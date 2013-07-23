@@ -40,18 +40,6 @@ else if (window.RTCSessionDescription) {
   WebRTC.RTCSessionDescription = window.RTCSessionDescription;
 }
 
-// New syntax for getting streams in Chrome M26.
-if (WebRTC.RTCPeerConnection && WebRTC.RTCPeerConnection.prototype) {
-  if (!WebRTC.RTCPeerConnection.prototype.getLocalStreams) {
-    WebRTC.RTCPeerConnection.prototype.getLocalStreams = function() {
-      return this.localStreams;
-    };
-    WebRTC.RTCPeerConnection.prototype.getRemoteStreams = function() {
-      return this.remoteStreams;
-    };
-  }
-}
-
 // isSupported attribute.
 if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
   WebRTC.isSupported = true;
