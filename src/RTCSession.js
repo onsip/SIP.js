@@ -454,6 +454,12 @@ RTCSession.prototype.init_incoming = function(request) {
     request.reply(415);
     return;
   }
+  else if( window.mozRTCPeerConnection !== undefined) 
+  {
+    request.body = request.body.replace(/relay/g,"host generation 0");
+    request.body = request.body.replace(/ \r\n/g, "\r\n");
+  }
+
 
   // Session parameter initialization
   this.status = C.STATUS_INVITE_RECEIVED;
