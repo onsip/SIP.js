@@ -901,6 +901,9 @@ RTCSession.prototype.receiveResponse = function(response) {
         this.acceptAndTerminate(response, 400, 'Missing session description');
         this.failed('remote', response, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
         break;
+      } else if (window.mozRTCPeerConnection !== undefined) {
+        response.body = response.body.replace(/relay/g, 'host generation 0');
+        response.body = response.body.replace(/ \r\n/g, '\r\n');
       }
 
       // An error on dialog creation will fire 'failed' event
