@@ -3721,7 +3721,7 @@ RTCMediaHandler.prototype = {
     this.peerConnection.onicecandidate = function(e) {
       if (e.candidate) {
         self.logger.log('ICE candidate received: '+ e.candidate.candidate);
-      } else {
+      } else if (self.onIceCompleted !== undefined) {
         self.onIceCompleted();
       }
     };
@@ -4420,6 +4420,12 @@ RTCSession.prototype.init_incoming = function(request) {
     request.reply(415);
     return;
   }
+  else if( window.mozRTCPeerConnection !== undefined) 
+  {
+    request.body = request.body.replace(/relay/g,"host generation 0");
+    request.body = request.body.replace(/ \r\n/g, "\r\n");
+  }
+
 
   // Session parameter initialization
   this.status = C.STATUS_INVITE_RECEIVED;
@@ -4861,6 +4867,9 @@ RTCSession.prototype.receiveResponse = function(response) {
         this.acceptAndTerminate(response, 400, 'Missing session description');
         this.failed('remote', response, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
         break;
+      } else if (window.mozRTCPeerConnection !== undefined) {
+        response.body = response.body.replace(/relay/g, 'host generation 0');
+        response.body = response.body.replace(/ \r\n/g, '\r\n');
       }
 
       // An error on dialog creation will fire 'failed' event
@@ -8117,9 +8126,10 @@ JsSIP.Grammar = (function(){
       
       function parse_escaped() {
         var result0, result1, result2;
-        var pos0;
+        var pos0, pos1;
         
         pos0 = pos;
+        pos1 = pos;
         if (input.charCodeAt(pos) === 37) {
           result0 = "%";
           pos++;
@@ -8137,14 +8147,20 @@ JsSIP.Grammar = (function(){
               result0 = [result0, result1, result2];
             } else {
               result0 = null;
-              pos = pos0;
+              pos = pos1;
             }
           } else {
             result0 = null;
-            pos = pos0;
+            pos = pos1;
           }
         } else {
           result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, escaped) {return escaped.join(''); })(pos0, result0);
+        }
+        if (result0 === null) {
           pos = pos0;
         }
         return result0;
