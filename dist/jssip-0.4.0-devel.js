@@ -494,6 +494,7 @@ JsSIP.C= {
   REGISTER:   'REGISTER',
   UPDATE:     'UPDATE',
   SUBSCRIBE:  'SUBSCRIBE',
+  REFER:      'REFER',
 
   /* SIP Response Reasons
    * DOC: http://www.iana.org/assignments/sip-parameters
@@ -722,9 +723,22 @@ Transport.prototype = {
   */
   disconnect: function() {
     if(this.ws) {
+      // Clear reconnectTimer
+      window.clearTimeout(this.reconnectTimer);
+      
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
       this.ws.close();
+    }
+
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+      this.ua.emit('disconnected', this.ua, {
+        transport: this,
+        code: this.lastTransportError.code,
+        reason: this.lastTransportError.reason
+      });
     }
   },
 
@@ -781,7 +795,12 @@ Transport.prototype = {
 
     this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
     // Clear reconnectTimer since we are not disconnected
-    window.clearTimeout(this.reconnectTimer);
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    // Reset reconnection_attempts
+    this.reconnection_attempts = 0;
     // Disable closed
     this.closed = false;
     // Trigger onTransportConnected callback
@@ -808,8 +827,6 @@ Transport.prototype = {
       this.ua.onTransportClosed(this);
       // Check whether the user requested to close.
       if(!this.closed) {
-        // Reset reconnection_attempts
-        this.reconnection_attempts = 0;
         this.reConnect();
       } else {
         this.ua.emit('disconnected', this.ua, {
@@ -927,7 +944,9 @@ Transport.prototype = {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
       this.reconnectTimer = window.setTimeout(function() {
-        transport.connect();}, this.ua.configuration.ws_server_reconnection_timeout * 1000);
+        transport.connect();
+        transport.reconnectTimer = null;
+      }, this.ua.configuration.ws_server_reconnection_timeout * 1000);
     }
   }
 };
@@ -985,7 +1004,7 @@ function getHeader(data, headerStart) {
 }
 
 function parseHeader(message, data, headerStart, headerEnd) {
-  var header, idx, parsed,
+  var header, idx, length, parsed,
     hcolonIndex = data.indexOf(':', headerStart),
     headerName = data.substring(headerStart, hcolonIndex).trim(),
     headerValue = data.substring(hcolonIndex + 1, headerEnd).trim();
@@ -1030,7 +1049,8 @@ function parseHeader(message, data, headerStart, headerEnd) {
         parsed = undefined;
       }
 
-      for(idx in parsed) {
+      length = parsed.length;
+      for (idx = 0; idx < length; idx++) {
         header = parsed[idx];
         message.addHeader('record-route', headerValue.substring(header.possition, header.offset));
         message.headers['Record-Route'][message.getHeaders('record-route').length - 1].parsed = header.parsed;
@@ -1052,7 +1072,8 @@ function parseHeader(message, data, headerStart, headerEnd) {
         parsed = undefined;
       }
 
-      for(idx in parsed) {
+      length = parsed.length;
+      for (idx = 0; idx < length; idx++) {
         header = parsed[idx];
         message.addHeader('contact', headerValue.substring(header.possition, header.offset));
         message.headers['Contact'][message.getHeaders('contact').length - 1].parsed = header.parsed;
@@ -1089,6 +1110,14 @@ function parseHeader(message, data, headerStart, headerEnd) {
     case 'proxy-authenticate':
       message.setHeader('proxy-authenticate', headerValue);
       parsed = message.parseHeader('proxy-authenticate');
+      break;
+    case 'refer-to':
+    case 'r':
+      message.setHeader('refer-to', headerValue);
+      parsed = message.parseHeader('refer-to');
+      if (parsed) {
+        message.refer_to = parsed;
+      }
       break;
     default:
       // Do not parse this header.
@@ -1294,14 +1323,15 @@ OutgoingRequest.prototype = {
 
     msg += this.method + ' ' + this.ruri + ' SIP/2.0\r\n';
 
-    for(header in this.headers) {
-      for(idx in this.headers[header]) {
+    for (header in this.headers) {
+      length = this.headers[header].length;
+      for (idx = 0; idx < length; idx++) {
         msg += header + ': ' + this.headers[header][idx] + '\r\n';
       }
     }
 
     length = this.extraHeaders.length;
-    for(idx=0; idx < length; idx++) {
+    for (idx = 0; idx < length; idx++) {
       msg += this.extraHeaders[idx] +'\r\n';
     }
 
@@ -1381,7 +1411,7 @@ IncomingMessage.prototype = {
    * @returns {Array} Array with all the headers of the specified name.
    */
   getHeaders: function(name) {
-    var idx,
+    var idx, length,
       header = this.headers[JsSIP.Utils.headerize(name)],
       result = [];
 
@@ -1389,7 +1419,8 @@ IncomingMessage.prototype = {
       return [];
     }
 
-    for(idx in header) {
+    length = header.length;
+    for (idx = 0; idx < length; idx++) {
       result.push(header[idx].raw);
     }
 
@@ -1545,7 +1576,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   response += 'CSeq: ' + this.cseq + ' ' + this.method + '\r\n';
 
   length = extraHeaders.length;
-  for(idx=0; idx < length; idx++) {
+  for (idx = 0; idx < length; idx++) {
     response += extraHeaders[idx] +'\r\n';
   }
 
@@ -3689,17 +3720,20 @@ RTCMediaHandler.prototype = {
   * @param {Function} onSuccess Fired when there are no more ICE candidates
   */
   init: function(constraints) {
-    var idx, server, scheme, url,
+    var idx, length, server, scheme, url,
       self = this,
-      servers = [];
+      servers = [],
+      config = this.session.ua.configuration;
 
-    for (idx in this.session.ua.configuration.stun_servers) {
-      server = this.session.ua.configuration.stun_servers[idx];
+    length = config.stun_servers.length;
+    for (idx = 0; idx < length; idx++) {
+      server = config.stun_servers[idx];
       servers.push({'url': server});
     }
 
-    for (idx in this.session.ua.configuration.turn_servers) {
-      server = this.session.ua.configuration.turn_servers[idx];
+    length = config.turn_servers.length;
+    for (idx = 0; idx < length; idx++) {
+      server = config.turn_servers[idx];
       url = server.server;
       scheme = url.substr(0, url.indexOf(':'));
       servers.push({
@@ -3869,20 +3903,7 @@ DTMF.prototype.send = function(tone, options) {
     this.tone = tone;
   }
 
-  // Check duration
-  if (options.duration && !JsSIP.Utils.isDecimal(options.duration)) {
-    throw new TypeError('Invalid tone duration: '+ options.duration);
-  } else if (!options.duration) {
-    options.duration = C.DEFAULT_DURATION;
-  } else if (options.duration < C.MIN_DURATION) {
-    this.logger.warn('"duration" value is lower than the minimum allowed, setting it to '+ C.MIN_DURATION+ ' milliseconds');
-    options.duration = C.MIN_DURATION;
-  } else if (options.duration > C.MAX_DURATION) {
-    this.logger.warn('"duration" value is greater than the maximum allowed, setting it to '+ C.MAX_DURATION +' milliseconds');
-    options.duration = C.MAX_DURATION;
-  } else {
-    options.duration = Math.abs(options.duration);
-  }
+  // Duration is checked/corrected in RTCSession
   this.duration = options.duration;
 
   // Set event handlers
@@ -4019,10 +4040,11 @@ var RTCSession,
     STATUS_1XX_RECEIVED:       2,
     STATUS_INVITE_RECEIVED:    3,
     STATUS_WAITING_FOR_ANSWER: 4,
-    STATUS_WAITING_FOR_ACK:    5,
-    STATUS_CANCELED:           6,
-    STATUS_TERMINATED:         7,
-    STATUS_CONFIRMED:          8
+    STATUS_ANSWERED:           5,
+    STATUS_WAITING_FOR_ACK:    6,
+    STATUS_CANCELED:           7,
+    STATUS_TERMINATED:         8,
+    STATUS_CONFIRMED:          9
   };
 
 
@@ -4038,7 +4060,7 @@ RTCSession = function(ua) {
   this.ua = ua;
   this.status = C.STATUS_NULL;
   this.dialog = null;
-  this.earlyDialogs = [];
+  this.earlyDialogs = {};
   this.rtcMediaHandler = null;
 
   // Session Timers
@@ -4055,6 +4077,8 @@ RTCSession = function(ua) {
   this.remote_identity = null;
   this.start_time = null;
   this.end_time = null;
+  this.tones = null;
+  this.media_constraints = {'audio':true, 'video':true};
 
   // Custom session empty object for high level use
   this.data = {};
@@ -4120,6 +4144,7 @@ RTCSession.prototype.terminate = function(options) {
 
       // - UAS -
     case C.STATUS_WAITING_FOR_ANSWER:
+    case C.STATUS_ANSWERED:
       this.logger.log('rejecting RTCSession');
 
       status_code = status_code || 480;
@@ -4166,7 +4191,6 @@ RTCSession.prototype.answer = function(options) {
     self = this,
     request = this.request,
     extraHeaders = options.extraHeaders || [],
-    mediaConstraints = options.mediaConstraints || {'audio':true, 'video':true},
 
     // User media succeeded
     userMediaSucceeded = function(stream) {
@@ -4277,12 +4301,18 @@ RTCSession.prototype.answer = function(options) {
     };
 
 
+  if (options.mediaConstraints != null) {
+    this.media_constraints = options.mediaConstraints;
+  }
+
   // Check Session Direction and Status
   if (this.direction !== 'incoming') {
     throw new JsSIP.Exceptions.NotSupportedError('"answer" not supported for outgoing RTCSession');
   } else if (this.status !== C.STATUS_WAITING_FOR_ANSWER) {
     throw new JsSIP.Exceptions.InvalidStateError(this.status);
   }
+  
+  this.status = C.STATUS_ANSWERED;
 
   // An error on dialog creation will fire 'failed' event
   if(!this.createDialog(request, 'UAS')) {
@@ -4295,7 +4325,7 @@ RTCSession.prototype.answer = function(options) {
   this.rtcMediaHandler.getUserMedia(
     userMediaSucceeded,
     userMediaFailed,
-    mediaConstraints
+    this.media_constraints
   );
 };
 
@@ -4306,12 +4336,12 @@ RTCSession.prototype.answer = function(options) {
  * @param {Object} [options]
  */
 RTCSession.prototype.sendDTMF = function(tones, options) {
-  var timer, interToneGap,
-    possition = 0,
-    self = this,
-    ready = true;
+  var duration, interToneGap,
+    position = 0,
+    self = this;
 
   options = options || {};
+  duration = options.duration || null;
   interToneGap = options.interToneGap || null;
 
   if (tones === undefined) {
@@ -4324,11 +4354,27 @@ RTCSession.prototype.sendDTMF = function(tones, options) {
   }
 
   // Check tones
-  if (!tones || (typeof tones !== 'string' && typeof tones !== 'number') || !tones.toString().match(/^[0-9A-D#*]+$/i)) {
+  if (!tones || (typeof tones !== 'string' && typeof tones !== 'number') || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
     throw new TypeError('Invalid tones: '+ tones);
   }
 
   tones = tones.toString();
+
+  // Check duration
+  if (duration && !JsSIP.Utils.isDecimal(duration)) {
+    throw new TypeError('Invalid tone duration: '+ duration);
+  } else if (!duration) {
+    duration = DTMF.C.DEFAULT_DURATION;
+  } else if (duration < DTMF.C.MIN_DURATION) {
+    this.logger.warn('"duration" value is lower than the minimum allowed, setting it to '+ DTMF.C.MIN_DURATION+ ' milliseconds');
+    duration = DTMF.C.MIN_DURATION;
+  } else if (duration > DTMF.C.MAX_DURATION) {
+    this.logger.warn('"duration" value is greater than the maximum allowed, setting it to '+ DTMF.C.MAX_DURATION +' milliseconds');
+    duration = DTMF.C.MAX_DURATION;
+  } else {
+    duration = Math.abs(duration);
+  }
+  options.duration = duration;
 
   // Check interToneGap
   if (interToneGap && !JsSIP.Utils.isDecimal(interToneGap)) {
@@ -4342,32 +4388,86 @@ RTCSession.prototype.sendDTMF = function(tones, options) {
     interToneGap = Math.abs(interToneGap);
   }
 
-  function sendDTMF() {
-    var tone,
-      dtmf = new DTMF(self);
-
-    dtmf.on('failed', function(){ready = false;});
-
-    tone = tones[possition];
-    possition += 1;
-
-    dtmf.send(tone, options);
+  if (this.tones) {
+    // Tones are already queued, just add to the queue
+    this.tones += tones;
+    return;
   }
+
+  // New set of tones to start sending
+  this.tones = tones;
+
+  var sendDTMF = function () {
+    var tone, timeout,
+      tones = self.tones;
+
+    if (self.status === C.STATUS_TERMINATED || !tones || position >= tones.length) {
+      // Stop sending DTMF
+      self.tones = null;
+      return;
+    }
+
+    tone = tones[position];
+    position += 1;
+
+    if (tone === ',') {
+      timeout = 2000;
+    } else {
+      var dtmf = new DTMF(self);
+      dtmf.on('failed', function(){self.tones = null;});
+      dtmf.send(tone, options);
+      timeout = duration + interToneGap;
+    }
+
+    // Set timeout for the next tone
+    window.setTimeout(sendDTMF, timeout);
+  };
 
   // Send the first tone
   sendDTMF();
+};
 
-  // Send the following tones
-  timer = window.setInterval(
-    function() {
-      if (self.status !== C.STATUS_TERMINATED && ready && tones.length > possition) {
-          sendDTMF();
-      } else {
-        window.clearInterval(timer);
-      }
-    },
-    interToneGap
-  );
+/**
+ * Blind transfer the remote party to the target address
+ *
+ * @param {String} target
+ * @param {Object} [options]
+ */
+RTCSession.prototype.transfer = function(target, options) {
+  options = options || {};
+
+  var request,
+    invalidTarget = false,
+    extraHeaders = options.extraHeaders || [],
+    self = this;
+
+  if (target === undefined) {
+    throw new TypeError('Not enough arguments');
+  }
+
+  // Check Session Status
+  if (this.status !== C.STATUS_CONFIRMED) {
+    throw new JsSIP.Exceptions.InvalidStateError(this.status);
+  }
+
+  // Check target validity
+  try {
+    target = JsSIP.Utils.normalizeTarget(target, this.ua.configuration.hostport_params);
+  } catch(e) {
+    target = JsSIP.URI.parse(JsSIP.INVALID_TARGET_URI);
+    invalidTarget = true;
+  }
+
+  extraHeaders.push('Contact: '+ this.contact);
+  extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
+  extraHeaders.push('Refer-To: '+ target);
+
+  
+  request = new Request(this);
+  request.send(JsSIP.C.REFER, { extraHeaders: extraHeaders });
+  request.on('succeeded', function () {
+    self.terminate();
+  });
 };
 
 /**
@@ -4514,8 +4614,11 @@ RTCSession.prototype.connect = function(target, options) {
     originalTarget = target,
     eventHandlers = options.eventHandlers || {},
     extraHeaders = options.extraHeaders || [],
-    mediaConstraints = options.mediaConstraints || {audio: true, video: true},
     RTCConstraints = options.RTCConstraints || {};
+
+  if (options.mediaConstraints != null) {
+    this.media_constraints = options.mediaConstraints;
+  }
 
   if (target === undefined) {
     throw new TypeError('Not enough arguments');
@@ -4584,7 +4687,7 @@ RTCSession.prototype.connect = function(target, options) {
 
   this.newRTCSession('local', this.request);
 
-  this.sendInitialRequest(mediaConstraints);
+  this.sendInitialRequest(this.media_constraints);
 };
 
 /**
@@ -4739,6 +4842,33 @@ RTCSession.prototype.receiveRequest = function(request) {
             new DTMF(this).init_incoming(request);
           }
         }
+        break;
+      case JsSIP.C.REFER:
+        if(this.status ===  C.STATUS_CONFIRMED) {
+          this.logger.log('REFER received');
+          request.reply(202, 'Accepted');
+
+          (new Request(this)).send(JsSIP.C.NOTIFY, {
+            extraHeaders: [
+              'Event: refer',
+              'Subscription-State: terminated',
+              'Content-Type: message/sipfrag'
+            ],
+            body: 'SIP/2.0 100 Trying'
+          });
+
+          /*
+            Harmless race condition.  Both sides of REFER
+            may send a BYE, but in the end the dialogs are destroyed.
+          */
+          this.terminate();
+
+          this.ua.call(request.parseHeader('refer-to').uri, {
+            mediaConstraints: this.media_constraints
+          });
+          
+        }
+        break;
     }
   }
 };
@@ -5384,7 +5514,6 @@ UA = function(configuration) {
 
   this.configuration = {};
   this.dialogs = {};
-  this.registrator = null;
 
   //User actions outside any session/dialog (MESSAGE)
   this.applicants = {};
@@ -5465,7 +5594,7 @@ UA = function(configuration) {
     }
 
     if (configuration.log.hasOwnProperty('connector')) {
-      this.log.level = configuration.log.connector;
+      this.log.connector = configuration.log.connector;
     }
   }
 
@@ -5477,6 +5606,9 @@ UA = function(configuration) {
     this.error = C.CONFIGURATION_ERROR;
     throw e;
   }
+  
+  // Initialize registrator
+  this.registrator = new JsSIP.Registrator(this);
 };
 UA.prototype = new JsSIP.EventEmitter();
 
@@ -5511,7 +5643,7 @@ UA.prototype.unregister = function(options) {
  * @param {Boolean}
  */
 UA.prototype.isRegistered = function() {
-  if(this.registrator && this.registrator.registered) {
+  if(this.registrator.registered) {
     return true;
   } else {
     return false;
@@ -5587,10 +5719,8 @@ UA.prototype.stop = function() {
   }
 
   // Close registrator
-  if(this.registrator) {
-    this.logger.log('closing registrator');
-    this.registrator.close();
-  }
+  this.logger.log('closing registrator');
+  this.registrator.close();
 
   // Run  _terminate_ on every Session
   for(session in this.sessions) {
@@ -5695,13 +5825,14 @@ UA.prototype.getLogger = function(category, label) {
  */
 UA.prototype.onTransportClosed = function(transport) {
   // Run _onTransportError_ callback on every client transaction using _transport_
-  var type, idx,
+  var type, idx, length,
     client_transactions = ['nict', 'ict', 'nist', 'ist'];
 
   transport.server.status = JsSIP.Transport.C.STATUS_DISCONNECTED;
   this.logger.log('connection state set to '+ JsSIP.Transport.C.STATUS_DISCONNECTED);
 
-  for(type in client_transactions) {
+  length = client_transactions.length;
+  for (type = 0; type < length; type++) {
     for(idx in this.transactions[client_transactions[type]]) {
       this.transactions[client_transactions[type]][idx].onTransportError();
     }
@@ -5777,14 +5908,7 @@ UA.prototype.onTransportConnected = function(transport) {
   });
 
   if(this.configuration.register) {
-    if(this.registrator) {
-      this.registrator.onTransportConnected();
-    } else {
-      this.registrator = new JsSIP.Registrator(this, transport);
-      this.register();
-    }
-  } else if (!this.registrator) {
-    this.registrator = new JsSIP.Registrator(this, transport);
+    this.registrator.onTransportConnected();
   }
 };
 
@@ -5988,10 +6112,11 @@ UA.prototype.findDialog = function(request) {
  */
 UA.prototype.getNextWsServer = function() {
   // Order servers by weight
-  var idx, ws_server,
+  var idx, length, ws_server,
     candidates = [];
 
-  for (idx in this.configuration.ws_servers) {
+  length = this.configuration.ws_servers.length;
+  for (idx = 0; idx < length; idx++) {
     ws_server = this.configuration.ws_servers[idx];
 
     if (ws_server.status === JsSIP.Transport.C.STATUS_ERROR) {
@@ -6022,18 +6147,17 @@ UA.prototype.closeSessionsOnTransportError = function() {
     this.sessions[idx].onTransportError();
   }
   // Call registrator _onTransportClosed_
-  if(this.registrator){
-    this.registrator.onTransportClosed();
-  }
+  this.registrator.onTransportClosed();
 };
 
 UA.prototype.recoverTransport = function(ua) {
-  var idx, k, nextRetry, count, server;
+  var idx, length, k, nextRetry, count, server;
 
   ua = ua || this;
   count = ua.transportRecoverAttempts;
 
-  for (idx in ua.configuration.ws_servers) {
+  length = ua.configuration.ws_servers.length;
+  for (idx = 0; idx < length; idx++) {
     ua.configuration.ws_servers[idx].status = 0;
   }
 
@@ -6331,7 +6455,7 @@ UA.configuration_check = {
     },
 
     ws_servers: function(ws_servers) {
-      var idx, url;
+      var idx, length, url;
 
       /* Allow defining ws_servers parameter as:
        *  String: "host"
@@ -6342,7 +6466,8 @@ UA.configuration_check = {
       if (typeof ws_servers === 'string') {
         ws_servers = [{ws_uri: ws_servers}];
       } else if (ws_servers instanceof Array) {
-        for(idx in ws_servers) {
+        length = ws_servers.length;
+        for (idx = 0; idx < length; idx++) {
           if (typeof ws_servers[idx] === 'string'){
             ws_servers[idx] = {ws_uri: ws_servers[idx]};
           }
@@ -6355,7 +6480,8 @@ UA.configuration_check = {
         return false;
       }
 
-      for (idx in ws_servers) {
+      length = ws_servers.length;
+      for (idx = 0; idx < length; idx++) {
         if (!ws_servers[idx].ws_uri) {
           this.logger.error('missing "ws_uri" attribute in ws_servers parameter');
           return;
@@ -6498,7 +6624,7 @@ UA.configuration_check = {
     },
 
     stun_servers: function(stun_servers) {
-      var idx, stun_server;
+      var idx, length, stun_server;
 
       if (typeof stun_servers === 'string') {
         stun_servers = [stun_servers];
@@ -6506,7 +6632,8 @@ UA.configuration_check = {
         return;
       }
 
-      for (idx in stun_servers) {
+      length = stun_servers.length;
+      for (idx = 0; idx < length; idx++) {
         stun_server = stun_servers[idx];
         if (!(/^stuns?:/.test(stun_server))) {
           stun_server = 'stun:' + stun_server;
@@ -6528,7 +6655,7 @@ UA.configuration_check = {
     },
 
     turn_servers: function(turn_servers) {
-      var idx, turn_server;
+      var idx, length, turn_server;
 
       if (turn_servers instanceof Array) {
         // Do nothing
@@ -6536,7 +6663,8 @@ UA.configuration_check = {
         turn_servers = [turn_servers];
       }
 
-      for (idx in turn_servers) {
+      length = turn_servers.length;
+      for (idx = 0; idx < length; idx++) {
         turn_server = turn_servers[idx];
         if (!turn_server.server || !turn_server.username || !turn_server.password) {
           return;
@@ -6545,10 +6673,6 @@ UA.configuration_check = {
         }
 
         if(JsSIP.Grammar.parse(turn_server.server, 'turn_URI') === -1) {
-          return;
-        } else if(JsSIP.Grammar.parse(turn_server.username, 'user') === -1) {
-          return;
-        } else if(JsSIP.Grammar.parse(turn_server.password, 'password') === -1) {
           return;
         }
       }
@@ -6715,10 +6839,11 @@ Utils= {
       'Www-Authenticate': 'WWW-Authenticate'
       },
       name = string.toLowerCase().replace(/_/g,'-').split('-'),
-      hname = '', part;
+      hname = '',
+      parts = name.length, part;
 
-    for (part in name) {
-      if (part !== '0') {
+    for (part = 0; part < parts; part++) {
+      if (part !== 0) {
         hname +='-';
       }
       hname += name[part].charAt(0).toUpperCase()+name[part].substring(1);
@@ -7588,6 +7713,7 @@ JsSIP.Grammar = (function(){
         "REGISTERm": parse_REGISTERm,
         "SUBSCRIBEm": parse_SUBSCRIBEm,
         "NOTIFYm": parse_NOTIFYm,
+        "REFERm": parse_REFERm,
         "Method": parse_Method,
         "Status_Line": parse_Status_Line,
         "Status_Code": parse_Status_Code,
@@ -7652,6 +7778,7 @@ JsSIP.Grammar = (function(){
         "Proxy_Require": parse_Proxy_Require,
         "Record_Route": parse_Record_Route,
         "rec_route": parse_rec_route,
+        "Refer_To": parse_Refer_To,
         "Require": parse_Require,
         "Route": parse_Route,
         "route_param": parse_route_param,
@@ -15096,6 +15223,21 @@ JsSIP.Grammar = (function(){
         return result0;
       }
       
+      function parse_REFERm() {
+        var result0;
+        
+        if (input.substr(pos, 5) === "REFER") {
+          result0 = "REFER";
+          pos += 5;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"REFER\"");
+          }
+        }
+        return result0;
+      }
+      
       function parse_Method() {
         var result0;
         var pos0;
@@ -15117,7 +15259,10 @@ JsSIP.Grammar = (function(){
                     if (result0 === null) {
                       result0 = parse_NOTIFYm();
                       if (result0 === null) {
-                        result0 = parse_token();
+                        result0 = parse_REFERm();
+                        if (result0 === null) {
+                          result0 = parse_token();
+                        }
                       }
                     }
                   }
@@ -15434,8 +15579,9 @@ JsSIP.Grammar = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset) {
-                                var idx;
-                                for (idx in data.multi_header) {
+                                var idx, length;
+                                length = data.multi_header.length;
+                                for (idx = 0; idx < length; idx++) {
                                   if (data.multi_header[idx].parsed === null) {
                                     data = null;
                                     break;
@@ -17691,8 +17837,9 @@ JsSIP.Grammar = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset) {
-                          var idx;
-                          for (idx in data.multi_header) {
+                          var idx, length;
+                          length = data.multi_header.length;
+                          for (idx = 0; idx < length; idx++) {
                             if (data.multi_header[idx].parsed === null) {
                               data = null;
                               break;
@@ -17776,6 +17923,73 @@ JsSIP.Grammar = (function(){
                                                     'offset': offset,
                                                     'parsed': header
                                                   });})(pos0);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        return result0;
+      }
+      
+      function parse_Refer_To() {
+        var result0, result1, result2, result3;
+        var pos0, pos1, pos2;
+        
+        pos0 = pos;
+        pos1 = pos;
+        result0 = parse_SIP_URI_noparams();
+        if (result0 === null) {
+          result0 = parse_name_addr();
+        }
+        if (result0 !== null) {
+          result1 = [];
+          pos2 = pos;
+          result2 = parse_SEMI();
+          if (result2 !== null) {
+            result3 = parse_generic_param();
+            if (result3 !== null) {
+              result2 = [result2, result3];
+            } else {
+              result2 = null;
+              pos = pos2;
+            }
+          } else {
+            result2 = null;
+            pos = pos2;
+          }
+          while (result2 !== null) {
+            result1.push(result2);
+            pos2 = pos;
+            result2 = parse_SEMI();
+            if (result2 !== null) {
+              result3 = parse_generic_param();
+              if (result3 !== null) {
+                result2 = [result2, result3];
+              } else {
+                result2 = null;
+                pos = pos2;
+              }
+            } else {
+              result2 = null;
+              pos = pos2;
+            }
+          }
+          if (result1 !== null) {
+            result0 = [result0, result1];
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset) {
+                    try {
+                      data = new JsSIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                    } catch(e) {
+                      data = -1;
+                    }})(pos0);
         }
         if (result0 === null) {
           pos = pos0;

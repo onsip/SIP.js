@@ -67,6 +67,7 @@ JsSIP.C= {
   REGISTER:   'REGISTER',
   UPDATE:     'UPDATE',
   SUBSCRIBE:  'SUBSCRIBE',
+  REFER:      'REFER',
 
   /* SIP Response Reasons
    * DOC: http://www.iana.org/assignments/sip-parameters

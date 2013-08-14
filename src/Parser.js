@@ -152,6 +152,14 @@ function parseHeader(message, data, headerStart, headerEnd) {
       message.setHeader('proxy-authenticate', headerValue);
       parsed = message.parseHeader('proxy-authenticate');
       break;
+    case 'refer-to':
+    case 'r':
+      message.setHeader('refer-to', headerValue);
+      parsed = message.parseHeader('refer-to');
+      if (parsed) {
+        message.refer_to = parsed;
+      }
+      break;
     default:
       // Do not parse this header.
       message.setHeader(headerName, headerValue);

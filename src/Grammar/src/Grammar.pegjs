@@ -336,8 +336,10 @@ SUBSCRIBEm        = "\x53\x55\x42\x53\x43\x52\x49\x42\x45" // SUBSCRIBE in caps
 
 NOTIFYm           = "\x4E\x4F\x54\x49\x46\x59" // NOTIFY in caps
 
+REFERm            = "\x52\x45\x46\x45\x52" // REFER in caps
+
 Method            = ( INVITEm / ACKm / OPTIONSm / BYEm / CANCELm / REGISTERm
-                    / SUBSCRIBEm / NOTIFYm / extension_method ){
+                    / SUBSCRIBEm / NOTIFYm / REFERm / extension_method ){
                     data.method = input.substring(pos, offset);
                     return data.method; }
 
@@ -653,6 +655,17 @@ rec_route     = name_addr ( SEMI rr_param )* {
                                           });}
 
 rr_param      = generic_param
+
+// REFER-TO
+
+Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
+            try {
+              data = new JsSIP.NameAddrHeader(data.uri, data.display_name, data.params);
+            } catch(e) {
+              data = -1;
+            }}
+
+r_param = generic_param
 
 
 // REQUIRE

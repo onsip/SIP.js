@@ -59,6 +59,7 @@ RTCSession = function(ua) {
   this.start_time = null;
   this.end_time = null;
   this.tones = null;
+  this.media_constraints = {'audio':true, 'video':true};
 
   // Custom session empty object for high level use
   this.data = {};
@@ -171,7 +172,6 @@ RTCSession.prototype.answer = function(options) {
     self = this,
     request = this.request,
     extraHeaders = options.extraHeaders || [],
-    mediaConstraints = options.mediaConstraints || {'audio':true, 'video':true},
 
     // User media succeeded
     userMediaSucceeded = function(stream) {
@@ -282,6 +282,10 @@ RTCSession.prototype.answer = function(options) {
     };
 
 
+  if (options.mediaConstraints != null) {
+    this.media_constraints = options.mediaConstraints;
+  }
+
   // Check Session Direction and Status
   if (this.direction !== 'incoming') {
     throw new JsSIP.Exceptions.NotSupportedError('"answer" not supported for outgoing RTCSession');
@@ -302,7 +306,7 @@ RTCSession.prototype.answer = function(options) {
   this.rtcMediaHandler.getUserMedia(
     userMediaSucceeded,
     userMediaFailed,
-    mediaConstraints
+    this.media_constraints
   );
 };
 
@@ -402,6 +406,49 @@ RTCSession.prototype.sendDTMF = function(tones, options) {
 
   // Send the first tone
   sendDTMF();
+};
+
+/**
+ * Blind transfer the remote party to the target address
+ *
+ * @param {String} target
+ * @param {Object} [options]
+ */
+RTCSession.prototype.transfer = function(target, options) {
+  options = options || {};
+
+  var request,
+    invalidTarget = false,
+    extraHeaders = options.extraHeaders || [],
+    self = this;
+
+  if (target === undefined) {
+    throw new TypeError('Not enough arguments');
+  }
+
+  // Check Session Status
+  if (this.status !== C.STATUS_CONFIRMED) {
+    throw new JsSIP.Exceptions.InvalidStateError(this.status);
+  }
+
+  // Check target validity
+  try {
+    target = JsSIP.Utils.normalizeTarget(target, this.ua.configuration.hostport_params);
+  } catch(e) {
+    target = JsSIP.URI.parse(JsSIP.INVALID_TARGET_URI);
+    invalidTarget = true;
+  }
+
+  extraHeaders.push('Contact: '+ this.contact);
+  extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
+  extraHeaders.push('Refer-To: '+ target);
+
+  
+  request = new Request(this);
+  request.send(JsSIP.C.REFER, { extraHeaders: extraHeaders });
+  request.on('succeeded', function () {
+    self.terminate();
+  });
 };
 
 /**
@@ -548,8 +595,11 @@ RTCSession.prototype.connect = function(target, options) {
     originalTarget = target,
     eventHandlers = options.eventHandlers || {},
     extraHeaders = options.extraHeaders || [],
-    mediaConstraints = options.mediaConstraints || {audio: true, video: true},
     RTCConstraints = options.RTCConstraints || {};
+
+  if (options.mediaConstraints != null) {
+    this.media_constraints = options.mediaConstraints;
+  }
 
   if (target === undefined) {
     throw new TypeError('Not enough arguments');
@@ -618,7 +668,7 @@ RTCSession.prototype.connect = function(target, options) {
 
   this.newRTCSession('local', this.request);
 
-  this.sendInitialRequest(mediaConstraints);
+  this.sendInitialRequest(this.media_constraints);
 };
 
 /**
@@ -773,6 +823,33 @@ RTCSession.prototype.receiveRequest = function(request) {
             new DTMF(this).init_incoming(request);
           }
         }
+        break;
+      case JsSIP.C.REFER:
+        if(this.status ===  C.STATUS_CONFIRMED) {
+          this.logger.log('REFER received');
+          request.reply(202, 'Accepted');
+
+          (new Request(this)).send(JsSIP.C.NOTIFY, {
+            extraHeaders: [
+              'Event: refer',
+              'Subscription-State: terminated',
+              'Content-Type: message/sipfrag'
+            ],
+            body: 'SIP/2.0 100 Trying'
+          });
+
+          /*
+            Harmless race condition.  Both sides of REFER
+            may send a BYE, but in the end the dialogs are destroyed.
+          */
+          this.terminate();
+
+          this.ua.call(request.parseHeader('refer-to').uri, {
+            mediaConstraints: this.media_constraints
+          });
+          
+        }
+        break;
     }
   }
 };
