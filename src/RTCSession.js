@@ -408,6 +408,7 @@ RTCSession.prototype.sendDTMF = function(tones, options) {
   sendDTMF();
 };
 
+
 /**
  * Blind transfer the remote party to the target address
  *
@@ -416,40 +417,52 @@ RTCSession.prototype.sendDTMF = function(tones, options) {
  */
 RTCSession.prototype.transfer = function(target, options) {
   options = options || {};
-
   var request,
-    invalidTarget = false,
-    extraHeaders = options.extraHeaders || [],
-    self = this;
-
+  invalidTarget = false,
+  extraHeaders = options.extraHeaders || [],
+  self = this;
   if (target === undefined) {
     throw new TypeError('Not enough arguments');
   }
-
-  // Check Session Status
-  if (this.status !== C.STATUS_CONFIRMED) {
-    throw new JsSIP.Exceptions.InvalidStateError(this.status);
+  else if (target instanceof JsSIP.RTCSession)
+  {
+    //Attended Transfer
+    // B.transfer(C)
+    extraHeaders.push('Contact: '+ this.contact);   
+    extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
   }
-
-  // Check target validity
-  try {
-    target = JsSIP.Utils.normalizeTarget(target, this.ua.configuration.hostport_params);
-  } catch(e) {
-    target = JsSIP.URI.parse(JsSIP.INVALID_TARGET_URI);
-    invalidTarget = true;
-  }
-
-  extraHeaders.push('Contact: '+ this.contact);
-  extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
-  extraHeaders.push('Refer-To: '+ target);
-
   
+  else
+  {
+    //Blind Transfer
+  
+    // Check Session Status
+    if (this.status !== C.STATUS_CONFIRMED) {
+      throw new JsSIP.Exceptions.InvalidStateError(this.status);
+    }
+  
+    // Check target validity
+    try {
+      target = JsSIP.Utils.normalizeTarget(target, this.ua.configuration.hostport_params);
+    } catch(e) {
+      target = JsSIP.URI.parse(JsSIP.INVALID_TARGET_URI);
+      invalidTarget = true;
+    }
+  
+    extraHeaders.push('Contact: '+ this.contact);
+    extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Refer-To: '+ target);
+  }
+  
+  //Send the request
   request = new Request(this);
   request.send(JsSIP.C.REFER, { extraHeaders: extraHeaders });
   request.on('succeeded', function () {
     self.terminate();
   });
 };
+
 
 /**
  * Send a generic in-dialog Request
