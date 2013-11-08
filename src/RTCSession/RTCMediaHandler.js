@@ -10,14 +10,14 @@
 (function(JsSIP){
 
 var RTCMediaHandler = function(session, constraints) {
-  constraints = constraints || {};
+  this.constraints = constraints || {};
 
   this.logger = session.ua.getLogger('jssip.rtcsession.rtcmediahandler', session.id);
   this.session = session;
   this.localMedia = null;
   this.peerConnection = null;
 
-  this.init(constraints);
+  this.init();
 };
 
 RTCMediaHandler.prototype = {
@@ -72,7 +72,8 @@ RTCMediaHandler.prototype = {
         self.logger.error('unable to create answer');
         self.logger.error(e);
         onFailure();
-      }
+      },
+      this.constraints
     );
   },
 
@@ -107,7 +108,7 @@ RTCMediaHandler.prototype = {
   * peerConnection creation.
   * @param {Function} onSuccess Fired when there are no more ICE candidates
   */
-  init: function(constraints) {
+  init: function() {
     var idx, length, server, scheme, url,
       self = this,
       servers = [],
@@ -130,7 +131,7 @@ RTCMediaHandler.prototype = {
       });
     }
 
-    this.peerConnection = new JsSIP.WebRTC.RTCPeerConnection({'iceServers': servers}, constraints);
+    this.peerConnection = new JsSIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.constraints);
 
     this.peerConnection.onaddstream = function(e) {
       self.logger.log('stream added: '+ e.stream.id);
@@ -180,12 +181,12 @@ RTCMediaHandler.prototype = {
   * @param {Function} onSuccess
   * @param {Function} onFailure
   */
-  getUserMedia: function(onSuccess, onFailure, constraints) {
+  getUserMedia: function(onSuccess, onFailure, mediaConstraints) {
     var self = this;
 
     this.logger.log('requesting access to local media');
 
-    JsSIP.WebRTC.getUserMedia(constraints,
+    JsSIP.WebRTC.getUserMedia(mediaConstraints,
       function(stream) {
         self.logger.log('got local media stream');
         self.localMedia = stream;
