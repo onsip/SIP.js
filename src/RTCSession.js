@@ -1048,10 +1048,40 @@ RTCSession.prototype.receiveResponse = function(response) {
               if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
                 return;
               }
+              /* 
+               * This is a Firefox hack to insert valid sdp when createAnswer is
+               * called with the constraint offerToReceiveVideo = false.
+               * We search for either a c-line at the top of the sdp above all 
+               * m-lines. If that does not exist then we search for a c-line 
+               * beneath each m-line. If it is missing a c-line, we insert 
+               * a fake c-line with the ip address 0.0.0.0. This is then valid
+               * sdp and no media will be sent for that m-line.
+               * 
+               * Valid SDP is:
+               * m=
+               * i=
+               * c=
+               */
+              if (offer.indexOf('c=') > offer.indexOf('m=')) {
+                var insertAt;
+                var mlines = (offer.match(/m=.*\r\n.*/g));
+                for (var i=0; i<mlines.length; i++) {
+                  if (mlines[i].toString().search(/i=.*/) >= 0) {
+                    insertAt = offer.indexOf(mlines[i].toString())+mlines[i].toString().length;
+                    if (offer.substr(insertAt,2)!=='c=') {
+                      offer = offer.substr(0,insertAt) + '\r\nc=IN IP 4 0.0.0.0' + offer.substr(insertAt);
+                    }
+                  } else if (mlines[i].toString().search(/c=.*/) < 0) {
+                    insertAt = offer.indexOf(mlines[i].toString().match(/.*/))+mlines[i].toString().match(/.*/).toString().length;
+                    offer = offer.substr(0,insertAt) + '\r\nc=IN IP4 0.0.0.0' + offer.substr(insertAt);
+                  }
+                }
+              }
+              
               session.status = C.STATUS_CONFIRMED;
               session.sendRequest(JsSIP.C.ACK,{
                 body:offer,
-                extraHeaders:["Content-Type: application/sdp"]
+                extraHeaders:['Content-Type: application/sdp']
               });
               session.started('remote', response);
             };
