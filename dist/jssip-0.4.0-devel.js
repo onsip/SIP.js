@@ -466,9 +466,16 @@ JsSIP.C= {
     NO_ANSWER:                'No Answer',
     EXPIRES:                  'Expires',
     NO_ACK:                   'No ACK',
+    NO_PRACK:                 'No PRACK',
     USER_DENIED_MEDIA_ACCESS: 'User Denied Media Access',
     BAD_MEDIA_DESCRIPTION:    'Bad Media Description',
     RTP_TIMEOUT:              'RTP Timeout'
+  },
+  
+  supported: {
+    UNSUPPORTED:        0,
+    SUPPORTED:          1,
+    REQUIRED:           2
   },
 
   SIP_ERROR_CAUSES: {
@@ -4037,16 +4044,19 @@ return DTMF;
 var RTCSession,
   C = {
     // RTCSession states
-    STATUS_NULL:               0,
-    STATUS_INVITE_SENT:        1,
-    STATUS_1XX_RECEIVED:       2,
-    STATUS_INVITE_RECEIVED:    3,
-    STATUS_WAITING_FOR_ANSWER: 4,
-    STATUS_ANSWERED:           5,
-    STATUS_WAITING_FOR_ACK:    6,
-    STATUS_CANCELED:           7,
-    STATUS_TERMINATED:         8,
-    STATUS_CONFIRMED:          9
+    STATUS_NULL:                        0,
+    STATUS_INVITE_SENT:                 1,
+    STATUS_1XX_RECEIVED:                2,
+    STATUS_INVITE_RECEIVED:             3,
+    STATUS_WAITING_FOR_ANSWER:          4,
+    STATUS_ANSWERED:                    5,
+    STATUS_WAITING_FOR_PRACK:           6,
+    STATUS_WAITING_FOR_ACK:             7,
+    STATUS_CANCELED:                    8,
+    STATUS_TERMINATED:                  9,
+    STATUS_ANSWERED_WAITING_FOR_PRACK: 10,
+    STATUS_EARLY_MEDIA:                11,
+    STATUS_CONFIRMED:                  12
   };
 
 
@@ -4071,7 +4081,9 @@ RTCSession = function(ua) {
     ackTimer: null,
     expiresTimer: null,
     invite2xxTimer: null,
-    userNoAnswerTimer: null
+    userNoAnswerTimer: null,
+    rel1xxTimer: null,
+    prackTimer: null
   };
 
   // Session info
@@ -4084,6 +4096,8 @@ RTCSession = function(ua) {
   this.end_time = null;
   this.tones = null;
   this.media_constraints = {'audio':true, 'video':true};
+  this.early_sdp = null;
+  this.rel100 = JsSIP.C.supported.UNSUPPORTED;
 
   // Custom session empty object for high level use
   this.data = {};
@@ -4150,6 +4164,7 @@ RTCSession.prototype.terminate = function(options) {
       // - UAS -
     case C.STATUS_WAITING_FOR_ANSWER:
     case C.STATUS_ANSWERED:
+    case C.STATUS_EARLY_MEDIA:
       this.logger.log('rejecting RTCSession');
 
       status_code = status_code || 480;
@@ -4186,11 +4201,107 @@ RTCSession.prototype.terminate = function(options) {
 };
 
 /**
+ * Pre-Answer the call
+ * @param {Object} [options]
+ */
+RTCSession.prototype.preAnswer = function(options) {
+  options = options || {};
+  var self = this;
+  
+  if (this.rel100 === JsSIP.C.supported.UNSUPPORTED) {
+    return;
+  }
+  self.status = C.STATUS_WAITING_FOR_PRACK;
+  var extraHeaders = [];
+  extraHeaders.push('Contact: '+ this.contact); 
+  extraHeaders.push('Require: 100rel');
+
+  var 
+  answerCreationSucceeded = function(offer) {
+    if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
+      return;
+    }
+    
+    self.early_sdp = offer;
+    var rseq = Math.floor(Math.random() * 10000);
+    var timeout =  JsSIP.Timers.T1;
+
+    self.timers.rel1xxTimer = window.setTimeout(function rel1xxRetransmission(rseq) {
+      extraHeaders.push('RSeq: '+ rseq);
+      self.request.reply(183,null,extraHeaders,offer);
+      extraHeaders.pop();
+      timeout = timeout * 2;
+      self.timers.rel1xxTimer = window.setTimeout(
+        rel1xxRetransmission,timeout, rseq
+      ); 
+    }, timeout,rseq);
+    
+    self.timers.prackTimer = window.setTimeout(function () {
+      if(self.status === C.STATUS_WAITING_FOR_PRACK) {
+        self.logger.log('no ACK received, terminating the call');
+        window.clearTimeout(self.timers.rel1xxTimer);
+        self.request.reply(504);
+        self.ended('remote',null, JsSIP.C.causes.NO_PRACK);
+      }
+    },JsSIP.Timers.T1*64);
+  },
+  answerCreationFailed = function () {
+    if (self.status === C.STATUS_TERMINATED) {
+        return;
+    }
+    self.failed('local', null, JsSIP.C.causes.WEBRTC_ERROR);
+  },
+  
+  // rtcMediaHandler.addStream successfully added
+  streamAdditionSucceeded = function() {
+    self.rtcMediaHandler.createAnswer(
+      answerCreationSucceeded,
+      answerCreationFailed
+    );
+  },
+
+  // rtcMediaHandler.addStream failed
+  streamAdditionFailed = function() {
+    if (self.status === C.STATUS_TERMINATED) {
+      return;
+    }
+    self.failed('local', null, JsSIP.C.causes.WEBRTC_ERROR);
+  },
+  
+  // User media succeeded
+  userMediaSucceeded = function(stream) {
+    self.rtcMediaHandler.addStream(
+      stream,
+      streamAdditionSucceeded,
+      streamAdditionFailed
+    );
+  },
+
+  // User media failed
+  userMediaFailed = function() {
+    this.request.reply(480);
+    self.failed('local', null, JsSIP.C.causes.USER_DENIED_MEDIA_ACCESS);
+  };
+  
+  self.rtcMediaHandler.getUserMedia(
+    userMediaSucceeded,
+    userMediaFailed,
+    self.media_constraints
+  );
+
+};
+
+/**
  * Answer the call.
  * @param {Object} [options]
  */
 RTCSession.prototype.answer = function(options) {
   options = options || {};
+  
+  if (this.status === C.STATUS_WAITING_FOR_PRACK) {
+    this.status = C.STATUS_ANSWERED_WAITING_FOR_PRACK;
+    return;
+  }
 
   var
     self = this,
@@ -4242,7 +4353,7 @@ RTCSession.prototype.answer = function(options) {
         // run for reply success callback
         replySucceeded = function() {
           var timeout = JsSIP.Timers.T1;
-
+          
           self.status = C.STATUS_WAITING_FOR_ACK;
 
           /**
@@ -4267,7 +4378,7 @@ RTCSession.prototype.answer = function(options) {
                 invite2xxRetransmission, timeout
               );
             },
-            timeout
+            timeout 
           );
 
           /**
@@ -4303,6 +4414,7 @@ RTCSession.prototype.answer = function(options) {
         replySucceeded,
         replyFailed
       );
+
     },
 
     // rtcMediaHandler.createAnsewr failed
@@ -4322,7 +4434,7 @@ RTCSession.prototype.answer = function(options) {
   // Check Session Direction and Status
   if (this.direction !== 'incoming') {
     throw new JsSIP.Exceptions.NotSupportedError('"answer" not supported for outgoing RTCSession');
-  } else if (this.status !== C.STATUS_WAITING_FOR_ANSWER) {
+  } else if (this.status !== C.STATUS_WAITING_FOR_ANSWER && this.status !== C.STATUS_EARLY_MEDIA) {
     throw new JsSIP.Exceptions.InvalidStateError(this.status);
   }
   
@@ -4335,12 +4447,16 @@ RTCSession.prototype.answer = function(options) {
   }
 
   window.clearTimeout(this.timers.userNoAnswerTimer);
-
-  this.rtcMediaHandler.getUserMedia(
-    userMediaSucceeded,
-    userMediaFailed,
-    this.media_constraints
-  );
+  if (this.status === C.STATUS_EARLY_MEDIA) {
+    sdpCreationSucceeded(self.early_sdp);
+    
+  } else {
+    this.rtcMediaHandler.getUserMedia(
+      userMediaSucceeded,
+      userMediaFailed,
+      this.media_constraints
+    );
+  }
 };
 
 /**
@@ -4568,7 +4684,15 @@ RTCSession.prototype.init_incoming = function(request) {
   if(request.hasHeader('expires')) {
     expires = request.getHeader('expires') * 1000;
   }
-
+  
+  //Set 100rel if necissary
+  if (request.hasHeader('require') && request.getHeader('require').toLowerCase().indexOf('100rel') >= 0) {
+    this.rel100 = JsSIP.C.supported.REQUIRED;
+  } 
+  if (request.hasHeader('supported') && request.getHeader('supported').toLowerCase().indexOf('100rel') >= 0) {
+    this.rel100 = JsSIP.C.supported.SUPPORTED;
+  }
+  
   /* Set the to_tag before
    * replying a response code that will create a dialog.
    */
@@ -4584,9 +4708,14 @@ RTCSession.prototype.init_incoming = function(request) {
   this.rtcMediaHandler = new RTCMediaHandler(this,
     {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
   );
-
+  
   function fireNewSession() {
-    request.reply(180, null, ['Contact: ' + self.contact]);
+    var extraHeaders = ['Contact: ' + self.contact];
+
+    if (self.rel100 !== JsSIP.C.supported.REQUIRED) {
+      request.reply(180, null, extraHeaders);
+    }
+      
     self.status = C.STATUS_WAITING_FOR_ANSWER;
 
     // Set userNoAnswerTimer
@@ -4920,6 +5049,19 @@ RTCSession.prototype.receiveRequest = function(request) {
           }
         }
         break;
+      case JsSIP.C.PRACK:
+        if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+          window.clearTimeout(this.timers.rel1xxTimer);
+          window.clearTimeout(this.timers.prackTimer);
+          request.reply(200);
+          if (this.status === C.STATUS_WAITING_FOR_PRACK) {
+            this.status = C.STATUS_EARLY_MEDIA;
+          } else if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+            this.status = C.STATUS_EARLY_MEDIA;
+            this.answer();
+          }
+        }
+        break;
       case JsSIP.C.BYE:
         if(this.status === C.STATUS_CONFIRMED) {
           request.reply(200);
@@ -5046,6 +5188,7 @@ RTCSession.prototype.sendInitialRequest = function(mediaConstraints) {
  * @private
  */
 RTCSession.prototype.receiveResponse = function(response) {
+  console.log("received response");
   var cause,
     session = this;
 

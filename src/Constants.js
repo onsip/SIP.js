@@ -39,9 +39,16 @@ JsSIP.C= {
     NO_ANSWER:                'No Answer',
     EXPIRES:                  'Expires',
     NO_ACK:                   'No ACK',
+    NO_PRACK:                 'No PRACK',
     USER_DENIED_MEDIA_ACCESS: 'User Denied Media Access',
     BAD_MEDIA_DESCRIPTION:    'Bad Media Description',
     RTP_TIMEOUT:              'RTP Timeout'
+  },
+  
+  supported: {
+    UNSUPPORTED:        0,
+    SUPPORTED:          1,
+    REQUIRED:           2
   },
 
   SIP_ERROR_CAUSES: {
