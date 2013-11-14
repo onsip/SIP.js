@@ -4087,7 +4087,6 @@ RTCSession = function(ua) {
   };
 
   // Session info
-  this.earlyMedia = false;
   this.pracked = [];
   this.direction = null;
   this.local_identity = null;
@@ -4708,14 +4707,13 @@ RTCSession.prototype.init_incoming = function(request) {
   this.rtcMediaHandler = new RTCMediaHandler(this,
     {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
   );
-  
+
   function fireNewSession() {
     var extraHeaders = ['Contact: ' + self.contact];
 
     if (self.rel100 !== JsSIP.C.supported.REQUIRED) {
       request.reply(180, null, extraHeaders);
     }
-      
     self.status = C.STATUS_WAITING_FOR_ANSWER;
 
     // Set userNoAnswerTimer
@@ -5192,7 +5190,7 @@ RTCSession.prototype.receiveResponse = function(response) {
   var cause,
     session = this;
 
-  if(this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED) {
+  if(this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
     if (response.status_code!==200) {
       return;
     }
@@ -5271,7 +5269,7 @@ RTCSession.prototype.receiveResponse = function(response) {
               session.sendRequest(JsSIP.C.PRACK, {
                 extraHeaders: extraHeaders
               });
-              session.earlyMedia = true;
+              session.status = C.STATUS_EARLY_MEDIA;
             },
             /*
              * onFailure
@@ -5287,7 +5285,7 @@ RTCSession.prototype.receiveResponse = function(response) {
       }
       break;
     case /^2[0-9]{2}$/.test(response.status_code):
-      if (this.earlyMedia) {
+      if (this.status === C.STATUS_EARLY_MEDIA) {
         session.status = C.STATUS_CONFIRMED;
         session.sendRequest(JsSIP.C.ACK);
         session.started('remote', response);
