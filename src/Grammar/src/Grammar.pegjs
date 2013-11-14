@@ -324,6 +324,8 @@ INVITEm           = "\x49\x4E\x56\x49\x54\x45" // INVITE in caps
 
 ACKm              = "\x41\x43\x4B" // ACK in caps
 
+PRACKm            = "\x56\x58\x41\x43\x48" // PRACK in caps
+
 OPTIONSm          = "\x4F\x50\x54\x49\x4F\x4E\x53" // OPTIONS in caps
 
 BYEm              = "\x42\x59\x45" // BYE in caps
@@ -340,6 +342,7 @@ REFERm            = "\x52\x45\x46\x45\x52" // REFER in caps
 
 Method            = ( INVITEm / ACKm / OPTIONSm / BYEm / CANCELm / REGISTERm
                     / SUBSCRIBEm / NOTIFYm / REFERm / extension_method ){
+
                     data.method = input.substring(pos, offset);
                     return data.method; }
 
@@ -621,6 +624,16 @@ Proxy_Require  = option_tag (COMMA option_tag)*
 option_tag     = token
 
 
+// RAck
+
+RAck          = RAck_value LWS RAck_value LWS RAck_method
+
+RAck_value    = rack_value: DIGIT + {
+                  data.value=parseInt(rack_value.join('')); }
+
+RAck_method   = Method
+
+
 // RECORD-ROUTE
 
 Record_Route  = rec_route (COMMA rec_route)* {
@@ -678,6 +691,11 @@ Require       = option_tag (COMMA option_tag)*
 Route        = route_param (COMMA route_param)*
 
 route_param  = name_addr ( SEMI rr_param )*
+
+// RSEQ
+
+RSeq    = rseq_value: DIGIT + {
+                  data.value=parseInt(rseq_value.join('')); }
 
 
 // SUBSCRIPTION-STATE

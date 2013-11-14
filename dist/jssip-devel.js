@@ -495,6 +495,7 @@ JsSIP.C= {
   UPDATE:     'UPDATE',
   SUBSCRIBE:  'SUBSCRIBE',
   REFER:      'REFER',
+  PRACK:      'PRACK',
 
   /* SIP Response Reasons
    * DOC: http://www.iana.org/assignments/sip-parameters
@@ -4074,6 +4075,8 @@ RTCSession = function(ua) {
   };
 
   // Session info
+  this.earlyMedia = false;
+  this.pracked = [];
   this.direction = null;
   this.local_identity = null;
   this.remote_identity = null;
@@ -4698,6 +4701,10 @@ RTCSession.prototype.connect = function(target, options) {
     extraHeaders.push('Content-Type: application/sdp');
   }
 
+  if (this.ua.configuration.reliable === 'required') {
+    extraHeaders.push('Required: 100rel');
+  }
+
   this.request = new JsSIP.OutgoingRequest(JsSIP.C.INVITE, target, this.ua, requestParams, extraHeaders);
 
   this.id = this.request.call_id + this.from_tag;
@@ -5077,8 +5084,72 @@ RTCSession.prototype.receiveResponse = function(response) {
 
       this.status = C.STATUS_1XX_RECEIVED;
       this.progress('remote', response);
+
+    if((response.hasHeader('supported') && response.getHeader('supported').indexOf('100rel') !== -1) || (response.hasHeader('require') && response.getHeader('require').indexOf('100rel') !== -1 && 
+ response.hasHeader('rseq'))) {
+
+        var id = response.call_id + response.from_tag + response.to_tag;
+        // Do nothing if this.dialog is already confirmed
+        if (this.dialog || !this.earlyDialogs[id]) {
+          break;
+        }
+
+        if (this.pracked.indexOf(response.getHeader('rseq')) !== -1 || this.pracked[this.pracked.length-1] > response.getHeader('rseq')) {
+          return;
+        }
+
+        if (window.mozRTCPeerConnection !== undefined) {
+          response.body = response.body.replace(/relay/g, 'host generation 0');
+          response.body = response.body.replace(/ \r\n/g, '\r\n');
+        }
+        if (!response.body) {
+          var extraHeaders = [];
+          extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+          this.pracked.push(response.getHeader('rseq'));
+          this.earlyDialogs[id].sendRequest(this, JsSIP.C.PRACK, {
+            extraHeaders: extraHeaders
+          });
+        } else {
+          if (!this.createDialog(response, 'UAC')) {
+            break;
+          }
+          this.rtcMediaHandler.onMessage(
+            'answer',
+            response.body,
+            /*
+             * onSuccess
+             * SDP Answer fits with Offer. Media will start
+             */
+            function () {
+              var extraHeaders = [];
+              extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+              session.pracked.push(response.getHeader('rseq'));
+
+              session.sendRequest(JsSIP.C.PRACK, {
+                extraHeaders: extraHeaders
+              });
+              session.earlyMedia = true;
+            },
+            /*
+             * onFailure
+             * SDP Answer does not fit the Offer. Accept the call and Terminate.
+             */
+            function(e) {
+              session.logger.warn(e);
+              session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
+              session.failed('remote', response, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
+          );
+        }
+      }
       break;
-    case (/^2[0-9]{2}$/.test(response.status_code)):
+    case /^2[0-9]{2}$/.test(response.status_code):
+      if (this.earlyMedia) {
+        session.status = C.STATUS_CONFIRMED;
+        session.sendRequest(JsSIP.C.ACK);
+        session.started('remote', response);
+        break;
+      }
       // Do nothing if this.dialog is already confirmed
       if (this.dialog) {
         break;
@@ -6089,7 +6160,7 @@ UA.prototype.newTransaction = function(transaction) {
 
 
 /**
- * new Transaction
+ * destroy Transaction
  * @private
  * @param {JsSIP.Transaction} transaction.
  */
@@ -6385,7 +6456,10 @@ UA.prototype.loadConfig = function(configuration) {
 
       // Hacks
       hack_via_tcp: false,
-      hack_ip_in_contact: false
+      hack_ip_in_contact: false,
+
+      //Reliable Provisional Responses
+      reliable: 'none'
     };
 
   // Pre-Configuration
@@ -6563,6 +6637,7 @@ UA.configuration_skeleton = (function() {
       "password",
       "register_expires", // 600 seconds.
       "registrar_server",
+      "reliable",
       "stun_servers",
       "trace_sip",
       "turn_servers",
@@ -6750,6 +6825,17 @@ UA.configuration_check = {
 
     password: function(password) {
       return String(password);
+    },
+
+    reliable: function(reliable) {
+      if(reliable === 'required') {
+        return reliable;
+      } else if (reliable === 'supported') {
+        JsSIP.UA.C.SUPPORTED = JsSIP.UA.C.SUPPORTED + ', 100rel';
+        return reliable;
+      } else  {
+        return "none";
+      }
     },
 
     register: function(register) {
@@ -6998,6 +7084,8 @@ Utils= {
     var exceptions = {
       'Call-Id': 'Call-ID',
       'Cseq': 'CSeq',
+      'Rack': 'RAck',
+      'Rseq': 'RSeq',
       'Www-Authenticate': 'WWW-Authenticate'
       },
       name = string.toLowerCase().replace(/_/g,'-').split('-'),
@@ -7869,6 +7957,7 @@ JsSIP.Grammar = (function(){
         "SIP_Version": parse_SIP_Version,
         "INVITEm": parse_INVITEm,
         "ACKm": parse_ACKm,
+        "PRACKm": parse_PRACKm,
         "OPTIONSm": parse_OPTIONSm,
         "BYEm": parse_BYEm,
         "CANCELm": parse_CANCELm,
@@ -7938,12 +8027,15 @@ JsSIP.Grammar = (function(){
         "qop_options": parse_qop_options,
         "qop_value": parse_qop_value,
         "Proxy_Require": parse_Proxy_Require,
+        "RAck": parse_RAck,
+        "RAck_value": parse_RAck_value,
         "Record_Route": parse_Record_Route,
         "rec_route": parse_rec_route,
         "Refer_To": parse_Refer_To,
         "Require": parse_Require,
         "Route": parse_Route,
         "route_param": parse_route_param,
+        "RSeq": parse_RSeq,
         "Subscription_State": parse_Subscription_State,
         "substate_value": parse_substate_value,
         "subexp_params": parse_subexp_params,
@@ -15295,6 +15387,21 @@ JsSIP.Grammar = (function(){
         return result0;
       }
       
+      function parse_PRACKm() {
+        var result0;
+        
+        if (input.substr(pos, 5) === "VXACH") {
+          result0 = "VXACH";
+          pos += 5;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"VXACH\"");
+          }
+        }
+        return result0;
+      }
+      
       function parse_OPTIONSm() {
         var result0;
         
@@ -15435,6 +15542,7 @@ JsSIP.Grammar = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset) {
+        
                             data.method = input.substring(pos, offset);
                             return data.method; })(pos0);
         }
@@ -17947,6 +18055,70 @@ JsSIP.Grammar = (function(){
         return result0;
       }
       
+      function parse_RAck() {
+        var result0, result1, result2, result3, result4;
+        var pos0;
+        
+        pos0 = pos;
+        result0 = parse_RAck_value();
+        if (result0 !== null) {
+          result1 = parse_LWS();
+          if (result1 !== null) {
+            result2 = parse_RAck_value();
+            if (result2 !== null) {
+              result3 = parse_LWS();
+              if (result3 !== null) {
+                result4 = parse_Method();
+                if (result4 !== null) {
+                  result0 = [result0, result1, result2, result3, result4];
+                } else {
+                  result0 = null;
+                  pos = pos0;
+                }
+              } else {
+                result0 = null;
+                pos = pos0;
+              }
+            } else {
+              result0 = null;
+              pos = pos0;
+            }
+          } else {
+            result0 = null;
+            pos = pos0;
+          }
+        } else {
+          result0 = null;
+          pos = pos0;
+        }
+        return result0;
+      }
+      
+      function parse_RAck_value() {
+        var result0, result1;
+        var pos0;
+        
+        pos0 = pos;
+        result1 = parse_DIGIT();
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            result1 = parse_DIGIT();
+          }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, rack_value) {
+                          data.value=parseInt(rack_value.join('')); })(pos0, result0);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        return result0;
+      }
+      
       function parse_Record_Route() {
         var result0, result1, result2, result3;
         var pos0, pos1, pos2;
@@ -18310,6 +18482,31 @@ JsSIP.Grammar = (function(){
           }
         } else {
           result0 = null;
+          pos = pos0;
+        }
+        return result0;
+      }
+      
+      function parse_RSeq() {
+        var result0, result1;
+        var pos0;
+        
+        pos0 = pos;
+        result1 = parse_DIGIT();
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            result1 = parse_DIGIT();
+          }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, rseq_value) {
+                          data.value=parseInt(rseq_value.join('')); })(pos0, result0);
+        }
+        if (result0 === null) {
           pos = pos0;
         }
         return result0;

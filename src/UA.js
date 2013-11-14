@@ -485,7 +485,7 @@ UA.prototype.newTransaction = function(transaction) {
 
 
 /**
- * new Transaction
+ * destroy Transaction
  * @private
  * @param {JsSIP.Transaction} transaction.
  */
@@ -781,7 +781,10 @@ UA.prototype.loadConfig = function(configuration) {
 
       // Hacks
       hack_via_tcp: false,
-      hack_ip_in_contact: false
+      hack_ip_in_contact: false,
+
+      //Reliable Provisional Responses
+      reliable: 'none'
     };
 
   // Pre-Configuration
@@ -959,6 +962,7 @@ UA.configuration_skeleton = (function() {
       "password",
       "register_expires", // 600 seconds.
       "registrar_server",
+      "reliable",
       "stun_servers",
       "trace_sip",
       "turn_servers",
@@ -1146,6 +1150,17 @@ UA.configuration_check = {
 
     password: function(password) {
       return String(password);
+    },
+
+    reliable: function(reliable) {
+      if(reliable === 'required') {
+        return reliable;
+      } else if (reliable === 'supported') {
+        JsSIP.UA.C.SUPPORTED = JsSIP.UA.C.SUPPORTED + ', 100rel';
+        return reliable;
+      } else  {
+        return "none";
+      }
     },
 
     register: function(register) {

@@ -54,6 +54,8 @@ RTCSession = function(ua) {
   };
 
   // Session info
+  this.earlyMedia = false;
+  this.pracked = [];
   this.direction = null;
   this.local_identity = null;
   this.remote_identity = null;
@@ -678,6 +680,10 @@ RTCSession.prototype.connect = function(target, options) {
     extraHeaders.push('Content-Type: application/sdp');
   }
 
+  if (this.ua.configuration.reliable === 'required') {
+    extraHeaders.push('Required: 100rel');
+  }
+
   this.request = new JsSIP.OutgoingRequest(JsSIP.C.INVITE, target, this.ua, requestParams, extraHeaders);
 
   this.id = this.request.call_id + this.from_tag;
@@ -1057,8 +1063,72 @@ RTCSession.prototype.receiveResponse = function(response) {
 
       this.status = C.STATUS_1XX_RECEIVED;
       this.progress('remote', response);
+
+    if((response.hasHeader('supported') && response.getHeader('supported').indexOf('100rel') !== -1) || (response.hasHeader('require') && response.getHeader('require').indexOf('100rel') !== -1 && 
+ response.hasHeader('rseq'))) {
+
+        var id = response.call_id + response.from_tag + response.to_tag;
+        // Do nothing if this.dialog is already confirmed
+        if (this.dialog || !this.earlyDialogs[id]) {
+          break;
+        }
+
+        if (this.pracked.indexOf(response.getHeader('rseq')) !== -1 || this.pracked[this.pracked.length-1] > response.getHeader('rseq')) {
+          return;
+        }
+
+        if (window.mozRTCPeerConnection !== undefined) {
+          response.body = response.body.replace(/relay/g, 'host generation 0');
+          response.body = response.body.replace(/ \r\n/g, '\r\n');
+        }
+        if (!response.body) {
+          var extraHeaders = [];
+          extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+          this.pracked.push(response.getHeader('rseq'));
+          this.earlyDialogs[id].sendRequest(this, JsSIP.C.PRACK, {
+            extraHeaders: extraHeaders
+          });
+        } else {
+          if (!this.createDialog(response, 'UAC')) {
+            break;
+          }
+          this.rtcMediaHandler.onMessage(
+            'answer',
+            response.body,
+            /*
+             * onSuccess
+             * SDP Answer fits with Offer. Media will start
+             */
+            function () {
+              var extraHeaders = [];
+              extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+              session.pracked.push(response.getHeader('rseq'));
+
+              session.sendRequest(JsSIP.C.PRACK, {
+                extraHeaders: extraHeaders
+              });
+              session.earlyMedia = true;
+            },
+            /*
+             * onFailure
+             * SDP Answer does not fit the Offer. Accept the call and Terminate.
+             */
+            function(e) {
+              session.logger.warn(e);
+              session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
+              session.failed('remote', response, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
+          );
+        }
+      }
       break;
-    case (/^2[0-9]{2}$/.test(response.status_code)):
+    case /^2[0-9]{2}$/.test(response.status_code):
+      if (this.earlyMedia) {
+        session.status = C.STATUS_CONFIRMED;
+        session.sendRequest(JsSIP.C.ACK);
+        session.started('remote', response);
+        break;
+      }
       // Do nothing if this.dialog is already confirmed
       if (this.dialog) {
         break;

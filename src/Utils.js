@@ -141,6 +141,8 @@ Utils= {
     var exceptions = {
       'Call-Id': 'Call-ID',
       'Cseq': 'CSeq',
+      'Rack': 'RAck',
+      'Rseq': 'RSeq',
       'Www-Authenticate': 'WWW-Authenticate'
       },
       name = string.toLowerCase().replace(/_/g,'-').split('-'),

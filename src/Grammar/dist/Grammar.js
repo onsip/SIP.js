@@ -140,6 +140,7 @@ JsSIP.Grammar = (function(){
         "SIP_Version": parse_SIP_Version,
         "INVITEm": parse_INVITEm,
         "ACKm": parse_ACKm,
+        "PRACKm": parse_PRACKm,
         "OPTIONSm": parse_OPTIONSm,
         "BYEm": parse_BYEm,
         "CANCELm": parse_CANCELm,
@@ -209,12 +210,15 @@ JsSIP.Grammar = (function(){
         "qop_options": parse_qop_options,
         "qop_value": parse_qop_value,
         "Proxy_Require": parse_Proxy_Require,
+        "RAck": parse_RAck,
+        "RAck_value": parse_RAck_value,
         "Record_Route": parse_Record_Route,
         "rec_route": parse_rec_route,
         "Refer_To": parse_Refer_To,
         "Require": parse_Require,
         "Route": parse_Route,
         "route_param": parse_route_param,
+        "RSeq": parse_RSeq,
         "Subscription_State": parse_Subscription_State,
         "substate_value": parse_substate_value,
         "subexp_params": parse_subexp_params,
@@ -7566,6 +7570,21 @@ JsSIP.Grammar = (function(){
         return result0;
       }
       
+      function parse_PRACKm() {
+        var result0;
+        
+        if (input.substr(pos, 5) === "VXACH") {
+          result0 = "VXACH";
+          pos += 5;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"VXACH\"");
+          }
+        }
+        return result0;
+      }
+      
       function parse_OPTIONSm() {
         var result0;
         
@@ -7706,6 +7725,7 @@ JsSIP.Grammar = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset) {
+        
                             data.method = input.substring(pos, offset);
                             return data.method; })(pos0);
         }
@@ -10218,6 +10238,70 @@ JsSIP.Grammar = (function(){
         return result0;
       }
       
+      function parse_RAck() {
+        var result0, result1, result2, result3, result4;
+        var pos0;
+        
+        pos0 = pos;
+        result0 = parse_RAck_value();
+        if (result0 !== null) {
+          result1 = parse_LWS();
+          if (result1 !== null) {
+            result2 = parse_RAck_value();
+            if (result2 !== null) {
+              result3 = parse_LWS();
+              if (result3 !== null) {
+                result4 = parse_Method();
+                if (result4 !== null) {
+                  result0 = [result0, result1, result2, result3, result4];
+                } else {
+                  result0 = null;
+                  pos = pos0;
+                }
+              } else {
+                result0 = null;
+                pos = pos0;
+              }
+            } else {
+              result0 = null;
+              pos = pos0;
+            }
+          } else {
+            result0 = null;
+            pos = pos0;
+          }
+        } else {
+          result0 = null;
+          pos = pos0;
+        }
+        return result0;
+      }
+      
+      function parse_RAck_value() {
+        var result0, result1;
+        var pos0;
+        
+        pos0 = pos;
+        result1 = parse_DIGIT();
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            result1 = parse_DIGIT();
+          }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, rack_value) {
+                          data.value=parseInt(rack_value.join('')); })(pos0, result0);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        return result0;
+      }
+      
       function parse_Record_Route() {
         var result0, result1, result2, result3;
         var pos0, pos1, pos2;
@@ -10581,6 +10665,31 @@ JsSIP.Grammar = (function(){
           }
         } else {
           result0 = null;
+          pos = pos0;
+        }
+        return result0;
+      }
+      
+      function parse_RSeq() {
+        var result0, result1;
+        var pos0;
+        
+        pos0 = pos;
+        result1 = parse_DIGIT();
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            result1 = parse_DIGIT();
+          }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, rseq_value) {
+                          data.value=parseInt(rseq_value.join('')); })(pos0, result0);
+        }
+        if (result0 === null) {
           pos = pos0;
         }
         return result0;
