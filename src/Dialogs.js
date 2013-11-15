@@ -14,6 +14,7 @@
 
 // Load dependencies
 var RequestSender   = @@include('../src/Dialog/RequestSender.js')
+var RTCMediaHandler = @@include('../src/RTCSession/RTCMediaHandler.js')
 
 var Dialog,
   C = {
@@ -69,11 +70,17 @@ Dialog = function(owner, message, type, state) {
       }
     };
     this.state = state;
+    this.invite_seqnum = message.cseq;
     this.local_seqnum = message.cseq;
     this.local_uri = message.parseHeader('from').uri;
+    this.pracked = [];
     this.remote_uri = message.parseHeader('to').uri;
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route').reverse();
+
+    if (this.state === C.STATUS_EARLY && !owner.request.body) {
+      this.rtcMediaHandler = new RTCMediaHandler(owner, owner.rtcMediaHandler.constraints);
+    }
   }
 
   this.logger = owner.ua.getLogger('jssip.dialog', this.id.toString());
@@ -100,6 +107,9 @@ Dialog.prototype = {
 
   terminate: function() {
     this.logger.log('dialog ' + this.id.toString() + ' deleted');
+    if (this.rtcMediaHandler && this.state !== C.STATUS_CONFIRMED) {
+      this.rtcMediaHandler.peerConnection.close();
+    }
     delete this.owner.ua.dialogs[this.id.toString()];
   },
 
@@ -116,7 +126,7 @@ Dialog.prototype = {
 
     if(!this.local_seqnum) { this.local_seqnum = Math.floor(Math.random() * 10000); }
 
-    cseq = (method === JsSIP.C.CANCEL || method === JsSIP.C.ACK) ? this.local_seqnum : this.local_seqnum += 1;
+    cseq = (method === JsSIP.C.CANCEL || method === JsSIP.C.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
 
     request = new JsSIP.OutgoingRequest(
       method,
