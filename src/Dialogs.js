@@ -58,6 +58,7 @@ Dialog = function(owner, message, type, state) {
     this.remote_uri = message.parseHeader('from').uri;
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route');
+    this.invite_seqnum = message.cseq;
   }
   // RFC 3261 12.1.2
   else if(type === 'UAC') {
@@ -159,6 +160,9 @@ Dialog.prototype = {
         //Do not try to reply to an ACK request.
         if (request.method !== JsSIP.C.ACK) {
           request.reply(500);
+        }
+        if (request.cseq === this.invite_seqnum) {
+          return true;
         }
         return false;
     } else if(request.cseq > this.remote_seqnum) {

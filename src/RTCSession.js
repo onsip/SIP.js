@@ -135,6 +135,8 @@ RTCSession.prototype.terminate = function(options) {
     case C.STATUS_WAITING_FOR_ANSWER:
     case C.STATUS_ANSWERED:
     case C.STATUS_EARLY_MEDIA:
+    case C.STATUS_WAITING_FOR_PRACK:
+    case C.STATUS_ANSWERED_WAITING_FOR_PRACK:
       this.logger.log('rejecting RTCSession');
 
       status_code = status_code || 480;
@@ -187,7 +189,7 @@ RTCSession.prototype.preAnswer = function(options) {
   extraHeaders.push('Require: 100rel');
 
   var 
-  answerCreationSucceeded = function(offer) {
+  sdpCreationSucceeded = function(offer) {
     if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
       return;
     }
@@ -215,7 +217,7 @@ RTCSession.prototype.preAnswer = function(options) {
       }
     },JsSIP.Timers.T1*64);
   },
-  answerCreationFailed = function () {
+  sdpCreationFailed = function () {
     if (self.status === C.STATUS_TERMINATED) {
         return;
     }
@@ -224,10 +226,17 @@ RTCSession.prototype.preAnswer = function(options) {
   
   // rtcMediaHandler.addStream successfully added
   streamAdditionSucceeded = function() {
-    self.rtcMediaHandler.createAnswer(
-      answerCreationSucceeded,
-      answerCreationFailed
-    );
+    if (self.request.body) {
+      self.rtcMediaHandler.createAnswer(
+        sdpCreationSucceeded,
+        sdpCreationFailed
+      );
+    } else {
+      self.rtcMediaHandler.createOffer(
+        sdpCreationSucceeded,
+        sdpCreationFailed
+      );
+    }
   },
 
   // rtcMediaHandler.addStream failed
@@ -985,39 +994,49 @@ RTCSession.prototype.receiveRequest = function(request) {
     * Terminate the whole session in case the user didn't accept nor reject the
     *request opening the session.
     */
-    if(this.status === C.STATUS_WAITING_FOR_ANSWER) {
+    if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA) {
+      if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+        window.clearTimeout(session.timers.rel1xxTimer);
+        window.clearTimeout(session.timers.prackTimer);
+      }
       this.status = C.STATUS_CANCELED;
       this.request.reply(487);
       this.failed('remote', request, JsSIP.C.causes.CANCELED);
-    }
+    } 
   } else {
     // Requests arriving here are in-dialog requests.
     switch(request.method) {
       case JsSIP.C.ACK:
         if(this.status === C.STATUS_WAITING_FOR_ACK) {
-          if (request.body && !this.request.body && request.getHeader('content-type') === 'application/sdp') {
-            // ACK contains answer to an INVITE w/o SDP negotiation
-            this.rtcMediaHandler.onMessage(
-              'answer',
-              request.body,
-              /*
-               * onSuccess
-               * SDP Answer fits with Offer. Media will start
-               */
-              confirmSession,
-              /*
-               * onFailure
-               * SDP Answer does not fit the Offer.  Terminate the call.
-               */
-              function (e) {
-                session.logger.warn(e);
-                session.terminate({
-                  status_code: '488',
-                  reason_phrase: 'Bad Media Description'
-                });
-                session.failed('local', request, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
-              }
-            );
+          if (!this.request.body) {
+            if(request.body && request.getHeader('content-type') === 'application/sdp') {
+              // ACK contains answer to an INVITE w/o SDP negotiation
+              this.rtcMediaHandler.onMessage(
+                'answer',
+                request.body,
+                /*
+                 * onSuccess
+                 * SDP Answer fits with Offer. Media will start
+                 */
+                confirmSession,
+                /*
+                 * onFailure
+                 * SDP Answer does not fit the Offer.  Terminate the call.
+                 */
+                function (e) {
+                  session.logger.warn(e);
+                  session.terminate({
+                    status_code: '488',
+                    reason_phrase: 'Bad Media Description'
+                  });
+                  session.failed('local', request, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                }
+              );
+            } else if (session.early_sdp) {
+              confirmSession();
+            } else {
+              session.failed('local', request, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
           } else {
             confirmSession();
           }
@@ -1025,14 +1044,52 @@ RTCSession.prototype.receiveRequest = function(request) {
         break;
       case JsSIP.C.PRACK:
         if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-          window.clearTimeout(this.timers.rel1xxTimer);
-          window.clearTimeout(this.timers.prackTimer);
-          request.reply(200);
-          if (this.status === C.STATUS_WAITING_FOR_PRACK) {
-            this.status = C.STATUS_EARLY_MEDIA;
-          } else if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-            this.status = C.STATUS_EARLY_MEDIA;
-            this.answer();
+          if(!this.request.body) {
+            if(request.body && request.getHeader('content-type') === 'application/sdp') {
+              this.rtcMediaHandler.onMessage(
+                'answer',
+                request.body,
+                /*
+                 * onSuccess
+                 * SDP Answer fits with Offer. Media will start
+                 */
+                function() {
+                  window.clearTimeout(session.timers.rel1xxTimer);
+                  window.clearTimeout(session.timers.prackTimer);
+                  request.reply(200);
+                  if (session.status === C.STATUS_WAITING_FOR_PRACK) {
+                    session.status = C.STATUS_EARLY_MEDIA;
+                  } else if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+                    session.status = C.STATUS_EARLY_MEDIA;
+                    session.answer();
+                  }
+                },
+                function (e) {
+                  session.logger.warn(e);
+                  session.terminate({
+                    status_code: '488',
+                    reason_phrase: 'Bad Media Description'
+                  });
+                  session.failed('local', request, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                }
+              );
+            } else {
+              session.terminate({
+                status_code: '488',
+                reason_phrase: 'Bad Media Description'
+              });
+              session.failed('local', request, JsSIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
+          } else {
+            window.clearTimeout(session.timers.rel1xxTimer);
+            window.clearTimeout(session.timers.prackTimer);
+            request.reply(200);
+            if (this.status === C.STATUS_WAITING_FOR_PRACK) {
+              this.status = C.STATUS_EARLY_MEDIA;
+            } else if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+              this.status = C.STATUS_EARLY_MEDIA;
+              this.answer();
+            }
           }
         }
         break;
