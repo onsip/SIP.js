@@ -5659,7 +5659,7 @@ RTCSession.prototype.receiveResponse = function(response) {
       }
 
       if (this.status === C.STATUS_EARLY_MEDIA) {
-        if (id !== this.dialog.id) {
+        if (id !== this.dialog.id.toString()) {
           if (!this.createDialog(response, 'UAC', true)) {
             break;
           }
