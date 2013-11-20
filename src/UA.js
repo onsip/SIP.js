@@ -164,7 +164,7 @@ UA = function(configuration) {
     this.error = C.CONFIGURATION_ERROR;
     throw e;
   }
-  
+
   // Initialize registrator
   this.registrator = new JsSIP.Registrator(this);
 };

@@ -4442,21 +4442,21 @@ RTCSession.prototype.terminate = function(options) {
 RTCSession.prototype.preAnswer = function(options) {
   options = options || {};
   var self = this;
-  
+
   if (this.rel100 === JsSIP.C.supported.UNSUPPORTED) {
     return;
   }
   self.status = C.STATUS_WAITING_FOR_PRACK;
   var extraHeaders = [];
-  extraHeaders.push('Contact: '+ this.contact); 
+  extraHeaders.push('Contact: '+ this.contact);
   extraHeaders.push('Require: 100rel');
 
-  var 
+  var
   sdpCreationSucceeded = function(offer) {
     if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
       return;
     }
-    
+
     self.early_sdp = offer;
     var rseq = Math.floor(Math.random() * 10000);
     var timeout =  JsSIP.Timers.T1;
@@ -4468,9 +4468,9 @@ RTCSession.prototype.preAnswer = function(options) {
       timeout = timeout * 2;
       self.timers.rel1xxTimer = window.setTimeout(
         rel1xxRetransmission,timeout, rseq
-      ); 
+      );
     }, timeout,rseq);
-    
+
     self.timers.prackTimer = window.setTimeout(function () {
       if(self.status === C.STATUS_WAITING_FOR_PRACK) {
         self.logger.log('no ACK received, terminating the call');
@@ -4486,7 +4486,7 @@ RTCSession.prototype.preAnswer = function(options) {
     }
     self.failed('local', null, JsSIP.C.causes.WEBRTC_ERROR);
   },
-  
+
   // rtcMediaHandler.addStream successfully added
   streamAdditionSucceeded = function() {
     if (self.request.body) {
@@ -4509,7 +4509,7 @@ RTCSession.prototype.preAnswer = function(options) {
     }
     self.failed('local', null, JsSIP.C.causes.WEBRTC_ERROR);
   },
-  
+
   // User media succeeded
   userMediaSucceeded = function(stream) {
     self.rtcMediaHandler.addStream(
@@ -4524,7 +4524,7 @@ RTCSession.prototype.preAnswer = function(options) {
     this.request.reply(480);
     self.failed('local', null, JsSIP.C.causes.USER_DENIED_MEDIA_ACCESS);
   };
-  
+
   self.rtcMediaHandler.getUserMedia(
     userMediaSucceeded,
     userMediaFailed,
@@ -4539,11 +4539,6 @@ RTCSession.prototype.preAnswer = function(options) {
  */
 RTCSession.prototype.answer = function(options) {
   options = options || {};
-  
-  if (this.status === C.STATUS_WAITING_FOR_PRACK) {
-    this.status = C.STATUS_ANSWERED_WAITING_FOR_PRACK;
-    return;
-  }
 
   var
     self = this,
@@ -4595,7 +4590,7 @@ RTCSession.prototype.answer = function(options) {
         // run for reply success callback
         replySucceeded = function() {
           var timeout = JsSIP.Timers.T1;
-          
+
           self.status = C.STATUS_WAITING_FOR_ACK;
 
           /**
@@ -4620,7 +4615,7 @@ RTCSession.prototype.answer = function(options) {
                 invite2xxRetransmission, timeout
               );
             },
-            timeout 
+            timeout
           );
 
           /**
@@ -4676,11 +4671,14 @@ RTCSession.prototype.answer = function(options) {
   // Check Session Direction and Status
   if (this.direction !== 'incoming') {
     throw new JsSIP.Exceptions.NotSupportedError('"answer" not supported for outgoing RTCSession');
-  } else if (this.status !== C.STATUS_WAITING_FOR_ANSWER && this.status !== C.STATUS_EARLY_MEDIA) {
+  } else if (this.status === C.STATUS_WAITING_FOR_PRACK) {
+    this.status = C.STATUS_ANSWERED_WAITING_FOR_PRACK;
+    return;
+  } else if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
+    this.status = C.STATUS_ANSWERED;
+  } else if (this.status !== C.STATUS_EARLY_MEDIA) {
     throw new JsSIP.Exceptions.InvalidStateError(this.status);
   }
-  
-  this.status = C.STATUS_ANSWERED;
 
   // An error on dialog creation will fire 'failed' event
   if(!this.createDialog(request, 'UAS')) {
@@ -4691,7 +4689,7 @@ RTCSession.prototype.answer = function(options) {
   window.clearTimeout(this.timers.userNoAnswerTimer);
   if (this.status === C.STATUS_EARLY_MEDIA) {
     sdpCreationSucceeded(self.early_sdp);
-    
+
   } else {
     this.rtcMediaHandler.getUserMedia(
       userMediaSucceeded,
@@ -4819,20 +4817,20 @@ RTCSession.prototype.transfer = function(target, options) {
   {
     //Attended Transfer
     // B.transfer(C)
-    extraHeaders.push('Contact: '+ this.contact);   
+    extraHeaders.push('Contact: '+ this.contact);
     extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
     extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
   }
-  
+
   else
   {
     //Blind Transfer
-  
+
     // Check Session Status
     if (this.status !== C.STATUS_CONFIRMED) {
       throw new JsSIP.Exceptions.InvalidStateError(this.status);
     }
-  
+
     // Check target validity
     try {
       target = JsSIP.Utils.normalizeTarget(target, this.ua.configuration.hostport_params);
@@ -4840,12 +4838,12 @@ RTCSession.prototype.transfer = function(target, options) {
       target = JsSIP.URI.parse(JsSIP.INVALID_TARGET_URI);
       invalidTarget = true;
     }
-  
+
     extraHeaders.push('Contact: '+ this.contact);
     extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
     extraHeaders.push('Refer-To: '+ target);
   }
-  
+
   //Send the request
   request = new Request(this);
   request.send(JsSIP.C.REFER, { extraHeaders: extraHeaders });
@@ -4926,15 +4924,15 @@ RTCSession.prototype.init_incoming = function(request) {
   if(request.hasHeader('expires')) {
     expires = request.getHeader('expires') * 1000;
   }
-  
+
   //Set 100rel if necissary
   if (request.hasHeader('require') && request.getHeader('require').toLowerCase().indexOf('100rel') >= 0) {
     this.rel100 = JsSIP.C.supported.REQUIRED;
-  } 
+  }
   if (request.hasHeader('supported') && request.getHeader('supported').toLowerCase().indexOf('100rel') >= 0) {
     this.rel100 = JsSIP.C.supported.SUPPORTED;
   }
-  
+
   /* Set the to_tag before
    * replying a response code that will create a dialog.
    */
@@ -5080,12 +5078,12 @@ RTCSession.prototype.connect = function(target, options) {
   this.id = this.request.call_id + this.from_tag;
 
   this.logger = this.ua.getLogger('jssip.rtcsession', this.id);
-  
+
   this.rtcMediaHandler = new RTCMediaHandler(this, RTCConstraints);
   //Save the session into the ua sessions collection.
   this.ua.sessions[this.id] = this;
   this.newRTCSession('local', this.request);
-  
+
   if (inviteWithoutSdp) {
     var self = this;
     var streamAdditionSucceeded = function() {
@@ -5119,7 +5117,7 @@ RTCSession.prototype.connect = function(target, options) {
       userMediaFailed,
       mediaConstraints
     );
-  } else {  
+  } else {
     this.sendInitialRequest(mediaConstraints);
   }
 };
@@ -5233,13 +5231,19 @@ RTCSession.prototype.createDialog = function(message, type, early) {
  * @private
  */
 RTCSession.prototype.receiveRequest = function(request) {
-  var contentType, session = this;
+  var contentType, session = this, localMedia;
 
   function confirmSession() {
+    localMedia = session.rtcMediaHandler.localMedia;
     window.clearTimeout(session.timers.ackTimer);
     window.clearTimeout(session.timers.invite2xxTimer);
     session.status = C.STATUS_CONFIRMED;
-
+    if (localMedia.getAudioTracks().length > 0) {
+      localMedia.getAudioTracks()[0].enabled = true;
+    }
+    if (localMedia.getVideoTracks().length > 0) {
+      localMedia.getVideoTracks()[0].enabled = true;
+    }
     if (!session.request.body) {
       session.started('local');
     }
@@ -5265,7 +5269,7 @@ RTCSession.prototype.receiveRequest = function(request) {
       this.status = C.STATUS_CANCELED;
       this.request.reply(487);
       this.failed('remote', request, JsSIP.C.causes.CANCELED);
-    } 
+    }
   } else {
     // Requests arriving here are in-dialog requests.
     switch(request.method) {
@@ -5326,6 +5330,14 @@ RTCSession.prototype.receiveRequest = function(request) {
                     session.status = C.STATUS_EARLY_MEDIA;
                     session.answer();
                   }
+                  if (session.status === C.STATUS_EARLY_MEDIA) {
+                    if (localMedia.getAudioTracks().length > 0) {
+                      localMedia.getAudioTracks()[0].enabled = false;
+                    }
+                    if (localMedia.getVideoTracks().length > 0) {
+                      localMedia.getVideoTracks()[0].enabled = false;
+                    }
+                  }
                 },
                 function (e) {
                   session.logger.warn(e);
@@ -5352,6 +5364,15 @@ RTCSession.prototype.receiveRequest = function(request) {
             } else if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
               this.status = C.STATUS_EARLY_MEDIA;
               this.answer();
+            }
+            if (session.status === C.STATUS_EARLY_MEDIA) {
+              localMedia = session.rtcMediaHandler.localMedia;
+              if (localMedia.getAudioTracks().length > 0) {
+                localMedia.getAudioTracks()[0].enabled = false;
+              }
+              if (localMedia.getVideoTracks().length > 0) {
+                localMedia.getVideoTracks()[0].enabled = false;
+              }
             }
           }
         }
@@ -5398,7 +5419,7 @@ RTCSession.prototype.receiveRequest = function(request) {
           this.ua.call(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.media_constraints
           });
-          
+
         }
         break;
     }
@@ -5482,7 +5503,7 @@ RTCSession.prototype.sendInitialRequest = function(mediaConstraints) {
  * @private
  */
 RTCSession.prototype.receiveResponse = function(response) {
-  var cause,
+  var cause, localMedia,
   session = this,
   id = response.call_id + response.from_tag + response.to_tag,
   extraHeaders = [];
@@ -5575,6 +5596,15 @@ RTCSession.prototype.receiveResponse = function(response) {
                 extraHeaders: extraHeaders
               });
               session.status = C.STATUS_EARLY_MEDIA;
+              if (session.status === C.STATUS_EARLY_MEDIA) {
+                localMedia = session.rtcMediaHandler.localMedia;
+                if (localMedia.getAudioTracks().length > 0) {
+                  localMedia.getAudioTracks()[0].enabled = false;
+                }
+                if (localMedia.getVideoTracks().length > 0) {
+                  localMedia.getVideoTracks()[0].enabled = false;
+                }
+              }
             },
             /*
              * onFailure
@@ -5670,6 +5700,13 @@ RTCSession.prototype.receiveResponse = function(response) {
         }
 
         this.status = C.STATUS_CONFIRMED;
+        localMedia = this.rtcMediaHandler.localMedia;
+        if (localMedia.getAudioTracks().length > 0) {
+          localMedia.getAudioTracks()[0].enabled = true;
+        }
+        if (localMedia.getVideoTracks().length > 0) {
+          localMedia.getVideoTracks()[0].enabled = true;
+        }
         this.sendRequest(JsSIP.C.ACK);
         this.started('remote', response);
         break;
@@ -5687,7 +5724,7 @@ RTCSession.prototype.receiveResponse = function(response) {
         response.body = response.body.replace(/relay/g, 'host generation 0');
         response.body = response.body.replace(/ \r\n/g, '\r\n');
       }
-      
+
       // This is an invite without sdp
       if (!this.request.body) {
         if (this.earlyDialogs[id] && this.earlyDialogs[id].rtcMediaHandler.localMedia) {
@@ -5697,6 +5734,14 @@ RTCSession.prototype.receiveResponse = function(response) {
           }
           session.status = C.STATUS_CONFIRMED;
           session.sendRequest(JsSIP.C.ACK);
+
+          localMedia = session.rtcMediaHandler.localMedia;
+          if (localMedia.getAudioTracks().length > 0) {
+            localMedia.getAudioTracks()[0].enabled = true;
+          }
+          if (localMedia.getVideoTracks().length > 0) {
+            localMedia.getVideoTracks()[0].enabled = true;
+          }
           session.started('remote', response);
         } else {
           if (!this.createDialog(response, 'UAC')) {
@@ -5711,6 +5756,7 @@ RTCSession.prototype.receiveResponse = function(response) {
              */
             function() {
               var offerCreationSucceeded = function (offer) {
+                var localMedia;
                 if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
                   return;
                 }
@@ -5745,6 +5791,14 @@ RTCSession.prototype.receiveResponse = function(response) {
                 }
 
                 session.status = C.STATUS_CONFIRMED;
+
+                localMedia = session.rtcMediaHandler.localMedia;
+                if (localMedia.getAudioTracks().length > 0) {
+                  localMedia.getAudioTracks()[0].enabled = true;
+                }
+                if (localMedia.getVideoTracks().length > 0) {
+                  localMedia.getVideoTracks()[0].enabled = true;
+                }
                 session.sendRequest(JsSIP.C.ACK,{
                   body:offer,
                   extraHeaders:['Content-Type: application/sdp']
@@ -5783,7 +5837,15 @@ RTCSession.prototype.receiveResponse = function(response) {
            * SDP Answer fits with Offer. Media will start
            */
           function() {
+            var localMedia;
             session.status = C.STATUS_CONFIRMED;
+            localMedia = session.rtcMediaHandler.localMedia;
+            if (localMedia.getAudioTracks().length > 0) {
+              localMedia.getAudioTracks()[0].enabled = true;
+            }
+            if (localMedia.getVideoTracks().length > 0) {
+              localMedia.getVideoTracks()[0].enabled = true;
+            }
             session.sendRequest(JsSIP.C.ACK);
             session.started('remote', response);
           },
@@ -6374,7 +6436,7 @@ UA = function(configuration) {
     this.error = C.CONFIGURATION_ERROR;
     throw e;
   }
-  
+
   // Initialize registrator
   this.registrator = new JsSIP.Registrator(this);
 };
