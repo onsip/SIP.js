@@ -3303,6 +3303,8 @@ RequestSender.prototype = {
         this.clientTransaction = new JsSIP.Transactions.NonInviteClientTransaction(this, this.request, this.ua.transport);
     }
     this.clientTransaction.send();
+
+    return this.clientTransaction;
   },
 
   /**
@@ -6270,6 +6272,202 @@ JsSIP.Message = Message;
 
 
 
+(function (JsSIP) {
+var ClientTransaction;
+
+ClientTransaction = function (method, target, options, ua) {
+  var events = [
+    'progress',
+    'accept',
+    'reject',
+    'failed'
+  ];
+  this.ua = ua;
+  this.logger = ua.getLogger('jssip.clienttransaction');
+  this.method = method;
+  this.target = target;
+  this.options = options || {};
+
+  this.data = {};
+
+  this.initEvents(events);
+};
+ClientTransaction.prototype = new JsSIP.EventEmitter();
+
+ClientTransaction.prototype.send = function () {
+  var request_sender, extraHeaders, body,
+    originalTarget = this.target;
+
+  if (this.target === undefined) {
+    throw new TypeError('Not enough arguments');
+  }
+
+  // Check target validity
+  this.target = this.ua.normalizeTarget(this.target);
+  if (!this.target) {
+    throw new TypeError('Invalid target: '+ originalTarget);
+  }
+
+  // Get call options
+  extraHeaders = this.options.extraHeaders || [];
+  body = this.options.body;
+
+  this.ua.applicants[this] = this;
+
+  this.request = new JsSIP.OutgoingRequest(this.method, this.target, this.ua, null, extraHeaders);
+
+  if (body) {
+    this.request.body = body;
+  }
+
+  request_sender = new JsSIP.RequestSender(this, this.ua);
+  request_sender.send();
+};
+
+ClientTransaction.prototype.receiveResponse = function (response) {
+  var cause;
+
+  switch(true) {
+    case /^1[0-9]{2}$/.test(response.status_code):
+      this.emit('progress', this, {
+        code: response.status_code,
+        response: response
+      });
+      break;
+
+    case /^2[0-9]{2}$/.test(response.status_code):
+      delete this.ua.applicants[this];
+      this.emit('accept', this, {
+        code: response.status_code,
+        response: response
+      });
+      break;
+
+    default:
+      delete this.ua.applicants[this];
+      cause = JsSIP.Utils.sipErrorCause(response.status_code);
+      this.emit('reject', this, {
+        code: response && response.status_code,
+        response: response,
+        cause: cause
+      });
+      this.emit('failed', this, {
+        code: response && response.status_code,
+        response: response,
+        cause: cause
+      });
+      break;
+  }
+
+};
+
+ClientTransaction.prototype.onRequestTimeout = function () {
+  this.emit('failed',
+            /* Status code */ 0,
+            /* Response */ null,
+            JsSIP.C.causes.REQUEST_TIMEOUT);
+};
+
+ClientTransaction.prototype.onTransportError = function () {
+  this.emit('failed',
+            /* Status code */ 0,
+            /* Response */ null,
+            JsSIP.C.causes.CONNECTION_ERROR);
+};
+
+JsSIP.XClientTransaction = ClientTransaction;
+}(JsSIP));
+
+
+//(function (JsSIP) {
+var ServerTransaction;
+
+ServerTransaction = function (request, ua) {
+  this.ua = ua;
+  this.logger = ua.getLogger('jssip.serverTransaction');
+  this.request = request;
+  this.transaction = new JsSIP.Transactions.NonInviteServerTransaction(request, ua);
+
+  this.data = {};
+
+  if (!ua.checkEvent(request.method.toLowerCase()) || this.ua.listeners(request.method.toLowerCase()).length === 0) {
+    // UA is not listening for this.  Reject immediately.
+    request.reply(405, null, ['Allow: '+ JsSIP.Utils.getAllowedMethods(ua)]);
+  } else {
+    // Send a provisional response to stop retransmissions.
+    request.reply(180, 'Trying');
+    this.ua.emit(request.method.toLowerCase(), this.ua, this);
+  }
+};
+
+
+ServerTransaction.prototype = new JsSIP.EventEmitter();
+
+ServerTransaction.prototype.progress = function (options) {
+  options = options || {};
+  var
+    statusCode = options.statusCode || 180,
+    reasonPhrase = options.reasonPhrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
+
+  if (statusCode < 100 || statusCode > 199) {
+    throw new TypeError('Invalid statusCode: ' + statusCode);
+  }
+  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+
+  return this;
+};
+
+ServerTransaction.prototype.accept = function (options) {
+  options = options || {};
+  var
+    statusCode = options.statusCode || 200,
+    reasonPhrase = options.reasonPhrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
+
+  if (statusCode < 200 || statusCode > 299) {
+    throw new TypeError('Invalid statusCode: ' + statusCode);
+  }
+  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+
+  return this;
+};
+
+ServerTransaction.prototype.reject = function (options) {
+  options = options || {};
+  var
+    statusCode = options.statusCode || 480,
+    reasonPhrase = options.reasonPhrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
+
+  if (statusCode < 300 || statusCode > 699) {
+    throw new TypeError('Invalid statusCode: ' + statusCode);
+  }
+  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+
+  return this;
+};
+
+ServerTransaction.prototype.reply = function (options) {
+  options = options || {};
+  var
+    statusCode = options.statusCode,
+    reasonPhrase = options.reasonPhrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
+
+  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+
+  return this;
+};
+
+JsSIP.XServerTransaction = ServerTransaction;
+//}(JsSIP));
+
+
 /**
  * @fileoverview SIP User Agent
  */
@@ -6330,7 +6528,11 @@ UA = function(configuration) {
     'registrationFailed',
     'newRTCSession',
     'newMessage'
-  ];
+  ], i, len;
+
+  for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
+    events.push(C.ALLOWED_METHODS[i].toLowerCase());
+  }
 
   // Set Accepted Body Types
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
@@ -6524,6 +6726,24 @@ UA.prototype.sendMessage = function(target, body, options) {
 
   message = new JsSIP.Message(this);
   message.send(target, body, options);
+};
+
+UA.prototype.request = function (method, target, options) {
+  var transaction = new JsSIP.XClientTransaction(method, target, options, this);
+  transaction.send();
+
+  transaction.on('progress', function (e) {
+    console.log('Progress response received: ' + e.data.code + ' ' + e.data.response.method);
+  });
+  transaction.on('accept', function (e) {
+    console.log('Success response received: ' + e.data.code + ' ' + e.data.response.method);
+  });
+  transaction.on('failed', function (e) {
+    console.log('Failed response received: ' + e.data.code +
+                ' ' + (e.data.response && e.data.response.method) +
+                ' Cause: ' + e.data.cause);
+  });
+  return transaction;
 };
 
 /**
@@ -6780,7 +7000,8 @@ UA.prototype.destroyTransaction = function(transaction) {
  */
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
-    method = request.method;
+    method = request.method,
+    transaction;
 
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
@@ -6795,31 +7016,38 @@ UA.prototype.receiveRequest = function(request) {
   if(JsSIP.Transactions.checkTransaction(this, request)) {
     return;
   }
-
+/*
   // Create the server transaction
   if(method === JsSIP.C.INVITE) {
     new JsSIP.Transactions.InviteServerTransaction(request, this);
   } else if(method !== JsSIP.C.ACK) {
     new JsSIP.Transactions.NonInviteServerTransaction(request, this);
   }
-
+*/
   /* RFC3261 12.2.2
    * Requests that do not change in any way the state of a dialog may be
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-  if(method === JsSIP.C.OPTIONS) {
+/*  if(method === JsSIP.C.OPTIONS) {
     request.reply(200, null, [
       'Allow: '+ JsSIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else if (method === JsSIP.C.MESSAGE) {
+  } else */if (method === JsSIP.C.MESSAGE) {
     if (!this.checkEvent('newMessage') || this.listeners('newMessage').length === 0) {
       request.reply(405, null, ['Allow: '+ JsSIP.Utils.getAllowedMethods(this)]);
       return;
     }
     message = new JsSIP.Message(this);
     message.init_incoming(request);
+  } else if (method !== JsSIP.C.INVITE &&
+             method !== JsSIP.C.BYE &&
+             method !== JsSIP.C.CANCEL &&
+             method !== JsSIP.C.ACK) {
+    // Let those methods pass through to normal processing for now.
+    transaction = new JsSIP.XServerTransaction(request, this);
+    return;
   }
 
   // Initial Request

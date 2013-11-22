@@ -44,6 +44,8 @@ RequestSender.prototype = {
         this.clientTransaction = new JsSIP.Transactions.NonInviteClientTransaction(this, this.request, this.ua.transport);
     }
     this.clientTransaction.send();
+
+    return this.clientTransaction;
   },
 
   /**

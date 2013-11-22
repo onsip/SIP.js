@@ -58,7 +58,11 @@ UA = function(configuration) {
     'registrationFailed',
     'newRTCSession',
     'newMessage'
-  ];
+  ], i, len;
+
+  for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
+    events.push(C.ALLOWED_METHODS[i].toLowerCase());
+  }
 
   // Set Accepted Body Types
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
@@ -252,6 +256,24 @@ UA.prototype.sendMessage = function(target, body, options) {
 
   message = new JsSIP.Message(this);
   message.send(target, body, options);
+};
+
+UA.prototype.request = function (method, target, options) {
+  var transaction = new JsSIP.XClientTransaction(method, target, options, this);
+  transaction.send();
+
+  transaction.on('progress', function (e) {
+    console.log('Progress response received: ' + e.data.code + ' ' + e.data.response.method);
+  });
+  transaction.on('accept', function (e) {
+    console.log('Success response received: ' + e.data.code + ' ' + e.data.response.method);
+  });
+  transaction.on('failed', function (e) {
+    console.log('Failed response received: ' + e.data.code +
+                ' ' + (e.data.response && e.data.response.method) +
+                ' Cause: ' + e.data.cause);
+  });
+  return transaction;
 };
 
 /**
@@ -508,7 +530,8 @@ UA.prototype.destroyTransaction = function(transaction) {
  */
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
-    method = request.method;
+    method = request.method,
+    transaction;
 
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
@@ -523,31 +546,38 @@ UA.prototype.receiveRequest = function(request) {
   if(JsSIP.Transactions.checkTransaction(this, request)) {
     return;
   }
-
+/*
   // Create the server transaction
   if(method === JsSIP.C.INVITE) {
     new JsSIP.Transactions.InviteServerTransaction(request, this);
   } else if(method !== JsSIP.C.ACK) {
     new JsSIP.Transactions.NonInviteServerTransaction(request, this);
   }
-
+*/
   /* RFC3261 12.2.2
    * Requests that do not change in any way the state of a dialog may be
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-  if(method === JsSIP.C.OPTIONS) {
+/*  if(method === JsSIP.C.OPTIONS) {
     request.reply(200, null, [
       'Allow: '+ JsSIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else if (method === JsSIP.C.MESSAGE) {
+  } else */if (method === JsSIP.C.MESSAGE) {
     if (!this.checkEvent('newMessage') || this.listeners('newMessage').length === 0) {
       request.reply(405, null, ['Allow: '+ JsSIP.Utils.getAllowedMethods(this)]);
       return;
     }
     message = new JsSIP.Message(this);
     message.init_incoming(request);
+  } else if (method !== JsSIP.C.INVITE &&
+             method !== JsSIP.C.BYE &&
+             method !== JsSIP.C.CANCEL &&
+             method !== JsSIP.C.ACK) {
+    // Let those methods pass through to normal processing for now.
+    transaction = new JsSIP.XServerTransaction(request, this);
+    return;
   }
 
   // Initial Request
