@@ -265,7 +265,7 @@ UA.prototype.request = function (method, target, options) {
   transaction.on('progress', function (e) {
     console.log('Progress response received: ' + e.data.code + ' ' + e.data.response.method);
   });
-  transaction.on('accept', function (e) {
+  transaction.on('accepted', function (e) {
     console.log('Success response received: ' + e.data.code + ' ' + e.data.response.method);
   });
   transaction.on('failed', function (e) {
@@ -577,6 +577,18 @@ UA.prototype.receiveRequest = function(request) {
              method !== JsSIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
     transaction = new JsSIP.XServerTransaction(request, this);
+    
+    transaction.on('progress', function (e) {
+      console.log('Progress request: ' + e.data.code + ' ' + e.data.response.method);
+    });
+    transaction.on('accepted', function (e) {
+      console.log('Accepted request: ' + e.data.code + ' ' + e.data.response.method);
+    });
+    transaction.on('failed', function (e) {
+      console.log('Failed request: ' + e.data.code +
+                  ' ' + (e.data.response && e.data.response.method) +
+                  ' Cause: ' + e.data.cause);
+    });
     return;
   }
 

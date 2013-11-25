@@ -4,8 +4,8 @@ var ClientTransaction;
 ClientTransaction = function (method, target, options, ua) {
   var events = [
     'progress',
-    'accept',
-    'reject',
+    'accepted',
+    'rejected',
     'failed'
   ];
   this.ua = ua;
@@ -63,7 +63,7 @@ ClientTransaction.prototype.receiveResponse = function (response) {
 
     case /^2[0-9]{2}$/.test(response.status_code):
       delete this.ua.applicants[this];
-      this.emit('accept', this, {
+      this.emit('accepted', this, {
         code: response.status_code,
         response: response
       });
@@ -72,7 +72,7 @@ ClientTransaction.prototype.receiveResponse = function (response) {
     default:
       delete this.ua.applicants[this];
       cause = JsSIP.Utils.sipErrorCause(response.status_code);
-      this.emit('reject', this, {
+      this.emit('rejected', this, {
         code: response && response.status_code,
         response: response,
         cause: cause

@@ -2,6 +2,12 @@
 var ServerTransaction;
 
 ServerTransaction = function (request, ua) {
+  var events = [
+    'progress',
+    'accepted',
+    'rejected',
+    'failed'
+  ];
   this.ua = ua;
   this.logger = ua.getLogger('jssip.serverTransaction');
   this.request = request;
@@ -34,6 +40,10 @@ ServerTransaction.prototype.progress = function (options) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+  this.emit('progress', this, {
+        code: response.status_code,
+        response: response
+      });
 
   return this;
 };
@@ -50,6 +60,10 @@ ServerTransaction.prototype.accept = function (options) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+  this.emit('accepted', this, {
+        code: response.status_code,
+        response: response
+      });
 
   return this;
 };
@@ -66,6 +80,16 @@ ServerTransaction.prototype.reject = function (options) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+  this.emit('rejected', this, {
+        code: response && response.status_code,
+        response: response,
+        cause: cause
+      });
+      this.emit('failed', this, {
+        code: response && response.status_code,
+        response: response,
+        cause: cause
+      });
 
   return this;
 };
@@ -81,6 +105,20 @@ ServerTransaction.prototype.reply = function (options) {
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
 
   return this;
+};
+
+ServerTransaction.prototype.onRequestTimeout = function () {
+  this.emit('failed',
+            /* Status code */ 0,
+            /* Response */ null,
+            JsSIP.C.causes.REQUEST_TIMEOUT);
+};
+
+ServerTransaction.prototype.onTransportError = function () {
+  this.emit('failed',
+            /* Status code */ 0,
+            /* Response */ null,
+            JsSIP.C.causes.CONNECTION_ERROR);
 };
 
 JsSIP.XServerTransaction = ServerTransaction;
