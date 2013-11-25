@@ -4,9 +4,9 @@
 
 /**
  * @class Request
- * @param {JsSIP.RTCSession} session
+ * @param {SIP.RTCSession} session
  */
-(function(JsSIP) {
+(function(SIP) {
 
 var Request = function(session) {
   var events = [
@@ -20,7 +20,7 @@ var Request = function(session) {
   this.logger = session.ua.getLogger('sip.rtcsession.request', session.id);
   this.initEvents(events);
 };
-Request.prototype = new JsSIP.EventEmitter();
+Request.prototype = new SIP.EventEmitter();
 
 
 Request.prototype.send = function(method, options) {
@@ -36,11 +36,11 @@ Request.prototype.send = function(method, options) {
   }
 
   // Check RTCSession Status
-  if (this.owner.status !== JsSIP.RTCSession.C.STATUS_1XX_RECEIVED &&
-    this.owner.status !== JsSIP.RTCSession.C.STATUS_WAITING_FOR_ANSWER &&
-    this.owner.status !== JsSIP.RTCSession.C.STATUS_WAITING_FOR_ACK &&
-    this.owner.status !== JsSIP.RTCSession.C.STATUS_CONFIRMED) {
-    throw new JsSIP.Exceptions.InvalidStateError(this.owner.status);
+  if (this.owner.status !== SIP.RTCSession.C.STATUS_1XX_RECEIVED &&
+    this.owner.status !== SIP.RTCSession.C.STATUS_WAITING_FOR_ANSWER &&
+    this.owner.status !== SIP.RTCSession.C.STATUS_WAITING_FOR_ACK &&
+    this.owner.status !== SIP.RTCSession.C.STATUS_CONFIRMED) {
+    throw new SIP.Exceptions.InvalidStateError(this.owner.status);
   }
 
   // Set event handlers
@@ -76,7 +76,7 @@ Request.prototype.receiveResponse = function(response) {
       break;
 
     default:
-      cause = JsSIP.Utils.sipErrorCause(response.status_code);
+      cause = SIP.Utils.sipErrorCause(response.status_code);
       this.emit('failed', this, {
         originator: 'remote',
         response: response,
@@ -92,7 +92,7 @@ Request.prototype.receiveResponse = function(response) {
 Request.prototype.onRequestTimeout = function() {
   this.emit('failed', this, {
     originator: 'system',
-    cause: JsSIP.C.causes.REQUEST_TIMEOUT
+    cause: SIP.C.causes.REQUEST_TIMEOUT
   });
   this.owner.onRequestTimeout();
 };
@@ -103,7 +103,7 @@ Request.prototype.onRequestTimeout = function() {
 Request.prototype.onTransportError = function() {
   this.emit('failed', this, {
     originator: 'system',
-    cause: JsSIP.C.causes.CONNECTION_ERROR
+    cause: SIP.C.causes.CONNECTION_ERROR
   });
   this.owner.onTransportError();
 };
@@ -115,10 +115,10 @@ Request.prototype.onDialogError = function(response) {
   this.emit('failed', this, {
     originator: 'remote',
     response: response,
-    cause: JsSIP.C.causes.DIALOG_ERROR
+    cause: SIP.C.causes.DIALOG_ERROR
   });
   this.owner.onDialogError(response);
 };
 
 return Request;
-}(JsSIP));
+}(SIP));

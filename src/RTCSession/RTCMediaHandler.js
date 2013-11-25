@@ -4,10 +4,10 @@
 
 /* RTCMediaHandler
  * @class PeerConnection helper Class.
- * @param {JsSIP.RTCSession} session
+ * @param {SIP.RTCSession} session
  * @param {Object} [contraints]
  */
-(function(JsSIP){
+(function(SIP){
 
 var RTCMediaHandler = function(session, constraints) {
   this.constraints = constraints || {};
@@ -131,7 +131,7 @@ RTCMediaHandler.prototype = {
       });
     }
 
-    this.peerConnection = new JsSIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.constraints);
+    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.constraints);
 
     this.peerConnection.onaddstream = function(e) {
       self.logger.log('stream added: '+ e.stream.id);
@@ -186,7 +186,7 @@ RTCMediaHandler.prototype = {
 
     this.logger.log('requesting access to local media');
 
-    JsSIP.WebRTC.getUserMedia(mediaConstraints,
+    SIP.WebRTC.getUserMedia(mediaConstraints,
       function(stream) {
         self.logger.log('got local media stream');
         self.localMedia = stream;
@@ -209,7 +209,7 @@ RTCMediaHandler.prototype = {
   */
   onMessage: function(type, body, onSuccess, onFailure) {
     this.peerConnection.setRemoteDescription(
-      new JsSIP.WebRTC.RTCSessionDescription({type: type, sdp:body}),
+      new SIP.WebRTC.RTCSessionDescription({type: type, sdp:body}),
       onSuccess,
       onFailure
     );
@@ -218,4 +218,4 @@ RTCMediaHandler.prototype = {
 
 // Return since it will be assigned to a variable.
 return RTCMediaHandler;
-}(JsSIP));
+}(SIP));

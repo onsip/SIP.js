@@ -1,17 +1,17 @@
 /*global console: false*/
 
 /**
- * @name JsSIP
+ * @name SIP
  * @namespace
  */
 (function(window) {
 
-var JsSIP = (function() {
+var SIP = (function() {
   "use strict";
 
-  var JsSIP = {};
+  var SIP = {};
 
-  Object.defineProperties(JsSIP, {
+  Object.defineProperties(SIP, {
     version: {
       get: function(){ return '<%= pkg.version %>'; }
     },
@@ -20,5 +20,5 @@ var JsSIP = (function() {
     }
   });
 
-  return JsSIP;
+  return SIP;
 }());

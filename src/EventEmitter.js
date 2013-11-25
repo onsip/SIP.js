@@ -3,14 +3,14 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating an event emitter.
  */
-(function(JsSIP) {
+(function(SIP) {
 var
   EventEmitter,
   Event,
-  logger = new JsSIP.LoggerFactory().getLogger('sip.eventemitter'),
+  logger = new SIP.LoggerFactory().getLogger('sip.eventemitter'),
   C = {
     MAX_LISTENERS: 10
   };
@@ -177,7 +177,7 @@ EventEmitter.prototype = {
 
     this.logger.log('emitting event '+ event);
 
-    e = new JsSIP.Event(event, sender, data);
+    e = new SIP.Event(event, sender, data);
 
     // Fire event listeners
     listeners = this.events[event];
@@ -206,6 +206,6 @@ Event = function(type, sender, data) {
 
 EventEmitter.C = C;
 
-JsSIP.EventEmitter = EventEmitter;
-JsSIP.Event = Event;
-}(JsSIP));
+SIP.EventEmitter = EventEmitter;
+SIP.Event = Event;
+}(SIP));

@@ -4,12 +4,12 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating a request sender.
  * @param {Object} applicant
- * @param {JsSIP.UA} ua
+ * @param {SIP.UA} ua
  */
-(function(JsSIP) {
+(function(SIP) {
 var RequestSender;
 
 RequestSender = function(applicant, ua) {
@@ -23,7 +23,7 @@ RequestSender = function(applicant, ua) {
   this.staled = false;
 
   // If ua is in closing process or even closed just allow sending Bye and ACK
-  if (ua.status === JsSIP.UA.C.STATUS_USER_CLOSED && (this.method !== JsSIP.C.BYE || this.method !== JsSIP.C.ACK)) {
+  if (ua.status === SIP.UA.C.STATUS_USER_CLOSED && (this.method !== SIP.C.BYE || this.method !== SIP.C.ACK)) {
     this.onTransportError();
   }
 };
@@ -35,13 +35,13 @@ RequestSender.prototype = {
   send: function() {
     switch(this.method) {
       case "INVITE":
-        this.clientTransaction = new JsSIP.Transactions.InviteClientTransaction(this, this.request, this.ua.transport);
+        this.clientTransaction = new SIP.Transactions.InviteClientTransaction(this, this.request, this.ua.transport);
         break;
       case "ACK":
-        this.clientTransaction = new JsSIP.Transactions.AckClientTransaction(this, this.request, this.ua.transport);
+        this.clientTransaction = new SIP.Transactions.AckClientTransaction(this, this.request, this.ua.transport);
         break;
       default:
-        this.clientTransaction = new JsSIP.Transactions.NonInviteClientTransaction(this, this.request, this.ua.transport);
+        this.clientTransaction = new SIP.Transactions.NonInviteClientTransaction(this, this.request, this.ua.transport);
     }
     this.clientTransaction.send();
 
@@ -69,7 +69,7 @@ RequestSender.prototype = {
   /**
   * Called from client transaction when receiving a correct response to the request.
   * Authenticate request if needed or pass the response back to the applicant.
-  * @param {JsSIP.IncomingResponse} response
+  * @param {SIP.IncomingResponse} response
   */
   receiveResponse: function(response) {
     var cseq, challenge, authorization_header_name,
@@ -99,7 +99,7 @@ RequestSender.prototype = {
 
       if (!this.challenged || (!this.staled && challenge.stale === true)) {
         if (!this.credentials) {
-          this.credentials = new JsSIP.DigestAuthentication(this.ua);
+          this.credentials = new SIP.DigestAuthentication(this.ua);
         }
 
         // Verify that the challenge is really valid.
@@ -113,7 +113,7 @@ RequestSender.prototype = {
           this.staled = true;
         }
 
-        if (response.method === JsSIP.C.REGISTER) {
+        if (response.method === SIP.C.REGISTER) {
           cseq = this.applicant.cseq += 1;
         } else if (this.request.dialog){
           cseq = this.request.dialog.local_seqnum += 1;
@@ -134,5 +134,5 @@ RequestSender.prototype = {
   }
 };
 
-JsSIP.RequestSender = RequestSender;
-}(JsSIP));
+SIP.RequestSender = RequestSender;
+}(SIP));

@@ -2,7 +2,7 @@
  * @fileoverview Utils
  */
 
-(function(JsSIP) {
+(function(SIP) {
 var Utils;
 
 Utils= {
@@ -38,7 +38,7 @@ Utils= {
   },
 
   newTag: function() {
-    return JsSIP.Utils.createRandomToken(JsSIP.UA.C.TAG_LENGTH);
+    return SIP.Utils.createRandomToken(SIP.UA.C.TAG_LENGTH);
   },
 
   // http://stackoverflow.com/users/109538/broofa
@@ -55,7 +55,7 @@ Utils= {
     if (!host) {
       return;
     } else {
-      host = JsSIP.Grammar.parse(host,'host');
+      host = SIP.Grammar.parse(host,'host');
       if (host !== -1) {
         return host.host_type;
       }
@@ -78,8 +78,8 @@ Utils= {
     // If no target is given then raise an error.
     if (!target) {
       return;
-    // If a JsSIP.URI instance is given then return it.
-    } else if (target instanceof JsSIP.URI) {
+    // If a SIP.URI instance is given then return it.
+    } else if (target instanceof SIP.URI) {
       return target;
 
     // If a string is given split it by '@':
@@ -114,10 +114,10 @@ Utils= {
       }
 
       // Build the complete SIP URI.
-      target = JsSIP.C.SIP + ':' + JsSIP.Utils.escapeUser(target_user) + '@' + target_domain;
+      target = SIP.C.SIP + ':' + SIP.Utils.escapeUser(target_user) + '@' + target_domain;
 
       // Finally parse the resulting URI.
-      if (uri = JsSIP.URI.parse(target)) {
+      if (uri = SIP.URI.parse(target)) {
         return uri;
       } else {
         return;
@@ -164,13 +164,13 @@ Utils= {
   sipErrorCause: function(status_code) {
     var cause;
 
-    for (cause in JsSIP.C.SIP_ERROR_CAUSES) {
-      if (JsSIP.C.SIP_ERROR_CAUSES[cause].indexOf(status_code) !== -1) {
-        return JsSIP.C.causes[cause];
+    for (cause in SIP.C.SIP_ERROR_CAUSES) {
+      if (SIP.C.SIP_ERROR_CAUSES[cause].indexOf(status_code) !== -1) {
+        return SIP.C.causes[cause];
       }
     }
 
-    return JsSIP.C.causes.SIP_FAILURE_CODE;
+    return SIP.C.causes.SIP_FAILURE_CODE;
   },
 
   /**
@@ -186,11 +186,11 @@ Utils= {
 
   getAllowedMethods: function(ua) {
     var event,
-      allowed = JsSIP.UA.C.ALLOWED_METHODS.toString();
+      allowed = SIP.UA.C.ALLOWED_METHODS.toString();
 
-    for (event in JsSIP.UA.C.EVENT_METHODS) {
+    for (event in SIP.UA.C.EVENT_METHODS) {
       if (ua.checkEvent(event) && ua.listeners(event).length > 0) {
-        allowed += ','+ JsSIP.UA.C.EVENT_METHODS[event];
+        allowed += ','+ SIP.UA.C.EVENT_METHODS[event];
       }
     }
 
@@ -407,5 +407,5 @@ Utils= {
   }
 };
 
-JsSIP.Utils = Utils;
-}(JsSIP));
+SIP.Utils = Utils;
+}(SIP));

@@ -1,5 +1,5 @@
 
-(function(JsSIP) {
+(function(SIP) {
 
 var Logger = @@include('../src/Logger.js')
 
@@ -143,5 +143,5 @@ LoggerFactory.prototype.getLogger = function(category, label) {
   }
 };
 
-JsSIP.LoggerFactory = LoggerFactory;
-}(JsSIP));
+SIP.LoggerFactory = LoggerFactory;
+}(SIP));

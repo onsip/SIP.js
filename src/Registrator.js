@@ -3,12 +3,12 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating a registrator agent.
- * @param {JsSIP.UA} ua
- * @param {JsSIP.Transport} transport
+ * @param {SIP.UA} ua
+ * @param {SIP.Transport} transport
  */
-(function(JsSIP) {
+(function(SIP) {
 var Registrator;
 
 Registrator = function(ua, transport) {
@@ -23,7 +23,7 @@ Registrator = function(ua, transport) {
   this.expires = ua.configuration.register_expires;
 
   // Call-ID and CSeq values RFC3261 10.2
-  this.call_id = JsSIP.Utils.createRandomToken(22);
+  this.call_id = SIP.Utils.createRandomToken(22);
   this.cseq = 80;
 
   // this.to_uri
@@ -57,15 +57,15 @@ Registrator.prototype = {
     options = options || {};
     extraHeaders = options.extraHeaders || [];
     extraHeaders.push('Contact: '+ this.contact + ';expires=' + this.expires);
-    extraHeaders.push('Allow: '+ JsSIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
 
-    this.request = new JsSIP.OutgoingRequest(JsSIP.C.REGISTER, this.registrar, this.ua, {
+    this.request = new SIP.OutgoingRequest(SIP.C.REGISTER, this.registrar, this.ua, {
         'to_uri': this.to_uri,
         'call_id': this.call_id,
         'cseq': (this.cseq += 1)
       }, extraHeaders);
 
-    request_sender = new JsSIP.RequestSender(this, this.ua);
+    request_sender = new SIP.RequestSender(this, this.ua);
 
     /**
     * @private
@@ -148,11 +148,11 @@ Registrator.prototype = {
             this.register();
           } else { //This response MUST contain a Min-Expires header field
             this.logger.warn('423 response received for REGISTER without Min-Expires');
-            this.registrationFailure(response, JsSIP.C.causes.SIP_FAILURE_CODE);
+            this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
           }
           break;
         default:
-          cause = JsSIP.Utils.sipErrorCause(response.status_code);
+          cause = SIP.Utils.sipErrorCause(response.status_code);
           this.registrationFailure(response, cause);
       }
     };
@@ -161,14 +161,14 @@ Registrator.prototype = {
     * @private
     */
     this.onRequestTimeout = function() {
-      this.registrationFailure(null, JsSIP.C.causes.REQUEST_TIMEOUT);
+      this.registrationFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
     };
 
     /**
     * @private
     */
     this.onTransportError = function() {
-      this.registrationFailure(null, JsSIP.C.causes.CONNECTION_ERROR);
+      this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
     };
 
     request_sender.send();
@@ -200,7 +200,7 @@ Registrator.prototype = {
       extraHeaders.push('Contact: *');
       extraHeaders.push('Expires: 0');
 
-      this.request = new JsSIP.OutgoingRequest(JsSIP.C.REGISTER, this.registrar, this.ua, {
+      this.request = new SIP.OutgoingRequest(SIP.C.REGISTER, this.registrar, this.ua, {
           'to_uri': this.to_uri,
           'call_id': this.call_id,
           'cseq': (this.cseq += 1)
@@ -208,14 +208,14 @@ Registrator.prototype = {
     } else {
       extraHeaders.push('Contact: '+ this.contact + ';expires=0');
 
-      this.request = new JsSIP.OutgoingRequest(JsSIP.C.REGISTER, this.registrar, this.ua, {
+      this.request = new SIP.OutgoingRequest(SIP.C.REGISTER, this.registrar, this.ua, {
           'to_uri': this.to_uri,
           'call_id': this.call_id,
           'cseq': (this.cseq += 1)
         }, extraHeaders);
     }
 
-    var request_sender = new JsSIP.RequestSender(this, this.ua);
+    var request_sender = new SIP.RequestSender(this, this.ua);
 
     /**
     * @private
@@ -231,7 +231,7 @@ Registrator.prototype = {
           this.unregistered(response);
           break;
         default:
-          cause = JsSIP.Utils.sipErrorCause(response.status_code);
+          cause = SIP.Utils.sipErrorCause(response.status_code);
           this.unregistered(response, cause);
       }
     };
@@ -240,14 +240,14 @@ Registrator.prototype = {
     * @private
     */
     this.onRequestTimeout = function() {
-      this.unregistered(null, JsSIP.C.causes.REQUEST_TIMEOUT);
+      this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
     };
 
     /**
     * @private
     */
     this.onTransportError = function() {
-      this.unregistered(null, JsSIP.C.causes.CONNECTION_ERROR);
+      this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
     };
 
     request_sender.send();
@@ -314,5 +314,5 @@ Registrator.prototype = {
   }
 };
 
-JsSIP.Registrator = Registrator;
-}(JsSIP));
+SIP.Registrator = Registrator;
+}(SIP));

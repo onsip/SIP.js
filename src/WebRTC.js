@@ -2,7 +2,7 @@
  * @fileoverview WebRTC
  */
 
-(function(JsSIP) {
+(function(SIP) {
 var WebRTC;
 
 WebRTC = {};
@@ -48,5 +48,5 @@ else {
   WebRTC.isSupported = false;
 }
 
-JsSIP.WebRTC = WebRTC;
-}(JsSIP));
+SIP.WebRTC = WebRTC;
+}(SIP));

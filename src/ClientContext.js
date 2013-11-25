@@ -1,4 +1,4 @@
-(function (JsSIP) {
+(function (SIP) {
 var ClientContext;
 
 ClientContext = function (method, target, options, ua) {
@@ -18,7 +18,7 @@ ClientContext = function (method, target, options, ua) {
 
   this.initEvents(events);
 };
-ClientContext.prototype = new JsSIP.EventEmitter();
+ClientContext.prototype = new SIP.EventEmitter();
 
 ClientContext.prototype.send = function () {
   var request_sender, extraHeaders, body,
@@ -40,13 +40,13 @@ ClientContext.prototype.send = function () {
 
   this.ua.applicants[this] = this;
 
-  this.request = new JsSIP.OutgoingRequest(this.method, this.target, this.ua, null, extraHeaders);
+  this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, null, extraHeaders);
 
   if (body) {
     this.request.body = body;
   }
 
-  request_sender = new JsSIP.RequestSender(this, this.ua);
+  request_sender = new SIP.RequestSender(this, this.ua);
   request_sender.send();
 };
 
@@ -71,7 +71,7 @@ ClientContext.prototype.receiveResponse = function (response) {
 
     default:
       delete this.ua.applicants[this];
-      cause = JsSIP.Utils.sipErrorCause(response.status_code);
+      cause = SIP.Utils.sipErrorCause(response.status_code);
       this.emit('rejected', this, {
         code: response && response.status_code,
         response: response,
@@ -91,15 +91,15 @@ ClientContext.prototype.onRequestTimeout = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
-            JsSIP.C.causes.REQUEST_TIMEOUT);
+            SIP.C.causes.REQUEST_TIMEOUT);
 };
 
 ClientContext.prototype.onTransportError = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
-            JsSIP.C.causes.CONNECTION_ERROR);
+            SIP.C.causes.CONNECTION_ERROR);
 };
 
-JsSIP.ClientContext = ClientContext;
-}(JsSIP));
+SIP.ClientContext = ClientContext;
+}(SIP));

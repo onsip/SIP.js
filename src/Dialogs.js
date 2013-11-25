@@ -3,14 +3,14 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating a SIP dialog.
- * @param {JsSIP.RTCSession} owner
- * @param {JsSIP.IncomingRequest|JsSIP.IncomingResponse} message
+ * @param {SIP.RTCSession} owner
+ * @param {SIP.IncomingRequest|SIP.IncomingResponse} message
  * @param {Enum} type UAC / UAS
- * @param {Enum} state JsSIP.Dialog.C.STATUS_EARLY / JsSIP.Dialog.C.STATUS_CONFIRMED
+ * @param {Enum} state SIP.Dialog.C.STATUS_EARLY / SIP.Dialog.C.STATUS_CONFIRMED
  */
-(function(JsSIP) {
+(function(SIP) {
 
 // Load dependencies
 var RequestSender   = @@include('../src/Dialog/RequestSender.js')
@@ -33,7 +33,7 @@ Dialog = function(owner, message, type, state) {
     };
   }
 
-  if(message instanceof JsSIP.IncomingResponse) {
+  if(message instanceof SIP.IncomingResponse) {
     state = (message.status_code < 200) ? C.STATUS_EARLY : C.STATUS_CONFIRMED;
   } else {
     // Create confirmed dialog if state is not defined
@@ -92,7 +92,7 @@ Dialog = function(owner, message, type, state) {
 
 Dialog.prototype = {
   /**
-   * @param {JsSIP.IncomingMessage} message
+   * @param {SIP.IncomingMessage} message
    * @param {Enum} UAC/UAS
    */
   update: function(message, type) {
@@ -117,7 +117,7 @@ Dialog.prototype = {
   /**
   * @param {String} method request method
   * @param {Object} extraHeaders extra headers
-  * @returns {JsSIP.OutgoingRequest}
+  * @returns {SIP.OutgoingRequest}
   */
 
   // RFC 3261 12.2.1.1
@@ -127,9 +127,9 @@ Dialog.prototype = {
 
     if(!this.local_seqnum) { this.local_seqnum = Math.floor(Math.random() * 10000); }
 
-    cseq = (method === JsSIP.C.CANCEL || method === JsSIP.C.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
+    cseq = (method === SIP.C.CANCEL || method === SIP.C.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
 
-    request = new JsSIP.OutgoingRequest(
+    request = new SIP.OutgoingRequest(
       method,
       this.remote_target,
       this.owner.ua, {
@@ -148,7 +148,7 @@ Dialog.prototype = {
   },
 
   /**
-  * @param {JsSIP.IncomingRequest} request
+  * @param {SIP.IncomingRequest} request
   * @returns {Boolean}
   */
 
@@ -156,9 +156,9 @@ Dialog.prototype = {
   checkInDialogRequest: function(request) {
     if(!this.remote_seqnum) {
       this.remote_seqnum = request.cseq;
-    } else if(request.method !== JsSIP.C.INVITE && request.cseq < this.remote_seqnum) {
+    } else if(request.method !== SIP.C.INVITE && request.cseq < this.remote_seqnum) {
         //Do not try to reply to an ACK request.
-        if (request.method !== JsSIP.C.ACK) {
+        if (request.method !== SIP.C.ACK) {
           request.reply(500);
         }
         if (request.cseq === this.invite_seqnum) {
@@ -171,7 +171,7 @@ Dialog.prototype = {
 
     switch(request.method) {
       // RFC3261 14.2 Modifying an Existing Session -UAS BEHAVIOR-
-      case JsSIP.C.INVITE:
+      case SIP.C.INVITE:
         if(request.cseq < this.remote_seqnum) {
           if(this.state === C.STATUS_EARLY) {
             var retryAfter = (Math.random() * 10 | 0) + 1;
@@ -191,7 +191,7 @@ Dialog.prototype = {
           this.remote_target = request.parseHeader('contact').uri;
         }
         break;
-      case JsSIP.C.NOTIFY:
+      case SIP.C.NOTIFY:
         // RFC6655 3.2 Replace the dialog`s remote target URI
         if(request.hasHeader('contact')) {
           this.remote_target = request.parseHeader('contact').uri;
@@ -215,7 +215,7 @@ Dialog.prototype = {
   },
 
   /**
-  * @param {JsSIP.IncomingRequest} request
+  * @param {SIP.IncomingRequest} request
   */
   receiveRequest: function(request) {
     //Check in-dialog request
@@ -228,5 +228,5 @@ Dialog.prototype = {
 };
 
 Dialog.C = C;
-JsSIP.Dialog = Dialog;
-}(JsSIP));
+SIP.Dialog = Dialog;
+}(SIP));

@@ -3,11 +3,11 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating SIP MESSAGE request.
- * @param {JsSIP.UA} ua
+ * @param {SIP.UA} ua
  */
-(function(JsSIP) {
+(function(SIP) {
 var Message;
 
 Message = function(ua) {
@@ -20,7 +20,7 @@ Message = function(ua) {
   // Custom message empty object for high level use
   this.data = {};
 };
-Message.prototype = new JsSIP.EventEmitter();
+Message.prototype = new SIP.EventEmitter();
 
 
 Message.prototype.send = function(target, body, options) {
@@ -64,13 +64,13 @@ Message.prototype.send = function(target, body, options) {
 
   extraHeaders.push('Content-Type: '+ contentType);
 
-  this.request = new JsSIP.OutgoingRequest(JsSIP.C.MESSAGE, target, this.ua, null, extraHeaders);
+  this.request = new SIP.OutgoingRequest(SIP.C.MESSAGE, target, this.ua, null, extraHeaders);
 
   if(body) {
     this.request.body = body;
   }
 
-  request_sender = new JsSIP.RequestSender(this, this.ua);
+  request_sender = new SIP.RequestSender(this, this.ua);
 
   this.ua.emit('newMessage', this.ua, {
     originator: 'local',
@@ -105,7 +105,7 @@ Message.prototype.receiveResponse = function(response) {
 
     default:
       delete this.ua.applicants[this];
-      cause = JsSIP.Utils.sipErrorCause(response.status_code);
+      cause = SIP.Utils.sipErrorCause(response.status_code);
       this.emit('failed', this, {
         originator: 'remote',
         response: response,
@@ -125,7 +125,7 @@ Message.prototype.onRequestTimeout = function() {
   }
   this.emit('failed', this, {
     originator: 'system',
-    cause: JsSIP.C.causes.REQUEST_TIMEOUT
+    cause: SIP.C.causes.REQUEST_TIMEOUT
   });
 };
 
@@ -138,7 +138,7 @@ Message.prototype.onTransportError = function() {
   }
   this.emit('failed', this, {
     originator: 'system',
-    cause: JsSIP.C.causes.CONNECTION_ERROR
+    cause: SIP.C.causes.CONNECTION_ERROR
   });
 };
 
@@ -171,7 +171,7 @@ Message.prototype.init_incoming = function(request) {
 
     transaction = this.ua.transactions.nist[request.via_branch];
 
-    if (transaction && (transaction.state === JsSIP.Transactions.C.STATUS_TRYING || transaction.state === JsSIP.Transactions.C.STATUS_PROCEEDING)) {
+    if (transaction && (transaction.state === SIP.Transactions.C.STATUS_TRYING || transaction.state === SIP.Transactions.C.STATUS_PROCEEDING)) {
       request.reply(200);
     }
   } else {
@@ -191,7 +191,7 @@ Message.prototype.accept = function(options) {
     body = options.body;
 
   if (this.direction !== 'incoming') {
-    throw new JsSIP.Exceptions.NotSupportedError('"accept" not supported for outgoing Message');
+    throw new SIP.Exceptions.NotSupportedError('"accept" not supported for outgoing Message');
   }
 
   this.request.reply(200, null, extraHeaders, body);
@@ -214,7 +214,7 @@ Message.prototype.reject = function(options) {
     body = options.body;
 
   if (this.direction !== 'incoming') {
-    throw new JsSIP.Exceptions.NotSupportedError('"reject" not supported for outgoing Message');
+    throw new SIP.Exceptions.NotSupportedError('"reject" not supported for outgoing Message');
   }
 
   if (status_code < 300 || status_code >= 700) {
@@ -224,5 +224,5 @@ Message.prototype.reject = function(options) {
   this.request.reply(status_code, reason_phrase, extraHeaders, body);
 };
 
-JsSIP.Message = Message;
-}(JsSIP));
+SIP.Message = Message;
+}(SIP));

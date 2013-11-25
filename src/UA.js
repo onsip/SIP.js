@@ -4,10 +4,10 @@
 
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating a SIP User Agent.
  */
-(function(JsSIP) {
+(function(SIP) {
 var UA,
   C = {
     // UA status codes
@@ -67,7 +67,7 @@ UA = function(configuration) {
   // Set Accepted Body Types
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
 
-  this.log = new JsSIP.LoggerFactory();
+  this.log = new SIP.LoggerFactory();
   this.logger = this.getLogger('sip.ua');
 
   this.cache = {
@@ -137,7 +137,7 @@ UA = function(configuration) {
   /**
    * Load configuration
    *
-   * @throws {JsSIP.Exceptions.ConfigurationError}
+   * @throws {SIP.Exceptions.ConfigurationError}
    * @throws {TypeError}
    */
 
@@ -170,9 +170,9 @@ UA = function(configuration) {
   }
 
   // Initialize registrator
-  this.registrator = new JsSIP.Registrator(this);
+  this.registrator = new SIP.Registrator(this);
 };
-UA.prototype = new JsSIP.EventEmitter();
+UA.prototype = new SIP.EventEmitter();
 
 
 //=================
@@ -237,7 +237,7 @@ UA.prototype.isConnected = function() {
 UA.prototype.call = function(target, options) {
   var session;
 
-  session = new JsSIP.RTCSession(this);
+  session = new SIP.RTCSession(this);
   session.connect(target, options);
 };
 
@@ -254,12 +254,12 @@ UA.prototype.call = function(target, options) {
 UA.prototype.sendMessage = function(target, body, options) {
   var message;
 
-  message = new JsSIP.Message(this);
+  message = new SIP.Message(this);
   message.send(target, body, options);
 };
 
 UA.prototype.request = function (method, target, options) {
-  var transaction = new JsSIP.ClientContext(method, target, options, this);
+  var transaction = new SIP.ClientContext(method, target, options, this);
   transaction.send();
 
   transaction.on('progress', function (e) {
@@ -342,7 +342,7 @@ UA.prototype.start = function() {
 
   if (this.status === C.STATUS_INIT) {
     server = this.getNextWsServer();
-    new JsSIP.Transport(this, server);
+    new SIP.Transport(this, server);
   } else if(this.status === C.STATUS_USER_CLOSED) {
     this.logger.log('resuming');
     this.status = C.STATUS_READY;
@@ -359,10 +359,10 @@ UA.prototype.start = function() {
  *
  * @param {String} target
  *
- * @returns {JsSIP.URI|undefined}
+ * @returns {SIP.URI|undefined}
  */
 UA.prototype.normalizeTarget = function(target) {
-  return JsSIP.Utils.normalizeTarget(target, this.configuration.hostport_params);
+  return SIP.Utils.normalizeTarget(target, this.configuration.hostport_params);
 };
 
 
@@ -401,15 +401,15 @@ UA.prototype.getLogger = function(category, label) {
  * Transport Close event.
  * @private
  * @event
- * @param {JsSIP.Transport} transport.
+ * @param {SIP.Transport} transport.
  */
 UA.prototype.onTransportClosed = function(transport) {
   // Run _onTransportError_ callback on every client transaction using _transport_
   var type, idx, length,
     client_transactions = ['nict', 'ict', 'nist', 'ist'];
 
-  transport.server.status = JsSIP.Transport.C.STATUS_DISCONNECTED;
-  this.logger.log('connection state set to '+ JsSIP.Transport.C.STATUS_DISCONNECTED);
+  transport.server.status = SIP.Transport.C.STATUS_DISCONNECTED;
+  this.logger.log('connection state set to '+ SIP.Transport.C.STATUS_DISCONNECTED);
 
   length = client_transactions.length;
   for (type = 0; type < length; type++) {
@@ -430,16 +430,16 @@ UA.prototype.onTransportClosed = function(transport) {
  * Connection reattempt logic has been done and didn't success.
  * @private
  * @event
- * @param {JsSIP.Transport} transport.
+ * @param {SIP.Transport} transport.
  */
 UA.prototype.onTransportError = function(transport) {
   var server;
 
-  this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ JsSIP.Transport.C.STATUS_ERROR);
+  this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ SIP.Transport.C.STATUS_ERROR);
 
   // Close sessions.
   //Mark this transport as 'down' and try the next one
-  transport.server.status = JsSIP.Transport.C.STATUS_ERROR;
+  transport.server.status = SIP.Transport.C.STATUS_ERROR;
 
   this.emit('disconnected', this, {
     transport: transport,
@@ -450,7 +450,7 @@ UA.prototype.onTransportError = function(transport) {
   server = this.getNextWsServer();
 
   if(server) {
-    new JsSIP.Transport(this, server);
+    new SIP.Transport(this, server);
   }else {
     this.closeSessionsOnTransportError();
     if (!this.error || this.error !== C.NETWORK_ERROR) {
@@ -466,7 +466,7 @@ UA.prototype.onTransportError = function(transport) {
  * Transport connection event.
  * @private
  * @event
- * @param {JsSIP.Transport} transport.
+ * @param {SIP.Transport} transport.
  */
 UA.prototype.onTransportConnected = function(transport) {
   this.transport = transport;
@@ -474,8 +474,8 @@ UA.prototype.onTransportConnected = function(transport) {
   // Reset transport recovery counter
   this.transportRecoverAttempts = 0;
 
-  transport.server.status = JsSIP.Transport.C.STATUS_READY;
-  this.logger.log('connection state set to '+ JsSIP.Transport.C.STATUS_READY);
+  transport.server.status = SIP.Transport.C.STATUS_READY;
+  this.logger.log('connection state set to '+ SIP.Transport.C.STATUS_READY);
 
   if(this.status === C.STATUS_USER_CLOSED) {
     return;
@@ -496,7 +496,7 @@ UA.prototype.onTransportConnected = function(transport) {
 /**
  * new Transaction
  * @private
- * @param {JsSIP.Transaction} transaction.
+ * @param {SIP.Transaction} transaction.
  */
 UA.prototype.newTransaction = function(transaction) {
   this.transactions[transaction.type][transaction.id] = transaction;
@@ -509,7 +509,7 @@ UA.prototype.newTransaction = function(transaction) {
 /**
  * destroy Transaction
  * @private
- * @param {JsSIP.Transaction} transaction.
+ * @param {SIP.Transaction} transaction.
  */
 UA.prototype.destroyTransaction = function(transaction) {
   delete this.transactions[transaction.type][transaction.id];
@@ -526,7 +526,7 @@ UA.prototype.destroyTransaction = function(transaction) {
 /**
  * Request reception
  * @private
- * @param {JsSIP.IncomingRequest} request.
+ * @param {SIP.IncomingRequest} request.
  */
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
@@ -536,22 +536,22 @@ UA.prototype.receiveRequest = function(request) {
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
     this.logger.warn('Request-URI does not point to us');
-    if (request.method !== JsSIP.C.ACK) {
+    if (request.method !== SIP.C.ACK) {
       request.reply_sl(404);
     }
     return;
   }
 
   // Check transaction
-  if(JsSIP.Transactions.checkTransaction(this, request)) {
+  if(SIP.Transactions.checkTransaction(this, request)) {
     return;
   }
 /*
   // Create the server transaction
-  if(method === JsSIP.C.INVITE) {
-    new JsSIP.Transactions.InviteServerTransaction(request, this);
-  } else if(method !== JsSIP.C.ACK) {
-    new JsSIP.Transactions.NonInviteServerTransaction(request, this);
+  if(method === SIP.C.INVITE) {
+    new SIP.Transactions.InviteServerTransaction(request, this);
+  } else if(method !== SIP.C.ACK) {
+    new SIP.Transactions.NonInviteServerTransaction(request, this);
   }
 */
   /* RFC3261 12.2.2
@@ -559,24 +559,24 @@ UA.prototype.receiveRequest = function(request) {
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-/*  if(method === JsSIP.C.OPTIONS) {
+/*  if(method === SIP.C.OPTIONS) {
     request.reply(200, null, [
-      'Allow: '+ JsSIP.Utils.getAllowedMethods(this),
+      'Allow: '+ SIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else */if (method === JsSIP.C.MESSAGE) {
+  } else */if (method === SIP.C.MESSAGE) {
     if (!this.checkEvent('newMessage') || this.listeners('newMessage').length === 0) {
-      request.reply(405, null, ['Allow: '+ JsSIP.Utils.getAllowedMethods(this)]);
+      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
       return;
     }
-    message = new JsSIP.Message(this);
+    message = new SIP.Message(this);
     message.init_incoming(request);
-  } else if (method !== JsSIP.C.INVITE &&
-             method !== JsSIP.C.BYE &&
-             method !== JsSIP.C.CANCEL &&
-             method !== JsSIP.C.ACK) {
+  } else if (method !== SIP.C.INVITE &&
+             method !== SIP.C.BYE &&
+             method !== SIP.C.CANCEL &&
+             method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new JsSIP.ServerContext(request, this);
+    transaction = new SIP.ServerContext(request, this);
     
     transaction.on('progress', function (e) {
       console.log('Progress request: ' + e.data.code + ' ' + e.data.response.method);
@@ -595,20 +595,20 @@ UA.prototype.receiveRequest = function(request) {
   // Initial Request
   if(!request.to_tag) {
     switch(method) {
-      case JsSIP.C.INVITE:
-        if(JsSIP.WebRTC.isSupported) {
-          session = new JsSIP.RTCSession(this);
+      case SIP.C.INVITE:
+        if(SIP.WebRTC.isSupported) {
+          session = new SIP.RTCSession(this);
           session.init_incoming(request);
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);
         }
         break;
-      case JsSIP.C.BYE:
+      case SIP.C.BYE:
         // Out of dialog BYE received
         request.reply(481);
         break;
-      case JsSIP.C.CANCEL:
+      case SIP.C.CANCEL:
         session = this.findSession(request);
         if(session) {
           session.receiveRequest(request);
@@ -616,7 +616,7 @@ UA.prototype.receiveRequest = function(request) {
           this.logger.warn('received CANCEL request for a non existent session');
         }
         break;
-      case JsSIP.C.ACK:
+      case SIP.C.ACK:
         /* Absorb it.
          * ACK request without a corresponding Invite Transaction
          * and without To tag.
@@ -633,7 +633,7 @@ UA.prototype.receiveRequest = function(request) {
 
     if(dialog) {
       dialog.receiveRequest(request);
-    } else if (method === JsSIP.C.NOTIFY) {
+    } else if (method === SIP.C.NOTIFY) {
       session = this.findSession(request);
       if(session) {
         session.receiveRequest(request);
@@ -648,7 +648,7 @@ UA.prototype.receiveRequest = function(request) {
      * been created.
      */
     else {
-      if(method !== JsSIP.C.ACK) {
+      if(method !== SIP.C.ACK) {
         request.reply(481);
       }
     }
@@ -662,8 +662,8 @@ UA.prototype.receiveRequest = function(request) {
 /**
  * Get the session to which the request belongs to, if any.
  * @private
- * @param {JsSIP.IncomingRequest} request.
- * @returns {JsSIP.OutgoingSession|JsSIP.IncomingSession|null}
+ * @param {SIP.IncomingRequest} request.
+ * @returns {SIP.OutgoingSession|SIP.IncomingSession|null}
  */
 UA.prototype.findSession = function(request) {
   var
@@ -684,8 +684,8 @@ UA.prototype.findSession = function(request) {
 /**
  * Get the dialog to which the request belongs to, if any.
  * @private
- * @param {JsSIP.IncomingRequest}
- * @returns {JsSIP.Dialog|null}
+ * @param {SIP.IncomingRequest}
+ * @returns {SIP.Dialog|null}
  */
 UA.prototype.findDialog = function(request) {
   var
@@ -719,7 +719,7 @@ UA.prototype.getNextWsServer = function() {
   for (idx = 0; idx < length; idx++) {
     ws_server = this.configuration.ws_servers[idx];
 
-    if (ws_server.status === JsSIP.Transport.C.STATUS_ERROR) {
+    if (ws_server.status === SIP.Transport.C.STATUS_ERROR) {
       continue;
     } else if (candidates.length === 0) {
       candidates.push(ws_server);
@@ -777,7 +777,7 @@ UA.prototype.recoverTransport = function(ua) {
   window.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
-      new JsSIP.Transport(ua, server);
+      new SIP.Transport(ua, server);
     }, nextRetry * 1000);
 };
 
@@ -793,7 +793,7 @@ UA.prototype.loadConfig = function(configuration) {
       /* Host address
       * Value to be set in Via sent_by and host part of Contact FQDN
       */
-      via_host: JsSIP.Utils.createRandomToken(12) + '.invalid',
+      via_host: SIP.Utils.createRandomToken(12) + '.invalid',
 
       // Password
       password: null,
@@ -834,14 +834,14 @@ UA.prototype.loadConfig = function(configuration) {
   // Check Mandatory parameters
   for(parameter in UA.configuration_check.mandatory) {
     if(!configuration.hasOwnProperty(parameter)) {
-      throw new JsSIP.Exceptions.ConfigurationError(parameter);
+      throw new SIP.Exceptions.ConfigurationError(parameter);
     } else {
       value = configuration[parameter];
       checked_value = UA.configuration_check.mandatory[parameter](value);
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
-        throw new JsSIP.Exceptions.ConfigurationError(parameter, value);
+        throw new SIP.Exceptions.ConfigurationError(parameter, value);
       }
     }
   }
@@ -861,7 +861,7 @@ UA.prototype.loadConfig = function(configuration) {
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
-        throw new JsSIP.Exceptions.ConfigurationError(parameter, value);
+        throw new SIP.Exceptions.ConfigurationError(parameter, value);
       }
     }
   }
@@ -870,7 +870,7 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Connection recovery intervals
   if(settings.connection_recovery_max_interval < settings.connection_recovery_min_interval) {
-    throw new JsSIP.Exceptions.ConfigurationError('connection_recovery_max_interval', settings.connection_recovery_max_interval);
+    throw new SIP.Exceptions.ConfigurationError('connection_recovery_max_interval', settings.connection_recovery_max_interval);
   }
 
   // Post Configuration Process
@@ -882,11 +882,11 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Instance-id for GRUU
   if (!settings.instance_id) {
-    settings.instance_id = JsSIP.Utils.newUUID();
+    settings.instance_id = SIP.Utils.newUUID();
   }
 
   // jssip_id instance parameter. Static random tag of length 5
-  settings.jssip_id = JsSIP.Utils.createRandomToken(5);
+  settings.jssip_id = SIP.Utils.createRandomToken(5);
 
   // String containing settings.uri without scheme and user.
   hostport_params = settings.uri.clone();
@@ -912,13 +912,13 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Via Host
   if (settings.hack_ip_in_contact) {
-    settings.via_host = JsSIP.Utils.getRandomTestNetIP();
+    settings.via_host = SIP.Utils.getRandomTestNetIP();
   }
 
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new JsSIP.URI('sip', JsSIP.Utils.createRandomToken(8), settings.via_host, null, {transport: 'ws'}),
+    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.via_host, null, {transport: 'ws'}),
     toString: function(options){
       options = options || {};
 
@@ -1045,9 +1045,9 @@ UA.configuration_check = {
       var parsed;
 
       if (!/^sip:/i.test(uri)) {
-        uri = JsSIP.C.SIP + ':' + uri;
+        uri = SIP.C.SIP + ':' + uri;
       }
-      parsed = JsSIP.URI.parse(uri);
+      parsed = SIP.URI.parse(uri);
 
       if(!parsed) {
         return;
@@ -1095,7 +1095,7 @@ UA.configuration_check = {
           return;
         }
 
-        url = JsSIP.Grammar.parse(ws_servers[idx].ws_uri, 'absoluteURI');
+        url = SIP.Grammar.parse(ws_servers[idx].ws_uri, 'absoluteURI');
 
         if(url === -1) {
           this.logger.error('invalid "ws_uri" attribute in ws_servers parameter: ' + ws_servers[idx].ws_uri);
@@ -1121,7 +1121,7 @@ UA.configuration_check = {
   optional: {
 
     authorization_user: function(authorization_user) {
-      if(JsSIP.Grammar.parse('"'+ authorization_user +'"', 'quoted_string') === -1) {
+      if(SIP.Grammar.parse('"'+ authorization_user +'"', 'quoted_string') === -1) {
         return;
       } else {
         return authorization_user;
@@ -1130,7 +1130,7 @@ UA.configuration_check = {
 
     connection_recovery_max_interval: function(connection_recovery_max_interval) {
       var value;
-      if(JsSIP.Utils.isDecimal(connection_recovery_max_interval)) {
+      if(SIP.Utils.isDecimal(connection_recovery_max_interval)) {
         value = window.Number(connection_recovery_max_interval);
         if(value > 0) {
           return value;
@@ -1140,7 +1140,7 @@ UA.configuration_check = {
 
     connection_recovery_min_interval: function(connection_recovery_min_interval) {
       var value;
-      if(JsSIP.Utils.isDecimal(connection_recovery_min_interval)) {
+      if(SIP.Utils.isDecimal(connection_recovery_min_interval)) {
         value = window.Number(connection_recovery_min_interval);
         if(value > 0) {
           return value;
@@ -1149,7 +1149,7 @@ UA.configuration_check = {
     },
 
     display_name: function(display_name) {
-      if(JsSIP.Grammar.parse('"' + display_name + '"', 'display_name') === -1) {
+      if(SIP.Grammar.parse('"' + display_name + '"', 'display_name') === -1) {
         return;
       } else {
         return display_name;
@@ -1173,7 +1173,7 @@ UA.configuration_check = {
         instance_id = 'uuid:' + instance_id;
       }
 
-      if(JsSIP.Grammar.parse(instance_id, 'uuid_URI') === -1) {
+      if(SIP.Grammar.parse(instance_id, 'uuid_URI') === -1) {
         return;
       } else {
         return instance_id;
@@ -1182,7 +1182,7 @@ UA.configuration_check = {
 
     no_answer_timeout: function(no_answer_timeout) {
       var value;
-      if (JsSIP.Utils.isDecimal(no_answer_timeout)) {
+      if (SIP.Utils.isDecimal(no_answer_timeout)) {
         value = window.Number(no_answer_timeout);
         if (value > 0) {
           return value;
@@ -1198,7 +1198,7 @@ UA.configuration_check = {
       if(reliable === 'required') {
         return reliable;
       } else if (reliable === 'supported') {
-        JsSIP.UA.C.SUPPORTED = JsSIP.UA.C.SUPPORTED + ', 100rel';
+        SIP.UA.C.SUPPORTED = SIP.UA.C.SUPPORTED + ', 100rel';
         return reliable;
       } else  {
         return "none";
@@ -1213,7 +1213,7 @@ UA.configuration_check = {
 
     register_expires: function(register_expires) {
       var value;
-      if (JsSIP.Utils.isDecimal(register_expires)) {
+      if (SIP.Utils.isDecimal(register_expires)) {
         value = window.Number(register_expires);
         if (value > 0) {
           return value;
@@ -1225,9 +1225,9 @@ UA.configuration_check = {
       var parsed;
 
       if (!/^sip:/i.test(registrar_server)) {
-        registrar_server = JsSIP.C.SIP + ':' + registrar_server;
+        registrar_server = SIP.C.SIP + ':' + registrar_server;
       }
-      parsed = JsSIP.URI.parse(registrar_server);
+      parsed = SIP.URI.parse(registrar_server);
 
       if(!parsed) {
         return;
@@ -1254,7 +1254,7 @@ UA.configuration_check = {
           stun_server = 'stun:' + stun_server;
         }
 
-        if(JsSIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
+        if(SIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
           return;
         } else {
           stun_servers[idx] = stun_server;
@@ -1287,7 +1287,7 @@ UA.configuration_check = {
           turn_server.server = 'turn:' + turn_server.server;
         }
 
-        if(JsSIP.Grammar.parse(turn_server.server, 'turn_URI') === -1) {
+        if(SIP.Grammar.parse(turn_server.server, 'turn_URI') === -1) {
           return;
         }
       }
@@ -1303,5 +1303,5 @@ UA.configuration_check = {
 };
 
 UA.C = C;
-JsSIP.UA = UA;
-}(JsSIP));
+SIP.UA = UA;
+}(SIP));

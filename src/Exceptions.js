@@ -3,10 +3,10 @@
  */
 
 /**
- * JsSIP Exceptions.
- * @augments JsSIP
+ * SIP Exceptions.
+ * @augments SIP
  */
-(function(JsSIP) {
+(function(SIP) {
 var Exceptions;
 
 Exceptions= {
@@ -43,5 +43,5 @@ Exceptions= {
   }())
 };
 
-JsSIP.Exceptions = Exceptions;
-}(JsSIP));
+SIP.Exceptions = Exceptions;
+}(SIP));

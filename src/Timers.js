@@ -3,9 +3,9 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  */
-(function(JsSIP) {
+(function(SIP) {
 var Timers,
   T1 = 500,
   T2 = 4000,
@@ -27,5 +27,5 @@ Timers = {
   PROVISIONAL_RESPONSE_INTERVAL: 60000  // See RFC 3261 Section 13.3.1.1
 };
 
-JsSIP.Timers = Timers;
-}(JsSIP));
+SIP.Timers = Timers;
+}(SIP));

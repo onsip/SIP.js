@@ -3,12 +3,12 @@
  */
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Transport
- * @param {JsSIP.UA} ua
+ * @param {SIP.UA} ua
  * @param {Object} server ws_server Object
  */
-(function(JsSIP) {
+(function(SIP) {
 var Transport,
   C = {
     // Transport status codes
@@ -38,7 +38,7 @@ Transport = function(ua, server) {
 Transport.prototype = {
   /**
    * Send a message.
-   * @param {JsSIP.OutgoingRequest|String} msg
+   * @param {SIP.OutgoingRequest|String} msg
    * @returns {Boolean}
    */
   send: function(msg) {
@@ -217,34 +217,34 @@ Transport.prototype = {
       }
     }
 
-    message = JsSIP.Parser.parseMessage(data, this.ua);
+    message = SIP.Parser.parseMessage(data, this.ua);
 
     if (!message) {
       return;
     }
 
-    if(this.ua.status === JsSIP.UA.C.STATUS_USER_CLOSED && message instanceof JsSIP.IncomingRequest) {
+    if(this.ua.status === SIP.UA.C.STATUS_USER_CLOSED && message instanceof SIP.IncomingRequest) {
       return;
     }
 
     // Do some sanity check
-    if(JsSIP.sanityCheck(message, this.ua, this)) {
-      if(message instanceof JsSIP.IncomingRequest) {
+    if(SIP.sanityCheck(message, this.ua, this)) {
+      if(message instanceof SIP.IncomingRequest) {
         message.transport = this;
         this.ua.receiveRequest(message);
-      } else if(message instanceof JsSIP.IncomingResponse) {
+      } else if(message instanceof SIP.IncomingResponse) {
         /* Unike stated in 18.1.2, if a response does not match
         * any transaction, it is discarded here and no passed to the core
         * in order to be discarded there.
         */
         switch(message.method) {
-          case JsSIP.C.INVITE:
+          case SIP.C.INVITE:
             transaction = this.ua.transactions.ict[message.via_branch];
             if(transaction) {
               transaction.receiveResponse(message);
             }
             break;
-          case JsSIP.C.ACK:
+          case SIP.C.ACK:
             // Just in case ;-)
             break;
           default:
@@ -290,5 +290,5 @@ Transport.prototype = {
 };
 
 Transport.C = C;
-JsSIP.Transport = Transport;
-}(JsSIP));
+SIP.Transport = Transport;
+}(SIP));

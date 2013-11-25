@@ -1,4 +1,4 @@
-//(function (JsSIP) {
+//(function (SIP) {
 var ServerContext;
 
 ServerContext = function (request, ua) {
@@ -11,13 +11,15 @@ ServerContext = function (request, ua) {
   this.ua = ua;
   this.logger = ua.getLogger('sip.serverTransaction');
   this.request = request;
-  this.transaction = new JsSIP.Transactions.NonInviteServerTransaction(request, ua);
+  this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
 
   this.data = {};
 
+  this.initEvents(events);
+
   if (!ua.checkEvent(request.method.toLowerCase()) || this.ua.listeners(request.method.toLowerCase()).length === 0) {
     // UA is not listening for this.  Reject immediately.
-    request.reply(405, null, ['Allow: '+ JsSIP.Utils.getAllowedMethods(ua)]);
+    request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
   } else {
     // Send a provisional response to stop retransmissions.
     request.reply(180, 'Trying');
@@ -26,7 +28,7 @@ ServerContext = function (request, ua) {
 };
 
 
-ServerContext.prototype = new JsSIP.EventEmitter();
+ServerContext.prototype = new SIP.EventEmitter();
 
 ServerContext.prototype.progress = function (options) {
   options = options || {};
@@ -41,8 +43,8 @@ ServerContext.prototype.progress = function (options) {
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
   this.emit('progress', this, {
-        code: response.status_code,
-        response: response
+        code: statusCode,
+        response: null
       });
 
   return this;
@@ -61,8 +63,8 @@ ServerContext.prototype.accept = function (options) {
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
   this.emit('accepted', this, {
-        code: response.status_code,
-        response: response
+        code: statusCode,
+        response: null
       });
 
   return this;
@@ -81,15 +83,15 @@ ServerContext.prototype.reject = function (options) {
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
   this.emit('rejected', this, {
-        code: response && response.status_code,
-        response: response,
-        cause: cause
-      });
-      this.emit('failed', this, {
-        code: response && response.status_code,
-        response: response,
-        cause: cause
-      });
+    code: statusCode,
+    response: null,
+    cause: reasonPhrase
+  });
+  this.emit('failed', this, {
+    code: statusCode,
+    response: null,
+    cause: reasonPhrase
+  });
 
   return this;
 };
@@ -111,15 +113,15 @@ ServerContext.prototype.onRequestTimeout = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
-            JsSIP.C.causes.REQUEST_TIMEOUT);
+            SIP.C.causes.REQUEST_TIMEOUT);
 };
 
 ServerContext.prototype.onTransportError = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
-            JsSIP.C.causes.CONNECTION_ERROR);
+            SIP.C.causes.CONNECTION_ERROR);
 };
 
-JsSIP.ServerContext = ServerContext;
-//}(JsSIP));
+SIP.ServerContext = ServerContext;
+//}(SIP));

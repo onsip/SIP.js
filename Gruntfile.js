@@ -3,7 +3,7 @@
 module.exports = function(grunt) {
 
   var srcFiles = [
-    'src/JsSIP.js',
+    'src/SIP.js',
     'src/LoggerFactory.js',
     'src/EventEmitter.js',
     'src/Constants.js',
@@ -36,13 +36,13 @@ module.exports = function(grunt) {
     meta: {
       banner: '\
 /*\n\
- * JsSIP version <%= pkg.version %>\n\
+ * SIP version <%= pkg.version %>\n\
  * Copyright (c) 2012-<%= grunt.template.today("yyyy") %> José Luis Millán - Versatica <http://www.versatica.com>\n\
  * Homepage: http://jssip.net\n\
  * License: http://jssip.net/license\n\
  */\n\n\n',
       footer: '\
-\n\n\nwindow.JsSIP = JsSIP;\n\
+\n\n\nwindow.SIP = SIP;\n\
 }(window));\n\n'
     },
     concat: {
@@ -151,7 +151,7 @@ module.exports = function(grunt) {
 
     // First compile JsSIP grammar with PEGjs.
     console.log('"grammar" task: compiling JsSIP PEGjs grammar into Grammar.js ...');
-    child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS -e JsSIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
+    child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS -e SIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
       if (error) {
         sys.print('ERROR: ' + stderr);
         done(false);  // Tell grunt that async task has failed.

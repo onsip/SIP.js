@@ -4,10 +4,10 @@
 
 /**
  * Extract and parse every header of a SIP message.
- * @augments JsSIP
+ * @augments SIP
  * @namespace
  */
-(function(JsSIP) {
+(function(SIP) {
 var Parser;
 
 function getHeader(data, headerStart) {
@@ -84,7 +84,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       }
       break;
     case 'record-route':
-      parsed = JsSIP.Grammar.parse(headerValue, 'Record_Route');
+      parsed = SIP.Grammar.parse(headerValue, 'Record_Route');
 
       if (parsed === -1) {
         parsed = undefined;
@@ -107,7 +107,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       break;
     case 'contact':
     case 'm':
-      parsed = JsSIP.Grammar.parse(headerValue, 'Contact');
+      parsed = SIP.Grammar.parse(headerValue, 'Contact');
 
       if (parsed === -1) {
         parsed = undefined;
@@ -136,7 +136,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       if(parsed) {
         message.cseq = parsed.value;
       }
-      if(message instanceof JsSIP.IncomingResponse) {
+      if(message instanceof SIP.IncomingResponse) {
         message.method = parsed.method;
       }
       break;
@@ -179,7 +179,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
  * @function
  * @param {String} message SIP message.
  * @param {Object} logger object.
- * @returns {JsSIP.IncomingRequest|JsSIP.IncomingResponse|undefined}
+ * @returns {SIP.IncomingRequest|SIP.IncomingResponse|undefined}
  */
 Parser = {};
 Parser.parseMessage = function(data, ua) {
@@ -195,17 +195,17 @@ Parser.parseMessage = function(data, ua) {
 
   // Parse first line. Check if it is a Request or a Reply.
   firstLine = data.substring(0, headerEnd);
-  parsed = JsSIP.Grammar.parse(firstLine, 'Request_Response');
+  parsed = SIP.Grammar.parse(firstLine, 'Request_Response');
 
   if(parsed === -1) {
     logger.warn('error parsing first line of SIP message: "' + firstLine + '"');
     return;
   } else if(!parsed.status_code) {
-    message = new JsSIP.IncomingRequest(ua);
+    message = new SIP.IncomingRequest(ua);
     message.method = parsed.method;
     message.ruri = parsed.uri;
   } else {
-    message = new JsSIP.IncomingResponse(ua);
+    message = new SIP.IncomingResponse(ua);
     message.status_code = parsed.status_code;
     message.reason_phrase = parsed.reason_phrase;
   }
@@ -254,5 +254,5 @@ Parser.parseMessage = function(data, ua) {
   return message;
 };
 
-JsSIP.Parser = Parser;
-}(JsSIP));
+SIP.Parser = Parser;
+}(SIP));

@@ -5,15 +5,15 @@
 
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating a SIP Subscriber.
  */
 
-JsSIP.Subscriber = function(ua) {
+SIP.Subscriber = function(ua) {
   this.logger = ua.getLogger('sip.subscriber')
 };
 
-JsSIP.Subscriber.prototype = {
+SIP.Subscriber.prototype = {
   /**
    * @private
    */
@@ -73,11 +73,11 @@ JsSIP.Subscriber.prototype = {
     }
 
     subscriber = this;
-    from_tag = JsSIP.Utils.newTag();
+    from_tag = SIP.Utils.newTag();
 
     new function() {
       this.request = subscriber.createSubscribeRequest(null,{from_tag:from_tag});
-      var request_sender = new JsSIP.RequestSender(this, subscriber.ua);
+      var request_sender = new SIP.RequestSender(this, subscriber.ua);
 
       this.receiveResponse = function(response) {
         switch(true) {
@@ -102,10 +102,10 @@ JsSIP.Subscriber.prototype = {
 
               if (!expires) {
                 this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
-                subscriber.onFailure(null, JsSIP.C.EXPIRES_HEADER_MISSING);
+                subscriber.onFailure(null, SIP.C.EXPIRES_HEADER_MISSING);
               } else {
                 this.logger.warn('Expires header in a 200-class response to SUBSCRIBE with a higher value than the indicated in the request');
-                subscriber.onFailure(null, JsSIP.C.INVALID_EXPIRES_HEADER);
+                subscriber.onFailure(null, SIP.C.INVALID_EXPIRES_HEADER);
               }
             }
             break;
@@ -117,11 +117,11 @@ JsSIP.Subscriber.prototype = {
       };
 
       this.onRequestTimeout = function() {
-        subscriber.onFailure(null, JsSIP.C.causes.REQUEST_TIMEOUT);
+        subscriber.onFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
       };
 
       this.onTransportError = function() {
-        subscriber.onFailure(null, JsSIP.C.causes.CONNECTION_ERROR);
+        subscriber.onFailure(null, SIP.C.causes.CONNECTION_ERROR);
       };
 
       this.send = function() {
@@ -130,7 +130,7 @@ JsSIP.Subscriber.prototype = {
         subscriber.state = 'notify_wait';
         subscriber.N = window.setTimeout(
           function() {subscriber.timer_N();},
-          (JsSIP.Timers.T1 * 64)
+          (SIP.Timers.T1 * 64)
         );
         request_sender.send();
       };
@@ -144,8 +144,8 @@ JsSIP.Subscriber.prototype = {
   },
 
   /**
-  * Every Session needs a 'terminate' method in order to be called by JsSIP.UA
-  * when user fires JsSIP.UA.close()
+  * Every Session needs a 'terminate' method in order to be called by SIP.UA
+  * when user fires SIP.UA.close()
   * @private
   */
   terminate: function() {
@@ -178,7 +178,7 @@ JsSIP.Subscriber.prototype = {
       case 'active':
         //create the subscription.
         window.clearTimeout(this.N);
-        new JsSIP.Subscription(this, request, subscription_state.state, expires);
+        new SIP.Subscription(this, request, subscription_state.state, expires);
         break;
       case 'terminated':
         if (subscription_state.reason) {
@@ -221,10 +221,10 @@ JsSIP.Subscriber.prototype = {
 };
 
 /**
- * @augments JsSIP
+ * @augments SIP
  * @class Class creating a SIP Subscription.
  */
-JsSIP.Subscription = function (subscriber, request, state, expires) {
+SIP.Subscription = function (subscriber, request, state, expires) {
 
     this.id = null;
     this.subscriber = subscriber;
@@ -253,7 +253,7 @@ JsSIP.Subscription = function (subscriber, request, state, expires) {
     }
 };
 
-JsSIP.Subscription.prototype = {
+SIP.Subscription.prototype = {
   /**
   * @private
   */
@@ -289,7 +289,7 @@ JsSIP.Subscription.prototype = {
     remote_tag = (type === 'UAS') ? message.from_tag : message.to_tag;
     id = message.call_id + local_tag + remote_tag;
 
-    dialog = new JsSIP.Dialog(this, message, type);
+    dialog = new SIP.Dialog(this, message, type);
 
     if(dialog) {
       this.dialog = dialog;
@@ -323,7 +323,7 @@ JsSIP.Subscription.prototype = {
       return;
     }
 
-    request.reply(200, JsSIP.C.REASON_200, [
+    request.reply(200, SIP.C.REASON_200, [
       'Contact: <'+ this.subscriber.contact +'>'
     ]);
 
@@ -359,7 +359,7 @@ JsSIP.Subscription.prototype = {
     new function() {
       this.request = subscription.subscriber.createSubscribeRequest(subscription.dialog);
 
-      var request_sender = new JsSIP.RequestSender(this, subscription.subscriber.ua);
+      var request_sender = new SIP.RequestSender(this, subscription.subscriber.ua);
 
       this.receiveResponse = function(response) {
         if (subscription.error_codes.indexOf(response.status_code) !== -1) {
@@ -383,10 +383,10 @@ JsSIP.Subscription.prototype = {
 
                 if (!expires) {
                   this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
-                  subscription.subscriber.onFailure(null, JsSIP.C.EXPIRES_HEADER_MISSING);
+                  subscription.subscriber.onFailure(null, SIP.C.EXPIRES_HEADER_MISSING);
                 } else {
                   this.logger.warn('Expires header in a 200-class response to SUBSCRIBE with a higher value than the indicated in the request');
-                  subscription.subscriber.onFailure(null, JsSIP.C.INVALID_EXPIRES_HEADER);
+                  subscription.subscriber.onFailure(null, SIP.C.INVALID_EXPIRES_HEADER);
                 }
               }
               break;
@@ -402,17 +402,17 @@ JsSIP.Subscription.prototype = {
         window.clearTimeout(subscription.N);
         subscription.N = window.setTimeout(
           function() {subscription.timer_N();},
-          (JsSIP.Timers.T1 * 64)
+          (SIP.Timers.T1 * 64)
         );
         request_sender.send();
       };
 
       this.onRequestTimeout = function() {
-        subscription.subscriber.onFailure(null, JsSIP.C.causes.REQUEST_TIMEOUT);
+        subscription.subscriber.onFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
       };
 
       this.onTransportError = function() {
-        subscription.subscriber.onFailure(null, JsSIP.C.causes.CONNECTION_ERROR);
+        subscription.subscriber.onFailure(null, SIP.C.causes.CONNECTION_ERROR);
       };
 
       this.send();
@@ -428,7 +428,7 @@ JsSIP.Subscription.prototype = {
       this.request = subscription.subscriber.createSubscribeRequest(subscription.dialog);
       this.request.setHeader('Expires', 0);
 
-      var request_sender = new JsSIP.RequestSender(this, subscription.subscriber.ua);
+      var request_sender = new SIP.RequestSender(this, subscription.subscriber.ua);
 
       //Don't care about response.
       this.receiveResponse = function(){};
@@ -437,16 +437,16 @@ JsSIP.Subscription.prototype = {
         window.clearTimeout(subscription.N);
         subscription.N = window.setTimeout(
           function() {subscription.timer_N();},
-          (JsSIP.Timers.T1 * 64)
+          (SIP.Timers.T1 * 64)
         );
         request_sender.send();
       };
 
       this.onRequestTimeout = function() {
-        subscription.subscriber.onFailure(null, JsSIP.C.causes.REQUEST_TIMEOUT);
+        subscription.subscriber.onFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
       };
       this.onTransportError = function() {
-        subscription.subscriber.onFailure(null, JsSIP.C.causes.CONNECTION_ERROR);
+        subscription.subscriber.onFailure(null, SIP.C.causes.CONNECTION_ERROR);
       };
 
       this.send();
