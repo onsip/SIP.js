@@ -19,7 +19,7 @@ var Transport,
 
 Transport = function(ua, server) {
 
-  this.logger = ua.getLogger('jssip.transport');
+  this.logger = ua.getLogger('sip.transport');
   this.ua = ua;
   this.ws = null;
   this.server = server;

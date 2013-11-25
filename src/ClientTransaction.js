@@ -9,7 +9,7 @@ ClientTransaction = function (method, target, options, ua) {
     'failed'
   ];
   this.ua = ua;
-  this.logger = ua.getLogger('jssip.clienttransaction');
+  this.logger = ua.getLogger('sip.clienttransaction');
   this.method = method;
   this.target = target;
   this.options = options || {};

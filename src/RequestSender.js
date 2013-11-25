@@ -13,7 +13,7 @@
 var RequestSender;
 
 RequestSender = function(applicant, ua) {
-  this.logger = ua.getLogger('jssip.requestsender');
+  this.logger = ua.getLogger('sip.requestsender');
   this.ua = ua;
   this.applicant = applicant;
   this.method = applicant.request.method;

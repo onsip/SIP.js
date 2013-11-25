@@ -9,7 +9,7 @@ ServerTransaction = function (request, ua) {
     'failed'
   ];
   this.ua = ua;
-  this.logger = ua.getLogger('jssip.serverTransaction');
+  this.logger = ua.getLogger('sip.serverTransaction');
   this.request = request;
   this.transaction = new JsSIP.Transactions.NonInviteServerTransaction(request, ua);
 

@@ -84,7 +84,7 @@ Dialog = function(owner, message, type, state) {
     }
   }
 
-  this.logger = owner.ua.getLogger('jssip.dialog', this.id.toString());
+  this.logger = owner.ua.getLogger('sip.dialog', this.id.toString());
   this.owner = owner;
   owner.ua.dialogs[this.id.toString()] = this;
   this.logger.log('new ' + type + ' dialog created with status ' + (this.state === C.STATUS_EARLY ? 'EARLY': 'CONFIRMED'));

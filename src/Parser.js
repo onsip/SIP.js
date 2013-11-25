@@ -186,7 +186,7 @@ Parser.parseMessage = function(data, ua) {
   var message, firstLine, contentLength, bodyStart, parsed,
     headerStart = 0,
     headerEnd = data.indexOf('\r\n'),
-    logger = ua.getLogger('jssip.parser');
+    logger = ua.getLogger('sip.parser');
 
   if(headerEnd === -1) {
     logger.warn('no CRLF found, not a SIP message, discarded');

@@ -17,7 +17,7 @@ var Request = function(session) {
 
   this.owner = session;
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.request', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.request', session.id);
   this.initEvents(events);
 };
 Request.prototype = new JsSIP.EventEmitter();

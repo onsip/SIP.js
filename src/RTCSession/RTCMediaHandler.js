@@ -12,7 +12,7 @@
 var RTCMediaHandler = function(session, constraints) {
   this.constraints = constraints || {};
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.rtcmediahandler', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.rtcmediahandler', session.id);
   this.session = session;
   this.localMedia = null;
   this.peerConnection = null;

@@ -35,7 +35,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
     return null;
   }
 
-  this.logger = ua.getLogger('jssip.sipmessage');
+  this.logger = ua.getLogger('sip.sipmessage');
   this.headers = {};
   this.method = method;
   this.ruri = ruri;
@@ -290,7 +290,7 @@ IncomingMessage.prototype = {
  * @class Class for incoming SIP request.
  */
 IncomingRequest = function(ua) {
-  this.logger = ua.getLogger('jssip.sipmessage');
+  this.logger = ua.getLogger('sip.sipmessage');
   this.headers = {};
   this.ruri = null;
   this.transport = null;
@@ -424,7 +424,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
  * @class Class for incoming SIP response.
  */
 IncomingResponse = function(ua) {
-  this.logger = ua.getLogger('jssip.sipmessage');
+  this.logger = ua.getLogger('sip.sipmessage');
   this.headers = {};
   this.status_code = null;
   this.reason_phrase = null;

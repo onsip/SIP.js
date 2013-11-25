@@ -23,7 +23,7 @@ DTMF = function(session) {
   'failed'
   ];
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.dtmf', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.dtmf', session.id);
   this.owner = session;
   this.direction = null;
   this.tone = null;

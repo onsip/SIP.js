@@ -652,7 +652,7 @@ RTCSession.prototype.init_incoming = function(request) {
   this.request = request;
   this.contact = this.ua.contact.toString();
 
-  this.logger = this.ua.getLogger('jssip.rtcsession', this.id);
+  this.logger = this.ua.getLogger('sip.rtcsession', this.id);
 
   //Save the session into the ua sessions collection.
   this.ua.sessions[this.id] = this;
@@ -814,7 +814,7 @@ RTCSession.prototype.connect = function(target, options) {
 
   this.id = this.request.call_id + this.from_tag;
 
-  this.logger = this.ua.getLogger('jssip.rtcsession', this.id);
+  this.logger = this.ua.getLogger('sip.rtcsession', this.id);
 
   this.rtcMediaHandler = new RTCMediaHandler(this, RTCConstraints);
   //Save the session into the ua sessions collection.

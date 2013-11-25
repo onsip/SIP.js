@@ -68,7 +68,7 @@ UA = function(configuration) {
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
 
   this.log = new JsSIP.LoggerFactory();
-  this.logger = this.getLogger('jssip.ua');
+  this.logger = this.getLogger('sip.ua');
 
   this.cache = {
     credentials: {}

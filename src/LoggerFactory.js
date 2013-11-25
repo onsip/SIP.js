@@ -18,7 +18,7 @@ var LoggerFactory = function() {
 
     this.loggers = {};
 
-    logger = this.getLogger('jssip.loggerfactory');
+    logger = this.getLogger('sip.loggerfactory');
 
 
   Object.defineProperties(this, {

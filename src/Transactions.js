@@ -42,7 +42,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
   this.request_sender = request_sender;
   this.request = request;
 
-  this.logger = request_sender.ua.getLogger('jssip.transaction.nict', this.id);
+  this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
@@ -145,7 +145,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
   this.request_sender = request_sender;
   this.request = request;
 
-  this.logger = request_sender.ua.getLogger('jssip.transaction.ict', this.id);
+  this.logger = request_sender.ua.getLogger('sip.transaction.ict', this.id);
 
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
@@ -333,7 +333,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
   this.request_sender = request_sender;
   this.request = request;
 
-  this.logger = request_sender.ua.getLogger('jssip.transaction.nict', this.id);
+  this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
@@ -371,7 +371,7 @@ var NonInviteServerTransaction = function(request, ua) {
   this.last_response = '';
   request.server_transaction = this;
 
-  this.logger = ua.getLogger('jssip.transaction.nist', this.id);
+  this.logger = ua.getLogger('sip.transaction.nist', this.id);
 
   this.state = C.STATUS_TRYING;
 
@@ -472,7 +472,7 @@ var InviteServerTransaction = function(request, ua) {
   this.last_response = '';
   request.server_transaction = this;
 
-  this.logger = ua.getLogger('jssip.transaction.ist', this.id);
+  this.logger = ua.getLogger('sip.transaction.ist', this.id);
 
   this.state = C.STATUS_PROCEEDING;
 
