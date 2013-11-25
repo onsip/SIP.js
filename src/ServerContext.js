@@ -1,7 +1,7 @@
 //(function (JsSIP) {
-var ServerTransaction;
+var ServerContext;
 
-ServerTransaction = function (request, ua) {
+ServerContext = function (request, ua) {
   var events = [
     'progress',
     'accepted',
@@ -26,9 +26,9 @@ ServerTransaction = function (request, ua) {
 };
 
 
-ServerTransaction.prototype = new JsSIP.EventEmitter();
+ServerContext.prototype = new JsSIP.EventEmitter();
 
-ServerTransaction.prototype.progress = function (options) {
+ServerContext.prototype.progress = function (options) {
   options = options || {};
   var
     statusCode = options.statusCode || 180,
@@ -48,7 +48,7 @@ ServerTransaction.prototype.progress = function (options) {
   return this;
 };
 
-ServerTransaction.prototype.accept = function (options) {
+ServerContext.prototype.accept = function (options) {
   options = options || {};
   var
     statusCode = options.statusCode || 200,
@@ -68,7 +68,7 @@ ServerTransaction.prototype.accept = function (options) {
   return this;
 };
 
-ServerTransaction.prototype.reject = function (options) {
+ServerContext.prototype.reject = function (options) {
   options = options || {};
   var
     statusCode = options.statusCode || 480,
@@ -94,7 +94,7 @@ ServerTransaction.prototype.reject = function (options) {
   return this;
 };
 
-ServerTransaction.prototype.reply = function (options) {
+ServerContext.prototype.reply = function (options) {
   options = options || {};
   var
     statusCode = options.statusCode,
@@ -107,19 +107,19 @@ ServerTransaction.prototype.reply = function (options) {
   return this;
 };
 
-ServerTransaction.prototype.onRequestTimeout = function () {
+ServerContext.prototype.onRequestTimeout = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
             JsSIP.C.causes.REQUEST_TIMEOUT);
 };
 
-ServerTransaction.prototype.onTransportError = function () {
+ServerContext.prototype.onTransportError = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
             JsSIP.C.causes.CONNECTION_ERROR);
 };
 
-JsSIP.XServerTransaction = ServerTransaction;
+JsSIP.ServerContext = ServerContext;
 //}(JsSIP));

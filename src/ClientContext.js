@@ -1,7 +1,7 @@
 (function (JsSIP) {
-var ClientTransaction;
+var ClientContext;
 
-ClientTransaction = function (method, target, options, ua) {
+ClientContext = function (method, target, options, ua) {
   var events = [
     'progress',
     'accepted',
@@ -18,9 +18,9 @@ ClientTransaction = function (method, target, options, ua) {
 
   this.initEvents(events);
 };
-ClientTransaction.prototype = new JsSIP.EventEmitter();
+ClientContext.prototype = new JsSIP.EventEmitter();
 
-ClientTransaction.prototype.send = function () {
+ClientContext.prototype.send = function () {
   var request_sender, extraHeaders, body,
     originalTarget = this.target;
 
@@ -50,7 +50,7 @@ ClientTransaction.prototype.send = function () {
   request_sender.send();
 };
 
-ClientTransaction.prototype.receiveResponse = function (response) {
+ClientContext.prototype.receiveResponse = function (response) {
   var cause;
 
   switch(true) {
@@ -87,19 +87,19 @@ ClientTransaction.prototype.receiveResponse = function (response) {
 
 };
 
-ClientTransaction.prototype.onRequestTimeout = function () {
+ClientContext.prototype.onRequestTimeout = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
             JsSIP.C.causes.REQUEST_TIMEOUT);
 };
 
-ClientTransaction.prototype.onTransportError = function () {
+ClientContext.prototype.onTransportError = function () {
   this.emit('failed',
             /* Status code */ 0,
             /* Response */ null,
             JsSIP.C.causes.CONNECTION_ERROR);
 };
 
-JsSIP.XClientTransaction = ClientTransaction;
+JsSIP.ClientContext = ClientContext;
 }(JsSIP));

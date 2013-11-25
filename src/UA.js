@@ -259,7 +259,7 @@ UA.prototype.sendMessage = function(target, body, options) {
 };
 
 UA.prototype.request = function (method, target, options) {
-  var transaction = new JsSIP.XClientTransaction(method, target, options, this);
+  var transaction = new JsSIP.ClientContext(method, target, options, this);
   transaction.send();
 
   transaction.on('progress', function (e) {
@@ -576,7 +576,7 @@ UA.prototype.receiveRequest = function(request) {
              method !== JsSIP.C.CANCEL &&
              method !== JsSIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new JsSIP.XServerTransaction(request, this);
+    transaction = new JsSIP.ServerContext(request, this);
     
     transaction.on('progress', function (e) {
       console.log('Progress request: ' + e.data.code + ' ' + e.data.response.method);
