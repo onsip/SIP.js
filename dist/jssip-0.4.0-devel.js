@@ -81,7 +81,7 @@ var LoggerFactory = function() {
 
     this.loggers = {};
 
-    logger = this.getLogger('jssip.loggerfactory');
+    logger = this.getLogger('sip.loggerfactory');
 
 
   Object.defineProperties(this, {
@@ -223,7 +223,7 @@ SIP.LoggerFactory = LoggerFactory;
 var
   EventEmitter,
   Event,
-  logger = new SIP.LoggerFactory().getLogger('jssip.eventemitter'),
+  logger = new SIP.LoggerFactory().getLogger('sip.eventemitter'),
   C = {
     MAX_LISTENERS: 10
   };
@@ -235,6 +235,13 @@ EventEmitter.prototype = {
    * @param {Array} events
    */
   initEvents: function(events) {
+    this.events = {};
+    this.oneTimeListeners = {};
+
+    this.initMoreEvents(events);
+  },
+
+  initMoreEvents: function(events) {
     var idx;
 
     if (!this.logger) {
@@ -243,13 +250,14 @@ EventEmitter.prototype = {
 
     this.maxListeners = C.MAX_LISTENERS;
 
-    this.events = {};
-    this.oneTimeListeners = {};
-
-    for (idx in events) {
-      this.logger.log('adding event '+ events[idx]);
-      this.events[events[idx]] = [];
-      this.oneTimeListeners[events[idx]] = [];
+    for (idx = 0; idx < events.length; idx++) {
+      if (!this.events[events[idx]]) {
+        this.logger.log('adding event '+ events[idx]);
+        this.events[events[idx]] = [];
+        this.oneTimeListeners[events[idx]] = [];
+      } else {
+        this.logger.log('skipping event '+ events[idx]+ ' - Event exists');
+      }
     }
   },
 
@@ -690,7 +698,7 @@ var Transport,
 
 Transport = function(ua, server) {
 
-  this.logger = ua.getLogger('jssip.transport');
+  this.logger = ua.getLogger('sip.transport');
   this.ua = ua;
   this.ws = null;
   this.server = server;
@@ -1154,7 +1162,7 @@ Parser.parseMessage = function(data, ua) {
   var message, firstLine, contentLength, bodyStart, parsed,
     headerStart = 0,
     headerEnd = data.indexOf('\r\n'),
-    logger = ua.getLogger('jssip.parser');
+    logger = ua.getLogger('sip.parser');
 
   if(headerEnd === -1) {
     logger.warn('no CRLF found, not a SIP message, discarded');
@@ -1264,7 +1272,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
     return null;
   }
 
-  this.logger = ua.getLogger('jssip.sipmessage');
+  this.logger = ua.getLogger('sip.sipmessage');
   this.headers = {};
   this.method = method;
   this.ruri = ruri;
@@ -1519,7 +1527,7 @@ IncomingMessage.prototype = {
  * @class Class for incoming SIP request.
  */
 IncomingRequest = function(ua) {
-  this.logger = ua.getLogger('jssip.sipmessage');
+  this.logger = ua.getLogger('sip.sipmessage');
   this.headers = {};
   this.ruri = null;
   this.transport = null;
@@ -1653,7 +1661,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
  * @class Class for incoming SIP response.
  */
 IncomingResponse = function(ua) {
-  this.logger = ua.getLogger('jssip.sipmessage');
+  this.logger = ua.getLogger('sip.sipmessage');
   this.headers = {};
   this.status_code = null;
   this.reason_phrase = null;
@@ -2047,7 +2055,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
   this.request_sender = request_sender;
   this.request = request;
 
-  this.logger = request_sender.ua.getLogger('jssip.transaction.nict', this.id);
+  this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
@@ -2150,7 +2158,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
   this.request_sender = request_sender;
   this.request = request;
 
-  this.logger = request_sender.ua.getLogger('jssip.transaction.ict', this.id);
+  this.logger = request_sender.ua.getLogger('sip.transaction.ict', this.id);
 
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
@@ -2338,7 +2346,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
   this.request_sender = request_sender;
   this.request = request;
 
-  this.logger = request_sender.ua.getLogger('jssip.transaction.nict', this.id);
+  this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
@@ -2376,7 +2384,7 @@ var NonInviteServerTransaction = function(request, ua) {
   this.last_response = '';
   request.server_transaction = this;
 
-  this.logger = ua.getLogger('jssip.transaction.nist', this.id);
+  this.logger = ua.getLogger('sip.transaction.nist', this.id);
 
   this.state = C.STATUS_TRYING;
 
@@ -2477,7 +2485,7 @@ var InviteServerTransaction = function(request, ua) {
   this.last_response = '';
   request.server_transaction = this;
 
-  this.logger = ua.getLogger('jssip.transaction.ist', this.id);
+  this.logger = ua.getLogger('sip.transaction.ist', this.id);
 
   this.state = C.STATUS_PROCEEDING;
 
@@ -2832,7 +2840,7 @@ var RTCMediaHandler = /**
 var RTCMediaHandler = function(session, constraints) {
   this.constraints = constraints || {};
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.rtcmediahandler', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.rtcmediahandler', session.id);
   this.session = session;
   this.localMedia = null;
   this.peerConnection = null;
@@ -3109,7 +3117,7 @@ Dialog = function(owner, message, type, state) {
     }
   }
 
-  this.logger = owner.ua.getLogger('jssip.dialog', this.id.toString());
+  this.logger = owner.ua.getLogger('sip.dialog', this.id.toString());
   this.owner = owner;
   owner.ua.dialogs[this.id.toString()] = this;
   this.logger.log('new ' + type + ' dialog created with status ' + (this.state === C.STATUS_EARLY ? 'EARLY': 'CONFIRMED'));
@@ -3273,7 +3281,7 @@ SIP.Dialog = Dialog;
 var RequestSender;
 
 RequestSender = function(applicant, ua) {
-  this.logger = ua.getLogger('jssip.requestsender');
+  this.logger = ua.getLogger('sip.requestsender');
   this.ua = ua;
   this.applicant = applicant;
   this.method = applicant.request.method;
@@ -3415,7 +3423,7 @@ var Registrator;
 Registrator = function(ua, transport) {
   var reg_id=1; //Force reg_id to 1.
 
-  this.logger = ua.getLogger('jssip.registrator');
+  this.logger = ua.getLogger('sip.registrator');
 
   this.ua = ua;
   this.transport = transport;
@@ -3750,7 +3758,7 @@ var Request = function(session) {
 
   this.owner = session;
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.request', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.request', session.id);
   this.initEvents(events);
 };
 Request.prototype = new SIP.EventEmitter();
@@ -3870,7 +3878,7 @@ var RTCMediaHandler = /**
 var RTCMediaHandler = function(session, constraints) {
   this.constraints = constraints || {};
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.rtcmediahandler', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.rtcmediahandler', session.id);
   this.session = session;
   this.localMedia = null;
   this.peerConnection = null;
@@ -4103,7 +4111,7 @@ DTMF = function(session) {
   'failed'
   ];
 
-  this.logger = session.ua.getLogger('jssip.rtcsession.dtmf', session.id);
+  this.logger = session.ua.getLogger('sip.rtcsession.dtmf', session.id);
   this.owner = session;
   this.direction = null;
   this.tone = null;
@@ -4918,7 +4926,7 @@ RTCSession.prototype.init_incoming = function(request) {
   this.request = request;
   this.contact = this.ua.contact.toString();
 
-  this.logger = this.ua.getLogger('jssip.rtcsession', this.id);
+  this.logger = this.ua.getLogger('sip.rtcsession', this.id);
 
   //Save the session into the ua sessions collection.
   this.ua.sessions[this.id] = this;
@@ -5080,7 +5088,7 @@ RTCSession.prototype.connect = function(target, options) {
 
   this.id = this.request.call_id + this.from_tag;
 
-  this.logger = this.ua.getLogger('jssip.rtcsession', this.id);
+  this.logger = this.ua.getLogger('sip.rtcsession', this.id);
 
   this.rtcMediaHandler = new RTCMediaHandler(this, RTCConstraints);
   //Save the session into the ua sessions collection.
@@ -6056,7 +6064,7 @@ var Message;
 
 Message = function(ua) {
   this.ua = ua;
-  this.logger = ua.getLogger('jssip.message');
+  this.logger = ua.getLogger('sip.message');
   this.direction = null;
   this.local_identity = null;
   this.remote_identity = null;
@@ -6284,14 +6292,14 @@ ClientContext = function (method, target, options, ua) {
     'failed'
   ];
   this.ua = ua;
-  this.logger = ua.getLogger('jssip.clienttransaction');
+  this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
   this.target = target;
   this.options = options || {};
 
   this.data = {};
 
-  this.initEvents(events);
+  this.initMoreEvents(events);
 };
 ClientContext.prototype = new SIP.EventEmitter();
 
@@ -6381,35 +6389,36 @@ SIP.ClientContext = ClientContext;
 
 
 
-//(function (SIP) {
+(function (SIP) {
 var ServerContext;
 
 ServerContext = function (request, ua) {
   var events = [
-    'progress',
-    'accepted',
-    'rejected',
-    'failed'
-  ];
+      'progress',
+      'accepted',
+      'rejected',
+      'failed'
+    ],
+    methodLower = request.method.toLowerCase();
   this.ua = ua;
-  this.logger = ua.getLogger('jssip.serverTransaction');
+  this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
   this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
 
   this.data = {};
 
-  this.initEvents(events);
+  this.initMoreEvents(events);
 
-  if (!ua.checkEvent(request.method.toLowerCase()) || this.ua.listeners(request.method.toLowerCase()).length === 0) {
+  if (!ua.checkEvent(methodLower) ||
+      ua.listeners(methodLower).length === 0) {
     // UA is not listening for this.  Reject immediately.
     request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
   } else {
     // Send a provisional response to stop retransmissions.
     request.reply(180, 'Trying');
-    this.ua.emit(request.method.toLowerCase(), this.ua, this);
+    ua.emit(methodLower, ua, this);
   }
 };
-
 
 ServerContext.prototype = new SIP.EventEmitter();
 
@@ -6507,7 +6516,7 @@ ServerContext.prototype.onTransportError = function () {
 };
 
 SIP.ServerContext = ServerContext;
-//}(SIP));
+}(SIP));
 
 
 
@@ -6581,7 +6590,7 @@ UA = function(configuration) {
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
 
   this.log = new SIP.LoggerFactory();
-  this.logger = this.getLogger('jssip.ua');
+  this.logger = this.getLogger('sip.ua');
 
   this.cache = {
     credentials: {}
@@ -6775,17 +6784,6 @@ UA.prototype.request = function (method, target, options) {
   var transaction = new SIP.ClientContext(method, target, options, this);
   transaction.send();
 
-  transaction.on('progress', function (e) {
-    console.log('Progress response received: ' + e.data.code + ' ' + e.data.response.method);
-  });
-  transaction.on('accepted', function (e) {
-    console.log('Success response received: ' + e.data.code + ' ' + e.data.response.method);
-  });
-  transaction.on('failed', function (e) {
-    console.log('Failed response received: ' + e.data.code +
-                ' ' + (e.data.response && e.data.response.method) +
-                ' Cause: ' + e.data.cause);
-  });
   return transaction;
 };
 
@@ -7830,6 +7828,19 @@ var Utils;
 
 Utils= {
 
+  augment: function (object, constructor, args) {
+    var idx, proto;
+
+    // Add public properties from constructor's prototype onto object
+    proto = constructor.prototype;
+    for (idx in proto) {
+      object[idx] = proto[idx];
+    }
+
+    // Construct the object as though it were just created by constructor
+    constructor.apply(object, args);
+  },
+
   str_utf8_length: function(string) {
     return window.unescape(encodeURIComponent(string)).length;
   },
@@ -8426,7 +8437,7 @@ sanityCheck = function(m, u, t) {
   ua = u;
   transport = t;
 
-  logger = ua.getLogger('jssip.sanitycheck');
+  logger = ua.getLogger('sip.sanitycheck');
 
   len = all.length;
   while(len--) {

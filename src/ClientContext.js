@@ -9,14 +9,14 @@ ClientContext = function (method, target, options, ua) {
     'failed'
   ];
   this.ua = ua;
-  this.logger = ua.getLogger('sip.clienttransaction');
+  this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
   this.target = target;
   this.options = options || {};
 
   this.data = {};
 
-  this.initEvents(events);
+  this.initMoreEvents(events);
 };
 ClientContext.prototype = new SIP.EventEmitter();
 

@@ -7,6 +7,19 @@ var Utils;
 
 Utils= {
 
+  augment: function (object, constructor, args) {
+    var idx, proto;
+
+    // Add public properties from constructor's prototype onto object
+    proto = constructor.prototype;
+    for (idx in proto) {
+      object[idx] = proto[idx];
+    }
+
+    // Construct the object as though it were just created by constructor
+    constructor.apply(object, args);
+  },
+
   str_utf8_length: function(string) {
     return window.unescape(encodeURIComponent(string)).length;
   },

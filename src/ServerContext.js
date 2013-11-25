@@ -1,32 +1,33 @@
-//(function (SIP) {
+(function (SIP) {
 var ServerContext;
 
 ServerContext = function (request, ua) {
   var events = [
-    'progress',
-    'accepted',
-    'rejected',
-    'failed'
-  ];
+      'progress',
+      'accepted',
+      'rejected',
+      'failed'
+    ],
+    methodLower = request.method.toLowerCase();
   this.ua = ua;
-  this.logger = ua.getLogger('sip.serverTransaction');
+  this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
   this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
 
   this.data = {};
 
-  this.initEvents(events);
+  this.initMoreEvents(events);
 
-  if (!ua.checkEvent(request.method.toLowerCase()) || this.ua.listeners(request.method.toLowerCase()).length === 0) {
+  if (!ua.checkEvent(methodLower) ||
+      ua.listeners(methodLower).length === 0) {
     // UA is not listening for this.  Reject immediately.
     request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
   } else {
     // Send a provisional response to stop retransmissions.
     request.reply(180, 'Trying');
-    this.ua.emit(request.method.toLowerCase(), this.ua, this);
+    ua.emit(methodLower, ua, this);
   }
 };
-
 
 ServerContext.prototype = new SIP.EventEmitter();
 
@@ -124,4 +125,4 @@ ServerContext.prototype.onTransportError = function () {
 };
 
 SIP.ServerContext = ServerContext;
-//}(SIP));
+}(SIP));

@@ -262,17 +262,6 @@ UA.prototype.request = function (method, target, options) {
   var transaction = new SIP.ClientContext(method, target, options, this);
   transaction.send();
 
-  transaction.on('progress', function (e) {
-    console.log('Progress response received: ' + e.data.code + ' ' + e.data.response.method);
-  });
-  transaction.on('accepted', function (e) {
-    console.log('Success response received: ' + e.data.code + ' ' + e.data.response.method);
-  });
-  transaction.on('failed', function (e) {
-    console.log('Failed response received: ' + e.data.code +
-                ' ' + (e.data.response && e.data.response.method) +
-                ' Cause: ' + e.data.cause);
-  });
   return transaction;
 };
 

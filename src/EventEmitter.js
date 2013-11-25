@@ -22,6 +22,13 @@ EventEmitter.prototype = {
    * @param {Array} events
    */
   initEvents: function(events) {
+    this.events = {};
+    this.oneTimeListeners = {};
+
+    this.initMoreEvents(events);
+  },
+
+  initMoreEvents: function(events) {
     var idx;
 
     if (!this.logger) {
@@ -30,13 +37,14 @@ EventEmitter.prototype = {
 
     this.maxListeners = C.MAX_LISTENERS;
 
-    this.events = {};
-    this.oneTimeListeners = {};
-
-    for (idx in events) {
-      this.logger.log('adding event '+ events[idx]);
-      this.events[events[idx]] = [];
-      this.oneTimeListeners[events[idx]] = [];
+    for (idx = 0; idx < events.length; idx++) {
+      if (!this.events[events[idx]]) {
+        this.logger.log('adding event '+ events[idx]);
+        this.events[events[idx]] = [];
+        this.oneTimeListeners[events[idx]] = [];
+      } else {
+        this.logger.log('skipping event '+ events[idx]+ ' - Event exists');
+      }
     }
   },
 
