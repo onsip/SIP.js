@@ -3407,78 +3407,58 @@ SIP.RequestSender = RequestSender;
 
 
 
-/**
- * @fileoverview Registrator Agent
- */
+(function (SIP) {
 
-/**
- * @augments SIP
- * @class Class creating a registrator agent.
- * @param {SIP.UA} ua
- * @param {SIP.Transport} transport
- */
-(function(SIP) {
-var Registrator;
+var RegisterContext;
 
-Registrator = function(ua, transport) {
-  var reg_id=1; //Force reg_id to 1.
-
-  this.logger = ua.getLogger('sip.registrator');
-
-  this.ua = ua;
-  this.transport = transport;
+RegisterContext = function (ua) {
+  var regId = 1,
+    events = [
+      'registered',
+      'unregistered'
+    ];
 
   this.registrar = ua.configuration.registrar_server;
   this.expires = ua.configuration.register_expires;
+
+  // Extends ClientContext
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar]);
 
   // Call-ID and CSeq values RFC3261 10.2
   this.call_id = SIP.Utils.createRandomToken(22);
   this.cseq = 80;
 
-  // this.to_uri
   this.to_uri = ua.configuration.uri;
 
   this.registrationTimer = null;
 
   // Set status
-  this.registered = this.registered_before = false;
+  this.registered = false;
 
   // Save into ua instance
-  this.ua.registrator = this;
+  ua.registrationContext = this;
 
   // Contact header
-  this.contact = this.ua.contact.toString();
+  this.contact = ua.contact.toString();
 
-  if(reg_id) {
-    this.contact += ';reg-id='+ reg_id;
-    this.contact += ';+sip.instance="<urn:uuid:'+ this.ua.configuration.instance_id+'>"';
+  if(regId) {
+    this.contact += ';reg-id='+ regId;
+    this.contact += ';+sip.instance="<urn:uuid:'+ ua.configuration.instance_id+'>"';
   }
+
+  this.logger = ua.getLogger('sip.registercontext');
+  this.initMoreEvents(events);
 };
 
-Registrator.prototype = {
-  /**
-   * @param {Object} [options]
-   */
-  register: function(options) {
-    var request_sender, cause, extraHeaders,
-      self = this;
-
+RegisterContext.prototype = {
+  register: function (options) {
+    var extraHeaders, cause, self = this;
     options = options || {};
     extraHeaders = options.extraHeaders || [];
     extraHeaders.push('Contact: '+ this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
 
-    this.request = new SIP.OutgoingRequest(SIP.C.REGISTER, this.registrar, this.ua, {
-        'to_uri': this.to_uri,
-        'call_id': this.call_id,
-        'cseq': (this.cseq += 1)
-      }, extraHeaders);
 
-    request_sender = new SIP.RequestSender(this, this.ua);
-
-    /**
-    * @private
-    */
     this.receiveResponse = function(response) {
       var contact, expires,
         contacts = response.getHeaders('contact').length;
@@ -3497,6 +3477,10 @@ Registrator.prototype = {
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
           // Ignore provisional responses.
+          this.emit('progress', this, {
+            code: response.status_code,
+            response: response
+          });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
           if(response.hasHeader('expires')) {
@@ -3544,7 +3528,11 @@ Registrator.prototype = {
           }
 
           this.registered = true;
-          this.ua.emit('registered', this.ua, {
+          this.emit('accepted', this, {
+            code: response.status_code,
+            response: response
+          });
+          this.emit('registered', this, {
             response: response
           });
           break;
@@ -3580,150 +3568,53 @@ Registrator.prototype = {
       this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
     };
 
-    request_sender.send();
+
+
+    this.send({
+      params: {
+        'to_uri': this.to_uri,
+        'call_id': this.call_id,
+        'cseq': (this.cseq += 1)
+      },
+      extraHeaders: extraHeaders
+    });
   },
 
-  /**
-  * @param {Object} [options]
-  */
-  unregister: function(options) {
-    var extraHeaders;
-
-    if(!this.registered) {
-      this.logger.warn('already unregistered');
-      return;
-    }
-
-    options = options || {};
-    extraHeaders = options.extraHeaders || [];
-
-    this.registered = false;
-
-    // Clear the registration timer.
-    if (this.registrationTimer !== null) {
-      window.clearTimeout(this.registrationTimer);
-      this.registrationTimer = null;
-    }
-
-    if(options.all) {
-      extraHeaders.push('Contact: *');
-      extraHeaders.push('Expires: 0');
-
-      this.request = new SIP.OutgoingRequest(SIP.C.REGISTER, this.registrar, this.ua, {
-          'to_uri': this.to_uri,
-          'call_id': this.call_id,
-          'cseq': (this.cseq += 1)
-        }, extraHeaders);
-    } else {
-      extraHeaders.push('Contact: '+ this.contact + ';expires=0');
-
-      this.request = new SIP.OutgoingRequest(SIP.C.REGISTER, this.registrar, this.ua, {
-          'to_uri': this.to_uri,
-          'call_id': this.call_id,
-          'cseq': (this.cseq += 1)
-        }, extraHeaders);
-    }
-
-    var request_sender = new SIP.RequestSender(this, this.ua);
-
-    /**
-    * @private
-    */
-    this.receiveResponse = function(response) {
-      var cause;
-
-      switch(true) {
-        case /^1[0-9]{2}$/.test(response.status_code):
-          // Ignore provisional responses.
-          break;
-        case /^2[0-9]{2}$/.test(response.status_code):
-          this.unregistered(response);
-          break;
-        default:
-          cause = SIP.Utils.sipErrorCause(response.status_code);
-          this.unregistered(response, cause);
-      }
-    };
-
-    /**
-    * @private
-    */
-    this.onRequestTimeout = function() {
-      this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
-    };
-
-    /**
-    * @private
-    */
-    this.onTransportError = function() {
-      this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
-    };
-
-    request_sender.send();
-  },
-
-  /**
-  * @private
-  */
-  registrationFailure: function(response, cause) {
-    this.ua.emit('registrationFailed', this.ua, {
+  registrationFailure: function (response, cause) {
+    this.emit('failed', this, {
+      code: (response && response.status_code) || 0,
       response: response || null,
       cause: cause
     });
 
     if (this.registered) {
       this.registered = false;
-      this.ua.emit('unregistered', this.ua, {
+      this.emit('unregistered', this, {
+        code: (response && response.status_code) || 0,
         response: response || null,
         cause: cause
       });
     }
   },
 
-  /**
-   * @private
-   */
-  unregistered: function(response, cause) {
-    this.registered = false;
-    this.ua.emit('unregistered', this.ua, {
-      response: response || null,
-      cause: cause || null
-    });
-  },
-
-  /**
-  * @private
-  */
-  onTransportClosed: function() {
-    this.registered_before = this.registered;
-    if (this.registrationTimer !== null) {
-      window.clearTimeout(this.registrationTimer);
-      this.registrationTimer = null;
-    }
-
-    if(this.registered) {
-      this.registered = false;
-      this.ua.emit('unregistered', this.ua);
-    }
-  },
-
-  /**
-  * @private
-  */
   onTransportConnected: function() {
     this.register();
   },
 
-  /**
-  * @private
-  */
   close: function() {
     this.registered_before = this.registered;
     this.unregister();
-  }
+  },
+
+  unregister: function () { console.log('no dice'); },
+  unregistered: function () {},
+  registered: function () {}
+  
+
 };
 
-SIP.Registrator = Registrator;
+
+SIP.RegisterContext = RegisterContext;
 }(SIP));
 
 
@@ -6284,7 +6175,7 @@ SIP.Message = Message;
 (function (SIP) {
 var ClientContext;
 
-ClientContext = function (method, target, options, ua) {
+ClientContext = function (ua, method, target) {
   var events = [
     'progress',
     'accepted',
@@ -6295,16 +6186,15 @@ ClientContext = function (method, target, options, ua) {
   this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
   this.target = target;
-  this.options = options || {};
 
   this.data = {};
 
-  this.initMoreEvents(events);
+  this.initEvents(events);
 };
 ClientContext.prototype = new SIP.EventEmitter();
 
-ClientContext.prototype.send = function () {
-  var request_sender, extraHeaders, body,
+ClientContext.prototype.send = function (options) {
+  var request_sender, params, extraHeaders, body,
     originalTarget = this.target;
 
   if (this.target === undefined) {
@@ -6318,12 +6208,13 @@ ClientContext.prototype.send = function () {
   }
 
   // Get call options
-  extraHeaders = this.options.extraHeaders || [];
-  body = this.options.body;
+  params = options.params;
+  extraHeaders = options.extraHeaders || [];
+  body = options.body;
 
   this.ua.applicants[this] = this;
 
-  this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, null, extraHeaders);
+  this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
 
   if (body) {
     this.request.body = body;
@@ -6407,7 +6298,7 @@ ServerContext = function (request, ua) {
 
   this.data = {};
 
-  this.initMoreEvents(events);
+  this.initEvents(events);
 
   if (!ua.checkEvent(methodLower) ||
       ua.listeners(methodLower).length === 0) {
@@ -6691,8 +6582,8 @@ UA = function(configuration) {
     throw e;
   }
 
-  // Initialize registrator
-  this.registrator = new SIP.Registrator(this);
+  // Initialize registerContext
+  this.registerContext = new SIP.RegisterContext(this);
 };
 UA.prototype = new SIP.EventEmitter();
 
@@ -6708,7 +6599,7 @@ UA.prototype = new SIP.EventEmitter();
  */
 UA.prototype.register = function(options) {
   this.configuration.register = true;
-  this.registrator.register(options);
+  this.registerContext.register(options);
 };
 
 /**
@@ -6719,19 +6610,11 @@ UA.prototype.register = function(options) {
  */
 UA.prototype.unregister = function(options) {
   this.configuration.register = false;
-  this.registrator.unregister(options);
+  this.registerContext.unregister(options);
 };
 
-/**
- * Registration state.
- * @param {Boolean}
- */
 UA.prototype.isRegistered = function() {
-  if(this.registrator.registered) {
-    return true;
-  } else {
-    return false;
-  }
+  return this.registerContext.registered;
 };
 
 /**
@@ -6809,9 +6692,9 @@ UA.prototype.stop = function() {
     return;
   }
 
-  // Close registrator
-  this.logger.log('closing registrator');
-  this.registrator.close();
+  // Close registerContext
+  this.logger.log('closing registerContext');
+  this.registerContext.close();
 
   // Run  _terminate_ on every Session
   for(session in this.sessions) {
@@ -6999,7 +6882,7 @@ UA.prototype.onTransportConnected = function(transport) {
   });
 
   if(this.configuration.register) {
-    this.registrator.onTransportConnected();
+    this.registerContext.onTransportConnected();
   }
 };
 
@@ -7257,8 +7140,8 @@ UA.prototype.closeSessionsOnTransportError = function() {
   for(idx in this.sessions) {
     this.sessions[idx].onTransportError();
   }
-  // Call registrator _onTransportClosed_
-  this.registrator.onTransportClosed();
+  // Call registerContext _onTransportClosed_
+  this.registerContext.onTransportClosed();
 };
 
 UA.prototype.recoverTransport = function(ua) {

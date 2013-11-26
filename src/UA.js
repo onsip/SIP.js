@@ -169,8 +169,8 @@ UA = function(configuration) {
     throw e;
   }
 
-  // Initialize registrator
-  this.registrator = new SIP.Registrator(this);
+  // Initialize registerContext
+  this.registerContext = new SIP.RegisterContext(this);
 };
 UA.prototype = new SIP.EventEmitter();
 
@@ -186,7 +186,7 @@ UA.prototype = new SIP.EventEmitter();
  */
 UA.prototype.register = function(options) {
   this.configuration.register = true;
-  this.registrator.register(options);
+  this.registerContext.register(options);
 };
 
 /**
@@ -197,19 +197,11 @@ UA.prototype.register = function(options) {
  */
 UA.prototype.unregister = function(options) {
   this.configuration.register = false;
-  this.registrator.unregister(options);
+  this.registerContext.unregister(options);
 };
 
-/**
- * Registration state.
- * @param {Boolean}
- */
 UA.prototype.isRegistered = function() {
-  if(this.registrator.registered) {
-    return true;
-  } else {
-    return false;
-  }
+  return this.registerContext.registered;
 };
 
 /**
@@ -287,9 +279,9 @@ UA.prototype.stop = function() {
     return;
   }
 
-  // Close registrator
-  this.logger.log('closing registrator');
-  this.registrator.close();
+  // Close registerContext
+  this.logger.log('closing registerContext');
+  this.registerContext.close();
 
   // Run  _terminate_ on every Session
   for(session in this.sessions) {
@@ -477,7 +469,7 @@ UA.prototype.onTransportConnected = function(transport) {
   });
 
   if(this.configuration.register) {
-    this.registrator.onTransportConnected();
+    this.registerContext.onTransportConnected();
   }
 };
 
@@ -735,8 +727,8 @@ UA.prototype.closeSessionsOnTransportError = function() {
   for(idx in this.sessions) {
     this.sessions[idx].onTransportError();
   }
-  // Call registrator _onTransportClosed_
-  this.registrator.onTransportClosed();
+  // Call registerContext _onTransportClosed_
+  this.registerContext.onTransportClosed();
 };
 
 UA.prototype.recoverTransport = function(ua) {

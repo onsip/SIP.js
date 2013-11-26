@@ -1,7 +1,7 @@
 (function (SIP) {
 var ClientContext;
 
-ClientContext = function (method, target, options, ua) {
+ClientContext = function (ua, method, target) {
   var events = [
     'progress',
     'accepted',
@@ -12,16 +12,15 @@ ClientContext = function (method, target, options, ua) {
   this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
   this.target = target;
-  this.options = options || {};
 
   this.data = {};
 
-  this.initMoreEvents(events);
+  this.initEvents(events);
 };
 ClientContext.prototype = new SIP.EventEmitter();
 
-ClientContext.prototype.send = function () {
-  var request_sender, extraHeaders, body,
+ClientContext.prototype.send = function (options) {
+  var request_sender, params, extraHeaders, body,
     originalTarget = this.target;
 
   if (this.target === undefined) {
@@ -35,12 +34,13 @@ ClientContext.prototype.send = function () {
   }
 
   // Get call options
-  extraHeaders = this.options.extraHeaders || [];
-  body = this.options.body;
+  params = options.params;
+  extraHeaders = options.extraHeaders || [];
+  body = options.body;
 
   this.ua.applicants[this] = this;
 
-  this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, null, extraHeaders);
+  this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
 
   if (body) {
     this.request.body = body;

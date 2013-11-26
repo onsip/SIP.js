@@ -16,7 +16,7 @@ ServerContext = function (request, ua) {
 
   this.data = {};
 
-  this.initMoreEvents(events);
+  this.initEvents(events);
 
   if (!ua.checkEvent(methodLower) ||
       ua.listeners(methodLower).length === 0) {
