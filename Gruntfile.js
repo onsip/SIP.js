@@ -20,7 +20,7 @@ module.exports = function(grunt) {
     'src/InDialogRequestSender.js',
     'src/RegisterContext.js',
     'src/RTCSession.js',
-    'src/Message.js',
+    'src/MessageContext.js',
     'src/ClientContext.js',
     'src/ServerContext.js',
     'src/UA.js',

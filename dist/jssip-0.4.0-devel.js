@@ -3460,6 +3460,7 @@ RegisterContext.prototype = {
 
 
     this.receiveResponse = function(response) {
+      /*RESPONSE RECEIVED EVENT*/
       var contact, expires,
         contacts = response.getHeaders('contact').length;
 
@@ -3473,6 +3474,7 @@ RegisterContext.prototype = {
         window.clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
+      /*RESPONSE RECEIVED EVENT*/
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
@@ -3483,6 +3485,7 @@ RegisterContext.prototype = {
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
+          /*200 RECEIVED EVENT*/
           if(response.hasHeader('expires')) {
             expires = response.getHeader('expires');
           }
@@ -3535,9 +3538,14 @@ RegisterContext.prototype = {
           this.emit('registered', this, {
             response: response
           });
+          this.ua.emit('registered', this, {
+            response: response
+          });
+          /*200 RECEIVED EVENT*/
           break;
         // Interval too brief RFC3261 10.2.8
         case /^423$/.test(response.status_code):
+          /*423 RECEIVED EVENT*/
           if(response.hasHeader('min-expires')) {
             // Increase our registration interval to the suggested minimum
             this.expires = response.getHeader('min-expires');
@@ -3547,10 +3555,13 @@ RegisterContext.prototype = {
             this.logger.warn('423 response received for REGISTER without Min-Expires');
             this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
           }
+          /*423 RECEIVED EVENT*/
           break;
         default:
+          /*ERROR CASE HIT*/
           cause = SIP.Utils.sipErrorCause(response.status_code);
           this.registrationFailure(response, cause);
+          /*ERROR CASE HIT*/
       }
     };
 
@@ -5941,235 +5952,53 @@ SIP.RTCSession = RTCSession;
 
 
 
-/**
- * @fileoverview Message
- */
-
-/**
- * @augments SIP
- * @class Class creating SIP MESSAGE request.
- * @param {SIP.UA} ua
- */
 (function(SIP) {
-var Message;
 
-Message = function(ua) {
-  this.ua = ua;
-  this.logger = ua.getLogger('sip.message');
-  this.direction = null;
-  this.local_identity = null;
-  this.remote_identity = null;
+var MessageServerContext, MessageClientContext;
 
-  // Custom message empty object for high level use
-  this.data = {};
+MessageServerContext = function(ua, request) {
+  var transaction;
+
+  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
+
+  this.logger = ua.getLogger('sip.messageserver');
+
+  transaction = ua.transactions.nist[request.via_branch];
 };
-Message.prototype = new SIP.EventEmitter();
+
+SIP.MessageServerContext = MessageServerContext;
 
 
-Message.prototype.send = function(target, body, options) {
-  var request_sender, event, contentType, eventHandlers, extraHeaders,
-    events = [
-      'succeeded',
-      'failed'
-    ],
-    originalTarget = target;
-
-  if (target === undefined || body === undefined) {
+MessageClientContext = function(ua, target, body, contentType) {
+  if (body === undefined) {
     throw new TypeError('Not enough arguments');
   }
 
-  // Check target validity
-  target = this.ua.normalizeTarget(target);
-  if (!target) {
-    throw new TypeError('Invalid target: '+ originalTarget);
-  }
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'MESSAGE', target]);
 
-  this.initEvents(events);
-
-  // Get call options
-  options = options || {};
-  extraHeaders = options.extraHeaders || [];
-  eventHandlers = options.eventHandlers || {};
-  contentType = options.contentType || 'text/plain';
-
-  // Set event handlers
-  for (event in eventHandlers) {
-    this.on(event, eventHandlers[event]);
-  }
-
-  // Message parameter initialization
-  this.direction = 'outgoing';
-  this.local_identity = this.ua.configuration.uri;
-  this.remote_identity = target;
-
-  this.closed = false;
-  this.ua.applicants[this] = this;
-
-  extraHeaders.push('Content-Type: '+ contentType);
-
-  this.request = new SIP.OutgoingRequest(SIP.C.MESSAGE, target, this.ua, null, extraHeaders);
-
-  if(body) {
-    this.request.body = body;
-  }
-
-  request_sender = new SIP.RequestSender(this, this.ua);
-
-  this.ua.emit('newMessage', this.ua, {
-    originator: 'local',
-    message: this,
-    request: this.request
-  });
-
-  request_sender.send();
+  this.logger = ua.getLogger('sip.messageclient');
+  this.body = body;
+  this.contentType = contentType || 'text/plain';
 };
 
-/**
-* @private
-*/
-Message.prototype.receiveResponse = function(response) {
-  var cause;
+MessageClientContext.prototype = {
+  message: function(options) {
+    var extraHeaders;
 
-  if(this.closed) {
-    return;
-  }
-  switch(true) {
-    case /^1[0-9]{2}$/.test(response.status_code):
-      // Ignore provisional responses.
-      break;
+    // Get call options
+    options = options || {};
+    extraHeaders = options.extraHeaders || [];
 
-    case /^2[0-9]{2}$/.test(response.status_code):
-      delete this.ua.applicants[this];
-      this.emit('succeeded', this, {
-        originator: 'remote',
-        response: response
-      });
-      break;
+    extraHeaders.push('Content-Type: '+ this.contentType);
+    options.extraHeaders = extraHeaders;
+    options.body = this.body;
 
-    default:
-      delete this.ua.applicants[this];
-      cause = SIP.Utils.sipErrorCause(response.status_code);
-      this.emit('failed', this, {
-        originator: 'remote',
-        response: response,
-        cause: cause
-      });
-      break;
+    this.send(options);
   }
 };
 
-
-/**
-* @private
-*/
-Message.prototype.onRequestTimeout = function() {
-  if(this.closed) {
-    return;
-  }
-  this.emit('failed', this, {
-    originator: 'system',
-    cause: SIP.C.causes.REQUEST_TIMEOUT
-  });
-};
-
-/**
-* @private
-*/
-Message.prototype.onTransportError = function() {
-  if(this.closed) {
-    return;
-  }
-  this.emit('failed', this, {
-    originator: 'system',
-    cause: SIP.C.causes.CONNECTION_ERROR
-  });
-};
-
-/**
-* @private
-*/
-Message.prototype.close = function() {
-  this.closed = true;
-  delete this.ua.applicants[this];
-};
-
-/**
- * @private
- */
-Message.prototype.init_incoming = function(request) {
-  var transaction,
-    contentType = request.getHeader('content-type');
-
-  this.direction = 'incoming';
-  this.request = request;
-  this.local_identity = request.to.uri;
-  this.remote_identity = request.from.uri;
-
-  if (contentType && (contentType.match(/^text\/plain(\s*;\s*.+)*$/i) || contentType.match(/^text\/html(\s*;\s*.+)*$/i))) {
-    this.ua.emit('newMessage', this.ua, {
-      originator: 'remote',
-      message: this,
-      request: request
-    });
-
-    transaction = this.ua.transactions.nist[request.via_branch];
-
-    if (transaction && (transaction.state === SIP.Transactions.C.STATUS_TRYING || transaction.state === SIP.Transactions.C.STATUS_PROCEEDING)) {
-      request.reply(200);
-    }
-  } else {
-    request.reply(415, null, ['Accept: text/plain, text/html']);
-  }
-};
-
-/**
- * Accept the incoming Message
- * Only valid for incoming Messages
- */
-Message.prototype.accept = function(options) {
-  options = options || {};
-
-  var
-    extraHeaders = options.extraHeaders || [],
-    body = options.body;
-
-  if (this.direction !== 'incoming') {
-    throw new SIP.Exceptions.NotSupportedError('"accept" not supported for outgoing Message');
-  }
-
-  this.request.reply(200, null, extraHeaders, body);
-};
-
-/**
- * Reject the incoming Message
- * Only valid for incoming Messages
- *
- * @param {Number} status_code
- * @param {String} [reason_phrase]
- */
-Message.prototype.reject = function(options) {
-  options = options || {};
-
-  var
-    status_code = options.status_code || 480,
-    reason_phrase = options.reason_phrase,
-    extraHeaders = options.extraHeaders || [],
-    body = options.body;
-
-  if (this.direction !== 'incoming') {
-    throw new SIP.Exceptions.NotSupportedError('"reject" not supported for outgoing Message');
-  }
-
-  if (status_code < 300 || status_code >= 700) {
-    throw new TypeError('Invalid status_code: '+ status_code);
-  }
-
-  this.request.reply(status_code, reason_phrase, extraHeaders, body);
-};
-
-SIP.Message = Message;
+SIP.MessageClientContext = MessageClientContext;
 }(SIP));
-
 
 
 (function (SIP) {
@@ -6283,7 +6112,7 @@ SIP.ClientContext = ClientContext;
 (function (SIP) {
 var ServerContext;
 
-ServerContext = function (request, ua) {
+ServerContext = function (ua, request) {
   var events = [
       'progress',
       'accepted',
@@ -6306,7 +6135,6 @@ ServerContext = function (request, ua) {
     request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
   } else {
     // Send a provisional response to stop retransmissions.
-    request.reply(180, 'Trying');
     ua.emit(methodLower, ua, this);
   }
 };
@@ -6439,7 +6267,7 @@ var UA,
      */
     EVENT_METHODS: {
       'newRTCSession': 'INVITE',
-      'newMessage': 'MESSAGE'
+      'message': 'MESSAGE'
     },
 
     ALLOWED_METHODS: [
@@ -6470,7 +6298,7 @@ UA = function(configuration) {
     'unregistered',
     'registrationFailed',
     'newRTCSession',
-    'newMessage'
+    'message'
   ], i, len;
 
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
@@ -6659,8 +6487,8 @@ UA.prototype.call = function(target, options) {
 UA.prototype.sendMessage = function(target, body, options) {
   var message;
 
-  message = new SIP.Message(this);
-  message.send(target, body, options);
+  message = new SIP.MessageClientContext(this, target, body, 'text/plain');
+  message.message(options);
 };
 
 UA.prototype.request = function (method, target, options) {
@@ -6959,18 +6787,14 @@ UA.prototype.receiveRequest = function(request) {
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else */if (method === SIP.C.MESSAGE) {
-    if (!this.checkEvent('newMessage') || this.listeners('newMessage').length === 0) {
-      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
-      return;
-    }
-    message = new SIP.Message(this);
-    message.init_incoming(request);
+    message = new SIP.MessageServerContext(this, request);
+    return;
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.BYE &&
              method !== SIP.C.CANCEL &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new SIP.ServerContext(request, this);
+    transaction = new SIP.ServerContext(this, request);
     
     transaction.on('progress', function (e) {
       console.log('Progress request: ' + e.data.code + ' ' + e.data.response.method);

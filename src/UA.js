@@ -26,7 +26,7 @@ var UA,
      */
     EVENT_METHODS: {
       'newRTCSession': 'INVITE',
-      'newMessage': 'MESSAGE'
+      'message': 'MESSAGE'
     },
 
     ALLOWED_METHODS: [
@@ -57,7 +57,7 @@ UA = function(configuration) {
     'unregistered',
     'registrationFailed',
     'newRTCSession',
-    'newMessage'
+    'message'
   ], i, len;
 
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
@@ -246,8 +246,8 @@ UA.prototype.call = function(target, options) {
 UA.prototype.sendMessage = function(target, body, options) {
   var message;
 
-  message = new SIP.Message(this);
-  message.send(target, body, options);
+  message = new SIP.MessageClientContext(this, target, body, 'text/plain');
+  message.message(options);
 };
 
 UA.prototype.request = function (method, target, options) {
@@ -546,18 +546,14 @@ UA.prototype.receiveRequest = function(request) {
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else */if (method === SIP.C.MESSAGE) {
-    if (!this.checkEvent('newMessage') || this.listeners('newMessage').length === 0) {
-      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
-      return;
-    }
-    message = new SIP.Message(this);
-    message.init_incoming(request);
+    message = new SIP.MessageServerContext(this, request);
+    return;
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.BYE &&
              method !== SIP.C.CANCEL &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new SIP.ServerContext(request, this);
+    transaction = new SIP.ServerContext(this, request);
     
     transaction.on('progress', function (e) {
       console.log('Progress request: ' + e.data.code + ' ' + e.data.response.method);

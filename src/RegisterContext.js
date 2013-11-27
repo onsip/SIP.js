@@ -51,6 +51,7 @@ RegisterContext.prototype = {
 
 
     this.receiveResponse = function(response) {
+      /*RESPONSE RECEIVED EVENT*/
       var contact, expires,
         contacts = response.getHeaders('contact').length;
 
@@ -64,6 +65,7 @@ RegisterContext.prototype = {
         window.clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
+      /*RESPONSE RECEIVED EVENT*/
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
@@ -74,6 +76,7 @@ RegisterContext.prototype = {
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
+          /*200 RECEIVED EVENT*/
           if(response.hasHeader('expires')) {
             expires = response.getHeader('expires');
           }
@@ -126,9 +129,14 @@ RegisterContext.prototype = {
           this.emit('registered', this, {
             response: response
           });
+          this.ua.emit('registered', this, {
+            response: response
+          });
+          /*200 RECEIVED EVENT*/
           break;
         // Interval too brief RFC3261 10.2.8
         case /^423$/.test(response.status_code):
+          /*423 RECEIVED EVENT*/
           if(response.hasHeader('min-expires')) {
             // Increase our registration interval to the suggested minimum
             this.expires = response.getHeader('min-expires');
@@ -138,10 +146,13 @@ RegisterContext.prototype = {
             this.logger.warn('423 response received for REGISTER without Min-Expires');
             this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
           }
+          /*423 RECEIVED EVENT*/
           break;
         default:
+          /*ERROR CASE HIT*/
           cause = SIP.Utils.sipErrorCause(response.status_code);
           this.registrationFailure(response, cause);
+          /*ERROR CASE HIT*/
       }
     };
 

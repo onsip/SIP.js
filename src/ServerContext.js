@@ -1,7 +1,7 @@
 (function (SIP) {
 var ServerContext;
 
-ServerContext = function (request, ua) {
+ServerContext = function (ua, request) {
   var events = [
       'progress',
       'accepted',
@@ -24,7 +24,6 @@ ServerContext = function (request, ua) {
     request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
   } else {
     // Send a provisional response to stop retransmissions.
-    request.reply(180, 'Trying');
     ua.emit(methodLower, ua, this);
   }
 };
