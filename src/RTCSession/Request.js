@@ -36,10 +36,10 @@ Request.prototype.send = function(method, options) {
   }
 
   // Check RTCSession Status
-  if (this.owner.status !== SIP.RTCSession.C.STATUS_1XX_RECEIVED &&
-    this.owner.status !== SIP.RTCSession.C.STATUS_WAITING_FOR_ANSWER &&
-    this.owner.status !== SIP.RTCSession.C.STATUS_WAITING_FOR_ACK &&
-    this.owner.status !== SIP.RTCSession.C.STATUS_CONFIRMED) {
+  if (this.owner.status !== SIP.InviteContext.C.STATUS_1XX_RECEIVED &&
+    this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ANSWER &&
+    this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ACK &&
+    this.owner.status !== SIP.InviteContext.C.STATUS_CONFIRMED) {
     throw new SIP.Exceptions.InvalidStateError(this.owner.status);
   }
 

@@ -25,7 +25,7 @@ var UA,
      * corresponding event handler is set.
      */
     EVENT_METHODS: {
-      'newRTCSession': 'INVITE',
+      'invite': 'INVITE',
       'message': 'MESSAGE'
     },
 
@@ -56,7 +56,8 @@ UA = function(configuration) {
     'registered',
     'unregistered',
     'registrationFailed',
-    'newRTCSession',
+    'invite',
+    'newSession',
     'message'
   ], i, len;
 
@@ -229,8 +230,8 @@ UA.prototype.isConnected = function() {
 UA.prototype.call = function(target, options) {
   var session;
 
-  session = new SIP.RTCSession(this);
-  session.connect(target, options);
+  session = new SIP.InviteClientContext(this, target);
+  session.invite(options);
 };
 
 /**
@@ -574,8 +575,7 @@ UA.prototype.receiveRequest = function(request) {
     switch(method) {
       case SIP.C.INVITE:
         if(SIP.WebRTC.isSupported) {
-          session = new SIP.RTCSession(this);
-          session.init_incoming(request);
+          session = new SIP.InviteServerContext(this, request);
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);

@@ -69,7 +69,7 @@ EventEmitter.prototype = {
       this.logger.error('listener must be a function');
       return;
     } else if (!this.checkEvent(event)) {
-      this.logger.error('unable to add a listener to a nonexistent event'+ event);
+      this.logger.error('unable to add a listener to a nonexistent event '+ event);
       return;
     }
 
@@ -111,7 +111,7 @@ EventEmitter.prototype = {
     } else if (typeof listener !== 'function') {
       this.logger.error('listener must be a function');
     } else if (!this.checkEvent(event)) {
-      this.logger.error('unable to remove a listener from a nonexistent event'+ event);
+      this.logger.error('unable to remove a listener from a nonexistent event '+ event);
       return;
     }
 
@@ -133,7 +133,7 @@ EventEmitter.prototype = {
   */
   removeAllListener: function(event) {
     if (!this.checkEvent(event)) {
-      this.logger.error('unable to remove listeners from a nonexistent event'+ event);
+      this.logger.error('unable to remove listeners from a nonexistent event '+ event);
       return;
     }
 
@@ -179,7 +179,7 @@ EventEmitter.prototype = {
     var listeners, idx, e;
 
     if (!this.checkEvent(event)) {
-      this.logger.error('unable to emit a nonexistent event'+ event);
+      this.logger.error('unable to emit a nonexistent event '+ event);
       return;
     }
 

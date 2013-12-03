@@ -20,7 +20,7 @@ ClientContext = function (ua, method, target) {
 ClientContext.prototype = new SIP.EventEmitter();
 
 ClientContext.prototype.send = function (options) {
-  var request_sender, params, extraHeaders, body,
+  var request_sender, params, extraHeaders,
     originalTarget = this.target;
 
   if (this.target === undefined) {
@@ -36,18 +36,19 @@ ClientContext.prototype.send = function (options) {
   // Get call options
   params = options.params;
   extraHeaders = options.extraHeaders || [];
-  body = options.body;
 
   this.ua.applicants[this] = this;
 
   this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
 
-  if (body) {
-    this.request.body = body;
+  if (options.body) {
+    this.request.body = options.body;
   }
 
+  //I'd throw an if around this if we decide to call send in INVITE (maybe just the send line)
   request_sender = new SIP.RequestSender(this, this.ua);
   request_sender.send();
+
 };
 
 ClientContext.prototype.receiveResponse = function (response) {

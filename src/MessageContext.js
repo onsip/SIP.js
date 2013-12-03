@@ -10,6 +10,7 @@ MessageServerContext = function(ua, request) {
   this.logger = ua.getLogger('sip.messageserver');
 
   transaction = ua.transactions.nist[request.via_branch];
+  ua.emit('message', ua, this);
 };
 
 SIP.MessageServerContext = MessageServerContext;

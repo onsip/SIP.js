@@ -171,7 +171,6 @@ RegisterContext.prototype = {
     };
 
 
-
     this.send({
       params: {
         'to_uri': this.to_uri,

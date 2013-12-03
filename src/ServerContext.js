@@ -12,7 +12,11 @@ ServerContext = function (ua, request) {
   this.ua = ua;
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
-  this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
+  if (methodLower === 'invite') {
+    this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua); 
+  } else {
+    this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
+  }
 
   this.data = {};
 
@@ -22,9 +26,6 @@ ServerContext = function (ua, request) {
       ua.listeners(methodLower).length === 0) {
     // UA is not listening for this.  Reject immediately.
     request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
-  } else {
-    // Send a provisional response to stop retransmissions.
-    ua.emit(methodLower, ua, this);
   }
 };
 
