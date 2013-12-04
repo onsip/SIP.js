@@ -5536,7 +5536,7 @@ InviteServerContext.prototype = {
             */
             this.terminate();
 
-            this.ua.call(request.parseHeader('refer-to').uri, {
+            this.ua.invite(request.parseHeader('refer-to').uri, {
               mediaConstraints: this.media_constraints
             });
 
@@ -6206,7 +6206,7 @@ InviteClientContext.prototype = {
           */
           this.terminate();
 
-          this.ua.call(request.parseHeader('refer-to').uri, {
+          this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.media_constraints
           });
           break;
@@ -6449,11 +6449,12 @@ UA.prototype.isConnected = function() {
  * @throws {TypeError}
  *
  */
-UA.prototype.call = function(target, options) {
+UA.prototype.invite = function(target, options) {
   var session;
 
   session = new SIP.InviteClientContext(this, target);
   session.invite(options);
+  return session;
 };
 
 /**

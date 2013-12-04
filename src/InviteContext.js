@@ -999,7 +999,7 @@ InviteServerContext.prototype = {
             */
             this.terminate();
 
-            this.ua.call(request.parseHeader('refer-to').uri, {
+            this.ua.invite(request.parseHeader('refer-to').uri, {
               mediaConstraints: this.media_constraints
             });
 
@@ -1669,7 +1669,7 @@ InviteClientContext.prototype = {
           */
           this.terminate();
 
-          this.ua.call(request.parseHeader('refer-to').uri, {
+          this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.media_constraints
           });
           break;

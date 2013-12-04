@@ -227,11 +227,12 @@ UA.prototype.isConnected = function() {
  * @throws {TypeError}
  *
  */
-UA.prototype.call = function(target, options) {
+UA.prototype.invite = function(target, options) {
   var session;
 
   session = new SIP.InviteClientContext(this, target);
   session.invite(options);
+  return session;
 };
 
 /**
