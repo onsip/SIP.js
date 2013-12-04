@@ -1,9 +1,9 @@
 test('Parse URI', function() {
   var data = 'SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2';
-  var uri = JsSIP.URI.parse(data);
+  var uri = SIP.URI.parse(data);
 
   // Parsed data.
-  ok(uri instanceof(JsSIP.URI));
+  ok(uri instanceof(SIP.URI));
   strictEqual(uri.scheme, 'sip');
   strictEqual(uri.user, 'aliCE');
   strictEqual(uri.host, 'versatica.com');
@@ -37,11 +37,11 @@ test('Parse URI', function() {
 
 test('Parse NameAddrHeader', function() {
   var data = '"Iñaki ðđøþ" <SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2>;QWE=QWE;ASd';
-  var name = JsSIP.NameAddrHeader.parse(data);
+  var name = SIP.NameAddrHeader.parse(data);
   var uri;
 
   // Parsed data.
-  ok(name instanceof(JsSIP.NameAddrHeader));
+  ok(name instanceof(SIP.NameAddrHeader));
   strictEqual(name.display_name, 'Iñaki ðđøþ');
   strictEqual(name.hasParam('qwe'), true);
   strictEqual(name.hasParam('asd'), true);
@@ -50,7 +50,7 @@ test('Parse NameAddrHeader', function() {
   strictEqual(name.getParam('asd'), null);
 
   uri = name.uri;
-  ok(uri instanceof(JsSIP.URI));
+  ok(uri instanceof(SIP.URI));
   strictEqual(uri.scheme, 'sip');
   strictEqual(uri.user, 'aliCE');
   strictEqual(uri.host, 'versatica.com');
@@ -79,7 +79,7 @@ test('Parse NameAddrHeader', function() {
 
 test('Parse multiple Contact', function() {
   var data = '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sip:DOMAIN.com:5>';
-  var contacts = JsSIP.Grammar.parse(data, 'Contact');
+  var contacts = SIP.Grammar.parse(data, 'Contact');
 
   ok(contacts instanceof(Array));
   strictEqual(contacts.length, 3);
@@ -88,13 +88,13 @@ test('Parse multiple Contact', function() {
   var c3 = contacts[2].parsed;
 
   // Parsed data.
-  ok(c1 instanceof(JsSIP.NameAddrHeader));
+  ok(c1 instanceof(SIP.NameAddrHeader));
   strictEqual(c1.display_name, 'Iñaki @ł€');
   strictEqual(c1.hasParam('+sip.instance'), true);
   strictEqual(c1.hasParam('nooo'), false);
   strictEqual(c1.getParam('+SIP.instance'), '"abCD"');
   strictEqual(c1.getParam('nooo'), undefined);
-  ok(c1.uri instanceof(JsSIP.URI));
+  ok(c1.uri instanceof(SIP.URI));
   strictEqual(c1.uri.scheme, 'sip');
   strictEqual(c1.uri.user, '+1234');
   strictEqual(c1.uri.host, 'aliax.net');
@@ -117,10 +117,10 @@ test('Parse multiple Contact', function() {
   strictEqual(c1.toString(), '"€€€" <sip:+999@aliax.net;transport=ws;new-param>;+sip.instance="zxCV";new-param');
 
   // Parsed data.
-  ok(c2 instanceof(JsSIP.NameAddrHeader));
+  ok(c2 instanceof(SIP.NameAddrHeader));
   strictEqual(c2.display_name, undefined);
   strictEqual(c2.hasParam('HEADERPARAM'), true);
-  ok(c2.uri instanceof(JsSIP.URI));
+  ok(c2.uri instanceof(SIP.URI));
   strictEqual(c2.uri.scheme, 'sip');
   strictEqual(c2.uri.user, 'bob');
   strictEqual(c2.uri.host, 'biloxi.com');
@@ -133,9 +133,9 @@ test('Parse multiple Contact', function() {
   strictEqual(c2.toString(), '"@ł€ĸłæß" <sip:bob@biloxi.com>;headerparam');
 
   // Parsed data.
-  ok(c3 instanceof(JsSIP.NameAddrHeader));
+  ok(c3 instanceof(SIP.NameAddrHeader));
   strictEqual(c3.display_name, undefined);
-  ok(c3.uri instanceof(JsSIP.URI));
+  ok(c3.uri instanceof(SIP.URI));
   strictEqual(c3.uri.scheme, 'sip');
   strictEqual(c3.uri.user, undefined);
   strictEqual(c3.uri.host, 'domain.com');
@@ -152,7 +152,7 @@ test('Parse multiple Contact', function() {
 
 test('Parse Via', function() {
   var data = 'SIP /  3.0 \r\n / UDP [1:ab::FF]:6060 ;\r\n  BRanch=1234;Param1=Foo;paRAM2;param3=Bar';
-  var via = JsSIP.Grammar.parse(data, 'Via');
+  var via = SIP.Grammar.parse(data, 'Via');
 
   strictEqual(via.protocol, 'SIP');
   strictEqual(via.transport, 'UDP');
@@ -166,7 +166,7 @@ test('Parse Via', function() {
 
 test('Parse CSeq', function() {
   var data = '123456  CHICKEN';
-  var cseq = JsSIP.Grammar.parse(data, 'CSeq');
+  var cseq = SIP.Grammar.parse(data, 'CSeq');
 
   strictEqual(cseq.value, 123456);
   strictEqual(cseq.method, 'CHICKEN');
@@ -175,7 +175,7 @@ test('Parse CSeq', function() {
 
 test('Parse challenge', function() {
   var data = 'Digest realm =  "[1:ABCD::abc]", nonce =  "31d0a89ed7781ce6877de5cb032bf114", qop="AUTH,autH-INt", algorithm =  md5  ,  stale =  TRUE , opaque = "00000188"';
-  var auth = JsSIP.Grammar.parse(data, 'challenge');
+  var auth = SIP.Grammar.parse(data, 'challenge');
 
   strictEqual(auth.realm, '[1:ABCD::abc]');
   strictEqual(auth.nonce, '31d0a89ed7781ce6877de5cb032bf114');
@@ -188,7 +188,7 @@ test('Parse challenge', function() {
 
 test('Parse Event', function() {
   var data = 'Presence;Param1=QWe;paraM2';
-  var event = JsSIP.Grammar.parse(data, 'Event');
+  var event = SIP.Grammar.parse(data, 'Event');
 
   strictEqual(event.event, 'presence');
   deepEqual(event.params, {param1: 'QWe', param2: undefined});
