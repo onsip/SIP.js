@@ -7,12 +7,11 @@ ServerContext = function (ua, request) {
       'accepted',
       'rejected',
       'failed'
-    ],
-    methodLower = request.method.toLowerCase();
+    ];
   this.ua = ua;
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
-  if (methodLower === 'invite') {
+  if (request.method === SIP.C.INVITE) {
     this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua); 
   } else {
     this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
@@ -21,12 +20,6 @@ ServerContext = function (ua, request) {
   this.data = {};
 
   this.initEvents(events);
-
-  if (!ua.checkEvent(methodLower) ||
-      ua.listeners(methodLower).length === 0) {
-    // UA is not listening for this.  Reject immediately.
-    request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
-  }
 };
 
 ServerContext.prototype = new SIP.EventEmitter();

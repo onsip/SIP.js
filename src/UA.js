@@ -513,7 +513,8 @@ UA.prototype.destroyTransaction = function(transaction) {
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
     method = request.method,
-    transaction;
+    transaction,
+    methodLower = request.method.toLowerCase();
 
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
@@ -528,6 +529,7 @@ UA.prototype.receiveRequest = function(request) {
   if(SIP.Transactions.checkTransaction(this, request)) {
     return;
   }
+
 /*
   // Create the server transaction
   if(method === SIP.C.INVITE) {
@@ -541,17 +543,19 @@ UA.prototype.receiveRequest = function(request) {
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-/*  if(method === SIP.C.OPTIONS) {
+  if(method === SIP.C.OPTIONS) {
     request.reply(200, null, [
       'Allow: '+ SIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else */if (method === SIP.C.MESSAGE) {
+  } else if (method === SIP.C.MESSAGE) {
+    if (!this.checkEvent(methodLower) || this.listeners(methodLower).length === 0) {
+      // UA is not listening for this.  Reject immediately.
+      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
+      return;
+    }
     message = new SIP.MessageServerContext(this, request);
-    return;
   } else if (method !== SIP.C.INVITE &&
-             method !== SIP.C.BYE &&
-             method !== SIP.C.CANCEL &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
     transaction = new SIP.ServerContext(this, request);
@@ -567,7 +571,6 @@ UA.prototype.receiveRequest = function(request) {
                   ' ' + (e.data.response && e.data.response.method) +
                   ' Cause: ' + e.data.cause);
     });
-    return;
   }
 
   // Initial Request

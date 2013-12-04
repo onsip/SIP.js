@@ -39,6 +39,7 @@ MessageClientContext.prototype = {
     extraHeaders.push('Content-Type: '+ this.contentType);
     options.extraHeaders = extraHeaders;
     options.body = this.body;
+    this.ua.applicants[this] = this;
 
     this.send(options);
   }

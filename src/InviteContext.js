@@ -435,7 +435,7 @@ InviteServerContext = function(ua, request) {
     expires = request.getHeader('expires') * 1000;
   }
 
-  //Set 100rel if necissary
+  //Set 100rel if necessary
   if (request.hasHeader('require') && request.getHeader('require').toLowerCase().indexOf('100rel') >= 0) {
     this.rel100 = SIP.C.supported.REQUIRED;
   }
@@ -893,6 +893,7 @@ InviteServerContext.prototype = {
           break;
         case SIP.C.PRACK:
           if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+            localMedia = session.rtcMediaHandler.localMedia;
             if(!this.request.body) {
               if(request.body && request.getHeader('content-type') === 'application/sdp') {
                 this.rtcMediaHandler.onMessage(
@@ -1559,39 +1560,57 @@ InviteClientContext.prototype = {
 
     var cancel_reason,
     status_code = options.status_code,
-    reason_phrase = options.reason_phrase;
+    reason_phrase = options.reason_phrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
-    }
+    } else if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
+      this.logger.log('terminating RTCSession');
 
-    this.logger.log('canceling RTCSession');
+      reason_phrase = options.reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
 
-    if (status_code && (status_code < 200 || status_code >= 700)) {
-      throw new TypeError('Invalid status_code: '+ status_code);
-    } else if (status_code) {
-      reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
-      cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
-    }
+      if (status_code && (status_code < 200 || status_code >= 700)) {
+        throw new TypeError('Invalid status_code: '+ status_code);
+      } else if (status_code) {
+        extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
+      }
 
-    // Check Session Status
-    if (this.status === C.STATUS_NULL) {
-      this.isCanceled = true;
-      this.cancelReason = cancel_reason;
-    } else if (this.status === C.STATUS_INVITE_SENT) {
-      if(this.received_100) {
-        this.request.cancel(cancel_reason);
-      } else {
+      this.sendRequest(SIP.C.BYE, {
+        extraHeaders: extraHeaders,
+        body: body
+      });
+
+      this.ended('local', null, SIP.C.causes.BYE);
+    } else {
+      this.logger.log('canceling RTCSession');
+
+      if (status_code && (status_code < 200 || status_code >= 700)) {
+        throw new TypeError('Invalid status_code: '+ status_code);
+      } else if (status_code) {
+        reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+        cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
+      }
+
+      // Check Session Status
+      if (this.status === C.STATUS_NULL) {
         this.isCanceled = true;
         this.cancelReason = cancel_reason;
-          }
-    } else if(this.status === C.STATUS_1XX_RECEIVED) {
+      } else if (this.status === C.STATUS_INVITE_SENT) {
+        if(this.received_100) {
           this.request.cancel(cancel_reason);
+        } else {
+          this.isCanceled = true;
+          this.cancelReason = cancel_reason;
+        }
+      } else if(this.status === C.STATUS_1XX_RECEIVED) {
+        this.request.cancel(cancel_reason);
+      }
+
+      this.failed('local', null, SIP.C.causes.CANCELED);
     }
-
-    this.failed('local', null, SIP.C.causes.CANCELED);
-
     this.close();
   },
 

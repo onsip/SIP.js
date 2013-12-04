@@ -3460,7 +3460,6 @@ RegisterContext.prototype = {
 
 
     this.receiveResponse = function(response) {
-      /*RESPONSE RECEIVED EVENT*/
       var contact, expires,
         contacts = response.getHeaders('contact').length;
 
@@ -3474,7 +3473,6 @@ RegisterContext.prototype = {
         window.clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
-      /*RESPONSE RECEIVED EVENT*/
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
@@ -3485,7 +3483,6 @@ RegisterContext.prototype = {
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
-          /*200 RECEIVED EVENT*/
           if(response.hasHeader('expires')) {
             expires = response.getHeader('expires');
           }
@@ -3538,14 +3535,12 @@ RegisterContext.prototype = {
           this.emit('registered', this, {
             response: response
           });
-          this.ua.emit('registered', this, {
+          this.ua.emit('registered', this.ua, {
             response: response
           });
-          /*200 RECEIVED EVENT*/
           break;
         // Interval too brief RFC3261 10.2.8
         case /^423$/.test(response.status_code):
-          /*423 RECEIVED EVENT*/
           if(response.hasHeader('min-expires')) {
             // Increase our registration interval to the suggested minimum
             this.expires = response.getHeader('min-expires');
@@ -3555,30 +3550,21 @@ RegisterContext.prototype = {
             this.logger.warn('423 response received for REGISTER without Min-Expires');
             this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
           }
-          /*423 RECEIVED EVENT*/
           break;
         default:
-          /*ERROR CASE HIT*/
           cause = SIP.Utils.sipErrorCause(response.status_code);
           this.registrationFailure(response, cause);
-          /*ERROR CASE HIT*/
       }
     };
 
-    /**
-    * @private
-    */
+   
     this.onRequestTimeout = function() {
       this.registrationFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
     };
 
-    /**
-    * @private
-    */
     this.onTransportError = function() {
       this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
     };
-
 
     this.send({
       params: {
@@ -3607,6 +3593,18 @@ RegisterContext.prototype = {
     }
   },
 
+  onTransportClosed: function() {
+    this.registered_before = this.registered;
+    if (this.registrationTimer !== null) {
+      window.clearTimeout(this.registrationTimer);
+      this.registrationTimer = null;
+    }
+
+    if(this.registered) {
+      this.unregistered();
+    }
+  },
+
   onTransportConnected: function() {
     this.register();
   },
@@ -3616,17 +3614,80 @@ RegisterContext.prototype = {
     this.unregister();
   },
 
-  unregister: function () { console.log('no dice'); },
-  unregistered: function () {},
-  registered: function () {}
-  
+  unregister: function(options) {
+    var extraHeaders;
 
+    if(!this.registered) {
+      this.logger.warn('already unregistered');
+      return;
+    }
+
+    options = options || {};
+    extraHeaders = options.extraHeaders || [];
+
+    this.registered = false;
+
+    // Clear the registration timer.
+    if (this.registrationTimer !== null) {
+      window.clearTimeout(this.registrationTimer);
+      this.registrationTimer = null;
+    }
+
+    if(options.all) {
+      extraHeaders.push('Contact: *');
+      extraHeaders.push('Expires: 0');
+    } else {
+      extraHeaders.push('Contact: '+ this.contact + ';expires=0');
+    }
+
+
+    this.receiveResponse = function(response) {
+      var cause;
+
+      switch(true) {
+        case /^1[0-9]{2}$/.test(response.status_code):
+          // Ignore provisional responses.
+          break;
+        case /^2[0-9]{2}$/.test(response.status_code):
+          this.unregistered(response);
+          break;
+        default:
+          cause = SIP.Utils.sipErrorCause(response.status_code);
+          this.unregistered(response, cause);
+      }
+    };
+
+    this.onRequestTimeout = function() {
+      this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
+    };
+
+    this.onTransportError = function() {
+      this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
+    };
+
+    this.send({
+      params: {
+        'to_uri': this.to_uri,
+        'call_id': this.call_id,
+        'cseq': (this.cseq += 1)
+      },
+      extraHeaders: extraHeaders
+    });
+  },
+
+  unregistered: function(response, cause) {
+    this.registered = false;
+    this.ua.emit('unregistered', this.ua, {
+      response: response || null,
+      cause: cause || null
+    });
+  }
+  
 };
 
 
 SIP.RegisterContext = RegisterContext;
 }(SIP));
-
 
 
 (function(SIP) {
@@ -3670,6 +3731,7 @@ MessageClientContext.prototype = {
     extraHeaders.push('Content-Type: '+ this.contentType);
     options.extraHeaders = extraHeaders;
     options.body = this.body;
+    this.ua.applicants[this] = this;
 
     this.send(options);
   }
@@ -3718,8 +3780,6 @@ ClientContext.prototype.send = function (options) {
   params = options.params;
   extraHeaders = options.extraHeaders || [];
 
-  this.ua.applicants[this] = this;
-
   this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
 
   if (options.body) {
@@ -3730,6 +3790,21 @@ ClientContext.prototype.send = function (options) {
   request_sender = new SIP.RequestSender(this, this.ua);
   request_sender.send();
 
+};
+
+ClientContext.prototype.progress = function (options) {
+  options = options || {};
+  var statusCode = options.statusCode || 180;
+
+  if (statusCode < 100 || statusCode > 199) {
+    throw new TypeError('Invalid statusCode: ' + statusCode);
+  }
+  this.emit('progress', this, {
+        code: statusCode,
+        response: null
+      });
+
+  return this;
 };
 
 ClientContext.prototype.receiveResponse = function (response) {
@@ -3744,7 +3819,9 @@ ClientContext.prototype.receiveResponse = function (response) {
       break;
 
     case /^2[0-9]{2}$/.test(response.status_code):
-      delete this.ua.applicants[this];
+      if(this.ua.applicants[this]) {
+        delete this.ua.applicants[this];
+      }
       this.emit('accepted', this, {
         code: response.status_code,
         response: response
@@ -3752,7 +3829,9 @@ ClientContext.prototype.receiveResponse = function (response) {
       break;
 
     default:
-      delete this.ua.applicants[this];
+      if(this.ua.applicants[this]) {
+        delete this.ua.applicants[this];
+      }
       cause = SIP.Utils.sipErrorCause(response.status_code);
       this.emit('rejected', this, {
         code: response && response.status_code,
@@ -3797,12 +3876,11 @@ ServerContext = function (ua, request) {
       'accepted',
       'rejected',
       'failed'
-    ],
-    methodLower = request.method.toLowerCase();
+    ];
   this.ua = ua;
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
-  if (methodLower === 'invite') {
+  if (request.method === SIP.C.INVITE) {
     this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua); 
   } else {
     this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
@@ -3811,12 +3889,6 @@ ServerContext = function (ua, request) {
   this.data = {};
 
   this.initEvents(events);
-
-  if (!ua.checkEvent(methodLower) ||
-      ua.listeners(methodLower).length === 0) {
-    // UA is not listening for this.  Reject immediately.
-    request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(ua)]);
-  }
 };
 
 ServerContext.prototype = new SIP.EventEmitter();
@@ -4354,7 +4426,7 @@ DTMF.prototype.send = function(tone, options) {
   body = "Signal= " + this.tone + "\r\n";
   body += "Duration= " + this.duration;
 
-  this.owner.emit('newDTMF', this.owner, {
+  this.owner.emit('dtmf', this.owner, {
     originator: 'local',
     dtmf: this,
     request: this.request
@@ -4457,7 +4529,7 @@ DTMF.prototype.init_incoming = function(request) {
   if (!this.tone || !this.duration) {
     this.logger.warn('invalid INFO DTMF received, discarded');
   } else {
-    this.owner.emit('newDTMF', this.owner, {
+    this.owner.emit('dtmf', this.owner, {
       originator: 'remote',
       dtmf: this,
       request: request
@@ -4900,7 +4972,7 @@ InviteServerContext = function(ua, request) {
     expires = request.getHeader('expires') * 1000;
   }
 
-  //Set 100rel if necissary
+  //Set 100rel if necessary
   if (request.hasHeader('require') && request.getHeader('require').toLowerCase().indexOf('100rel') >= 0) {
     this.rel100 = SIP.C.supported.REQUIRED;
   }
@@ -5358,6 +5430,7 @@ InviteServerContext.prototype = {
           break;
         case SIP.C.PRACK:
           if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+            localMedia = session.rtcMediaHandler.localMedia;
             if(!this.request.body) {
               if(request.body && request.getHeader('content-type') === 'application/sdp') {
                 this.rtcMediaHandler.onMessage(
@@ -6024,39 +6097,57 @@ InviteClientContext.prototype = {
 
     var cancel_reason,
     status_code = options.status_code,
-    reason_phrase = options.reason_phrase;
+    reason_phrase = options.reason_phrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
-    }
+    } else if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
+      this.logger.log('terminating RTCSession');
 
-    this.logger.log('canceling RTCSession');
+      reason_phrase = options.reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
 
-    if (status_code && (status_code < 200 || status_code >= 700)) {
-      throw new TypeError('Invalid status_code: '+ status_code);
-    } else if (status_code) {
-      reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
-      cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
-    }
+      if (status_code && (status_code < 200 || status_code >= 700)) {
+        throw new TypeError('Invalid status_code: '+ status_code);
+      } else if (status_code) {
+        extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
+      }
 
-    // Check Session Status
-    if (this.status === C.STATUS_NULL) {
-      this.isCanceled = true;
-      this.cancelReason = cancel_reason;
-    } else if (this.status === C.STATUS_INVITE_SENT) {
-      if(this.received_100) {
-        this.request.cancel(cancel_reason);
-      } else {
+      this.sendRequest(SIP.C.BYE, {
+        extraHeaders: extraHeaders,
+        body: body
+      });
+
+      this.ended('local', null, SIP.C.causes.BYE);
+    } else {
+      this.logger.log('canceling RTCSession');
+
+      if (status_code && (status_code < 200 || status_code >= 700)) {
+        throw new TypeError('Invalid status_code: '+ status_code);
+      } else if (status_code) {
+        reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+        cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
+      }
+
+      // Check Session Status
+      if (this.status === C.STATUS_NULL) {
         this.isCanceled = true;
         this.cancelReason = cancel_reason;
-          }
-    } else if(this.status === C.STATUS_1XX_RECEIVED) {
+      } else if (this.status === C.STATUS_INVITE_SENT) {
+        if(this.received_100) {
           this.request.cancel(cancel_reason);
+        } else {
+          this.isCanceled = true;
+          this.cancelReason = cancel_reason;
+        }
+      } else if(this.status === C.STATUS_1XX_RECEIVED) {
+        this.request.cancel(cancel_reason);
+      }
+
+      this.failed('local', null, SIP.C.causes.CANCELED);
     }
-
-    this.failed('local', null, SIP.C.causes.CANCELED);
-
     this.close();
   },
 
@@ -6644,7 +6735,8 @@ UA.prototype.destroyTransaction = function(transaction) {
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
     method = request.method,
-    transaction;
+    transaction,
+    methodLower = request.method.toLowerCase();
 
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
@@ -6659,6 +6751,7 @@ UA.prototype.receiveRequest = function(request) {
   if(SIP.Transactions.checkTransaction(this, request)) {
     return;
   }
+
 /*
   // Create the server transaction
   if(method === SIP.C.INVITE) {
@@ -6672,17 +6765,19 @@ UA.prototype.receiveRequest = function(request) {
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-/*  if(method === SIP.C.OPTIONS) {
+  if(method === SIP.C.OPTIONS) {
     request.reply(200, null, [
       'Allow: '+ SIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else */if (method === SIP.C.MESSAGE) {
+  } else if (method === SIP.C.MESSAGE) {
+    if (!this.checkEvent(methodLower) || this.listeners(methodLower).length === 0) {
+      // UA is not listening for this.  Reject immediately.
+      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
+      return;
+    }
     message = new SIP.MessageServerContext(this, request);
-    return;
   } else if (method !== SIP.C.INVITE &&
-             method !== SIP.C.BYE &&
-             method !== SIP.C.CANCEL &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
     transaction = new SIP.ServerContext(this, request);
@@ -6698,7 +6793,6 @@ UA.prototype.receiveRequest = function(request) {
                   ' ' + (e.data.response && e.data.response.method) +
                   ' Cause: ' + e.data.cause);
     });
-    return;
   }
 
   // Initial Request

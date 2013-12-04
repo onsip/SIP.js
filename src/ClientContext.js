@@ -37,8 +37,6 @@ ClientContext.prototype.send = function (options) {
   params = options.params;
   extraHeaders = options.extraHeaders || [];
 
-  this.ua.applicants[this] = this;
-
   this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
 
   if (options.body) {
@@ -49,6 +47,21 @@ ClientContext.prototype.send = function (options) {
   request_sender = new SIP.RequestSender(this, this.ua);
   request_sender.send();
 
+};
+
+ClientContext.prototype.progress = function (options) {
+  options = options || {};
+  var statusCode = options.statusCode || 180;
+
+  if (statusCode < 100 || statusCode > 199) {
+    throw new TypeError('Invalid statusCode: ' + statusCode);
+  }
+  this.emit('progress', this, {
+        code: statusCode,
+        response: null
+      });
+
+  return this;
 };
 
 ClientContext.prototype.receiveResponse = function (response) {
@@ -63,7 +76,9 @@ ClientContext.prototype.receiveResponse = function (response) {
       break;
 
     case /^2[0-9]{2}$/.test(response.status_code):
-      delete this.ua.applicants[this];
+      if(this.ua.applicants[this]) {
+        delete this.ua.applicants[this];
+      }
       this.emit('accepted', this, {
         code: response.status_code,
         response: response
@@ -71,7 +86,9 @@ ClientContext.prototype.receiveResponse = function (response) {
       break;
 
     default:
-      delete this.ua.applicants[this];
+      if(this.ua.applicants[this]) {
+        delete this.ua.applicants[this];
+      }
       cause = SIP.Utils.sipErrorCause(response.status_code);
       this.emit('rejected', this, {
         code: response && response.status_code,

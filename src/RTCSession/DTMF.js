@@ -83,7 +83,7 @@ DTMF.prototype.send = function(tone, options) {
   body = "Signal= " + this.tone + "\r\n";
   body += "Duration= " + this.duration;
 
-  this.owner.emit('newDTMF', this.owner, {
+  this.owner.emit('dtmf', this.owner, {
     originator: 'local',
     dtmf: this,
     request: this.request
@@ -186,7 +186,7 @@ DTMF.prototype.init_incoming = function(request) {
   if (!this.tone || !this.duration) {
     this.logger.warn('invalid INFO DTMF received, discarded');
   } else {
-    this.owner.emit('newDTMF', this.owner, {
+    this.owner.emit('dtmf', this.owner, {
       originator: 'remote',
       dtmf: this,
       request: request
