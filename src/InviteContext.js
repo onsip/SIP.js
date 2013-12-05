@@ -151,7 +151,7 @@ InviteContext.prototype = {
     sendDTMF();
   },
 
-  transfer: function(target, options) {
+  refer: function(target, options) {
     options = options || {};
     var request,
     invalidTarget = false,
@@ -159,7 +159,7 @@ InviteContext.prototype = {
     self = this;
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
-    } else if (target instanceof SIP.RTCSession) {
+    } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
       //Attended Transfer
       // B.transfer(C)
       extraHeaders.push('Contact: '+ this.contact);
