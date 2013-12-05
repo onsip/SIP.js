@@ -43,7 +43,7 @@ RegisterContext = function (ua) {
 
 RegisterContext.prototype = {
   register: function (options) {
-    var extraHeaders, cause, self = this;
+    var extraHeaders, self = this;
     options = options || {};
     extraHeaders = options.extraHeaders || [];
     extraHeaders.push('Contact: '+ this.contact + ';expires=' + this.expires);
@@ -52,7 +52,8 @@ RegisterContext.prototype = {
 
     this.receiveResponse = function(response) {
       var contact, expires,
-        contacts = response.getHeaders('contact').length;
+        contacts = response.getHeaders('contact').length,
+        cause;
 
       // Discard responses to older REGISTER/un-REGISTER requests.
       if(response.cseq !== this.cseq) {
@@ -67,13 +68,17 @@ RegisterContext.prototype = {
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
-          // Ignore provisional responses.
           this.emit('progress', this, {
             code: response.status_code,
             response: response
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
+          this.emit('accepted', this, {
+            code: response.status_code,
+            response: response
+          });
+
           if(response.hasHeader('expires')) {
             expires = response.getHeader('expires');
           }
@@ -119,15 +124,8 @@ RegisterContext.prototype = {
           }
 
           this.registered = true;
-          this.emit('accepted', this, {
-            code: response.status_code,
-            response: response
-          });
           this.emit('registered', this, {
-            response: response
-          });
-          this.ua.emit('registered', this.ua, {
-            response: response
+            response: response || null
           });
           break;
         // Interval too brief RFC3261 10.2.8
@@ -173,14 +171,8 @@ RegisterContext.prototype = {
       response: response || null,
       cause: cause
     });
-
     if (this.registered) {
-      this.registered = false;
-      this.emit('unregistered', this, {
-        code: (response && response.status_code) || 0,
-        response: response || null,
-        cause: cause
-      });
+      this.unregistered(response, cause);
     }
   },
 
@@ -237,14 +229,21 @@ RegisterContext.prototype = {
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
-          // Ignore provisional responses.
+          this.emit('progress', this, {
+            code: response.status_code,
+            response: response
+          });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
+          this.emit('accepted', this, {
+            code: response.status_code,
+            response: response
+          });
           this.unregistered(response);
           break;
         default:
           cause = SIP.Utils.sipErrorCause(response.status_code);
-          this.unregistered(response, cause);
+          this.unregistered(response,cause);
       }
     };
 
@@ -268,7 +267,7 @@ RegisterContext.prototype = {
 
   unregistered: function(response, cause) {
     this.registered = false;
-    this.ua.emit('unregistered', this.ua, {
+    this.emit('unregistered', this.ua, {
       response: response || null,
       cause: cause || null
     });

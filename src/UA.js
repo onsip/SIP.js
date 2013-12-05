@@ -48,7 +48,8 @@ var UA,
   };
 
 UA = function(configuration) {
-  var events = [
+  var self = this,
+  events = [
     'connected',
     'disconnected',
     'newTransaction',
@@ -172,6 +173,27 @@ UA = function(configuration) {
 
   // Initialize registerContext
   this.registerContext = new SIP.RegisterContext(this);
+
+  this.registerContext.on('failed', function(e) {
+    self.emit('registrationFailed', self, {
+      response: e.data.response,
+      cause: e.data.cause
+    });
+  });
+
+  this.registerContext.on('registered', function(e) {
+    self.emit('registered', self, {
+      response: e.data.response,
+      cause: e.data.cause
+    });
+  });
+
+  this.registerContext.on('unregistered', function(e) {
+    self.emit('unregistered', self, {
+      response: e.data.response,
+      cause: e.data.cause
+    });
+  });
 };
 UA.prototype = new SIP.EventEmitter();
 
@@ -249,7 +271,7 @@ UA.prototype.sendMessage = function(target, body, options) {
   var message;
 
   message = new SIP.MessageClientContext(this, target, body, 'text/plain');
-  message.message(options);
+  message.message(options);    
 };
 
 UA.prototype.request = function (method, target, options) {
@@ -515,7 +537,8 @@ UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
     method = request.method,
     transaction,
-    methodLower = request.method.toLowerCase();
+    methodLower = request.method.toLowerCase(),
+    self = this;
 
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
@@ -556,6 +579,7 @@ UA.prototype.receiveRequest = function(request) {
       return;
     }
     message = new SIP.MessageServerContext(this, request);
+    this.emit('message', this, message);
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
@@ -580,6 +604,10 @@ UA.prototype.receiveRequest = function(request) {
       case SIP.C.INVITE:
         if(SIP.WebRTC.isSupported) {
           session = new SIP.InviteServerContext(this, request);
+
+          session.on('invite', function(e) {
+            self.emit('invite', this, e.sender);
+          });
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);

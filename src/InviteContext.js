@@ -27,7 +27,8 @@ InviteContext = function() {
   var events = [
   'started',
   'ended',
-  'dtmf'
+  'dtmf',
+  'invite'
   ];
 
   this.status = C.STATUS_NULL;
@@ -359,11 +360,8 @@ InviteContext.prototype = {
   },
 
   failed: function(originator, message, cause) {
-    var session = this,
-    event_name = 'failed';
-
-    session.close();
-    session.emit(event_name, session, {
+    this.close();
+    this.emit('failed', this, {
       originator: originator,
       message: message || null,
       cause: cause
@@ -371,25 +369,19 @@ InviteContext.prototype = {
   },
 
   started: function(originator, message) {
-    var session = this,
-    event_name = 'started';
+    this.start_time = new Date();
 
-    session.start_time = new Date();
-
-    session.emit(event_name, session, {
+    this.emit('started', this, {
       originator: originator,
       response: message || null
     });
   },
 
   ended: function(originator, message, cause) {
-    var session = this,
-    event_name = 'ended';
+    this.end_time = new Date();
 
-    session.end_time = new Date();
-
-    session.close();
-    session.emit(event_name, session, {
+    this.close();
+    this.emit('ended', this, {
       originator: originator,
       message: message || null,
       cause: cause
@@ -487,7 +479,7 @@ InviteServerContext = function(ua, request) {
     self.local_identity = self.request.to;
     self.remote_identity = self.request.from;
 
-    self.ua.emit('invite', self.ua, self);
+    self.emit('invite', self, {});
   }
 
   if (request.body) {
@@ -1049,9 +1041,6 @@ InviteClientContext = function(ua, target) {
   this.method = SIP.C.INVITE;
 
   this.logger = ua.getLogger('sip.inviteclientcontext');
-
-  //Save the session into the ua sessions collection.
-  ua.sessions[this.id] = this;
 };
 
 InviteClientContext.prototype = {
@@ -1481,6 +1470,9 @@ InviteClientContext.prototype = {
     //End of extra lines
     this.rtcMediaHandler = new RTCMediaHandler(this, RTCConstraints);
 
+    //Save the session into the ua sessions collection.
+    this.ua.sessions[this.id] = this;
+
     var self = this,
     request_sender = new SIP.RequestSender(this, this.ua),
     // User media succeeded
@@ -1552,7 +1544,6 @@ InviteClientContext.prototype = {
 
     this.local_identity = this.request.from;
     this.remote_identity = this.request.to;
-    this.ua.emit('invite', this.ua, this);
   },
 
   terminate: function(options) {

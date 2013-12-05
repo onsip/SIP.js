@@ -3452,7 +3452,7 @@ RegisterContext = function (ua) {
 
 RegisterContext.prototype = {
   register: function (options) {
-    var extraHeaders, cause, self = this;
+    var extraHeaders, self = this;
     options = options || {};
     extraHeaders = options.extraHeaders || [];
     extraHeaders.push('Contact: '+ this.contact + ';expires=' + this.expires);
@@ -3461,7 +3461,8 @@ RegisterContext.prototype = {
 
     this.receiveResponse = function(response) {
       var contact, expires,
-        contacts = response.getHeaders('contact').length;
+        contacts = response.getHeaders('contact').length,
+        cause;
 
       // Discard responses to older REGISTER/un-REGISTER requests.
       if(response.cseq !== this.cseq) {
@@ -3476,13 +3477,17 @@ RegisterContext.prototype = {
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
-          // Ignore provisional responses.
           this.emit('progress', this, {
             code: response.status_code,
             response: response
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
+          this.emit('accepted', this, {
+            code: response.status_code,
+            response: response
+          });
+
           if(response.hasHeader('expires')) {
             expires = response.getHeader('expires');
           }
@@ -3528,15 +3533,8 @@ RegisterContext.prototype = {
           }
 
           this.registered = true;
-          this.emit('accepted', this, {
-            code: response.status_code,
-            response: response
-          });
           this.emit('registered', this, {
-            response: response
-          });
-          this.ua.emit('registered', this.ua, {
-            response: response
+            response: response || null
           });
           break;
         // Interval too brief RFC3261 10.2.8
@@ -3582,14 +3580,8 @@ RegisterContext.prototype = {
       response: response || null,
       cause: cause
     });
-
     if (this.registered) {
-      this.registered = false;
-      this.emit('unregistered', this, {
-        code: (response && response.status_code) || 0,
-        response: response || null,
-        cause: cause
-      });
+      this.unregistered(response, cause);
     }
   },
 
@@ -3646,14 +3638,21 @@ RegisterContext.prototype = {
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
-          // Ignore provisional responses.
+          this.emit('progress', this, {
+            code: response.status_code,
+            response: response
+          });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
+          this.emit('accepted', this, {
+            code: response.status_code,
+            response: response
+          });
           this.unregistered(response);
           break;
         default:
           cause = SIP.Utils.sipErrorCause(response.status_code);
-          this.unregistered(response, cause);
+          this.unregistered(response,cause);
       }
     };
 
@@ -3677,7 +3676,7 @@ RegisterContext.prototype = {
 
   unregistered: function(response, cause) {
     this.registered = false;
-    this.ua.emit('unregistered', this.ua, {
+    this.emit('unregistered', this.ua, {
       response: response || null,
       cause: cause || null
     });
@@ -3695,14 +3694,10 @@ SIP.RegisterContext = RegisterContext;
 var MessageServerContext, MessageClientContext;
 
 MessageServerContext = function(ua, request) {
-  var transaction;
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
 
   this.logger = ua.getLogger('sip.messageserver');
-
-  transaction = ua.transactions.nist[request.via_branch];
-  ua.emit('message', ua, this);
 };
 
 SIP.MessageServerContext = MessageServerContext;
@@ -4564,7 +4559,8 @@ InviteContext = function() {
   var events = [
   'started',
   'ended',
-  'dtmf'
+  'dtmf',
+  'invite'
   ];
 
   this.status = C.STATUS_NULL;
@@ -4896,11 +4892,8 @@ InviteContext.prototype = {
   },
 
   failed: function(originator, message, cause) {
-    var session = this,
-    event_name = 'failed';
-
-    session.close();
-    session.emit(event_name, session, {
+    this.close();
+    this.emit('failed', this, {
       originator: originator,
       message: message || null,
       cause: cause
@@ -4908,25 +4901,19 @@ InviteContext.prototype = {
   },
 
   started: function(originator, message) {
-    var session = this,
-    event_name = 'started';
+    this.start_time = new Date();
 
-    session.start_time = new Date();
-
-    session.emit(event_name, session, {
+    this.emit('started', this, {
       originator: originator,
       response: message || null
     });
   },
 
   ended: function(originator, message, cause) {
-    var session = this,
-    event_name = 'ended';
+    this.end_time = new Date();
 
-    session.end_time = new Date();
-
-    session.close();
-    session.emit(event_name, session, {
+    this.close();
+    this.emit('ended', this, {
       originator: originator,
       message: message || null,
       cause: cause
@@ -5024,7 +5011,7 @@ InviteServerContext = function(ua, request) {
     self.local_identity = self.request.to;
     self.remote_identity = self.request.from;
 
-    self.ua.emit('invite', self.ua, self);
+    self.emit('invite', self, {});
   }
 
   if (request.body) {
@@ -5586,9 +5573,6 @@ InviteClientContext = function(ua, target) {
   this.method = SIP.C.INVITE;
 
   this.logger = ua.getLogger('sip.inviteclientcontext');
-
-  //Save the session into the ua sessions collection.
-  ua.sessions[this.id] = this;
 };
 
 InviteClientContext.prototype = {
@@ -6018,6 +6002,9 @@ InviteClientContext.prototype = {
     //End of extra lines
     this.rtcMediaHandler = new RTCMediaHandler(this, RTCConstraints);
 
+    //Save the session into the ua sessions collection.
+    this.ua.sessions[this.id] = this;
+
     var self = this,
     request_sender = new SIP.RequestSender(this, this.ua),
     // User media succeeded
@@ -6089,7 +6076,6 @@ InviteClientContext.prototype = {
 
     this.local_identity = this.request.from;
     this.remote_identity = this.request.to;
-    this.ua.emit('invite', this.ua, this);
   },
 
   terminate: function(options) {
@@ -6270,7 +6256,8 @@ var UA,
   };
 
 UA = function(configuration) {
-  var events = [
+  var self = this,
+  events = [
     'connected',
     'disconnected',
     'newTransaction',
@@ -6394,6 +6381,27 @@ UA = function(configuration) {
 
   // Initialize registerContext
   this.registerContext = new SIP.RegisterContext(this);
+
+  this.registerContext.on('failed', function(e) {
+    self.emit('registrationFailed', self, {
+      response: e.data.response,
+      cause: e.data.cause
+    });
+  });
+
+  this.registerContext.on('registered', function(e) {
+    self.emit('registered', self, {
+      response: e.data.response,
+      cause: e.data.cause
+    });
+  });
+
+  this.registerContext.on('unregistered', function(e) {
+    self.emit('unregistered', self, {
+      response: e.data.response,
+      cause: e.data.cause
+    });
+  });
 };
 UA.prototype = new SIP.EventEmitter();
 
@@ -6471,7 +6479,7 @@ UA.prototype.sendMessage = function(target, body, options) {
   var message;
 
   message = new SIP.MessageClientContext(this, target, body, 'text/plain');
-  message.message(options);
+  message.message(options);    
 };
 
 UA.prototype.request = function (method, target, options) {
@@ -6737,7 +6745,8 @@ UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
     method = request.method,
     transaction,
-    methodLower = request.method.toLowerCase();
+    methodLower = request.method.toLowerCase(),
+    self = this;
 
   // Check that Ruri points to us
   if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
@@ -6778,6 +6787,7 @@ UA.prototype.receiveRequest = function(request) {
       return;
     }
     message = new SIP.MessageServerContext(this, request);
+    this.emit('message', this, message);
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
@@ -6802,6 +6812,10 @@ UA.prototype.receiveRequest = function(request) {
       case SIP.C.INVITE:
         if(SIP.WebRTC.isSupported) {
           session = new SIP.InviteServerContext(this, request);
+
+          session.on('invite', function(e) {
+            self.emit('invite', this, e.sender);
+          });
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);
