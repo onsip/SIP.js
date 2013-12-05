@@ -376,6 +376,13 @@ InviteContext.prototype = {
       response: message || null
     });
   },
+  
+  progress: function(originator, response) {
+    this.emit('progress', this, {
+      originator: originator,
+      response: response || null
+    });
+  },
 
   ended: function(originator, message, cause) {
     this.end_time = new Date();

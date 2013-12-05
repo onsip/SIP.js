@@ -3787,21 +3787,6 @@ ClientContext.prototype.send = function (options) {
 
 };
 
-ClientContext.prototype.progress = function (options) {
-  options = options || {};
-  var statusCode = options.statusCode || 180;
-
-  if (statusCode < 100 || statusCode > 199) {
-    throw new TypeError('Invalid statusCode: ' + statusCode);
-  }
-  this.emit('progress', this, {
-        code: statusCode,
-        response: null
-      });
-
-  return this;
-};
-
 ClientContext.prototype.receiveResponse = function (response) {
   var cause;
 
@@ -4906,6 +4891,13 @@ InviteContext.prototype = {
     this.emit('started', this, {
       originator: originator,
       response: message || null
+    });
+  },
+  
+  progress: function(originator, response) {
+    this.emit('progress', this, {
+      originator: originator,
+      response: response || null
     });
   },
 
