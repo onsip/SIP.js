@@ -25,8 +25,7 @@ var InviteContext, InviteServerContext, InviteClientContext,
 
 InviteContext = function() {
   var events = [
-  'started',
-  'ended',
+  'terminated',
   'dtmf',
   'invite'
   ];
@@ -332,7 +331,7 @@ InviteContext.prototype = {
   onTransportError: function() {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
-        this.ended('system', null, SIP.C.causes.CONNECTION_ERROR);
+        this.terminated('system', null, SIP.C.causes.CONNECTION_ERROR);
       } else {
         this.failed('system', null, SIP.C.causes.CONNECTION_ERROR);
       }
@@ -342,7 +341,7 @@ InviteContext.prototype = {
   onRequestTimeout: function() {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
-        this.ended('system', null, SIP.C.causes.REQUEST_TIMEOUT);
+        this.terminated('system', null, SIP.C.causes.REQUEST_TIMEOUT);
       } else {
         this.failed('system', null, SIP.C.causes.REQUEST_TIMEOUT);
       }
@@ -352,7 +351,7 @@ InviteContext.prototype = {
   onDialogError: function(response) {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
-        this.ended('remote', response, SIP.C.causes.DIALOG_ERROR);
+        this.terminated('remote', response, SIP.C.causes.DIALOG_ERROR);
       } else {
         this.failed('remote', response, SIP.C.causes.DIALOG_ERROR);
       }
@@ -368,10 +367,10 @@ InviteContext.prototype = {
     });
   },
 
-  started: function(originator, message) {
+  accepted: function(originator, message) {
     this.start_time = new Date();
 
-    this.emit('started', this, {
+    this.emit('accepted', this, {
       originator: originator,
       response: message || null
     });
@@ -384,11 +383,11 @@ InviteContext.prototype = {
     });
   },
 
-  ended: function(originator, message, cause) {
+  terminated: function(originator, message, cause) {
     this.end_time = new Date();
 
     this.close();
-    this.emit('ended', this, {
+    this.emit('terminated', this, {
       originator: originator,
       message: message || null,
       cause: cause
@@ -542,7 +541,7 @@ InviteServerContext.prototype = {
         body: body
       });
 
-      this.ended('local', null, SIP.C.causes.BYE);
+      this.terminated('local', null, SIP.C.causes.BYE);
     } else {
       this.logger.log('rejecting RTCSession');
 
@@ -596,7 +595,7 @@ InviteServerContext.prototype = {
           self.logger.log('no ACK received, terminating the call');
           window.clearTimeout(self.timers.rel1xxTimer);
           self.request.reply(504);
-          self.ended('remote',null, SIP.C.causes.NO_PRACK);
+          self.terminated('remote',null, SIP.C.causes.NO_PRACK);
         }
       },SIP.Timers.T1*64);
     },
@@ -743,14 +742,14 @@ InviteServerContext.prototype = {
                 self.logger.log('no ACK received, terminating the call');
                 window.clearTimeout(self.timers.invite2xxTimer);
                 self.sendRequest(SIP.C.BYE);
-                self.ended('remote', null, SIP.C.causes.NO_ACK);
+                self.terminated('remote', null, SIP.C.causes.NO_ACK);
               }
             },
             SIP.Timers.TIMER_H
           );
 
           if (self.request.body) {
-            self.started('local');
+            self.accepted('local');
           }
         },
 
@@ -826,7 +825,7 @@ InviteServerContext.prototype = {
         localMedia.getVideoTracks()[0].enabled = true;
       }
       if (!session.request.body) {
-        session.started('local');
+        session.accepted('local');
       }
     }
 
@@ -962,7 +961,7 @@ InviteServerContext.prototype = {
         case SIP.C.BYE:
           if(this.status === C.STATUS_CONFIRMED) {
             request.reply(200);
-            this.ended('remote', request, SIP.C.causes.BYE);
+            this.terminated('remote', request, SIP.C.causes.BYE);
           }
           break;
         case SIP.C.INVITE:
@@ -1267,7 +1266,7 @@ InviteClientContext.prototype = {
               localMedia.getVideoTracks()[0].enabled = true;
             }
             this.sendRequest(SIP.C.ACK);
-            this.started('remote', response);
+            this.accepted('remote', response);
             break;
           }
           // Do nothing if this.dialog is already confirmed
@@ -1301,7 +1300,7 @@ InviteClientContext.prototype = {
               if (localMedia.getVideoTracks().length > 0) {
                 localMedia.getVideoTracks()[0].enabled = true;
               }
-              session.started('remote', response);
+              session.accepted('remote', response);
             } else {
               if (!this.createDialog(response, 'UAC')) {
                 break;
@@ -1362,7 +1361,7 @@ InviteClientContext.prototype = {
                       body:offer,
                       extraHeaders:['Content-Type: application/sdp']
                     });
-                    session.started('remote', response);
+                    session.accepted('remote', response);
                   };
                   var offerCreationFailed = function () {
                     //do something here
@@ -1406,7 +1405,7 @@ InviteClientContext.prototype = {
                   localMedia.getVideoTracks()[0].enabled = true;
                 }
                 session.sendRequest(SIP.C.ACK);
-                session.started('remote', response);
+                session.accepted('remote', response);
               },
               /*
                * onFailure
@@ -1581,7 +1580,7 @@ InviteClientContext.prototype = {
         body: body
       });
 
-      this.ended('local', null, SIP.C.causes.BYE);
+      this.terminated('local', null, SIP.C.causes.BYE);
     } else {
       this.logger.log('canceling RTCSession');
 
@@ -1637,7 +1636,7 @@ InviteClientContext.prototype = {
       switch(request.method) {
         case SIP.C.BYE:
           request.reply(200);
-          this.ended('remote', request, SIP.C.causes.BYE);
+          this.terminated('remote', request, SIP.C.causes.BYE);
           break;
         case SIP.C.INVITE:
           this.logger.log('re-INVITE received');
