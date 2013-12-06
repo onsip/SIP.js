@@ -37,7 +37,7 @@ MessageClientContext.prototype = {
     options.body = this.body;
     this.ua.applicants[this] = this;
 
-    this.send(options);
+    return this.send(options);
   }
 };
 

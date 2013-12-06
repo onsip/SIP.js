@@ -114,7 +114,7 @@ InviteContext.prototype = {
     if (this.tones) {
       // Tones are already queued, just add to the queue
       this.tones += tones;
-      return;
+      return this;
     }
 
     // New set of tones to start sending
@@ -127,7 +127,7 @@ InviteContext.prototype = {
       if (self.status === C.STATUS_TERMINATED || !tones || position >= tones.length) {
         // Stop sending DTMF
         self.tones = null;
-        return;
+        return this;
       }
 
       tone = tones[position];
@@ -148,6 +148,7 @@ InviteContext.prototype = {
 
     // Send the first tone
     sendDTMF();
+    return this;
   },
 
   refer: function(target, options) {
@@ -191,12 +192,15 @@ InviteContext.prototype = {
     request.on('succeeded', function () {
       self.terminate();
     });
+
+    return this;
   },
 
   sendRequest: function(method, options) {
     var request = new Request(this);
 
     request.send(method, options);
+    return this;
   },
 
   getLocalStreams: function() {
@@ -219,7 +223,7 @@ InviteContext.prototype = {
     var idx;
 
     if(this.status === C.STATUS_TERMINATED) {
-      return;
+      return this;
     }
 
     this.logger.log('closing INVITE session ' + this.id);
@@ -253,6 +257,7 @@ InviteContext.prototype = {
     this.status = C.STATUS_TERMINATED;
 
     delete this.ua.sessions[this.id];
+    return this;
   },
 
   createDialog: function(message, type, early) {
@@ -326,6 +331,8 @@ InviteContext.prototype = {
         extraHeaders: extraHeaders
       });
     }
+
+    return this;
   },
 
   onTransportError: function() {
@@ -556,6 +563,7 @@ InviteServerContext.prototype = {
     }
 
     this.close();
+    return this;
   },
 
   preAnswer: function(options) {
@@ -563,7 +571,7 @@ InviteServerContext.prototype = {
     var self = this;
 
     if (this.rel100 === SIP.C.supported.UNSUPPORTED) {
-      return;
+      return this;
     }
     self.status = C.STATUS_WAITING_FOR_PRACK;
     var extraHeaders = [];
@@ -649,6 +657,8 @@ InviteServerContext.prototype = {
       userMediaFailed,
       self.media_constraints
     );
+
+    return this;
   },
 
   answer: function(options) {
@@ -785,7 +795,7 @@ InviteServerContext.prototype = {
     // Check Session Status
     if (this.status === C.STATUS_WAITING_FOR_PRACK) {
       this.status = C.STATUS_ANSWERED_WAITING_FOR_PRACK;
-      return;
+      return this;
     } else if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
       this.status = C.STATUS_ANSWERED;
     } else if (this.status !== C.STATUS_EARLY_MEDIA) {
@@ -795,7 +805,7 @@ InviteServerContext.prototype = {
     // An error on dialog creation will fire 'failed' event
     if(!this.createDialog(request, 'UAS')) {
       request.reply(500, 'Missing Contact header field');
-      return;
+      return this;
     }
 
     window.clearTimeout(this.timers.userNoAnswerTimer);
@@ -808,6 +818,7 @@ InviteServerContext.prototype = {
         this.media_constraints
       );
     }
+    return this;
   },
 
   receiveRequest: function(request) {
@@ -1550,6 +1561,8 @@ InviteClientContext.prototype = {
 
     this.local_identity = this.request.from;
     this.remote_identity = this.request.to;
+
+    return this;
   },
 
   terminate: function(options) {
@@ -1609,6 +1622,7 @@ InviteClientContext.prototype = {
       this.failed('local', null, SIP.C.causes.CANCELED);
     }
     this.close();
+    return this;
   },
 
   receiveRequest: function(request) {

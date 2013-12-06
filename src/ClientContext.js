@@ -46,7 +46,7 @@ ClientContext.prototype.send = function (options) {
   //I'd throw an if around this if we decide to call send in INVITE (maybe just the send line)
   request_sender = new SIP.RequestSender(this, this.ua);
   request_sender.send();
-
+  return this;
 };
 
 ClientContext.prototype.receiveResponse = function (response) {

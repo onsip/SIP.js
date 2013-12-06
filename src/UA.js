@@ -210,6 +210,8 @@ UA.prototype = new SIP.EventEmitter();
 UA.prototype.register = function(options) {
   this.configuration.register = true;
   this.registerContext.register(options);
+
+  return this;
 };
 
 /**
@@ -221,6 +223,8 @@ UA.prototype.register = function(options) {
 UA.prototype.unregister = function(options) {
   this.configuration.register = false;
   this.registerContext.unregister(options);
+
+  return this;
 };
 
 UA.prototype.isRegistered = function() {
@@ -250,11 +254,8 @@ UA.prototype.isConnected = function() {
  *
  */
 UA.prototype.invite = function(target, options) {
-  var session;
-
-  session = new SIP.InviteClientContext(this, target);
-  session.invite(options);
-  return session;
+  var invite = new SIP.InviteClientContext(this, target);
+  return invite.invite(options);
 };
 
 /**
@@ -267,18 +268,14 @@ UA.prototype.invite = function(target, options) {
  * @throws {TypeError}
  *
  */
-UA.prototype.sendMessage = function(target, body, options) {
-  var message;
-
-  message = new SIP.MessageClientContext(this, target, body, 'text/plain');
-  message.message(options);    
+UA.prototype.message = function(target, body, options) {
+  var message = new SIP.MessageClientContext(this, target, body, 'text/plain');
+  return message.message(options);
 };
 
 UA.prototype.request = function (method, target, options) {
-  var transaction = new SIP.ClientContext(method, target, options, this);
-  transaction.send();
-
-  return transaction;
+  var context = new SIP.ClientContext(method, target, options, this);
+  return context.send();
 };
 
 /**
@@ -300,7 +297,7 @@ UA.prototype.stop = function() {
 
   if(this.status === C.STATUS_USER_CLOSED) {
     this.logger.warn('UA already closed');
-    return;
+    return this;
   }
 
   // Close registerContext
@@ -333,6 +330,8 @@ UA.prototype.stop = function() {
   } else {
     this.on('transactionDestroyed', transactionsListener);
   }
+
+  return this;
 };
 
 /**
@@ -357,10 +356,12 @@ UA.prototype.start = function() {
   } else {
     this.logger.error('Connection is down. Auto-Recovery system is trying to connect');
   }
+
+  return this;
 };
 
 /**
- * Normalice a string into a valid SIP request URI
+ * Normalize a string into a valid SIP request URI
  *
  * @param {String} target
  *
@@ -378,6 +379,8 @@ UA.prototype.normalizeTarget = function(target) {
 UA.prototype.saveCredentials = function(credentials) {
   this.cache.credentials[credentials.realm] = this.cache.credentials[credentials.realm] || {};
   this.cache.credentials[credentials.realm][credentials.uri] = credentials;
+
+  return this;
 };
 
 UA.prototype.getCredentials = function(request) {
@@ -394,7 +397,7 @@ UA.prototype.getCredentials = function(request) {
 };
 
 UA.prototype.getLogger = function(category, label) {
-    return this.log.getLogger(category, label);
+  return this.log.getLogger(category, label);
 };
 
 
