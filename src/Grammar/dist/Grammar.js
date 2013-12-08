@@ -3061,13 +3061,24 @@ SIP.Grammar = (function(){
         var pos0;
         
         pos0 = pos;
-        if (input.substr(pos, 3).toLowerCase() === "sip") {
-          result0 = input.substr(pos, 3);
-          pos += 3;
+        if (input.substr(pos, 4).toLowerCase() === "sips") {
+          result0 = input.substr(pos, 4);
+          pos += 4;
         } else {
           result0 = null;
           if (reportFailures === 0) {
-            matchFailed("\"sip\"");
+            matchFailed("\"sips\"");
+          }
+        }
+        if (result0 === null) {
+          if (input.substr(pos, 3).toLowerCase() === "sip") {
+            result0 = input.substr(pos, 3);
+            pos += 3;
+          } else {
+            result0 = null;
+            if (reportFailures === 0) {
+              matchFailed("\"sip\"");
+            }
           }
         }
         if (result0 !== null) {

@@ -11,7 +11,7 @@ SIP.C= {
   USER_AGENT: SIP.name +' '+ SIP.version,
 
   // SIP scheme
-  SIP: 'sip',
+  SIP:  'sip',
   SIPS: 'sips',
 
   // End and Failure causes
