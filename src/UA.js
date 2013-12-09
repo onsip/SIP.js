@@ -183,8 +183,7 @@ UA = function(configuration) {
 
   this.registerContext.on('registered', function(e) {
     self.emit('registered', self, {
-      response: e.data.response,
-      cause: e.data.cause
+      response: e.data.response
     });
   });
 
@@ -236,11 +235,7 @@ UA.prototype.isRegistered = function() {
  * @param {Boolean}
  */
 UA.prototype.isConnected = function() {
-  if(this.transport) {
-    return this.transport.connected;
-  } else {
-    return false;
-  }
+  return (this.transport) ? this.transport.connected : false;
 };
 
 /**
@@ -450,9 +445,7 @@ UA.prototype.onTransportError = function(transport) {
   transport.server.status = SIP.Transport.C.STATUS_ERROR;
 
   this.emit('disconnected', this, {
-    transport: transport,
-    code: transport.lastTransportError.code,
-    reason: transport.lastTransportError.reason
+    transport: transport
   });
 
   server = this.getNextWsServer();

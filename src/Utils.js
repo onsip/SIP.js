@@ -7,13 +7,15 @@ var Utils;
 
 Utils= {
 
-  augment: function (object, constructor, args) {
+  augment: function (object, constructor, args, override) {
     var idx, proto;
 
     // Add public properties from constructor's prototype onto object
     proto = constructor.prototype;
     for (idx in proto) {
-      object[idx] = proto[idx];
+      if (override || object[idx] === undefined) {
+        object[idx] = proto[idx];
+      }
     }
 
     // Construct the object as though it were just created by constructor

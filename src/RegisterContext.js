@@ -167,7 +167,6 @@ RegisterContext.prototype = {
 
   registrationFailure: function (response, cause) {
     this.emit('failed', this, {
-      code: (response && response.status_code) || 0,
       response: response || null,
       cause: cause
     });

@@ -55,7 +55,7 @@ RequestSender.prototype = {
         this.request.cseq.value = this.dialog.local_seqnum += 1;
         this.reattemptTimer = window.setTimeout(
           function() {
-            if (self.applicant.owner.status !== SIP.RTCSession.C.STATUS_TERMINATED) {
+            if (self.applicant.owner.status !== SIP.InviteContext.C.STATUS_TERMINATED) {
               self.reattempt = true;
               self.request_sender.send();
             }

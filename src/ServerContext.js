@@ -19,6 +19,9 @@ ServerContext = function (ua, request) {
 
   this.data = {};
 
+  this.local_identity = request.to;
+  this.remote_identity = request.from;
+
   this.initEvents(events);
 };
 
@@ -30,15 +33,16 @@ ServerContext.prototype.progress = function (options) {
     statusCode = options.statusCode || 180,
     reasonPhrase = options.reasonPhrase,
     extraHeaders = options.extraHeaders || [],
-    body = options.body;
+    body = options.body,
+    response;
 
   if (statusCode < 100 || statusCode > 199) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
-  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
   this.emit('progress', this, {
         code: statusCode,
-        response: null
+        response: response
       });
 
   return this;

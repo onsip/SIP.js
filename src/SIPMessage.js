@@ -370,6 +370,8 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   this.server_transaction.receiveResponse(code, response, onSuccess, onFailure);
+
+  return response;
 };
 
 /**

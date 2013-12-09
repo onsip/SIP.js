@@ -39,6 +39,9 @@ ClientContext.prototype.send = function (options) {
 
   this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
 
+  this.local_identity = this.request.from;
+  this.remote_identity = this.request.to;
+
   if (options.body) {
     this.request.body = options.body;
   }

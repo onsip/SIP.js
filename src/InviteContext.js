@@ -1,9 +1,9 @@
 (function (SIP) {
 
 // Load dependencies
-var Request         = @@include('../src/RTCSession/Request.js')
-var RTCMediaHandler = @@include('../src/RTCSession/RTCMediaHandler.js')
-var DTMF            = @@include('../src/RTCSession/DTMF.js')
+var Request         = @@include('../src/InviteContext/Request.js')
+var RTCMediaHandler = @@include('../src/InviteContext/RTCMediaHandler.js')
+var DTMF            = @@include('../src/InviteContext/DTMF.js')
 
 var InviteContext, InviteServerContext, InviteClientContext,
  C = {
@@ -27,7 +27,10 @@ InviteContext = function() {
   var events = [
   'terminated',
   'dtmf',
-  'invite'
+  'invite',
+  'preaccepted',
+  'canceled',
+  'referred'
   ];
 
   this.status = C.STATUS_NULL;
@@ -149,6 +152,40 @@ InviteContext.prototype = {
     // Send the first tone
     sendDTMF();
     return this;
+  },
+
+  _terminate: function(options) {
+    options = options || {};
+
+    var
+    status_code = options.status_code,
+    reason_phrase = options.reason_phrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body;
+
+    // Check Session Status
+    if (this.status === C.STATUS_TERMINATED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+
+    this.logger.log('terminating RTCSession');
+
+    reason_phrase = options.reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+
+    if (status_code && (status_code < 200 || status_code >= 700)) {
+      throw new TypeError('Invalid status_code: '+ status_code);
+    } else if (status_code) {
+      extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
+    }
+
+    this.sendRequest(SIP.C.BYE, {
+      extraHeaders: extraHeaders,
+      body: body
+    });
+
+    this.terminated(null, SIP.C.causes.BYE);
+
+    this.close();
   },
 
   refer: function(target, options) {
@@ -278,7 +315,7 @@ InviteContext.prototype = {
         // Dialog has been successfully created.
         if(early_dialog.error) {
           this.logger.error(dialog.error);
-          this.failed('remote', message, SIP.C.causes.INTERNAL_ERROR);
+          this.failed(message, SIP.C.causes.INTERNAL_ERROR);
           return false;
         } else {
           this.earlyDialogs[id] = early_dialog;
@@ -306,7 +343,7 @@ InviteContext.prototype = {
 
       if(dialog.error) {
         this.logger.error(dialog.error);
-        this.failed('remote', message, SIP.C.causes.INTERNAL_ERROR);
+        this.failed(message, SIP.C.causes.INTERNAL_ERROR);
         return false;
       } else {
         this.to_tag = message.to_tag;
@@ -338,9 +375,9 @@ InviteContext.prototype = {
   onTransportError: function() {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
-        this.terminated('system', null, SIP.C.causes.CONNECTION_ERROR);
+        this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
       } else {
-        this.failed('system', null, SIP.C.causes.CONNECTION_ERROR);
+        this.failed(null, SIP.C.causes.CONNECTION_ERROR);
       }
     }
   },
@@ -348,9 +385,9 @@ InviteContext.prototype = {
   onRequestTimeout: function() {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
-        this.terminated('system', null, SIP.C.causes.REQUEST_TIMEOUT);
+        this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
       } else {
-        this.failed('system', null, SIP.C.causes.REQUEST_TIMEOUT);
+        this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
       }
     }
   },
@@ -358,47 +395,82 @@ InviteContext.prototype = {
   onDialogError: function(response) {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
-        this.terminated('remote', response, SIP.C.causes.DIALOG_ERROR);
+        this.terminated(response, SIP.C.causes.DIALOG_ERROR);
       } else {
-        this.failed('remote', response, SIP.C.causes.DIALOG_ERROR);
+        this.failed(response, SIP.C.causes.DIALOG_ERROR);
       }
     }
   },
 
-  failed: function(originator, message, cause) {
+  failed: function(response, cause) {
+    var code = response ? response.status_code : null;
+
     this.close();
     this.emit('failed', this, {
-      originator: originator,
-      message: message || null,
-      cause: cause
+      response: response || null,
+      cause: cause,
+      code: code
     });
+
+    return this;
   },
 
-  accepted: function(originator, message) {
+  rejected: function(response, cause) {
+    var code = response ? response.status_code : null;
+
+    this.close();
+    this.emit('rejected', this, {
+      response: response || null,
+      cause: cause,
+      code: code
+    });
+
+    return this;
+  },
+
+  referred: function(response) {
+    this.emit('referred', this, {
+      response: response || null
+    });
+
+    return this;
+  },
+
+  canceled: function(response) {
+    var code = response ? response.status_code : null;
+
+    this.close();
+    this.emit('canceled', this, {
+      response: response || null,
+      code: code
+    });
+
+    return this;
+  },
+
+  accepted: function(response) {
+    var code = response ? response.status_code : null;
+
     this.start_time = new Date();
 
     this.emit('accepted', this, {
-      originator: originator,
-      response: message || null
-    });
-  },
-  
-  progress: function(originator, response) {
-    this.emit('progress', this, {
-      originator: originator,
+      code: code,
       response: response || null
     });
+
+    return this;
   },
 
-  terminated: function(originator, message, cause) {
+  terminated: function(message, cause) {
     this.end_time = new Date();
 
     this.close();
     this.emit('terminated', this, {
-      originator: originator,
       message: message || null,
       cause: cause
     });
+
+    return this;
   }
 };
 
@@ -465,17 +537,17 @@ InviteServerContext = function(ua, request) {
   );
 
   function fireNewSession() {
-    var extraHeaders = ['Contact: ' + self.contact];
+    var options = {extraHeaders: ['Contact: ' + self.contact]};
 
     if (self.rel100 !== SIP.C.supported.REQUIRED) {
-      request.reply(180, null, extraHeaders);
+      self.progress(options);
     }
     self.status = C.STATUS_WAITING_FOR_ANSWER;
 
     // Set userNoAnswerTimer
     self.timers.userNoAnswerTimer = window.setTimeout(function() {
       request.reply(408);
-      self.failed('local', null, SIP.C.causes.NO_ANSWER);
+      self.failed(request, SIP.C.causes.NO_ANSWER);
     }, self.ua.configuration.no_answer_timeout);
 
     /* Set expiresTimer
@@ -485,12 +557,10 @@ InviteServerContext = function(ua, request) {
       self.timers.expiresTimer = window.setTimeout(function() {
         if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
           request.reply(487);
-          self.failed('system', null, SIP.C.causes.EXPIRES);
+          self.failed(request, SIP.C.causes.EXPIRES);
         }
       }, expires);
     }
-    self.local_identity = self.request.to;
-    self.remote_identity = self.request.from;
 
     self.emit('invite', self, {});
   }
@@ -520,7 +590,7 @@ InviteServerContext = function(ua, request) {
 };
 
 InviteServerContext.prototype = {
-  terminate: function(options) {
+  reject: function(options) {
     options = options || {};
 
     var
@@ -528,45 +598,42 @@ InviteServerContext.prototype = {
     reason_phrase = options.reason_phrase,
     extraHeaders = options.extraHeaders || [],
     body = options.body;
-
+   
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
-    } else if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
-      this.logger.log('terminating RTCSession');
-
-      reason_phrase = options.reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
-
-      if (status_code && (status_code < 200 || status_code >= 700)) {
-        throw new TypeError('Invalid status_code: '+ status_code);
-      } else if (status_code) {
-        extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
-      }
-
-      this.sendRequest(SIP.C.BYE, {
-        extraHeaders: extraHeaders,
-        body: body
-      });
-
-      this.terminated('local', null, SIP.C.causes.BYE);
-    } else {
-      this.logger.log('rejecting RTCSession');
-
-      status_code = status_code || 480;
-
-      if (status_code < 300 || status_code >= 700) {
-        throw new TypeError('Invalid status_code: '+ status_code);
-      }
-
-      this.request.reply(status_code, reason_phrase, extraHeaders, body);
-      this.failed('local', null, SIP.C.causes.REJECTED);
     }
 
+    this.logger.log('rejecting RTCSession');
+
+    status_code = status_code || 480;
+
+    if (status_code < 300 || status_code >= 700) {
+      throw new TypeError('Invalid status_code: '+ status_code);
+    }
+
+    this.request.reply(status_code, reason_phrase, extraHeaders, body);
+    this.failed(null, SIP.C.causes.REJECTED);
+    this.rejected(null, reason_phrase);
+
     this.close();
+
     return this;
   },
 
-  preAnswer: function(options) {
+  terminate: function(options) {
+    options = options || {};
+
+    if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
+      this._terminate(options);
+    } else {
+      this.reject(options);
+    }
+
+    return this;
+  },
+
+  preaccept: function(options) {
     options = options || {};
     var self = this;
 
@@ -603,15 +670,17 @@ InviteServerContext.prototype = {
           self.logger.log('no ACK received, terminating the call');
           window.clearTimeout(self.timers.rel1xxTimer);
           self.request.reply(504);
-          self.terminated('remote',null, SIP.C.causes.NO_PRACK);
+          self.terminated(null, SIP.C.causes.NO_PRACK);
         }
       },SIP.Timers.T1*64);
+
+      self.emit('preaccepted', {});
     },
     sdpCreationFailed = function () {
       if (self.status === C.STATUS_TERMINATED) {
         return;
       }
-      self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      self.failed(null, SIP.C.causes.WEBRTC_ERROR);
     },
 
     // rtcMediaHandler.addStream successfully added
@@ -634,7 +703,7 @@ InviteServerContext.prototype = {
       if (self.status === C.STATUS_TERMINATED) {
         return;
       }
-      self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      self.failed(null, SIP.C.causes.WEBRTC_ERROR);
     },
 
     // User media succeeded
@@ -649,7 +718,7 @@ InviteServerContext.prototype = {
     // User media failed
     userMediaFailed = function() {
       this.request.reply(480);
-      self.failed('local', null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
+      self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
     };
 
     self.rtcMediaHandler.getUserMedia(
@@ -661,11 +730,12 @@ InviteServerContext.prototype = {
     return this;
   },
 
-  answer: function(options) {
+  accept: function(options) {
     options = options || {};
 
     var
       self = this,
+      response,
       request = this.request,
       extraHeaders = options.extraHeaders || [],
 
@@ -680,8 +750,8 @@ InviteServerContext.prototype = {
 
     // User media failed
     userMediaFailed = function() {
-      request.reply(480);
-      self.failed('local', null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
+      response = request.reply(480);
+      self.failed(response, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
     },
 
     // rtcMediaHandler.addStream successfully added
@@ -705,7 +775,7 @@ InviteServerContext.prototype = {
         return;
       }
 
-      self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      self.failed(null, SIP.C.causes.WEBRTC_ERROR);
     },
 
     // rtcMediaHandler.createAnswer succeeded
@@ -752,20 +822,20 @@ InviteServerContext.prototype = {
                 self.logger.log('no ACK received, terminating the call');
                 window.clearTimeout(self.timers.invite2xxTimer);
                 self.sendRequest(SIP.C.BYE);
-                self.terminated('remote', null, SIP.C.causes.NO_ACK);
+                self.terminated(null, SIP.C.causes.NO_ACK);
               }
             },
             SIP.Timers.TIMER_H
           );
 
           if (self.request.body) {
-            self.accepted('local');
+            self.accepted();
           }
         },
 
         // run for reply failure callback
         replyFailed = function() {
-          self.failed('system', null, SIP.C.causes.CONNECTION_ERROR);
+          self.failed(null, SIP.C.causes.CONNECTION_ERROR);
         };
 
       extraHeaders.push('Contact: ' + self.contact);
@@ -784,7 +854,7 @@ InviteServerContext.prototype = {
         return;
       }
 
-      self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      self.failed(null, SIP.C.causes.WEBRTC_ERROR);
     };
 
 
@@ -836,7 +906,7 @@ InviteServerContext.prototype = {
         localMedia.getVideoTracks()[0].enabled = true;
       }
       if (!session.request.body) {
-        session.accepted('local');
+        session.accepted();
       }
     }
 
@@ -859,7 +929,8 @@ InviteServerContext.prototype = {
         }
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
-        this.failed('remote', request, SIP.C.causes.CANCELED);
+        this.failed(request, SIP.C.causes.CANCELED);
+        this.canceled(request);
       }
     } else {
       // Requests arriving here are in-dialog requests.
@@ -887,13 +958,13 @@ InviteServerContext.prototype = {
                       status_code: '488',
                       reason_phrase: 'Bad Media Description'
                     });
-                    session.failed('local', request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                    session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
                   }
                 );
               } else if (session.early_sdp) {
                 confirmSession();
               } else {
-                session.failed('local', request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }
             } else {
               confirmSession();
@@ -937,7 +1008,7 @@ InviteServerContext.prototype = {
                       status_code: '488',
                       reason_phrase: 'Bad Media Description'
                     });
-                    session.failed('local', request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                    session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
                   }
                 );
               } else {
@@ -945,7 +1016,7 @@ InviteServerContext.prototype = {
                   status_code: '488',
                   reason_phrase: 'Bad Media Description'
                 });
-                session.failed('local', request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }
             } else {
               window.clearTimeout(session.timers.rel1xxTimer);
@@ -972,7 +1043,7 @@ InviteServerContext.prototype = {
         case SIP.C.BYE:
           if(this.status === C.STATUS_CONFIRMED) {
             request.reply(200);
-            this.terminated('remote', request, SIP.C.causes.BYE);
+            this.terminated(request, SIP.C.causes.BYE);
           }
           break;
         case SIP.C.INVITE:
@@ -1007,6 +1078,7 @@ InviteServerContext.prototype = {
               may send a BYE, but in the end the dialogs are destroyed.
             */
             this.terminate();
+            this.referred(request);
 
             this.ua.invite(request.parseHeader('refer-to').uri, {
               mediaConstraints: this.media_constraints
@@ -1071,371 +1143,6 @@ InviteClientContext.prototype = {
       RTCConstraints = options.RTCConstraints || {},
       inviteWithoutSdp = options.inviteWithoutSdp || false;
 
-    this.receiveResponse = function(response) {
-      var cause, localMedia,
-      session = this,
-      id = response.call_id + response.from_tag + response.to_tag,
-      extraHeaders = [];
-
-      if(this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
-        if (response.status_code!==200) {
-          return;
-        }
-      } else if (this.status === C.STATUS_EARLY_MEDIA && response.status_code !== 200) {
-        if (!this.earlyDialogs[id]) {
-          this.createDialog(response, 'UAC', true);
-        }
-        extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-        this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-
-        this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
-          extraHeaders: extraHeaders
-        });
-        return;
-      }
-
-      // Proceed to cancellation if the user requested.
-      if(this.isCanceled) {
-        if(response.status_code >= 100 && response.status_code < 200) {
-          this.request.cancel(this.cancelReason);
-        } else if(response.status_code >= 200 && response.status_code < 299) {
-          this.acceptAndTerminate(response);
-        }
-        return;
-      }
-
-      switch(true) {
-        case /^100$/.test(response.status_code):
-          this.received_100 = true;
-          break;
-        case (/^1[0-9]{2}$/.test(response.status_code)):
-          // Do nothing with 1xx responses without To tag.
-          if(!response.to_tag) {
-            this.logger.warn('1xx response received without to tag');
-            break;
-          }
-
-          // Create Early Dialog if 1XX comes with contact
-          if(response.hasHeader('contact')) {
-            // An error on dialog creation will fire 'failed' event
-            this.createDialog(response, 'UAC', true);
-          }
-
-          this.status = C.STATUS_1XX_RECEIVED;
-          this.progress('remote', response);
-
-          if(response.hasHeader('require') && response.getHeader('require').indexOf('100rel') !== -1) {
-
-            // Do nothing if this.dialog is already confirmed
-            if (this.dialog || !this.earlyDialogs[id]) {
-              break;
-            }
-
-            if (this.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')) !== -1 || (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] > response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
-              return;
-            }
-
-            if (window.mozRTCPeerConnection !== undefined) {
-              response.body = response.body.replace(/relay/g, 'host generation 0');
-              response.body = response.body.replace(/ \r\n/g, '\r\n');
-            }
-            if (!response.body) {
-              extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-              this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-              this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
-                extraHeaders: extraHeaders
-              });
-            } else if (this.request.body) {
-              if (!this.createDialog(response, 'UAC')) {
-                break;
-              }
-
-              this.rtcMediaHandler.onMessage(
-                'answer',
-                response.body,
-                /*
-                 * onSuccess
-                 * SDP Answer fits with Offer. Media will start
-                 */
-                function () {
-                  extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-                  session.dialog.pracked.push(response.getHeader('rseq'));
-
-                  session.sendRequest(SIP.C.PRACK, {
-                    extraHeaders: extraHeaders
-                  });
-                  session.status = C.STATUS_EARLY_MEDIA;
-                  if (session.status === C.STATUS_EARLY_MEDIA) {
-                    localMedia = session.rtcMediaHandler.localMedia;
-                    if (localMedia.getAudioTracks().length > 0) {
-                      localMedia.getAudioTracks()[0].enabled = false;
-                    }
-                    if (localMedia.getVideoTracks().length > 0) {
-                      localMedia.getVideoTracks()[0].enabled = false;
-                    }
-                  }
-                },
-                /*
-                 * onFailure
-                 * SDP Answer does not fit the Offer. Accept the call and Terminate.
-                 */
-                function(e) {
-                  session.logger.warn(e);
-                  session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-                  session.failed('remote', response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                }
-              );
-            } else {
-              // rtcMediaHandler.addStream successfully added
-              var streamAdditionSucceeded = function() {
-                session.earlyDialogs[id].rtcMediaHandler.createAnswer(
-                  sdpCreationSucceeded,
-                  sdpCreationFailed
-                );
-              },
-
-              // rtcMediaHandler.addStream failed
-              streamAdditionFailed = function() {
-                if (session.status === C.STATUS_TERMINATED) {
-                  return;
-                }
-
-                session.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
-              },
-
-              // rtcMediaHandler.createAnswer succeeded
-              sdpCreationSucceeded = function(body) {
-                extraHeaders.push('Content-Type: application/sdp');
-                extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-                session.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-                session.earlyDialogs[id].sendRequest(session, SIP.C.PRACK, {
-                  extraHeaders: extraHeaders,
-                  body: body
-                });
-              },
-
-              // rtcMediaHandler.createAnswer failed
-              sdpCreationFailed = function() {
-                if (session.status === C.STATUS_TERMINATED) {
-                  return;
-                }
-
-                session.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
-              };
-
-              this.earlyDialogs[id].rtcMediaHandler.localMedia = this.rtcMediaHandler.localMedia;
-              this.earlyDialogs[id].rtcMediaHandler.onMessage(
-                'offer',
-                response.body,
-                /*
-                 * onSuccess
-                 * SDP Offer is valid. Fire UA newRTCSession
-                 */
-                function() {
-                  session.earlyDialogs[id].rtcMediaHandler.addStream(
-                    session.rtcMediaHandler.localMedia,
-                    streamAdditionSucceeded,
-                    streamAdditionFailed
-                  );
-                },
-                /*
-                 * onFailure
-                 * Bad media description
-                 */
-                function(e) {
-                  session.logger.warn('invalid SDP');
-                  session.logger.warn(e);
-                  response.reply(488);
-                }
-              );
-            }
-          }
-          break;
-        case /^2[0-9]{2}$/.test(response.status_code):
-          var cseq = this.request.cseq + ' ' + this.request.method;
-          if (cseq !== response.getHeader('cseq')) {
-            break;
-          }
-
-          if (this.status === C.STATUS_EARLY_MEDIA) {
-            if (id !== this.dialog.id.toString()) {
-              if (!this.createDialog(response, 'UAC', true)) {
-                break;
-              }
-              this.earlyDialogs[id].sendRequest(this, SIP.C.ACK);
-              this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
-              session.failed('remote', response, SIP.C.causes.WEBRTC_ERROR);
-              break;
-            }
-
-            this.status = C.STATUS_CONFIRMED;
-            localMedia = this.rtcMediaHandler.localMedia;
-            if (localMedia.getAudioTracks().length > 0) {
-              localMedia.getAudioTracks()[0].enabled = true;
-            }
-            if (localMedia.getVideoTracks().length > 0) {
-              localMedia.getVideoTracks()[0].enabled = true;
-            }
-            this.sendRequest(SIP.C.ACK);
-            this.accepted('remote', response);
-            break;
-          }
-          // Do nothing if this.dialog is already confirmed
-          if (this.dialog) {
-            break;
-          }
-
-          if(!response.body) {
-            this.acceptAndTerminate(response, 400, 'Missing session description');
-            this.failed('remote', response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-            break;
-          } else if (window.mozRTCPeerConnection !== undefined) {
-            response.body = response.body.replace(/relay/g, 'host generation 0');
-            response.body = response.body.replace(/ \r\n/g, '\r\n');
-          }
-
-          // This is an invite without sdp
-          if (!this.request.body) {
-            if (this.earlyDialogs[id] && this.earlyDialogs[id].rtcMediaHandler.localMedia) {
-              this.rtcMediaHandler = this.earlyDialogs[id].rtcMediaHandler;
-              if (!this.createDialog(response, 'UAC')) {
-                break;
-              }
-              session.status = C.STATUS_CONFIRMED;
-              session.sendRequest(SIP.C.ACK);
-
-              localMedia = session.rtcMediaHandler.localMedia;
-              if (localMedia.getAudioTracks().length > 0) {
-                localMedia.getAudioTracks()[0].enabled = true;
-              }
-              if (localMedia.getVideoTracks().length > 0) {
-                localMedia.getVideoTracks()[0].enabled = true;
-              }
-              session.accepted('remote', response);
-            } else {
-              if (!this.createDialog(response, 'UAC')) {
-                break;
-              }
-              this.rtcMediaHandler.onMessage(
-                'offer',
-                response.body,
-                /*
-                 * onSuccess
-                 * SDP Offer is valid. Fire UA newRTCSession
-                 */
-                function() {
-                  var offerCreationSucceeded = function (offer) {
-                    var localMedia;
-                    if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
-                      return;
-                    }
-                    /* 
-                     * This is a Firefox hack to insert valid sdp when createAnswer is
-                     * called with the constraint offerToReceiveVideo = false.
-                     * We search for either a c-line at the top of the sdp above all 
-                     * m-lines. If that does not exist then we search for a c-line 
-                     * beneath each m-line. If it is missing a c-line, we insert 
-                     * a fake c-line with the ip address 0.0.0.0. This is then valid
-                     * sdp and no media will be sent for that m-line.
-                     * 
-                     * Valid SDP is:
-                     * m=
-                     * i=
-                     * c=
-                     */
-                    if (offer.indexOf('c=') > offer.indexOf('m=')) {
-                      var insertAt;
-                      var mlines = (offer.match(/m=.*\r\n.*/g));
-                      for (var i=0; i<mlines.length; i++) {
-                        if (mlines[i].toString().search(/i=.*/) >= 0) {
-                          insertAt = offer.indexOf(mlines[i].toString())+mlines[i].toString().length;
-                          if (offer.substr(insertAt,2)!=='c=') {
-                            offer = offer.substr(0,insertAt) + '\r\nc=IN IP 4 0.0.0.0' + offer.substr(insertAt);
-                          }
-                        } else if (mlines[i].toString().search(/c=.*/) < 0) {
-                          insertAt = offer.indexOf(mlines[i].toString().match(/.*/))+mlines[i].toString().match(/.*/).toString().length;
-                          offer = offer.substr(0,insertAt) + '\r\nc=IN IP4 0.0.0.0' + offer.substr(insertAt);
-                        }
-                      }
-                    }
-
-                    session.status = C.STATUS_CONFIRMED;
-
-                    localMedia = session.rtcMediaHandler.localMedia;
-                    if (localMedia.getAudioTracks().length > 0) {
-                      localMedia.getAudioTracks()[0].enabled = true;
-                    }
-                    if (localMedia.getVideoTracks().length > 0) {
-                      localMedia.getVideoTracks()[0].enabled = true;
-                    }
-                    session.sendRequest(SIP.C.ACK,{
-                      body:offer,
-                      extraHeaders:['Content-Type: application/sdp']
-                    });
-                    session.accepted('remote', response);
-                  };
-                  var offerCreationFailed = function () {
-                    //do something here
-                    console.log("there was a problem");
-                  };
-                  session.rtcMediaHandler.createAnswer(
-                    offerCreationSucceeded,
-                    offerCreationFailed
-                  );
-                },
-                /*
-                 * onFailure
-                 * Bad media description
-                 */
-                function(e) {
-                  session.logger.warn('invalid SDP');
-                  session.logger.warn(e);
-                  response.reply(488);
-                }
-              );
-            }
-          } else {
-            if (!this.createDialog(response, 'UAC')) {
-              break;
-            }
-            this.rtcMediaHandler.onMessage(
-              'answer',
-              response.body,
-              /*
-               * onSuccess
-               * SDP Answer fits with Offer. Media will start
-               */
-              function() {
-                var localMedia;
-                session.status = C.STATUS_CONFIRMED;
-                localMedia = session.rtcMediaHandler.localMedia;
-                if (localMedia.getAudioTracks().length > 0) {
-                  localMedia.getAudioTracks()[0].enabled = true;
-                }
-                if (localMedia.getVideoTracks().length > 0) {
-                  localMedia.getVideoTracks()[0].enabled = true;
-                }
-                session.sendRequest(SIP.C.ACK);
-                session.accepted('remote', response);
-              },
-              /*
-               * onFailure
-               * SDP Answer does not fit the Offer. Accept the call and Terminate.
-               */
-              function(e) {
-                session.logger.warn(e);
-                session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-                session.failed('remote', response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-              }
-            );
-          }
-          break;
-        default:
-          cause = SIP.Utils.sipErrorCause(response.status_code);
-          this.failed('remote', response, cause);
-      }
-    };
-
     // Set event handlers
     for (event in eventHandlers) {
       this.on(event, eventHandlers[event]);
@@ -1482,6 +1189,8 @@ InviteClientContext.prototype = {
       this.request.body = options.body;
     }
 
+    this.local_identity = this.request.from;
+    this.remote_identity = this.request.to;
     this.id = this.request.call_id + this.from_tag;
     this.logger = this.ua.getLogger('sip.inviteclientcontext', this.id);
     //End of extra lines
@@ -1507,7 +1216,7 @@ InviteClientContext.prototype = {
         return;
       }
 
-      self.failed('local', null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
+      self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
     },
 
     // rtcMediaHandler.addStream successfully added
@@ -1530,7 +1239,7 @@ InviteClientContext.prototype = {
         return;
       }
 
-      self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      self.failed(null, SIP.C.causes.WEBRTC_ERROR);
     },
 
     // rtcMediaHandler.createOffer succeeded
@@ -1550,7 +1259,7 @@ InviteClientContext.prototype = {
         return;
       }
 
-      self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      self.failed(null, SIP.C.causes.WEBRTC_ERROR);
     };
     
     this.rtcMediaHandler.getUserMedia(
@@ -1559,69 +1268,429 @@ InviteClientContext.prototype = {
       mediaConstraints
     );
 
-    this.local_identity = this.request.from;
-    this.remote_identity = this.request.to;
-
     return this;
   },
 
-  terminate: function(options) {
+  receiveResponse: function(response) {
+    var cause, localMedia,
+      session = this,
+      id = response.call_id + response.from_tag + response.to_tag,
+      extraHeaders = [];
+
+    if(this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
+      if (response.status_code!==200) {
+        return;
+      }
+    } else if (this.status === C.STATUS_EARLY_MEDIA && response.status_code !== 200) {
+      if (!this.earlyDialogs[id]) {
+        this.createDialog(response, 'UAC', true);
+      }
+      extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+      this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
+
+      this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
+        extraHeaders: extraHeaders
+      });
+      return;
+    }
+
+    // Proceed to cancellation if the user requested.
+    if(this.isCanceled) {
+      if(response.status_code >= 100 && response.status_code < 200) {
+        this.request.cancel(this.cancelReason);
+        this.canceled(null);
+      } else if(response.status_code >= 200 && response.status_code < 299) {
+        this.acceptAndTerminate(response);
+      }
+      return;
+    }
+
+    switch(true) {
+      case /^100$/.test(response.status_code):
+        this.received_100 = true;
+        break;
+      case (/^1[0-9]{2}$/.test(response.status_code)):
+        // Do nothing with 1xx responses without To tag.
+        if(!response.to_tag) {
+          this.logger.warn('1xx response received without to tag');
+          break;
+        }
+
+        // Create Early Dialog if 1XX comes with contact
+        if(response.hasHeader('contact')) {
+          // An error on dialog creation will fire 'failed' event
+          this.createDialog(response, 'UAC', true);
+        }
+
+        this.status = C.STATUS_1XX_RECEIVED;
+        this.emit('progress', this, {
+          response: response || null
+        });
+
+        if(response.hasHeader('require') && response.getHeader('require').indexOf('100rel') !== -1) {
+
+          // Do nothing if this.dialog is already confirmed
+          if (this.dialog || !this.earlyDialogs[id]) {
+            break;
+          }
+
+          if (this.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')) !== -1 || (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] > response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
+            return;
+          }
+
+          if (window.mozRTCPeerConnection !== undefined) {
+            response.body = response.body.replace(/relay/g, 'host generation 0');
+            response.body = response.body.replace(/ \r\n/g, '\r\n');
+          }
+          if (!response.body) {
+            extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+            this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
+            this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
+              extraHeaders: extraHeaders
+            });
+          } else if (this.request.body) {
+            if (!this.createDialog(response, 'UAC')) {
+              break;
+            }
+
+            this.rtcMediaHandler.onMessage(
+              'answer',
+              response.body,
+              /*
+               * onSuccess
+               * SDP Answer fits with Offer. Media will start
+               */
+              function () {
+                extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+                session.dialog.pracked.push(response.getHeader('rseq'));
+
+                session.sendRequest(SIP.C.PRACK, {
+                  extraHeaders: extraHeaders
+                });
+                session.status = C.STATUS_EARLY_MEDIA;
+                if (session.status === C.STATUS_EARLY_MEDIA) {
+                  localMedia = session.rtcMediaHandler.localMedia;
+                  if (localMedia.getAudioTracks().length > 0) {
+                    localMedia.getAudioTracks()[0].enabled = false;
+                  }
+                  if (localMedia.getVideoTracks().length > 0) {
+                    localMedia.getVideoTracks()[0].enabled = false;
+                  }
+                }
+              },
+              /*
+               * onFailure
+               * SDP Answer does not fit the Offer. Accept the call and Terminate.
+               */
+              function(e) {
+                session.logger.warn(e);
+                session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
+                session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              }
+            );
+          } else {
+            // rtcMediaHandler.addStream successfully added
+            var streamAdditionSucceeded = function() {
+              session.earlyDialogs[id].rtcMediaHandler.createAnswer(
+                sdpCreationSucceeded,
+                sdpCreationFailed
+              );
+            },
+
+            // rtcMediaHandler.addStream failed
+            streamAdditionFailed = function() {
+              if (session.status === C.STATUS_TERMINATED) {
+                return;
+              }
+
+              session.failed(null, SIP.C.causes.WEBRTC_ERROR);
+            },
+
+            // rtcMediaHandler.createAnswer succeeded
+            sdpCreationSucceeded = function(body) {
+              extraHeaders.push('Content-Type: application/sdp');
+              extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+              session.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
+              session.earlyDialogs[id].sendRequest(session, SIP.C.PRACK, {
+                extraHeaders: extraHeaders,
+                body: body
+              });
+            },
+
+            // rtcMediaHandler.createAnswer failed
+            sdpCreationFailed = function() {
+              if (session.status === C.STATUS_TERMINATED) {
+                return;
+              }
+
+              session.failed(null, SIP.C.causes.WEBRTC_ERROR);
+            };
+
+            this.earlyDialogs[id].rtcMediaHandler.localMedia = this.rtcMediaHandler.localMedia;
+            this.earlyDialogs[id].rtcMediaHandler.onMessage(
+              'offer',
+              response.body,
+              /*
+               * onSuccess
+               * SDP Offer is valid. Fire UA newRTCSession
+               */
+              function() {
+                session.earlyDialogs[id].rtcMediaHandler.addStream(
+                  session.rtcMediaHandler.localMedia,
+                  streamAdditionSucceeded,
+                  streamAdditionFailed
+                );
+              },
+              /*
+               * onFailure
+               * Bad media description
+               */
+              function(e) {
+                session.logger.warn('invalid SDP');
+                session.logger.warn(e);
+                response.reply(488);
+              }
+            );
+          }
+        }
+        break;
+      case /^2[0-9]{2}$/.test(response.status_code):
+        var cseq = this.request.cseq + ' ' + this.request.method;
+        if (cseq !== response.getHeader('cseq')) {
+          break;
+        }
+
+        if (this.status === C.STATUS_EARLY_MEDIA) {
+          if (id !== this.dialog.id.toString()) {
+            if (!this.createDialog(response, 'UAC', true)) {
+              break;
+            }
+            this.earlyDialogs[id].sendRequest(this, SIP.C.ACK);
+            this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
+            session.failed(response, SIP.C.causes.WEBRTC_ERROR);
+            break;
+          }
+
+          this.status = C.STATUS_CONFIRMED;
+          localMedia = this.rtcMediaHandler.localMedia;
+          if (localMedia.getAudioTracks().length > 0) {
+            localMedia.getAudioTracks()[0].enabled = true;
+          }
+          if (localMedia.getVideoTracks().length > 0) {
+            localMedia.getVideoTracks()[0].enabled = true;
+          }
+          this.sendRequest(SIP.C.ACK);
+          this.accepted(response);
+          break;
+        }
+        // Do nothing if this.dialog is already confirmed
+        if (this.dialog) {
+          break;
+        }
+
+        if(!response.body) {
+          this.acceptAndTerminate(response, 400, 'Missing session description');
+          this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+          break;
+        } else if (window.mozRTCPeerConnection !== undefined) {
+          response.body = response.body.replace(/relay/g, 'host generation 0');
+          response.body = response.body.replace(/ \r\n/g, '\r\n');
+        }
+
+        // This is an invite without sdp
+        if (!this.request.body) {
+          if (this.earlyDialogs[id] && this.earlyDialogs[id].rtcMediaHandler.localMedia) {
+            this.rtcMediaHandler = this.earlyDialogs[id].rtcMediaHandler;
+            if (!this.createDialog(response, 'UAC')) {
+              break;
+            }
+            session.status = C.STATUS_CONFIRMED;
+            session.sendRequest(SIP.C.ACK);
+
+            localMedia = session.rtcMediaHandler.localMedia;
+            if (localMedia.getAudioTracks().length > 0) {
+              localMedia.getAudioTracks()[0].enabled = true;
+            }
+            if (localMedia.getVideoTracks().length > 0) {
+              localMedia.getVideoTracks()[0].enabled = true;
+            }
+            session.accepted(response);
+          } else {
+            if (!this.createDialog(response, 'UAC')) {
+              break;
+            }
+            this.rtcMediaHandler.onMessage(
+              'offer',
+              response.body,
+              /*
+               * onSuccess
+               * SDP Offer is valid. Fire UA newRTCSession
+               */
+              function() {
+                var offerCreationSucceeded = function (offer) {
+                  var localMedia;
+                  if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
+                    return;
+                  }
+                  /* 
+                   * This is a Firefox hack to insert valid sdp when createAnswer is
+                   * called with the constraint offerToReceiveVideo = false.
+                   * We search for either a c-line at the top of the sdp above all 
+                   * m-lines. If that does not exist then we search for a c-line 
+                   * beneath each m-line. If it is missing a c-line, we insert 
+                   * a fake c-line with the ip address 0.0.0.0. This is then valid
+                   * sdp and no media will be sent for that m-line.
+                   * 
+                   * Valid SDP is:
+                   * m=
+                   * i=
+                   * c=
+                   */
+                  if (offer.indexOf('c=') > offer.indexOf('m=')) {
+                    var insertAt;
+                    var mlines = (offer.match(/m=.*\r\n.*/g));
+                    for (var i=0; i<mlines.length; i++) {
+                      if (mlines[i].toString().search(/i=.*/) >= 0) {
+                        insertAt = offer.indexOf(mlines[i].toString())+mlines[i].toString().length;
+                        if (offer.substr(insertAt,2)!=='c=') {
+                          offer = offer.substr(0,insertAt) + '\r\nc=IN IP 4 0.0.0.0' + offer.substr(insertAt);
+                        }
+                      } else if (mlines[i].toString().search(/c=.*/) < 0) {
+                        insertAt = offer.indexOf(mlines[i].toString().match(/.*/))+mlines[i].toString().match(/.*/).toString().length;
+                        offer = offer.substr(0,insertAt) + '\r\nc=IN IP4 0.0.0.0' + offer.substr(insertAt);
+                      }
+                    }
+                  }
+
+                  session.status = C.STATUS_CONFIRMED;
+
+                  localMedia = session.rtcMediaHandler.localMedia;
+                  if (localMedia.getAudioTracks().length > 0) {
+                    localMedia.getAudioTracks()[0].enabled = true;
+                  }
+                  if (localMedia.getVideoTracks().length > 0) {
+                    localMedia.getVideoTracks()[0].enabled = true;
+                  }
+                  session.sendRequest(SIP.C.ACK,{
+                    body:offer,
+                    extraHeaders:['Content-Type: application/sdp']
+                  });
+                  session.accepted(response);
+                };
+                var offerCreationFailed = function () {
+                  //do something here
+                  console.log("there was a problem");
+                };
+                session.rtcMediaHandler.createAnswer(
+                  offerCreationSucceeded,
+                  offerCreationFailed
+                );
+              },
+              /*
+               * onFailure
+               * Bad media description
+               */
+              function(e) {
+                session.logger.warn('invalid SDP');
+                session.logger.warn(e);
+                response.reply(488);
+              }
+            );
+          }
+        } else {
+          if (!this.createDialog(response, 'UAC')) {
+            break;
+          }
+          this.rtcMediaHandler.onMessage(
+            'answer',
+            response.body,
+            /*
+             * onSuccess
+             * SDP Answer fits with Offer. Media will start
+             */
+            function() {
+              var localMedia;
+              session.status = C.STATUS_CONFIRMED;
+              localMedia = session.rtcMediaHandler.localMedia;
+              if (localMedia.getAudioTracks().length > 0) {
+                localMedia.getAudioTracks()[0].enabled = true;
+              }
+              if (localMedia.getVideoTracks().length > 0) {
+                localMedia.getVideoTracks()[0].enabled = true;
+              }
+              session.sendRequest(SIP.C.ACK);
+              session.accepted(response);
+            },
+            /*
+             * onFailure
+             * SDP Answer does not fit the Offer. Accept the call and Terminate.
+             */
+            function(e) {
+              session.logger.warn(e);
+              session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
+              session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
+          );
+        }
+        break;
+      default:
+        cause = SIP.Utils.sipErrorCause(response.status_code);
+        this.failed(response, cause);
+        this.rejected(response, cause);
+    }
+  },
+
+  cancel: function(options) {
     options = options || {};
 
-    var cancel_reason,
+    var
     status_code = options.status_code,
     reason_phrase = options.reason_phrase,
-    extraHeaders = options.extraHeaders || [],
-    body = options.body;
+    cancel_reason;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
-    } else if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
-      this.logger.log('terminating RTCSession');
+    }
 
-      reason_phrase = options.reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+    this.logger.log('canceling RTCSession');
 
-      if (status_code && (status_code < 200 || status_code >= 700)) {
-        throw new TypeError('Invalid status_code: '+ status_code);
-      } else if (status_code) {
-        extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
-      }
+    if (status_code && (status_code < 200 || status_code >= 700)) {
+      throw new TypeError('Invalid status_code: '+ status_code);
+    } else if (status_code) {
+      reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+      cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
+    }
 
-      this.sendRequest(SIP.C.BYE, {
-        extraHeaders: extraHeaders,
-        body: body
-      });
-
-      this.terminated('local', null, SIP.C.causes.BYE);
-    } else {
-      this.logger.log('canceling RTCSession');
-
-      if (status_code && (status_code < 200 || status_code >= 700)) {
-        throw new TypeError('Invalid status_code: '+ status_code);
-      } else if (status_code) {
-        reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
-        cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
-      }
-
-      // Check Session Status
-      if (this.status === C.STATUS_NULL) {
+    // Check Session Status
+    if (this.status === C.STATUS_NULL) {
+      this.isCanceled = true;
+      this.cancelReason = cancel_reason;
+    } else if (this.status === C.STATUS_INVITE_SENT) {
+      if(this.received_100) {
+        this.request.cancel(cancel_reason);
+      } else {
         this.isCanceled = true;
         this.cancelReason = cancel_reason;
-      } else if (this.status === C.STATUS_INVITE_SENT) {
-        if(this.received_100) {
-          this.request.cancel(cancel_reason);
-        } else {
-          this.isCanceled = true;
-          this.cancelReason = cancel_reason;
-        }
-      } else if(this.status === C.STATUS_1XX_RECEIVED) {
-        this.request.cancel(cancel_reason);
       }
-
-      this.failed('local', null, SIP.C.causes.CANCELED);
+    } else if(this.status === C.STATUS_1XX_RECEIVED) {
+      this.request.cancel(cancel_reason);
     }
-    this.close();
+
+    this.failed(null, SIP.C.causes.CANCELED);
+
+    this.canceled(null);
+
+    return this;
+  },
+  
+  terminate: function(options) {
+
+    if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
+      this._terminate(options);
+    } else {
+      this.cancel(options);
+    }
     return this;
   },
 
@@ -1643,14 +1712,15 @@ InviteClientContext.prototype = {
       if(this.status === C.STATUS_EARLY_MEDIA) {
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
-        this.failed('remote', request, SIP.C.causes.CANCELED);
+        this.failed(request, SIP.C.causes.CANCELED);
+        this.canceled(request);
       }
     } else if (C.STATUS_CONFIRMED) {
       // Requests arriving here are in-dialog requests.
       switch(request.method) {
         case SIP.C.BYE:
           request.reply(200);
-          this.terminated('remote', request, SIP.C.causes.BYE);
+          this.terminated(request, SIP.C.causes.BYE);
           break;
         case SIP.C.INVITE:
           this.logger.log('re-INVITE received');
@@ -1679,6 +1749,7 @@ InviteClientContext.prototype = {
             may send a BYE, but in the end the dialogs are destroyed.
           */
           this.terminate();
+          this.referred(request);
 
           this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.media_constraints
