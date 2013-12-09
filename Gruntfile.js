@@ -17,7 +17,6 @@ module.exports = function(grunt) {
     'src/Transactions.js',
     'src/Dialogs.js',
     'src/RequestSender.js',
-    'src/InDialogRequestSender.js',
     'src/RegisterContext.js',
     'src/MessageContext.js',
     'src/ClientContext.js',
