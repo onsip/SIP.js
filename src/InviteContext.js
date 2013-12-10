@@ -187,6 +187,7 @@ InviteContext.prototype = {
       cause: reason_phrase,
       code: status_code
     });
+    this.terminated();
 
     this.close();
   },
@@ -618,6 +619,7 @@ InviteServerContext.prototype = {
     this.request.reply(status_code, reason_phrase, extraHeaders, body);
     this.failed(null, SIP.C.causes.REJECTED);
     this.rejected(null, reason_phrase);
+    this.terminated();
 
     this.close();
 
@@ -632,8 +634,6 @@ InviteServerContext.prototype = {
     } else {
       this.reject(options);
     }
-
-    this.terminated();
 
     return this;
   },
@@ -1677,8 +1677,8 @@ InviteClientContext.prototype = {
     }
 
     this.failed(null, SIP.C.causes.CANCELED);
-
     this.canceled(null);
+    this.terminated();
 
     return this;
   },
