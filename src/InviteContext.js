@@ -154,7 +154,7 @@ InviteContext.prototype = {
     return this;
   },
 
-  _terminate: function(options) {
+  bye: function(options) {
     options = options || {};
 
     var
@@ -183,7 +183,10 @@ InviteContext.prototype = {
       body: body
     });
 
-    this.terminated(null, SIP.C.causes.BYE);
+    this.emit('bye', this, {
+      cause: reason_phrase,
+      code: status_code
+    });
 
     this.close();
   },
@@ -467,7 +470,7 @@ InviteContext.prototype = {
     this.close();
     this.emit('terminated', this, {
       message: message || null,
-      cause: cause
+      cause: cause || null
     });
 
     return this;
@@ -625,10 +628,12 @@ InviteServerContext.prototype = {
     options = options || {};
 
     if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
-      this._terminate(options);
+      this.bye(options);
     } else {
       this.reject(options);
     }
+
+    this.terminated();
 
     return this;
   },
@@ -1136,17 +1141,11 @@ InviteClientContext.prototype = {
   invite: function (options) {
     options = options || {};
 
-    var event, requestParams,
-      eventHandlers = options.eventHandlers || {},
+    var requestParams,
       extraHeaders = options.extraHeaders || [],
       mediaConstraints = options.mediaConstraints || {audio: true, video: true},
       RTCConstraints = options.RTCConstraints || {},
       inviteWithoutSdp = options.inviteWithoutSdp || false;
-
-    // Set event handlers
-    for (event in eventHandlers) {
-      this.on(event, eventHandlers[event]);
-    }
 
     // Set anonymous property
     this.anonymous = options.anonymous;
@@ -1687,10 +1686,13 @@ InviteClientContext.prototype = {
   terminate: function(options) {
 
     if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
-      this._terminate(options);
+      this.bye(options);
     } else {
       this.cancel(options);
     }
+
+    this.terminated();
+
     return this;
   },
 
