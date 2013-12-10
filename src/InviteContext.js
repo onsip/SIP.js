@@ -936,6 +936,7 @@ InviteServerContext.prototype = {
         this.request.reply(487);
         this.failed(request, SIP.C.causes.CANCELED);
         this.canceled(request);
+        this.terminated(request);
       }
     } else {
       // Requests arriving here are in-dialog requests.
