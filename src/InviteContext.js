@@ -1157,6 +1157,10 @@ InviteClientContext.prototype = {
     // Set anonymous property
     this.anonymous = options.anonymous;
 
+    //Custom data to be sent either in INVITE or in ACK
+    this.renderbody = options.renderbody || null;
+    this.rendertype = options.rendertype || null;
+
     requestParams = {from_tag: this.from_tag};
 
     this.contact = this.ua.contact.toString({
@@ -1175,6 +1179,8 @@ InviteClientContext.prototype = {
     extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
     if (!inviteWithoutSdp) {
       extraHeaders.push('Content-Type: application/sdp');
+    } else if (this.renderbody) {
+      extraHeaders.push('Content-Type: ' + this.rendertype);
     }
 
     if (this.ua.configuration.reliable === 'required') {
@@ -1229,6 +1235,7 @@ InviteClientContext.prototype = {
     streamAdditionSucceeded = function() {
       if (inviteWithoutSdp) {
         //just send an invite with no sdp...
+        self.request.body = self.referbody;
         self.status = C.STATUS_INVITE_SENT;
         request_sender.send();
       } else {
@@ -1281,7 +1288,8 @@ InviteClientContext.prototype = {
     var cause, localMedia,
       session = this,
       id = response.call_id + response.from_tag + response.to_tag,
-      extraHeaders = [];
+      extraHeaders = [],
+      options = null;
 
     if(this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
       if (response.status_code!==200) {
@@ -1485,7 +1493,12 @@ InviteClientContext.prototype = {
           if (localMedia.getVideoTracks().length > 0) {
             localMedia.getVideoTracks()[0].enabled = true;
           }
-          this.sendRequest(SIP.C.ACK);
+          if (this.referbody) {
+                extraHeaders.push('Content-Type' + this.refertype);
+                options.extraHeaders = extraHeaders;
+                options.body = this.referbody;
+              }
+          this.sendRequest(SIP.C.ACK, options);
           this.accepted(response);
           break;
         }
@@ -1624,7 +1637,12 @@ InviteClientContext.prototype = {
               if (localMedia.getVideoTracks().length > 0) {
                 localMedia.getVideoTracks()[0].enabled = true;
               }
-              session.sendRequest(SIP.C.ACK);
+              if (session.referbody) {
+                extraHeaders.push('Content-Type' + session.refertype);
+                options.extraHeaders = extraHeaders;
+                options.body = session.referbody;
+              }
+              session.sendRequest(SIP.C.ACK, options);
               session.accepted(response);
             },
             /*

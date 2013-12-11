@@ -264,7 +264,9 @@ UA.prototype.invite = function(target, options) {
  *
  */
 UA.prototype.message = function(target, body, options) {
-  var message = new SIP.MessageClientContext(this, target, body, 'text/plain');
+  options = options || {};
+
+  var message = new SIP.MessageClientContext(this, target, body, options.contentType);
   return message.message(options);
 };
 
