@@ -30,7 +30,8 @@ InviteContext = function() {
   'invite',
   'preaccepted',
   'canceled',
-  'referred'
+  'referred',
+  'bye'
   ];
 
   this.status = C.STATUS_NULL;
@@ -485,12 +486,17 @@ SIP.InviteContext = InviteContext;
 InviteServerContext = function(ua, request) {
   var expires,
     self = this,
-    contentType = request.getHeader('Content-Type');
+    contentType = request.getHeader('Content-Type'),
+    contentDisp = request.getHeader('Content-Disposition');
 
   // Check body and content type
   if (request.body && contentType !== 'application/sdp') {
-    request.reply(415);
-    return;
+    if (contentDisp === 'session') {
+      request.reply(415);
+      return;
+    } else {
+      contentDisp = 'render';
+    }
   }
   else if (window.mozRTCPeerConnection !== undefined) {
     request.body = request.body.replace(/relay/g,"host generation 0");
@@ -569,7 +575,9 @@ InviteServerContext = function(ua, request) {
     self.emit('invite', self, {});
   }
 
-  if (request.body) {
+  if (!request.body || contentDisp === 'render') {
+    fireNewSession();
+  } else {
     this.rtcMediaHandler.onMessage(
       'offer',
       request.body,
@@ -588,8 +596,6 @@ InviteServerContext = function(ua, request) {
         request.reply(488);
       }
     );
-  } else {
-    fireNewSession();
   }
 };
 
