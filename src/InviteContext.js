@@ -918,6 +918,10 @@ InviteServerContext.prototype = {
       }
       if (!session.request.body) {
         session.accepted();
+      } else if (contentType !== 'application/sdp') {
+        //custom data will be here
+        session.renderbody = request.body;
+        session.rendertype = request.getHeader('Content-type');
       }
     }
 
@@ -1235,7 +1239,7 @@ InviteClientContext.prototype = {
     streamAdditionSucceeded = function() {
       if (inviteWithoutSdp) {
         //just send an invite with no sdp...
-        self.request.body = self.referbody;
+        self.request.body = self.renderbody;
         self.status = C.STATUS_INVITE_SENT;
         request_sender.send();
       } else {
@@ -1493,10 +1497,10 @@ InviteClientContext.prototype = {
           if (localMedia.getVideoTracks().length > 0) {
             localMedia.getVideoTracks()[0].enabled = true;
           }
-          if (this.referbody) {
-                extraHeaders.push('Content-Type' + this.refertype);
+          if (this.renderbody) {
+                extraHeaders.push('Content-Type' + this.rendertype);
                 options.extraHeaders = extraHeaders;
-                options.body = this.referbody;
+                options.body = this.renderbody;
               }
           this.sendRequest(SIP.C.ACK, options);
           this.accepted(response);
@@ -1637,10 +1641,10 @@ InviteClientContext.prototype = {
               if (localMedia.getVideoTracks().length > 0) {
                 localMedia.getVideoTracks()[0].enabled = true;
               }
-              if (session.referbody) {
-                extraHeaders.push('Content-Type' + session.refertype);
+              if (session.renderbody) {
+                extraHeaders.push('Content-Type' + session.rendertype);
                 options.extraHeaders = extraHeaders;
-                options.body = session.referbody;
+                options.body = session.renderbody;
               }
               session.sendRequest(SIP.C.ACK, options);
               session.accepted(response);
