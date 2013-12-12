@@ -603,9 +603,13 @@ UA.prototype.receiveRequest = function(request) {
         if(SIP.WebRTC.isSupported) {
           session = new SIP.InviteServerContext(this, request);
 
-          session.on('invite', function(e) {
-            self.emit('invite', this, e.sender);
-          });
+          if (session.contentDisp === 'render' || !request.body) {
+            self.emit('invite', this, session);
+          } else {
+            session.on('invite', function(e) {
+              self.emit('invite', this, e.sender);
+            });
+          }
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);

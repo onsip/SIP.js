@@ -486,16 +486,17 @@ SIP.InviteContext = InviteContext;
 InviteServerContext = function(ua, request) {
   var expires,
     self = this,
-    contentType = request.getHeader('Content-Type'),
-    contentDisp = request.getHeader('Content-Disposition');
+    contentType = request.getHeader('Content-Type');
+
+  this.contentDisp = request.getHeader('Content-Disposition');
 
   // Check body and content type
   if (request.body && contentType !== 'application/sdp') {
-    if (contentDisp === 'session') {
+    if (this.contentDisp === 'session') {
       request.reply(415);
       return;
     } else {
-      contentDisp = 'render';
+      this.contentDisp = 'render';
     }
   }
   else if (window.mozRTCPeerConnection !== undefined) {
@@ -575,7 +576,7 @@ InviteServerContext = function(ua, request) {
     self.emit('invite', self, {});
   }
 
-  if (!request.body || contentDisp === 'render') {
+  if (!request.body || this.contentDisp === 'render') {
     fireNewSession();
   } else {
     this.rtcMediaHandler.onMessage(
