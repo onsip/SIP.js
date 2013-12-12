@@ -1525,7 +1525,7 @@ InviteClientContext.prototype = {
         }
 
         // This is an invite without sdp
-      if (!this.request.body || (this.request.body === this.renderbody)) {
+        if (!this.request.body || (this.request.body === this.renderbody)) {
           if (this.earlyDialogs[id] && this.earlyDialogs[id].rtcMediaHandler.localMedia) {
             this.rtcMediaHandler = this.earlyDialogs[id].rtcMediaHandler;
             if (!this.createDialog(response, 'UAC')) {

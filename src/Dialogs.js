@@ -79,7 +79,7 @@ Dialog = function(owner, message, type, state) {
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route').reverse();
 
-    if (this.state === C.STATUS_EARLY && (!owner.request.body || owner.renderbody)) {
+    if (this.state === C.STATUS_EARLY && (!owner.request.body || (owner.request.body === owner.renderbody))) {
       this.rtcMediaHandler = new RTCMediaHandler(owner, owner.rtcMediaHandler.constraints);
     }
   }
