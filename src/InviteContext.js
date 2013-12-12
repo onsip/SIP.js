@@ -697,7 +697,7 @@ InviteServerContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      if (self.request.body) {
+      if (self.request.body && self.contentDisp !== 'render') {
         self.rtcMediaHandler.createAnswer(
           sdpCreationSucceeded,
           sdpCreationFailed
@@ -768,7 +768,7 @@ InviteServerContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      if (request.body && this.contentDisp !== 'render') {
+      if (request.body && self.contentDisp !== 'render') {
         self.rtcMediaHandler.createAnswer(
           sdpCreationSucceeded,
           sdpCreationFailed
@@ -917,8 +917,11 @@ InviteServerContext.prototype = {
       if (localMedia.getVideoTracks().length > 0) {
         localMedia.getVideoTracks()[0].enabled = true;
       }
-      if (!session.request.body) {
+      if (!session.request.body || session.contentDisp === 'render') {
         session.accepted();
+        //custom data will be here
+        session.renderbody = session.request.body;
+        session.rendertype = session.request.getHeader('Content-type');
       } else if (contentType !== 'application/sdp') {
         //custom data will be here
         session.renderbody = request.body;
@@ -954,7 +957,7 @@ InviteServerContext.prototype = {
       switch(request.method) {
         case SIP.C.ACK:
           if(this.status === C.STATUS_WAITING_FOR_ACK) {
-            if (!this.request.body) {
+            if (!this.request.body || this.contentDisp === 'render') {
               if(request.body && request.getHeader('content-type') === 'application/sdp') {
                 // ACK contains answer to an INVITE w/o SDP negotiation
                 this.rtcMediaHandler.onMessage(
@@ -1367,7 +1370,7 @@ InviteClientContext.prototype = {
             this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
               extraHeaders: extraHeaders
             });
-          } else if (this.request.body) {
+          } else if (this.request.body && (this.request.body !== this.renderbody)) {
             if (!this.createDialog(response, 'UAC')) {
               break;
             }
@@ -1499,7 +1502,7 @@ InviteClientContext.prototype = {
             localMedia.getVideoTracks()[0].enabled = true;
           }
           if (this.renderbody) {
-                extraHeaders.push('Content-Type' + this.rendertype);
+                extraHeaders.push('Content-Type: ' + this.rendertype);
                 options.extraHeaders = extraHeaders;
                 options.body = this.renderbody;
               }
@@ -1522,7 +1525,7 @@ InviteClientContext.prototype = {
         }
 
         // This is an invite without sdp
-        if (!this.request.body) {
+      if (!this.request.body || (this.request.body === this.renderbody)) {
           if (this.earlyDialogs[id] && this.earlyDialogs[id].rtcMediaHandler.localMedia) {
             this.rtcMediaHandler = this.earlyDialogs[id].rtcMediaHandler;
             if (!this.createDialog(response, 'UAC')) {
@@ -1633,7 +1636,7 @@ InviteClientContext.prototype = {
              * SDP Answer fits with Offer. Media will start
              */
             function() {
-              var localMedia;
+              var localMedia, options = {};
               session.status = C.STATUS_CONFIRMED;
               localMedia = session.rtcMediaHandler.localMedia;
               if (localMedia.getAudioTracks().length > 0) {
@@ -1643,7 +1646,7 @@ InviteClientContext.prototype = {
                 localMedia.getVideoTracks()[0].enabled = true;
               }
               if (session.renderbody) {
-                extraHeaders.push('Content-Type' + session.rendertype);
+                extraHeaders.push('Content-Type: ' + session.rendertype);
                 options.extraHeaders = extraHeaders;
                 options.body = session.renderbody;
               }
