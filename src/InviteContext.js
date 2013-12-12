@@ -768,7 +768,7 @@ InviteServerContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      if (request.body) {
+      if (request.body && this.contentDisp !== 'render') {
         self.rtcMediaHandler.createAnswer(
           sdpCreationSucceeded,
           sdpCreationFailed
@@ -840,7 +840,7 @@ InviteServerContext.prototype = {
             SIP.Timers.TIMER_H
           );
 
-          if (self.request.body) {
+          if (self.request.body && self.contentDisp !== 'render') {
             self.accepted();
           }
         },
