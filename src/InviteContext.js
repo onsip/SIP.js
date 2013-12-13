@@ -1669,6 +1669,7 @@ InviteClientContext.prototype = {
         cause = SIP.Utils.sipErrorCause(response.status_code);
         this.failed(response, cause);
         this.rejected(response, cause);
+        this.terminated(response, cause);
     }
   },
 
