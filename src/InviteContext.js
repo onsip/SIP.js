@@ -1543,6 +1543,7 @@ InviteServerContext.prototype = {
         case SIP.C.BYE:
           if(this.status === C.STATUS_CONFIRMED) {
             request.reply(200);
+            this.bye();
             this.terminated(request, SIP.C.causes.BYE);
           }
           break;
@@ -2270,6 +2271,7 @@ InviteClientContext.prototype = {
       switch(request.method) {
         case SIP.C.BYE:
           request.reply(200);
+          this.bye();
           this.terminated(request, SIP.C.causes.BYE);
           break;
         case SIP.C.INVITE:
