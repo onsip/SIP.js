@@ -30,8 +30,22 @@ RequestSender = function(dialog, applicant, request) {
 
 RequestSender.prototype = {
   send: function() {
-    var request_sender = new SIP.RequestSender(this, this.dialog.owner.ua);
-    request_sender.send();
+    var self = this,
+      request_sender = new SIP.RequestSender(this, this.dialog.owner.ua);
+
+      request_sender.send();
+
+    // RFC3261 14.2 Modifying an Existing Session -UAC BEHAVIOR-
+    if (this.request.method === SIP.C.INVITE && request_sender.clientTransaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
+      this.dialog.uac_pending_reply = true;
+      request_sender.clientTransaction.on('stateChanged', function(e){
+        if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED ||
+            e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
+            e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+          self.dialog.uac_pending_reply = false;
+        }
+      });
+    }
   },
 
   onRequestTimeout: function() {

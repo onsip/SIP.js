@@ -27,6 +27,7 @@ Exceptions= {
       this.code = 2;
       this.name = 'INVALID_STATE_ERROR';
       this.status = status;
+      this.message = 'Invalid status: ' + status;
     };
     exception.prototype = new Error();
     return exception;
@@ -36,6 +37,16 @@ Exceptions= {
     var exception = function(message) {
       this.code = 3;
       this.name = 'NOT_SUPPORTED_ERROR';
+      this.message = message;
+    };
+    exception.prototype = new Error();
+    return exception;
+  }()),
+
+  NotReadyError: (function(){
+    var exception = function(message) {
+      this.code = 4;
+      this.name = 'NOT_READY_ERROR';
       this.message = message;
     };
     exception.prototype = new Error();

@@ -17,7 +17,7 @@ var RTCMediaHandler = function(session, constraints) {
   this.localMedia = null;
   this.peerConnection = null;
 
-  this.init();
+  this.init(constraints);
 };
 
 RTCMediaHandler.prototype = {
@@ -47,6 +47,12 @@ RTCMediaHandler.prototype = {
         onFailure();
       }
     );
+
+    if (this.peerConnection.iceGatheringState === 'complete' && this.peerConnection.iceConnectionState === 'connected') {
+      window.setTimeout(function(){
+        self.onIceCompleted();
+      },0);
+    }
   },
 
   createAnswer: function(onSuccess, onFailure) {
@@ -73,8 +79,14 @@ RTCMediaHandler.prototype = {
         self.logger.error(e);
         onFailure();
       },
-      this.constraints
+      this.constraints.RTCConstraints
     );
+
+    if (this.peerConnection.iceGatheringState === 'complete' && this.peerConnection.iceConnectionState === 'connected') {
+      window.setTimeout(function(){
+        self.onIceCompleted();
+      },0);
+    }
   },
 
   setLocalDescription: function(sessionDescription, onFailure) {
@@ -108,30 +120,38 @@ RTCMediaHandler.prototype = {
   * peerConnection creation.
   * @param {Function} onSuccess Fired when there are no more ICE candidates
   */
-  init: function() {
-    var idx, length, server, scheme, url,
+  init: function(options) {
+    options = options || {};
+
+    var idx, length, server,
       self = this,
       servers = [],
+      constraints = options.RTCConstraints || {},
+      stun_servers = options.stun_servers || null,
+      turn_servers = options.turn_servers || null,
       config = this.session.ua.configuration;
 
-    length = config.stun_servers.length;
-    for (idx = 0; idx < length; idx++) {
-      server = config.stun_servers[idx];
-      servers.push({'url': server});
+    if (!stun_servers) {
+      stun_servers = config.stun_servers;
     }
 
-    length = config.turn_servers.length;
+    if(!turn_servers) {
+      turn_servers = config.turn_servers;
+    }
+
+    servers.push({'url': stun_servers});
+
+    length = turn_servers.length;
     for (idx = 0; idx < length; idx++) {
-      server = config.turn_servers[idx];
-      url = server.server;
-      scheme = url.substr(0, url.indexOf(':'));
+      server = turn_servers[idx];
       servers.push({
-        'url': scheme + ':' + server.username + '@' + url.substr(scheme.length+1),
+        'url': server.urls,
+        'username': server.username,
         'credential': server.password
       });
     }
 
-    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.constraints);
+    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, constraints);
 
     this.peerConnection.onaddstream = function(e) {
       self.logger.log('stream added: '+ e.stream.id);
@@ -151,13 +171,15 @@ RTCMediaHandler.prototype = {
 
     this.peerConnection.oniceconnectionstatechange = function(e) {
       self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
-      if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      if (this.iceConnectionState === 'disconnected') {
+        self.session.terminate({
+          cause: SIP.C.causes.RTP_TIMEOUT,
+          status_code: 200,
+          reason_phrase: SIP.C.causes.RTP_TIMEOUT
+        });
+      } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
         self.onIceCompleted();
       }
-    };
-
-    this.peerConnection.onicechange = function() {
-      self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
     };
 
     this.peerConnection.onstatechange = function() {

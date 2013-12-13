@@ -27,6 +27,9 @@ var Dialog,
 Dialog = function(owner, message, type, state) {
   var contact;
 
+  this.uac_pending_reply = false;
+  this.uas_pending_reply = false;
+
   if(!message.hasHeader('contact')) {
     return {
       error: 'unable to create a Dialog without Contact header field'
@@ -154,9 +157,11 @@ Dialog.prototype = {
 
   // RFC 3261 12.2.2
   checkInDialogRequest: function(request) {
+    var self = this;
+
     if(!this.remote_seqnum) {
       this.remote_seqnum = request.cseq;
-    } else if(request.method !== SIP.C.INVITE && request.cseq < this.remote_seqnum) {
+    } else if(request.cseq < this.remote_seqnum) {
         //Do not try to reply to an ACK request.
         if (request.method !== SIP.C.ACK) {
           request.reply(500);
@@ -172,29 +177,38 @@ Dialog.prototype = {
     switch(request.method) {
       // RFC3261 14.2 Modifying an Existing Session -UAS BEHAVIOR-
       case SIP.C.INVITE:
-        if(request.cseq < this.remote_seqnum) {
-          if(this.state === C.STATUS_EARLY) {
-            var retryAfter = (Math.random() * 10 | 0) + 1;
-            request.reply(500, null, ['Retry-After:'+ retryAfter]);
-          } else {
-            request.reply(500);
-          }
-          return false;
-        }
-        // RFC3261 14.2
-        if(this.state === C.STATUS_EARLY) {
+        if (this.uac_pending_reply === true) {
           request.reply(491);
+        } else if (this.uas_pending_reply === true) {
           return false;
+        } else {
+          this.uas_pending_reply = true;
+          request.server_transaction.on('stateChanged', function(e){
+            if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED ||
+                e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
+                e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+              self.uas_pending_reply = false;
+            }
+          });
         }
-        // RFC3261 12.2.2 Replace the dialog`s remote target URI
+
+        // RFC3261 12.2.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
-          this.remote_target = request.parseHeader('contact').uri;
+          request.server_transaction.on('stateChanged', function(e){
+            if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED) {
+              self.remote_target = request.parseHeader('contact').uri;
+            }
+          });
         }
         break;
       case SIP.C.NOTIFY:
-        // RFC6655 3.2 Replace the dialog`s remote target URI
+        // RFC6655 3.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
-          this.remote_target = request.parseHeader('contact').uri;
+          request.server_transaction.on('stateChanged', function(e){
+            if (e.sender.state === SIP.Transactions.C.STATUS_COMPLETED) {
+              self.remote_target = request.parseHeader('contact').uri;
+            }
+          });
         }
         break;
     }

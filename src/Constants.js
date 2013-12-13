@@ -12,6 +12,7 @@ SIP.C= {
 
   // SIP scheme
   SIP: 'sip',
+  SIPS: 'sips',
 
   // End and Failure causes
   causes: {

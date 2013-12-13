@@ -36,6 +36,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   }
 
   this.logger = ua.getLogger('sip.sipmessage');
+  this.ua = ua;
   this.headers = {};
   this.method = method;
   this.ruri = ruri;
@@ -98,8 +99,57 @@ OutgoingRequest.prototype = {
   setHeader: function(name, value) {
     this.headers[SIP.Utils.headerize(name)] = (value instanceof Array) ? value : [value];
   },
+
+  /**
+   * Get the value of the given header name at the given position.
+   * @param {String} name header name
+   * @returns {String|undefined} Returns the specified header, null if header doesn't exist.
+   */
+  getHeader: function(name) {
+    var header = this.headers[SIP.Utils.headerize(name)];
+
+    if(header) {
+      if(header[0]) {
+        return header[0].raw;
+      }
+    } else {
+      return;
+    }
+  },
+
+  /**
+   * Get the header/s of the given name.
+   * @param {String} name header name
+   * @returns {Array} Array with all the headers of the specified name.
+   */
+  getHeaders: function(name) {
+    var idx, length,
+      header = this.headers[SIP.Utils.headerize(name)],
+      result = [];
+
+    if(!header) {
+      return [];
+    }
+
+    length = header.length;
+    for (idx = 0; idx < length; idx++) {
+      result.push(header[idx].raw);
+    }
+
+    return result;
+  },
+
+  /**
+   * Verify the existence of the given header.
+   * @param {String} name header name
+   * @returns {boolean} true if header with given name exists, false otherwise
+   */
+  hasHeader: function(name) {
+    return(this.headers[SIP.Utils.headerize(name)]) ? true : false;
+  },
+
   toString: function() {
-    var msg = '', header, length, idx;
+    var msg = '', header, length, idx, supported = [];
 
     msg += this.method + ' ' + this.ruri + ' SIP/2.0\r\n';
 
@@ -115,7 +165,21 @@ OutgoingRequest.prototype = {
       msg += this.extraHeaders[idx] +'\r\n';
     }
 
-    msg += 'Supported: ' +  SIP.UA.C.SUPPORTED +'\r\n';
+    //Supported
+    if (this.method === SIP.C.REGISTER) {
+      supported.push('path', 'gruu');
+    } else if (this.method === SIP.C.INVITE && 
+               (this.ua.contact.pub_guu || this.ua.contact.temp_gruu)) {
+      supported.push('gruu');
+    }
+
+    if (this.ua.configuration.reliable === 'supported') {
+      supported.push('100rel');
+    }
+
+    supported.push('outbound');
+
+    msg += 'Supported: ' +  supported +'\r\n';
     msg += 'User-Agent: ' + SIP.C.USER_AGENT +'\r\n';
 
     if(this.body) {
@@ -291,6 +355,7 @@ IncomingMessage.prototype = {
  */
 IncomingRequest = function(ua) {
   this.logger = ua.getLogger('sip.sipmessage');
+  this.ua = ua;
   this.headers = {};
   this.ruri = null;
   this.transport = null;
@@ -309,6 +374,7 @@ IncomingRequest.prototype = new IncomingMessage();
 */
 IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onSuccess, onFailure) {
   var rr, vias, length, idx, response,
+  supported = [],
     to = this.getHeader('To'),
     r = 0,
     v = 0;
@@ -359,6 +425,20 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   for (idx = 0; idx < length; idx++) {
     response += extraHeaders[idx] +'\r\n';
   }
+
+  //Supported
+  if (this.method === SIP.C.INVITE && 
+               (this.ua.contact.pub_guu || this.ua.contact.temp_gruu)) {
+    supported.push('gruu');
+  }
+
+  if (this.ua.configuration.reliable === 'supported') {
+    supported.push('100rel');
+  }
+
+  supported.push('outbound');
+
+  response += 'Supported: ' + supported + '\r\n';
 
   if(body) {
     length = SIP.Utils.str_utf8_length(body);

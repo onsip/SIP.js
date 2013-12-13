@@ -41,8 +41,6 @@ var UA,
       'application/dtmf-relay'
     ],
 
-    SUPPORTED: 'path, outbound, gruu',
-
     MAX_FORWARDS: 69,
     TAG_LENGTH: 10
   };
@@ -50,6 +48,7 @@ var UA,
 UA = function(configuration) {
   var self = this,
   events = [
+    'connecting',
     'connected',
     'disconnected',
     'newTransaction',
@@ -497,6 +496,20 @@ UA.prototype.onTransportConnected = function(transport) {
 
 
 /**
+ * Transport connecting event
+ * @private
+ * @param {SIP.Transport} transport.
+ * #param {Integer} attempts.
+ */
+  UA.prototype.onTransportConnecting = function(transport, attempts) {
+    this.emit('connecting', this, {
+      transport: transport,
+      attempts: attempts
+    });
+  };
+
+
+/**
  * new Transaction
  * @private
  * @param {SIP.Transaction} transaction.
@@ -566,6 +579,7 @@ UA.prototype.receiveRequest = function(request) {
    * They are processed as if they had been received outside the dialog.
    */
   if(method === SIP.C.OPTIONS) {
+    new SIP.Transactions.NonInviteServerTransaction(request, this);
     request.reply(200, null, [
       'Allow: '+ SIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
@@ -573,10 +587,12 @@ UA.prototype.receiveRequest = function(request) {
   } else if (method === SIP.C.MESSAGE) {
     if (!this.checkEvent(methodLower) || this.listeners(methodLower).length === 0) {
       // UA is not listening for this.  Reject immediately.
+      new SIP.Transactions.NonInviteServerTransaction(request, this);
       request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
       return;
     }
     message = new SIP.MessageServerContext(this, request);
+    request.reply(200, null);
     this.emit('message', this, message);
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
@@ -862,8 +878,8 @@ UA.prototype.loadConfig = function(configuration) {
     if(configuration.hasOwnProperty(parameter)) {
       value = configuration[parameter];
 
-      // If the parameter value is null, empty string or undefined then apply its default value.
-      if(value === null || value === "" || value === undefined) { continue; }
+      // If the parameter value is null, empty string,undefined, or empty array then apply its default value.
+      if(value === null || value === "" || value === undefined || (value instanceof Array && value.length === 0)) { continue; }
       // If it's a number with NaN value then also apply its default value.
       // NOTE: JS does not allow "value === NaN", the following does the work:
       else if(typeof(value) === 'number' && window.isNaN(value)) { continue; }
@@ -1180,11 +1196,11 @@ UA.configuration_check = {
     },
 
     instance_id: function(instance_id) {
-      if (!(/^uuid?:/.test(instance_id))) {
-        instance_id = 'uuid:' + instance_id;
+      if ((/^uuid:/i.test(instance_id))) {
+        instance_id = instance_id.substr(5);
       }
 
-      if(SIP.Grammar.parse(instance_id, 'uuid_URI') === -1) {
+      if(SIP.Grammar.parse(instance_id, 'uuid') === -1) {
         return;
       } else {
         return instance_id;
@@ -1281,7 +1297,7 @@ UA.configuration_check = {
     },
 
     turn_servers: function(turn_servers) {
-      var idx, length, turn_server;
+      var idx, length, turn_server, url;
 
       if (turn_servers instanceof Array) {
         // Do nothing
@@ -1292,14 +1308,30 @@ UA.configuration_check = {
       length = turn_servers.length;
       for (idx = 0; idx < length; idx++) {
         turn_server = turn_servers[idx];
-        if (!turn_server.server || !turn_server.username || !turn_server.password) {
+        //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
+        if (turn_server.server) {
+          turn_server.urls = [turn_server.server];
+        } 
+
+        if (!turn_server.urls || !turn_server.username || !turn_server.password) {
           return;
-        } else if (!(/^turns?:/.test(turn_server.server))) {
-          turn_server.server = 'turn:' + turn_server.server;
         }
 
-        if(SIP.Grammar.parse(turn_server.server, 'turn_URI') === -1) {
-          return;
+        if (!turn_server.urls instanceof Array) {
+          turn_server.urls = [turn_server.urls];
+        }
+
+        length = turn_server.urls.length;
+        for (idx = 0; idx < length; idx++) {
+          url = turn_server.urls[idx];
+
+          if (!(/^turns?:/.test(url))) {
+            url = 'turn:' + url;
+          }
+
+          if(SIP.Grammar.parse(url, 'turn_URI') === -1) {
+            return;
+          }
         }
       }
       return turn_servers;

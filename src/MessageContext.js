@@ -6,7 +6,7 @@ MessageServerContext = function(ua, request) {
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
 
-  this.logger = ua.getLogger('sip.messageserver');
+  this.logger = ua.getLogger('sip.messageservercontext');
 };
 
 SIP.MessageServerContext = MessageServerContext;
@@ -19,7 +19,7 @@ MessageClientContext = function(ua, target, body, contentType) {
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, 'MESSAGE', target]);
 
-  this.logger = ua.getLogger('sip.messageclient');
+  this.logger = ua.getLogger('sip.messageclientcontext');
   this.body = body;
   this.contentType = contentType || 'text/plain';
 };

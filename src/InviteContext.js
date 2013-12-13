@@ -25,13 +25,18 @@ var InviteContext, InviteServerContext, InviteClientContext,
 
 InviteContext = function() {
   var events = [
+  'connecting',
   'terminated',
   'dtmf',
   'invite',
   'preaccepted',
   'canceled',
   'referred',
-  'bye'
+  'bye',
+  'hold',
+  'unhold',
+  'muted',
+  'unmuted'
   ];
 
   this.status = C.STATUS_NULL;
@@ -54,6 +59,13 @@ InviteContext = function() {
   this.start_time = null;
   this.end_time = null;
   this.tones = null;
+
+  // Mute/Hold state
+  this.audioMuted = false;
+  this.videoMuted = false;
+  this.local_hold = false;
+  this.remote_hold = false;
+
   this.media_constraints = {'audio':true, 'video':true};
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
@@ -358,6 +370,360 @@ InviteContext.prototype = {
     }
   },
 
+  /**
+  * Check if RTCSession is ready for a re-INVITE
+  *
+  * @returns {Boolean} 
+  */
+  isReadyForReinvite: function() {
+    if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
+      return false;
+    }
+
+    // Another INVITE transaction is in progress
+    if (this.dialog.uac_pending_reply === true || this.dialog.uas_pending_reply === true) {
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Mute
+   */
+  mute: function(options) {
+    options = options || {audio:true, video:false};
+
+    var audioMuted = false, 
+        videoMuted = false;
+
+    if (this.audioMuted === false && options.audio) {
+      audioMuted = true;
+      this.audioMuted = true;
+      this.toogleMuteAudio(true);
+    }
+
+    if (this.videoMuted === false && options.video) {
+      videoMuted = true;
+      this.videoMuted = true;
+      this.toogleMuteVideo(true);
+    }
+
+    if (audioMuted === true || videoMuted === true) {
+      this.onmute({
+        audio: audioMuted,
+        video: videoMuted
+      });
+    }
+  },
+
+  /**
+   * Unmute
+   */
+  unmute: function(options) {
+    options = options || {audio:true, video:true};
+ 
+    var audioUnMuted = false, 
+        videoUnMuted = false;
+
+    if (this.audioMuted === true && options.audio) {
+      this.audioMuted = false;
+      this.toogleMuteAudio(false);
+    }
+
+    if (this.videoMuted === true && options.video) {
+      videoUnMuted = true;
+      this.videoMuted = false;
+      this.toogleMuteVideo(false);
+    }
+
+    if (audioUnMuted === true || videoUnMuted === true) {
+      this.onunmute({
+        audio: audioUnMuted,
+        video: videoUnMuted
+      });
+    }
+  },
+
+  /**
+   * isMuted
+   */
+  isMuted: function() {
+    return {
+      audio: this.audioMuted,
+      video: this.videoMuted
+    };
+  },
+
+  /*
+   * @private
+   */
+  toogleMuteAudio: function(mute) {
+    var streamIdx, trackIdx, tracks,
+        localStreams = this.getLocalStreams();
+
+    for (streamIdx in localStreams) {
+      tracks = localStreams[streamIdx].getAudioTracks();
+      for (trackIdx in tracks) {
+        tracks[trackIdx].enabled = !mute;
+      }
+    }
+  },
+
+  /*
+   * @private
+   */
+  toogleMuteVideo: function(mute) {
+    var streamIdx, trackIdx, tracks,
+        localStreams = this.getLocalStreams();
+
+    for (streamIdx in localStreams) {
+      tracks = localStreams[streamIdx].getVideoTracks();
+      for (trackIdx in tracks) {
+        tracks[trackIdx].enabled = !mute;
+      }
+    }
+  },
+
+  /**
+   * Hold
+   */
+  hold: function() {
+
+    // Check if RTCSession is ready to send a reINVITE
+    if (!this.isReadyForReinvite()) {
+      throw new SIP.Exceptions.NotReadyError('Not ready for re-INVITE');
+    }
+
+    if (this.local_hold === true) {
+      return;
+    }
+
+    this.toogleMuteAudio(true);
+    this.toogleMuteVideo(true);
+
+    this.onhold('local');
+
+    this.sendReinvite({
+      mangle: function(body){
+        var idx, length;
+
+        body = SIP.Parser.parseSDP(body);
+
+        length = body.media.length;
+        for (idx=0; idx<length; idx++) {
+          if (body.media[idx].sendrecv === undefined) {
+            body.media[idx].sendrecv = 'sendonly';
+          } else if (body.media[idx].sendrecv === 'sendrecv') {
+            body.media[idx].sendrecv = 'sendonly';
+          } else if (body.media[idx].sendrecv === 'sendonly') {
+            body.media[idx].sendrecv = 'inactive';
+          }
+        }
+
+        return SIP.Parser.writeSDP(body);
+      }
+    });
+  },
+
+  /**
+   * Unhold
+   */
+  unhold: function() {
+
+    // Check if RTCSession is ready to send a reINVITE
+    if (!this.isReadyForReinvite()) {
+      throw new SIP.Exceptions.NotReadyError('Not ready for re-INVITE');
+    }
+
+    if (this.local_hold === false) {
+      return;
+    }
+
+    if (!this.audioMuted) {
+      this.toogleMuteAudio(false);
+    }
+
+    if (!this.videoMuted) {
+      this.toogleMuteVideo(false);
+    }
+
+    this.onunhold('local');
+
+    this.sendReinvite();
+  },
+
+  /**
+   * isOnHold
+   */
+  isOnHold: function() {
+    return {
+      local: this.local_hold,
+      remote: this.remote_hold
+    };
+  },
+
+  /**
+   * In dialog INVITE Reception
+   * @private
+   */
+  receiveReinvite: function(request) {
+    var sdp, idx, direction,
+        self = this,
+        contentType = request.getHeader('Content-Type'),
+        hold = true;
+
+    if (request.body) {
+      if (contentType !== 'application/sdp') {
+        this.logger.warn('invalid Content-Type');
+        request.reply(415);
+        return;
+      }
+     
+      sdp = SIP.Parser.parseSDP(request.body);
+
+      for (idx=0; idx < sdp.media.length; idx++) {
+        direction = sdp.sendrecv || sdp.media[idx].sendrecv || 'sendrecv';
+
+        if (direction !== 'sendonly' && direction !== 'inactive') {
+          hold = false;
+        }
+      }
+
+      this.rtcMediaHandler.onMessage(
+        'offer',
+        request.body,
+        /*
+         * onSuccess
+         * SDP Offer is valid
+         */
+        function() {
+          self.rtcMediaHandler.createAnswer(
+            function(body) {
+              request.reply(200, null, ['Contact: ' + self.contact], body,
+                function() {
+                  self.status = C.STATUS_WAITING_FOR_ACK;
+                  self.setInvite2xxTimer(request, body);
+                  self.setACKTimer();
+
+                  if (self.remote_hold === true && hold === false) {
+                    self.onunhold('remote');
+                  } else if (self.remote_hold === false && hold === true) {
+                    self.onhold('remote');
+                  }
+                });
+            },
+            function() {
+              request.reply(500);
+            }
+          );
+        },
+        /*
+         * onFailure
+         * Bad media description
+         */
+        function(e) {
+          self.logger.error(e);
+          request.reply(488);
+        }
+      );
+    }
+  },
+
+  sendReinvite: function(options) {
+    options = options || {}; 
+
+    var
+      self = this,
+       extraHeaders = options.extraHeaders || [],
+       eventHandlers = options.eventHandlers || {},
+       mangle = options.mangle || null;
+
+    if (eventHandlers.succeeded) {
+      this.reinviteSucceeded = eventHandlers.succeeded;
+    } else {
+      this.reinviteSucceeded = function(){};
+    }
+    if (eventHandlers.failed) {
+      this.reinviteFailed = eventHandlers.failed;
+    } else {
+      this.reinviteFailed = function(){};
+    }
+
+    extraHeaders.push('Contact: ' + this.contact);
+    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Content-Type: application/sdp');
+
+    this.receiveResponse = this.receiveReinviteResponse;
+
+    this.rtcMediaHandler.createOffer(
+      function(body){
+        if (mangle) {
+          body = mangle(body);
+        }
+
+        self.dialog.sendRequest(self, SIP.C.INVITE, {
+          extraHeaders: extraHeaders,
+          body: body
+        });
+      },
+      function() {
+        self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+      }
+    );
+  },
+ 
+  /**
+   * Reception of Response for in-dialog INVITE
+   * @private
+   */
+  receiveReinviteResponse: function(response) {
+    var self = this,
+        contentType = response.getHeader('Content-Type');
+
+    if (this.status === C.STATUS_TERMINATED) {
+      return;
+    }
+
+    switch(true) {
+      case /^1[0-9]{2}$/.test(response.status_code):
+        break;
+      case /^2[0-9]{2}$/.test(response.status_code):
+        this.status = C.STATUS_CONFIRMED;
+        this.sendRequest(SIP.C.ACK);
+
+        if(!response.body) {
+          this.reinviteFailed();
+          break;
+        } else if (contentType !== 'application/sdp') {
+          this.reinviteFailed();
+          break;
+        }
+
+        this.rtcMediaHandler.onMessage(
+          'answer',
+          response.body,
+          /*
+           * onSuccess
+           * SDP Answer fits with Offer.
+           */
+          function() {
+            self.reinviteSucceeded();
+          },
+          /*
+           * onFailure
+           * SDP Answer does not fit the Offer.
+           */
+          function() {
+            self.reinviteFailed();
+          }
+        );
+        break;
+      default:
+        this.reinviteFailed();
+    }
+  },
+
   acceptAndTerminate: function(response, status_code, reason_phrase) {
     var extraHeaders = [];
 
@@ -375,6 +741,52 @@ InviteContext.prototype = {
     }
 
     return this;
+  },
+
+  /**
+   * RFC3261 13.3.1.4
+   * Response retransmissions cannot be accomplished by transaction layer
+   *  since it is destroyed when receiving the first 2xx answer
+   */
+  setInvite2xxTimer: function(request, body) {
+    var self = this,
+        timeout = SIP.Timers.T1;
+
+    this.timers.invite2xxTimer = window.setTimeout(function invite2xxRetransmission() {
+      if (self.status !== C.STATUS_WAITING_FOR_ACK) {
+        return;
+      }
+
+      request.reply(200, null, ['Contact: ' + self.contact], body);
+
+      if (timeout < SIP.Timers.T2) {
+        timeout = timeout * 2;
+        if (timeout > SIP.Timers.T2) {
+          timeout = SIP.Timers.T2;
+        }
+      }
+      self.timers.invite2xxTimer = window.setTimeout(
+        invite2xxRetransmission, timeout
+      );
+    }, timeout);
+  },
+
+  /**
+   * RFC3261 14.2
+   * If a UAS generates a 2xx response and never receives an ACK,
+   *  it SHOULD generate a BYE to terminate the dialog.
+   */
+  setACKTimer: function() {
+    var self = this;
+
+    this.timers.ackTimer = window.setTimeout(function() {
+      if(self.status === C.STATUS_WAITING_FOR_ACK) {
+        self.logger.log('no ACK received, terminating the call');
+        window.clearTimeout(self.timers.invite2xxTimer);
+        self.sendRequest(SIP.C.BYE);
+        self.terminated(null, SIP.C.causes.NO_ACK);
+      }
+    }, SIP.Timers.TIMER_H);
   },
 
   onTransportError: function() {
@@ -405,6 +817,56 @@ InviteContext.prototype = {
         this.failed(response, SIP.C.causes.DIALOG_ERROR);
       }
     }
+  },
+
+  /**
+   * @private
+   */
+  onhold: function(originator) {
+    if (originator === 'local') {
+      this.local_hold = true;
+    } else {
+      this.remote_hold = true;
+    }
+   
+    this.emit('hold', this, {
+      originator: originator
+    });
+  },
+
+  /**
+   * @private
+   */
+  onunhold: function(originator) {
+    if (originator === 'local') {
+      this.local_hold = false;
+    } else {
+      this.remote_hold = false;
+    }
+
+    this.emit('unhold', this, {
+      originator: originator
+    });
+  },
+
+  /*
+   * @private
+   */
+  onmute: function(options) {
+    this.emit('muted', this, {
+      audio: options.audio,
+      video: options.video
+    });
+  },
+
+  /*
+   * @private
+   */
+  onunmute: function(options) {
+    this.emit('unmuted', this, {
+      audio: options.audio,
+      video: options.video
+    });
   },
 
   failed: function(response, cause) {
@@ -476,6 +938,12 @@ InviteContext.prototype = {
     });
 
     return this;
+  },
+
+  connecting: function(request) {
+    this.emit('connecting', this, {
+      request: request
+    });
   }
 };
 
@@ -543,9 +1011,9 @@ InviteServerContext = function(ua, request) {
   }
 
   //Initialize Media Session
-  this.rtcMediaHandler = new RTCMediaHandler(this,
-    {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
-  );
+  this.rtcMediaHandler = new RTCMediaHandler(this, {
+    RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
+  });
 
   function fireNewSession() {
     var options = {extraHeaders: ['Contact: ' + self.contact]};
@@ -636,7 +1104,51 @@ InviteServerContext.prototype = {
   terminate: function(options) {
     options = options || {};
 
-    if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
+    var
+    status_code = options.status_code,
+    reason_phrase = options.reason_phrase,
+    extraHeaders = options.extraHeaders || [],
+    body = options.body,
+    dialog,
+    self = this;
+
+    if (this.status === C.STATUS_WAITING_FOR_ACK &&
+       this.request.server_transaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
+      dialog = this.dialog;
+      
+      this.receiveRequest = function(request) {
+        if (request.method === SIP.C.ACK) {
+          this.request(SIP.C.BYE, {
+            extraHeaders: extraHeaders,
+            body: body
+          });
+          dialog.terminate();
+        }
+      };
+
+      this.request.server_transaction.on('stateChanged', function(e){
+        if (e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+          self.sendRequest(SIP.C.BYE, {
+            extraHeaders: extraHeaders,
+            body: body
+          });
+          dialog.terminate();
+        }
+      });
+
+      this.emit('bye', this, {
+        cause: reason_phrase,
+        code: status_code
+      });
+      this.terminated();
+
+      // Restore the dialog into 'this' in order to be able to send the in-dialog BYE :-)
+      this.dialog = dialog;
+
+      // Restore the dialog into 'ua' so the ACK can reach 'this' session
+      this.ua.dialogs[dialog.id.toString()] = dialog;
+      
+    } else if (this.status === C.STATUS_CONFIRMED) {
       this.bye(options);
     } else {
       this.reject(options);
@@ -697,7 +1209,10 @@ InviteServerContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      if (self.request.body && self.contentDisp !== 'render') {
+      self.connecting();
+      if (self.status === C.STATUS_TERMINATED) {
+        return;
+      } else if (self.request.body && self.contentDisp !== 'render') {
         self.rtcMediaHandler.createAnswer(
           sdpCreationSucceeded,
           sdpCreationFailed
@@ -768,7 +1283,10 @@ InviteServerContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      if (request.body && self.contentDisp !== 'render') {
+      self.connecting(request);
+      if (self.status === C.STATUS_TERMINATED) {
+        return;
+      } else if (request.body && self.contentDisp !== 'render') {
         self.rtcMediaHandler.createAnswer(
           sdpCreationSucceeded,
           sdpCreationFailed
@@ -795,51 +1313,10 @@ InviteServerContext.prototype = {
       var
         // run for reply success callback
         replySucceeded = function() {
-          var timeout = SIP.Timers.T1;
-
           self.status = C.STATUS_WAITING_FOR_ACK;
 
-          /**
-           * RFC3261 13.3.1.4
-           * Response retransmissions cannot be accomplished by transaction layer
-           *  since it is destroyed when receiving the first 2xx answer
-           */
-          self.timers.invite2xxTimer = window.setTimeout(function invite2xxRetransmission() {
-              if (self.status !== C.STATUS_WAITING_FOR_ACK) {
-                return;
-              }
-
-              request.reply(200, null, ['Contact: '+ self.contact], body);
-
-              if (timeout < SIP.Timers.T2) {
-                timeout = timeout * 2;
-                if (timeout > SIP.Timers.T2) {
-                  timeout = SIP.Timers.T2;
-                }
-              }
-              self.timers.invite2xxTimer = window.setTimeout(
-                invite2xxRetransmission, timeout
-              );
-            },
-            timeout
-          );
-
-          /**
-           * RFC3261 14.2
-           * If a UAS generates a 2xx response and never receives an ACK,
-           *  it SHOULD generate a BYE to terminate the dialog.
-           */
-          self.timers.ackTimer = window.setTimeout(function() {
-              if(self.status === C.STATUS_WAITING_FOR_ACK) {
-                self.logger.log('no ACK received, terminating the call');
-                window.clearTimeout(self.timers.invite2xxTimer);
-                self.sendRequest(SIP.C.BYE);
-                self.terminated(null, SIP.C.causes.NO_ACK);
-              }
-            },
-            SIP.Timers.TIMER_H
-          );
-
+          self.setInvite2xxTimer(request, body);
+          self.setACKTimer();
           if (self.request.body && self.contentDisp !== 'render') {
             self.accepted();
           }
@@ -891,6 +1368,9 @@ InviteServerContext.prototype = {
     }
 
     window.clearTimeout(this.timers.userNoAnswerTimer);
+
+    extraHeaders.unshift('Contact: ' + self.contact);
+
     if (this.status === C.STATUS_EARLY_MEDIA) {
       sdpCreationSucceeded(self.early_sdp);
     } else {
@@ -948,8 +1428,8 @@ InviteServerContext.prototype = {
         }
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
-        this.failed(request, SIP.C.causes.CANCELED);
         this.canceled(request);
+        this.failed(request, SIP.C.causes.CANCELED);
         this.terminated(request);
       }
     } else {
@@ -1011,7 +1491,7 @@ InviteServerContext.prototype = {
                       session.status = C.STATUS_EARLY_MEDIA;
                     } else if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                       session.status = C.STATUS_EARLY_MEDIA;
-                      session.answer();
+                      session.accept();
                     }
                     if (session.status === C.STATUS_EARLY_MEDIA) {
                       if (localMedia.getAudioTracks().length > 0) {
@@ -1046,7 +1526,7 @@ InviteServerContext.prototype = {
                 this.status = C.STATUS_EARLY_MEDIA;
               } else if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                 this.status = C.STATUS_EARLY_MEDIA;
-                this.answer();
+                this.accept();
               }
               if (session.status === C.STATUS_EARLY_MEDIA) {
                 localMedia = session.rtcMediaHandler.localMedia;
@@ -1069,6 +1549,7 @@ InviteServerContext.prototype = {
         case SIP.C.INVITE:
           if(this.status === C.STATUS_CONFIRMED) {
             this.logger.log('re-INVITE received');
+            this.receiveReinvite(request);
           }
           break;
         case SIP.C.INFO:
@@ -1160,10 +1641,24 @@ InviteClientContext.prototype = {
       extraHeaders = options.extraHeaders || [],
       mediaConstraints = options.mediaConstraints || {audio: true, video: true},
       RTCConstraints = options.RTCConstraints || {},
+      stun_servers = options.stun_servers || null,
+      turn_servers = options.turn_servers || null,
       inviteWithoutSdp = options.inviteWithoutSdp || false;
 
+    if (stun_servers) {
+      if (!SIP.UA.configuration_check.optional['stun_servers'](stun_servers)) {
+        throw new TypeError('Invalid stun_servers: '+ stun_servers);
+      }
+    }
+
+    if (turn_servers) {
+      if (!SIP.UA.configuration_check.optional['turn_servers'](turn_servers)) {
+        throw new TypeError('Invalid turn_servers: '+ turn_servers);
+      }
+    }
+
     // Set anonymous property
-    this.anonymous = options.anonymous;
+    this.anonymous = options.anonymous || false;
 
     //Custom data to be sent either in INVITE or in ACK
     this.renderbody = options.renderbody || null;
@@ -1173,9 +1668,12 @@ InviteClientContext.prototype = {
 
     this.contact = this.ua.contact.toString({
       anonymous: this.anonymous,
-      outbound: true
+      outbound: ((this.anonymous === false && this.ua.contact.pub_gruu) || (this.anonymous === true && this.ua.contact.temp_gruu)) ? false : true
     });
 
+    /* Do not add ;ob in initial forming dialog requests if the registration over 
+     *  the current connection got a GRUU URI.
+     */
     if (this.anonymous) {
       requestParams.from_display_name = 'Anonymous';
       requestParams.from_uri = 'sip:anonymous@anonymous.invalid';
@@ -1205,16 +1703,17 @@ InviteClientContext.prototype = {
     //Extra lines if we don't call send
     this.ua.applicants[this] = this;
     this.request = new SIP.OutgoingRequest(SIP.C.INVITE, this.target, this.ua, requestParams, extraHeaders);
-    if (options.body) {
-      this.request.body = options.body;
-    }
 
     this.local_identity = this.request.from;
     this.remote_identity = this.request.to;
     this.id = this.request.call_id + this.from_tag;
     this.logger = this.ua.getLogger('sip.inviteclientcontext', this.id);
     //End of extra lines
-    this.rtcMediaHandler = new RTCMediaHandler(this, RTCConstraints);
+    this.rtcMediaHandler = new RTCMediaHandler(this, {
+      RTCConstraints: RTCConstraints,
+      stun_servers: stun_servers,
+      turn_servers: turn_servers
+    });
 
     //Save the session into the ua sessions collection.
     this.ua.sessions[this.id] = this;
@@ -1241,12 +1740,15 @@ InviteClientContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      if (inviteWithoutSdp) {
+      if (self.status === C.STATUS_TERMINATED) {
+        return;
+      } else if (inviteWithoutSdp) {
         //just send an invite with no sdp...
         self.request.body = self.renderbody;
         self.status = C.STATUS_INVITE_SENT;
         request_sender.send();
       } else {
+        self.connecting(this.request);
         self.rtcMediaHandler.createOffer(
           offerCreationSucceeded,
           offerCreationFailed
@@ -1299,11 +1801,27 @@ InviteClientContext.prototype = {
       extraHeaders = [],
       options = null;
 
-    if(this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
-      if (response.status_code!==200) {
+    if (this.dialog && (response.status_code >= 200 && response.status <= 299)) {
+      if (id !== this.dialog.id.toString() ) {
+        if (!this.createDialog(response, 'UAC', true)) {
+          return;
+        }
+        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK);
+        this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
+        //session.failed(response, SIP.C.causes.WEBRTC_ERROR);
+        return;
+      } else if (this.status === C.STATUS_CONFIRMED) {
+        this.sendRequest(SIP.C.ACK);
         return;
       }
-    } else if (this.status === C.STATUS_EARLY_MEDIA && response.status_code !== 200) {
+    }
+
+   /* if (this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
+      if (response.status_code !== 200) {
+        return;
+      }
+    } else */if (this.status === C.STATUS_EARLY_MEDIA && response.status_code !== 200) {
+      //Early media has been set up with at least one other different branch, but a final 2xx response hasn't been received
       if (!this.earlyDialogs[id]) {
         this.createDialog(response, 'UAC', true);
       }
@@ -1341,7 +1859,9 @@ InviteClientContext.prototype = {
         // Create Early Dialog if 1XX comes with contact
         if(response.hasHeader('contact')) {
           // An error on dialog creation will fire 'failed' event
-          this.createDialog(response, 'UAC', true);
+          if (!this.createDialog(response, 'UAC', true)) {
+            break;
+          }
         }
 
         this.status = C.STATUS_1XX_RECEIVED;
@@ -1413,6 +1933,10 @@ InviteClientContext.prototype = {
           } else {
             // rtcMediaHandler.addStream successfully added
             var streamAdditionSucceeded = function() {
+              session.connecting(response);
+              if (session.status === C.STATUS_TERMINATED) {
+                return;
+              }
               session.earlyDialogs[id].rtcMediaHandler.createAnswer(
                 sdpCreationSucceeded,
                 sdpCreationFailed
@@ -1483,16 +2007,6 @@ InviteClientContext.prototype = {
         }
 
         if (this.status === C.STATUS_EARLY_MEDIA) {
-          if (id !== this.dialog.id.toString()) {
-            if (!this.createDialog(response, 'UAC', true)) {
-              break;
-            }
-            this.earlyDialogs[id].sendRequest(this, SIP.C.ACK);
-            this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
-            session.failed(response, SIP.C.causes.WEBRTC_ERROR);
-            break;
-          }
-
           this.status = C.STATUS_CONFIRMED;
           localMedia = this.rtcMediaHandler.localMedia;
           if (localMedia.getAudioTracks().length > 0) {
@@ -1710,8 +2224,8 @@ InviteClientContext.prototype = {
       this.request.cancel(cancel_reason);
     }
 
-    this.failed(null, SIP.C.causes.CANCELED);
     this.canceled(null);
+    this.failed(null, SIP.C.causes.CANCELED);
     this.terminated();
 
     return this;
@@ -1748,8 +2262,8 @@ InviteClientContext.prototype = {
       if(this.status === C.STATUS_EARLY_MEDIA) {
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
-        this.failed(request, SIP.C.causes.CANCELED);
         this.canceled(request);
+        this.failed(request, SIP.C.causes.CANCELED);
       }
     } else if (C.STATUS_CONFIRMED) {
       // Requests arriving here are in-dialog requests.
@@ -1760,6 +2274,7 @@ InviteClientContext.prototype = {
           break;
         case SIP.C.INVITE:
           this.logger.log('re-INVITE received');
+          this.receiveReinvite(request);
           break;
         case SIP.C.INFO:
           contentType = request.getHeader('content-type');

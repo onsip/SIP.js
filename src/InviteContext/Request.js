@@ -39,10 +39,17 @@ Request.prototype.send = function(method, options) {
   if (this.owner.status !== SIP.InviteContext.C.STATUS_1XX_RECEIVED &&
     this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ANSWER &&
     this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ACK &&
-    this.owner.status !== SIP.InviteContext.C.STATUS_CONFIRMED) {
+    this.owner.status !== SIP.InviteContext.C.STATUS_CONFIRMED &&
+    this.owner.status !== SIP.InviteContext.C.STATUS_TERMINATED) {
     throw new SIP.Exceptions.InvalidStateError(this.owner.status);
   }
 
+  /* Allow sending BYE in TERMINATED status (only if invitecontext is terminated before ACK arrives
+   * RFC3261 Section 15, Paragraph 2
+   */
+  else if (this.owner.status === C.STATUS_TERMINATED && method !== SIP.C.BYE) {
+    throw new SIP.Exceptions.InvalidStateError(this.owner.status);
+  }
   // Set event handlers
   for (event in eventHandlers) {
     this.on(event, eventHandlers[event]);
