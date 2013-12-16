@@ -1516,10 +1516,10 @@ InviteServerContext.prototype = {
        */
 
       /*
-       * Terminate the whole session in case the user didn't accept nor reject the
+       * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
        *request opening the session.
        */
-      if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA) {
+      if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || C.STATUS_ANSWERED) {
         if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
           window.clearTimeout(session.timers.rel1xxTimer);
           window.clearTimeout(session.timers.prackTimer);

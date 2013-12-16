@@ -178,7 +178,7 @@ module.exports = function(grunt) {
     var child;
 
     // Build a bundle of 'sdp-transform' for the browser.
-    console.log('"sdp" task: getting JsSIP parser from "sdp-transform" ...');
+    console.log('"sdp" task: getting SIP parser from "sdp-transform" ...');
     child = exec('browserify src/SDP/main.js -o src/SDP/dist/SDP.js', function(error, stdout, stderr) {
       if (error) {
         sys.print('ERROR: ' + stderr);
@@ -189,12 +189,12 @@ module.exports = function(grunt) {
     });
   });
 
-  // Task for building jssip-devel.js (uncompressed), jssip-X.Y.Z.js (uncompressed)
-  // and jssip-X.Y.Z.min.js (minified).
-  // Both jssip-devel.js and jssip-X.Y.Z.js are the same file with different name.
+  // Task for building jssip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
+  // and sip-X.Y.Z.min.js (minified).
+  // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
   grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'concat:post_dist', 'uglify:dist']);
 
-  // Task for building jssip-devel.js (uncompressed).
+  // Task for building sip-devel.js (uncompressed).
   grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel']);
 
   // Test tasks.

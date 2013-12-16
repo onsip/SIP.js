@@ -106,15 +106,25 @@ OutgoingRequest.prototype = {
    * @returns {String|undefined} Returns the specified header, null if header doesn't exist.
    */
   getHeader: function(name) {
-    var header = this.headers[SIP.Utils.headerize(name)];
+    var regexp, idx,
+      length = this.extraHeaders.length,
+      header = this.headers[SIP.Utils.headerize(name)];
 
     if(header) {
       if(header[0]) {
         return header[0].raw;
       }
     } else {
-      return;
+      regexp = new RegExp('^\\s*' + name + '\\s*:','i');
+      for (idx = 0; idx < length; idx++) {
+        header = this.extraHeaders[idx];
+        if (regexp.test(header)) {
+          return header.substring(header.indexOf(':')+1).trim();
+        }
+      }
     }
+
+    return;
   },
 
   /**
@@ -123,20 +133,27 @@ OutgoingRequest.prototype = {
    * @returns {Array} Array with all the headers of the specified name.
    */
   getHeaders: function(name) {
-    var idx, length,
+    var idx, length, regexp,
       header = this.headers[SIP.Utils.headerize(name)],
       result = [];
 
-    if(!header) {
-      return [];
+    if(header) {
+      length = header.length;
+      for (idx = 0; idx < length; idx++) {
+        result.push(header[idx]);
+      }
+      return result;
+    } else {
+      length = this.extraHeaders.length;
+      regexp = new RegExp('^\\s*' + name + '\\s*:','i');
+      for (idx = 0; idx < length; idx++) {
+        header = this.extraHeaders[idx];
+        if (regexp.test(header)) {
+          result.push(header.substring(header.indexOf(':')+1).trim());
+        }
+      }
+      return result;
     }
-
-    length = header.length;
-    for (idx = 0; idx < length; idx++) {
-      result.push(header[idx].raw);
-    }
-
-    return result;
   },
 
   /**
@@ -145,7 +162,21 @@ OutgoingRequest.prototype = {
    * @returns {boolean} true if header with given name exists, false otherwise
    */
   hasHeader: function(name) {
-    return(this.headers[SIP.Utils.headerize(name)]) ? true : false;
+    var regexp, idx,
+      length = this.extraHeaders.length;
+
+    if (this.headers[SIP.Utils.headerize(name)]) {
+      return true;
+    } else {
+      regexp = new RegExp('^\\s*' + name + '\\s*:','i');
+      for (idx = 0; idx < length; idx++) {
+        if (regexp.test(this.extraHeaders[idx])) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   },
 
   toString: function() {
@@ -162,7 +193,7 @@ OutgoingRequest.prototype = {
 
     length = this.extraHeaders.length;
     for (idx = 0; idx < length; idx++) {
-      msg += this.extraHeaders[idx] +'\r\n';
+      msg += this.extraHeaders[idx].trim() +'\r\n';
     }
 
     //Supported
@@ -423,7 +454,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
 
   length = extraHeaders.length;
   for (idx = 0; idx < length; idx++) {
-    response += extraHeaders[idx] +'\r\n';
+    response += extraHeaders[idx].trim() +'\r\n';
   }
 
   //Supported
