@@ -171,13 +171,14 @@ RTCMediaHandler.prototype = {
 
     this.peerConnection.oniceconnectionstatechange = function(e) {
       self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
-      if (this.iceConnectionState === 'disconnected') {
+      //Bria state changes are always connected -> disconnected -> connected, so session gets termi
+     /* if (this.iceConnectionState === 'disconnected') {
         self.session.terminate({
           cause: SIP.C.causes.RTP_TIMEOUT,
           status_code: 200,
           reason_phrase: SIP.C.causes.RTP_TIMEOUT
         });
-      } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      } else*/ if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
         self.onIceCompleted();
       }
     };
