@@ -66,6 +66,49 @@ InviteContext = function() {
   this.local_hold = false;
   this.remote_hold = false;
 
+  this.pending_actions = {
+    actions: [],
+     
+    length: function() {
+      return this.actions.length;
+    },
+     
+    isPending: function(name){
+      var 
+      idx = 0,
+      length = this.actions.length;
+         
+      for (idx; idx<length; idx++) {
+        if (this.actions[idx].name === name) {
+          return true;
+        }
+      }
+      return false;
+    },
+     
+    shift: function() {
+      return this.actions.shift();
+    },
+     
+    push: function(name) {
+      this.actions.push({
+        name: name
+      });
+    },
+     
+    pop: function(name) {
+      var 
+      idx = 0,
+      length = this.actions.length;
+
+      for (idx; idx<length; idx++) {
+        if (this.actions[idx].name === name) {
+          this.actions.splice(idx,1);
+        }
+      }
+    }
+   };
+
   this.media_constraints = {'audio':true, 'video':true};
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
@@ -375,9 +418,10 @@ InviteContext.prototype = {
   *
   * @returns {Boolean} 
   */
-  isReadyForReinvite: function() {
-    if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
-      return false;
+  isReadyToReinvite: function() {
+    //rtcMediaHandler is not ready
+    if (!this.rtcMediaHandler.isReady()) {
+      return;
     }
 
     // Another INVITE transaction is in progress
@@ -392,7 +436,10 @@ InviteContext.prototype = {
    * Mute
    */
   mute: function(options) {
-    options = options || {audio:true, video:false};
+    options = options || {
+      audio:this.getLocalStreams()[0].getAudioTracks().length > 0, 
+      video:this.getLocalStreams()[0].getVideoTracks().length > 0
+    };
 
     var audioMuted = false, 
         videoMuted = false;
@@ -421,20 +468,30 @@ InviteContext.prototype = {
    * Unmute
    */
   unmute: function(options) {
-    options = options || {audio:true, video:true};
+    options = options || {
+      audio:this.getLocalStreams()[0].getAudioTracks().length > 0, 
+      video:this.getLocalStreams()[0].getVideoTracks().length > 0
+    };
  
     var audioUnMuted = false, 
         videoUnMuted = false;
 
     if (this.audioMuted === true && options.audio) {
+      audioUnMuted = true;
       this.audioMuted = false;
-      this.toogleMuteAudio(false);
+
+      if (this.local_hold === false) {
+        this.toogleMuteAudio(false);
+      }
     }
 
     if (this.videoMuted === true && options.video) {
       videoUnMuted = true;
       this.videoMuted = false;
-      this.toogleMuteVideo(false);
+
+      if (this.local_hold === false) {
+        this.toogleMuteVideo(false);
+      }
     }
 
     if (audioUnMuted === true || videoUnMuted === true) {
@@ -490,17 +547,28 @@ InviteContext.prototype = {
    */
   hold: function() {
 
-    // Check if RTCSession is ready to send a reINVITE
-    if (!this.isReadyForReinvite()) {
-      throw new SIP.Exceptions.NotReadyError('Not ready for re-INVITE');
-    }
-
-    if (this.local_hold === true) {
-      return;
+    if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
     this.toogleMuteAudio(true);
     this.toogleMuteVideo(true);
+
+    // Check if RTCSession is ready to send a reINVITE
+    if (!this.isReadyToReinvite()) {
+      /* If there is a pending 'unhold' action, cancel it and don't queue this one
+       * Else, if there isn't any 'hold' action, add this one to the queue
+       * Else, if there is already a 'hold' action, skip
+       */
+      if (this.pending_actions.isPending('unhold')) {
+        this.pending_actions.pop('unhold');
+      } else if (!this.pending_actions.isPending('hold')) {
+        this.pending_actions.push('hold');
+      }
+      return;
+    } else if (this.local_hold === true) {
+        return;
+    }
 
     this.onhold('local');
 
@@ -531,13 +599,8 @@ InviteContext.prototype = {
    */
   unhold: function() {
 
-    // Check if RTCSession is ready to send a reINVITE
-    if (!this.isReadyForReinvite()) {
-      throw new SIP.Exceptions.NotReadyError('Not ready for re-INVITE');
-    }
-
-    if (this.local_hold === false) {
-      return;
+    if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
     if (!this.audioMuted) {
@@ -546,6 +609,21 @@ InviteContext.prototype = {
 
     if (!this.videoMuted) {
       this.toogleMuteVideo(false);
+    }
+
+    if (!this.isReadyToReinvite()) {
+      /* If there is a pending 'hold' action, cancel it and don't queue this one
+       * Else, if there isn't any 'unhold' action, add this one to the queue
+       * Else, if there is already a 'unhold' action, skip
+       */
+      if (this.pending_actions.isPending('hold')) {
+        this.pending_actions.pop('hold');
+      } else if (!this.pending_actions.isPending('unhold')) {
+        this.pending_actions.push('unhold');
+      }
+      return;
+    } else if (this.local_hold === false) {
+      return;
     }
 
     this.onunhold('local');
@@ -668,7 +746,10 @@ InviteContext.prototype = {
         });
       },
       function() {
-        self.failed('local', null, SIP.C.causes.WEBRTC_ERROR);
+        if (self.isReadyToReinvite()) {
+          self.onReadyToReinvite();
+        }
+        self.reinviteFailed();
       }
     );
   },
@@ -789,6 +870,23 @@ InviteContext.prototype = {
     }, SIP.Timers.TIMER_H);
   },
 
+  /*
+   * @private
+   */
+  onReadyToReinvite: function() {
+    var action = (this.pending_actions.length() > 0)? this.pending_actions.shift() : null;
+
+    if (!action) {
+      return;
+    }
+
+    if (action.name === 'hold') {
+      this.hold();
+    } else if (action.name === 'unhold') {
+      this.unhold();
+    }
+  },
+
   onTransportError: function() {
     if(this.status !== C.STATUS_TERMINATED) {
       if (this.status === C.STATUS_CONFIRMED) {
@@ -895,9 +993,9 @@ InviteContext.prototype = {
     return this;
   },
 
-  referred: function(response) {
+  referred: function(context) {
     this.emit('referred', this, {
-      response: response || null
+      context: context || null
     });
 
     return this;
@@ -1384,7 +1482,7 @@ InviteServerContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType, session = this, localMedia;
+    var contentType, session = this, localMedia, referSession;
 
     function confirmSession() {
       localMedia = session.rtcMediaHandler.localMedia;
@@ -1580,11 +1678,12 @@ InviteServerContext.prototype = {
               may send a BYE, but in the end the dialogs are destroyed.
             */
             this.terminate();
-            this.referred(request);
 
-            this.ua.invite(request.parseHeader('refer-to').uri, {
+            referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
               mediaConstraints: this.media_constraints
             });
+
+            this.referred(referSession);
 
           }
           break;
@@ -2246,7 +2345,7 @@ InviteClientContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType;
+    var contentType, referSession;
 
     if(request.method === SIP.C.CANCEL) {
       /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
@@ -2302,11 +2401,12 @@ InviteClientContext.prototype = {
             may send a BYE, but in the end the dialogs are destroyed.
           */
           this.terminate();
-          this.referred(request);
 
-          this.ua.invite(request.parseHeader('refer-to').uri, {
+          referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.media_constraints
           });
+
+          this.referred(referSession);
           break;
       }
     }

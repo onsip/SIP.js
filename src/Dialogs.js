@@ -188,6 +188,10 @@ Dialog.prototype = {
                 e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
                 e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
               self.uas_pending_reply = false;
+
+              if (self.uac_pending_reply === false) {
+                self.onReadyToReinvite();
+              }
             }
           });
         }

@@ -43,6 +43,10 @@ RequestSender.prototype = {
             e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
             e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
           self.dialog.uac_pending_reply = false;
+
+          if (self.dialog.uas_pending_reply === false) {
+            self.dialog.owner.onReadyToReinvite();
+          }
         }
       });
     }

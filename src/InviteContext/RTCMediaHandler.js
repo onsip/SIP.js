@@ -16,89 +16,108 @@ var RTCMediaHandler = function(session, constraints) {
   this.session = session;
   this.localMedia = null;
   this.peerConnection = null;
+  this.ready = true;
 
   this.init(constraints);
 };
 
 RTCMediaHandler.prototype = {
 
-  createOffer: function(onSuccess, onFailure) {
-    var
-      self = this,
-      sent = false;
+  isReady: function() {
+    return this.ready;
+  },
 
-    this.onIceCompleted = function() {
-      if (!sent) {
-        sent = true;
+  createOffer: function(onSuccess, onFailure) {
+    var self = this;
+
+    function onSetLocalDescriptionSuccess() {
+      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection.iceConnectionState === 'connected') {
+        self.ready = true;
         onSuccess(self.peerConnection.localDescription.sdp);
+      } else {
+        self.onIceCompleted = function() {
+          if (!self.ready) {
+            self.ready = true;
+            onSuccess(self.peerConnection.localDescription.sdp);
+          }
+        };
       }
-    };
+    }
+
+    this.ready = false;
 
     this.peerConnection.createOffer(
       function(sessionDescription){
         self.setLocalDescription(
           sessionDescription,
-          onFailure
+          onSetLocalDescriptionSuccess,
+          function(e) {
+            self.ready = true;
+            onFailure(e);
+          }
         );
       },
       function(e) {
+        self.ready = true;
         self.logger.error('unable to create offer');
         self.logger.error(e);
-        onFailure();
-      }
+        onFailure(e);
+      },
+      this.constraints.RTCConstraints
     );
-
-    if (this.peerConnection.iceGatheringState === 'complete' && this.peerConnection.iceConnectionState === 'connected') {
-      window.setTimeout(function(){
-        self.onIceCompleted();
-      },0);
-    }
   },
 
   createAnswer: function(onSuccess, onFailure) {
-    var
-      self = this,
-      sent = false;
+    var self = this;
 
-    this.onIceCompleted = function() {
-      if (!sent) {
-        sent = true;
+    function onSetLocalDescriptionSuccess() {
+      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection === 'connected') {
+        self.ready = true;
         onSuccess(self.peerConnection.localDescription.sdp);
+      } else {
+        self.onIceCompleted = function() {
+          if (!self.ready) {
+            self.ready = true;
+            onSuccess(self.peerConnection.localDescription.sdp);
+          }
+        };
       }
-    };
+    }
+
+    this.ready = false;
 
     this.peerConnection.createAnswer(
       function(sessionDescription){
         self.setLocalDescription(
           sessionDescription,
-          onFailure
+          onSetLocalDescriptionSuccess,
+          function(e) {
+            self.ready = true;
+            onFailure(e);
+          }
         );
       },
       function(e) {
+        self.ready = true;
         self.logger.error('unable to create answer');
         self.logger.error(e);
-        onFailure();
+        onFailure(e);
       },
       this.constraints.RTCConstraints
     );
 
-    if (this.peerConnection.iceGatheringState === 'complete' && this.peerConnection.iceConnectionState === 'connected') {
-      window.setTimeout(function(){
-        self.onIceCompleted();
-      },0);
-    }
   },
 
-  setLocalDescription: function(sessionDescription, onFailure) {
+  setLocalDescription: function(sessionDescription, onSuccess, onFailure) {
     var self = this;
 
     this.peerConnection.setLocalDescription(
       sessionDescription,
-      function(){},
+      onSuccess,
       function(e) {
         self.logger.error('unable to set local description');
         self.logger.error(e);
-        onFailure();
+        onFailure(e);
       }
     );
   },
@@ -171,7 +190,8 @@ RTCMediaHandler.prototype = {
 
     this.peerConnection.oniceconnectionstatechange = function(e) {
       self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
-      //Bria state changes are always connected -> disconnected -> connected, so session gets termi
+      //Bria state changes are always connected -> disconnected -> connected, so session gets terminated
+      //NOTE: JsSIP later removes the e argument, as well as the conditional we've left in
      /* if (this.iceConnectionState === 'disconnected') {
         self.session.terminate({
           cause: SIP.C.causes.RTP_TIMEOUT,
