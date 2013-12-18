@@ -128,8 +128,17 @@ module.exports = function(grunt) {
         banner: '<%= meta.banner %>'
       }
     },
-    qunit: {
-      noWebRTC: ['test/run-TestNoWebRTC.html']
+    jasmine: {
+      components: {
+        src: [
+        'dist/sip-devel.js'
+        ],
+        options: {
+          specs: 'test/spec/Spec*.js',
+          keepRunner : true,
+          //helpers: 'test/spec/*.js'
+        }
+      }
     }
   });
 
@@ -139,7 +148,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-include-replace');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-contrib-qunit');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
 
 
   // Task for building JsSIP Grammar.js and Grammar.min.js files.
@@ -198,14 +207,14 @@ module.exports = function(grunt) {
   grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel']);
 
   // Test tasks.
-  grunt.registerTask('testNoWebRTC', ['qunit:noWebRTC']);
-  grunt.registerTask('test', ['testNoWebRTC']);
+  grunt.registerTask('test',['jasmine']);
 
   // Travis CI task.
   // Doc: http://manuel.manuelles.nl/blog/2012/06/22/integrate-travis-ci-into-grunt/
   grunt.registerTask('travis', ['grammar', 'devel', 'test']);
 
   // Default task is an alias for 'build'.
-  grunt.registerTask('default', ['build']);
+  // I know this is annoying... but you could always do grunt build. This encourages better code testing! --Eric Green
+  grunt.registerTask('default', ['test','build']);
 
 };
