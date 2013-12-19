@@ -115,8 +115,9 @@ var grammar = module.exports = {
       format: "maxptime:%d"
     },
     { //a=sendrecv
-      name: 'sendrecv',
-      reg: /^(sendrecv|recvonly|sendonly|inactive)/
+      name: 'direction',
+      reg: /^(sendrecv|recvonly|sendonly|inactive)/,
+      format: "%s"
     },
     { //a=ice-ufrag:F7gI
       name: 'iceUfrag',

@@ -62,6 +62,7 @@ Dialog = function(owner, message, type, state) {
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route');
     this.invite_seqnum = message.cseq;
+    this.local_seqnum = message.cseq;
   }
   // RFC 3261 12.1.2
   else if(type === 'UAC') {
@@ -180,17 +181,21 @@ Dialog.prototype = {
         if (this.uac_pending_reply === true) {
           request.reply(491);
         } else if (this.uas_pending_reply === true) {
+          var retryAfter = (Math.random() * 10 | 0) + 1;
+          request.reply(500, null, ['Retry-After:' + retryAfter]);
           return false;
         } else {
           this.uas_pending_reply = true;
-          request.server_transaction.on('stateChanged', function(e){
+          request.server_transaction.on('stateChanged', function stateChanged(e){
             if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED ||
                 e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
                 e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+
+              request.server_transaction.removeListener('stateChanged', stateChanged);
               self.uas_pending_reply = false;
 
               if (self.uac_pending_reply === false) {
-                self.onReadyToReinvite();
+                self.owner.onReadyToReinvite();
               }
             }
           });

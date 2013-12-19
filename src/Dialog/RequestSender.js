@@ -38,10 +38,12 @@ RequestSender.prototype = {
     // RFC3261 14.2 Modifying an Existing Session -UAC BEHAVIOR-
     if (this.request.method === SIP.C.INVITE && request_sender.clientTransaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
       this.dialog.uac_pending_reply = true;
-      request_sender.clientTransaction.on('stateChanged', function(e){
+      request_sender.clientTransaction.on('stateChanged', function stateChanged(e){
         if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED ||
             e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
             e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+
+          request_sender.clientTransaction.removeListener('stateChanged', stateChanged);
           self.dialog.uac_pending_reply = false;
 
           if (self.dialog.uas_pending_reply === false) {

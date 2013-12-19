@@ -447,13 +447,13 @@ InviteContext.prototype = {
     if (this.audioMuted === false && options.audio) {
       audioMuted = true;
       this.audioMuted = true;
-      this.toogleMuteAudio(true);
+      this.toggleMuteAudio(true);
     }
 
     if (this.videoMuted === false && options.video) {
       videoMuted = true;
       this.videoMuted = true;
-      this.toogleMuteVideo(true);
+      this.toggleMuteVideo(true);
     }
 
     if (audioMuted === true || videoMuted === true) {
@@ -481,7 +481,7 @@ InviteContext.prototype = {
       this.audioMuted = false;
 
       if (this.local_hold === false) {
-        this.toogleMuteAudio(false);
+        this.toggleMuteAudio(false);
       }
     }
 
@@ -490,7 +490,7 @@ InviteContext.prototype = {
       this.videoMuted = false;
 
       if (this.local_hold === false) {
-        this.toogleMuteVideo(false);
+        this.toggleMuteVideo(false);
       }
     }
 
@@ -515,7 +515,7 @@ InviteContext.prototype = {
   /*
    * @private
    */
-  toogleMuteAudio: function(mute) {
+  toggleMuteAudio: function(mute) {
     var streamIdx, trackIdx, tracks,
         localStreams = this.getLocalStreams();
 
@@ -530,7 +530,7 @@ InviteContext.prototype = {
   /*
    * @private
    */
-  toogleMuteVideo: function(mute) {
+  toggleMuteVideo: function(mute) {
     var streamIdx, trackIdx, tracks,
         localStreams = this.getLocalStreams();
 
@@ -551,8 +551,8 @@ InviteContext.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    this.toogleMuteAudio(true);
-    this.toogleMuteVideo(true);
+    this.toggleMuteAudio(true);
+    this.toggleMuteVideo(true);
 
     // Check if RTCSession is ready to send a reINVITE
     if (!this.isReadyToReinvite()) {
@@ -580,12 +580,12 @@ InviteContext.prototype = {
 
         length = body.media.length;
         for (idx=0; idx<length; idx++) {
-          if (body.media[idx].sendrecv === undefined) {
-            body.media[idx].sendrecv = 'sendonly';
-          } else if (body.media[idx].sendrecv === 'sendrecv') {
-            body.media[idx].sendrecv = 'sendonly';
-          } else if (body.media[idx].sendrecv === 'sendonly') {
-            body.media[idx].sendrecv = 'inactive';
+          if (body.media[idx].direction === undefined) {
+            body.media[idx].direction = 'sendonly';
+          } else if (body.media[idx].direction === 'sendrecv') {
+            body.media[idx].direction = 'sendonly';
+          } else if (body.media[idx].direction === 'sendonly') {
+            body.media[idx].direction = 'inactive';
           }
         }
 
@@ -604,11 +604,11 @@ InviteContext.prototype = {
     }
 
     if (!this.audioMuted) {
-      this.toogleMuteAudio(false);
+      this.toggleMuteAudio(false);
     }
 
     if (!this.videoMuted) {
-      this.toogleMuteVideo(false);
+      this.toggleMuteVideo(false);
     }
 
     if (!this.isReadyToReinvite()) {
@@ -661,12 +661,14 @@ InviteContext.prototype = {
       sdp = SIP.Parser.parseSDP(request.body);
 
       for (idx=0; idx < sdp.media.length; idx++) {
-        direction = sdp.sendrecv || sdp.media[idx].sendrecv || 'sendrecv';
+        direction = sdp.direction || sdp.media[idx].direction || 'sendrecv';
 
         if (direction !== 'sendonly' && direction !== 'inactive') {
           hold = false;
         }
       }
+
+      this.rtcMediaHandler.onIceCompleted = undefined;
 
       this.rtcMediaHandler.onMessage(
         'offer',
@@ -709,7 +711,7 @@ InviteContext.prototype = {
   },
 
   sendReinvite: function(options) {
-    options = options || {}; 
+    options = options || {};
 
     var
       self = this,
@@ -720,7 +722,11 @@ InviteContext.prototype = {
     if (eventHandlers.succeeded) {
       this.reinviteSucceeded = eventHandlers.succeeded;
     } else {
-      this.reinviteSucceeded = function(){};
+      this.reinviteSucceeded = function(){
+        window.clearTimeout(self.timers.ackTimer);
+        window.clearTimeout(self.timers.invite2xxTimer);
+        self.status = C.STATUS_CONFIRMED;
+      };
     }
     if (eventHandlers.failed) {
       this.reinviteFailed = eventHandlers.failed;
@@ -732,6 +738,7 @@ InviteContext.prototype = {
     extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
     extraHeaders.push('Content-Type: application/sdp');
 
+    this.rtcMediaHandler.onIceCompleted = undefined;
     this.receiveResponse = this.receiveReinviteResponse;
 
     this.rtcMediaHandler.createOffer(
@@ -1110,7 +1117,7 @@ InviteServerContext = function(ua, request) {
 
   //Initialize Media Session
   this.rtcMediaHandler = new RTCMediaHandler(this, {
-    RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
+    RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}    
   });
 
   function fireNewSession() {
@@ -1729,6 +1736,7 @@ InviteClientContext = function(ua, target) {
   this.received_100 = false;
 
   this.method = SIP.C.INVITE;
+  this.receiveResponse = this.receiveInviteResponse;
 
   this.logger = ua.getLogger('sip.inviteclientcontext');
 };
@@ -1894,7 +1902,7 @@ InviteClientContext.prototype = {
     return this;
   },
 
-  receiveResponse: function(response) {
+  receiveInviteResponse: function(response) {
     var cause, localMedia,
       session = this,
       id = response.call_id + response.from_tag + response.to_tag,
@@ -2365,7 +2373,7 @@ InviteClientContext.prototype = {
         this.canceled(request);
         this.failed(request, SIP.C.causes.CANCELED);
       }
-    } else if (C.STATUS_CONFIRMED) {
+    } else {
       // Requests arriving here are in-dialog requests.
       switch(request.method) {
         case SIP.C.BYE:
@@ -2376,6 +2384,13 @@ InviteClientContext.prototype = {
         case SIP.C.INVITE:
           this.logger.log('re-INVITE received');
           this.receiveReinvite(request);
+          break;
+        case SIP.C.ACK:
+          if(this.status === C.STATUS_WAITING_FOR_ACK) {
+            window.clearTimeout(this.timers.ackTimer);
+            window.clearTimeout(this.timers.invite2xxTimer);
+            this.status = C.STATUS_CONFIRMED;
+          }
           break;
         case SIP.C.INFO:
           contentType = request.getHeader('content-type');

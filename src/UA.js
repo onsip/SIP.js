@@ -659,6 +659,9 @@ UA.prototype.receiveRequest = function(request) {
     dialog = this.findDialog(request);
 
     if(dialog) {
+      if (method === SIP.C.INVITE) {
+        new SIP.Transactions.InviteServerTransaction(request, this);
+      }
       dialog.receiveRequest(request);
     } else if (method === SIP.C.NOTIFY) {
       session = this.findSession(request);

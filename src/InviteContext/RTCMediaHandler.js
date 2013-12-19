@@ -10,9 +10,9 @@
 (function(SIP){
 
 var RTCMediaHandler = function(session, constraints) {
-  this.constraints = constraints || {};
+  constraints = constraints || {};
 
-  this.logger = session.ua.getLogger('sip.rtcsession.rtcmediahandler', session.id);
+  this.logger = session.ua.getLogger('sip.invitecontext.rtcmediahandler', session.id);
   this.session = session;
   this.localMedia = null;
   this.peerConnection = null;
@@ -27,7 +27,7 @@ RTCMediaHandler.prototype = {
     return this.ready;
   },
 
-  createOffer: function(onSuccess, onFailure) {
+  createOffer: function(onSuccess, onFailure, constraints) {
     var self = this;
 
     function onSetLocalDescriptionSuccess() {
@@ -36,10 +36,8 @@ RTCMediaHandler.prototype = {
         onSuccess(self.peerConnection.localDescription.sdp);
       } else {
         self.onIceCompleted = function() {
-          if (!self.ready) {
-            self.ready = true;
-            onSuccess(self.peerConnection.localDescription.sdp);
-          }
+          self.ready = true;
+          onSuccess(self.peerConnection.localDescription.sdp);
         };
       }
     }
@@ -63,23 +61,21 @@ RTCMediaHandler.prototype = {
         self.logger.error(e);
         onFailure(e);
       },
-      this.constraints.RTCConstraints
+      constraints
     );
   },
 
-  createAnswer: function(onSuccess, onFailure) {
+  createAnswer: function(onSuccess, onFailure, constraints) {
     var self = this;
 
     function onSetLocalDescriptionSuccess() {
-      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection === 'connected') {
+      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection.iceConnectionState === 'connected') {
         self.ready = true;
         onSuccess(self.peerConnection.localDescription.sdp);
       } else {
         self.onIceCompleted = function() {
-          if (!self.ready) {
-            self.ready = true;
-            onSuccess(self.peerConnection.localDescription.sdp);
-          }
+          self.ready = true;
+          onSuccess(self.peerConnection.localDescription.sdp);
         };
       }
     }
@@ -103,7 +99,7 @@ RTCMediaHandler.prototype = {
         self.logger.error(e);
         onFailure(e);
       },
-      this.constraints.RTCConstraints
+      constraints
     );
 
   },
@@ -145,7 +141,7 @@ RTCMediaHandler.prototype = {
     var idx, length, server,
       self = this,
       servers = [],
-      constraints = options.RTCConstraints || {},
+      constraints = options.constraints || {},
       stun_servers = options.stun_servers || null,
       turn_servers = options.turn_servers || null,
       config = this.session.ua.configuration;
@@ -188,19 +184,18 @@ RTCMediaHandler.prototype = {
       }
     };
 
-    this.peerConnection.oniceconnectionstatechange = function(e) {
+    this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
       self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
-      //Bria state changes are always connected -> disconnected -> connected, so session gets terminated
-      //NOTE: JsSIP later removes the e argument, as well as the conditional we've left in
-     /* if (this.iceConnectionState === 'disconnected') {
+      //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
+      if (this.iceConnectionState === 'failed') {
         self.session.terminate({
           cause: SIP.C.causes.RTP_TIMEOUT,
           status_code: 200,
           reason_phrase: SIP.C.causes.RTP_TIMEOUT
         });
-      } else*/ if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      }/* else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
         self.onIceCompleted();
-      }
+      }*/
     };
 
     this.peerConnection.onstatechange = function() {

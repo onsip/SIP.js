@@ -31,7 +31,7 @@
     "pegjs": "0.7.0",
     "node-minify": "~0.7.2",
     "browserify": "~2.36.0",
-    "sdp-transform": "~0.3.3"
+    "sdp-transform": "~0.4.0"
   },
   "engines": {
     "node": ">=0.8"
