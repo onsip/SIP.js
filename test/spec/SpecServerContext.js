@@ -1,15 +1,23 @@
 describe('ServerContext', function() {
   var ServerContext;
-  var ua = jasmine.createSpyObj('ua',['getLogger','normalizeTarget','applicants']);
-  var request = 'request'; 
+  var ua;
+  var request;
   
   beforeEach(function(){
+    ua = jasmine.createSpyObj('ua',['getLogger','normalizeTarget','applicants']);
+    request = 'request'; 
     ua.getLogger.andCallFake(function(){
       return jasmine.createSpyObj('logger',['log']);
     });
     SIP.Transactions.InviteServerTransaction = jasmine.createSpy('IST');
     SIP.Transactions.NonInviteServerTransaction = jasmine.createSpy('NST');
     ServerContext = new SIP.ServerContext(ua,request);
+  });
+  
+  afterEach(function() {
+    ua = null;
+    request = null;
+    
   });
   
   it('should set the ua', function() {

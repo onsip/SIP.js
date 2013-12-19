@@ -1,11 +1,15 @@
 describe("URI", function() {
   var URI;
-  var scheme = null;
-  var user = 'alice';
-  var host = 'test.com';
-  var port = 5060;
+  var scheme;
+  var user;
+  var host;
+  var port;
 
   beforeEach(function() {
+    scheme = null;
+    user = 'alice';
+    host = 'test.com';
+    port = 5060;
     URI = new SIP.URI(scheme, user, host, port);
   });
   
@@ -195,11 +199,6 @@ describe("URI", function() {
   
   it("should be able to create a string of itself", function() {
     expect(typeof URI.toString()).toEqual("string");
-  });
-  
-  it("should create an aor of itself", function() {
-    var show_port = 5061;
-    expect(URI.toAor(show_port)).toEqual(scheme||"sip" + ":" + user + "@" + host + ":" + port );
   });
   
   it("should parse a URI from a valid string", function() {
