@@ -215,6 +215,6 @@ module.exports = function(grunt) {
 
   // Default task is an alias for 'build'.
   // I know this is annoying... but you could always do grunt build. This encourages better code testing! --Eric Green
-  grunt.registerTask('default', ['test','build']);
+  grunt.registerTask('default', ['build','test']);
 
 };
