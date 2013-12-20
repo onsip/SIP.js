@@ -53,10 +53,12 @@ describe('ServerContext', function() {
   });
   
   describe('when there is progress', function() {
+    var callback;
+
     beforeEach(function() {
       ServerContext.request = jasmine.createSpyObj('request',['reply']);
       ServerContext.request.reply.andCallFake(function() { return 'reply'; });
-      ServerContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     it('should default to status code 180 if none is provided', function() {
       ServerContext.progress(null);
@@ -91,13 +93,12 @@ describe('ServerContext', function() {
     
     it('should emit event progress with a valid status code and response', function() {
       var counter = 0;
+      ServerContext.on('progress', callback);
       for (var i = 100; i < 200; i++) {
         var options = {statusCode : i};
         ServerContext.progress(options);
-        expect(ServerContext.emit.calls[counter].args[0]).toEqual('progress');
-        expect(ServerContext.emit.calls[counter].args[1]).toBe(ServerContext);
-        expect(ServerContext.emit.calls[counter].args[2].code).toBe(options.statusCode);
-        expect(ServerContext.emit.calls[counter].args[2].response).toEqual('reply');
+        expect(callback.calls[counter].args[0].code).toBe(options.statusCode);
+        expect(callback.calls[counter].args[0].response).toEqual('reply');
         counter++;
       }
     });
@@ -109,10 +110,11 @@ describe('ServerContext', function() {
   });
   
   describe('when there is an accept', function() {
+    var callback;
     beforeEach(function() {
       ServerContext.request = jasmine.createSpyObj('request',['reply']);
       ServerContext.request.reply.andCallFake(function() { return 'reply'; });
-      ServerContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     it('should default to status code 200 if none is provided', function() {
       ServerContext.accept(null);
@@ -147,13 +149,12 @@ describe('ServerContext', function() {
     
     it('should emit event accepted with a valid status code and null response', function() {
       var counter = 0;
+      ServerContext.on('accepted', callback);
       for (var i = 200; i < 300; i++) {
         var options = {statusCode : i};
         ServerContext.accept(options);
-        expect(ServerContext.emit.calls[counter].args[0]).toEqual('accepted');
-        expect(ServerContext.emit.calls[counter].args[1]).toBe(ServerContext);
-        expect(ServerContext.emit.calls[counter].args[2].code).toBe(options.statusCode);
-        expect(ServerContext.emit.calls[counter].args[2].response).toEqual(null);
+        expect(callback.calls[counter].args[0].code).toBe(options.statusCode);
+        expect(callback.calls[counter].args[0].response).toEqual(null);
         counter++;
       }
     });
@@ -165,10 +166,11 @@ describe('ServerContext', function() {
   });
   
   describe('when there is a reject', function() {
+    var callback;
     beforeEach(function() {
       ServerContext.request = jasmine.createSpyObj('request',['reply']);
       ServerContext.request.reply.andCallFake(function() { return 'reply'; });
-      ServerContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     
     it('should default to status code 480 if none is provided', function() {
@@ -199,22 +201,23 @@ describe('ServerContext', function() {
       expect(ServerContext.request.reply.calls.length).toEqual(counter);
     });
     
-    it('should emit event rejected and event fails with a valid status code and null response and reasonPgrase for a cause', function() {
+    it('should emit event rejected and event fails with a valid status code and null response and reasonPhrase for a cause', function() {
       var counter = 0;
+      var failedCallback = jasmine.createSpy('failed');
+      ServerContext.
+        on('rejected', callback).
+        on('failed', failedCallback);
+
       for (var i = 300; i < 700; i++) {
         var options = {statusCode : i, reasonPhrase : 'reason'};
         ServerContext.reject(options);
-        expect(ServerContext.emit.calls[counter].args[0]).toEqual('rejected');
-        expect(ServerContext.emit.calls[counter].args[1]).toBe(ServerContext);
-        expect(ServerContext.emit.calls[counter].args[2].code).toBe(options.statusCode);
-        expect(ServerContext.emit.calls[counter].args[2].response).toEqual(null);
-        expect(ServerContext.emit.calls[counter].args[2].cause).toBe(options.reasonPhrase);
-        expect(ServerContext.emit.calls[counter+1].args[0]).toEqual('failed');
-        expect(ServerContext.emit.calls[counter+1].args[1]).toBe(ServerContext);
-        expect(ServerContext.emit.calls[counter+1].args[2].code).toBe(options.statusCode);
-        expect(ServerContext.emit.calls[counter+1].args[2].response).toEqual(null);
-        expect(ServerContext.emit.calls[counter+1].args[2].cause).toBe(options.reasonPhrase);
-        counter+=2;
+        expect(callback.calls[counter].args[0].code).toBe(options.statusCode);
+        expect(callback.calls[counter].args[0].response).toEqual(null);
+        expect(callback.calls[counter].args[0].cause).toBe(options.reasonPhrase);
+        expect(failedCallback.calls[counter].args[0].code).toBe(options.statusCode);
+        expect(failedCallback.calls[counter].args[0].response).toEqual(null);
+        expect(failedCallback.calls[counter].args[0].cause).toBe(options.reasonPhrase);
+        counter++;
       }
     });
     
@@ -254,24 +257,28 @@ describe('ServerContext', function() {
   
     
   describe('when a request timeout occurs', function() {
+    var callback;
     beforeEach(function() {
-      ServerContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     
     it('should emit failed with a status code 0, null response, and request timeout cause', function() {
+      ServerContext.on('failed', callback);
       ServerContext.onRequestTimeout();
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed',0,null,SIP.C.causes.REQUEST_TIMEOUT);
+      expect(callback).toHaveBeenCalledWith(0, null, SIP.C.causes.REQUEST_TIMEOUT);
     });
   });
   
   describe('when a transport error occurs', function() {
+    var callback;
     beforeEach(function() {
-      ServerContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     
     it('should emit failed with a status code 0, null response, and connection error cause', function() {
+      ServerContext.on('failed', callback);
       ServerContext.onTransportError();
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed',0,null,SIP.C.causes.CONNECTION_ERROR);
+      expect(callback).toHaveBeenCalledWith(0, null, SIP.C.causes.CONNECTION_ERROR);
     });
   });
 });

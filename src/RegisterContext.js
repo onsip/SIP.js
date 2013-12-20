@@ -68,13 +68,13 @@ RegisterContext.prototype = {
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
-          this.emit('progress', this, {
+          this.emit('progress', {
             code: response.status_code,
             response: response
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
-          this.emit('accepted', this, {
+          this.emit('accepted', {
             code: response.status_code,
             response: response
           });
@@ -124,7 +124,7 @@ RegisterContext.prototype = {
           }
 
           this.registered = true;
-          this.emit('registered', this, {
+          this.emit('registered', {
             response: response || null
           });
           break;
@@ -166,7 +166,7 @@ RegisterContext.prototype = {
   },
 
   registrationFailure: function (response, cause) {
-    this.emit('failed', this, {
+    this.emit('failed', {
       response: response || null,
       cause: cause
     });
@@ -228,13 +228,13 @@ RegisterContext.prototype = {
 
       switch(true) {
         case /^1[0-9]{2}$/.test(response.status_code):
-          this.emit('progress', this, {
+          this.emit('progress', {
             code: response.status_code,
             response: response
           });
           break;
         case /^2[0-9]{2}$/.test(response.status_code):
-          this.emit('accepted', this, {
+          this.emit('accepted', {
             code: response.status_code,
             response: response
           });
@@ -266,7 +266,7 @@ RegisterContext.prototype = {
 
   unregistered: function(response, cause) {
     this.registered = false;
-    this.emit('unregistered', this.ua, {
+    this.emit('unregistered', {
       response: response || null,
       cause: cause || null
     });

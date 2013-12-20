@@ -57,7 +57,7 @@ ClientContext.prototype.receiveResponse = function (response) {
 
   switch(true) {
     case /^1[0-9]{2}$/.test(response.status_code):
-      this.emit('progress', this, {
+      this.emit('progress', {
         code: response.status_code,
         response: response
       });
@@ -67,7 +67,7 @@ ClientContext.prototype.receiveResponse = function (response) {
       if(this.ua.applicants[this]) {
         delete this.ua.applicants[this];
       }
-      this.emit('accepted', this, {
+      this.emit('accepted', {
         code: response.status_code,
         response: response
       });
@@ -78,12 +78,12 @@ ClientContext.prototype.receiveResponse = function (response) {
         delete this.ua.applicants[this];
       }
       cause = SIP.Utils.sipErrorCause(response.status_code);
-      this.emit('rejected', this, {
+      this.emit('rejected', {
         code: response && response.status_code,
         response: response,
         cause: cause
       });
-      this.emit('failed', this, {
+      this.emit('failed', {
         code: response && response.status_code,
         response: response,
         cause: cause

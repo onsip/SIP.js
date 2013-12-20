@@ -25,7 +25,7 @@ EventEmitter.prototype = {
     this.events = {};
     this.oneTimeListeners = {};
 
-    this.initMoreEvents(events);
+    return this.initMoreEvents(events);
   },
 
   initMoreEvents: function(events) {
@@ -46,6 +46,8 @@ EventEmitter.prototype = {
         this.logger.log('skipping event '+ events[idx]+ ' - Event exists');
       }
     }
+
+    return this;
   },
 
   /**
@@ -54,7 +56,16 @@ EventEmitter.prototype = {
   * @returns {Boolean}
   */
   checkEvent: function(event) {
-    return !!this.events[event];
+    return !!(this.events && this.events[event]);
+  },
+
+  /**
+  * Check whether an event exists and has at least one listener or not.
+  * @param {String} event
+  * @returns {Boolean}
+  */
+  checkListener: function(event) {
+    return this.checkEvent(event) && this.events[event].length > 0;
   },
 
   /**
@@ -62,27 +73,30 @@ EventEmitter.prototype = {
   * @param {String} event
   * @param {Function} listener
   */
-  addListener: function(event, listener) {
+  on: function(event, listener, bindTarget) {
     if (listener === undefined) {
-      return;
+      return this;
     } else if (typeof listener !== 'function') {
       this.logger.error('listener must be a function');
-      return;
+      return this;
     } else if (!this.checkEvent(event)) {
       this.logger.error('unable to add a listener to a nonexistent event '+ event);
-      return;
+      throw new TypeError('Invalid or uninitialized event: ' + event);
+    }
+
+    var listenerObj = { listener: listener };
+    if (bindTarget) {
+      listenerObj.bindTarget = bindTarget;
     }
 
     if (this.events[event].length >= this.maxListeners) {
       this.logger.warn('max listeners exceeded for event '+ event);
+      return this;
     }
 
-    this.events[event].push(listener);
+    this.events[event].push(listenerObj);
     this.logger.log('new listener added to event '+ event);
-  },
-
-  on: function(event, listener) {
-    this.addListener(event, listener);
+    return this;
   },
 
   /**
@@ -91,9 +105,20 @@ EventEmitter.prototype = {
   * @param {String} event
   * @param {Function} listener
   */
-  once: function(event, listener) {
-    this.on(event, listener);
-    this.oneTimeListeners[event].push(listener);
+  once: function(event, listener, bindTarget) {
+    var listeners = this.events && this.events[event] && this.events[event].length;
+
+    this.on(event, listener, bindTarget);
+
+    var listenersNow = this.events && this.events[event] && this.events[event].length;
+    if (listenersNow === listeners + 1) {
+      this.oneTimeListeners[event].push({
+        listener: listener,
+        bindTarget: bindTarget
+      });
+    }
+
+    return this;
   },
 
   /**
@@ -102,43 +127,38 @@ EventEmitter.prototype = {
   * @param {String} event
   * @param {Function} listener
   */
-  removeListener: function(event, listener) {
+  off: function(event, listener, bindTarget) {
     var events, length,
       idx = 0;
 
-    if (listener === undefined) {
-      return;
-    } else if (typeof listener !== 'function') {
+    if (listener && typeof listener !== 'function') {
       this.logger.error('listener must be a function');
+      return this;
+    } else if (!event) {
+      for (idx in this.events) {
+        this.events[idx] = [];
+        this.oneTimeListeners[idx] = [];
+      }
+      return this;
     } else if (!this.checkEvent(event)) {
       this.logger.error('unable to remove a listener from a nonexistent event '+ event);
-      return;
+      throw new TypeError('Invalid or uninitialized event: ' + event);
     }
 
     events = this.events[event];
     length = events.length;
 
     while (idx < length) {
-      if (events[idx] === listener) {
+      if (events[idx] &&
+          (!listener || events[idx].listener === listener) &&
+          (!bindTarget || events[idx].bindTarget === bindTarget)) {
         events.splice(idx,1);
       } else {
         idx ++;
       }
     }
-  },
 
-  /**
-  * Remove all listeners from the listener array for the specified event.
-  * @param {String} event
-  */
-  removeAllListener: function(event) {
-    if (!this.checkEvent(event)) {
-      this.logger.error('unable to remove listeners from a nonexistent event '+ event);
-      return;
-    }
-
-    this.events[event] = [];
-    this.oneTimeListeners[event] = [];
+    return this;
   },
 
   /**
@@ -150,24 +170,11 @@ EventEmitter.prototype = {
   setMaxListeners: function(listeners) {
     if (typeof listeners !== 'number' || listeners < 0) {
       this.logger.error('listeners must be a positive number');
-      return;
+      return this;
     }
 
     this.maxListeners = listeners;
-  },
-
-  /**
-  * Get the listeners for a specific event.
-  * @param {String} event
-  * @returns {Array}  Array of listeners for the specified event.
-  */
-  listeners: function(event) {
-    if (!this.checkEvent(event)) {
-      this.logger.error('no event '+ event);
-      return;
-    }
-
-    return this.events[event];
+    return this;
   },
 
   /**
@@ -175,23 +182,22 @@ EventEmitter.prototype = {
   * @param {String} events
   * @param {Array} args
   */
-  emit: function(event, sender, data) {
-    var listeners, idx, e;
+  emit: function(event) {
+    var listeners, idx, l;
 
     if (!this.checkEvent(event)) {
       this.logger.error('unable to emit a nonexistent event '+ event);
-      return;
+      throw new TypeError('Invalid or uninitialized event: ' + event);
     }
 
     this.logger.log('emitting event '+ event);
-
-    e = new SIP.Event(event, sender, data);
 
     // Fire event listeners
     listeners = this.events[event];
     for (idx in listeners) {
       try {
-        listeners[idx].apply(null, [e]);
+        listeners[idx].listener.apply(listeners[idx].bindTarget || this,
+                                      Array.prototype.slice.apply(arguments, [1]));
       } catch(err) {
         this.logger.error(err.stack);
       }
@@ -199,7 +205,8 @@ EventEmitter.prototype = {
 
     // Remove one time listeners
     for (idx in this.oneTimeListeners[event]) {
-      this.removeListener(event, this.oneTimeListeners[event][idx]);
+      l = this.oneTimeListeners[event][idx];
+      this.off(event, l.listener, l.bindTarget);
     }
 
     this.oneTimeListeners[event] = [];

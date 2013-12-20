@@ -40,7 +40,7 @@ ServerContext.prototype.progress = function (options) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('progress', this, {
+  this.emit('progress', {
         code: statusCode,
         response: response
       });
@@ -60,7 +60,7 @@ ServerContext.prototype.accept = function (options) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('accepted', this, {
+  this.emit('accepted', {
         code: statusCode,
         response: null
       });
@@ -80,12 +80,12 @@ ServerContext.prototype.reject = function (options) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('rejected', this, {
+  this.emit('rejected', {
     code: statusCode,
     response: null,
     cause: reasonPhrase
   });
-  this.emit('failed', this, {
+  this.emit('failed', {
     code: statusCode,
     response: null,
     cause: reasonPhrase

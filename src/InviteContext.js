@@ -239,7 +239,7 @@ InviteContext.prototype = {
       body: body
     });
 
-    this.emit('bye', this, {
+    this.emit('bye', {
       cause: reason_phrase,
       code: status_code
     });
@@ -932,7 +932,7 @@ InviteContext.prototype = {
       this.remote_hold = true;
     }
    
-    this.emit('hold', this, {
+    this.emit('hold', {
       originator: originator
     });
   },
@@ -947,7 +947,7 @@ InviteContext.prototype = {
       this.remote_hold = false;
     }
 
-    this.emit('unhold', this, {
+    this.emit('unhold', {
       originator: originator
     });
   },
@@ -956,7 +956,7 @@ InviteContext.prototype = {
    * @private
    */
   onmute: function(options) {
-    this.emit('muted', this, {
+    this.emit('muted', {
       audio: options.audio,
       video: options.video
     });
@@ -966,7 +966,7 @@ InviteContext.prototype = {
    * @private
    */
   onunmute: function(options) {
-    this.emit('unmuted', this, {
+    this.emit('unmuted', {
       audio: options.audio,
       video: options.video
     });
@@ -976,7 +976,7 @@ InviteContext.prototype = {
     var code = response ? response.status_code : null;
 
     this.close();
-    this.emit('failed', this, {
+    this.emit('failed', {
       response: response || null,
       cause: cause,
       code: code
@@ -989,7 +989,7 @@ InviteContext.prototype = {
     var code = response ? response.status_code : null;
 
     this.close();
-    this.emit('rejected', this, {
+    this.emit('rejected', {
       response: response || null,
       cause: cause,
       code: code
@@ -999,7 +999,7 @@ InviteContext.prototype = {
   },
 
   referred: function(context) {
-    this.emit('referred', this, {
+    this.emit('referred', {
       context: context || null
     });
 
@@ -1010,7 +1010,7 @@ InviteContext.prototype = {
     var code = response ? response.status_code : null;
 
     this.close();
-    this.emit('canceled', this, {
+    this.emit('canceled', {
       response: response || null,
       code: code
     });
@@ -1023,7 +1023,7 @@ InviteContext.prototype = {
 
     this.start_time = new Date();
 
-    this.emit('accepted', this, {
+    this.emit('accepted', {
       code: code,
       response: response || null
     });
@@ -1035,7 +1035,7 @@ InviteContext.prototype = {
     this.end_time = new Date();
 
     this.close();
-    this.emit('terminated', this, {
+    this.emit('terminated', {
       message: message || null,
       cause: cause || null
     });
@@ -1044,7 +1044,7 @@ InviteContext.prototype = {
   },
 
   connecting: function(request) {
-    this.emit('connecting', this, {
+    this.emit('connecting', {
       request: request
     });
   }
@@ -1144,7 +1144,7 @@ InviteServerContext = function(ua, request) {
       }, expires);
     }
 
-    self.emit('invite', self, {});
+    self.emit('invite');
   }
 
   if (!request.body || this.contentDisp === 'render') {
@@ -1229,8 +1229,8 @@ InviteServerContext.prototype = {
         }
       };
 
-      this.request.server_transaction.on('stateChanged', function(e){
-        if (e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+      this.request.server_transaction.on('stateChanged', function(){
+        if (this.state === SIP.Transactions.C.STATUS_TERMINATED) {
           self.sendRequest(SIP.C.BYE, {
             extraHeaders: extraHeaders,
             body: body
@@ -1239,7 +1239,7 @@ InviteServerContext.prototype = {
         }
       });
 
-      this.emit('bye', this, {
+      this.emit('bye', {
         cause: reason_phrase,
         code: status_code
       });
@@ -1301,7 +1301,7 @@ InviteServerContext.prototype = {
         }
       },SIP.Timers.T1*64);
 
-      self.emit('preaccepted', {});
+      self.emit('preaccepted');
     },
     sdpCreationFailed = function () {
       if (self.status === C.STATUS_TERMINATED) {
@@ -1970,7 +1970,7 @@ InviteClientContext.prototype = {
         }
 
         this.status = C.STATUS_1XX_RECEIVED;
-        this.emit('progress', this, {
+        this.emit('progress', {
           response: response || null
         });
 

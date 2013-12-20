@@ -69,14 +69,14 @@ Request.prototype.receiveResponse = function(response) {
 
   switch(true) {
     case /^1[0-9]{2}$/.test(response.status_code):
-      this.emit('progress', this, {
+      this.emit('progress', {
         originator: 'remote',
         response: response
       });
       break;
 
     case /^2[0-9]{2}$/.test(response.status_code):
-      this.emit('succeeded', this, {
+      this.emit('succeeded', {
         originator: 'remote',
         response: response
       });
@@ -84,7 +84,7 @@ Request.prototype.receiveResponse = function(response) {
 
     default:
       cause = SIP.Utils.sipErrorCause(response.status_code);
-      this.emit('failed', this, {
+      this.emit('failed', {
         originator: 'remote',
         response: response,
         cause: cause
@@ -97,7 +97,7 @@ Request.prototype.receiveResponse = function(response) {
  * @private
  */
 Request.prototype.onRequestTimeout = function() {
-  this.emit('failed', this, {
+  this.emit('failed', {
     originator: 'system',
     cause: SIP.C.causes.REQUEST_TIMEOUT
   });
@@ -108,7 +108,7 @@ Request.prototype.onRequestTimeout = function() {
  * @private
  */
 Request.prototype.onTransportError = function() {
-  this.emit('failed', this, {
+  this.emit('failed', {
     originator: 'system',
     cause: SIP.C.causes.CONNECTION_ERROR
   });
@@ -119,7 +119,7 @@ Request.prototype.onTransportError = function() {
  * @private
  */
 Request.prototype.onDialogError = function(response) {
-  this.emit('failed', this, {
+  this.emit('failed', {
     originator: 'remote',
     response: response,
     cause: SIP.C.causes.DIALOG_ERROR

@@ -78,75 +78,87 @@ describe('ClientContext', function() {
   });
   
   describe('when receiving a response', function() {
+    var callback;
+
     beforeEach(function() {
-      ClientContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     
     it('should emit progress on a 1xx response', function() {
       var counter = 0;
+      ClientContext.on('progress', callback.andCallFake(function () {
+        expect(this).toBe(ClientContext);
+      }));
       for (var i = 100; i < 200; i++) {
         ClientContext.receiveResponse({status_code:i});
-        expect(ClientContext.emit.calls[counter].args[0]).toEqual('progress');
-        expect(ClientContext.emit.calls[counter].args[1]).toBe(ClientContext);
-        expect(ClientContext.emit.calls[counter].args[2].code).toEqual(i);
-        expect(ClientContext.emit.calls[counter].args[2].response).toEqual({status_code:i});
+        expect(callback.calls[counter].args[0].code).toEqual(i);
+        expect(callback.calls[counter].args[0].response).toEqual({status_code:i});
         counter++;
       }
-      expect(ClientContext.emit.calls.length).toEqual(counter);
+      expect(callback.calls.length).toEqual(counter);
     });
     
     it('should emit accepted on a 2xx response', function() {
       var counter = 0;
+      ClientContext.on('accepted', callback.andCallFake(function () {
+        expect(this).toBe(ClientContext);
+      }));
       for (var i = 200; i < 300; i++) {
         ClientContext.receiveResponse({status_code:i});
-        expect(ClientContext.emit.calls[counter].args[0]).toEqual('accepted');
-        expect(ClientContext.emit.calls[counter].args[1]).toBe(ClientContext);
-        expect(ClientContext.emit.calls[counter].args[2].code).toEqual(i);
-        expect(ClientContext.emit.calls[counter].args[2].response).toEqual({status_code:i});
+        expect(callback.calls[counter].args[0].code).toEqual(i);
+        expect(callback.calls[counter].args[0].response).toEqual({status_code:i});
         counter++;
       }
-      expect(ClientContext.emit.calls.length).toEqual(counter);
+      expect(callback.calls.length).toEqual(counter);
     });
     
     it('should emit rejected and failed on all other responses',function() {
       var counter = 0;
+      var failedCallback = jasmine.createSpy('failed');
+      ClientContext.on('rejected', callback.andCallFake(function () {
+        expect(this).toBe(ClientContext);
+      }));
+      ClientContext.on('failed', failedCallback.andCallFake(function () {
+        expect(this).toBe(ClientContext);
+      }));
       for (i = 300; i < 700; i++) {
         ClientContext.receiveResponse({status_code:i});
-        expect(ClientContext.emit.calls[counter].args[0]).toEqual('rejected');
-        expect(ClientContext.emit.calls[counter].args[1]).toBe(ClientContext);
-        expect(ClientContext.emit.calls[counter].args[2].code).toEqual(i);
-        expect(ClientContext.emit.calls[counter].args[2].response).toEqual({status_code:i});
-        expect(ClientContext.emit.calls[counter].args[2].cause).toBeDefined();
-        expect(ClientContext.emit.calls[counter+1].args[0]).toEqual('failed');
-        expect(ClientContext.emit.calls[counter+1].args[1]).toBe(ClientContext);
-        expect(ClientContext.emit.calls[counter+1].args[2].code).toEqual(i);
-        expect(ClientContext.emit.calls[counter+1].args[2].response).toEqual({status_code:i});
-        expect(ClientContext.emit.calls[counter+1].args[2].cause).toBeDefined();
-        counter+=2;
+        expect(callback.calls[counter].args[0].code).toEqual(i);
+        expect(callback.calls[counter].args[0].response).toEqual({status_code:i});
+        expect(callback.calls[counter].args[0].cause).toBeDefined();
+        expect(failedCallback.calls[counter].args[0].code).toEqual(i);
+        expect(failedCallback.calls[counter].args[0].response).toEqual({status_code:i});
+        expect(failedCallback.calls[counter].args[0].cause).toBeDefined();
+        counter++;
       }
-      expect(ClientContext.emit.calls.length).toEqual(counter);
+      expect(callback.calls.length).toEqual(counter);
+      expect(failedCallback.calls.length).toEqual(counter);
     });
   });
   
   describe('when a request timeout occurs', function() {
+    var callback;
     beforeEach(function() {
-      ClientContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     
     it('should emit failed with a status code 0, null response, and request timeout cause', function() {
+      ClientContext.on('failed', callback);
       ClientContext.onRequestTimeout();
-      expect(ClientContext.emit).toHaveBeenCalledWith('failed',0,null,SIP.C.causes.REQUEST_TIMEOUT);
+      expect(callback).toHaveBeenCalledWith(0, null, SIP.C.causes.REQUEST_TIMEOUT);
     });
   });
   
   describe('when a transport error occurs', function() {
+    var callback;
     beforeEach(function() {
-      ClientContext.emit = jasmine.createSpy('emit');
+      callback = jasmine.createSpy('callback');
     });
     
     it('should emit failed with a status code 0, null response, and connection error cause', function() {
+      ClientContext.on('failed', callback);
       ClientContext.onTransportError();
-      expect(ClientContext.emit).toHaveBeenCalledWith('failed',0,null,SIP.C.causes.CONNECTION_ERROR);
+      expect(callback).toHaveBeenCalledWith(0,null,SIP.C.causes.CONNECTION_ERROR);
     });
   });
 });

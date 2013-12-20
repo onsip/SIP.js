@@ -173,23 +173,23 @@ UA = function(configuration) {
   // Initialize registerContext
   this.registerContext = new SIP.RegisterContext(this);
 
-  this.registerContext.on('failed', function(e) {
-    self.emit('registrationFailed', self, {
-      response: e.data.response,
-      cause: e.data.cause
+  this.registerContext.on('failed', function(data) {
+    self.emit('registrationFailed', {
+      response: data.response,
+      cause: data.cause
     });
   });
 
-  this.registerContext.on('registered', function(e) {
-    self.emit('registered', self, {
-      response: e.data.response
+  this.registerContext.on('registered', function(data) {
+    self.emit('registered', {
+      response: data.response
     });
   });
 
-  this.registerContext.on('unregistered', function(e) {
-    self.emit('unregistered', self, {
-      response: e.data.response,
-      cause: e.data.cause
+  this.registerContext.on('unregistered', function(data) {
+    self.emit('unregistered', {
+      response: data.response,
+      cause: data.cause
     });
   });
 };
@@ -284,7 +284,7 @@ UA.prototype.stop = function() {
 
   function transactionsListener() {
     if (ua.nistTransactionsCount === 0 && ua.nictTransactionsCount === 0) {
-        ua.removeListener('transactionDestroyed', transactionsListener);
+        ua.off('transactionDestroyed', transactionsListener);
         ua.transport.disconnect();
     }
   }
@@ -445,7 +445,7 @@ UA.prototype.onTransportError = function(transport) {
   //Mark this transport as 'down' and try the next one
   transport.server.status = SIP.Transport.C.STATUS_ERROR;
 
-  this.emit('disconnected', this, {
+  this.emit('disconnected', {
     transport: transport
   });
 
@@ -485,7 +485,7 @@ UA.prototype.onTransportConnected = function(transport) {
 
   this.status = C.STATUS_READY;
   this.error = null;
-  this.emit('connected', this, {
+  this.emit('connected', {
     transport: transport
   });
 
@@ -502,7 +502,7 @@ UA.prototype.onTransportConnected = function(transport) {
  * #param {Integer} attempts.
  */
   UA.prototype.onTransportConnecting = function(transport, attempts) {
-    this.emit('connecting', this, {
+    this.emit('connecting', {
       transport: transport,
       attempts: attempts
     });
@@ -516,7 +516,7 @@ UA.prototype.onTransportConnected = function(transport) {
  */
 UA.prototype.newTransaction = function(transaction) {
   this.transactions[transaction.type][transaction.id] = transaction;
-  this.emit('newTransaction', this, {
+  this.emit('newTransaction', {
     transaction: transaction
   });
 };
@@ -529,7 +529,7 @@ UA.prototype.newTransaction = function(transaction) {
  */
 UA.prototype.destroyTransaction = function(transaction) {
   delete this.transactions[transaction.type][transaction.id];
-  this.emit('transactionDestroyed', this, {
+  this.emit('transactionDestroyed', {
     transaction: transaction
   });
 };
@@ -585,7 +585,7 @@ UA.prototype.receiveRequest = function(request) {
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!this.checkEvent(methodLower) || this.listeners(methodLower).length === 0) {
+    if (!this.checkListener(methodLower)) {
       // UA is not listening for this.  Reject immediately.
       new SIP.Transactions.NonInviteServerTransaction(request, this);
       request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
@@ -593,22 +593,22 @@ UA.prototype.receiveRequest = function(request) {
     }
     message = new SIP.MessageServerContext(this, request);
     request.reply(200, null);
-    this.emit('message', this, message);
+    this.emit('message', message);
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
     transaction = new SIP.ServerContext(this, request);
     
-    transaction.on('progress', function (e) {
-      console.log('Progress request: ' + e.data.code + ' ' + e.data.response.method);
+    transaction.on('progress', function (data) {
+      console.log('Progress request: ' + data.code + ' ' + data.response.method);
     });
-    transaction.on('accepted', function (e) {
-      console.log('Accepted request: ' + e.data.code + ' ' + e.data.response.method);
+    transaction.on('accepted', function (data) {
+      console.log('Accepted request: ' + data.code + ' ' + data.response.method);
     });
-    transaction.on('failed', function (e) {
-      console.log('Failed request: ' + e.data.code +
-                  ' ' + (e.data.response && e.data.response.method) +
-                  ' Cause: ' + e.data.cause);
+    transaction.on('failed', function (data) {
+      console.log('Failed request: ' + data.code +
+                  ' ' + (data.response && data.response.method) +
+                  ' Cause: ' + data.cause);
     });
   }
 
@@ -620,10 +620,10 @@ UA.prototype.receiveRequest = function(request) {
           session = new SIP.InviteServerContext(this, request);
 
           if (session.contentDisp === 'render' || !request.body) {
-            self.emit('invite', this, session);
+            self.emit('invite', session);
           } else {
-            session.on('invite', function(e) {
-              self.emit('invite', this, e.sender);
+            session.on('invite', function() {
+              self.emit('invite', this);
             });
           }
         } else {

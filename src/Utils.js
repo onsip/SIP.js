@@ -204,7 +204,7 @@ Utils= {
       allowed = SIP.UA.C.ALLOWED_METHODS.toString();
 
     for (event in SIP.UA.C.EVENT_METHODS) {
-      if (ua.checkEvent(event) && ua.listeners(event).length > 0) {
+      if (ua.checkListener(event)) {
         allowed += ','+ SIP.UA.C.EVENT_METHODS[event];
       }
     }

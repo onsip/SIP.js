@@ -83,7 +83,7 @@ DTMF.prototype.send = function(tone, options) {
   body = "Signal= " + this.tone + "\r\n";
   body += "Duration= " + this.duration;
 
-  this.owner.emit('dtmf', this.owner, {
+  this.owner.emit('dtmf', {
     originator: 'local',
     dtmf: this,
     request: this.request
@@ -107,7 +107,7 @@ DTMF.prototype.receiveResponse = function(response) {
       break;
 
     case /^2[0-9]{2}$/.test(response.status_code):
-      this.emit('succeeded', this, {
+      this.emit('succeeded', {
         originator: 'remote',
         response: response
       });
@@ -115,7 +115,7 @@ DTMF.prototype.receiveResponse = function(response) {
 
     default:
       cause = SIP.Utils.sipErrorCause(response.status_code);
-      this.emit('failed', this, {
+      this.emit('failed', {
         originator: 'remote',
         response: response,
         cause: cause
@@ -128,7 +128,7 @@ DTMF.prototype.receiveResponse = function(response) {
  * @private
  */
 DTMF.prototype.onRequestTimeout = function() {
-  this.emit('failed', this, {
+  this.emit('failed', {
     originator: 'system',
     cause: SIP.C.causes.REQUEST_TIMEOUT
   });
@@ -139,7 +139,7 @@ DTMF.prototype.onRequestTimeout = function() {
  * @private
  */
 DTMF.prototype.onTransportError = function() {
-  this.emit('failed', this, {
+  this.emit('failed', {
     originator: 'system',
     cause: SIP.C.causes.CONNECTION_ERROR
   });
@@ -150,7 +150,7 @@ DTMF.prototype.onTransportError = function() {
  * @private
  */
 DTMF.prototype.onDialogError = function(response) {
-  this.emit('failed', this, {
+  this.emit('failed', {
     originator: 'remote',
     response: response,
     cause: SIP.C.causes.DIALOG_ERROR
@@ -186,7 +186,7 @@ DTMF.prototype.init_incoming = function(request) {
   if (!this.tone || !this.duration) {
     this.logger.warn('invalid INFO DTMF received, discarded');
   } else {
-    this.owner.emit('dtmf', this.owner, {
+    this.owner.emit('dtmf', {
       originator: 'remote',
       dtmf: this,
       request: request

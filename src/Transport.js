@@ -72,7 +72,7 @@ Transport.prototype = {
     if (this.reconnectTimer !== null) {
       window.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
-      this.ua.emit('disconnected', this.ua, {
+      this.ua.emit('disconnected', {
         transport: this,
         code: this.lastTransportError.code,
         reason: this.lastTransportError.reason
@@ -169,7 +169,7 @@ Transport.prototype = {
       if(!this.closed) {
         this.reConnect();
       } else {
-        this.ua.emit('disconnected', this.ua, {
+        this.ua.emit('disconnected', {
           transport: this,
           code: this.lastTransportError.code,
           reason: this.lastTransportError.reason

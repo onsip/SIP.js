@@ -186,12 +186,12 @@ Dialog.prototype = {
           return false;
         } else {
           this.uas_pending_reply = true;
-          request.server_transaction.on('stateChanged', function stateChanged(e){
-            if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED ||
-                e.sender.state === SIP.Transactions.C.STATUS_COMPLETED ||
-                e.sender.state === SIP.Transactions.C.STATUS_TERMINATED) {
+          request.server_transaction.on('stateChanged', function stateChanged(){
+            if (this.state === SIP.Transactions.C.STATUS_ACCEPTED ||
+                this.state === SIP.Transactions.C.STATUS_COMPLETED ||
+                this.state === SIP.Transactions.C.STATUS_TERMINATED) {
 
-              request.server_transaction.removeListener('stateChanged', stateChanged);
+              this.off('stateChanged', stateChanged);
               self.uas_pending_reply = false;
 
               if (self.uac_pending_reply === false) {
@@ -203,8 +203,8 @@ Dialog.prototype = {
 
         // RFC3261 12.2.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
-          request.server_transaction.on('stateChanged', function(e){
-            if (e.sender.state === SIP.Transactions.C.STATUS_ACCEPTED) {
+          request.server_transaction.on('stateChanged', function(){
+            if (this.state === SIP.Transactions.C.STATUS_ACCEPTED) {
               self.remote_target = request.parseHeader('contact').uri;
             }
           });
@@ -213,8 +213,8 @@ Dialog.prototype = {
       case SIP.C.NOTIFY:
         // RFC6655 3.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
-          request.server_transaction.on('stateChanged', function(e){
-            if (e.sender.state === SIP.Transactions.C.STATUS_COMPLETED) {
+          request.server_transaction.on('stateChanged', function(){
+            if (this.state === SIP.Transactions.C.STATUS_COMPLETED) {
               self.remote_target = request.parseHeader('contact').uri;
             }
           });
