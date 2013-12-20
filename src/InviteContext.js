@@ -668,8 +668,6 @@ InviteContext.prototype = {
         }
       }
 
-      this.rtcMediaHandler.onIceCompleted = undefined;
-
       this.rtcMediaHandler.onMessage(
         'offer',
         request.body,
@@ -1684,14 +1682,13 @@ InviteServerContext.prototype = {
               Harmless race condition.  Both sides of REFER
               may send a BYE, but in the end the dialogs are destroyed.
             */
-            this.terminate();
-
             referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
               mediaConstraints: this.media_constraints
             });
 
             this.referred(referSession);
 
+            this.terminate();
           }
           break;
       }
@@ -2415,13 +2412,13 @@ InviteClientContext.prototype = {
             Harmless race condition.  Both sides of REFER
             may send a BYE, but in the end the dialogs are destroyed.
           */
-          this.terminate();
-
           referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.media_constraints
           });
 
           this.referred(referSession);
+
+          this.terminate();
           break;
       }
     }

@@ -36,6 +36,7 @@ RTCMediaHandler.prototype = {
         onSuccess(self.peerConnection.localDescription.sdp);
       } else {
         self.onIceCompleted = function() {
+          self.onIceCompleted = undefined;
           self.ready = true;
           onSuccess(self.peerConnection.localDescription.sdp);
         };
@@ -74,6 +75,7 @@ RTCMediaHandler.prototype = {
         onSuccess(self.peerConnection.localDescription.sdp);
       } else {
         self.onIceCompleted = function() {
+          self.onIceCompleted = undefined;
           self.ready = true;
           onSuccess(self.peerConnection.localDescription.sdp);
         };
