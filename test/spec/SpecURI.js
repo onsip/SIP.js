@@ -220,4 +220,76 @@ describe("URI", function() {
     
     expect(parsedURI).toBeUndefined();
   });
+
+  var toParse = 'SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2';
+
+  describe('when calling URI.parse with "' + toParse + '"', function () {
+    var uri;
+
+    beforeEach(function () {
+      uri = SIP.URI.parse(toParse);
+    });
+
+    it('produces a SIP.URI', function () {
+      expect(uri instanceof(SIP.URI)).toBeTruthy();
+    });
+
+    function itParses (property, expected) {
+      it('parses the ' + property, function () {
+        expect(uri[property]).toEqual(expected);
+      });
+    }
+
+    itParses('scheme', 'sip');
+    itParses('user', 'aliCE');
+    itParses('host', 'versatica.com');
+    itParses('port', 6060);
+
+    it('parses non-null parameter "transport"', function () {
+      expect(uri.hasParam('transport')).toEqual(true);
+      expect(uri.getParam('transport')).toEqual('tcp');
+    });
+
+    it('doesn\'t parse missing parameter "nooo"', function () {
+      expect(uri.hasParam('nooo')).toEqual(false);
+      expect(uri.getParam('nooo')).toEqual(undefined);
+    });
+
+    function itsMethod (testName, methodName, argArray, expected) {
+      it(testName, function () {
+        expect(uri[methodName].apply(uri, argArray)).toEqual(expected);
+      });
+    }
+
+    itsMethod('parses non-null parameter foo', 'getParam', ['foo'], 'abc');
+    itsMethod('parses null parameter baz', 'getParam', ['baz'], null);
+    itsMethod('parses header list x-header-1', 'getHeader', ['x-header-1'], ['AaA1', 'AAA2']);
+    itsMethod('parses header X-HEADER-2', 'getHeader', ['X-HEADER-2'], ['BbB']);
+    itsMethod('doesn\'t parse missing header "nooo"', 'getHeader', ['nooo'], undefined);
+    itsMethod('correctly toString()s itself', 'toString', [], 'sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
+
+    var newUser = 'Iñaki:PASSWD';
+    describe('when setting the user to "' + newUser + '"', function () {
+      beforeEach(function () {
+        uri.user = newUser;
+      });
+
+      it('sets the user correctly', function () {
+        expect(uri.user).toEqual(newUser);
+      });
+
+      it('can delete parameter "foo" and delete header "x-header-1"', function () {
+        expect(uri.deleteParam('foo')).toEqual('abc');
+        expect(uri.deleteHeader('x-header-1')).toEqual(['AaA1', 'AAA2']);
+        expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versatica.com:6060;transport=tcp;baz?X-Header-2=BbB');
+      });
+
+      it('can clear parameters and headers, and nullify the port', function () {
+        uri.clearParams();
+        uri.clearHeaders();
+        uri.port = null;
+        expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versatica.com');
+      });
+    });
+  });
 });
