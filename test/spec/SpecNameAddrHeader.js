@@ -96,4 +96,78 @@ describe('NameAddrHeader', function() {
       expect(name.user).toBeUndefined();
     });
   });
+
+  var toParse = '"Iñaki ðđøþ" <SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2>;QWE=QWE;ASd';
+
+  describe("when calling NameAddrHeader.parse('" + toParse + "')", function () {
+    var header;
+
+    beforeEach(function () {
+      header = SIP.NameAddrHeader.parse(toParse);
+    });
+
+    it('returns a SIP.NameAddrHeader', function () {
+      expect(header instanceof(SIP.NameAddrHeader)).toBeTruthy();
+    });
+
+    it('parses the display name', function () {
+      expect(header.display_name).toEqual('Iñaki ðđøþ');
+    });
+
+    function itsMethod (testName, methodName, argArray, expected) {
+      it(testName, function () {
+        expect(header[methodName].apply(header, argArray)).toEqual(expected);
+      });
+    }
+
+    itsMethod('has parameter "qwe"', 'hasParam', ['qwe'], true);
+    itsMethod('gets parameter "qwe" as "QWE"', 'getParam', ['qwe'], 'QWE');
+    itsMethod('has parameter "asd"', 'hasParam', ['asd'], true);
+    itsMethod('gets parameter "asd" as null', 'getParam', ['asd'], null);
+    itsMethod('doesn\'t have parameter "nooo"', 'hasParam', ['nooo'], false);
+
+    var newDispName = "Foo Bar";
+    it('can set the display name to "' + newDispName + '"', function () {
+      header.display_name = newDispName;
+      expect(header.display_name).toEqual(newDispName);
+    });
+
+    newDispName = null;
+    it('can set the display name to ' + newDispName, function () {
+      header.display_name = newDispName;
+      expect(header.display_name).toEqual(newDispName);
+      expect(header.toString()).toEqual('<sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd');
+    });
+
+    describe('its URI:', function () {
+      function itsUriParses (property, expected) {
+        it('parses the ' + property, function () {
+          expect(header.uri[property]).toEqual(expected);
+        });
+      }
+
+      itsUriParses('scheme', 'sip');
+      itsUriParses('user', 'aliCE');
+      itsUriParses('host', 'versatica.com');
+      itsUriParses('port', 6060);
+
+      function itsUriMethod (methodName, methodArg, expected) {
+        var quote = (typeof expected === 'string') ? '"' : '';
+        var testName = methodName + '("' + methodArg + '") is ' + quote + expected + quote;
+        it(testName, function () {
+          expect(header.uri[methodName].call(header.uri, methodArg)).toEqual(expected);
+        });
+      }
+
+      itsUriMethod('hasParam', 'transport', true);
+      itsUriMethod('getParam', 'transport', 'tcp');
+      itsUriMethod('hasParam', 'nooo', false);
+      itsUriMethod('getParam', 'foo', 'abc');
+      itsUriMethod('getParam', 'baz', null);
+      itsUriMethod('getParam', 'noo', undefined);
+      itsUriMethod('getHeader', 'x-header-1', ['AaA1', 'AAA2']);
+      itsUriMethod('getHeader', 'X-HEADER-2', ['BbB']);
+      itsUriMethod('getHeader', 'nooo', undefined);
+    });
+  });
 });
