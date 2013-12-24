@@ -21,7 +21,6 @@ describe('NameAddrHeader', function() {
   });
 
   it('can create a string of itself', function() {
-    //expect(name.toString()).toEqual('"Alice æßð" <sip:alice@sip.js.net>');
     expect(name.toString()).toEqual(toStringAll);
   });
   
@@ -114,17 +113,17 @@ describe('NameAddrHeader', function() {
       expect(header.display_name).toEqual('Iñaki ðđøþ');
     });
 
-    function itsMethod (testName, methodName, argArray, expected) {
+    function itsMethod (testName, methodName, methodArg, expected) {
       it(testName, function () {
-        expect(header[methodName].apply(header, argArray)).toEqual(expected);
+        expect(header[methodName].call(header, methodArg)).toEqual(expected);
       });
     }
 
-    itsMethod('has parameter "qwe"', 'hasParam', ['qwe'], true);
-    itsMethod('gets parameter "qwe" as "QWE"', 'getParam', ['qwe'], 'QWE');
-    itsMethod('has parameter "asd"', 'hasParam', ['asd'], true);
-    itsMethod('gets parameter "asd" as null', 'getParam', ['asd'], null);
-    itsMethod('doesn\'t have parameter "nooo"', 'hasParam', ['nooo'], false);
+    itsMethod('has parameter "qwe"', 'hasParam', 'qwe', true);
+    itsMethod('gets parameter "qwe" as "QWE"', 'getParam', 'qwe', 'QWE');
+    itsMethod('has parameter "asd"', 'hasParam', 'asd', true);
+    itsMethod('gets parameter "asd" as null', 'getParam', 'asd', null);
+    itsMethod('doesn\'t have parameter "nooo"', 'hasParam', 'nooo', false);
 
     var newDispName = "Foo Bar";
     it('can set the display name to "' + newDispName + '"', function () {
