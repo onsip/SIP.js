@@ -152,8 +152,7 @@ describe('NameAddrHeader', function() {
       itsUriParses('port', 6060);
 
       function itsUriMethod (methodName, methodArg, expected) {
-        var quote = (typeof expected === 'string') ? '"' : '';
-        var testName = methodName + '("' + methodArg + '") is ' + quote + expected + quote;
+        var testName = methodName + '("' + methodArg + '") is ' + JSON.stringify(expected);
         it(testName, function () {
           expect(header.uri[methodName].call(header.uri, methodArg)).toEqual(expected);
         });

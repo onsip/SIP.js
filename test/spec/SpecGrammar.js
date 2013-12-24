@@ -1,14 +1,13 @@
 describe('Grammar', function () {
   function itHas (objThunk, property, value) {
-    var quote = (typeof value === 'string') ? '"' : ''
-    it('has ' + property + ': ' + quote + value + quote, function () {
+    var testName = 'has ' + property + ': ' + JSON.stringify(value);
+    it(testName, function () {
       expect(objThunk()[property]).toEqual(value);
     });
   }
 
   function itsMethodReturns (objThunk, methodName, methodArg, expected) {
-    var quote = (typeof expected === 'string') ? '"' : '';
-    var testName = methodName + '("' + methodArg + '") is ' + quote + expected + quote;
+    var testName = methodName + '("' + methodArg + '") is ' + JSON.stringify(expected);
     it(testName, function () {
       expect(objThunk()[methodName].call(objThunk(), methodArg)).toEqual(expected);
     });

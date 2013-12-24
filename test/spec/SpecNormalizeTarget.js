@@ -15,8 +15,7 @@ describe('Utils.normalizeTarget', function() {
     }
 
     function test_error (given_data) {
-      quote = (typeof given_data === 'string') ? '"' : '';
-      it('fails to normalize ' + quote + given_data + quote, function () {
+      it('fails to normalize ' + JSON.stringify(given_data), function () {
         var uri = SIP.Utils.normalizeTarget(given_data, domain);
         expect(uri).toBeUndefined();
       });
