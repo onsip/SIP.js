@@ -14,7 +14,7 @@ describe('Grammar', function () {
   }
 
   var contactString = '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sip:DOMAIN.com:5>';
-  describe('Contacts parsed from ' + contactString, function () {
+  describe("Contacts parsed from '" + contactString + "'", function () {
     var contacts;
 
     beforeEach(function () {
