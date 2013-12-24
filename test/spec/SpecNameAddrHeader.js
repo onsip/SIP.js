@@ -115,7 +115,7 @@ describe('NameAddrHeader', function() {
 
     function itsMethod (testName, methodName, methodArg, expected) {
       it(testName, function () {
-        expect(header[methodName].call(header, methodArg)).toEqual(expected);
+        expect(header[methodName](methodArg)).toEqual(expected);
       });
     }
 
@@ -153,7 +153,7 @@ describe('NameAddrHeader', function() {
       function itsUriMethod (methodName, methodArg, expected) {
         var testName = methodName + '("' + methodArg + '") is ' + JSON.stringify(expected);
         it(testName, function () {
-          expect(header.uri[methodName].call(header.uri, methodArg)).toEqual(expected);
+          expect(header.uri[methodName](methodArg)).toEqual(expected);
         });
       }
 

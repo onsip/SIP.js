@@ -9,7 +9,7 @@ describe('Grammar', function () {
   function itsMethodReturns (objThunk, methodName, methodArg, expected) {
     var testName = methodName + '("' + methodArg + '") is ' + JSON.stringify(expected);
     it(testName, function () {
-      expect(objThunk()[methodName].call(objThunk(), methodArg)).toEqual(expected);
+      expect(objThunk()[methodName](methodArg)).toEqual(expected);
     });
   }
 

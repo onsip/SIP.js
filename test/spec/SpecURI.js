@@ -255,18 +255,18 @@ describe("URI", function() {
       expect(uri.getParam('nooo')).toEqual(undefined);
     });
 
-    function itsMethod (testName, methodName, argArray, expected) {
+    function itsMethod (testName, methodName, methodArg, expected) {
       it(testName, function () {
-        expect(uri[methodName].apply(uri, argArray)).toEqual(expected);
+        expect(uri[methodName](methodArg)).toEqual(expected);
       });
     }
 
-    itsMethod('parses non-null parameter foo', 'getParam', ['foo'], 'abc');
-    itsMethod('parses null parameter baz', 'getParam', ['baz'], null);
-    itsMethod('parses header list x-header-1', 'getHeader', ['x-header-1'], ['AaA1', 'AAA2']);
-    itsMethod('parses header X-HEADER-2', 'getHeader', ['X-HEADER-2'], ['BbB']);
-    itsMethod('doesn\'t parse missing header "nooo"', 'getHeader', ['nooo'], undefined);
-    itsMethod('correctly toString()s itself', 'toString', [], 'sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
+    itsMethod('parses non-null parameter foo', 'getParam', 'foo', 'abc');
+    itsMethod('parses null parameter baz', 'getParam', 'baz', null);
+    itsMethod('parses header list x-header-1', 'getHeader', 'x-header-1', ['AaA1', 'AAA2']);
+    itsMethod('parses header X-HEADER-2', 'getHeader', 'X-HEADER-2', ['BbB']);
+    itsMethod('doesn\'t parse missing header "nooo"', 'getHeader', 'nooo', undefined);
+    itsMethod('correctly toString()s itself', 'toString', undefined, 'sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
 
     var newUser = 'Iñaki:PASSWD';
     describe('when setting the user to "' + newUser + '"', function () {
