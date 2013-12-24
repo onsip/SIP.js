@@ -33,7 +33,7 @@ TestSIP.Helpers = {
     display_name: 'Fake UA ð→€ł !!!',
     register: false,
     use_preloaded_route: true,
-    registrar_server: 'registrar.sipjs.NET:6060;TRansport=TCP'
+    registrar_server: 'registrar.sip.js.NET:6060;TRansport=TCP'
   },
 
   createFakeUA: function() {

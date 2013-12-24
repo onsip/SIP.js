@@ -31,7 +31,7 @@ test('UA no WS connection', function() {
     }
   }
 
-  ua.sendMessage('test', 'FAIL WITH CONNECTION_ERROR PLEASE', {
+  ua.message('test', 'FAIL WITH CONNECTION_ERROR PLEASE', {
     eventHandlers: {
       sending: function(e) {
         var ruri = e.data.request.ruri;
