@@ -701,19 +701,9 @@ UA.prototype.receiveRequest = function(request) {
  * @returns {SIP.OutgoingSession|SIP.IncomingSession|null}
  */
 UA.prototype.findSession = function(request) {
-  var
-    sessionIDa = request.call_id + request.from_tag,
-    sessionA = this.sessions[sessionIDa],
-    sessionIDb = request.call_id + request.to_tag,
-    sessionB = this.sessions[sessionIDb];
-
-  if(sessionA) {
-    return sessionA;
-  } else if(sessionB) {
-    return sessionB;
-  } else {
-    return null;
-  }
+  return this.sessions[request.call_id + request.from_tag] ||
+          this.sessions[request.call_id + request.to_tag] ||
+          null;
 };
 
 /**
@@ -723,21 +713,9 @@ UA.prototype.findSession = function(request) {
  * @returns {SIP.Dialog|null}
  */
 UA.prototype.findDialog = function(request) {
-  var
-    id = request.call_id + request.from_tag + request.to_tag,
-    dialog = this.dialogs[id];
-
-  if(dialog) {
-    return dialog;
-  } else {
-    id = request.call_id + request.to_tag + request.from_tag;
-    dialog = this.dialogs[id];
-    if(dialog) {
-      return dialog;
-    } else {
-      return null;
-    }
-  }
+  return this.dialogs[request.call_id + request.from_tag + request.to_tag] ||
+          this.dialogs[request.call_id + request.to_tag + request.from_tag] ||
+          null;
 };
 
 /**
