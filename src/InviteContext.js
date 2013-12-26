@@ -104,6 +104,8 @@ InviteContext = function() {
       for (idx; idx<length; idx++) {
         if (this.actions[idx].name === name) {
           this.actions.splice(idx,1);
+          length --;
+          idx--;
         }
       }
     }
@@ -374,7 +376,7 @@ InviteContext.prototype = {
 
         // Dialog has been successfully created.
         if(early_dialog.error) {
-          this.logger.error(dialog.error);
+          this.logger.error(early_dialog.error);
           this.failed(message, SIP.C.causes.INTERNAL_ERROR);
           return false;
         } else {
@@ -414,14 +416,14 @@ InviteContext.prototype = {
   },
 
   /**
-  * Check if RTCSession is ready for a re-INVITE
+  * Check if InviteContext is ready for a re-INVITE
   *
   * @returns {Boolean} 
   */
   isReadyToReinvite: function() {
     //rtcMediaHandler is not ready
     if (!this.rtcMediaHandler.isReady()) {
-      return;
+      return false;
     }
 
     // Another INVITE transaction is in progress
@@ -1363,11 +1365,12 @@ InviteServerContext.prototype = {
   accept: function(options) {
     options = options || {};
 
-    var
+    var idx, length, hasAudio, hasVideo,
       self = this,
       response,
       request = this.request,
       extraHeaders = options.extraHeaders || [],
+      mediaStream = options.mediaStream || null,
 
     // User media succeeded
     userMediaSucceeded = function(stream) {
@@ -1473,6 +1476,37 @@ InviteServerContext.prototype = {
     window.clearTimeout(this.timers.userNoAnswerTimer);
 
     extraHeaders.unshift('Contact: ' + self.contact);
+
+    length = this.getRemoteStreams().length;
+
+    for (idx = 0; idx < length; idx++) {
+      if (this.getRemoteStreams()[idx].getVideoTracks().length > 0) {
+        hasVideo = true;
+      }
+      if (this.getRemoteStreams()[idx].getAudioTracks().length > 0) {
+        hasAudio = true;
+      }
+    }
+
+    if (!hasAudio && this.media_constraints.audio === true) {
+      this.media_constraints.audio = false;
+      if (mediaStream) {
+        length = mediaStream.getAudioTracks().length;
+        for (idx = 0; idx < length; idx++) {
+          mediaStream.removeTrack(mediaStream.getAudioTracks()[idx]);
+        }
+      }
+    }
+
+    if (!hasVideo && this.media_constraints.video === true) {
+      this.media_constraints.video = false;
+      if (mediaStream) {
+        length = mediaStream.getVideoTracks().length;
+        for (idx = 0; idx < length; idx++) {
+          mediaStream.removeTrack(mediaStream.getVideoTracks()[idx]);
+        }
+      }
+    }
 
     if (this.status === C.STATUS_EARLY_MEDIA) {
       sdpCreationSucceeded(self.early_sdp);
@@ -1742,7 +1776,7 @@ InviteClientContext.prototype = {
   invite: function (options) {
     options = options || {};
 
-    var requestParams,
+    var requestParams, iceServers,
       extraHeaders = options.extraHeaders || [],
       mediaConstraints = options.mediaConstraints || {audio: true, video: true},
       RTCConstraints = options.RTCConstraints || {},
@@ -1751,14 +1785,20 @@ InviteClientContext.prototype = {
       inviteWithoutSdp = options.inviteWithoutSdp || false;
 
     if (stun_servers) {
-      if (!SIP.UA.configuration_check.optional['stun_servers'](stun_servers)) {
+      iceServers = SIP.UA.configuration_check.optional['stun_servers'](stun_servers);
+      if (!iceServers) {
         throw new TypeError('Invalid stun_servers: '+ stun_servers);
+      } else {
+        stun_servers = iceServers;
       }
     }
 
     if (turn_servers) {
-      if (!SIP.UA.configuration_check.optional['turn_servers'](turn_servers)) {
+      iceServers = !SIP.UA.configuration_check.optional['turn_servers'](turn_servers);
+      if (!iceServers) {
         throw new TypeError('Invalid turn_servers: '+ turn_servers);
+      } else {
+        turn_servers = iceServers;
       }
     }
 

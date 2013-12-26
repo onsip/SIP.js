@@ -94,6 +94,7 @@ UA = function(configuration) {
   };
 
   this.transportRecoverAttempts = 0;
+  this.transportRecoveryTimer = null;
 
   Object.defineProperties(this, {
     transactionsCount: {
@@ -296,6 +297,9 @@ UA.prototype.stop = function() {
     return this;
   }
 
+  // Clear transportRecoveryTimer
+  window.clearTimeout(this.transportRecoveryTimer);
+
   // Close registerContext
   this.logger.log('closing registerContext');
   this.registerContext.close();
@@ -485,13 +489,14 @@ UA.prototype.onTransportConnected = function(transport) {
 
   this.status = C.STATUS_READY;
   this.error = null;
-  this.emit('connected', {
-    transport: transport
-  });
 
   if(this.configuration.register) {
     this.registerContext.onTransportConnected();
   }
+
+  this.emit('connected', {
+    transport: transport
+  });
 };
 
 
@@ -804,7 +809,7 @@ UA.prototype.recoverTransport = function(ua) {
 
   this.logger.log('next connection attempt in '+ nextRetry +' seconds');
 
-  window.setTimeout(
+  this.transportRecoveryTimer = window.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
       new SIP.Transport(ua, server);
