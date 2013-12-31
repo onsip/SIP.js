@@ -1,34 +1,29 @@
 describe('MessageContext', function() {
   var MessageContext;
   var ua;
-  var sipUtilsCleanup;
   
   beforeEach(function() {
     ua = jasmine.createSpyObj('ua',['getLogger','applicants']);
-    sipUtilsCleanup = SIP.Utils;
-    SIP.Utils = jasmine.createSpyObj('Utils',['augment']);
-    SIP.Utils.augment.andCallFake(function() {
-      return true;
-    });
     ua.getLogger.andCallFake(function(){
       return jasmine.createSpyObj('logger',['log']);
     });
-  });
-  
-  afterEach(function() {
-    SIP.Utils = sipUtilsCleanup;
+    spyOn(SIP.Utils, 'augment');
   });
   
   describe('when creating a server message context', function() {
     var request;
     
     beforeEach(function() {
-      request = 'request';
+      request = new SIP.IncomingRequest(ua);
       MessageContext = new SIP.MessageServerContext(ua,request);
     });
     
-    it('should augment itself when creating a server message context', function() {
+    it('should augment itself', function() {
       expect(SIP.Utils.augment).toHaveBeenCalledWith(MessageContext, SIP.ServerContext, [ua,request]);
+    });
+
+    it('should set the content type to text/plain if none is found', function () {
+      expect(MessageContext.content_type).toBe('text/plain');
     });
   });
   
@@ -63,11 +58,11 @@ describe('MessageContext', function() {
     
     it('should set the content type to text/plain if none is defined',function() {
       MessageContext = new SIP.MessageClientContext(ua,target,body,undefined);
-      expect(MessageContext.contentType).toEqual('text/plain');
+      expect(MessageContext.content_type).toEqual('text/plain');
     });
     
     it('should set the content type to the value passed to it', function() {
-      expect(MessageContext.contentType).toBe(contentType);
+      expect(MessageContext.content_type).toBe(contentType);
     });
   });
   

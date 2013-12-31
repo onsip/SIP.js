@@ -15,6 +15,11 @@ describe('EventEmitter', function () {
 
   beforeEach(function () {
     EventEmitter = new SIP.EventEmitter();
+    EventEmitter.logger = {
+      error: function () {},
+      warn: function () {},
+      log: function () {}
+    };
     checkEvent = EventEmitter.checkEvent.bind(EventEmitter);
   });
 

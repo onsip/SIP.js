@@ -10,8 +10,8 @@ describe('UA', function() {
     uri = 'alice@example.com';
     ws_servers = 'server.example.com';
     registrar_server = 'registrar.example.com';
-    configuration = {uri : uri ,
-                      ws_servers : ws_servers };
+    configuration = {uri : uri,
+                     ws_servers : ws_servers };
     
     saveUA.sipGrammarParse = SIP.Grammar.parse;
     
@@ -25,11 +25,11 @@ describe('UA', function() {
     registerContextRegister = jasmine.createSpy('register').andCallFake(function() { return 'register'; });
     registerContextUnregister = jasmine.createSpy('unregister').andCallFake(function() { return 'unregister'; });
     SIP.RegisterContext = jasmine.createSpy('RegisterContext').andCallFake(function() {
-      return {  on : registerContextOn , 
+      return {  on : registerContextOn,
                 register : registerContextRegister , 
                 unregister: registerContextUnregister,
                 registered : true 
-              }; 
+              };
     });
     
     UA = new SIP.UA(configuration);
