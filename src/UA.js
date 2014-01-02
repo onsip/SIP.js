@@ -144,7 +144,11 @@ UA = function(configuration) {
    */
 
   if(configuration === undefined) {
-    throw new TypeError('Not enough arguments');
+    configuration = {};
+  } else if (typeof configuration === 'string' || configuration instanceof String) {
+    configuration = {
+      uri: configuration
+    };
   }
 
   // Apply log configuration if present
@@ -808,6 +812,15 @@ UA.prototype.loadConfig = function(configuration) {
       */
       via_host: SIP.Utils.createRandomToken(12) + '.invalid',
 
+      uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
+      ws_servers: [{
+        scheme: 'WSS',
+        sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
+        status: 0,
+        weight: 0,
+        ws_uri: 'wss://edge.sip.onsip.com'
+      }],
+
       // Password
       password: null,
 
@@ -1001,11 +1014,9 @@ UA.configuration_skeleton = (function() {
       "ws_server_reconnection_timeout",
       "hostport_params",
 
-      // Mandatory user configurable parameters
+      // Optional user configurable parameters
       "uri",
       "ws_servers",
-
-      // Optional user configurable parameters
       "authorization_user",
       "connection_recovery_max_interval",
       "connection_recovery_min_interval",
@@ -1053,11 +1064,14 @@ UA.configuration_skeleton = (function() {
  */
 UA.configuration_check = {
   mandatory: {
+  },
+
+  optional: {
 
     uri: function(uri) {
       var parsed;
 
-      if (!/^sip:/i.test(uri)) {
+      if (!(/^sip:/i).test(uri)) {
         uri = SIP.C.SIP + ':' + uri;
       }
       parsed = SIP.URI.parse(uri);
@@ -1128,10 +1142,7 @@ UA.configuration_check = {
         }
       }
       return ws_servers;
-    }
-  },
-
-  optional: {
+    },
 
     authorization_user: function(authorization_user) {
       if(SIP.Grammar.parse('"'+ authorization_user +'"', 'quoted_string') === -1) {

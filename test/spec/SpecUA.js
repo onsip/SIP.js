@@ -56,6 +56,59 @@ describe('UA', function() {
     SIP.RegisterContext = saveUA.sipRegisterContext;
   });
 
+  it('has no mandatory parameters', function () {
+    var myUA;
+    function noParams() {
+      myUA = new SIP.UA();
+    }
+
+    expect(noParams).not.toThrow();
+    expect(myUA.configuration.uri.toString()).toEqual(jasmine.any(String));
+    expect(myUA.configuration.ws_servers).toEqual([{
+      scheme: 'WSS',
+      sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
+      status: 0,
+      weight: 0,
+      ws_uri: 'wss://edge.sip.onsip.com'
+    }]);
+  });
+
+  it('can be created with just a string URI', function () {
+    var myUA;
+    function oneParam() {
+      myUA = new SIP.UA('will@example.com');
+    }
+    SIP.Grammar.parse = saveUA.sipGrammarParse;
+
+    expect(oneParam).not.toThrow();
+    expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
+    expect(myUA.configuration.ws_servers).toEqual([{
+      scheme: 'WSS',
+      sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
+      status: 0,
+      weight: 0,
+      ws_uri: 'wss://edge.sip.onsip.com'
+    }]);
+  });
+
+  it('can be created with just a String (object) URI', function () {
+    var myUA;
+    function oneParam() {
+      myUA = new SIP.UA(new String('will@example.com'));
+    }
+    SIP.Grammar.parse = saveUA.sipGrammarParse;
+
+    expect(oneParam).not.toThrow();
+    expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
+    expect(myUA.configuration.ws_servers).toEqual([{
+      scheme: 'WSS',
+      sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
+      status: 0,
+      weight: 0,
+      ws_uri: 'wss://edge.sip.onsip.com'
+    }]);
+  });
+
   it('sets the instance variables', function() {
     UA = undefined;
     registerContextOn = jasmine.createSpy('on').andCallFake(function() { return 'on'; });
