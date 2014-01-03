@@ -226,7 +226,7 @@ Parser.parseMessage = function(data, ua) {
     }
     // data.indexOf returned -1 due to a malformed message.
     else if(headerEnd === -1) {
-      parsed.error('malformed message');
+      logger.error('malformed message');
       return;
     }
 

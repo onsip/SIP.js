@@ -738,7 +738,6 @@ InviteContext.prototype = {
     extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
     extraHeaders.push('Content-Type: application/sdp');
 
-    this.rtcMediaHandler.onIceCompleted = undefined;
     this.receiveResponse = this.receiveReinviteResponse;
 
     this.rtcMediaHandler.createOffer(
@@ -1558,7 +1557,7 @@ InviteServerContext.prototype = {
        * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
        *request opening the session.
        */
-      if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || C.STATUS_ANSWERED) {
+      if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_ANSWERED) {
         if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
           window.clearTimeout(session.timers.rel1xxTimer);
           window.clearTimeout(session.timers.prackTimer);
@@ -1624,19 +1623,16 @@ InviteServerContext.prototype = {
                     window.clearTimeout(session.timers.rel1xxTimer);
                     window.clearTimeout(session.timers.prackTimer);
                     request.reply(200);
-                    if (session.status === C.STATUS_WAITING_FOR_PRACK) {
-                      session.status = C.STATUS_EARLY_MEDIA;
-                    } else if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+                    if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                       session.status = C.STATUS_EARLY_MEDIA;
                       session.accept();
                     }
-                    if (session.status === C.STATUS_EARLY_MEDIA) {
-                      if (localMedia.getAudioTracks().length > 0) {
-                        localMedia.getAudioTracks()[0].enabled = false;
-                      }
-                      if (localMedia.getVideoTracks().length > 0) {
-                        localMedia.getVideoTracks()[0].enabled = false;
-                      }
+                    session.status = C.STATUS_EARLY_MEDIA;
+                    if (localMedia.getAudioTracks().length > 0) {
+                      localMedia.getAudioTracks()[0].enabled = false;
+                    }
+                    if (localMedia.getVideoTracks().length > 0) {
+                      localMedia.getVideoTracks()[0].enabled = false;
                     }
                   },
                   function (e) {
@@ -1659,20 +1655,18 @@ InviteServerContext.prototype = {
               window.clearTimeout(session.timers.rel1xxTimer);
               window.clearTimeout(session.timers.prackTimer);
               request.reply(200);
-              if (this.status === C.STATUS_WAITING_FOR_PRACK) {
-                this.status = C.STATUS_EARLY_MEDIA;
-              } else if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+              
+              if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                 this.status = C.STATUS_EARLY_MEDIA;
                 this.accept();
               }
-              if (session.status === C.STATUS_EARLY_MEDIA) {
-                localMedia = session.rtcMediaHandler.localMedia;
-                if (localMedia.getAudioTracks().length > 0) {
-                  localMedia.getAudioTracks()[0].enabled = false;
-                }
-                if (localMedia.getVideoTracks().length > 0) {
-                  localMedia.getVideoTracks()[0].enabled = false;
-                }
+              this.status = C.STATUS_EARLY_MEDIA;
+              localMedia = session.rtcMediaHandler.localMedia;
+              if (localMedia.getAudioTracks().length > 0) {
+                localMedia.getAudioTracks()[0].enabled = false;
+              }
+              if (localMedia.getVideoTracks().length > 0) {
+                localMedia.getVideoTracks()[0].enabled = false;
               }
             }
           }
@@ -1794,7 +1788,7 @@ InviteClientContext.prototype = {
     }
 
     if (turn_servers) {
-      iceServers = !SIP.UA.configuration_check.optional['turn_servers'](turn_servers);
+      iceServers = SIP.UA.configuration_check.optional['turn_servers'](turn_servers);
       if (!iceServers) {
         throw new TypeError('Invalid turn_servers: '+ turn_servers);
       } else {
@@ -1946,7 +1940,7 @@ InviteClientContext.prototype = {
       extraHeaders = [],
       options = null;
 
-    if (this.dialog && (response.status_code >= 200 && response.status <= 299)) {
+    if (this.dialog && (response.status_code >= 200 && response.status_code <= 299)) {
       if (id !== this.dialog.id.toString() ) {
         if (!this.createDialog(response, 'UAC', true)) {
           return;
@@ -2161,10 +2155,10 @@ InviteClientContext.prototype = {
             localMedia.getVideoTracks()[0].enabled = true;
           }
           if (this.renderbody) {
-                extraHeaders.push('Content-Type: ' + this.rendertype);
-                options.extraHeaders = extraHeaders;
-                options.body = this.renderbody;
-              }
+            extraHeaders.push('Content-Type: ' + this.rendertype);
+            options.extraHeaders = extraHeaders;
+            options.body = this.renderbody;
+          }
           this.sendRequest(SIP.C.ACK, options);
           this.accepted(response);
           break;
