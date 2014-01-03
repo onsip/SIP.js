@@ -213,9 +213,9 @@ describe('InviteContext', function() {
   describe('.bye', function() {
     beforeEach(function() {
       InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
-      spyOn(InviteContext.dialog, 'sendRequest').andReturn('sent');
+      spyOn(InviteContext.dialog, 'sendRequest');
 
-      spyOn(InviteContext,'emit').andCallThrough();
+      spyOn(InviteContext,'emit')
       InviteContext.status = 12;
     });
 
@@ -225,16 +225,17 @@ describe('InviteContext', function() {
     });
 
     it('emits bye and terminated on any status code >= 200', function() {
-      var counter = 0;
-      spyOn(InviteContext, 'close').andReturn('closed');
+      spyOn(InviteContext, 'terminated');
+      spyOn(InviteContext, 'close');
 
       for (var i = 200; i < 700; i++) {
         InviteContext.bye({status_code: i});
-        expect(InviteContext.emit.calls[counter].args[0]).toBe('bye');
-        expect(InviteContext.emit.calls[counter].args[1].code).toBe(i);
-        counter++;
-        expect(InviteContext.emit.calls[counter].args[0]).toBe('terminated');
-        counter++;
+
+        expect(InviteContext.emit).toHaveBeenCalledWith('bye', {code: i, cause: SIP.C.REASON_PHRASE[i] || ''});
+        expect(InviteContext.terminated).toHaveBeenCalled();
+        
+        InviteContext.emit.reset();
+        InviteContext.terminated.reset();
       }
     });
 

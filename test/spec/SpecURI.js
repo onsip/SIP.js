@@ -13,176 +13,176 @@ describe("URI", function() {
     URI = new SIP.URI(scheme, user, host, port);
   });
   
-  it("should have defined parameters", function() {
+  it("defines parameters", function() {
     expect(URI.parameters).toBeDefined();
   });
   
-  it("should have defined headers", function() {
+  it("defines headers", function() {
     expect(URI.parameters).toBeDefined();
   });
 
-  it("should have the scheme", function() {
+  it("sets the scheme", function() {
     expect(URI.scheme).toBe(scheme||SIP.C.SIP);
   });
 
-  it("should have the user", function() {
+  it("sets the user", function() {
     expect(URI.user).toBe(user);
   });
   
-  it("should have the host", function() {
+  it("sets the host", function() {
     expect(URI.host).toBe(host);
   });
   
-  it("should have the port", function() {
+  it("sets the port", function() {
     expect(URI.port).toBe(port);
   });
 
-  describe("when setting the parameters", function() {
+  describe(".setParam", function() {
     beforeEach(function() {
       URI.parameters = {};
     });
 
-    it("should not set a parameter with a null key", function() {
+    it("does not set a parameter with a null key", function() {
       URI.setParam(null,"value");
       expect(URI.parameters).toEqual({});
     });
     
-    it("should set a parameter with a null value", function() {
+    it("sets a parameter with a null value", function() {
       URI.setParam("key",null);
       expect(URI.parameters).toEqual({"key":null});
     });
     
-    it("should set a parameter with a key and value", function() {
+    it("sets a parameter with a key and value", function() {
       URI.setParam("key","value");
       expect(URI.parameters).toEqual({"key":"value"});
     });
     
-    it("should set a parameter and make the key lowercase", function() {
+    it("sets a parameter and make the key lowercase", function() {
       URI.setParam("KEY","value");
       expect(URI.parameters).toEqual({"key":"value"});
     });
     
-    it("should set a parameter and make the parameter lowercase", function() {
+    it("sets a parameter and make the parameter lowercase", function() {
       URI.setParam("key","VALUE");
       expect(URI.parameters).toEqual({"key":"value"});
     });
   });
   
-  describe("when getting the parameters", function() {
+  describe(".getParam", function() {
     beforeEach(function() {
       URI.parameters = {};
     });
     
-    it("should not get a parameter for a null key", function() {
+    it("does not get a parameter for a null key", function() {
       URI.setParam("key","value");
       expect(URI.getParam(null)).toBeUndefined();
     });
     
-    it("should get a parameter for a key", function() {
+    it("gets a parameter for a key", function() {
       URI.setParam("key","value");
       expect(URI.getParam("key")).toBe("value");
     });
     
-    it("should get a parameter for a key that is uppercase", function() {
+    it("gets a parameter for a key that is uppercase", function() {
       URI.setParam("KEY","value");
       expect(URI.getParam("KEY")).toBe("value");
     });
     
   });
   
-  describe("when checking for parameters", function() {
+  describe(".hasParam", function() {
     beforeEach(function() {
       URI.parameters = {"key":"value"};
     });
     
-    it("should be undefined for a null key", function() {
+    it("is undefined for a null key", function() {
       expect(URI.hasParam(null)).toBeUndefined();
     });
     
-    it("should be false for a parameter that does not exist", function() {
+    it("is false for a parameter that does not exist", function() {
       expect(URI.hasParam("doesNotExist")).toBeFalsy();
     });
     
-    it("should be true for a parameter that does exist", function() {
+    it("is true for a parameter that does exist", function() {
       expect(URI.hasParam("key")).toBeTruthy();
     });
     
-    it("should be true for a parameter that does exist regardless of case", function() {
+    it("is true for a parameter that does exist regardless of case", function() {
       expect(URI.hasParam("KEY")).toBeTruthy();
     });
   });
   
-  describe("when deleting parameters", function() {
+  describe(".deleteParam", function() {
     beforeEach(function() {
       URI.parameters = {"key" : "value", "key2" : "value2"};
     });
     
-    it("should delete the entry from the parameters list", function() {
+    it("deletes the entry from the parameters list", function() {
       URI.deleteParam("key");
       expect(URI.hasParam("key")).toBeFalsy();
     });
     
-    it("should return the value of the deleted key", function() {
+    it("returns the value of the deleted key", function() {
       expect(URI.deleteParam("key")).toEqual("value");
     });
     
-    it("should not delete a key that does not exist", function() {
+    it("does not delete a key that does not exist", function() {
       URI.deleteParam("does not exist");
       expect(URI.parameters).toEqual({"key" : "value", "key2" : "value2"});
     });
     
-    it("should not return a value if the key does not exist", function() {
+    it("does not return a value if the key does not exist", function() {
       expect(URI.deleteParam("does not exist")).toBeUndefined();
     });
   });
   
-  describe("when clearing parameters", function() {
+  describe(".clearParams", function() {
     beforeEach(function() {
       URI.parameters = {"key" : "value", "key2" : "value2"};
     });
     
-    it("should empty the parameter list", function() {
+    it("empties the parameter list", function() {
       URI.clearParams();
       expect(URI.parameters).toEqual({});
     });
     
-    it("should not make the parameter list undefined", function() {
+    it("does not make the parameter list undefined", function() {
       URI.clearParams();
       expect(URI.parameters).toBeDefined();
     });
   });
   
-  describe("when setting headers", function() {
-    it("should test something", function() {
-      true;
+  xdescribe(".setHeader", function() {
+    it("tests something", function() {
+      //expect('this test').toBe('implemented');
     });
   });
   
-  describe("when getting headers", function() {
-    it("should test something", function() {
-      true;
+  xdescribe(".getHeader", function() {
+    it("tests something", function() {
+      //expect('this test').toBe('implemented');
     });
   });
   
-  describe("when checking for headers", function() {
-    it("should test something", function() {
-      true;
+  xdescribe(".hasHeader", function() {
+    it("tests something", function() {
+      //expect('this test').toBe('implemented');
     });
   });
   
-  describe("when deleting headers", function() {
-    it("should test something", function() {
-      true;
+  xdescribe(".deleteHeader", function() {
+    it("tests something", function() {
+      //expect('this test').toBe('implemented');
     });
   });
   
-  describe("when clearing headers", function() {
-    it("should test something", function() {
-      true;
+  xdescribe(".clearHeaders", function() {
+    it("tests something", function() {
+      //expect('this test').toBe('implemented');
     });
   });
   
-  it("should be able to clone itself", function() {
+  it(".clone: be able to clone itself", function() {
     var clonedURI = URI.clone();
     
     expect(clonedURI).toBeDefined();
@@ -197,7 +197,7 @@ describe("URI", function() {
     expect(clonedURI.headers).toEqual(URI.headers);
   });
   
-  it("should be able to create a string of itself", function() {
+  it(".toString: be able to create a string of itself", function() {
     expect(typeof URI.toString()).toEqual("string");
   });
   
@@ -215,7 +215,7 @@ describe("URI", function() {
     expect(parsedURI.host).toEqual(URI.host);
   });
   
-  it("should not parse a URI from an invalid string", function() {
+  it(".parse does not parse a URI from an invalid string", function() {
     var parsedURI = SIP.URI.parse(user+host);
     
     expect(parsedURI).toBeUndefined();
@@ -223,7 +223,7 @@ describe("URI", function() {
 
   var toParse = 'SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2';
 
-  describe('when calling URI.parse with "' + toParse + '"', function () {
+  describe('URI.parse with "' + toParse + '"', function () {
     var uri;
 
     beforeEach(function () {
