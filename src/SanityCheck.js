@@ -41,7 +41,7 @@ var sanityCheck,
 
 // Sanity Check functions for requests
 function rfc3261_8_2_2_1() {
-  if(message.s('to').uri.scheme !== 'sip') {
+  if(!message.ruri || message.ruri.scheme !== 'sip') {
     reply(416);
     return false;
   }
@@ -75,7 +75,7 @@ function rfc3261_8_2_2_2() {
   if(!message.to_tag) {
     if(message.method === SIP.C.INVITE) {
       tr = ua.transactions.ist[message.via_branch];
-      if(!tr) {
+      if(tr) {
         return;
       } else {
         for(idx in ua.transactions.ist) {
@@ -88,7 +88,7 @@ function rfc3261_8_2_2_2() {
       }
     } else {
       tr = ua.transactions.nist[message.via_branch];
-      if(!tr) {
+      if(tr) {
         return;
       } else {
         for(idx in ua.transactions.nist) {
@@ -113,8 +113,8 @@ function rfc3261_8_1_3_3() {
 
 function rfc3261_18_1_2() {
   var via_host = ua.configuration.via_host;
-  if(message.via.host !== via_host) {
-    logger.warn('Via host in the response does not match UA Via host value. Dropping the response');
+  if(message.via.host !== via_host || message.via.port !== undefined) {
+    logger.warn('Via sent-by in the response does not match UA Via host value. Dropping the response');
     return false;
   }
 }
