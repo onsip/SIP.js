@@ -3,6 +3,7 @@ describe('ClientContext', function() {
   var ua;
   var method; 
   var target;
+  var saveClientContext = {};
   
   beforeEach(function(){
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
@@ -43,12 +44,16 @@ describe('ClientContext', function() {
     var options = {};
 
     beforeEach(function() {
+      saveClientContext.sipOutgoingRequest = SIP.OutgoingRequest;
       SIP.OutgoingRequest = jasmine.createSpy('OutgoingRequest');
       SIP.OutgoingRequest.send = jasmine.createSpy('send');
 
       spyOn(SIP,'RequestSender').andCallFake(function() {
         return {'send': SIP.OutgoingRequest.send}; 
       });
+    });
+    afterEach(function() {
+      SIP.OutgoingRequest = saveClientContext.sipOutgoingRequest;
     });
     
     it('checks that the target is not undefined', function() {

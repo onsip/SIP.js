@@ -103,7 +103,7 @@ OutgoingRequest.prototype = {
   /**
    * Get the value of the given header name at the given position.
    * @param {String} name header name
-   * @returns {String|undefined} Returns the specified header, null if header doesn't exist.
+   * @returns {String|undefined} Returns the specified header, undefined if header doesn't exist.
    */
   getHeader: function(name) {
     var regexp, idx,
@@ -112,7 +112,7 @@ OutgoingRequest.prototype = {
 
     if(header) {
       if(header[0]) {
-        return header[0].raw;
+        return header[0];
       }
     } else {
       regexp = new RegExp('^\\s*' + name + '\\s*:','i');
