@@ -152,33 +152,114 @@ describe("URI", function() {
     });
   });
   
-  xdescribe(".setHeader", function() {
-    it("tests something", function() {
-      //expect('this test').toBe('implemented');
+  describe(".setHeader", function() {
+    it("adds the header if it does not exist", function() {
+      expect(URI.headers).toEqual({});
+      var name = 'name';
+      var value = 'value';
+      URI.setHeader(name, value);
+      expect(URI.headers).toEqual({Name : [value]});
+    });
+    
+    it("replaces the header if it already exists", function() {
+      expect(URI.headers).toEqual({});
+      var name = 'name';
+      var value1 = 'value1';
+      URI.setHeader(name, value1);
+      expect(URI.headers).toEqual({Name : [value1]});
+      var value2 = 'value2';
+      URI.setHeader(name, value2);
+      expect(URI.headers).not.toEqual({Name : [value1]});
+      expect(URI.headers).toEqual({Name : [value2]});
     });
   });
   
-  xdescribe(".getHeader", function() {
-    it("tests something", function() {
-      //expect('this test').toBe('implemented');
+  describe(".getHeader", function() {
+    it("returns undefined if the header does not exist", function() {
+      expect(URI.headers).toEqual({});
+      expect(URI.getHeader('anything')).toBeUndefined();
+    });
+    
+    it('returns an array of the header that it found', function() {
+      expect(URI.headers).toEqual({});
+      var name = 'name';
+      var value = 'value';
+      URI.setHeader(name, value);
+      expect(URI.headers).toEqual({Name : [value]});
+      expect(URI.getHeader(name)).toEqual([value]);
     });
   });
   
-  xdescribe(".hasHeader", function() {
-    it("tests something", function() {
-      //expect('this test').toBe('implemented');
+  describe(".hasHeader", function() {
+    it("returns true if the header exists", function() {
+      expect(URI.headers).toEqual({});
+      var name = 'name';
+      var value = 'value';
+      URI.setHeader(name, value);
+      expect(URI.headers).toEqual({Name : [value]});
+      expect(URI.hasHeader(name)).toBe(true);
+    });
+    it('returns false if the header does not exist', function() {
+      expect(URI.headers).toEqual({});
+      expect(URI.hasHeader('anything')).toBe(false);
     });
   });
   
-  xdescribe(".deleteHeader", function() {
-    it("tests something", function() {
-      //expect('this test').toBe('implemented');
+  describe(".deleteHeader", function() {
+    it("deletes the given header from the headers list", function() {
+      expect(URI.headers).toEqual({});
+      var name1 = 'name1';
+      var value1 = 'value1';
+      var name2 = 'name2';
+      var value2 = 'value2';
+      URI.setHeader(name1,value1);
+      URI.setHeader(name2,value2);
+      expect(URI.headers).toEqual({Name1 : [value1], Name2 : [value2]});
+      URI.deleteHeader(name1);
+      expect(URI.headers).not.toEqual({Name1 : [value1], Name2 : [value2]})
+      expect(URI.headers).toEqual({Name2 : [value2]});
+    });
+    
+    it("returns the deleted value", function() {
+      expect(URI.headers).toEqual({});
+      var name1 = 'name1';
+      var value1 = 'value1';
+      var name2 = 'name2';
+      var value2 = 'value2';
+      URI.setHeader(name1,value1);
+      URI.setHeader(name2,value2);
+      expect(URI.headers).toEqual({Name1 : [value1], Name2 : [value2]});
+      expect(URI.deleteHeader(name1)).toEqual([value1]);
+      expect(URI.headers).not.toEqual({Name1 : [value1], Name2 : [value2]})
+      expect(URI.headers).toEqual({Name2 : [value2]});
+    });
+    
+    it('does not delete anything if it cannot find the header', function() {
+      expect(URI.headers).toEqual({});
+      var name1 = 'name1';
+      var value1 = 'value1';
+      var name2 = 'name2';
+      var value2 = 'value2';
+      URI.setHeader(name1,value1);
+      URI.setHeader(name2,value2);
+      expect(URI.headers).toEqual({Name1 : [value1], Name2 : [value2]});
+      expect(URI.deleteHeader('name3')).toBeUndefined();
+      expect(URI.headers).toEqual({Name1 : [value1], Name2 : [value2]});
     });
   });
   
-  xdescribe(".clearHeaders", function() {
-    it("tests something", function() {
-      //expect('this test').toBe('implemented');
+  describe(".clearHeaders", function() {
+    it("should remove all the headers from the headers variable", function() {
+      expect(URI.headers).toEqual({});
+      var name1 = 'name1';
+      var value1 = 'value1';
+      var name2 = 'name2';
+      var value2 = 'value2';
+      URI.setHeader(name1,value1);
+      URI.setHeader(name2,value2);
+      expect(URI.headers).toEqual({Name1 : [value1], Name2 : [value2]});
+      URI.clearHeaders();
+      expect(URI.headers).toEqual({});
     });
   });
   
