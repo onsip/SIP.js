@@ -52,6 +52,7 @@ describe('ClientContext', function() {
         return {'send': SIP.OutgoingRequest.send}; 
       });
     });
+
     afterEach(function() {
       SIP.OutgoingRequest = saveClientContext.sipOutgoingRequest;
     });
