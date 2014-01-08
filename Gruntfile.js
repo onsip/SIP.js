@@ -37,6 +37,12 @@ module.exports = function(grunt) {
       banner: '\
 /*\n\
  * SIP version <%= pkg.version %>\n\
+ * Copyright (c) 2014-<%= grunt.template.today("yyyy") %> Junction Networks, Inc <http://www.onsip.com>\n\
+ * Homepage: http://sipjs.com\n\
+ * License: http://sipjs.com/license\n\
+ *\n\
+ *\n\
+ * Some portions of SIP.js adapted from JsSIP:\n\
  * Copyright (c) 2012-<%= grunt.template.today("yyyy") %> José Luis Millán - Versatica <http://www.versatica.com>\n\
  * Homepage: http://jssip.net\n\
  * License: http://jssip.net/license\n\
@@ -151,15 +157,15 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jasmine');
 
 
-  // Task for building JsSIP Grammar.js and Grammar.min.js files.
+  // Task for building SIP.js Grammar.js and Grammar.min.js files.
   grunt.registerTask('grammar', function(){
     var done = this.async();  // This is an async task.
     var sys = require('sys');
     var exec = require('child_process').exec;
     var child;
 
-    // First compile JsSIP grammar with PEGjs.
-    console.log('"grammar" task: compiling JsSIP PEGjs grammar into Grammar.js ...');
+    // First compile SIP.js grammar with PEGjs.
+    console.log('"grammar" task: compiling SIP.js PEGjs grammar into Grammar.js ...');
     child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS -e SIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
       if (error) {
         sys.print('ERROR: ' + stderr);
@@ -179,7 +185,7 @@ module.exports = function(grunt) {
     });
   });
 
-  // Task for building JsSIP SDP.js and SDP.min.js files.
+  // Task for building SIP.js SDP.js and SDP.min.js files.
   grunt.registerTask('sdp', function(){
     var done = this.async();  // This is an async task.
     var sys = require('sys');
@@ -198,7 +204,7 @@ module.exports = function(grunt) {
     });
   });
 
-  // Task for building jssip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
+  // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
   grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'concat:post_dist', 'uglify:dist']);

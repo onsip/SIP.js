@@ -1,4 +1,4 @@
-## What you need to build JsSIP
+## What you need to build SIP.js
 
 You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com/). Optionally you also need [PhantomJS](http://phantomjs.org/) if you want to run test units.
 
@@ -21,11 +21,11 @@ You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com
 * In modern Debian/Ubuntu systems PhantomJS can be installed via `apt-get install phantomjs`
 
 
-## How to build JsSIP
+## How to build SIP.js
 
-Clone a copy of the main JsSIP git repository by running:
+Clone a copy of the main SIP.js git repository by running:
 ```
-$ git clone https://github.com/versatica/JsSIP.git
+$ git clone https://github.com/onsip/SIP.js.git
 ```
 
 Install grunt-cli globally:
@@ -35,7 +35,7 @@ $ npm install -g grunt-cli
 
 Enter the directory and install the Node.js dependencies:
 ```
-$ cd JsSIP && npm install
+$ cd SIP.js && npm install
 ```
 
 Make sure you have `grunt` installed by testing:
@@ -43,22 +43,22 @@ Make sure you have `grunt` installed by testing:
 $ grunt -version
 ```
 
-Finally, run `grunt` command with no arguments to get a complete version of JsSIP:
+Finally, run `grunt` command with no arguments to get a complete version of SIP.js:
 ```
 $ grunt
 ```
 
-The built version of JsSIP will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [JSLint](http://jslint.com/). There will be also a file named `dist/jssip-devel.js` which is an exact copy of the uncompressed file.
+The built version of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [JSLint](http://jslint.com/). There will be also a file named `dist/sip-devel.js` which is an exact copy of the uncompressed file.
 
 
 ## Development version
 
-Run `grunt devel` for just generating the `dist/jssip-devel.js` file. An uncompressed JsSIP source file named `jssip-devel.js` will be created in `dist` directory.
+Run `grunt devel` for just generating the `dist/sip-devel.js` file. An uncompressed SIP.js source file named `sip-devel.js` will be created in `dist` directory.
 
 
 ## Test units
 
-JsSIP includes test units based on [QUnit](http://qunitjs.com/). Test units use the `dist/jssip-devel.js` file. Run the tests as follows:
+SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/). Test units use the `dist/sip-devel.js` file. Run the tests as follows:
 ```
 $ grunt test
 
@@ -67,10 +67,10 @@ Testing testNoWebRTC.html.........OK
 >> 250 assertions passed (177ms)
 ```
 
-## Changes in JsSIP grammar
+## Changes in SIP.js grammar
 
-If you modify `src/Grammar/src/Grammar.pegjs` then you need to recompile JsSIP grammar files. For that run the following task:
+If you modify `src/Grammar/src/Grammar.pegjs` then you need to recompile SIP.js grammar files. For that run the following task:
 ```
 $ grunt grammar
 ```
-And then build JsSIP again as explained above.
+And then build SIP.js again as explained above.
