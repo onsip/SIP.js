@@ -56,8 +56,8 @@ InviteContext = function() {
   };
 
   // Session info
-  this.start_time = null;
-  this.end_time = null;
+  this.startTime = null;
+  this.endTime = null;
   this.tones = null;
 
   // Mute/Hold state
@@ -1022,7 +1022,7 @@ InviteContext.prototype = {
   accepted: function(response) {
     var code = response ? response.status_code : null;
 
-    this.start_time = new Date();
+    this.startTime = new Date();
 
     this.emit('accepted', {
       code: code,
@@ -1033,7 +1033,7 @@ InviteContext.prototype = {
   },
 
   terminated: function(message, cause) {
-    this.end_time = new Date();
+    this.endTime = new Date();
 
     this.close();
     this.emit('terminated', {
@@ -1727,26 +1727,63 @@ InviteServerContext.prototype = {
 
 SIP.InviteServerContext = InviteServerContext;
 
-InviteClientContext = function(ua, target) {
-  var originalTarget = target;
-
-  if (target === undefined) {
-    throw new TypeError('Not enough arguments');
-  }
+InviteClientContext = function(ua, target, options) {
+  options = options || {};
+  var requestParams, iceServers,
+    extraHeaders = options.extraHeaders || [],
+    stun_servers = options.stun_servers || null,
+    turn_servers = options.turn_servers || null;
 
   // Check WebRTC support
   if (!SIP.WebRTC.isSupported) {
     throw new SIP.Exceptions.NotSupportedError('WebRTC not supported');
   }
 
-  // Check target validity
-  target = ua.normalizeTarget(target);
-  if (!target) {
-    throw new TypeError('Invalid target: '+ originalTarget);
+  this.mediaConstraints = options.mediaConstraints || {audio: true, video: true},
+  this.RTCConstraints = options.RTCConstraints || {},
+  this.inviteWithoutSdp = options.inviteWithoutSdp || false;
+
+  // Set anonymous property
+  this.anonymous = options.anonymous || false;
+
+  //Custom data to be sent either in INVITE or in ACK
+  this.renderbody = options.renderbody || null;
+  this.rendertype = options.rendertype || null;
+
+  requestParams = {from_tag: this.from_tag};
+
+  /* Do not add ;ob in initial forming dialog requests if the registration over 
+   *  the current connection got a GRUU URI.
+   */
+  this.contact = ua.contact.toString({
+    anonymous: this.anonymous,
+    outbound: this.anonymous ? !ua.contact.temp_gruu : !ua.contact.pub_gruu
+  });
+
+  if (this.anonymous) {
+    requestParams.from_display_name = 'Anonymous';
+    requestParams.from_uri = 'sip:anonymous@anonymous.invalid';
+
+    extraHeaders.push('P-Preferred-Identity: '+ ua.configuration.uri.toString());
+    extraHeaders.push('Privacy: id');
+  }
+  extraHeaders.push('Contact: '+ this.contact);
+  extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  if (!this.inviteWithoutSdp) {
+    extraHeaders.push('Content-Type: application/sdp');
+  } else if (this.renderbody) {
+    extraHeaders.push('Content-Type: ' + this.rendertype);
   }
 
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'INVITE', target]);
-  SIP.Utils.augment(this, SIP.InviteContext, []);
+  if (ua.configuration.reliable === 'required') {
+    extraHeaders.push('Require: 100rel');
+  }
+
+  options.extraHeaders = extraHeaders;
+  options.params = requestParams;
+
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
+  SIP.Utils.augment(this, SIP.InviteContext);
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
@@ -1761,104 +1798,47 @@ InviteClientContext = function(ua, target) {
   this.received_100 = false;
 
   this.method = SIP.C.INVITE;
+
   this.receiveResponse = this.receiveInviteResponse;
 
   this.logger = ua.getLogger('sip.inviteclientcontext');
+
+  if (stun_servers) {
+    iceServers = SIP.UA.configuration_check.optional['stun_servers'](stun_servers);
+    if (!iceServers) {
+      throw new TypeError('Invalid stun_servers: '+ stun_servers);
+    } else {
+      this.stun_servers = iceServers;
+    }
+  }
+
+  if (turn_servers) {
+    iceServers = SIP.UA.configuration_check.optional['turn_servers'](turn_servers);
+    if (!iceServers) {
+      throw new TypeError('Invalid turn_servers: '+ turn_servers);
+    } else {
+      this.turn_servers = iceServers;
+    }
+  }
+
+  ua.applicants[this] = this;
+
+  this.id = this.request.call_id + this.from_tag;
+
 };
 
 InviteClientContext.prototype = {
-  invite: function (options) {
-    options = options || {};
-
-    var requestParams, iceServers,
-      extraHeaders = options.extraHeaders || [],
-      mediaConstraints = options.mediaConstraints || {audio: true, video: true},
-      RTCConstraints = options.RTCConstraints || {},
-      stun_servers = options.stun_servers || null,
-      turn_servers = options.turn_servers || null,
-      inviteWithoutSdp = options.inviteWithoutSdp || false;
-
-    if (stun_servers) {
-      iceServers = SIP.UA.configuration_check.optional['stun_servers'](stun_servers);
-      if (!iceServers) {
-        throw new TypeError('Invalid stun_servers: '+ stun_servers);
-      } else {
-        stun_servers = iceServers;
-      }
-    }
-
-    if (turn_servers) {
-      iceServers = SIP.UA.configuration_check.optional['turn_servers'](turn_servers);
-      if (!iceServers) {
-        throw new TypeError('Invalid turn_servers: '+ turn_servers);
-      } else {
-        turn_servers = iceServers;
-      }
-    }
-
-    // Set anonymous property
-    this.anonymous = options.anonymous || false;
-
-    //Custom data to be sent either in INVITE or in ACK
-    this.renderbody = options.renderbody || null;
-    this.rendertype = options.rendertype || null;
-
-    requestParams = {from_tag: this.from_tag};
-
-    this.contact = this.ua.contact.toString({
-      anonymous: this.anonymous,
-      outbound: ((this.anonymous === false && this.ua.contact.pub_gruu) || (this.anonymous === true && this.ua.contact.temp_gruu)) ? false : true
-    });
-
-    /* Do not add ;ob in initial forming dialog requests if the registration over 
-     *  the current connection got a GRUU URI.
-     */
-    if (this.anonymous) {
-      requestParams.from_display_name = 'Anonymous';
-      requestParams.from_uri = 'sip:anonymous@anonymous.invalid';
-
-      extraHeaders.push('P-Preferred-Identity: '+ this.ua.configuration.uri.toString());
-      extraHeaders.push('Privacy: id');
-    }
-    extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-    if (!inviteWithoutSdp) {
-      extraHeaders.push('Content-Type: application/sdp');
-    } else if (this.renderbody) {
-      extraHeaders.push('Content-Type: ' + this.rendertype);
-    }
-
-    if (this.ua.configuration.reliable === 'required') {
-      extraHeaders.push('Require: 100rel');
-    }
-
-    /* Feels like extra work just to jam it into ClientContext.send; doable, but necessary?
-    options.extraHeaders = extraHeaders;
-    options.params = requestParams;
-
-    this.send(options);
-    */
-
-    //Extra lines if we don't call send
-    this.ua.applicants[this] = this;
-    this.request = new SIP.OutgoingRequest(SIP.C.INVITE, this.target, this.ua, requestParams, extraHeaders);
-
-    this.local_identity = this.request.from;
-    this.remote_identity = this.request.to;
-    this.id = this.request.call_id + this.from_tag;
-    this.logger = this.ua.getLogger('sip.inviteclientcontext', this.id);
-    //End of extra lines
+  invite: function () {
     this.rtcMediaHandler = new RTCMediaHandler(this, {
-      RTCConstraints: RTCConstraints,
-      stun_servers: stun_servers,
-      turn_servers: turn_servers
+      RTCConstraints: this.RTCConstraints,
+      stun_servers: this.stun_servers,
+      turn_servers: this.turn_servers
     });
 
     //Save the session into the ua sessions collection.
     this.ua.sessions[this.id] = this;
 
     var self = this,
-    request_sender = new SIP.RequestSender(this, this.ua),
     // User media succeeded
     userMediaSucceeded = function(stream) {
       self.rtcMediaHandler.addStream(
@@ -1881,13 +1861,13 @@ InviteClientContext.prototype = {
     streamAdditionSucceeded = function() {
       if (self.status === C.STATUS_TERMINATED) {
         return;
-      } else if (inviteWithoutSdp) {
+      } else if (self.inviteWithoutSdp) {
         //just send an invite with no sdp...
         self.request.body = self.renderbody;
         self.status = C.STATUS_INVITE_SENT;
-        request_sender.send();
+        self.send();
       } else {
-        self.connecting(this.request);
+        self.connecting(self.request);
         self.rtcMediaHandler.createOffer(
           offerCreationSucceeded,
           offerCreationFailed
@@ -1912,7 +1892,7 @@ InviteClientContext.prototype = {
 
       self.request.body = offer;
       self.status = C.STATUS_INVITE_SENT;
-      request_sender.send();
+      self.send();
     },
 
     // rtcMediaHandler.createOffer failed
@@ -1927,7 +1907,7 @@ InviteClientContext.prototype = {
     this.rtcMediaHandler.getUserMedia(
       userMediaSucceeded,
       userMediaFailed,
-      mediaConstraints
+      this.mediaConstraints
     );
 
     return this;
@@ -2133,7 +2113,6 @@ InviteClientContext.prototype = {
               function(e) {
                 session.logger.warn('invalid SDP');
                 session.logger.warn(e);
-                response.reply(488);
               }
             );
           }

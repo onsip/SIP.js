@@ -1,17 +1,47 @@
 (function (SIP) {
 var ClientContext;
 
-ClientContext = function (ua, method, target) {
-  var events = [
-    'progress',
-    'accepted',
-    'rejected',
-    'failed'
-  ];
+ClientContext = function (ua, method, target, options) {
+  var params, extraHeaders,
+      originalTarget = target,
+      events = [
+        'progress',
+        'accepted',
+        'rejected',
+        'failed'
+      ];
+
+  if (target === undefined) {
+    throw new TypeError('Not enough arguments');
+  }
+
+  // Check target validity
+  target = ua.normalizeTarget(target);
+  if (!target) {
+    throw new TypeError('Invalid target: ' + originalTarget);
+  }
+
   this.ua = ua;
   this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
-  this.target = target;
+
+  if (options && options.body) {
+    this.body = options.body;
+  }
+  if (options && options.contentType) {
+    this.contentType = options.contentType;
+  }
+  params = options && options.params;
+  extraHeaders = (options && options.extraHeaders) || [];
+
+  this.request = new SIP.OutgoingRequest(this.method, target, this.ua, params, extraHeaders);
+
+  this.localIdentity = this.request.from;
+  this.remoteIdentity = this.request.to;
+
+  if (this.body) {
+    this.request.body = this.body;
+  }
 
   this.data = {};
 
@@ -19,37 +49,27 @@ ClientContext = function (ua, method, target) {
 };
 ClientContext.prototype = new SIP.EventEmitter();
 
-ClientContext.prototype.send = function (options) {
-  var request_sender, params, extraHeaders,
-    originalTarget = this.target;
-
-  if (this.target === undefined) {
-    throw new TypeError('Not enough arguments');
-  }
-
-  // Check target validity
-  this.target = this.ua.normalizeTarget(this.target);
-  if (!this.target) {
-    throw new TypeError('Invalid target: '+ originalTarget);
-  }
-
-  // Get call options
-  params = options.params;
-  extraHeaders = options.extraHeaders || [];
-
-  this.request = new SIP.OutgoingRequest(this.method, this.target, this.ua, params, extraHeaders);
-
-  this.local_identity = this.request.from;
-  this.remote_identity = this.request.to;
-
-  if (options.body) {
-    this.request.body = options.body;
-  }
-
-  //I'd throw an if around this if we decide to call send in INVITE (maybe just the send line)
-  request_sender = new SIP.RequestSender(this, this.ua);
-  request_sender.send();
+ClientContext.prototype.send = function () {
+  (new SIP.RequestSender(this, this.ua)).send();
   return this;
+};
+
+ClientContext.prototype.cancel = function (options) {
+  options = options || {};
+
+  var
+  status_code = options.status_code,
+  reason_phrase = options.reason_phrase,
+  cancel_reason;
+
+  if (status_code && status_code < 200 || status_code > 699) {
+    throw new TypeError('Invalid status_code: ' + status_code);
+  } else if (status_code) {
+    reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+    cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
+  }
+
+  this.request.cancel(cancel_reason);
 };
 
 ClientContext.prototype.receiveResponse = function (response) {

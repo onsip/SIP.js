@@ -3,31 +3,16 @@
 var RegisterContext;
 
 RegisterContext = function (ua) {
-  var regId = 1,
-    events = [
-      'registered',
-      'unregistered'
-    ];
+  var params = {},
+      regId = 1,
+      events = [
+        'registered',
+        'unregistered'
+      ];
 
   this.registrar = ua.configuration.registrar_server;
   this.expires = ua.configuration.register_expires;
 
-  // Extends ClientContext
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar]);
-
-  // Call-ID and CSeq values RFC3261 10.2
-  this.call_id = SIP.Utils.createRandomToken(22);
-  this.cseq = 80;
-
-  this.to_uri = ua.configuration.uri;
-
-  this.registrationTimer = null;
-
-  // Set status
-  this.registered = false;
-
-  // Save into ua instance
-  ua.registrationContext = this;
 
   // Contact header
   this.contact = ua.contact.toString();
@@ -37,18 +22,40 @@ RegisterContext = function (ua) {
     this.contact += ';+sip.instance="<urn:uuid:'+ ua.configuration.instance_id+'>"';
   }
 
+  // Call-ID and CSeq values RFC3261 10.2
+  this.call_id = SIP.Utils.createRandomToken(22);
+  this.cseq = 80;
+
+  this.to_uri = ua.configuration.uri;
+
+  params.to_uri = this.to_uri;
+  params.call_id = this.call_id;
+  params.cseq = this.cseq;
+
+  // Extends ClientContext
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar, {params: params}]);
+
+  this.registrationTimer = null;
+
+  // Set status
+  this.registered = false;
+
+  // Save into ua instance
+  ua.registrationContext = this;
+
   this.logger = ua.getLogger('sip.registercontext');
   this.initMoreEvents(events);
 };
 
 RegisterContext.prototype = {
   register: function (options) {
-    var extraHeaders, self = this;
+    var self = this, extraHeaders;
+
+    // Handle Options
     options = options || {};
     extraHeaders = options.extraHeaders || [];
-    extraHeaders.push('Contact: '+ this.contact + ';expires=' + this.expires);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-
+    extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
     this.receiveResponse = function(response) {
       var contact, expires,
@@ -112,7 +119,7 @@ RegisterContext.prototype = {
           // For that, decrease the expires value. ie: 3 seconds
           this.registrationTimer = window.setTimeout(function() {
             self.registrationTimer = null;
-            self.register();
+            self.register(options);
           }, (expires * 1000) - 3000);
 
           //Save gruu values
@@ -134,7 +141,7 @@ RegisterContext.prototype = {
             // Increase our registration interval to the suggested minimum
             this.expires = response.getHeader('min-expires');
             // Attempt the registration again immediately
-            this.register();
+            this.register(options);
           } else { //This response MUST contain a Min-Expires header field
             this.logger.warn('423 response received for REGISTER without Min-Expires');
             this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
@@ -146,7 +153,6 @@ RegisterContext.prototype = {
       }
     };
 
-   
     this.onRequestTimeout = function() {
       this.registrationFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
     };
@@ -155,14 +161,11 @@ RegisterContext.prototype = {
       this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
     };
 
-    this.send({
-      params: {
-        'to_uri': this.to_uri,
-        'call_id': this.call_id,
-        'cseq': (this.cseq += 1)
-      },
-      extraHeaders: extraHeaders
-    });
+    this.cseq++;
+    this.request.cseq = this.cseq;
+    this.request.setHeader('cseq', this.cseq + ' REGISTER');
+    this.request.extraHeaders = extraHeaders;
+    this.send();
   },
 
   registrationFailure: function (response, cause) {
@@ -254,14 +257,12 @@ RegisterContext.prototype = {
       this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
     };
 
-    this.send({
-      params: {
-        'to_uri': this.to_uri,
-        'call_id': this.call_id,
-        'cseq': (this.cseq += 1)
-      },
-      extraHeaders: extraHeaders
-    });
+    this.cseq++;
+    this.request.cseq = this.cseq;
+    this.request.setHeader('cseq', this.cseq + ' REGISTER');
+    this.request.extraHeaders = extraHeaders;
+
+    this.send();
   },
 
   unregistered: function(response, cause) {

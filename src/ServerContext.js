@@ -17,10 +17,18 @@ ServerContext = function (ua, request) {
     this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
   }
 
+  if (request.body) {
+    this.body = request.body;
+  }
+  if (request.hasHeader('Content-Type')) {
+    this.contentType = request.getHeader('Content-Type');
+  }
+  this.method = request.method;
+
   this.data = {};
 
-  this.local_identity = request.to;
-  this.remote_identity = request.from;
+  this.localIdentity = request.to;
+  this.remoteIdentity = request.from;
 
   this.initEvents(events);
 };

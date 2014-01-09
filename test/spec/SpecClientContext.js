@@ -1,16 +1,36 @@
+SIP.LoggerFactory.prototype.debug =
+  SIP.LoggerFactory.prototype.log =
+  SIP.LoggerFactory.prototype.warn =
+  SIP.LoggerFactory.prototype.error = function f() {};
+
 describe('ClientContext', function() {
   var ClientContext;
   var ua;
   var method; 
   var target;
   var saveClientContext = {};
-  
+  var body;
+  var contentType;
+
   beforeEach(function(){
+    saveClientContext.sipOutgoingRequest = SIP.OutgoingRequest;
+    SIP.OutgoingRequest = jasmine.createSpy('OutgoingRequest');
+    SIP.OutgoingRequest.send = jasmine.createSpy('send');
+
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
     method = SIP.C.INVITE;
     target = 'alice@example.com';
-    
-    ClientContext = new SIP.ClientContext(ua,method,target);
+    body = '{"foo":"bar"}';
+    contentType = 'application/json';
+
+    ClientContext = new SIP.ClientContext(ua,method,target, {
+      body: body,
+      contentType: contentType
+    });
+  });
+
+  afterEach(function () {
+    SIP.OutgoingRequest = saveClientContext.sipOutgoingRequest;
   });
   
   it('sets the ua', function() {
@@ -25,8 +45,20 @@ describe('ClientContext', function() {
     expect(ClientContext.method).toBe(method);
   });
   
-  it('sets the target', function() {
-    expect(ClientContext.target).toBe(target);
+  it('sets the body', function () {
+    expect(ClientContext.body).toBe('{"foo":"bar"}');
+  });
+
+  it('has no body by default', function () {
+    expect(new SIP.ClientContext(ua,method,target).body).not.toBeDefined();
+  });
+
+  it('sets the contentType', function () {
+    expect(ClientContext.contentType).toBe('application/json');
+  });
+
+  it('has no contentType by default', function () {
+    expect(new SIP.ClientContext(ua,method,target).contentType).not.toBeDefined();
   });
   
   it('initializes data', function() {
@@ -39,46 +71,39 @@ describe('ClientContext', function() {
     expect(ClientContext.checkEvent('rejected')).toBeTruthy();
     expect(ClientContext.checkEvent('failed')).toBeTruthy();
   });
-  
+
+  it('checks that the target is not undefined', function() {
+    expect(function () { new SIP.ClientContext(ua,method); }).toThrow('Not enough arguments');
+  });
+
+  it('checks that the target is valid', function() {
+    spyOn(ClientContext.ua, 'normalizeTarget');
+
+    expect(function() { new SIP.ClientContext(ua,method,'alice@example.com'); }).toThrow('Invalid target: alice@example.com');
+  });
+
+  it('creates a new outgoing request', function() {
+    expect(SIP.OutgoingRequest).toHaveBeenCalled();
+    expect(ClientContext.request).toBeDefined();
+  });
+
   describe('.send', function() {
     var options = {};
 
-    beforeEach(function() {
-      saveClientContext.sipOutgoingRequest = SIP.OutgoingRequest;
-      SIP.OutgoingRequest = jasmine.createSpy('OutgoingRequest');
-      SIP.OutgoingRequest.send = jasmine.createSpy('send');
-
+    it('calls the send method', function() {
       spyOn(SIP,'RequestSender').andCallFake(function() {
         return {'send': SIP.OutgoingRequest.send}; 
       });
-    });
 
-    afterEach(function() {
-      SIP.OutgoingRequest = saveClientContext.sipOutgoingRequest;
-    });
-    
-    it('checks that the target is not undefined', function() {
-      ClientContext.target = undefined;
-      expect(function() {ClientContext.send(options);}).toThrow('Not enough arguments');
-    });
-    
-    it('checks that the target is valid', function() {
-      spyOn(ClientContext.ua, 'normalizeTarget');
-
-      expect(function() {ClientContext.send(options);}).toThrow('Invalid target: alice@example.com');
-    });
-    
-    it('creates a new outgoing request', function() {
-      ClientContext.send(options);
-      expect(SIP.OutgoingRequest).toHaveBeenCalled();
-    });
-    
-    it('calls the send method', function() {
       ClientContext.send(options);
       expect(SIP.OutgoingRequest.send).toHaveBeenCalled();
     });
     
     it('returns itself', function() {
+      spyOn(SIP,'RequestSender').andCallFake(function() {
+        return {'send': SIP.OutgoingRequest.send}; 
+      });
+
       expect(ClientContext.send(options)).toBe(ClientContext);
     });
   });
@@ -140,6 +165,16 @@ describe('ClientContext', function() {
       spyOn(ClientContext, 'emit');
       ClientContext.onTransportError();
       expect(ClientContext.emit).toHaveBeenCalledWith('failed',0,null,SIP.C.causes.CONNECTION_ERROR);
+    });
+  });
+
+  describe('.cancel', function () {
+    it('calls request.cancel', function () {
+      ClientContext.request = jasmine.createSpyObj('request', ['cancel']);
+
+      ClientContext.cancel();
+
+      expect(ClientContext.request.cancel).toHaveBeenCalled();
     });
   });
 });

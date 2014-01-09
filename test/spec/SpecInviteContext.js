@@ -64,8 +64,8 @@ describe('InviteContext', function() {
   });
 
   it('initializes session info', function() {
-    expect(InviteContext.start_time).toBeNull();
-    expect(InviteContext.end_time).toBeNull();
+    expect(InviteContext.startTime).toBeNull();
+    expect(InviteContext.endTime).toBeNull();
     expect(InviteContext.tones).toBeNull();
   });
 
@@ -344,7 +344,7 @@ describe('InviteContext', function() {
       SIP.Dialog.C =  {STATUS_EARLY: 0};
     });
 
-    it('returns true and puts the dialog in the early dialogs array on a success call with early = true, type= UAS', function() {
+    it('returns true and puts the dialog in the early dialogs array on a success call with early = true, type = UAS', function() {
       expect(InviteContext.createDialog(message, 'UAS', true)).toBe(true);
       expect(InviteContext.earlyDialogs[Sid]).toBeDefined();
     });
@@ -1134,10 +1134,10 @@ describe('InviteContext', function() {
       spyOn(InviteContext, 'emit');
     });
 
-    it('calls emit, sets a start_time, and returns InviteContext', function() {
+    it('calls emit, sets a startTime, and returns InviteContext', function() {
       expect(InviteContext.accepted()).toBe(InviteContext);
 
-      expect(InviteContext.start_time).toBeDefined();
+      expect(InviteContext.startTime).toBeDefined();
       expect(InviteContext.emit.calls[0].args[0]).toBe('accepted');
     });
   });
@@ -1148,10 +1148,10 @@ describe('InviteContext', function() {
       spyOn(InviteContext, 'emit');
     });
 
-    it('calls close, emits, sets an end_time, and returns InviteContext', function() {
+    it('calls close, emits, sets an endTime, and returns InviteContext', function() {
       expect(InviteContext.terminated()).toBe(InviteContext);
 
-      expect(InviteContext.end_time).toBeDefined();
+      expect(InviteContext.endTime).toBeDefined();
       expect(InviteContext.close).toHaveBeenCalled();
       expect(InviteContext.emit.calls[0].args[0]).toBe('terminated');
     });
@@ -1218,6 +1218,7 @@ describe('InviteServerContext', function() {
     spyOn(request, 'reply');
 
     var ISC = new SIP.InviteServerContext(ua, request);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(ISC.contentDisp).toBe('render');
   });
@@ -1226,6 +1227,7 @@ describe('InviteServerContext', function() {
     spyOn(SIP.Utils, 'augment').andCallThrough();
 
     var ISC = new SIP.InviteServerContext(ua, request);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(SIP.Utils.augment.calls[0].args[1]).toBe(SIP.ServerContext);
     expect(SIP.Utils.augment.calls[1].args[1]).toBe(SIP.InviteContext);
@@ -1247,6 +1249,7 @@ describe('InviteServerContext', function() {
     spyOn(request, 'reply');
 
     var ISC = new SIP.InviteServerContext(ua, request);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(ISC.rel100).toBe(SIP.C.supported.REQUIRED);
   });
@@ -1256,6 +1259,7 @@ describe('InviteServerContext', function() {
     spyOn(request, 'reply');
 
     var ISC = new SIP.InviteServerContext(ua, request);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(ISC.rel100).toBe(SIP.C.supported.SUPPORTED);
   });
@@ -1268,6 +1272,7 @@ describe('InviteServerContext', function() {
     spyOn(SIP.InviteContext.prototype,'createDialog').andReturn(false);
 
     ISC = new SIP.InviteServerContext(ua, fakereq);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(fakereq.reply).toHaveBeenCalledWith(500, 'Missing Contact header field');
   });
@@ -1279,6 +1284,7 @@ describe('InviteServerContext', function() {
     spyOn(SIP.EventEmitter.prototype,'emit');
 
     ISC = new SIP.InviteServerContext(ua, request);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(ISC.emit.calls[1].args[0]).toBe('progress');
 
@@ -1299,6 +1305,7 @@ describe('InviteServerContext', function() {
     jasmine.createSpy(SIP.InviteContext.rtcMediaHandler.prototype, 'onMessage');
 
     ISC = new SIP.InviteServerContext(ua, request);
+    window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(InviteServerContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
 
@@ -1761,6 +1768,9 @@ describe('InviteClientContext', function() {
 
     target = 'bob@example.com';
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
+
     InviteClientContext = new SIP.InviteClientContext(ua, target);
   });
 
@@ -1813,41 +1823,43 @@ describe('InviteClientContext', function() {
     expect(InviteClientContext.logger).toBe(ua.getLogger('sip.inviteclientcontext'));
   });
 
+  it('throws a type error if invalid stun servers are passed in', function() {
+    spyOn(SIP.UA.configuration_check.optional, 'stun_servers');
+
+    expect(function() { new SIP.InviteClientContext(ua, target, {stun_servers: 'fake'});}).toThrow('Invalid stun_servers: fake');
+  });
+
+  it('throws a type error if invalid turn servers are passed in', function() {
+    spyOn(SIP.UA.configuration_check.optional, 'turn_servers');
+
+    expect(function() { new SIP.InviteClientContext(ua, target, {turn_servers: 'fake'});}).toThrow('Invalid turn_servers: fake');
+  });
+
+  it('sets anonymous, custom data, and contact', function() {
+    var ICC = new SIP.InviteClientContext(ua, target, {anonymous: 'anon', renderbody: 'rbody', rendertype: 'rtype'});
+
+    expect(ICC.anonymous).toBe('anon');
+    expect(ICC.renderbody).toBe('rbody');
+    expect(ICC.rendertype).toBe('rtype');
+    expect(ICC.contact).toBe(ua.contact.toString({anonymous: 'anon', outbound: true}));
+  });
+
+  it('sets ua.applicants, request, local and remote identity, id, and logger', function() {
+    expect(InviteClientContext.ua.applicants[InviteClientContext]).toBe(InviteClientContext);
+    expect(InviteClientContext.request).toBeDefined();
+
+    expect(InviteClientContext.localIdentity).toBe(InviteClientContext.request.from);
+    expect(InviteClientContext.remoteIdentity).toBe(InviteClientContext.request.to);
+    expect(InviteClientContext.id).toBe(InviteClientContext.request.call_id + InviteClientContext.from_tag);
+    expect(InviteClientContext.logger).toBe(InviteClientContext.ua.getLogger('sip.inviteclientcontext', InviteClientContext.id));
+
+  });
+
   describe('.invite', function() {
-    it('throws a type error if invalid stun servers are passed in', function() {
-      spyOn(SIP.UA.configuration_check.optional, 'stun_servers');
 
-      expect(function() {InviteClientContext.invite({stun_servers: 'fake'});}).toThrow('Invalid stun_servers: fake');
-    });
-
-    it('throws a type error if invalid turn servers are passed in', function() {
-      spyOn(SIP.UA.configuration_check.optional, 'turn_servers');
-
-      expect(function() {InviteClientContext.invite({turn_servers: 'fake'});}).toThrow('Invalid turn_servers: fake');
-    });
-
-    it('sets anonymous, custom data, and contact', function() {
-      InviteClientContext.invite({anonymous: 'anon', renderbody: 'rbody', rendertype: 'rtype'});
-
-      expect(InviteClientContext.anonymous).toBe('anon');
-      expect(InviteClientContext.renderbody).toBe('rbody');
-      expect(InviteClientContext.rendertype).toBe('rtype');
-      expect(InviteClientContext.contact).toBe(ua.contact.toString({anonymous: 'anon', outbound: true}));
-    });
-
-    it('sets ua.applicants, request, local and remote identity, id, logger, RTCMediaHandler, and ua.sessions', function() {
+    it('sets RTCMediaHandler and ua.sessions', function() {
       InviteClientContext.invite();
-
-      expect(InviteClientContext.ua.applicants[InviteClientContext]).toBe(InviteClientContext);
-      expect(InviteClientContext.request).toBeDefined();
-
-      expect(InviteClientContext.local_identity).toBe(InviteClientContext.request.from);
-      expect(InviteClientContext.remote_identity).toBe(InviteClientContext.request.to);
-      expect(InviteClientContext.id).toBe(InviteClientContext.request.call_id + InviteClientContext.from_tag);
-      expect(InviteClientContext.logger).toBe(InviteClientContext.ua.getLogger('sip.inviteclientcontext', InviteClientContext.id));
-
       expect(InviteClientContext.rtcMediaHandler).toBeDefined();
-
       expect(InviteClientContext.ua.sessions[InviteClientContext.id]).toBe(InviteClientContext);
     });
 

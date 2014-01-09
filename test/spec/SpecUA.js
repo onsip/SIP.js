@@ -402,16 +402,16 @@ describe('UA', function() {
       SIP.InviteClientContext = saveUA.sipInviteClientContext;
     });
 
-    it('creates an Invite Client Context with itself and target as parameters', function() {
+    it('creates an Invite Client Context with itself, target, and options as parameters', function() {
       var options = {};
       UA.invite(target,options);
-      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA,target);
+      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA,target,options);
     });
 
-    it('calls the Invite Client Context invite method with the options provided to it', function() {
+    it('calls the Invite Client Context invite method with no arguments', function() {
       var options = { option : 'things' };
       UA.invite(target,options);
-      expect(inviteClientContextInvite).toHaveBeenCalledWith(options);
+      expect(inviteClientContextInvite).toHaveBeenCalledWith();
     });
 
     it('returns the result of calling the invite context invite mehtod', function() {

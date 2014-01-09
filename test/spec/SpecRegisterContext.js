@@ -18,7 +18,9 @@ describe('RegisterContext', function() {
       contact : 'contact',
       getLogger : function() {
         return { log : log };
-      }
+      },
+      normalizeTarget: function (target) { return target; },
+      checkListener: function () { return true; }
     };
     RegisterContext = new SIP.RegisterContext(ua);
     
@@ -209,51 +211,28 @@ describe('RegisterContext', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.send).not.toHaveBeenCalled();
       RegisterContext.unregister(options);
-      expect(RegisterContext.send).toHaveBeenCalledWith( 
-      { 
-        params : 
-        { 
-          to_uri : RegisterContext.to_uri ,
-          call_id : RegisterContext.call_id, 
-          cseq : RegisterContext.cseq 
-        }, 
-        extraHeaders : [ 'Contact: *', 'Expires: 0' ] 
-      });
+      expect(RegisterContext.send).toHaveBeenCalledWith();
+      expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: *', 'Expires: 0' ]);
       
     });
     
-    it('pushes extra headers Contact <contact>;expires0 if options.all is not truthy', function() {
+    it('pushes extra headers Contact: <contact>, Expires: 0 if options.all is falsy', function() {
       var options = { all : false };
       RegisterContext.registered = true;
       expect(RegisterContext.send).not.toHaveBeenCalled();
       RegisterContext.unregister(options);
-      expect(RegisterContext.send).toHaveBeenCalledWith( 
-      { 
-        params : 
-        { 
-          to_uri : RegisterContext.to_uri ,
-          call_id : RegisterContext.call_id, 
-          cseq : RegisterContext.cseq 
-        }, 
-        extraHeaders : [ 'Contact: '+RegisterContext.contact+';expires=0' ] 
-      });
+      expect(RegisterContext.send).toHaveBeenCalledWith();
+      expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: '+RegisterContext.contact+';expires=0' ]);
     });
     
-    it('calls send with the params to_uri, call_id, and cseq+=1', function() {
+    it('calls send with the params call_id, and cseq+=1', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.send).not.toHaveBeenCalled();
       var cseqBefore = RegisterContext.cseq;
       RegisterContext.unregister();
-      expect(RegisterContext.send).toHaveBeenCalledWith( 
-      { 
-        params : 
-        { 
-          to_uri : RegisterContext.to_uri ,
-          call_id : RegisterContext.call_id, 
-          cseq : cseqBefore+1
-        }, 
-        extraHeaders : [ 'Contact: '+RegisterContext.contact+';expires=0' ] 
-      });
+      expect(RegisterContext.send).toHaveBeenCalledWith();
+      expect(RegisterContext.request.call_id).toBe(RegisterContext.call_id);
+      expect(RegisterContext.request.cseq).toBe(cseqBefore + 1);
       expect(RegisterContext.cseq).toBe(cseqBefore+1);
     });
     

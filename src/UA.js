@@ -254,8 +254,7 @@ UA.prototype.isConnected = function() {
  *
  */
 UA.prototype.invite = function(target, options) {
-  var invite = new SIP.InviteClientContext(this, target);
-  return invite.invite(options);
+  return new SIP.InviteClientContext(this, target, options).invite();
 };
 
 /**

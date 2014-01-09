@@ -1,11 +1,12 @@
 describe('ServerContext', function() {
   var ServerContext;
   var ua;
+  var method;
   var request;
   
   beforeEach(function(){
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
-    request = SIP.Parser.parseMessage('REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage('REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 10\r\n\r\na=sendrecv\r\n', ua);
     SIP.Transactions.InviteServerTransaction = jasmine.createSpy('IST');
     SIP.Transactions.NonInviteServerTransaction = jasmine.createSpy('NST');
     ServerContext = new SIP.ServerContext(ua,request);
@@ -20,10 +21,22 @@ describe('ServerContext', function() {
     //expect(ua.getLogger).toHaveBeenCalled();
   });
   
+  it('sets the method', function() {
+    expect(ServerContext.method).toBe(SIP.C.REFER);
+  });
+
   it('sets the request', function() {
     expect(ServerContext.request).toBe(request);
   });
-  
+
+  it('sets the body', function () {
+    expect(ServerContext.body).toBe('a=sendrecv');
+  });
+
+  it('sets the contentType', function () {
+    expect(ServerContext.contentType).toBe('application/sdp');
+  });
+
   it('sets the transaction based on the request method', function() {
     expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,ua);
     expect(ServerContext.transaction).toBeDefined();
