@@ -81,6 +81,7 @@ UA = function(configuration) {
   //User actions outside any session/dialog (MESSAGE)
   this.applicants = {};
 
+  this.data = {};
   this.sessions = {};
   this.transport = null;
   this.contact = null;

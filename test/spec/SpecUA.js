@@ -132,6 +132,7 @@ describe('UA', function() {
     expect(UA.configuration).toBeDefined();
     expect(UA.dialogs).toBeDefined();
     expect(UA.applicants).toBeDefined();
+    expect(UA.data).toBeDefined();
     expect(UA.sessions).toBeDefined();
     expect(UA.transport).toBeDefined();
     expect(UA.contact).toBeDefined();
