@@ -1,6 +1,6 @@
 # SIP.js
 
-A JavaScript SIP stack for WebRTC and more!
+A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 
 ## Website and Documentation
