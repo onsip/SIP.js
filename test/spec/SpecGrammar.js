@@ -13,6 +13,16 @@ describe('Grammar', function () {
     });
   }
 
+  describe('.parse() with invalid/missing start rule', function () {
+    it('throws when passed an invalid rule', function () {
+      expect(SIP.Grammar.parse.bind(SIP.Grammar, '', 'an invalid rule')).toThrow();
+    });
+
+    it('defaults to parsing CRLF when passed no rule', function () {
+      expect(SIP.Grammar.parse('\r\n')).toEqual({});
+    });
+  });
+
   var contactString = '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sip:DOMAIN.com:5>';
   describe("Contacts parsed from '" + contactString + "'", function () {
     var contacts;
