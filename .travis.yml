@@ -8,8 +8,6 @@ node_js:
 notifications:
   email:
     recipients:
-      - jmillan@aliax.net
-      - ibc@aliax.net
-      - saghul@gmail.com
+      - developer@onsip.com
     on_success: change
     on_failure: always
