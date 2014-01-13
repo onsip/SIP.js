@@ -62,9 +62,11 @@ SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/)
 ```
 $ grunt test
 
-Running "qunit:noWebRTC" (qunit) task
-Testing testNoWebRTC.html.........OK
->> 250 assertions passed (177ms)
+Running "jasmine:components" (jasmine) task
+Testing jasmine specs via phantom
+...
+672 specs in 2.757s.
+>> 0 failures
 ```
 
 ## Changes in SIP.js grammar

@@ -1,5 +1,9 @@
 # AUTHORS
 
+## JsSIP Authors
+
+SIP.js includes substantial portions of the JsSIP software.  JsSIP's authors are listed below.
+
 ### José Luis Millán
 
 * Main author. Core Designer and Developer.
