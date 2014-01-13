@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/onsip/SIP.js.png?branch=master)](https://travis-ci.org/onsip/SIP.js)
+
 # SIP.js
 
 A JavaScript SIP stack for WebRTC, instant messaging, and more!
