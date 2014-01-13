@@ -25,14 +25,16 @@ ClientContext = function (ua, method, target, options) {
   this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
 
+  params = options && options.params;
+  extraHeaders = (options && options.extraHeaders) || [];
+
   if (options && options.body) {
     this.body = options.body;
   }
   if (options && options.contentType) {
     this.contentType = options.contentType;
+    extraHeaders.push('Content-Type: ' + this.contentType);
   }
-  params = options && options.params;
-  extraHeaders = (options && options.extraHeaders) || [];
 
   this.request = new SIP.OutgoingRequest(this.method, target, this.ua, params, extraHeaders);
 

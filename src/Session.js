@@ -1,13 +1,13 @@
 (function (SIP) {
 
 // Load dependencies
-var Request         = @@include('../src/InviteContext/Request.js')
-var RTCMediaHandler = @@include('../src/InviteContext/RTCMediaHandler.js')
-var DTMF            = @@include('../src/InviteContext/DTMF.js')
+var Request         = @@include('../src/Session/Request.js')
+var RTCMediaHandler = @@include('../src/Session/RTCMediaHandler.js')
+var DTMF            = @@include('../src/Session/DTMF.js')
 
-var InviteContext, InviteServerContext, InviteClientContext,
+var Session, InviteServerContext, InviteClientContext,
  C = {
-    //InviteContext states
+    //Session states
     STATUS_NULL:                        0,
     STATUS_INVITE_SENT:                 1,
     STATUS_1XX_RECEIVED:                2,
@@ -23,7 +23,7 @@ var InviteContext, InviteServerContext, InviteClientContext,
     STATUS_CONFIRMED:                  12
   };
 
-InviteContext = function() {
+Session = function() {
   var events = [
   'connecting',
   'terminated',
@@ -118,7 +118,7 @@ InviteContext = function() {
   this.initMoreEvents(events);
 };
 
-InviteContext.prototype = {
+Session.prototype = {
   sendDTMF: function(tones, options) {
     var duration, interToneGap,
       position = 0,
@@ -416,7 +416,7 @@ InviteContext.prototype = {
   },
 
   /**
-  * Check if InviteContext is ready for a re-INVITE
+  * Check if Session is ready for a re-INVITE
   *
   * @returns {Boolean} 
   */
@@ -1051,8 +1051,8 @@ InviteContext.prototype = {
   }
 };
 
-InviteContext.C = C;
-SIP.InviteContext = InviteContext;
+Session.C = C;
+SIP.Session = Session;
 
 
 InviteServerContext = function(ua, request) {
@@ -1077,7 +1077,7 @@ InviteServerContext = function(ua, request) {
   }
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
-  SIP.Utils.augment(this, SIP.InviteContext, []);
+  SIP.Utils.augment(this, SIP.Session, []);
 
   this.status = C.STATUS_INVITE_RECEIVED;
   this.from_tag = request.from_tag;
@@ -1783,7 +1783,7 @@ InviteClientContext = function(ua, target, options) {
   options.params = requestParams;
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
-  SIP.Utils.augment(this, SIP.InviteContext);
+  SIP.Utils.augment(this, SIP.Session);
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {

@@ -355,24 +355,24 @@ describe('UA', function() {
       SIP.MessageClientContext = saveUA.sipMessageClientContext;
     });
 
-    it('defaults the options to an empty object if no options are provided', function() {
+    it('passes no options to message.message', function () {
       options = undefined;
       UA.message(target, body, options);
-      expect(messageClientContextMessage).toHaveBeenCalledWith({});
+      expect(messageClientContextMessage).toHaveBeenCalledWith();
     });
 
-    it('creates a MessageClientContext with itself, target, body, and options.contentType as parameters', function() {
+    it('creates a MessageClientContext with itself, target, body, options.contentType and options as parameters', function() {
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
-      expect(SIP.MessageClientContext).toHaveBeenCalledWith(UA, target, body, options.contentType);
+      expect(SIP.MessageClientContext).toHaveBeenCalledWith(UA, target, body, options.contentType, options);
     });
 
-    it('calls MessageClientContext.message method with the options provided to it', function() {
+    it('calls MessageClientContext.message method with no options provided to it', function() {
       options = { option : 'config' };
 
       UA.message(target, body, options);
-      expect(messageClientContextMessage).toHaveBeenCalledWith(options);
+      expect(messageClientContextMessage).toHaveBeenCalledWith();
     });
 
     it('returns the result of calling the message context message method', function() {

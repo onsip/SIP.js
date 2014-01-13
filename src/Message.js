@@ -15,32 +15,23 @@ MessageServerContext = function(ua, request) {
 SIP.MessageServerContext = MessageServerContext;
 
 
-MessageClientContext = function(ua, target, body, contentType) {
+MessageClientContext = function(ua, target, body, contentType, options) {
   if (body === undefined) {
     throw new TypeError('Not enough arguments');
   }
 
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'MESSAGE', target]);
+  options = options || {};
+  options.contentType = contentType || 'text/plain';
+  options.body = body;
+
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'MESSAGE', target, options]);
 
   this.logger = ua.getLogger('sip.messageclientcontext');
-  this.body = body;
-  this.content_type = contentType || 'text/plain';
 };
 
 MessageClientContext.prototype = {
-  message: function(options) {
-    var extraHeaders;
-
-    // Get call options
-    options = options || {};
-    extraHeaders = options.extraHeaders || [];
-
-    extraHeaders.push('Content-Type: '+ this.content_type);
-    options.extraHeaders = extraHeaders;
-    options.body = this.body;
-    this.ua.applicants[this] = this;
-
-    return this.send(options);
+  message: function() {
+    return this.send();
   }
 };
 

@@ -4,7 +4,7 @@
 
 /**
  * @class DTMF
- * @param {SIP.InviteContext} session
+ * @param {SIP.Session} session
  */
 (function(SIP) {
 
@@ -44,8 +44,8 @@ DTMF.prototype.send = function(tone, options) {
   this.direction = 'outgoing';
 
   // Check RTCSession Status
-  if (this.owner.status !== SIP.InviteContext.C.STATUS_CONFIRMED &&
-    this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ACK) {
+  if (this.owner.status !== SIP.Session.C.STATUS_CONFIRMED &&
+    this.owner.status !== SIP.Session.C.STATUS_WAITING_FOR_ACK) {
     throw new SIP.Exceptions.InvalidStateError(this.owner.status);
   }
 

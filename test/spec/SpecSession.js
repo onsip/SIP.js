@@ -1,5 +1,5 @@
-describe('InviteContext', function() {
-  var InviteContext;
+describe('Session', function() {
+  var Session;
   var ua;
   var message;
   var sipDialogCleanup;
@@ -18,13 +18,13 @@ describe('InviteContext', function() {
 
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
 
-    InviteContext = new SIP.EventEmitter();
-    InviteContext.initEvents([]);
-    SIP.Utils.augment(InviteContext, SIP.InviteContext, []);
+    Session = new SIP.EventEmitter();
+    Session.initEvents([]);
+    SIP.Utils.augment(Session, SIP.Session, []);
 
-    InviteContext.ua = ua;
+    Session.ua = ua;
 
-    message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteContext.ua);
+    message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', Session.ua);
   });
 
   afterEach(function() {
@@ -32,108 +32,108 @@ describe('InviteContext', function() {
   });
 
   it('initializes events', function() {
-    expect(InviteContext.checkEvent('connecting')).toBeTruthy();
-    expect(InviteContext.checkEvent('terminated')).toBeTruthy();
-    expect(InviteContext.checkEvent('dtmf')).toBeTruthy();
-    expect(InviteContext.checkEvent('invite')).toBeTruthy();
-    expect(InviteContext.checkEvent('preaccepted')).toBeTruthy();
-    expect(InviteContext.checkEvent('canceled')).toBeTruthy();
-    expect(InviteContext.checkEvent('referred')).toBeTruthy();
-    expect(InviteContext.checkEvent('bye')).toBeTruthy();
-    expect(InviteContext.checkEvent('hold')).toBeTruthy();
-    expect(InviteContext.checkEvent('unhold')).toBeTruthy();
-    expect(InviteContext.checkEvent('muted')).toBeTruthy();
-    expect(InviteContext.checkEvent('unmuted')).toBeTruthy();
+    expect(Session.checkEvent('connecting')).toBeTruthy();
+    expect(Session.checkEvent('terminated')).toBeTruthy();
+    expect(Session.checkEvent('dtmf')).toBeTruthy();
+    expect(Session.checkEvent('invite')).toBeTruthy();
+    expect(Session.checkEvent('preaccepted')).toBeTruthy();
+    expect(Session.checkEvent('canceled')).toBeTruthy();
+    expect(Session.checkEvent('referred')).toBeTruthy();
+    expect(Session.checkEvent('bye')).toBeTruthy();
+    expect(Session.checkEvent('hold')).toBeTruthy();
+    expect(Session.checkEvent('unhold')).toBeTruthy();
+    expect(Session.checkEvent('muted')).toBeTruthy();
+    expect(Session.checkEvent('unmuted')).toBeTruthy();
   });
 
   it('initializes session objects', function() {
-    expect(InviteContext.status).toBe(0);
-    expect(InviteContext.dialog).toBeNull();
-    expect(InviteContext.earlyDialogs).toBeDefined();
-    expect(InviteContext.rtcMediaHandler).toBeNull();
-    expect(InviteContext.mediaStream).toBeNull();
+    expect(Session.status).toBe(0);
+    expect(Session.dialog).toBeNull();
+    expect(Session.earlyDialogs).toBeDefined();
+    expect(Session.rtcMediaHandler).toBeNull();
+    expect(Session.mediaStream).toBeNull();
   });
 
   it('initializes session timers', function() {
-    expect(InviteContext.timers.ackTimer).toBeNull();
-    expect(InviteContext.timers.expiresTimer).toBeNull();
-    expect(InviteContext.timers.invite2xxTimer).toBeNull();
-    expect(InviteContext.timers.userNoAnswerTimer).toBeNull();
-    expect(InviteContext.timers.rel1xxTimer).toBeNull();
-    expect(InviteContext.timers.prackTimer).toBeNull();
+    expect(Session.timers.ackTimer).toBeNull();
+    expect(Session.timers.expiresTimer).toBeNull();
+    expect(Session.timers.invite2xxTimer).toBeNull();
+    expect(Session.timers.userNoAnswerTimer).toBeNull();
+    expect(Session.timers.rel1xxTimer).toBeNull();
+    expect(Session.timers.prackTimer).toBeNull();
   });
 
   it('initializes session info', function() {
-    expect(InviteContext.startTime).toBeNull();
-    expect(InviteContext.endTime).toBeNull();
-    expect(InviteContext.tones).toBeNull();
+    expect(Session.startTime).toBeNull();
+    expect(Session.endTime).toBeNull();
+    expect(Session.tones).toBeNull();
   });
 
   it('initializes mute/hold state info', function() {
-    expect(InviteContext.audioMuted).toBe(false);
-    expect(InviteContext.videoMuted).toBe(false);
-    expect(InviteContext.local_hold).toBe(false);
-    expect(InviteContext.remote_hold).toBe(false);
+    expect(Session.audioMuted).toBe(false);
+    expect(Session.videoMuted).toBe(false);
+    expect(Session.local_hold).toBe(false);
+    expect(Session.remote_hold).toBe(false);
   });
 
   it('initializes the pending actions array and functions', function() {
-    expect(InviteContext.pending_actions.actions).toBeDefined();
-    expect(InviteContext.pending_actions.length).toBeDefined();
-    expect(InviteContext.pending_actions.isPending).toBeDefined();
-    expect(InviteContext.pending_actions.shift).toBeDefined();
-    expect(InviteContext.pending_actions.push).toBeDefined();
-    expect(InviteContext.pending_actions.pop).toBeDefined();
+    expect(Session.pending_actions.actions).toBeDefined();
+    expect(Session.pending_actions.length).toBeDefined();
+    expect(Session.pending_actions.isPending).toBeDefined();
+    expect(Session.pending_actions.shift).toBeDefined();
+    expect(Session.pending_actions.push).toBeDefined();
+    expect(Session.pending_actions.pop).toBeDefined();
   });
 
   describe('.pending_actions', function() {
     beforeEach(function() {
-      InviteContext.pending_actions.actions = [{name: 'foo'}, {name: 'bar'}];
+      Session.pending_actions.actions = [{name: 'foo'}, {name: 'bar'}];
     });
 
     describe('.length', function() {
       it('returns the length', function() {
-        expect(InviteContext.pending_actions.length()).toBe(2);
+        expect(Session.pending_actions.length()).toBe(2);
       });
     });
 
     describe('.isPending', function() {
       it('returns true for objects that are present', function() {
-        expect(InviteContext.pending_actions.isPending('foo')).toBe(true);
+        expect(Session.pending_actions.isPending('foo')).toBe(true);
       });
 
       it('returns false for objects that are not present', function() {
-        expect(InviteContext.pending_actions.isPending('seven')).toBe(false);
+        expect(Session.pending_actions.isPending('seven')).toBe(false);
       });
     });
 
     describe('.shift', function() {
       it('returns foo and leaves bar as the only element in the array', function() {
-        expect(InviteContext.pending_actions.shift().name).toBe('foo');
-        expect(InviteContext.pending_actions.isPending('foo')).toBe(false);
-        expect(InviteContext.pending_actions.isPending('bar')).toBe(true);
+        expect(Session.pending_actions.shift().name).toBe('foo');
+        expect(Session.pending_actions.isPending('foo')).toBe(false);
+        expect(Session.pending_actions.isPending('bar')).toBe(true);
       });
     });
 
     describe('.push', function() {
       it('adds seven to the array', function() {
-        InviteContext.pending_actions.push('seven');
-        expect(InviteContext.pending_actions.isPending('seven')).toBe(true);
+        Session.pending_actions.push('seven');
+        expect(Session.pending_actions.isPending('seven')).toBe(true);
       });
     });
 
     describe('.pop', function() {
       it('removes foo from the array', function() {
-        InviteContext.pending_actions.pop('foo');
-        expect(InviteContext.pending_actions.isPending('foo')).toBe(false);
-        expect(InviteContext.pending_actions.isPending('bar')).toBe(true);
+        Session.pending_actions.pop('foo');
+        expect(Session.pending_actions.isPending('foo')).toBe(false);
+        expect(Session.pending_actions.isPending('bar')).toBe(true);
       });
     });
   });
 
   it('initializes media_constraints, early_sdp, and rel100', function() {
-    expect(InviteContext.media_constraints).toBeDefined();
-    expect(InviteContext.early_sdp).toBeNull();
-    expect(InviteContext.rel100).toBeDefined();
+    expect(Session.media_constraints).toBeDefined();
+    expect(Session.early_sdp).toBeNull();
+    expect(Session.rel100).toBeDefined();
   });
 
   describe('.sendDTMF', function() {
@@ -142,106 +142,106 @@ describe('InviteContext', function() {
     beforeEach(function() {
       tones = 1;
 
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
-      spyOn(InviteContext.dialog, 'sendRequest').andReturn('sent');
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
+      spyOn(Session.dialog, 'sendRequest').andReturn('sent');
 
-      InviteContext.status = 12;
+      Session.status = 12;
     });
 
     it('throws an error if tones is undefined', function() {
-      expect(function(){InviteContext.sendDTMF(undefined);}).toThrow('Not enough arguments');
+      expect(function(){Session.sendDTMF(undefined);}).toThrow('Not enough arguments');
     });
 
     it('throws an error if the session status is incorrect', function() {
-      InviteContext.status = 0;
-      expect(function(){InviteContext.sendDTMF(1);}).toThrow('Invalid status: 0');
+      Session.status = 0;
+      expect(function(){Session.sendDTMF(1);}).toThrow('Invalid status: 0');
     });
 
     it('throws an error if tones is the wrong type', function() {
-      expect(function(){InviteContext.sendDTMF(1);}).not.toThrow('Invalid tones: 1');
-      expect(function(){InviteContext.sendDTMF('one');}).toThrow('Invalid tones: one');
-      expect(function(){InviteContext.sendDTMF(true);}).toThrow('Invalid tones: true');
+      expect(function(){Session.sendDTMF(1);}).not.toThrow('Invalid tones: 1');
+      expect(function(){Session.sendDTMF('one');}).toThrow('Invalid tones: one');
+      expect(function(){Session.sendDTMF(true);}).toThrow('Invalid tones: true');
     });
 
     it('accepts a string argument', function() {
-      expect(function(){InviteContext.sendDTMF('1');}).not.toThrow('Invalid tones: 1');
+      expect(function(){Session.sendDTMF('1');}).not.toThrow('Invalid tones: 1');
     });
 
     it('throws an error if tone duration is invalid', function() {
-      expect(function(){InviteContext.sendDTMF(1, {duration: 'six'});}).toThrow('Invalid tone duration: six');
+      expect(function(){Session.sendDTMF(1, {duration: 'six'});}).toThrow('Invalid tone duration: six');
     });
 
     it('resets duration to 70 if it\'s too low', function() {
       var options = {duration: 7};
-      InviteContext.sendDTMF(1, options);
+      Session.sendDTMF(1, options);
       expect(options.duration).toBe(70);
     });
 
     it('resets duration to 6000 if it\'s too high', function() {
       var options = {duration: 7000};
-      InviteContext.sendDTMF(1, options);
+      Session.sendDTMF(1, options);
       expect(options.duration).toBe(6000);
     });
 
     it('resets duration to positive if it\'s negative', function() {
       var options = {duration: -700};
-      InviteContext.sendDTMF(1, options);
+      Session.sendDTMF(1, options);
       expect(options.duration).toBe(70);
     });
 
     it('throws an error if interToneGap is invalid', function() {
-      expect(function(){InviteContext.sendDTMF(1, {interToneGap: 'six'});}).toThrow('Invalid interToneGap: six');
+      expect(function(){Session.sendDTMF(1, {interToneGap: 'six'});}).toThrow('Invalid interToneGap: six');
     });
 
     it('queues up tones if tones are already queued', function() {
-      InviteContext.tones = '123';
-      InviteContext.sendDTMF('4');
-      expect(InviteContext.tones).toBe('1234');
+      Session.tones = '123';
+      Session.sendDTMF('4');
+      expect(Session.tones).toBe('1234');
     });
 
     it('sets tones if no tones are queued', function() {
-      InviteContext.tones = '';
-      InviteContext.sendDTMF('4');
-      expect(InviteContext.tones).toBe('4');
+      Session.tones = '';
+      Session.sendDTMF('4');
+      expect(Session.tones).toBe('4');
     });
 
-    it('returns InviteContext on success', function() {
-      expect(InviteContext.sendDTMF(1)).toBe(InviteContext);
+    it('returns Session on success', function() {
+      expect(Session.sendDTMF(1)).toBe(Session);
     });
   });
 
   describe('.bye', function() {
     beforeEach(function() {
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
-      spyOn(InviteContext.dialog, 'sendRequest');
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
+      spyOn(Session.dialog, 'sendRequest');
 
-      spyOn(InviteContext,'emit')
-      InviteContext.status = 12;
+      spyOn(Session,'emit')
+      Session.status = 12;
     });
 
     it('throws an error if the session status is terminated', function() {
-      InviteContext.status = 9;
-      expect(function(){InviteContext.bye();}).toThrow('Invalid status: 9');
+      Session.status = 9;
+      expect(function(){Session.bye();}).toThrow('Invalid status: 9');
     });
 
     it('emits bye and terminated on any status code >= 200', function() {
-      spyOn(InviteContext, 'terminated');
-      spyOn(InviteContext, 'close');
+      spyOn(Session, 'terminated');
+      spyOn(Session, 'close');
 
       for (var i = 200; i < 700; i++) {
-        InviteContext.bye({status_code: i});
+        Session.bye({status_code: i});
 
-        expect(InviteContext.emit).toHaveBeenCalledWith('bye', {code: i, cause: SIP.C.REASON_PHRASE[i] || ''});
-        expect(InviteContext.terminated).toHaveBeenCalled();
+        expect(Session.emit).toHaveBeenCalledWith('bye', {code: i, cause: SIP.C.REASON_PHRASE[i] || ''});
+        expect(Session.terminated).toHaveBeenCalled();
         
-        InviteContext.emit.reset();
-        InviteContext.terminated.reset();
+        Session.emit.reset();
+        Session.terminated.reset();
       }
     });
 
     it('throws an error for any other status code', function() {
       for (var i = 100; i < 200; i++) {
-        expect(function(){InviteContext.bye({status_code: i});}).toThrow('Invalid status_code: ' + i);
+        expect(function(){Session.bye({status_code: i});}).toThrow('Invalid status_code: ' + i);
       }
     });
   });
@@ -252,83 +252,83 @@ describe('InviteContext', function() {
     beforeEach(function() {
       target = 'target';
 
-      InviteContext.status = 12;
+      Session.status = 12;
     });
 
     it('throws an error if target is undefined', function() {
-      expect(function(){InviteContext.refer(undefined);}).toThrow('Not enough arguments');
+      expect(function(){Session.refer(undefined);}).toThrow('Not enough arguments');
     });
 
-    it('throws an error if target is not an InviteContext and status is not confirmed', function() {
-      InviteContext.status = 0;
-      expect(function(){InviteContext.refer(target);}).toThrow('Invalid status: 0');
+    it('throws an error if target is not an Session and status is not confirmed', function() {
+      Session.status = 0;
+      expect(function(){Session.refer(target);}).toThrow('Invalid status: 0');
     });
 
-    it('returns InviteContext on success', function() {
+    it('returns Session on success', function() {
       spyOn(SIP.URI, 'parse').andReturn(true);
       spyOn(SIP.Utils, 'getAllowedMethods').andReturn(true);
 
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
-      spyOn(InviteContext.dialog, 'sendRequest').andReturn('sent');
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
+      spyOn(Session.dialog, 'sendRequest').andReturn('sent');
 
-      expect(InviteContext.refer(target)).toBe(InviteContext);
+      expect(Session.refer(target)).toBe(Session);
     });
   });
 
   describe('.sendRequest', function() {
     var method;
 
-    it('returns InviteContext on success', function() {
+    it('returns Session on success', function() {
       method = 'method';
-      InviteContext.status = 12;
+      Session.status = 12;
 
       spyOn(SIP.Utils, 'getAllowedMethods').andReturn(true);
 
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
-      spyOn(InviteContext.dialog, 'sendRequest').andReturn('sent');
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
+      spyOn(Session.dialog, 'sendRequest').andReturn('sent');
 
-      expect(InviteContext.sendRequest(method)).toBe(InviteContext);
+      expect(Session.sendRequest(method)).toBe(Session);
     });
   });
 
   describe('.getLocalStreams', function() { 
     it('returns RTCMediaHandler', function() {
-      InviteContext.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn('correct')}};
+      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn('correct')}};
 
-      expect(InviteContext.getLocalStreams()).toBe('correct');
+      expect(Session.getLocalStreams()).toBe('correct');
     });
   });
 
   describe('.getRemoteStreams', function() { 
     it('returns RTCMediaHandler', function() {
-      InviteContext.rtcMediaHandler = {peerConnection: {getRemoteStreams: jasmine.createSpy('getRemoteStreams').andReturn('correct')}};
+      Session.rtcMediaHandler = {peerConnection: {getRemoteStreams: jasmine.createSpy('getRemoteStreams').andReturn('correct')}};
 
-      expect(InviteContext.getRemoteStreams()).toBe('correct');
+      expect(Session.getRemoteStreams()).toBe('correct');
     });
   });
 
   describe('.close', function() {
     beforeEach(function() {
-      InviteContext.rtcMediaHandler = {close: jasmine.createSpy('close').andReturn(true)};
+      Session.rtcMediaHandler = {close: jasmine.createSpy('close').andReturn(true)};
 
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
-      spyOn(InviteContext.dialog, 'terminate').andReturn(true);
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
+      spyOn(Session.dialog, 'terminate').andReturn(true);
 
-      InviteContext.status = 12;
+      Session.status = 12;
     });
 
-    it('returns InviteContext if the status is terminated', function() {
-      InviteContext.status = 9;
-      expect(InviteContext.close()).toBe(InviteContext);
+    it('returns Session if the status is terminated', function() {
+      Session.status = 9;
+      expect(Session.close()).toBe(Session);
     });
 
-    it('deletes the session from the ua, deletes the dialog, and returns the InviteContext on success', function() {
-      InviteContext.id = 777;
-      InviteContext.ua.sessions = [{777: InviteContext}];
+    it('deletes the session from the ua, deletes the dialog, and returns the Session on success', function() {
+      Session.id = 777;
+      Session.ua.sessions = [{777: Session}];
 
-      expect(InviteContext.close()).toBe(InviteContext);
-      expect(InviteContext.dialog).toBeUndefined();
-      expect(InviteContext.ua.sessions[777]).toBeUndefined();
+      expect(Session.close()).toBe(Session);
+      expect(Session.dialog).toBeUndefined();
+      expect(Session.ua.sessions[777]).toBeUndefined();
     });
   });
 
@@ -345,211 +345,211 @@ describe('InviteContext', function() {
     });
 
     it('returns true and puts the dialog in the early dialogs array on a success call with early = true, type = UAS', function() {
-      expect(InviteContext.createDialog(message, 'UAS', true)).toBe(true);
-      expect(InviteContext.earlyDialogs[Sid]).toBeDefined();
+      expect(Session.createDialog(message, 'UAS', true)).toBe(true);
+      expect(Session.earlyDialogs[Sid]).toBeDefined();
     });
 
     it('returns true and puts the dialog in the early dialogs array on a success call with early = true, type = UAC', function() {
-      expect(InviteContext.createDialog(message, 'UAC', true)).toBe(true);
-      expect(InviteContext.earlyDialogs[Cid]).toBeDefined();
+      expect(Session.createDialog(message, 'UAC', true)).toBe(true);
+      expect(Session.earlyDialogs[Cid]).toBeDefined();
     });
 
     it('returns false if early_dialog.error is true when early = true', function(){
       SIP.Dialog = jasmine.createSpy('errorSpy').andReturn({ error: true, update: function(x, y) {return true;} });
       SIP.Dialog.C =  {STATUS_EARLY: 0};
 
-      spyOn(InviteContext, 'failed').andReturn(true);
+      spyOn(Session, 'failed').andReturn(true);
 
-      expect(InviteContext.createDialog(message, 'UAC', true)).toBe(false);
+      expect(Session.createDialog(message, 'UAC', true)).toBe(false);
 
       SIP.Dialog = sipDialogCleanup;
     });
 
     it('creates an early dialog, then updates it; returns true, no longer in early dialog array', function() {
-      expect(InviteContext.createDialog(message, 'UAC', true)).toBe(true);
-      expect(InviteContext.earlyDialogs[Cid]).toBeDefined();
+      expect(Session.createDialog(message, 'UAC', true)).toBe(true);
+      expect(Session.earlyDialogs[Cid]).toBeDefined();
       
-      expect(InviteContext.createDialog(message, 'UAC', false)).toBe(true);
-      expect(InviteContext.earlyDialogs[Cid]).toBeUndefined();
+      expect(Session.createDialog(message, 'UAC', false)).toBe(true);
+      expect(Session.earlyDialogs[Cid]).toBeUndefined();
     });
 
     it('returns false if dialog.error is true when early = false', function() {
       SIP.Dialog = jasmine.createSpy('errorSpy').andReturn({ error: true, update: function(x, y) {return true;} });
       SIP.Dialog.C =  {STATUS_EARLY: 0};
 
-      spyOn(InviteContext, 'failed').andReturn(true);
+      spyOn(Session, 'failed').andReturn(true);
 
-      expect(InviteContext.createDialog(message, 'UAC', false)).toBe(false);
+      expect(Session.createDialog(message, 'UAC', false)).toBe(false);
 
       SIP.Dialog = sipDialogCleanup;
     });
 
     it('returns true on a call where early = false', function() {
-      expect(InviteContext.createDialog(message, 'UAC', false)).toBe(true);
+      expect(Session.createDialog(message, 'UAC', false)).toBe(true);
     });
   });
 
   describe('.isReadyToReinvite', function() {
     beforeEach(function() {
-      InviteContext.rtcMediaHandler = {isReady: jasmine.createSpy('isReady').andReturn(true)};
+      Session.rtcMediaHandler = {isReady: jasmine.createSpy('isReady').andReturn(true)};
 
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
     });
 
     it('returns false if rtcMediaHandler.isReady() returns false', function() {
-      InviteContext.rtcMediaHandler.isReady.andReturn(false);
+      Session.rtcMediaHandler.isReady.andReturn(false);
 
-      expect(InviteContext.isReadyToReinvite()).toBe(false);
+      expect(Session.isReadyToReinvite()).toBe(false);
     });
 
     it('returns false if either of the pending_reply options are true', function() {
-      InviteContext.dialog.uac_pending_reply = true;
-      expect(InviteContext.isReadyToReinvite()).toBe(false);
+      Session.dialog.uac_pending_reply = true;
+      expect(Session.isReadyToReinvite()).toBe(false);
 
-      InviteContext.dialog.uac_pending_reply = false;
-      InviteContext.dialog.uas_pending_reply = true;
-      expect(InviteContext.isReadyToReinvite()).toBe(false);
+      Session.dialog.uac_pending_reply = false;
+      Session.dialog.uas_pending_reply = true;
+      expect(Session.isReadyToReinvite()).toBe(false);
     });
 
     it('returns true if all above conditions are met', function() {
-      expect(InviteContext.isReadyToReinvite()).toBe(true);
+      expect(Session.isReadyToReinvite()).toBe(true);
     });
   });
 
   describe('.mute', function() {
     beforeEach(function() {
-      InviteContext.audioMuted = false;
-      InviteContext.videoMuted = false;
+      Session.audioMuted = false;
+      Session.videoMuted = false;
 
-      InviteContext.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
+      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
         getAudioTracks: function() {return [7];}, 
         getVideoTracks: function() {return [7];}
       }])}};
 
-      spyOn(InviteContext, 'toggleMuteAudio').andReturn(true);
-      spyOn(InviteContext, 'toggleMuteVideo').andReturn(true);
+      spyOn(Session, 'toggleMuteAudio').andReturn(true);
+      spyOn(Session, 'toggleMuteVideo').andReturn(true);
 
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
     it('sets audio and video muted to true if they are both present (no options)', function() {
-      InviteContext.mute();
+      Session.mute();
 
-      expect(InviteContext.audioMuted).toBe(true);
-      expect(InviteContext.videoMuted).toBe(true);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('muted');
+      expect(Session.audioMuted).toBe(true);
+      expect(Session.videoMuted).toBe(true);
+      expect(Session.emit.calls[0].args[0]).toBe('muted');
     });
 
     it('sets audio and video muted to true if they are both present (options)', function() {
-      InviteContext.mute({audio: true, video: true});
+      Session.mute({audio: true, video: true});
 
-      expect(InviteContext.audioMuted).toBe(true);
-      expect(InviteContext.videoMuted).toBe(true);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('muted');
+      expect(Session.audioMuted).toBe(true);
+      expect(Session.videoMuted).toBe(true);
+      expect(Session.emit.calls[0].args[0]).toBe('muted');
     });
 
     it('only sets video if audio is not present', function() {
-      InviteContext.mute({audio: false, video: true});
+      Session.mute({audio: false, video: true});
 
-      expect(InviteContext.audioMuted).toBe(false);
-      expect(InviteContext.videoMuted).toBe(true);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('muted');
+      expect(Session.audioMuted).toBe(false);
+      expect(Session.videoMuted).toBe(true);
+      expect(Session.emit.calls[0].args[0]).toBe('muted');
     });
 
     it('only sets audio if video is not present', function() {
-      InviteContext.mute({audio: true, video: false});
+      Session.mute({audio: true, video: false});
 
-      expect(InviteContext.audioMuted).toBe(true);
-      expect(InviteContext.videoMuted).toBe(false);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('muted');
+      expect(Session.audioMuted).toBe(true);
+      expect(Session.videoMuted).toBe(false);
+      expect(Session.emit.calls[0].args[0]).toBe('muted');
     });
 
     it('sets neither if neither is present and does not emit muted', function() {
-      InviteContext.mute({audio: false, video: false});
+      Session.mute({audio: false, video: false});
 
-      expect(InviteContext.audioMuted).toBe(false);
-      expect(InviteContext.videoMuted).toBe(false);
-      expect(InviteContext.emit).not.toHaveBeenCalled();
+      expect(Session.audioMuted).toBe(false);
+      expect(Session.videoMuted).toBe(false);
+      expect(Session.emit).not.toHaveBeenCalled();
     });
 
     it('sets neither if both are already muted and does not emit muted', function() {
-      InviteContext.audioMuted = true;
-      InviteContext.videoMuted = true;
+      Session.audioMuted = true;
+      Session.videoMuted = true;
 
-      InviteContext.mute({audio: true, video: true});
+      Session.mute({audio: true, video: true});
 
-      expect(InviteContext.audioMuted).toBe(true);
-      expect(InviteContext.videoMuted).toBe(true);
-      expect(InviteContext.emit).not.toHaveBeenCalled();
+      expect(Session.audioMuted).toBe(true);
+      expect(Session.videoMuted).toBe(true);
+      expect(Session.emit).not.toHaveBeenCalled();
     });
   });
 
   describe('.unmute', function() {
     beforeEach(function() {
-      InviteContext.audioMuted = true;
-      InviteContext.videoMuted = true;
-      InviteContext.local_hold = false;
+      Session.audioMuted = true;
+      Session.videoMuted = true;
+      Session.local_hold = false;
 
-      InviteContext.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
+      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
         getAudioTracks: function() {return [7];}, 
         getVideoTracks: function() {return [7];}
       }])}};
 
-      spyOn(InviteContext, 'toggleMuteAudio').andReturn(true);
-      spyOn(InviteContext, 'toggleMuteVideo').andReturn(true);
+      spyOn(Session, 'toggleMuteAudio').andReturn(true);
+      spyOn(Session, 'toggleMuteVideo').andReturn(true);
 
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
     it('sets audio and video muted to false if they are both present (no options)', function() {
-      InviteContext.unmute();
+      Session.unmute();
 
-      expect(InviteContext.audioMuted).toBe(false);
-      expect(InviteContext.videoMuted).toBe(false);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unmuted');
+      expect(Session.audioMuted).toBe(false);
+      expect(Session.videoMuted).toBe(false);
+      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
     });
 
     it('sets audio and video muted to false if they are both present (options)', function() {
-      InviteContext.unmute({audio: true, video: true});
+      Session.unmute({audio: true, video: true});
 
-      expect(InviteContext.audioMuted).toBe(false);
-      expect(InviteContext.videoMuted).toBe(false);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unmuted');
+      expect(Session.audioMuted).toBe(false);
+      expect(Session.videoMuted).toBe(false);
+      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
     });
 
     it('only sets video if audio is not present', function() {
-      InviteContext.unmute({audio: false, video: true});
+      Session.unmute({audio: false, video: true});
 
-      expect(InviteContext.audioMuted).toBe(true);
-      expect(InviteContext.videoMuted).toBe(false);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unmuted');
+      expect(Session.audioMuted).toBe(true);
+      expect(Session.videoMuted).toBe(false);
+      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
     });
 
     it('onlys set audio if video is not present', function() {
-      InviteContext.unmute({audio: true, video: false});
+      Session.unmute({audio: true, video: false});
 
-      expect(InviteContext.audioMuted).toBe(false);
-      expect(InviteContext.videoMuted).toBe(true);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unmuted');
+      expect(Session.audioMuted).toBe(false);
+      expect(Session.videoMuted).toBe(true);
+      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
     });
 
     it('sets neither if neither is present and does not emit unmuted', function() {
-      InviteContext.unmute({audio: false, video: false});
+      Session.unmute({audio: false, video: false});
 
-      expect(InviteContext.audioMuted).toBe(true);
-      expect(InviteContext.videoMuted).toBe(true);
-      expect(InviteContext.emit).not.toHaveBeenCalled();
+      expect(Session.audioMuted).toBe(true);
+      expect(Session.videoMuted).toBe(true);
+      expect(Session.emit).not.toHaveBeenCalled();
     });
 
     it('sets neither if both are already unmuted and does not emit unmuted', function() {
-      InviteContext.audioMuted = false;
-      InviteContext.videoMuted = false;
+      Session.audioMuted = false;
+      Session.videoMuted = false;
 
-      InviteContext.unmute({audio: true, video: true});
+      Session.unmute({audio: true, video: true});
 
-      expect(InviteContext.audioMuted).toBe(false);
-      expect(InviteContext.videoMuted).toBe(false);
-      expect(InviteContext.emit).not.toHaveBeenCalled();
+      expect(Session.audioMuted).toBe(false);
+      expect(Session.videoMuted).toBe(false);
+      expect(Session.emit).not.toHaveBeenCalled();
     });
 
     //Note: the local_hold conditional doesn't change anything in terms of this code; as long as
@@ -560,10 +560,10 @@ describe('InviteContext', function() {
     var result;
 
     it('returns the audioMuted and videoMuted variables', function() {
-      InviteContext.audioMuted = 'audio';
-      InviteContext.videoMuted = 'video';
+      Session.audioMuted = 'audio';
+      Session.videoMuted = 'video';
 
-      expect(InviteContext.isMuted()).toEqual({audio: 'audio', video: 'video'});
+      expect(Session.isMuted()).toEqual({audio: 'audio', video: 'video'});
     });
   });
 
@@ -573,27 +573,27 @@ describe('InviteContext', function() {
     beforeEach(function() {
       change = {enabled: true};
 
-      spyOn(InviteContext, 'getLocalStreams').andReturn([{getAudioTracks: function() { return [change]; }}]);
+      spyOn(Session, 'getLocalStreams').andReturn([{getAudioTracks: function() { return [change]; }}]);
     });
 
     it('sets enabled to false', function() {
-      expect(InviteContext.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
-      InviteContext.toggleMuteAudio(true);
-      expect(InviteContext.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(false);
+      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
+      Session.toggleMuteAudio(true);
+      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(false);
     });
 
     it('sets enabled to true', function() {
       change = {enabled: false};
 
-      expect(InviteContext.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(false);
-      InviteContext.toggleMuteAudio(false);
-      expect(InviteContext.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
+      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(false);
+      Session.toggleMuteAudio(false);
+      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
     });
 
     it('does not set enabled', function() {
-      expect(InviteContext.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
-      InviteContext.toggleMuteAudio(false);
-      expect(InviteContext.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
+      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
+      Session.toggleMuteAudio(false);
+      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
     });
   });
 
@@ -603,110 +603,110 @@ describe('InviteContext', function() {
     beforeEach(function() {
       change = {enabled: true};
 
-      spyOn(InviteContext, 'getLocalStreams').andReturn([{getVideoTracks: function() { return [change]; }}]);
+      spyOn(Session, 'getLocalStreams').andReturn([{getVideoTracks: function() { return [change]; }}]);
     });
 
     it('sets enabled to false', function() {
-      expect(InviteContext.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
-      InviteContext.toggleMuteVideo(true);
-      expect(InviteContext.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(false);
+      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
+      Session.toggleMuteVideo(true);
+      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(false);
     });
 
     it('sets enabled to true', function() {
       change = {enabled: false};
 
-      expect(InviteContext.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(false);
-      InviteContext.toggleMuteVideo(false);
-      expect(InviteContext.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
+      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(false);
+      Session.toggleMuteVideo(false);
+      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
     });
 
     it('does not set enabled', function() {
-      expect(InviteContext.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
-      InviteContext.toggleMuteVideo(false);
-      expect(InviteContext.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
+      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
+      Session.toggleMuteVideo(false);
+      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
     });
   });
 
   describe('.hold', function() {
 
     beforeEach(function() {
-      spyOn(InviteContext, 'emit');
-      InviteContext.status = 12;
+      spyOn(Session, 'emit');
+      Session.status = 12;
 
-      spyOn(InviteContext, 'isReadyToReinvite').andReturn(true);
+      spyOn(Session, 'isReadyToReinvite').andReturn(true);
 
-      spyOn(InviteContext, 'toggleMuteAudio');
-      spyOn(InviteContext, 'toggleMuteVideo');
-      spyOn(InviteContext, 'sendReinvite');
+      spyOn(Session, 'toggleMuteAudio');
+      spyOn(Session, 'toggleMuteVideo');
+      spyOn(Session, 'sendReinvite');
     });
 
     it('throws an error if the session is in the incorrect state', function() {
-      InviteContext.status = 0;
+      Session.status = 0;
 
-      expect(function(){InviteContext.hold()}).toThrow('Invalid status: 0');
+      expect(function(){Session.hold()}).toThrow('Invalid status: 0');
     });
 
     //Note: the pending actions conditionals were skipped because it wouldn't test
     //anything in relation to this function.
 
     it('does not emit hold if local hold is true', function() {
-      InviteContext.local_hold = true;
+      Session.local_hold = true;
 
-      InviteContext.hold();
+      Session.hold();
 
-      expect(InviteContext.emit).not.toHaveBeenCalled();
+      expect(Session.emit).not.toHaveBeenCalled();
     });
 
     it('emits hold on success', function() {
-      InviteContext.hold();
+      Session.hold();
 
-      expect(InviteContext.emit.calls[0].args[0]).toBe('hold');
+      expect(Session.emit.calls[0].args[0]).toBe('hold');
     });
   });
 
   describe('.unhold', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'emit');
-      InviteContext.status = 12;
-      InviteContext.local_hold = true;
-      InviteContext.audioMuted = true;
-      InviteContext.videoMuted = true;
+      spyOn(Session, 'emit');
+      Session.status = 12;
+      Session.local_hold = true;
+      Session.audioMuted = true;
+      Session.videoMuted = true;
 
-      spyOn(InviteContext, 'isReadyToReinvite').andReturn(true);
+      spyOn(Session, 'isReadyToReinvite').andReturn(true);
 
-      spyOn(InviteContext, 'sendReinvite');
+      spyOn(Session, 'sendReinvite');
     });
 
     //Note: the pending actions conditionals were skipped because it wouldn't test
     //anything in relation to this function.
 
     it('throws an error if the session is in the incorrect state', function() {
-      InviteContext.status = 0;
+      Session.status = 0;
 
-      expect(function(){InviteContext.unhold()}).toThrow('Invalid status: 0');
+      expect(function(){Session.unhold()}).toThrow('Invalid status: 0');
     });
 
     it('does not emit unhold if local hold is false', function() {
-      InviteContext.local_hold = false;
+      Session.local_hold = false;
 
-      InviteContext.unhold();
+      Session.unhold();
 
-      expect(InviteContext.emit).not.toHaveBeenCalled();
+      expect(Session.emit).not.toHaveBeenCalled();
     });
 
     it('emits unhold on success', function() {
-      InviteContext.unhold();
+      Session.unhold();
 
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unhold');
+      expect(Session.emit.calls[0].args[0]).toBe('unhold');
     });
   });
 
   describe('.isOnHold', function() {
     it('should return the values of local_hold and remote_hold', function() {
-      InviteContext.local_hold = 'local';
-      InviteContext.remote_hold = 'remote';
+      Session.local_hold = 'local';
+      Session.remote_hold = 'remote';
 
-      expect(InviteContext.isOnHold()).toEqual({local: 'local', remote: 'remote'});
+      expect(Session.isOnHold()).toEqual({local: 'local', remote: 'remote'});
     });
   });
 
@@ -714,458 +714,458 @@ describe('InviteContext', function() {
     var request;
 
     beforeEach(function() {
-      spyOn(InviteContext, 'emit');
-      InviteContext.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage')};
+      spyOn(Session, 'emit');
+      Session.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage')};
     });
 
     it('does not call onMessage and replies with 415 if contentType is not application/sdp', function() {
       spyOn(message, 'getHeader').andReturn('incorrect');
       spyOn(message, 'reply');
 
-      InviteContext.receiveReinvite(message);
+      Session.receiveReinvite(message);
 
-      expect(InviteContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
       expect(message.reply).toHaveBeenCalledWith(415);
     });
 
     it('calls onMessage on success', function() {
       spyOn(SIP.Parser, 'parseSDP').andReturn({media: []});
 
-      InviteContext.receiveReinvite(message);
+      Session.receiveReinvite(message);
 
-      expect(InviteContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).toHaveBeenCalled();
     });
   });
 
   describe('.sendReinvite', function() {
     beforeEach(function() {
-      InviteContext.rtcMediaHandler = {createOffer: jasmine.createSpy('createOffer').andReturn(true)};
+      Session.rtcMediaHandler = {createOffer: jasmine.createSpy('createOffer').andReturn(true)};
       spyOn(SIP.Utils, 'getAllowedMethods').andReturn(true);
     });
 
     it('on success, sets receiveResponse, reinviteSucceeded, and reinviteFailed, and calls createOffer', function(){
-      InviteContext.sendReinvite();
+      Session.sendReinvite();
 
-      expect(InviteContext.rtcMediaHandler.createOffer).toHaveBeenCalled();
-      expect(InviteContext.receiveResponse).toBe(InviteContext.receiveReinviteResponse);
-      expect(InviteContext.reinviteSucceeded).toBeDefined();
-      expect(InviteContext.reinviteFailed).toBeDefined();
+      expect(Session.rtcMediaHandler.createOffer).toHaveBeenCalled();
+      expect(Session.receiveResponse).toBe(Session.receiveReinviteResponse);
+      expect(Session.reinviteSucceeded).toBeDefined();
+      expect(Session.reinviteFailed).toBeDefined();
     });
   });
 
   describe('.receiveReinviteResponse', function() {
     beforeEach(function() {
-      InviteContext.status = 12;
+      Session.status = 12;
 
-      InviteContext.reinviteFailed = jasmine.createSpy('reinviteFailed');
+      Session.reinviteFailed = jasmine.createSpy('reinviteFailed');
 
-      spyOn(InviteContext, 'sendRequest');
+      spyOn(Session, 'sendRequest');
 
-      InviteContext.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage').andReturn(true)};
+      Session.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage').andReturn(true)};
     });
 
     it('returns without calling sendRequest or reinviteFailed when status is terminated', function() {
-      InviteContext.status = 9;
+      Session.status = 9;
 
-      InviteContext.receiveReinviteResponse(message);
+      Session.receiveReinviteResponse(message);
 
-      expect(InviteContext.sendRequest).not.toHaveBeenCalled();
-      expect(InviteContext.reinviteFailed).not.toHaveBeenCalled();
-      expect(InviteContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.sendRequest).not.toHaveBeenCalled();
+      expect(Session.reinviteFailed).not.toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
     it('returns without calling sendRequest or reinviteFailed when response status code is 1xx', function() {
       message.status_code = 111;
 
-      InviteContext.receiveReinviteResponse(message);
+      Session.receiveReinviteResponse(message);
 
-      expect(InviteContext.sendRequest).not.toHaveBeenCalled();
-      expect(InviteContext.reinviteFailed).not.toHaveBeenCalled();
-      expect(InviteContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.sendRequest).not.toHaveBeenCalled();
+      expect(Session.reinviteFailed).not.toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
     it('calls reInviteFailed when the response has no body with a 2xx status code', function() {
       message.body = null;
       message.status_code = 222;
 
-      InviteContext.receiveReinviteResponse(message);
+      Session.receiveReinviteResponse(message);
 
-      expect(InviteContext.reinviteFailed).toHaveBeenCalled()
-      expect(InviteContext.sendRequest).toHaveBeenCalled()
-      expect(InviteContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.reinviteFailed).toHaveBeenCalled()
+      expect(Session.sendRequest).toHaveBeenCalled()
+      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
     it('calls reInviteFailed when the response\'s content-type is not application/sdp with a 2xx status code', function() {
       spyOn(message, 'getHeader').andReturn('wrong');
       message.status_code = 222;
 
-      InviteContext.receiveReinviteResponse(message);
+      Session.receiveReinviteResponse(message);
 
-      expect(InviteContext.reinviteFailed).toHaveBeenCalled()
-      expect(InviteContext.sendRequest).toHaveBeenCalled();
-      expect(InviteContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.reinviteFailed).toHaveBeenCalled()
+      expect(Session.sendRequest).toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
     it('calls sendRequest and onMessage when response has a 2xx status code, a body, and content-type of application/sdp', function() {
       message.status_code = 222;
 
-      InviteContext.receiveReinviteResponse(message);
+      Session.receiveReinviteResponse(message);
 
-      expect(InviteContext.reinviteFailed).not.toHaveBeenCalled();
-      expect(InviteContext.sendRequest).toHaveBeenCalled();
-      expect(InviteContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+      expect(Session.reinviteFailed).not.toHaveBeenCalled();
+      expect(Session.sendRequest).toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).toHaveBeenCalled();
     });
 
     it('returns without calling sendRequest or reinviteFailed when response status code is neither 1xx or 2xx', function() {
       message.status_code = 333;
 
-      InviteContext.receiveReinviteResponse(message);
+      Session.receiveReinviteResponse(message);
 
-      expect(InviteContext.sendRequest).not.toHaveBeenCalled();
-      expect(InviteContext.reinviteFailed).toHaveBeenCalled();
-      expect(InviteContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.sendRequest).not.toHaveBeenCalled();
+      expect(Session.reinviteFailed).toHaveBeenCalled();
+      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
   });
 
   describe('.acceptAndTerminate', function() {
     beforeEach(function() {
-      InviteContext.dialog = new SIP.Dialog(InviteContext, message, 'UAC');
+      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
         
-      spyOn(InviteContext, 'createDialog').andReturn(true);
-      spyOn(InviteContext, 'sendRequest');
+      spyOn(Session, 'createDialog').andReturn(true);
+      spyOn(Session, 'sendRequest');
     });
 
-    it('calls sendRequest twice and returns InviteContext on success', function() {
-      expect(InviteContext.acceptAndTerminate(message)).toBe(InviteContext);
+    it('calls sendRequest twice and returns Session on success', function() {
+      expect(Session.acceptAndTerminate(message)).toBe(Session);
 
-      expect(InviteContext.sendRequest.calls.length).toBe(2);
+      expect(Session.sendRequest.calls.length).toBe(2);
     });
 
     it('calls createDialog if this.dialog is null', function() {
-      InviteContext.dialog = null;
+      Session.dialog = null;
 
-      expect(InviteContext.acceptAndTerminate(message)).toBe(InviteContext);
+      expect(Session.acceptAndTerminate(message)).toBe(Session);
 
-      expect(InviteContext.createDialog).toHaveBeenCalled();
-      expect(InviteContext.sendRequest.calls.length).toBe(2);
+      expect(Session.createDialog).toHaveBeenCalled();
+      expect(Session.sendRequest.calls.length).toBe(2);
     });
   });
 
   describe('.setInvite2xxTimer', function() {
     it('defines timers.invite2xxTimer', function() {
-      InviteContext.setInvite2xxTimer(null, null);
+      Session.setInvite2xxTimer(null, null);
 
-      expect(InviteContext.timers.invite2xxTimer).toBeDefined();
+      expect(Session.timers.invite2xxTimer).toBeDefined();
     });
   });
 
   describe('.setACKTimer', function() {
     it('defines timers.ackTimer', function() {
-      InviteContext.setACKTimer(null, null);
+      Session.setACKTimer(null, null);
 
-      expect(InviteContext.timers.ackTimer).toBeDefined();
+      expect(Session.timers.ackTimer).toBeDefined();
     });
   });
 
   describe('.onReadyToReinvite', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'hold');
-      spyOn(InviteContext, 'unhold');
+      spyOn(Session, 'hold');
+      spyOn(Session, 'unhold');
     });
 
     it('returns without calling hold/unhold if pending_actions is empty', function() {
-      InviteContext.onReadyToReinvite();
+      Session.onReadyToReinvite();
 
-      expect(InviteContext.hold).not.toHaveBeenCalled();
-      expect(InviteContext.unhold).not.toHaveBeenCalled();
+      expect(Session.hold).not.toHaveBeenCalled();
+      expect(Session.unhold).not.toHaveBeenCalled();
     });
 
     it('calls hold if that is the next action', function() {
-      InviteContext.pending_actions.push('hold');
+      Session.pending_actions.push('hold');
 
-      InviteContext.onReadyToReinvite();
+      Session.onReadyToReinvite();
 
-      expect(InviteContext.hold).toHaveBeenCalled();
-      expect(InviteContext.unhold).not.toHaveBeenCalled();
+      expect(Session.hold).toHaveBeenCalled();
+      expect(Session.unhold).not.toHaveBeenCalled();
     });
 
     it('calls unhold if that is the next action', function() {
-      InviteContext.pending_actions.push('unhold');
+      Session.pending_actions.push('unhold');
 
-      InviteContext.onReadyToReinvite();
+      Session.onReadyToReinvite();
 
-      expect(InviteContext.hold).not.toHaveBeenCalled();
-      expect(InviteContext.unhold).toHaveBeenCalled();
+      expect(Session.hold).not.toHaveBeenCalled();
+      expect(Session.unhold).toHaveBeenCalled();
     });
   });
 
   describe('.onTransportError', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'terminated');
-      spyOn(InviteContext, 'failed');
+      spyOn(Session, 'terminated');
+      spyOn(Session, 'failed');
     });
 
     it('does not call failed or terminated if the status is terminated', function() {
-      InviteContext.status = 9;
+      Session.status = 9;
 
-      InviteContext.onTransportError();
+      Session.onTransportError();
 
-      expect(InviteContext.failed).not.toHaveBeenCalled();
-      expect(InviteContext.terminated).not.toHaveBeenCalled();;
+      expect(Session.failed).not.toHaveBeenCalled();
+      expect(Session.terminated).not.toHaveBeenCalled();;
     });
 
     it('calls terminated if the status is confirmed', function() {
-      InviteContext.status = 12;
+      Session.status = 12;
 
-      InviteContext.onTransportError();
+      Session.onTransportError();
 
-      expect(InviteContext.terminated).toHaveBeenCalled();;
-      expect(InviteContext.failed).not.toHaveBeenCalled();;
+      expect(Session.terminated).toHaveBeenCalled();;
+      expect(Session.failed).not.toHaveBeenCalled();;
     });
 
     it('calls failed if the status is neither terminated or confirmed', function() {
-      InviteContext.status = 11;
+      Session.status = 11;
 
-      InviteContext.onTransportError();
+      Session.onTransportError();
 
-      expect(InviteContext.failed).toHaveBeenCalled();
-      expect(InviteContext.terminated).not.toHaveBeenCalled();
+      expect(Session.failed).toHaveBeenCalled();
+      expect(Session.terminated).not.toHaveBeenCalled();
     });
   });
 
   describe('.onRequestTimeout', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'terminated');
-      spyOn(InviteContext, 'failed');
+      spyOn(Session, 'terminated');
+      spyOn(Session, 'failed');
     });
 
     it('does not call failed or terminated if the status is terminated', function() {
-      InviteContext.status = 9;
+      Session.status = 9;
 
-      InviteContext.onRequestTimeout();
+      Session.onRequestTimeout();
 
-      expect(InviteContext.failed).not.toHaveBeenCalled();
-      expect(InviteContext.terminated).not.toHaveBeenCalled();
+      expect(Session.failed).not.toHaveBeenCalled();
+      expect(Session.terminated).not.toHaveBeenCalled();
     });
 
     it('calls terminated if the status is confirmed', function() {
-      InviteContext.status = 12;
+      Session.status = 12;
 
-      InviteContext.onRequestTimeout();
+      Session.onRequestTimeout();
 
-      expect(InviteContext.terminated).toHaveBeenCalled();
-      expect(InviteContext.failed).not.toHaveBeenCalled();
+      expect(Session.terminated).toHaveBeenCalled();
+      expect(Session.failed).not.toHaveBeenCalled();
     });
 
     it('calls failed if the status is neither terminated or confirmed', function() {
-      InviteContext.status = 11;
+      Session.status = 11;
 
-      InviteContext.onRequestTimeout();
+      Session.onRequestTimeout();
 
-      expect(InviteContext.failed).toHaveBeenCalled();
-      expect(InviteContext.terminated).not.toHaveBeenCalled();
+      expect(Session.failed).toHaveBeenCalled();
+      expect(Session.terminated).not.toHaveBeenCalled();
     });
   });
 
   describe('.onDialogError', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'terminated');
-      spyOn(InviteContext, 'failed');
+      spyOn(Session, 'terminated');
+      spyOn(Session, 'failed');
     });
 
     it('does not call failed or terminated if the status is terminated', function() {
-      InviteContext.status = 9;
+      Session.status = 9;
 
-      InviteContext.onDialogError();
+      Session.onDialogError();
 
-      expect(InviteContext.failed).not.toHaveBeenCalled();
-      expect(InviteContext.terminated).not.toHaveBeenCalled();
+      expect(Session.failed).not.toHaveBeenCalled();
+      expect(Session.terminated).not.toHaveBeenCalled();
     });
 
     it('calls terminated if the status is confirmed', function() {
-      InviteContext.status = 12;
+      Session.status = 12;
 
-      InviteContext.onDialogError();
+      Session.onDialogError();
 
-      expect(InviteContext.terminated).toHaveBeenCalled();
-      expect(InviteContext.failed).not.toHaveBeenCalled();
+      expect(Session.terminated).toHaveBeenCalled();
+      expect(Session.failed).not.toHaveBeenCalled();
     });
 
     it('calls failed if the status is neither terminated or confirmed', function() {
-      InviteContext.status = 11;
+      Session.status = 11;
 
-      InviteContext.onDialogError();
+      Session.onDialogError();
 
-      expect(InviteContext.failed).toHaveBeenCalled();
-      expect(InviteContext.terminated).not.toHaveBeenCalled();
+      expect(Session.failed).toHaveBeenCalled();
+      expect(Session.terminated).not.toHaveBeenCalled();
     });
   });
 
   describe('.onhold', function() {
     beforeEach(function() {
-      InviteContext.local_hold = false;
-      InviteContext.remote_hold = false;
+      Session.local_hold = false;
+      Session.remote_hold = false;
 
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
     it('sets local_hold to true and emits hold when originator is local', function(){
-      expect(InviteContext.local_hold).toBe(false);
+      expect(Session.local_hold).toBe(false);
 
-      InviteContext.onhold('local');
+      Session.onhold('local');
 
-      expect(InviteContext.local_hold).toBe(true);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('hold');
+      expect(Session.local_hold).toBe(true);
+      expect(Session.emit.calls[0].args[0]).toBe('hold');
     });
 
     it('sets remote_hold to true and emits hold when originator is remote', function(){
-      expect(InviteContext.remote_hold).toBe(false);
+      expect(Session.remote_hold).toBe(false);
 
-      InviteContext.onhold('remote');
+      Session.onhold('remote');
 
-      expect(InviteContext.remote_hold).toBe(true);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('hold');
+      expect(Session.remote_hold).toBe(true);
+      expect(Session.emit.calls[0].args[0]).toBe('hold');
     });
   });
 
   describe('.onunhold', function() {
     beforeEach(function() {
-      InviteContext.local_hold = true;
-      InviteContext.remote_hold = true;
+      Session.local_hold = true;
+      Session.remote_hold = true;
       
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
     it('sets local_hold to false and emits unhold when originator is local', function(){
-      expect(InviteContext.local_hold).toBe(true);
+      expect(Session.local_hold).toBe(true);
 
-      InviteContext.onunhold('local');
+      Session.onunhold('local');
 
-      expect(InviteContext.local_hold).toBe(false);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unhold');
+      expect(Session.local_hold).toBe(false);
+      expect(Session.emit.calls[0].args[0]).toBe('unhold');
     });
 
     it('sets remote_hold to false and emit unhold when originator is remote', function(){
-      expect(InviteContext.remote_hold).toBe(true);
+      expect(Session.remote_hold).toBe(true);
 
-      InviteContext.onunhold('remote');
+      Session.onunhold('remote');
 
-      expect(InviteContext.remote_hold).toBe(false);
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unhold');
+      expect(Session.remote_hold).toBe(false);
+      expect(Session.emit.calls[0].args[0]).toBe('unhold');
     });
   });
 
   describe('.onmute', function() {
     it('emits muted', function() {
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
 
-      InviteContext.onmute({audio: true, video: true});
+      Session.onmute({audio: true, video: true});
 
-      expect(InviteContext.emit.calls[0].args[0]).toBe('muted');
+      expect(Session.emit.calls[0].args[0]).toBe('muted');
     });
   });
 
   describe('.onunmute', function() {
     it('emits unmuted', function() {
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
 
-      InviteContext.onunmute({audio: true, video: true});
+      Session.onunmute({audio: true, video: true});
 
-      expect(InviteContext.emit.calls[0].args[0]).toBe('unmuted');
+      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
     });
   });
 
   describe('.failed', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'close');
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'close');
+      spyOn(Session, 'emit');
     });
 
-    it('calls close, emits, and returns InviteContext', function() {
-      expect(InviteContext.failed()).toBe(InviteContext);
+    it('calls close, emits, and returns Session', function() {
+      expect(Session.failed()).toBe(Session);
 
-      expect(InviteContext.close).toHaveBeenCalled();
-      expect(InviteContext.emit.calls[0].args[0]).toBe('failed');
+      expect(Session.close).toHaveBeenCalled();
+      expect(Session.emit.calls[0].args[0]).toBe('failed');
     });
   });
 
   describe('.rejected', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'close');
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'close');
+      spyOn(Session, 'emit');
     });
 
-    it('calls close, emits, and returns InviteContext', function() {
-      expect(InviteContext.rejected()).toBe(InviteContext);
+    it('calls close, emits, and returns Session', function() {
+      expect(Session.rejected()).toBe(Session);
 
-      expect(InviteContext.close).toHaveBeenCalled();
-      expect(InviteContext.emit.calls[0].args[0]).toBe('rejected');
+      expect(Session.close).toHaveBeenCalled();
+      expect(Session.emit.calls[0].args[0]).toBe('rejected');
     });
   });
 
   describe('.referred', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
-    it('emits and returns InviteContext', function() {
-      expect(InviteContext.referred()).toBe(InviteContext);
+    it('emits and returns Session', function() {
+      expect(Session.referred()).toBe(Session);
 
-      expect(InviteContext.emit.calls[0].args[0]).toBe('referred');
+      expect(Session.emit.calls[0].args[0]).toBe('referred');
     });
   });
 
   describe('.canceled', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'close');
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'close');
+      spyOn(Session, 'emit');
     });
 
-    it('calls close, emits, and returns InviteContext', function() {
-      expect(InviteContext.canceled()).toBe(InviteContext);
+    it('calls close, emits, and returns Session', function() {
+      expect(Session.canceled()).toBe(Session);
 
-      expect(InviteContext.close).toHaveBeenCalled();
-      expect(InviteContext.emit.calls[0].args[0]).toBe('canceled');
+      expect(Session.close).toHaveBeenCalled();
+      expect(Session.emit.calls[0].args[0]).toBe('canceled');
     });
   });
 
   describe('.accepted', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
-    it('calls emit, sets a startTime, and returns InviteContext', function() {
-      expect(InviteContext.accepted()).toBe(InviteContext);
+    it('calls emit, sets a startTime, and returns Session', function() {
+      expect(Session.accepted()).toBe(Session);
 
-      expect(InviteContext.startTime).toBeDefined();
-      expect(InviteContext.emit.calls[0].args[0]).toBe('accepted');
+      expect(Session.startTime).toBeDefined();
+      expect(Session.emit.calls[0].args[0]).toBe('accepted');
     });
   });
 
   describe('.terminated', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'close');
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'close');
+      spyOn(Session, 'emit');
     });
 
-    it('calls close, emits, sets an endTime, and returns InviteContext', function() {
-      expect(InviteContext.terminated()).toBe(InviteContext);
+    it('calls close, emits, sets an endTime, and returns Session', function() {
+      expect(Session.terminated()).toBe(Session);
 
-      expect(InviteContext.endTime).toBeDefined();
-      expect(InviteContext.close).toHaveBeenCalled();
-      expect(InviteContext.emit.calls[0].args[0]).toBe('terminated');
+      expect(Session.endTime).toBeDefined();
+      expect(Session.close).toHaveBeenCalled();
+      expect(Session.emit.calls[0].args[0]).toBe('terminated');
     });
   });
 
   describe('.connecting', function() {
     beforeEach(function() {
-      spyOn(InviteContext, 'emit');
+      spyOn(Session, 'emit');
     });
 
     it('calls emit', function() {
-      InviteContext.connecting();
+      Session.connecting();
 
-      expect(InviteContext.emit.calls[0].args[0]).toBe('connecting');
+      expect(Session.emit.calls[0].args[0]).toBe('connecting');
     });
   });
 });
@@ -1223,14 +1223,14 @@ describe('InviteServerContext', function() {
     expect(ISC.contentDisp).toBe('render');
   });
 
-  it('calls augment using ServerContext and InviteContext', function() {
+  it('calls augment using ServerContext and Session', function() {
     spyOn(SIP.Utils, 'augment').andCallThrough();
 
     var ISC = new SIP.InviteServerContext(ua, request);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(SIP.Utils.augment.calls[0].args[1]).toBe(SIP.ServerContext);
-    expect(SIP.Utils.augment.calls[1].args[1]).toBe(SIP.InviteContext);
+    expect(SIP.Utils.augment.calls[1].args[1]).toBe(SIP.Session);
   });
 
   it('sets status, from_tag, id, request, contact, logger, and sessions', function() {
@@ -1269,7 +1269,7 @@ describe('InviteServerContext', function() {
     fakereq = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(fakereq, 'reply');
 
-    spyOn(SIP.InviteContext.prototype,'createDialog').andReturn(false);
+    spyOn(SIP.Session.prototype,'createDialog').andReturn(false);
 
     ISC = new SIP.InviteServerContext(ua, fakereq);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
@@ -1300,16 +1300,16 @@ describe('InviteServerContext', function() {
   xit('should call rtcMediaHandler.onMessage otherwise', function() {
     var ISC;
 
-    jasmine.createSpy(SIP.InviteContext, 'rtcMediaHandler').andCallThrough();
+    jasmine.createSpy(SIP.Session, 'rtcMediaHandler').andCallThrough();
 
-    jasmine.createSpy(SIP.InviteContext.rtcMediaHandler.prototype, 'onMessage');
+    jasmine.createSpy(SIP.Session.rtcMediaHandler.prototype, 'onMessage');
 
     ISC = new SIP.InviteServerContext(ua, request);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(InviteServerContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
 
-    SIP.InviteContext.rtcMediaHandler = rtcMediaHandlerCleanup;
+    SIP.Session.rtcMediaHandler = rtcMediaHandlerCleanup;
   });
 
   describe('.reject', function() {
@@ -1722,7 +1722,7 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        //Not sure how to test this... another InviteContext/* problem
+        //Not sure how to test this... another Session/* problem
       });
     });
 
@@ -1739,7 +1739,7 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        //More can be tested here... another InviteContext/* problem
+        //More can be tested here... another Session/* problem
 
         expect(req.reply).toHaveBeenCalledWith(202, 'Accepted');
         expect(InviteServerContext.referred).toHaveBeenCalled();
@@ -1796,13 +1796,13 @@ describe('InviteClientContext', function() {
     expect(function() {new SIP.InviteClientContext(ua, target);}).toThrow('Invalid target: bob@example.com');
   });
 
-  it('calls augment using ClientContext and InviteContext', function() {
+  it('calls augment using ClientContext and Session', function() {
     spyOn(SIP.Utils, 'augment').andCallThrough();
 
     var ICC = new SIP.InviteClientContext(ua, target);
 
     expect(SIP.Utils.augment.calls[0].args[1]).toBe(SIP.ClientContext);
-    expect(SIP.Utils.augment.calls[1].args[1]).toBe(SIP.InviteContext);
+    expect(SIP.Utils.augment.calls[1].args[1]).toBe(SIP.Session);
   });
 
   it('throws an invalid state error if the status is null', function() {
@@ -2357,7 +2357,7 @@ describe('InviteClientContext', function() {
     });
 
     xit('DTMF case', function() {
-      //can't check much here, InviteContext/* problem
+      //can't check much here, Session/* problem
     });
 
     it('logs, replies 202, then calls referred and terminate', function() {

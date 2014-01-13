@@ -14,7 +14,7 @@
 
 // Load dependencies
 var RequestSender   = @@include('../src/Dialog/RequestSender.js')
-var RTCMediaHandler = @@include('../src/InviteContext/RTCMediaHandler.js')
+var RTCMediaHandler = @@include('../src/Session/RTCMediaHandler.js')
 
 var Dialog,
   C = {

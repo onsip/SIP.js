@@ -4,7 +4,7 @@
 
 /**
  * @class Request
- * @param {SIP.RTCSession} session
+ * @param {SIP.Session} session
  */
 (function(SIP) {
 
@@ -35,12 +35,12 @@ Request.prototype.send = function(method, options) {
     throw new TypeError('Not enough arguments');
   }
 
-  // Check RTCSession Status
-  if (this.owner.status !== SIP.InviteContext.C.STATUS_1XX_RECEIVED &&
-    this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ANSWER &&
-    this.owner.status !== SIP.InviteContext.C.STATUS_WAITING_FOR_ACK &&
-    this.owner.status !== SIP.InviteContext.C.STATUS_CONFIRMED &&
-    this.owner.status !== SIP.InviteContext.C.STATUS_TERMINATED) {
+  // Check Session Status
+  if (this.owner.status !== SIP.Session.C.STATUS_1XX_RECEIVED &&
+    this.owner.status !== SIP.Session.C.STATUS_WAITING_FOR_ANSWER &&
+    this.owner.status !== SIP.Session.C.STATUS_WAITING_FOR_ACK &&
+    this.owner.status !== SIP.Session.C.STATUS_CONFIRMED &&
+    this.owner.status !== SIP.Session.C.STATUS_TERMINATED) {
     throw new SIP.Exceptions.InvalidStateError(this.owner.status);
   }
 
