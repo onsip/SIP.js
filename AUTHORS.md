@@ -1,21 +1,22 @@
 # AUTHORS
 
+## Will Mitchell
+
+* Lead Developer
+* <will@onsip.com>
+* /wakamoleguy on [GitHub](https://github.com/wakamoleguy) and [Twitter](https://twitter.com/wakamoleguy)
+
+## James Criscuolo
+
+* <james@onsip.com>
+
+## Eric Green
+
 ## JsSIP Authors
 
 SIP.js includes substantial portions of the JsSIP software.  JsSIP's authors are listed below.
 
-### José Luis Millán
-
-* Main author. Core Designer and Developer.
-* <jmillan@aliax.net> (Github [@jmillan](https://github.com/jmillan))
-
-### Iñaki Baz Castillo
-
-* Core Designer and Developer.
-* <ibc@aliax.net> (Github [@ibc](https://github.com/ibc))
-
-### Saúl Ibarra Corretgé
-
-* Core Designer.
-* <saghul@gmail.com> (Github [@saghul](https://github.com/saghul))
+* José Luis Millán (GitHub [@jmillan](https://github.com/jmillan))
+* Iñaki Baz Castillo (GitHub [@ibc](https://github.com/ibc))
+* Saúl Ibarra Corretgé (Github [@saghul](https://github.com/saghul))
 

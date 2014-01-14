@@ -1,13 +1,15 @@
-[![Build Status](https://travis-ci.org/onsip/SIP.js.png?branch=master)](https://travis-ci.org/onsip/SIP.js)
-
 # SIP.js
+
+[![Build Status](https://travis-ci.org/onsip/SIP.js.png?branch=master)](https://travis-ci.org/onsip/SIP.js)
 
 A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 
 ## Website and Documentation
 
-* [sipjs.com](http://sipjs.com)
+* [SIPjs.com](http://sipjs.com)
+* [Mailing List](https://groups.google.com/forum/#!forum/sip_js)
+* [Issue Tracking](https://github.com/onsip/sip.js/issues)
 
 
 ## Download
@@ -17,25 +19,25 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ## Authors
 
+### Will Mitchell
+
+* Lead Developer
+* <will@onsip.com>
+* /wakamoleguy on [GitHub](http://github.com/wakamoleguy), [Twitter](http://twitter.com/wakamoleguy)
+
+### James Criscuolo
+
+* <james@onsip.com>
+
+### Eric Green
+
 ### JsSIP Authors
 
-SIP.js contains substantial portions of the JsSIP software. JsSIP's authors are listed below.
+SIP.js contains substantial portions of the JsSIP software. JsSIP's authors at time of fork are listed below. For up to date information about JsSIP, please visit [jssip.net](http://jssip.net)
 
-#### José Luis Millán
-
-* Main author. Core Designer and Developer.
-* <jmillan@aliax.net> (Github [@jmillan](https://github.com/jmillan))
-
-#### Iñaki Baz Castillo
-
-* Core Designer and Developer.
-* <ibc@aliax.net> (Github [@ibc](https://github.com/ibc))
-
-#### Saúl Ibarra Corretgé
-
-* Core Designer.
-* <saghul@gmail.com> (Github [@saghul](https://github.com/saghul))
-
+* José Luis Millán
+* Iñaki Baz Castillo
+* Saúl Ibarra Corretgé
 
 ## License
 
