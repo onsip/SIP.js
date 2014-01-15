@@ -210,6 +210,7 @@ EventEmitter.prototype = {
     }
 
     this.oneTimeListeners[event] = [];
+    return this;
   }
 };
 

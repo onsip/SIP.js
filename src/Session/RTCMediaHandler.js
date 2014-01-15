@@ -126,7 +126,7 @@ RTCMediaHandler.prototype = {
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
-      onFailure();
+      onFailure(e);
       return;
     }
 
@@ -238,7 +238,7 @@ RTCMediaHandler.prototype = {
       function(e) {
         self.logger.error('unable to get user media');
         self.logger.error(e);
-        onFailure();
+        onFailure(e);
       }
     );
   },
@@ -256,6 +256,83 @@ RTCMediaHandler.prototype = {
       onSuccess,
       onFailure
     );
+  },
+
+  /**
+   * Add a stream, and generate the appropriate offer or answer SDP
+   * @param {MediaStream} mediaStream (optional)
+   * @param {Object} mediaConstraints (optional)
+   * @param {Function} onSuccess
+   * @param {Function} onFailure
+   */
+  applyStream: function (mediaStreamOrConstraints, onSuccess, onFailure) {
+    var mediaHandler = this,
+    mediaStream = mediaStreamOrConstraints,
+    mediaConstraints = mediaStreamOrConstraints;
+
+    /*
+     * 1. getUserMedia (skip if mediaStream passed in)
+     * 2. addStream
+     * 3. createOffer/createAnswer
+     * 4. call onSuccess()
+     */
+
+    /** Failure functions **/
+    function userMediaFailed(err) {
+      onFailure(err);
+    }
+    function streamAdditionFailed(err) {
+      onFailure(err);
+    }
+    function sdpCreationFailed(err) {
+      onFailure(err);
+    }
+
+    /* Last functions first, to quiet JSLint */
+    function sdpCreationSucceeded(sdp) {
+      onSuccess(sdp);
+    }
+
+    function streamAdditionSucceeded() {
+      if (mediaHandler.peerConnection.signalingState === 'have-remote-offer') {
+        mediaHandler.createAnswer(
+          sdpCreationSucceeded,
+          sdpCreationFailed
+        );
+      } else {
+        mediaHandler.createOffer(
+          sdpCreationSucceeded,
+          sdpCreationFailed
+        );
+      }
+    }
+
+    function userMediaSucceeded(stream) {
+      mediaHandler.addStream(
+        stream,
+        streamAdditionSucceeded,
+        streamAdditionFailed
+      );
+    }
+
+    /** Were we given a media stream, or must we create one? **/
+    if ((window.MediaStream && mediaStream instanceof window.MediaStream) ||
+        (window.webkitMediaStream && mediaStream instanceof window.webkitMediaStream) ||
+        (mediaStream.id !== undefined &&
+         mediaStream.ended !== undefined &&
+         mediaStream.audio === undefined &&
+         mediaStream.video === undefined)) {
+      // The first argument looks like a media stream, so skip gUM
+      userMediaSucceeded(mediaStream);
+    } else {
+      // The first argument looks like media constraints
+      mediaHandler.getUserMedia(
+        userMediaSucceeded,
+        userMediaFailed,
+        mediaConstraints
+      );
+    }
+
   }
 };
 

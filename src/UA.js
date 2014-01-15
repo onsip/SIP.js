@@ -2,7 +2,6 @@
  * @fileoverview SIP User Agent
  */
 
-
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
@@ -60,6 +59,13 @@ UA = function(configuration) {
     'newSession',
     'message'
   ], i, len;
+
+  // Helper function for forwarding events
+  function selfEmit(type) {
+    return function (data) {
+      self.emit(type, data);
+    };
+  }
 
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
     events.push(C.ALLOWED_METHODS[i].toLowerCase());
@@ -178,29 +184,11 @@ UA = function(configuration) {
 
   // Initialize registerContext
   this.registerContext = new SIP.RegisterContext(this);
-
-  this.registerContext.on('failed', function(data) {
-    self.emit('registrationFailed', {
-      response: data.response,
-      cause: data.cause
-    });
-  });
-
-  this.registerContext.on('registered', function(data) {
-    self.emit('registered', {
-      response: data.response
-    });
-  });
-
-  this.registerContext.on('unregistered', function(data) {
-    self.emit('unregistered', {
-      response: data.response,
-      cause: data.cause
-    });
-  });
+  this.registerContext.on('failed', selfEmit('registrationFailed'));
+  this.registerContext.on('registered', selfEmit('registered'));
+  this.registerContext.on('unregistered', selfEmit('unregistered'));
 };
 UA.prototype = new SIP.EventEmitter();
-
 
 //=================
 //  High Level API
@@ -240,7 +228,7 @@ UA.prototype.isRegistered = function() {
  * @param {Boolean}
  */
 UA.prototype.isConnected = function() {
-  return (this.transport) ? this.transport.connected : false;
+  return this.transport ? this.transport.connected : false;
 };
 
 /**
@@ -272,8 +260,7 @@ UA.prototype.message = function(target, body, options) {
 };
 
 UA.prototype.request = function (method, target, options) {
-  var context = new SIP.ClientContext(method, target, options, this);
-  return context.send();
+  return new SIP.ClientContext(this, method, target, options).send();
 };
 
 /**
@@ -344,7 +331,6 @@ UA.prototype.start = function() {
   var server;
 
   this.logger.log('user requested startup...');
-
   if (this.status === C.STATUS_INIT) {
     server = this.getNextWsServer();
     new SIP.Transport(this, server);
@@ -522,9 +508,7 @@ UA.prototype.onTransportConnected = function(transport) {
  */
 UA.prototype.newTransaction = function(transaction) {
   this.transactions[transaction.type][transaction.id] = transaction;
-  this.emit('newTransaction', {
-    transaction: transaction
-  });
+  this.emit('newTransaction', {transaction: transaction});
 };
 
 
@@ -571,14 +555,6 @@ UA.prototype.receiveRequest = function(request) {
     return;
   }
 
-/*
-  // Create the server transaction
-  if(method === SIP.C.INVITE) {
-    new SIP.Transactions.InviteServerTransaction(request, this);
-  } else if(method !== SIP.C.ACK) {
-    new SIP.Transactions.NonInviteServerTransaction(request, this);
-  }
-*/
   /* RFC3261 12.2.2
    * Requests that do not change in any way the state of a dialog may be
    * received within a dialog (for example, an OPTIONS request).
@@ -604,18 +580,6 @@ UA.prototype.receiveRequest = function(request) {
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
     transaction = new SIP.ServerContext(this, request);
-    
-    transaction.on('progress', function (data) {
-      console.log('Progress request: ' + data.code + ' ' + data.response.method);
-    });
-    transaction.on('accepted', function (data) {
-      console.log('Accepted request: ' + data.code + ' ' + data.response.method);
-    });
-    transaction.on('failed', function (data) {
-      console.log('Failed request: ' + data.code +
-                  ' ' + (data.response && data.response.method) +
-                  ' Cause: ' + data.cause);
-    });
   }
 
   // Initial Request
@@ -1305,7 +1269,7 @@ UA.configuration_check = {
         //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
         if (turn_server.server) {
           turn_server.urls = [turn_server.server];
-        } 
+        }
 
         if (!turn_server.urls || !turn_server.username || !turn_server.password) {
           return;
