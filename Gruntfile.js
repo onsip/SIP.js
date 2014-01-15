@@ -160,9 +160,9 @@ module.exports = function(grunt) {
         'dist/sip-devel.js'
         ],
         options: {
-          specs: 'test/spec/Spec*.js',
+          specs: 'test/spec/*.js',
           keepRunner : true,
-          //helpers: 'test/spec/*.js'
+          helpers: 'test/helpers/*.js'
         }
       }
     }
