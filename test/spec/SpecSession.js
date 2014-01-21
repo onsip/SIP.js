@@ -1473,7 +1473,8 @@ describe('InviteServerContext', function() {
       expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.userNoAnswerTimer);
     });
 
-    it('sets the constraints to false if they were set to true earlier when there is no audio or video streams', function() {
+    // x'ing this since the code it tests currently breaks FF accept - JMF 21-1-2014
+    xit('sets the constraints to false if they were set to true earlier when there is no audio or video streams', function() {
       InviteServerContext.accept({mediaConstraints:{audio: true, video: true}});
 
       expect(InviteServerContext.media_constraints).toEqual({audio: false, video: false});

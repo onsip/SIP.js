@@ -1364,12 +1364,14 @@ InviteServerContext.prototype = {
   accept: function(options) {
     options = options || {};
 
-    var idx, length, hasAudio, hasVideo,
+    // commented out now-unused hold-related variables for jshint. See below. JMF 21-1-2014
+    var
+      //idx, length, hasAudio, hasVideo,
       self = this,
       response,
       request = this.request,
       extraHeaders = options.extraHeaders || [],
-      mediaStream = options.mediaStream || null,
+      //mediaStream = options.mediaStream || null,
 
     // User media succeeded
     userMediaSucceeded = function(stream) {
@@ -1476,6 +1478,8 @@ InviteServerContext.prototype = {
 
     extraHeaders.unshift('Contact: ' + self.contact);
 
+    // this hold-related code breaks FF accepting new calls - JMF 21-1-2014
+    /*
     length = this.getRemoteStreams().length;
 
     for (idx = 0; idx < length; idx++) {
@@ -1506,6 +1510,7 @@ InviteServerContext.prototype = {
         }
       }
     }
+    */
 
     if (this.status === C.STATUS_EARLY_MEDIA) {
       sdpCreationSucceeded(self.early_sdp);
