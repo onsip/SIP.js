@@ -119,7 +119,7 @@ Session = function() {
 };
 
 Session.prototype = {
-  sendDTMF: function(tones, options) {
+  dtmf: function(tones, options) {
     var duration, interToneGap,
       position = 0,
       self = this;

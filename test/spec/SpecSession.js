@@ -136,7 +136,7 @@ describe('Session', function() {
     expect(Session.rel100).toBeDefined();
   });
 
-  describe('.sendDTMF', function() {
+  describe('.dtmf', function() {
     var tones;
 
     beforeEach(function() {
@@ -149,64 +149,64 @@ describe('Session', function() {
     });
 
     it('throws an error if tones is undefined', function() {
-      expect(function(){Session.sendDTMF(undefined);}).toThrow('Not enough arguments');
+      expect(function(){Session.dtmf(undefined);}).toThrow('Not enough arguments');
     });
 
     it('throws an error if the session status is incorrect', function() {
       Session.status = 0;
-      expect(function(){Session.sendDTMF(1);}).toThrow('Invalid status: 0');
+      expect(function(){Session.dtmf(1);}).toThrow('Invalid status: 0');
     });
 
     it('throws an error if tones is the wrong type', function() {
-      expect(function(){Session.sendDTMF(1);}).not.toThrow('Invalid tones: 1');
-      expect(function(){Session.sendDTMF('one');}).toThrow('Invalid tones: one');
-      expect(function(){Session.sendDTMF(true);}).toThrow('Invalid tones: true');
+      expect(function(){Session.dtmf(1);}).not.toThrow('Invalid tones: 1');
+      expect(function(){Session.dtmf('one');}).toThrow('Invalid tones: one');
+      expect(function(){Session.dtmf(true);}).toThrow('Invalid tones: true');
     });
 
     it('accepts a string argument', function() {
-      expect(function(){Session.sendDTMF('1');}).not.toThrow('Invalid tones: 1');
+      expect(function(){Session.dtmf('1');}).not.toThrow('Invalid tones: 1');
     });
 
     it('throws an error if tone duration is invalid', function() {
-      expect(function(){Session.sendDTMF(1, {duration: 'six'});}).toThrow('Invalid tone duration: six');
+      expect(function(){Session.dtmf(1, {duration: 'six'});}).toThrow('Invalid tone duration: six');
     });
 
     it('resets duration to 70 if it\'s too low', function() {
       var options = {duration: 7};
-      Session.sendDTMF(1, options);
+      Session.dtmf(1, options);
       expect(options.duration).toBe(70);
     });
 
     it('resets duration to 6000 if it\'s too high', function() {
       var options = {duration: 7000};
-      Session.sendDTMF(1, options);
+      Session.dtmf(1, options);
       expect(options.duration).toBe(6000);
     });
 
     it('resets duration to positive if it\'s negative', function() {
       var options = {duration: -700};
-      Session.sendDTMF(1, options);
+      Session.dtmf(1, options);
       expect(options.duration).toBe(70);
     });
 
     it('throws an error if interToneGap is invalid', function() {
-      expect(function(){Session.sendDTMF(1, {interToneGap: 'six'});}).toThrow('Invalid interToneGap: six');
+      expect(function(){Session.dtmf(1, {interToneGap: 'six'});}).toThrow('Invalid interToneGap: six');
     });
 
     it('queues up tones if tones are already queued', function() {
       Session.tones = '123';
-      Session.sendDTMF('4');
+      Session.dtmf('4');
       expect(Session.tones).toBe('1234');
     });
 
     it('sets tones if no tones are queued', function() {
       Session.tones = '';
-      Session.sendDTMF('4');
+      Session.dtmf('4');
       expect(Session.tones).toBe('4');
     });
 
     it('returns Session on success', function() {
-      expect(Session.sendDTMF(1)).toBe(Session);
+      expect(Session.dtmf(1)).toBe(Session);
     });
   });
 
