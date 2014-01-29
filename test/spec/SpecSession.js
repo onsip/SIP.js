@@ -280,17 +280,17 @@ describe('Session', function() {
 
   describe('.getLocalStreams', function() { 
     it('returns RTCMediaHandler', function() {
-      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn('correct')}};
+      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([])}};
 
-      expect(Session.getLocalStreams()).toBe('correct');
+      expect(Session.getLocalStreams()).toEqual([]);
     });
   });
 
   describe('.getRemoteStreams', function() { 
     it('returns RTCMediaHandler', function() {
-      Session.rtcMediaHandler = {peerConnection: {getRemoteStreams: jasmine.createSpy('getRemoteStreams').andReturn('correct')}};
+      Session.rtcMediaHandler = {peerConnection: {getRemoteStreams: jasmine.createSpy('getRemoteStreams').andReturn([])}};
 
-      expect(Session.getRemoteStreams()).toBe('correct');
+      expect(Session.getRemoteStreams()).toEqual([]);
     });
   });
 
@@ -408,7 +408,7 @@ describe('Session', function() {
       Session.audioMuted = false;
       Session.videoMuted = false;
 
-      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
+      Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
         getAudioTracks: function() {return [7];}, 
         getVideoTracks: function() {return [7];}
       }])}};
@@ -477,7 +477,7 @@ describe('Session', function() {
       Session.videoMuted = true;
       Session.local_hold = false;
 
-      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
+      Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
         getAudioTracks: function() {return [7];}, 
         getVideoTracks: function() {return [7];}
       }])}};
@@ -560,6 +560,7 @@ describe('Session', function() {
     beforeEach(function() {
       change = {enabled: true};
 
+      Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable'}};
       spyOn(Session, 'getLocalStreams').andReturn([{getAudioTracks: function() { return [change]; }}]);
     });
 
