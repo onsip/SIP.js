@@ -1656,8 +1656,7 @@ InviteClientContext = function(ua, target, options) {
     throw new SIP.Exceptions.NotSupportedError('WebRTC not supported');
   }
 
-  this.mediaConstraints = options.mediaConstraints || {audio: true, video: true},
-  this.RTCConstraints = options.RTCConstraints || {},
+  this.RTCConstraints = options.RTCConstraints || {};
   this.inviteWithoutSdp = options.inviteWithoutSdp || false;
 
   // Set anonymous property
@@ -1702,6 +1701,7 @@ InviteClientContext = function(ua, target, options) {
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
   SIP.Utils.augment(this, SIP.Session);
 
+  this.mediaConstraints = options.mediaConstraints || {audio: true, video: true};
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
     throw new SIP.Exceptions.InvalidStateError(this.status);

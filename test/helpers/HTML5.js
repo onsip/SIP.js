@@ -26,7 +26,9 @@
       if (this.onerror) this.onerror(e);
     }
   };
-
+  FakeWebSocket.CONNECTING = 0;
+  FakeWebSocket.OPEN = 1;
+  FakeWebSocket.CLOSED = 3;
   FakeWebSocket.orig = window.WebSocket;
   window.WebSocket = FakeWebSocket;
 
@@ -46,20 +48,52 @@
   RTCPeerConnection.prototype = {
     iceGatheringState: 'complete',
     iceConnectionState: 'connected',
-    createOffer: function () {
-      return {
-        type: 'offer',
-        body: ''
-      };
+    createOffer: function createOffer(success, failure) {
+      if (createOffer.fail) {
+        failure();
+      } else {
+        setTimeout(function () {
+          success({
+            type: 'offer',
+            body: '',
+            sdp: 'Hello'
+          });
+        }, 0);
+      }
     },
-    createAnswer: function () {
-      return {
-        type: 'answer',
-        body: ''
-      };
+    createAnswer: function createAnswer(success, failure) {
+      if (createAnswer.fail) {
+        failure();
+      } else {
+        setTimeout(function () {
+          success({
+            type: 'answer',
+            body: '',
+            sdp: 'Hello'
+          });
+        }, 0);
+      }
     },
-    setLocalDescription: function () {},
-    setRemoteDescription: function () {},
+    setLocalDescription: function setLocalDescription(desc, success, failure) {
+      if (setLocalDescription.fail) {
+        failure();
+      } else {
+        this.localDescription = desc;
+        setTimeout(function () {
+          success();
+        }, 0);
+      }
+    },
+    setRemoteDescription: function setRemoteDescription(desc, success, failure) {
+      if (setRemoteDescription.fail) {
+        failure();
+      } else {
+        this.remoteDescription = desc;
+        setTimeout(function () {
+          success();
+        }, 0);
+      }
+    },
     addStream: function () {},
     close: function () {},
     signalingState: function () {}

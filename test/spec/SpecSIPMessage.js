@@ -137,17 +137,21 @@ describe('SIPMessage', function() {
   });
   describe('IncomingRequest', function() {
     var IncomingRequest,
-      ua,
+      ua, transaction,
       saveIncomingRequest = {};
     beforeEach(function(){
       var getLogger = jasmine.createSpy('getLogger').andReturn('logger');
-      ua = { 
+      ua = {
         getLogger : getLogger ,
         configuration : {
           use_preloaded_route : false
-        }  
+        },
+        transport: {
+          send: function () {}
+        }
       };
       IncomingRequest = new SIP.IncomingRequest(ua);
+      IncomingRequest.transport = ua.transport;
     });
     
     it('initialize the instance variables', function() {

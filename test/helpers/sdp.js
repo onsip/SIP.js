@@ -1,0 +1,1 @@
+/** Some valid SDP strings to pretend that browsers generated for SIP.js */

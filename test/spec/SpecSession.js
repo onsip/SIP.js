@@ -6,17 +6,8 @@ describe('Session', function() {
   var webrtc;
 
   beforeEach(function() {
-    webrtc = SIP.WebRTC.isSupported;
-    if(!webrtc) {
-      SIP.WebRTC.isSupported = true;
-      SIP.WebRTC.RTCPeerConnection = jasmine.createSpy('RTCPeerConnection');
-      SIP.WebRTC.RTCPeerConnection.prototype.setRemoteDescription = jasmine.createSpy('setRemoteDescription');
-      SIP.WebRTC.RTCPeerConnection.prototype.close = jasmine.createSpy('close');
-      SIP.WebRTC.RTCSessionDescription = jasmine.createSpy('RTCSessionDescription');
-      SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
-    }
-
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
 
     Session = new SIP.EventEmitter();
     Session.initEvents(['progress','accepted','rejected','failed']);
@@ -25,10 +16,6 @@ describe('Session', function() {
     Session.ua = ua;
 
     message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', Session.ua);
-  });
-
-  afterEach(function() {
-    SIP.WebRTC.isSupported = webrtc;
   });
 
   it('initializes events', function() {
@@ -1170,34 +1157,22 @@ describe('Session', function() {
   });
 });
 
-describe('InviteServerContext', function() {
+xdescribe('InviteServerContext', function() {
   var InviteServerContext;
   var ua;
   var request;
   var webrtc;
 
   beforeEach(function(){
-    webrtc = SIP.WebRTC.isSupported;
-    if(!webrtc) {
-      SIP.WebRTC.isSupported = true;
-      SIP.WebRTC.RTCPeerConnection = jasmine.createSpy('RTCPeerConnection');
-      SIP.WebRTC.RTCPeerConnection.prototype.setRemoteDescription = jasmine.createSpy('setRemoteDescription');
-      SIP.WebRTC.RTCPeerConnection.prototype.close = jasmine.createSpy('close');
-      SIP.WebRTC.RTCSessionDescription = jasmine.createSpy('RTCSessionDescription');
-      SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
-    }
 
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
 
     request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
 
     spyOn(request, 'reply');
 
     InviteServerContext = new SIP.InviteServerContext(ua,request);
-  });
-
-  afterEach(function() {
-    SIP.WebRTC.isSupported = webrtc;
   });
 
   it('sets contentDisp correctly', function() {
@@ -1750,33 +1725,19 @@ describe('InviteServerContext', function() {
   });
 });
 
-describe('InviteClientContext', function() {
+xdescribe('InviteClientContext', function() {
   var InviteClientContext;
   var ua;
   var target;
   var webrtc;
 
   beforeEach(function(){
-    webrtc = SIP.WebRTC.isSupported;
-    if(!webrtc) {
-      SIP.WebRTC.isSupported = true;
-      SIP.WebRTC.RTCPeerConnection = jasmine.createSpy('RTCPeerConnection');
-      SIP.WebRTC.RTCPeerConnection.prototype.setRemoteDescription = jasmine.createSpy('setRemoteDescription');
-      SIP.WebRTC.RTCPeerConnection.prototype.close = jasmine.createSpy('close');
-      SIP.WebRTC.RTCSessionDescription = jasmine.createSpy('RTCSessionDescription');
-      SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
-    }
-
     target = 'bob@example.com';
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
 
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
 
     InviteClientContext = new SIP.InviteClientContext(ua, target);
-  });
-
-  afterEach(function() {
-    SIP.WebRTC.isSupported = webrtc;
   });
 
   it('throws a type error if target is undefined', function() {
