@@ -15,12 +15,12 @@
     send: function (msg) {},
     close: function () {
       this.readyState = 3; // CLOSED
-      if (this.onclose) this.onclose();
+      if (this.onclose) this.onclose({code:3});
     },
 
     // Useful testing functions
     receiveMessage: function (msg) {
-      if (this.onmessage) this.onmessage(msg);
+      if (this.onmessage) this.onmessage({data: msg});
     },
     causeError: function (e) {
       if (this.onerror) this.onerror(e);
@@ -38,7 +38,7 @@
     if (getUserMedia.fail) {
       setTimeout(function () { failure(); }, 0);
     } else {
-      setTimeout(function () { success(); }, 0);
+      setTimeout(function () { success({getAudioTracks: function(){return [];}, getVideoTracks: function(){return [];}, stop: function(){} })}, 0);
     }
   }
   getUserMedia.orig = window.navigator.getUserMedia;

@@ -18,12 +18,10 @@ describe('An INVITE sent from a UAC', function () {
     session_options = {};
     console.log('cleared constraints');
 
-    runs(function () {
-      console.log('first', session_options);
-      ua = new SIP.UA(ua_config).start().on('connected', function () {
-        console.log(session_options);
-        session = ua.invite('alice@example.com', session_options);
-      });
+    console.log('first', session_options);
+    ua = new SIP.UA(ua_config).start().on('connected', function () {
+      console.log(session_options);
+      session = ua.invite('alice@example.com', session_options);
     });
   });
 
@@ -31,6 +29,13 @@ describe('An INVITE sent from a UAC', function () {
     waitsFor(function () {
       return sendSpy.calls.length > 0;
     }, 'Send never called', 500);
+
+    //UNBELIEVABLY IMPORTANT DON'T TOUCH IT
+    runs(function() {
+      if(ua.status !== 2) {
+        ua.stop();
+      };
+    });
   });
 
   it('inits ClientContext events', function () {
@@ -130,66 +135,107 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
-  xdescribe('following RFC3261 request generation rules (8.1.1)', function () {
+  describe('following RFC3261 request generation rules (8.1.1)', function () {
+    beforeEach(function() {
+      waitsFor(function() {
+        return sendSpy.calls.length > 0;
+      }, 'Send never called', 500);
+    });
+
     it('contains minimum header fields', function () {
-      expect('this test').toBe('implemented');
+      expect(session.request.hasHeader('to')).toBe(true);
+      expect(session.request.hasHeader('from')).toBe(true);
+      expect(session.request.hasHeader('cseq')).toBe(true);
+      expect(session.request.hasHeader('call-id')).toBe(true);
+      expect(session.request.hasHeader('max-forwards')).toBe(true);
+      expect(session.request.hasHeader('via')).toBe(true);      
     });
 
     it('sets the Request-URI to the To URI', function () {
       // See also - preloaded route set.
-      expect('this test').toBe('implemented');
+      expect(session.request.getHeader('to')).toBe("<" + session.request.ruri.toString() + ">");
     });
 
     it('sets the To URI from the given target', function () {
-      expect('this test').toBe('implemented');
+      expect(session.request.getHeader('to')).toBe("<sip:alice@example.com>");
     });
 
     it('must not contain a To tag', function () {
-      expect('this test').toBe('implemented');
+      expect(session.request.getHeader('to')).not.toContain(';tag');
     });
 
     it('sets the From URI from the UA', function () {
-      expect('this test').toBe('implemented');
+      expect(session.request.getHeader('from')).toContain(ua.configuration.display_name);
     });
 
     it('contains a From tag', function () {
       // See also - 19.3
-      expect('this test').toBe('implemented');
+     expect(session.request.getHeader('from')).toContain(';tag');
     });
 
     it('generates a new Call-ID', function () {
-      expect('this test').toBe('implemented');
+      var id = session.request.getHeader('call-id');
+      var ids = {};
+      ids[id] = true;
+      for (var i = 1; i < 1000; i++) {
+        session = ua.invite('alice@example.com', session_options);
+        /*waitsFor(function() {
+          return sendSpy.calls.length > i;
+        }, 'Send never called', 10000); */
+
+        id = session.request.getHeader('call-id');
+        expect(ids[id]).toBeUndefined();
+        ids[id] = true;
+      }
     });
 
+    //hard to 'guarantee,' but if there is a problem here then there was almost certainly a mistake added to the code.
     it('guarantees no other UA will inadvertently overlap Call-IDs', function () {
-      expect('this test').toBe('implemented');
+      var id = ua.configuration.jssip_id;
+      var ids = {};
+      ids[id] = true;
+
+      for (var i = 1; i < 10; i++) {
+        ua = new SIP.UA(ua_config).start();
+        id = ua.configuration.jssip_id;
+        expect(ids[id]).toBeUndefined();
+        ids[id] = true;
+      }
     });
 
     it('generates a valid CSeq', function () {
-      expect('this test').toBe('implemented');
+      var cseq = parseInt(session.request.getHeader('cseq').substring(0, session.request.getHeader('cseq').indexOf(' ')));
+      expect(cseq).toBeLessThan(Math.pow(2,31));
+      expect(cseq).toBeGreaterThan(0);
     });
 
     it('sets the Max-Forwards to 70', function () {
-      expect('this test').toBe('implemented');
+      expect(parseInt(session.request.getHeader('max-forwards'))).toBe(70);
     });
 
     it('uses SIP/2.0 in the Via', function () {
-      expect('this test').toBe('implemented');
+      var via = SIP.Parser.parseMessage(sendSpy.mostRecentCall.args[0], ua).getHeader('via');
+      expect(via).toContain('SIP/2.0');
     });
 
     it('has a branch parameter in the Via', function () {
-      expect('this test').toBe('implemented');
+      var via = SIP.Parser.parseMessage(sendSpy.mostRecentCall.args[0], ua).getHeader('via');
+      expect(via).toContain(';branch');
     });
 
     it('has a Contact with one valid SIP URI', function () {
+      var sip = session.request.getHeader('contact').indexOf('sip:') + 3;
+      expect(sip).not.toBe(2);
+      expect(session.request.getHeader('contact').indexOf('sip:', sip)).toBe(-1);
+    });
+
+    //not sure where this would go
+    xit('declares Support for UA-supported extensions', function () {
       expect('this test').toBe('implemented');
     });
 
-    it('declares Support for UA-supported extensions', function () {
-      expect('this test').toBe('implemented');
-    });
-
-    it('must declare Support only for RFC-defined extensions', function () {
+    //RFC only mentions other RFC's; there is no exhaustive list
+    xit('must declare Support only for RFC-defined extensions', function () {
       expect('this test').toBe('implemented');
     });
   });
@@ -311,33 +357,122 @@ describe('An INVITE sent from a UAC', function () {
 
   });
 
-  xdescribe('when receiving a 1xx response', function () {
+  describe('when receiving a 1xx response', function () {
+    beforeEach(function() {
+      ua_config.uri = 'alice@example.com';
+
+      uas = new SIP.UA(ua_config).start();
+
+      waitsFor(function () {
+        return sendSpy.calls.length > 0 && uas.isConnected();
+      }, 'Send never called', 500);
+
+      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
+    });
+
     it('fires the `progress` event', function () {
-      expect('this test').toBe('implemented');
-    });
+      waitsFor( function() {
+        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('180 Ringing') >= 0;
+      }, 'accept never called', 500);
 
-    it('sends an ACK', function () {
-      expect('this test').toBe('implemented');
+      runs(function() {
+        spyOn(session, 'emit');
+        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
+
+        expect(session.emit.mostRecentCall.args[0]).toBe('progress');
+      });
     });
   });
 
-  xdescribe('when receiving a 2xx response', function () {
+  describe('when receiving a 2xx response', function () {
+    var uas;
+
+    beforeEach(function() {
+      ua_config.uri = 'alice@example.com';
+
+      uas = new SIP.UA(ua_config).start().on('invite', function (newSession) {
+        newSession.accept();
+      });
+
+      waitsFor(function () {
+        return sendSpy.calls.length > 0 && uas.isConnected();
+      }, 'Send never called', 500);
+
+      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
+    });
+
     it('fires the `accepted` event', function () {
-      expect('this test').toBe('implemented');
+      waitsFor( function() {
+        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('200 OK') >= 0;
+      }, 'accept never called', 500);
+
+      runs(function() {
+        spyOn(session, 'accepted');
+        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
+      });
+
+     waitsFor( function() {
+       return session.accepted.calls.length > 0;
+     }, 'accepted never called', 500);
     });
 
     it('sends an ACK', function () {
-      expect('this test').toBe('implemented');
+      waitsFor( function() {
+        return sendSpy.mostRecentCall.args[0].indexOf('200 OK') >= 0;
+      }, 'accept never called', 500);
+
+      runs(function() {
+        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
+      });
+
+      waitsFor( function() {
+        return sendSpy.mostRecentCall.args[0].indexOf('ACK') >= 0;
+      }, 'ACK never sent', 500);
     });
   });
 
-  xdescribe('when receiving a 3xx-6xx response', function () {
+  describe('when receiving a 3xx-6xx response', function () {
+    beforeEach(function() {
+      ua_config.uri = 'alice@example.com';
+
+      uas = new SIP.UA(ua_config).start().on('invite', function (newSession) {
+        newSession.reject();
+      });
+
+      waitsFor(function () {
+        return sendSpy.calls.length > 0 && uas.isConnected();
+      }, 'Send never called', 500);
+
+      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
+    });
+
     it('fires the `rejected` event', function () {
-      expect('this test').toBe('implemented');
+      waitsFor( function() {
+        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('480') >= 0;
+      }, 'reject never called', 500);
+
+      runs(function() {
+        spyOn(session, 'rejected');
+        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
+      });
+
+      waitsFor( function() {
+        return session.rejected.calls.length > 0;
+      }, 'rejected never called', 500);
     });
 
     it('sends an ACK', function () {
-      expect('this test').toBe('implemented');
+      waitsFor( function() {
+        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('480') >= 0;
+      }, 'reject never called', 500);
+
+      runs(function() {
+        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
+      });
+
+      waitsFor( function() {
+        return sendSpy.mostRecentCall.args[0].indexOf('ACK') >= 0;
+      }, 'ACK never sent', 500);
     });
   });
 

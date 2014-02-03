@@ -51,6 +51,11 @@ describe('SanityCheck', function () {
     transport = jasmine.createSpyObj('transport', ['send']);
   });
 
+  afterEach(function () {
+    ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
+    ua.stop();
+  });
+
   describe('for all IncomingMessages', function () {
 
     describe('minimumHeaders check', function () {

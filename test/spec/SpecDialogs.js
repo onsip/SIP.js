@@ -1,23 +1,15 @@
-xdescribe('Dialogs', function() {
+describe('Dialogs', function() {
   var owner;
   var message;
   var Dialog;
-  var webrtc;
 
   beforeEach(function() {
-    webrtc = SIP.WebRTC.isSupported;
-    if(!webrtc) {
-      SIP.WebRTC.isSupported = true;
-      SIP.WebRTC.RTCPeerConnection = jasmine.createSpy('RTCPeerConnection');
-      SIP.WebRTC.RTCPeerConnection.prototype.setRemoteDescription = jasmine.createSpy('setRemoteDescription');
-      SIP.WebRTC.RTCPeerConnection.prototype.close = jasmine.createSpy('close');
-      SIP.WebRTC.RTCSessionDescription = jasmine.createSpy('RTCSessionDescription');
-      SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
-    }
-
     var ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send']);
     message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(message, 'reply');
+
+    message.transport = ua.transport;
 
     owner = new SIP.InviteServerContext(ua, message);
 
@@ -25,7 +17,7 @@ xdescribe('Dialogs', function() {
   });
 
   afterEach(function() {
-    SIP.WebRTC.isSupported = webrtc;
+    Dialog.owner.ua.stop();
   });
 
   it('sets the *_pending_reply properties', function() {
@@ -34,13 +26,17 @@ xdescribe('Dialogs', function() {
   });
 
   it('returns an error if the message has no contact header', function() {
-    var mes = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', owner.ua);
+    var mes = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', owner.ua);
+
+    mes.transport = owner.ua.transport;
 
     expect(new SIP.Dialog(owner, mes, 'UAS')).toEqual({error: 'unable to create a Dialog without Contact header field'});
   });
 
   it('sets the state correctly', function() {
     var resp = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', owner.ua);
+
+    resp.transport = owner.ua.transport;
 
     expect(Dialog.state).toBe(2);
 
@@ -158,9 +154,7 @@ xdescribe('Dialogs', function() {
       owner.request.body = null;
       Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
 
-      if(webrtc) {
-        spyOn(Dialog.rtcMediaHandler.peerConnection, 'close');
-      }
+      spyOn(Dialog.rtcMediaHandler.peerConnection, 'close');
 
       Dialog.terminate();
 

@@ -8,16 +8,15 @@ describe('ClientContext', function() {
   var ua;
   var method; 
   var target;
-  var saveClientContext = {};
   var body;
   var contentType;
 
   beforeEach(function(){
-    saveClientContext.sipOutgoingRequest = SIP.OutgoingRequest;
-    SIP.OutgoingRequest = jasmine.createSpy('OutgoingRequest');
+    spyOn(SIP, 'OutgoingRequest');
     SIP.OutgoingRequest.send = jasmine.createSpy('send');
 
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
     method = SIP.C.INVITE;
     target = 'alice@example.com';
     body = '{"foo":"bar"}';
@@ -30,7 +29,7 @@ describe('ClientContext', function() {
   });
 
   afterEach(function () {
-    SIP.OutgoingRequest = saveClientContext.sipOutgoingRequest;
+    ua.stop();
   });
   
   it('sets the ua', function() {

@@ -40,7 +40,7 @@ var UA,
       'application/dtmf-relay'
     ],
 
-    MAX_FORWARDS: 69,
+    MAX_FORWARDS: 70,
     TAG_LENGTH: 10
   };
 

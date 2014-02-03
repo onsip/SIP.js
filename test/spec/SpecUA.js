@@ -1,59 +1,30 @@
 describe('UA', function() {
   var UA;
   var uri;
-  var saveUA = {};
-  var registerContextRegister;
-  var registerContextUnregister;
-  var registerContextOn;
 
   beforeEach(function() {
     uri = 'alice@example.com';
-    ws_servers = 'server.example.com';
+    ws_servers = 'ws://server.example.com';
     registrar_server = 'registrar.example.com';
     configuration = {uri : uri,
                      ws_servers : ws_servers };
 
-    saveUA.sipGrammarParse = SIP.Grammar.parse;
-
-    SIP.Grammar.parse = jasmine.createSpy('Parse').andCallFake(function() {
-      return { user : 'alice' , scheme : 'ws', clone: function() {return 'clone'; } };
-    });
-
-    saveUA.sipRegisterContext = SIP.RegisterContext;
-
-    registerContextOn = jasmine.createSpy('on').andCallFake(function() { return 'on'; });
-    registerContextRegister = jasmine.createSpy('register').andCallFake(function() { return 'register'; });
-    registerContextUnregister = jasmine.createSpy('unregister').andCallFake(function() { return 'unregister'; });
-    SIP.RegisterContext = jasmine.createSpy('RegisterContext').andCallFake(function() {
-      return {  on : registerContextOn,
-                register : registerContextRegister ,
-                unregister: registerContextUnregister,
-                registered : true
-              };
+    spyOn(SIP, 'RegisterContext').andReturn({
+      on: jasmine.createSpy('on'),
+      register: jasmine.createSpy('register'),
+      unregister: jasmine.createSpy('unregister'),
+      registered: true,
+      close: jasmine.createSpy('close')
     });
 
     UA = new SIP.UA(configuration);
-
-    UA.logger = jasmine.createSpy('logger').andCallFake(function() {
-      return 'logger';
-    });
-
-    UA.logger.log = jasmine.createSpy('log').andCallFake(function() {
-      return 'log';
-    });
-
-    UA.logger.error = jasmine.createSpy('error').andCallFake(function() {
-      return 'error';
-    });
-
-    UA.logger.warn = jasmine.createSpy('warn').andCallFake(function() {
-      return 'warn';
-    });
+    
+    UA.logger = jasmine.createSpyObj('logger', ['log', 'error', 'warn']);
   });
 
   afterEach(function() {
-    SIP.Grammar.parse = saveUA.sipGrammarParse;
-    SIP.RegisterContext = saveUA.sipRegisterContext;
+    UA.transport = jasmine.createSpyObj('transport', ['disconnect']);
+    UA.stop();
   });
 
   it('has no mandatory parameters', function () {
@@ -78,7 +49,6 @@ describe('UA', function() {
     function oneParam() {
       myUA = new SIP.UA('will@example.com');
     }
-    SIP.Grammar.parse = saveUA.sipGrammarParse;
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
@@ -96,7 +66,6 @@ describe('UA', function() {
     function oneParam() {
       myUA = new SIP.UA(new String('will@example.com'));
     }
-    SIP.Grammar.parse = saveUA.sipGrammarParse;
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
@@ -111,16 +80,6 @@ describe('UA', function() {
 
   it('sets the instance variables', function() {
     UA = undefined;
-    registerContextOn = jasmine.createSpy('on').andCallFake(function() { return 'on'; });
-    registerContextRegister = jasmine.createSpy('register').andCallFake(function() { return 'register'; });
-    registerContextUnregister = jasmine.createSpy('unregister').andCallFake(function() { return 'unregister'; });
-    SIP.RegisterContext = jasmine.createSpy('RegisterContext').andCallFake(function() {
-      return {  on : registerContextOn ,
-                register : registerContextRegister ,
-                unregister: registerContextUnregister,
-                registered : true
-              };
-    });
 
     expect(UA).toBeUndefined();
 
@@ -144,18 +103,8 @@ describe('UA', function() {
 
   it('creates a new register context', function() {
     UA = undefined;
-    registerContextOn = jasmine.createSpy('on').andCallFake(function() { return 'on'; });
-    registerContextRegister = jasmine.createSpy('register').andCallFake(function() { return 'register'; });
-    registerContextUnregister = jasmine.createSpy('unregister').andCallFake(function() { return 'unregister'; });
-    SIP.RegisterContext = jasmine.createSpy('RegisterContext').andCallFake(function() {
-      return {  on : registerContextOn ,
-                register : registerContextRegister ,
-                unregister: registerContextUnregister,
-                registered : true
-              };
-    });
 
-    expect(SIP.RegisterContext).not.toHaveBeenCalled();
+    SIP.RegisterContext.reset();
 
     UA = new SIP.UA(configuration);
 
@@ -164,19 +113,14 @@ describe('UA', function() {
 
   describe('.start', function() {
     beforeEach(function() {
-      saveUA.sipTransport = SIP.Transport;
-      SIP.Transport = jasmine.createSpy('sipTransport').andCallFake(function() {
-        return 'Sip Transport';
-      });
-      SIP.Transport.C = {};
-      SIP.Transport.C.STATUS_ERROR = 999;
+      spyOn(SIP, 'Transport').andReturn('Sip Transport');
+      SIP.Transport.C = {
+        STATUS_READY:        0,
+        STATUS_DISCONNECTED: 1,
+        STATUS_ERROR:        2
+      };
 
-      UA.transport = {};
-      UA.transport.connect = jasmine.createSpy('uaTransportConnect');
-    });
-
-    afterEach(function() {
-      SIP.Transport = saveUA.sipTransport;
+      UA.transport = {connect: jasmine.createSpy('uaTransportConnect')};
     });
 
     it('creates a SIP transport if the status is C.STATUS_INIT', function() {
@@ -211,9 +155,9 @@ describe('UA', function() {
       expect(UA.start()).toBe(UA);
     });
 
-    it('should not register if not configured', function () {
+    it('does not register if not configured', function () {
       UA.start();
-      expect(registerContextRegister).not.toHaveBeenCalled();
+      expect(UA.registerContext.register).not.toHaveBeenCalled();
     });
   });
 
@@ -254,7 +198,7 @@ describe('UA', function() {
       expect(function () {
         UA.register();
       }).not.toThrow();
-      expect(registerContextRegister).toHaveBeenCalled();
+      expect(UA.registerContext.register).toHaveBeenCalled();
     });
 
     it('sets the register configuration option to true', function() {
@@ -265,7 +209,7 @@ describe('UA', function() {
 
     it('calls the Register Context register method with the options that were passed to the method', function() {
       UA.register(options);
-      expect(registerContextRegister).toHaveBeenCalledWith(options);
+      expect(UA.registerContext.register).toHaveBeenCalledWith(options);
     });
 
     it('returns itself', function() {
@@ -284,7 +228,7 @@ describe('UA', function() {
       expect(function () {
         UA.unregister();
       }).not.toThrow();
-      expect(registerContextUnregister).toHaveBeenCalled();
+      expect(UA.registerContext.unregister).toHaveBeenCalled();
     });
 
     it('sets the register configuration option to false', function() {
@@ -295,7 +239,7 @@ describe('UA', function() {
 
     it('calls the Register Context unregister method with the options that were passed to the method', function() {
       UA.unregister(options);
-      expect(registerContextUnregister).toHaveBeenCalledWith(options);
+      expect(UA.registerContext.unregister).toHaveBeenCalledWith(options);
     });
 
     it('returns itself', function() {
@@ -332,33 +276,27 @@ describe('UA', function() {
   });
 
   describe('.message', function() {
-    var messageClientContextMessage;
     var target;
     var body;
     var options;
+    var messageSpy;
 
     beforeEach(function() {
       target = 'target';
       body = 'body';
 
-      saveUA.sipMessageClientContext = SIP.MessageClientContext;
-      messageClientContextMessage = jasmine.createSpy('messageClientContextMessage').andCallFake(function() {
-        return 'Message Client Context Message';
+      messageSpy = jasmine.createSpy('message').andReturn('Message Client Context Message');
+
+      spyOn(SIP, 'MessageClientContext').andReturn({
+        message: messageSpy
       });
 
-      SIP.MessageClientContext = jasmine.createSpy('messageClientContext').andCallFake(function() {
-        return {message : messageClientContextMessage} ;
-      });
-    });
-
-    afterEach(function() {
-      SIP.MessageClientContext = saveUA.sipMessageClientContext;
     });
 
     it('passes no options to message.message', function () {
       options = undefined;
       UA.message(target, body, options);
-      expect(messageClientContextMessage).toHaveBeenCalledWith();
+      expect(messageSpy).toHaveBeenCalledWith();
     });
 
     it('creates a MessageClientContext with itself, target, body, options.contentType and options as parameters', function() {
@@ -372,7 +310,7 @@ describe('UA', function() {
       options = { option : 'config' };
 
       UA.message(target, body, options);
-      expect(messageClientContextMessage).toHaveBeenCalledWith();
+      expect(messageSpy).toHaveBeenCalledWith();
     });
 
     it('returns the result of calling the message context message method', function() {
@@ -382,24 +320,16 @@ describe('UA', function() {
   });
 
   describe('.invite', function() {
-    var inviteClientContextInvite;
+    var inviteSpy;
     var target;
 
     beforeEach(function() {
       target = 'target';
+      inviteSpy = jasmine.createSpy('invite').andReturn('Invite Client Context Invite');
 
-      saveUA.sipInviteClientContext = SIP.InviteClientContext;
-      inviteClientContextInvite = jasmine.createSpy('inviteClientContextInvite').andCallFake(function() {
-        return 'Invite Client Context Invite';
+      spyOn(SIP, 'InviteClientContext').andReturn({
+        invite: inviteSpy
       });
-
-      SIP.InviteClientContext = jasmine.createSpy('inviteClientContext').andCallFake(function() {
-        return {invite : inviteClientContextInvite} ;
-      });
-    });
-
-    afterEach(function() {
-      SIP.InviteClientContext = saveUA.sipInviteClientContext;
     });
 
     it('creates an Invite Client Context with itself, target, and options as parameters', function() {
@@ -411,7 +341,7 @@ describe('UA', function() {
     it('calls the Invite Client Context invite method with no arguments', function() {
       var options = { option : 'things' };
       UA.invite(target,options);
-      expect(inviteClientContextInvite).toHaveBeenCalledWith();
+      expect(inviteSpy).toHaveBeenCalledWith();
     });
 
     it('returns the result of calling the invite context invite mehtod', function() {
@@ -424,23 +354,18 @@ describe('UA', function() {
     var method;
     var target;
     var options;
-    var clientContextSend;
+    var sendSpy;
 
     beforeEach(function() {
       method = 'method';
       target = 'target';
       options = { option : 'someField' };
-      saveUA.sipClientContext = SIP.ClientContext;
-      clientContextSend = jasmine.createSpy('clientContextSend').andCallFake(function() {
-        return 'Client Context Send';
-      })
-      SIP.ClientContext = jasmine.createSpy('clientContext').andCallFake(function() {
-        return { send : clientContextSend };
-      });
-    });
 
-    afterEach(function() {
-      SIP.ClientContext = saveUA.sipClientContext;
+      requestSpy = jasmine.createSpy('send').andReturn('Client Context Send');
+
+      spyOn(SIP, 'ClientContext').andReturn({
+        send: requestSpy
+      });
     });
 
     it('creates a ClientContext with itself, the method, target and options provided', function() {
@@ -450,7 +375,7 @@ describe('UA', function() {
 
     it('calls ClientContext.send method with no parameters', function() {
       UA.request(method,target,options);
-      expect(clientContextSend).toHaveBeenCalledWith();
+      expect(requestSpy).toHaveBeenCalledWith();
     });
 
     it('returns the result of calling ClientContext.send method', function() {
@@ -460,12 +385,7 @@ describe('UA', function() {
 
   describe('.normalizeTarget', function() {
     beforeEach(function() {
-      saveUA.sipUtilsNormalizeTarget = SIP.Utils.normalizeTarget;
-      SIP.Utils.normalizeTarget = jasmine.createSpy('normalizeTarget').andReturn('Normalize Target');
-    });
-
-    afterEach(function() {
-      SIP.Utils.normalizeTarget = saveUA.sipUtilsNormalizeTarget;
+      spyOn(SIP.Utils, 'normalizeTarget').andReturn('Normalize Target');
     });
 
     it('calls SIP.Utils.normalizeTarget with the target and the hostport params', function() {
@@ -522,7 +442,7 @@ describe('UA', function() {
 
   describe('.getLogger', function() {
     it('calls this.log.getLogger function with the category and label passed to it and return the result', function() {
-      UA.log.getLogger = jasmine.createSpy('getLogger').andReturn('logger');
+      spyOn(UA.log, 'getLogger').andReturn('logger');
       var category = 'category';
       var label = 'label';
       expect(UA.getLogger(category,label)).toEqual('logger');
@@ -601,54 +521,23 @@ describe('UA', function() {
   });
 
   describe('.receiveRequest', function() {
-    var reply;
+    var replySpy;
     var serverContextOn;
     beforeEach(function() {
-      saveUA.sipTransactionsCheckTransaction = SIP.Transactions.checkTransaction;
-      SIP.Transactions.checkTransaction = jasmine.createSpy('checkTransaction').andReturn(false);
+      replySpy = jasmine.createSpy('reply');
 
-      saveUA.sipTransactionsNonInviteServerTransaction = SIP.Transactions.NonInviteServerTransaction;
-      SIP.Transactions.NonInviteServerTransaction = jasmine.createSpy('NIST').andCallFake(function() {
-        return true;
+      spyOn(SIP.Transactions, 'checkTransaction').andReturn(false);
+      spyOn(SIP.Transactions, 'NonInviteServerTransaction').andReturn(true);
+      spyOn(SIP, 'MessageServerContext').andReturn(true);
+      spyOn(SIP, 'ServerContext').andReturn({
+        on: function() {return true;}
       });
+      spyOn(SIP, 'InviteServerContext').andReturn(true);
+      spyOn(SIP.Transactions, 'InviteServerTransaction').andReturn(true);
 
-      saveUA.sipMessageServerContext = SIP.MessageServerContext;
-      SIP.MessageServerContext = jasmine.createSpy('MessageServerContext').andCallFake(function() {
-        return true;
-      });
-
-      saveUA.sipServerContext = SIP.ServerContext;
-      serverContextOn = jasmine.createSpy('ServerContext.on').andCallFake(function() {
-        return true;
-      });
-
-      SIP.ServerContext = function() {
-      /* jasmine.createSpy('ServerContext').andCallFake(function() { */
-        return { on : serverContextOn } ;
-      };
-      saveUA.sipInviteServerContext = SIP.InviteServerContext;
-      SIP.InviteServerContext = jasmine.createSpy('InviteServerContext').andCallFake(function() {
-        return true;
-      });
-      reply = jasmine.createSpy('reply').andCallFake(function() {
-        return true;
-      });
-
-      saveUA.sipTransactionsInviteServerTransaction = SIP.Transactions.InviteServerTransaction;
-      SIP.Transactions.InviteServerTransaction = jasmine.createSpy('InviteServerTransaction').andCallFake(function() {
-        return true;
-      });
-
-      SIP.WebRTC.isSupported = true;
+      //SIP.WebRTC.isSupported = true;
     });
 
-    afterEach(function() {
-      SIP.Transactions.checkTransaction = saveUA.sipTransactionsCheckTransaction;
-      SIP.Transactions.NonInviteServerTransaction = saveUA.sipTransactionsNonInviteServerTransaction;
-      SIP.MessageServerContext = saveUA.sipMessageServerContext;
-      SIP.InviteServerContext = saveUA.sipInviteServerContext;
-      SIP.Transactions.InviteServerTransaction = saveUA.sipTransactionsInviteServerTransaction;
-    });
     it('checks that the ruri points to us', function() {
       var reply_sl = jasmine.createSpy('reply_sl');
       var request = { method : SIP.C.ACK ,
@@ -672,9 +561,6 @@ describe('UA', function() {
     it('checks the transaction and returns if invalid', function() {
       var request = { method : SIP.C.ACK ,
                       ruri : { user : UA.configuration.uri.user} };
-      SIP.Transactions.checkTransaction = jasmine.createSpy('checkTransaction').andCallFake(function() {
-        return true;
-      });
       expect(UA.receiveRequest(request)).toBeUndefined();
       expect(SIP.Transactions.checkTransaction).toHaveBeenCalledWith(UA, request);
     });
@@ -682,23 +568,23 @@ describe('UA', function() {
     it('creates a new NIST if the SIP method is options', function() {
       var request = { method : SIP.C.OPTIONS ,
                       ruri : { user : UA.configuration.uri.user } ,
-                      reply : reply };
+                      reply : replySpy };
       UA.receiveRequest(request);
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request, UA);
-      expect(reply).toHaveBeenCalledWith(200,null,[ 'Allow: ACK,CANCEL,BYE,OPTIONS', 'Accept: application/sdp,application/dtmf-relay' ])
+      expect(replySpy).toHaveBeenCalledWith(200,null,[ 'Allow: ACK,CANCEL,BYE,OPTIONS', 'Accept: application/sdp,application/dtmf-relay' ])
     });
 
     it('checks if there is a listener when the SIP method is message and reject if no listener is found', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
-                      reply : reply };
+                      reply : replySpy };
       UA.checkListener = jasmine.createSpy('checkListener').andCallFake(function() {
         return false;
       });
       expect(UA.receiveRequest(request)).toBeUndefined();
       expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
-      expect(reply).toHaveBeenCalledWith(405, null, [ 'Allow: ACK,CANCEL,BYE,OPTIONS' ]);
+      expect(replySpy).toHaveBeenCalledWith(405, null, [ 'Allow: ACK,CANCEL,BYE,OPTIONS' ]);
     });
 
     it('checks if there is a listener when the SIP method is message and accept if listener is found', function() {
@@ -707,7 +593,7 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
-                      reply : reply };
+                      reply : replySpy };
       UA.checkListener = jasmine.createSpy('checkListener').andCallFake(function() {
         return true;
       });
@@ -716,21 +602,21 @@ describe('UA', function() {
       UA.receiveRequest(request);
 
       expect(SIP.MessageServerContext).toHaveBeenCalledWith(UA, request);
-      expect(reply).toHaveBeenCalledWith(200,null);
+      expect(replySpy).toHaveBeenCalledWith(200,null);
       expect(callback).toHaveBeenCalled();
     });
 
     xit('creates a ServerContext if the SIP method is anything besides options, message, invite, and ack', function() {
       var request = { method : 'method' ,
                       ruri : { user : UA.configuration.uri.user },
-                      reply : reply };
+                      reply : replySpy };
       UA.receiveRequest(request);
     });
 
     it('creates an invite server context and emit invite if the message is of type INVITE', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
-                      reply : reply };
+                      reply : replySpy };
       var callback = jasmine.createSpy('callback');
       UA.on('invite',callback);
       UA.receiveRequest(request);
@@ -740,42 +626,40 @@ describe('UA', function() {
     it('sends a 488 if an invite is received but there is no WebRTC support', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
-                      reply : reply };
+                      reply : replySpy };
+      var webrtc = SIP.WebRTC.isSupported;
       SIP.WebRTC.isSupported = false;
+
       UA.receiveRequest(request);
-      expect(reply).toHaveBeenCalledWith(488);
+      expect(replySpy).toHaveBeenCalledWith(488);
+
+      SIP.WebRTC.isSupported = webrtc;
     });
 
     it('sends a 481 if a BYE is received', function() {
       var request = { method : SIP.C.BYE ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply };
+                    reply : replySpy };
       UA.receiveRequest(request);
-      expect(reply).toHaveBeenCalledWith(481);
+      expect(replySpy).toHaveBeenCalledWith(481);
     });
 
     it('finds the session and call receiveRequest on the session if it exists if a CANCEL is received', function() {
-      var receiveRequest = jasmine.createSpy('receiveRequest').andCallFake(function() {
-        return 'Receive Request';
-      });
-      UA.findSession = jasmine.createSpy('findSession').andCallFake(function() {
-        return {receiveRequest : receiveRequest };
-      });
+      var receiveRequestSpy = jasmine.createSpy('receiveRequest');
+      spyOn(UA, 'findSession').andReturn({receiveRequest : receiveRequestSpy });
       var request = { method : SIP.C.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply };
+                    reply : replySpy };
       UA.receiveRequest(request);
       expect(UA.findSession).toHaveBeenCalledWith(request);
-      expect(receiveRequest).toHaveBeenCalledWith(request);
+      expect(receiveRequestSpy).toHaveBeenCalledWith(request);
     });
 
     it('logs a warning if the session does not exist if a CANCEL is a received', function() {
-      UA.findSession = jasmine.createSpy('findSession').andCallFake(function() {
-        return false;
-      });
+      spyOn(UA, 'findSession').andReturn(false);
       var request = { method : SIP.C.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply };
+                    reply : replySpy };
       UA.receiveRequest(request);
       expect(UA.findSession).toHaveBeenCalledWith(request);
       expect(UA.logger.warn).toHaveBeenCalled();
@@ -784,17 +668,17 @@ describe('UA', function() {
     it('should not do nothing if an ACK is received', function() {
       var request = { method : SIP.C.ACK ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply };
+                    reply : replySpy };
       UA.receiveRequest(request);
-      expect(reply).not.toHaveBeenCalled();
+      expect(replySpy).not.toHaveBeenCalled();
     });
 
     it('replies with a 405 if it cannot interpret the message', function() {
       var request = { method : 'unknown method' ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply };
+                    reply : replySpy };
       UA.receiveRequest(request);
-      expect(reply).toHaveBeenCalledWith(405);
+      expect(replySpy).toHaveBeenCalledWith(405);
     });
 
     it('creates a new Invite Server Transaction and call receive request if it receives an in dialog invite request', function() {
@@ -806,7 +690,7 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
@@ -823,7 +707,7 @@ describe('UA', function() {
       });
       var request = { method : 'some method' ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
@@ -837,11 +721,11 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
-      expect(reply).toHaveBeenCalledWith(481);
+      expect(replySpy).toHaveBeenCalledWith(481);
     });
 
     it('calls receiveRequest on the dialog if there is one', function() {
@@ -853,7 +737,7 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
@@ -872,7 +756,7 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
@@ -889,12 +773,12 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(UA.findSession).toHaveBeenCalledWith(request);
-      expect(reply).toHaveBeenCalledWith(481,'Subscription does not exist');
+      expect(replySpy).toHaveBeenCalledWith(481,'Subscription does not exist');
     });
 
     it ('replies with a 481 if an in dialog request is received that is not a NOTIFY OR ACK and no dialog is found', function() {
@@ -903,11 +787,11 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
-      expect(reply).toHaveBeenCalledWith(481);
+      expect(replySpy).toHaveBeenCalledWith(481);
     });
 
     it('should not do anything if an ACK is received and no dialog is found', function() {
@@ -916,26 +800,28 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.ACK ,
                     ruri : { user : UA.configuration.uri.user } ,
-                    reply : reply ,
+                    reply : replySpy ,
                     to_tag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
-      expect(reply).not.toHaveBeenCalled();
+      expect(replySpy).not.toHaveBeenCalled();
     });
   });
 
-  describe('.findSessions', function() {
+  describe('.findSession', function() {
     it('returns the session based on the call_id and from_tag', function() {
       var request = { call_id : 'callId' ,
                       from_tag : 'from' };
       UA.sessions[request.call_id + request.from_tag] = 'session';
       expect(UA.findSession(request)).toBe(UA.sessions[request.call_id + request.from_tag]);
+      delete UA.sessions[request.call_id + request.from_tag];
     });
     it('returns the session based on the call_id and to_tag', function() {
       var request = { call_id : 'callId' ,
                       to_tag : 'to' };
       UA.sessions[request.call_id + request.to_tag] = 'session';
       expect(UA.findSession(request)).toBe(UA.sessions[request.call_id + request.to_tag]);
+      delete UA.sessions[request.call_id + request.to_tag];
     });
     it('returns null if the session is not found', function() {
       var request = { call_id : 'callId' ,

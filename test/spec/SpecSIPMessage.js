@@ -7,9 +7,7 @@ describe('SIPMessage', function() {
       params,
       extraHeaders,
       body;
-    
-    var saveOutgoingRequest = {};
-      
+          
     beforeEach(function() {
       var getLogger = jasmine.createSpy('getLogger').andReturn('getLogger');
       ua = { 
@@ -24,20 +22,13 @@ describe('SIPMessage', function() {
       body = 'body';
       extraHeaders = 'extraHeaders';
       
-      saveOutgoingRequest.sipNameAddrHeader = SIP.NameAddrHeader;
-      SIP.NameAddrHeader = jasmine.createSpyObj('NameAddrHeader',['parse']);
+      spyOn(SIP, 'NameAddrHeader');
       SIP.NameAddrHeader.parse = jasmine.createSpy('NameAddrHeaderParse').andCallFake(function(param) { 
         return param.toString();
       });
-      
-      saveOutgoingRequest
-      
+            
       OutgoingRequest = new SIP.OutgoingRequest(method,ruri,ua,params,extraHeaders,body);
       
-    });
-    
-    afterEach(function() {
-      SIP.NameAddrHeader = saveOutgoingRequest.sipNameAddrHeader;
     });
     
     it('sets up instance variables', function() {
@@ -137,8 +128,7 @@ describe('SIPMessage', function() {
   });
   describe('IncomingRequest', function() {
     var IncomingRequest,
-      ua, transaction,
-      saveIncomingRequest = {};
+    ua, transaction;
     beforeEach(function(){
       var getLogger = jasmine.createSpy('getLogger').andReturn('logger');
       ua = {
@@ -273,12 +263,9 @@ describe('SIPMessage', function() {
         IncomingRequest.logger = {};
         IncomingRequest.logger.log = jasmine.createSpy('log').andReturn('log');
         IncomingRequest.logger.warn = jasmine.createSpy('warn').andReturn('warn');
-        saveIncomingRequest.sipGrammarParse = SIP.Grammar.parse;
         spyOn(SIP.Grammar,'parse').andCallThrough();
       });
-      afterEach(function() {
-        SIP.Grammar.parse = saveIncomingRequest.sipGrammarParse;
-      });
+
       it('returns undefined if the header does not exist in the headers object', function() {
         expect(IncomingRequest.headers).toEqual({});
         var name = 'name';
@@ -380,9 +367,8 @@ describe('SIPMessage', function() {
     })
   });
   describe('IncomingResponse', function() {
-    var IncomingResponse,
-      ua,
-      saveIncomingResponse = {};
+    var IncomingResponse, ua;
+
     beforeEach(function(){
       var getLogger = jasmine.createSpy('getLogger').andReturn('logger');
       ua = { 
@@ -511,12 +497,9 @@ describe('SIPMessage', function() {
         IncomingResponse.logger = {};
         IncomingResponse.logger.log = jasmine.createSpy('log').andReturn('log');
         IncomingResponse.logger.warn = jasmine.createSpy('warn').andReturn('warn');
-        saveIncomingResponse.sipGrammarParse = SIP.Grammar.parse;
         spyOn(SIP.Grammar,'parse').andCallThrough();
       });
-      afterEach(function() {
-        SIP.Grammar.parse = saveIncomingResponse.sipGrammarParse;
-      });
+
       it('returns undefined if the header does not exist in the headers object', function() {
         expect(IncomingResponse.headers).toEqual({});
         var name = 'name';

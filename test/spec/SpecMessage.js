@@ -4,7 +4,12 @@ describe('Message', function() {
   
   beforeEach(function() {
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
     spyOn(SIP.Utils, 'augment').andCallThrough();
+  });
+
+  afterEach(function() {
+    ua.stop();
   });
   
   describe('MessageServerContext', function() {
