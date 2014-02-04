@@ -2196,6 +2196,9 @@ InviteClientContext.prototype = {
   },
 
   terminate: function(options) {
+    if (this.status === C.STATUS_TERMINATED) {
+      return this;
+    }
 
     if (this.status === C.STATUS_WAITING_FOR_ACK || this.status === C.STATUS_CONFIRMED) {
       this.bye(options);
