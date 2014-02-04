@@ -14,7 +14,8 @@ describe('UA', function() {
       register: jasmine.createSpy('register'),
       unregister: jasmine.createSpy('unregister'),
       registered: true,
-      close: jasmine.createSpy('close')
+      close: jasmine.createSpy('close'),
+      onTransportClosed: jasmine.createSpy('onTransportClosed')
     });
 
     UA = new SIP.UA(configuration);
@@ -113,14 +114,14 @@ describe('UA', function() {
 
   describe('.start', function() {
     beforeEach(function() {
-      spyOn(SIP, 'Transport').andReturn('Sip Transport');
+      spyOn(SIP, 'Transport');
       SIP.Transport.C = {
         STATUS_READY:        0,
         STATUS_DISCONNECTED: 1,
         STATUS_ERROR:        2
       };
 
-      UA.transport = {connect: jasmine.createSpy('uaTransportConnect')};
+      UA.transport = {connect: jasmine.createSpy('connect')};
     });
 
     it('creates a SIP transport if the status is C.STATUS_INIT', function() {
@@ -161,29 +162,78 @@ describe('UA', function() {
     });
   });
 
-  xdescribe('.stop', function() {
+  describe('.stop', function() {
     beforeEach(function() {
-
+      UA.transport = jasmine.createSpyObj('transport', ['disconnect']);
     });
 
-    afterEach(function() {
+    it('logs a warning and returns this if the ua has already been closed', function () {
+      UA.status = 2;
 
+      expect(UA.stop()).toBe(UA);
+      expect(UA.logger.warn).toHaveBeenCalledWith('UA already closed');
     });
 
-    it('saves the current registration state', function () {
-      expect('this test').toBe('implemented');
-    });
+    it('clears the transportRecoveryTimer', function() {
+      spyOn(window, 'clearTimeout');
 
-    it('disconnects from the Web Socket', function () {
-      expect('this test').toBe('implemented');
-    });
+      UA.stop();
 
-    it('terminates any active sessions', function () {
-      expect('this test').toBe('implemented');
+      expect(window.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
     });
 
     it('unregisters', function () {
-      expect('this test').toBe('implemented');
+      UA.stop();
+
+      expect(UA.registerContext.close).toHaveBeenCalled();
+    });
+
+    it('terminates any active sessions', function () {
+      var session = jasmine.createSpyObj('session', ['terminate']);
+      UA.sessions[session] = session;
+
+      UA.stop();
+
+      expect(UA.sessions[session].terminate).toHaveBeenCalled();
+    });
+
+    it('closes any applicants', function () {
+      var applicant = jasmine.createSpyObj('applicant', ['close']);
+      UA.applicants[applicant] = applicant;
+
+      UA.stop();
+
+      expect(UA.applicants[applicant].close).toHaveBeenCalled();
+    });
+
+    it('disconnects from the Web Socket if there are no non-invite transactions left', function () {
+      UA.transactions['nist'] = [];
+      UA.transactions['nict'] = [];
+      UA.stop();
+
+      expect(UA.transport.disconnect).toHaveBeenCalled();
+    });
+
+    it('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
+      spyOn(UA, 'off');
+
+      //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
+
+      UA.transactions['nict'] = ['one'];
+      UA.transactions['nist'] = ['one'];
+
+      UA.stop();
+
+      expect(UA.transport.disconnect).not.toHaveBeenCalled();
+
+      UA.transactions['nist'] = [];
+      UA.emit('transactionDestroyed');
+      expect(UA.transport.disconnect).not.toHaveBeenCalled();
+
+      UA.transactions['nict'] = [];
+      UA.emit('transactionDestroyed');
+      expect(UA.transport.disconnect).toHaveBeenCalled();
+      expect(UA.off).toHaveBeenCalled();
     });
   });
 
@@ -522,7 +572,6 @@ describe('UA', function() {
 
   describe('.receiveRequest', function() {
     var replySpy;
-    var serverContextOn;
     beforeEach(function() {
       replySpy = jasmine.createSpy('reply');
 
@@ -534,8 +583,6 @@ describe('UA', function() {
       });
       spyOn(SIP, 'InviteServerContext').andReturn(true);
       spyOn(SIP.Transactions, 'InviteServerTransaction').andReturn(true);
-
-      //SIP.WebRTC.isSupported = true;
     });
 
     it('checks that the ruri points to us', function() {
@@ -809,65 +856,100 @@ describe('UA', function() {
   });
 
   describe('.findSession', function() {
+    var request;
+
+    beforeEach(function() {
+      request = { call_id : 'callId' ,
+                  from_tag : 'from' };
+    });
+
     it('returns the session based on the call_id and from_tag', function() {
-      var request = { call_id : 'callId' ,
-                      from_tag : 'from' };
       UA.sessions[request.call_id + request.from_tag] = 'session';
       expect(UA.findSession(request)).toBe(UA.sessions[request.call_id + request.from_tag]);
       delete UA.sessions[request.call_id + request.from_tag];
     });
     it('returns the session based on the call_id and to_tag', function() {
-      var request = { call_id : 'callId' ,
-                      to_tag : 'to' };
       UA.sessions[request.call_id + request.to_tag] = 'session';
       expect(UA.findSession(request)).toBe(UA.sessions[request.call_id + request.to_tag]);
       delete UA.sessions[request.call_id + request.to_tag];
     });
     it('returns null if the session is not found', function() {
-      var request = { call_id : 'callId' ,
-                      from_tag : 'from' };
       expect(UA.findSession(request)).toBe(null);
     });
   });
 
   describe('.findDialog', function() {
+    var request;
+
+    beforeEach(function() {
+      request = { call_id : 'callId' ,
+                  from_tag : 'from' ,
+                  to_tag : 'to' };
+    });
+
     it('returns the dialog based on the call_id and from_tag and to_tag', function() {
-      var request = { call_id : 'callId' ,
-                      from_tag : 'from' ,
-                      to_tag : 'to' };
       UA.dialogs[request.call_id + request.from_tag + request.to_tag] = 'dialog';
       expect(UA.findDialog(request)).toBe(UA.dialogs[request.call_id + request.from_tag + request.to_tag]);
     });
     it('returns the dialog based on the call_id and to_tag and from_tag', function() {
-      var request = { call_id : 'callId' ,
-                      from_tag : 'from' ,
-                      to_tag : 'to' };
       UA.dialogs[request.call_id + request.to_tag + request.from_tag] = 'dialog';
       expect(UA.findDialog(request)).toBe(UA.dialogs[request.call_id + request.to_tag + request.from_tag]);
     });
     it('returns null if the session is not found', function() {
-      var request = { call_id : 'callId' ,
-                      from_tag : 'from' ,
-                      to_tag : 'to' };
       expect(UA.findSession(request)).toBe(null);
     });
   });
 
-  xdescribe('.getNextWsServer', function() {
-    it('selects the candidate with the highest weight', function() {
+  describe('.getNextWsServer', function() {
+    var can1, can2, can3, can4;
 
+    beforeEach(function() {
+      can1 = {status: 0, weight: 0};
+      can2 = {status: 0, weight: 1};
+      can3 = {status: 0, weight: 1};
+      can4 = {status: 0, weight: 2};
+
+      //Note: can't just set ws_servers at this point
+      UA.configuration = {ws_servers: [can1,can2,can3,can4]};
     });
-    it('should not select a candidate that has a transport error', function() {
 
+    it('selects the candidate with the highest weight', function() {
+      expect(UA.getNextWsServer()).toBe(can4);
+    });
+
+    it('selects one of the candidates with the highest weight', function() {
+      can4.weight = 0;
+
+      spyOn(Math, 'random').andReturn(0.9);
+
+      expect(UA.getNextWsServer()).toBe(can3);
+
+      Math.random.andReturn(0.4);
+
+      expect(UA.getNextWsServer()).toBe(can2);
+    });
+
+    it('does not select a candidate that has a transport error', function() {
+      can4.status = 2;
+
+      expect(UA.getNextWsServer()).not.toBe(can4);
     });
   });
 
-  xdescribe('.closeSessionsOnTransportError', function() {
+  describe('.closeSessionsOnTransportError', function() {
     it('calls onTransportError for all the sessions in the sessions object', function() {
+      var session = jasmine.createSpyObj('session', ['onTransportError', 'terminate']);
+      UA.sessions[session] = session;
 
+      UA.closeSessionsOnTransportError();
+
+      expect(UA.sessions[session].onTransportError).toHaveBeenCalled();
     });
-    it('calls onTransportClosed on register context', function() {
 
+    it('calls onTransportClosed on register context', function() {
+      UA.closeSessionsOnTransportError();
+
+      expect(UA.registerContext.onTransportClosed).toHaveBeenCalled();
     });
   });
 

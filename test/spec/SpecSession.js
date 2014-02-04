@@ -398,7 +398,8 @@ describe('Session', function() {
 
       Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
         getAudioTracks: function() {return [7];}, 
-        getVideoTracks: function() {return [7];}
+        getVideoTracks: function() {return [7];},
+        stop: function() {}
       }])}};
 
       spyOn(Session, 'toggleMuteAudio').andReturn(true);
@@ -467,7 +468,8 @@ describe('Session', function() {
 
       Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
         getAudioTracks: function() {return [7];}, 
-        getVideoTracks: function() {return [7];}
+        getVideoTracks: function() {return [7];},
+        stop: function() {}
       }])}};
 
       spyOn(Session, 'toggleMuteAudio').andReturn(true);
@@ -1219,6 +1221,7 @@ describe('InviteServerContext', function() {
   it('sets 100rel, requires', function() {
     request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nRequire: 100rel\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(request, 'reply');
+    request.transport = ua.transport;
 
     var ISC = new SIP.InviteServerContext(ua, request);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
@@ -1229,6 +1232,7 @@ describe('InviteServerContext', function() {
   it('sets 100rel, supported', function() {
     request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound, 100rel\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(request, 'reply');
+    request.transport = ua.transport;
 
     var ISC = new SIP.InviteServerContext(ua, request);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
@@ -1240,6 +1244,7 @@ describe('InviteServerContext', function() {
     var ISC, fakereq;
     fakereq = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(fakereq, 'reply');
+    fakereq.transport = ua.transport;
 
     spyOn(SIP.Session.prototype,'createDialog').andReturn(false);
 
@@ -1272,6 +1277,7 @@ describe('InviteServerContext', function() {
   xit('calls rtcMediaHandler.onMessage otherwise', function() {
     var ISC;
 
+    //replace these with spyOn to avoid cleanup
     jasmine.createSpy(SIP.Session, 'rtcMediaHandler').andCallThrough();
 
     jasmine.createSpy(SIP.Session.rtcMediaHandler.prototype, 'onMessage');
@@ -1546,7 +1552,8 @@ describe('InviteServerContext', function() {
         InviteServerContext.status = 7;
 
         InviteServerContext.rtcMediaHandler.localMedia = {getAudioTracks: function(){return [];},
-                                                          getVideoTracks: function(){return [];}};
+                                                          getVideoTracks: function(){return [];},
+                                                          stop: function() {}};
 
         spyOn(InviteServerContext.rtcMediaHandler, "close");
         InviteServerContext.dialog = {id: 7, terminate: function(){}, sendRequest: function(){}};
@@ -1639,7 +1646,8 @@ describe('InviteServerContext', function() {
         spyOn(req, 'reply');
         spyOn(InviteServerContext, 'accept');
         InviteServerContext.rtcMediaHandler.localMedia = {getAudioTracks: function(){return [];},
-                                                          getVideoTracks: function(){return [];}};
+                                                          getVideoTracks: function(){return [];},
+                                                          stop: function() {}};
 
         InviteServerContext.receiveRequest(req);
 
@@ -1655,7 +1663,8 @@ describe('InviteServerContext', function() {
         spyOn(InviteServerContext, 'accept');
         InviteServerContext.status = 10;
         InviteServerContext.rtcMediaHandler.localMedia = {getAudioTracks: function(){return [];},
-                                                          getVideoTracks: function(){return [];}};
+                                                          getVideoTracks: function(){return [];},
+                                                          stop: function() {}};
 
         InviteServerContext.receiveRequest(req);
 
@@ -2033,7 +2042,8 @@ describe('InviteClientContext', function() {
         InviteClientContext.status = 11;
         InviteClientContext.createDialog(response, 'UAC', false);
         InviteClientContext.rtcMediaHandler = {localMedia: {getAudioTracks: function() {return []},
-                                                            getVideoTracks: function() {return []}},
+                                                            getVideoTracks: function() {return []},
+                                                            stop: function() {}},
                                                close: function(){}};
 
         response.setHeader('cseq', '7777 INVITE');
@@ -2050,7 +2060,8 @@ describe('InviteClientContext', function() {
         InviteClientContext.status = 11;
         InviteClientContext.createDialog(response, 'UAC', false);
         InviteClientContext.rtcMediaHandler = {localMedia: {getAudioTracks: function() {return []},
-                                                            getVideoTracks: function() {return []}},
+                                                            getVideoTracks: function() {return []},
+                                                            stop: function() {}},
                                                close: function(){}};
         spyOn(InviteClientContext, 'accepted');
 
@@ -2089,7 +2100,8 @@ describe('InviteClientContext', function() {
         InviteClientContext.createDialog(response, 'UAC', true);
         InviteClientContext.earlyDialogs[response.call_id+response.from_tag+response.to_tag].rtcMediaHandler = 
           {localMedia: {getAudioTracks: function() {return []},
-                        getVideoTracks: function() {return []}},
+                        getVideoTracks: function() {return []},
+                        stop: function() {}},
            close: function(){}};
         
         spyOn(InviteClientContext, 'accepted');
