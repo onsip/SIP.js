@@ -279,6 +279,7 @@ RTCMediaHandler.prototype = {
 
     /** Failure functions **/
     function userMediaFailed(err) {
+      mediaHandler.session.connecting();
       onFailure(err);
     }
     function streamAdditionFailed(err) {
@@ -308,6 +309,7 @@ RTCMediaHandler.prototype = {
     }
 
     function userMediaSucceeded(stream) {
+      mediaHandler.session.connecting();
       mediaHandler.addStream(
         stream,
         streamAdditionSucceeded,

@@ -1278,7 +1278,6 @@ InviteServerContext.prototype = {
 
     // rtcMediaHandler.addStream successfully added
     streamAdditionSucceeded = function() {
-      self.connecting();
       if (self.status === C.STATUS_TERMINATED) {
         return;
       } else if (self.request.body && self.contentDisp !== 'render') {
@@ -1304,6 +1303,7 @@ InviteServerContext.prototype = {
 
     // User media succeeded
     userMediaSucceeded = function(stream) {
+      self.connecting();
       self.rtcMediaHandler.addStream(
         stream,
         streamAdditionSucceeded,
@@ -1313,6 +1313,7 @@ InviteServerContext.prototype = {
 
     // User media failed
     userMediaFailed = function() {
+      self.connecting();
       this.request.reply(480);
       self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
     };
