@@ -2002,11 +2002,7 @@ InviteClientContext.prototype = {
           break;
         }
 
-        if(!response.body) {
-          this.acceptAndTerminate(response, 400, 'Missing session description');
-          this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-          break;
-        } else if (window.mozRTCPeerConnection !== undefined) {
+        if (response.body && window.mozRTCPeerConnection !== undefined) {
           response.body = response.body.replace(/relay/g, 'host generation 0');
           response.body = response.body.replace(/ \r\n/g, '\r\n');
         }
@@ -2030,6 +2026,11 @@ InviteClientContext.prototype = {
             }
             session.accepted(response);
           } else {
+            if(!response.body) {
+              this.acceptAndTerminate(response, 400, 'Missing session description');
+              this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              break;
+            } 
             if (!this.createDialog(response, 'UAC')) {
               break;
             }
@@ -2103,6 +2104,11 @@ InviteClientContext.prototype = {
             );
           }
         } else {
+          if(!response.body) {
+            this.acceptAndTerminate(response, 400, 'Missing session description');
+            this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            break;
+          } 
           if (!this.createDialog(response, 'UAC')) {
             break;
           }

@@ -953,19 +953,340 @@ describe('UA', function() {
     });
   });
 
-  xdescribe('.recoverTransport', function() {
+  describe('.recoverTransport', function() {
+    beforeEach(function() {
+      spyOn(Math, 'random').andReturn(0);
+    });
 
+    it('logs if the next retry time exceeds the max_interval', function(){
+      UA.configuration = {ws_servers: [{status:1, weight: 0}], connection_recovery_min_interval: 1, connection_recovery_max_interval: -1};
+
+      UA.recoverTransport(UA);
+
+      expect(UA.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connection_recovery_max_interval, resetting counter');
+    });
+
+    it('calls getNextWsServer', function() {
+      spyOn(UA, 'getNextWsServer').andCallThrough();
+
+      UA.recoverTransport(UA);
+
+      expect(UA.getNextWsServer).toHaveBeenCalled();
+    });
+
+    it('sets the transportRecoveryTimer', function() {
+      expect(UA.transportRecoveryTimer).toBeNull();
+      
+      UA.recoverTransport(UA);
+
+      expect(UA.transportRecoveryTimer).toBeDefined();
+    });
+
+    it('logs before setting the transport recovery timer, then attempts to make a new transport', function() {
+      spyOn(SIP, 'Transport');
+      SIP.Transport.C = {STATUS_READY: 0, STATUS_DISCONNECTED: 1, STATUS_ERROR: 2};
+
+      UA.configuration = {ws_servers: [{status:0, weight: 0}], connection_recovery_min_interval: 1, connection_recovery_max_interval: 7};
+      UA.transportRecoverAttempts = 0;
+
+      UA.recoverTransport(UA);
+
+      expect(UA.logger.log).toHaveBeenCalledWith('next connection attempt in 1 seconds');
+
+      waitsFor(function() {
+        return UA.transportRecoverAttempts === 1;
+      }, 'transportRecoveryTimer must fire', 1100);
+
+      runs(function() {
+        expect(SIP.Transport).toHaveBeenCalled();
+      });
+    })
   });
 
-  xdescribe('.loadConfig', function() {
+  describe('.loadConfig', function() {
+    beforeEach(function() {
+      UA.configuration = {};
+    });
 
+    it('sets default settings for many parameters', function() {
+      UA.loadConfig({});
+
+      expect(UA.configuration.via_host).toBeDefined();
+
+      expect(UA.configuration.uri).toBeDefined();
+      expect(UA.configuration.ws_servers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', status: 0, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
+
+      expect(UA.configuration.password).toBeNull();
+
+      expect(UA.configuration.register_expires).toBe(600);
+      expect(UA.configuration.register_min_expires).toBe(120);
+      expect(UA.configuration.register).toBe(true);
+      //registrar_server is set to null here, then switched later in the function if it wasn't passed in
+
+      expect(UA.configuration.ws_server_max_reconnection).toBe(3);
+      expect(UA.configuration.ws_server_reconnection_timeout).toBe(4);
+
+      expect(UA.configuration.connection_recovery_min_interval).toBe(2);
+      expect(UA.configuration.connection_recovery_max_interval).toBe(30);
+
+      expect(UA.configuration.use_preloaded_route).toBe(false);
+
+      //defaults to 60, then multiplies by 1000 later in the function
+      expect(UA.configuration.no_answer_timeout).toBe(60000);
+      expect(UA.configuration.stun_servers).toEqual(['stun:stun.l.google.com:19302']);
+      expect(UA.configuration.turn_servers).toEqual([]);
+
+      expect(UA.configuration.trace_sip).toBe(false);
+
+      expect(UA.configuration.hack_via_tcp).toBe(false);
+      expect(UA.configuration.hack_ip_in_contact).toBe(false);
+
+      expect(UA.configuration.reliable).toBe('none');
+    });
+
+    it('throws a configuration error when a mandatory parameter is missing', function() {
+      SIP.UA.configuration_check.mandatory.fake = function(value) {return;};
+
+      expect(function(){UA.loadConfig({});}).toThrow('Missing parameter: fake');
+
+      delete SIP.UA.configuration_check.mandatory.fake;
+    });
+
+    it('throws a configuration error if a mandatory parameter\'s passed-in value is invalid', function() {
+      SIP.UA.configuration_check.mandatory.fake = function(value) {return;};
+
+      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrow('Invalid value "fake" for parameter "fake"');
+
+      delete SIP.UA.configuration_check.mandatory.fake;
+    });
+
+    it('sets a mandatory value successfully in settings', function() {
+      SIP.UA.configuration_check.mandatory.fake = function(value) {return 'fake';};
+      SIP.UA.configuration_skeleton.fake = {value: '', writable: false, configurable: false};
+
+      UA.loadConfig({fake: 'fake'});
+
+      expect(UA.logger.log).toHaveBeenCalledWith('· fake: "fake"');
+
+      delete SIP.UA.configuration_skeleton.fake;
+      delete SIP.UA.configuration_check.mandatory.fake;
+    });
+
+    it('throws a ConfigurationError if an optional value is passed in which is invalid', function() {
+      SIP.UA.configuration_check.optional.fake = function(value) {return;};
+
+      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrow('Invalid value "fake" for parameter "fake"');
+
+      delete SIP.UA.configuration_check.optional.fake;
+    });
+
+    it('sets an optional value successfully in settings', function() {
+      SIP.UA.configuration_check.optional.fake = function(value) {return 'fake';};
+      SIP.UA.configuration_skeleton.fake = {value: '', writable: false, configurable: false};
+
+      UA.loadConfig({fake: 'fake'});
+
+      expect(UA.logger.log).toHaveBeenCalledWith('· fake: "fake"');
+
+      delete SIP.UA.configuration_skeleton.fake;
+      delete SIP.UA.configuration_check.optional.fake;
+    });
+
+    it('makes sure the connection recovery max interval is greater than the min interval', function() {
+      expect(function(){UA.loadConfig({connection_recovery_max_interval: 1, connection_recovery_min_interval: 2});}).toThrow('Invalid value 1 for parameter "connection_recovery_max_interval"');
+    });
+
+    it('allows 0 to be passed as a display name', function() {
+      UA.loadConfig({display_name: 0});
+
+      expect(UA.configuration.display_name).toBe('0');
+    });
+
+    it('sets an instance_id if one is not passed in also sets jssip_id', function() {
+      UA.loadConfig({});
+
+      expect(UA.configuration.instance_id).toBeDefined();
+
+      expect(UA.configuration.jssip_id).toBeDefined();
+      expect(UA.configuration.jssip_id.length).toBe(5);
+    });
+
+    it('sets auth user to uri user if auth user is not passed in', function() {
+      UA.loadConfig({uri: 'james@onsnip.onsip.com'});
+
+      expect(UA.configuration.authorization_user).toBe(UA.configuration.uri.user);
+    });
+
+    it('sets the registrar_server to the uri (without user) if it is not passed in', function() {
+      UA.loadConfig({uri: 'james@onsnip.onsip.com'});
+
+      var reg = UA.configuration.uri.clone();
+      reg.user = null;
+
+      expect(UA.configuration.registrar_server).toEqual(reg);
+    });
+
+    it('uses getRandomTestNetIP for via_host if hack_ip_in_contact is set to true', function() {
+      spyOn(SIP.Utils, 'getRandomTestNetIP').andCallThrough();
+
+      UA.loadConfig({hack_ip_in_contact: true});
+
+      expect(SIP.Utils.getRandomTestNetIP).toHaveBeenCalled();
+    });
+
+    it('creates the contact object', function() {
+      UA.loadConfig({});
+
+      expect(UA.contact.temp_gruu).toBeNull();
+      expect(UA.contact.pub_gruu).toBeNull();
+      expect(UA.contact.uri).toBeDefined();
+      expect(UA.contact.toString).toBeDefined();
+    });
+
+    //I'd check the filling of the configuration skeleton, but it is cleared soon after
+
+    //the setting of the configuration was checked with the default test
   });
 
-  xdescribe('.configuration_skeleton', function() {
+  describe('.configuration_skeleton', function() {
+    var skel;
+    beforeEach(function() {
+      skel = SIP.UA.configuration_skeleton;
+    });
 
+    it('sets all parameters (except register) as writable/configurable false', function() {
+      expect(skel['uri']).toBeDefined();
+      expect(skel['uri'].value).toBe('');
+      expect(skel['uri'].writable).toBe(false);
+      expect(skel['uri'].configurable).toBe(false);
+    });
+
+    it('sets all the register parameter as writable true, configurable false', function() {
+      expect(skel['register']).toBeDefined();
+      expect(skel['register'].value).toBe('');
+      expect(skel['register'].writable).toBe(true);
+      expect(skel['register'].configurable).toBe(false);
+    });
   });
 
-  xdescribe('.configuration_check', function() {
+  describe('.configuration_check', function() {
+    //I could've made another describe for optional, but they are all under that
+    describe('.uri', function() {
+      it('fails if nothing is passed in', function() {
+        expect(SIP.UA.configuration_check.optional.uri()).toBeUndefined();
+      });
 
+      it('fails if there is no user', function() {
+        expect(SIP.UA.configuration_check.optional.uri('@example.com')).toBeUndefined();
+      });
+
+      it('passes if there is a correctly parsed uri', function() {
+        expect(SIP.UA.configuration_check.optional.uri('alice@example.com')).toBeDefined();
+      });
+    });
+
+    xdescribe('.ws_servers', function() {
+      it('fails for types that are not string or array (of strings or objects', function() {
+        expect(SIP.UA.configuration_check.optional.ws_servers(7)).toBeUndefined();
+      });
+
+      it('fails for an empty array', function() {
+        //NOTE: this is the only case that false is returned (instead of nothing)
+        expect(SIP.UA.configuration_check.optional.ws_servers([])).toBe(false);
+      });
+
+      //From here on, there is logger errors, but because of how this testing works,
+      //there is no logger, so catching the error for the logger counts as failure
+      it('fails if ws_uri attribute is missing', function() {
+        expect(function(){SIP.UA.configuration_check.optional.ws_servers([{sandwich: 'ham'}]);}).toThrow('Cannot call method \'error\' of undefined');
+      });
+
+      it('fails if weight attribute is not a number', function() {
+        expect(function(){SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'ham', weight: 'scissors'}]);}).toThrow('Cannot call method \'error\' of undefined');
+      });
+
+      it('fails if the ws_uri is invalid', function() {
+        expect(function(){SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'ham'}]);}).toThrow('Cannot call method \'error\' of undefined');
+      });
+
+      it('fails if the url scheme is not wss or ws', function() {
+        expect(function(){SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}]);}).toThrow('Cannot call method \'error\' of undefined');
+      });
+
+      it('returns correctly if none of the above is wrong', function() {
+        expect(SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
+        expect(SIP.UA.configuration_check.optional.ws_servers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
+      });
+    });
+
+    describe('.authorization_user', function() {
+      it('fails if a type besides a string is passed in', function() {
+        expect(SIP.UA.configuration_check.optional.authorization_user()).toBeUndefined();
+      });
+    });
+
+    describe('.connection_recovery_max_interval', function() {
+
+    });
+
+    describe('.connection_recovery_min_interval', function() {
+
+    });
+
+    describe('.display_name', function() {
+
+    });
+
+    describe('.hack_via_tcp', function() {
+
+    });
+
+    describe('.hack_ip_in_contact', function() {
+
+    });
+
+    describe('.instance_id', function() {
+
+    });
+
+    describe('.no_answer_timeout', function() {
+
+    });
+
+    describe('.password', function() {
+
+    });
+
+    describe('.reliable', function() {
+
+    });
+
+    describe('.register', function() {
+
+    });
+
+    describe('.register_expires', function() {
+
+    });
+
+    describe('.registrar_server', function() {
+
+    });
+
+    describe('.stun_servers', function() {
+
+    });
+
+    describe('.trace_sip', function() {
+
+    });
+
+    describe('.turn_servers', function() {
+      
+    });
+
+    describe('.use_preloaded_route', function() {
+
+    });
   });
 });
