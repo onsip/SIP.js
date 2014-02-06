@@ -1432,7 +1432,7 @@ InviteServerContext.prototype = {
     */
 
     if (this.status === C.STATUS_EARLY_MEDIA) {
-      sdpCreationSucceeded(self.early_sdp);
+      sdpCreationSucceeded();
     } else {
       this.rtcMediaHandler.applyStream(
         this.mediaConstraints,
