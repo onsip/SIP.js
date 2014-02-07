@@ -1595,6 +1595,8 @@ InviteServerContext.prototype = {
                 localMedia.getVideoTracks()[0].enabled = false;
               }
             }
+          } else if(this.status === C.STATUS_EARLY_MEDIA) {
+            request.reply(200);
           }
           break;
         case SIP.C.BYE:
@@ -1882,7 +1884,7 @@ InviteClientContext.prototype = {
           }
 
           if (this.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')) !== -1 ||
-              (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] > response.getHeader('rseq') &&
+              (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] >= response.getHeader('rseq') &&
                this.earlyDialogs[id].pracked.length > 0)) {
             return;
           }
