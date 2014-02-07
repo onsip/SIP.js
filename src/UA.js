@@ -1046,6 +1046,7 @@ UA.configuration_check = {
       }
     },
 
+    //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
     ws_servers: function(ws_servers) {
       var idx, length, url;
 
@@ -1075,21 +1076,17 @@ UA.configuration_check = {
       length = ws_servers.length;
       for (idx = 0; idx < length; idx++) {
         if (!ws_servers[idx].ws_uri) {
-          this.logger.error('missing "ws_uri" attribute in ws_servers parameter');
           return;
         }
         if (ws_servers[idx].weight && !Number(ws_servers[idx].weight)) {
-          this.logger.error('"weight" attribute in ws_servers parameter must be a Number');
           return;
         }
 
         url = SIP.Grammar.parse(ws_servers[idx].ws_uri, 'absoluteURI');
 
         if(url === -1) {
-          this.logger.error('invalid "ws_uri" attribute in ws_servers parameter: ' + ws_servers[idx].ws_uri);
           return;
         } else if(url.scheme !== 'wss' && url.scheme !== 'ws') {
-          this.logger.error('invalid URI scheme in ws_servers parameter: ' + url.scheme);
           return;
         } else {
           ws_servers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=ws;lr>';
@@ -1154,6 +1151,10 @@ UA.configuration_check = {
     },
 
     instance_id: function(instance_id) {
+      if(typeof instance_id !== 'string') {
+        return;
+      }
+
       if ((/^uuid:/i.test(instance_id))) {
         instance_id = instance_id.substr(5);
       }
@@ -1208,6 +1209,10 @@ UA.configuration_check = {
 
     registrar_server: function(registrar_server) {
       var parsed;
+
+      if(typeof registrar_server !== 'string') {
+        return;
+      }
 
       if (!/^sip:/i.test(registrar_server)) {
         registrar_server = SIP.C.SIP + ':' + registrar_server;
