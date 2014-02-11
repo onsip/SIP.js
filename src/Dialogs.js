@@ -14,7 +14,6 @@
 
 // Load dependencies
 var RequestSender   = @@include('../src/Dialog/RequestSender.js')
-var RTCMediaHandler = @@include('../src/Session/RTCMediaHandler.js')
 
 var Dialog,
   C = {
@@ -83,8 +82,10 @@ Dialog = function(owner, message, type, state) {
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route').reverse();
 
-    if (this.state === C.STATUS_EARLY && (!owner.request.body || (owner.request.body === owner.renderbody))) {
-      this.rtcMediaHandler = new RTCMediaHandler(owner, owner.rtcMediaHandler.constraints);
+    //RENDERBODY
+    if (this.state === C.STATUS_EARLY && (!owner.hasOffer)) {
+    //if (this.state === C.STATUS_EARLY) {
+      this.mediaHandler = owner.mediaHandlerFactory(owner);
     }
   }
 
@@ -112,8 +113,8 @@ Dialog.prototype = {
 
   terminate: function() {
     this.logger.log('dialog ' + this.id.toString() + ' deleted');
-    if (this.rtcMediaHandler && this.state !== C.STATUS_CONFIRMED) {
-      this.rtcMediaHandler.peerConnection.close();
+    if (this.mediaHandler && this.state !== C.STATUS_CONFIRMED) {
+      this.mediaHandler.peerConnection.close();
     }
     delete this.owner.ua.dialogs[this.id.toString()];
   },

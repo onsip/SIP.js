@@ -1,0 +1,418 @@
+/**
+ * @fileoverview MediaHandler
+ */
+
+/* MediaHandler
+ * @class PeerConnection helper Class.
+ * @param {SIP.Session} session
+ * @param {Object} [options]
+ * @param {SIP.WebRTC.MediaStreamManager | SIP.WebRTC.MediaStream | (getUserMedia constraints)} [options.mediaStreamManager]
+ *        The MediaStreamManager to acquire/release streams from/to.
+ *        If a MediaStream or a getUserMedia constraints object is provided,
+ *        it will be converted to a MediaStreamManager.
+ *        If not provided, a default MediaStreamManager will be used.
+ */
+(function(SIP){
+
+var MediaHandler = function(session, options) {
+  options = options || {};
+
+  this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);
+  this.session = session;
+  this.localMedia = null;
+  this.ready = true;
+  this.mediaStreamManager = SIP.WebRTC.MediaStreamManager.cast(options.mediaStreamManager);
+  this.audioMuted = false;
+  this.videoMuted = false;
+
+  // old init() from here on
+  var idx, length, server,
+    self = this,
+    servers = [],
+    constraints = options.constraints || {},
+    stunServers = options.stunServers || null,
+    turnServers = options.turnServers || null,
+    config = this.session.ua.configuration;
+
+  if (!stunServers) {
+    stunServers = config.stunServers;
+  }
+
+  if(!turnServers) {
+    turnServers = config.turnServers;
+  }
+
+  /* Change 'url' to 'urls' whenever this issue is solved:
+   * https://code.google.com/p/webrtc/issues/detail?id=2096
+   */
+  servers.push({'url': stunServers});
+
+  length = turnServers.length;
+  for (idx = 0; idx < length; idx++) {
+    server = turnServers[idx];
+    servers.push({
+      'url': server.urls,
+      'username': server.username,
+      'credential': server.password
+    });
+  }
+
+  this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, constraints);
+
+  this.peerConnection.onaddstream = function(e) {
+    self.logger.log('stream added: '+ e.stream.id);
+  };
+
+  this.peerConnection.onremovestream = function(e) {
+    self.logger.log('stream removed: '+ e.stream.id);
+  };
+
+  this.peerConnection.onicecandidate = function(e) {
+    if (e.candidate) {
+      self.logger.log('ICE candidate received: '+ e.candidate.candidate);
+    } else if (self.onIceCompleted !== undefined) {
+      self.onIceCompleted();
+    }
+  };
+
+  this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
+    self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
+    //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
+    if (this.iceConnectionState === 'failed') {
+      self.session.terminate({
+        cause: SIP.C.causes.RTP_TIMEOUT,
+        status_code: 200,
+        reason_phrase: SIP.C.causes.RTP_TIMEOUT
+      });
+    }/* else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      self.onIceCompleted();
+    }*/
+  };
+
+  this.peerConnection.onstatechange = function() {
+    self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
+  };
+};
+
+MediaHandler.defaultFactory = function defaultFactory (session, options) {
+  return new MediaHandler(session, options);
+};
+
+MediaHandler.prototype = {
+// Functions the session can use
+  isReady: function() {
+    return this.ready;
+  },
+
+  close: function() {
+    this.logger.log('closing PeerConnection');
+    if(this.peerConnection) {
+      this.peerConnection.close();
+
+      if(this.localMedia) {
+        this.mediaStreamManager.release(this.localMedia);
+      }
+    }
+  },
+
+  /**
+   * @param {Function} onSuccess
+   * @param {Function} onFailure
+   * @param {SIP.WebRTC.MediaStream | (getUserMedia constraints)} [mediaHint]
+   *        the MediaStream (or the constraints describing it) to be used for the session
+   */
+  getDescription: function(onSuccess, onFailure, mediaHint) {
+    var self = this;
+
+    /*
+     * 1. acquire stream (skip if MediaStream passed in)
+     * 2. addStream
+     * 3. createOffer/createAnswer
+     * 4. call onSuccess()
+     */
+
+    /* Last functions first, to quiet JSLint */
+    function streamAdditionSucceeded() {
+      self.createOfferOrAnswer(onSuccess, onFailure);
+    }
+
+    function acquireSucceeded(stream) {
+      self.logger.log('acquired local media stream');
+      self.localMedia = stream;
+      self.session.connecting();
+      self.addStream(
+        stream,
+        streamAdditionSucceeded,
+        onFailure
+      );
+    }
+
+    if (self.localMedia) {
+      self.logger.log('already have local media');
+      streamAdditionSucceeded();
+      return;
+    }
+
+    if (mediaHint instanceof SIP.WebRTC.MediaStream) {
+      self.logger.log('mediaHint provided to getDescription is a MediaStream, casting to MediaStreamManager:', mediaHint);
+      self.mediaStreamManager = SIP.WebRTC.MediaStreamManager.cast(mediaHint);
+    }
+
+    self.logger.log('acquiring local media');
+    self.mediaStreamManager.acquire(
+      acquireSucceeded,
+      function acquireFailed(err) {
+        self.logger.error('unable to acquire stream');
+        self.logger.error(err);
+        self.session.connecting();
+        onFailure(err);
+      },
+      mediaHint
+    );
+  },
+
+  /**
+  * Message reception.
+  * @param {String} type
+  * @param {String} sdp
+  * @param {Function} onSuccess
+  * @param {Function} onFailure
+  */
+  setDescription: function(sdp, onSuccess, onFailure) {
+    var type = this.hasOffer('local') ? 'answer' : 'offer';
+    var description = new SIP.WebRTC.RTCSessionDescription({type: type, sdp: sdp});
+    this.peerConnection.setRemoteDescription(description, onSuccess, onFailure);
+  },
+
+// Functions the session can use, but only because it's convenient for the application
+  isMuted: function() {
+    return {
+      audio: this.audioMuted,
+      video: this.videoMuted
+    };
+  },
+
+  mute: function(options) {
+    if (this.getLocalStreams().length === 0) {
+      return;
+    }
+
+    options = options || {
+      audio: this.getLocalStreams()[0].getAudioTracks().length > 0,
+      video: this.getLocalStreams()[0].getVideoTracks().length > 0
+    };
+
+    var audioMuted = false,
+        videoMuted = false;
+
+    if (options.audio && !this.audioMuted) {
+      audioMuted = true;
+      this.audioMuted = true;
+      this.toggleMuteAudio(true);
+    }
+
+    if (options.video && !this.videoMuted) {
+      videoMuted = true;
+      this.videoMuted = true;
+      this.toggleMuteVideo(true);
+    }
+
+    //REVISIT
+    if (audioMuted || videoMuted) {
+      return {
+        audio: audioMuted,
+        video: videoMuted
+      };
+      /*this.session.onmute({
+        audio: audioMuted,
+        video: videoMuted
+      });*/
+    }
+  },
+
+  unmute: function(options) {
+    if (this.getLocalStreams().length === 0) {
+      return;
+    }
+
+    options = options || {
+      audio: this.getLocalStreams()[0].getAudioTracks().length > 0,
+      video: this.getLocalStreams()[0].getVideoTracks().length > 0
+    };
+
+    var audioUnMuted = false,
+        videoUnMuted = false;
+
+    if (options.audio && this.audioMuted) {
+      audioUnMuted = true;
+      this.audioMuted = false;
+
+      //REVISIT
+      if (!options.local_hold) {
+        this.toggleMuteAudio(false);
+      }
+    }
+
+    if (options.video && this.videoMuted) {
+      videoUnMuted = true;
+      this.videoMuted = false;
+
+      //REVISIT
+      if (!options.local_hold) {
+        this.toggleMuteVideo(false);
+      }
+    }
+
+    //REVISIT
+    if (audioUnMuted || videoUnMuted) {
+      return {
+        audio: audioUnMuted,
+        video: videoUnMuted
+      };
+      /*this.session.onunmute({
+        audio: audioUnMuted,
+        video: videoUnMuted
+      });*/
+    }
+  },
+
+  hold: function() {
+    this.toggleMuteAudio(true);
+    this.toggleMuteVideo(true);
+  },
+
+  unhold: function() {
+    if (!this.audioMuted) {
+      this.toggleMuteAudio(false);
+    }
+
+    if (!this.videoMuted) {
+      this.toggleMuteVideo(false);
+    }
+  },
+
+// Functions the application can use, but not the session
+  getLocalStreams: function() {
+    var pc = this.peerConnection;
+    if (pc && pc.signalingState === 'closed') {
+      this.logger.warn('peerConnection is closed, getLocalStreams returning []');
+      return [];
+    }
+    return (pc.getLocalStreams && pc.getLocalStreams()) ||
+      pc.localStreams || [];
+  },
+
+  getRemoteStreams: function() {
+    var pc = this.peerConnection;
+    if (pc && pc.signalingState === 'closed') {
+      this.logger.warn('peerConnection is closed, getRemoteStreams returning []');
+      return [];
+    }
+    return(pc.getRemoteStreams && pc.getRemoteStreams()) ||
+      pc.remoteStreams || [];
+  },
+
+// Internal functions
+  hasOffer: function (where) {
+    var offerState = 'have-' + where + '-offer';
+    return this.peerConnection.signalingState === offerState;
+    // TODO consider signalingStates with 'pranswer'?
+  },
+
+  createOfferOrAnswer: function(onSuccess, onFailure, constraints) {
+    var self = this;
+
+    function readySuccess () {
+      self.ready = true;
+      onSuccess(self.peerConnection.localDescription.sdp);
+    }
+
+    function onSetLocalDescriptionSuccess() {
+      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection.iceConnectionState === 'connected') {
+        readySuccess();
+      } else {
+        self.onIceCompleted = function() {
+          self.onIceCompleted = undefined;
+          readySuccess();
+        };
+      }
+    }
+
+    function methodFailed (methodName, e) {
+      self.logger.error('peerConnection.' + methodName + ' failed');
+      self.logger.error(e);
+      self.ready = true;
+      onFailure(e);
+    }
+
+    self.ready = false;
+
+    var methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
+
+    self.peerConnection[methodName](
+      function(sessionDescription){
+        self.peerConnection.setLocalDescription(
+          sessionDescription,
+          onSetLocalDescriptionSuccess,
+          methodFailed.bind(null, 'setLocalDescription')
+        );
+      },
+      methodFailed.bind(null, methodName),
+      constraints
+    );
+  },
+
+  addStream: function(stream, onSuccess, onFailure, constraints) {
+    try {
+      this.peerConnection.addStream(stream, constraints);
+    } catch(e) {
+      this.logger.error('error adding stream');
+      this.logger.error(e);
+      onFailure(e);
+      return;
+    }
+
+    onSuccess();
+  },
+
+  /*
+   * @private
+   */
+  toggleMuteAudio: function(mute) {
+    var streamIdx, trackIdx, tracks,
+        streamLen, trackLen,
+        localStreams = this.getLocalStreams();
+
+    for (streamIdx = 0, streamLen = localStreams.length;
+         streamIdx < streamLen; streamIdx++) {
+      tracks = localStreams[streamIdx].getAudioTracks();
+      for (trackIdx = 0, trackLen = tracks.length;
+           trackIdx < trackLen; trackIdx++) {
+        tracks[trackIdx].enabled = !mute;
+      }
+    }
+  },
+
+  /*
+   * @private
+   */
+  toggleMuteVideo: function(mute) {
+    var streamIdx, trackIdx, tracks,
+        streamLen, trackLen,
+        localStreams = this.getLocalStreams();
+
+    for (streamIdx = 0, streamLen = localStreams.length;
+         streamIdx < streamLen; streamIdx++) {
+      tracks = localStreams[streamIdx].getVideoTracks();
+      for (trackIdx = 0, trackLen = tracks.length;
+           trackIdx < trackLen; trackIdx++) {
+        tracks[trackIdx].enabled = !mute;
+      }
+    }
+  }
+
+};
+
+// Return since it will be assigned to a variable.
+return MediaHandler;
+}(SIP));

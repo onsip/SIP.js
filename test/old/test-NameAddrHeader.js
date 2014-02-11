@@ -4,16 +4,16 @@ test('SIP.NameAddrHeader', function() {
   uri = new SIP.URI('sip', 'alice', 'sip.js.net');
   name = new SIP.NameAddrHeader(uri, 'Alice æßð');
 
-  strictEqual(name.display_name, 'Alice æßð');
+  strictEqual(name.displayName, 'Alice æßð');
   strictEqual(name.toString(), '"Alice æßð" <sip:alice@sip.js.net>');
 
-  name.display_name = null;
+  name.displayName = null;
   strictEqual(name.toString(), '<sip:alice@sip.js.net>');
 
-  name.display_name = 0;
+  name.displayName = 0;
   strictEqual(name.toString(), '"0" <sip:alice@sip.js.net>');
 
-  name.display_name = "";
+  name.displayName = "";
   strictEqual(name.toString(), '<sip:alice@sip.js.net>');
 
   deepEqual(name.parameters, {});
@@ -32,8 +32,8 @@ test('SIP.NameAddrHeader', function() {
 
   var name2 = name.clone();
   strictEqual(name2.toString(), name.toString());
-  name2.display_name = '@ł€';
-  strictEqual(name2.display_name, '@ł€');
+  name2.displayName = '@ł€';
+  strictEqual(name2.displayName, '@ł€');
   strictEqual(name.user, undefined);
 });
 

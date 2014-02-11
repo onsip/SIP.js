@@ -398,9 +398,9 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         var header;
                         if(!data.multi_header) data.multi_header = [];
                         try {
-                          header = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                          header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                           delete data.uri;
-                          delete data.display_name;
+                          delete data.displayName;
                           delete data.params;
                         } catch(e) {
                           header = null;
@@ -410,16 +410,16 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                                                   'parsed': header
                                                 });}
 
-name_addr           = ( display_name )? LAQUOT SIP_URI RAQUOT
+name_addr           = ( displayName )? LAQUOT SIP_URI RAQUOT
 
 addr_spec           = SIP_URI_noparams
 
-display_name        = display_name: (token ( LWS token )* / quoted_string) {
-                        display_name = input.substring(pos, offset).trim();
-                        if (display_name[0] === '\"') {
-                          display_name = display_name.substring(1, display_name.length-1);
+displayName        = displayName: (token ( LWS token )* / quoted_string) {
+                        displayName = input.substring(pos, offset).trim();
+                        if (displayName[0] === '\"') {
+                          displayName = displayName.substring(1, displayName.length-1);
                         }
-                        data.display_name = display_name; }
+                        data.displayName = displayName; }
                         // The previous rule is corrected from RFC3261
 
 contact_params      = c_p_q / c_p_expires / contact_extension
@@ -542,7 +542,7 @@ event_param       = generic_param
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                 var tag = data.tag;
                 try {
-                  data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                  data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                   if (tag) {data.setParam('tag',tag)}
                 } catch(e) {
                   data = -1;
@@ -565,9 +565,9 @@ Min_Expires  = min_expires: delta_seconds {data = min_expires; }
 
 // Name_Addr
 
-Name_Addr_Header =  ( display_name )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
+Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
                       try {
-                        data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                        data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                       } catch(e) {
                         data = -1;
                       }}
@@ -655,9 +655,9 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   var header;
                   if(!data.multi_header) data.multi_header = [];
                   try {
-                    header = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                    header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                     delete data.uri;
-                    delete data.display_name;
+                    delete data.displayName;
                     delete data.params;
                   } catch(e) {
                     header = null;
@@ -673,7 +673,7 @@ rr_param      = generic_param
 
 Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
             try {
-              data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+              data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
             } catch(e) {
               data = -1;
             }}
@@ -743,7 +743,7 @@ Supported  = ( option_tag (COMMA option_tag)* )?
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
               var tag = data.tag;
               try {
-                data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                 if (tag) {data.setParam('tag',tag)}
               } catch(e) {
                 data = -1;
@@ -787,9 +787,9 @@ protocol_version  = token
 transport         = via_transport: ("UDP"i / "TCP"i / "TLS"i / "SCTP"i / other_transport) {
                       data.transport = via_transport; }
 
-sent_by           = via_host ( COLON via_port )?
+sent_by           = viaHost ( COLON via_port )?
 
-via_host          = ( hostname / IPv4address / IPv6reference ) {
+viaHost          = ( hostname / IPv4address / IPv6reference ) {
                       data.host = input.substring(pos, offset); }
 
 via_port          = via_sent_by_port: (DIGIT ? DIGIT ? DIGIT ? DIGIT ? DIGIT ?) {

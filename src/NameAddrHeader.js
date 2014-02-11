@@ -7,14 +7,14 @@
  * @class Class creating a Name Address SIP header.
  *
  * @param {SIP.URI} uri
- * @param {String} [display_name]
+ * @param {String} [displayName]
  * @param {Object} [parameters]
  *
  */
 (function(SIP) {
 var NameAddrHeader;
 
-NameAddrHeader = function(uri, display_name, parameters) {
+NameAddrHeader = function(uri, displayName, parameters) {
   var param;
 
   // Checks
@@ -31,10 +31,10 @@ NameAddrHeader = function(uri, display_name, parameters) {
   }
 
   Object.defineProperties(this, {
-    display_name: {
-      get: function() { return display_name; },
+    displayName: {
+      get: function() { return displayName; },
       set: function(value) {
-        display_name = (value === 0) ? '0' : value;
+        displayName = (value === 0) ? '0' : value;
       }
     }
   });
@@ -75,14 +75,14 @@ NameAddrHeader.prototype = {
   clone: function() {
     return new NameAddrHeader(
       this.uri.clone(),
-      this.display_name,
+      this.displayName,
       window.JSON.parse(window.JSON.stringify(this.parameters)));
   },
 
   toString: function() {
     var body, parameter;
 
-    body  = (this.display_name || this.display_name === 0) ? '"' + this.display_name + '" ' : '';
+    body  = (this.displayName || this.displayName === 0) ? '"' + this.displayName + '" ' : '';
     body += '<' + this.uri.toString() + '>';
 
     for (parameter in this.parameters) {

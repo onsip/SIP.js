@@ -8,10 +8,10 @@ describe('RegisterContext', function() {
     });
     ua = {
       configuration : {
-        registrar_server : 'registrar' ,
-        register_expires : 999,
+        registrarServer : 'registrar' ,
+        registerExpires : 999,
         uri : 'uri',
-        instance_id : 'instance'
+        instanceId : 'instance'
       },
       registrationContext : {},
       contact : 'contact',
@@ -37,8 +37,8 @@ describe('RegisterContext', function() {
     RegisterContext = new SIP.RegisterContext(ua);
     
     expect(RegisterContext).toBeDefined();
-    expect(RegisterContext.registrar).toBe(ua.configuration.registrar_server);
-    expect(RegisterContext.expires).toBe(ua.configuration.register_expires);
+    expect(RegisterContext.registrar).toBe(ua.configuration.registrarServer);
+    expect(RegisterContext.expires).toBe(ua.configuration.registerExpires);
     expect(RegisterContext.call_id).toBeDefined();
     expect(RegisterContext.cseq).toEqual(80);
     expect(RegisterContext.to_uri).toBe(ua.configuration.uri);

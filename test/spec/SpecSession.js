@@ -40,8 +40,7 @@ describe('Session', function() {
     expect(Session.status).toBe(0);
     expect(Session.dialog).toBeNull();
     expect(Session.earlyDialogs).toBeDefined();
-    expect(Session.rtcMediaHandler).toBeNull();
-    expect(Session.mediaStream).toBeNull();
+    expect(Session.mediaHandler).toBeUndefined();
   });
 
   it('initializes session timers', function() {
@@ -60,8 +59,6 @@ describe('Session', function() {
   });
 
   it('initializes mute/hold state info', function() {
-    expect(Session.audioMuted).toBe(false);
-    expect(Session.videoMuted).toBe(false);
     expect(Session.local_hold).toBe(false);
     expect(Session.remote_hold).toBe(false);
   });
@@ -120,8 +117,7 @@ describe('Session', function() {
     });
   });
 
-  it('initializes mediaConstraints, early_sdp, and rel100', function() {
-    expect(Session.mediaConstraints).toBeDefined();
+  it('initializes early_sdp, and rel100', function() {
     expect(Session.early_sdp).toBeNull();
     expect(Session.rel100).toBeDefined();
   });
@@ -277,25 +273,9 @@ describe('Session', function() {
     });
   });
 
-  describe('.getLocalStreams', function() { 
-    it('returns RTCMediaHandler', function() {
-      Session.rtcMediaHandler = {peerConnection: {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([])}};
-
-      expect(Session.getLocalStreams()).toEqual([]);
-    });
-  });
-
-  describe('.getRemoteStreams', function() { 
-    it('returns RTCMediaHandler', function() {
-      Session.rtcMediaHandler = {peerConnection: {getRemoteStreams: jasmine.createSpy('getRemoteStreams').andReturn([])}};
-
-      expect(Session.getRemoteStreams()).toEqual([]);
-    });
-  });
-
   describe('.close', function() {
     beforeEach(function() {
-      Session.rtcMediaHandler = {close: jasmine.createSpy('close').andReturn(true)};
+      Session.mediaHandler = {close: jasmine.createSpy('close').andReturn(true)};
 
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
 
@@ -325,7 +305,7 @@ describe('Session', function() {
       Cid = message.call_id + message.from_tag + message.to_tag;
 
       Session.request = {};
-      Session.rtcMediaHandler = {};
+      Session.mediaHandler = {};
     });
 
     it('returns true and puts the dialog in the early dialogs array on a success call with early = true, type = UAS', function() {
@@ -369,13 +349,13 @@ describe('Session', function() {
 
   describe('.isReadyToReinvite', function() {
     beforeEach(function() {
-      Session.rtcMediaHandler = {isReady: jasmine.createSpy('isReady').andReturn(true)};
+      Session.mediaHandler = {isReady: jasmine.createSpy('isReady').andReturn(true)};
 
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
     });
 
-    it('returns false if rtcMediaHandler.isReady() returns false', function() {
-      Session.rtcMediaHandler.isReady.andReturn(false);
+    it('returns false if mediaHandler.isReady() returns false', function() {
+      Session.mediaHandler.isReady.andReturn(false);
 
       expect(Session.isReadyToReinvite()).toBe(false);
     });
@@ -394,230 +374,15 @@ describe('Session', function() {
     });
   });
 
-  describe('.mute', function() {
-    beforeEach(function() {
-      Session.audioMuted = false;
-      Session.videoMuted = false;
-
-      Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
-        getAudioTracks: function() {return [7];}, 
-        getVideoTracks: function() {return [7];},
-        stop: function() {}
-      }])}};
-
-      spyOn(Session, 'toggleMuteAudio').andReturn(true);
-      spyOn(Session, 'toggleMuteVideo').andReturn(true);
-
-      spyOn(Session, 'emit');
-    });
-
-    it('sets audio and video muted to true if they are both present (no options)', function() {
-      Session.mute();
-
-      expect(Session.audioMuted).toBe(true);
-      expect(Session.videoMuted).toBe(true);
-      expect(Session.emit.calls[0].args[0]).toBe('muted');
-    });
-
-    it('sets audio and video muted to true if they are both present (options)', function() {
-      Session.mute({audio: true, video: true});
-
-      expect(Session.audioMuted).toBe(true);
-      expect(Session.videoMuted).toBe(true);
-      expect(Session.emit.calls[0].args[0]).toBe('muted');
-    });
-
-    it('only sets video if audio is not present', function() {
-      Session.mute({audio: false, video: true});
-
-      expect(Session.audioMuted).toBe(false);
-      expect(Session.videoMuted).toBe(true);
-      expect(Session.emit.calls[0].args[0]).toBe('muted');
-    });
-
-    it('only sets audio if video is not present', function() {
-      Session.mute({audio: true, video: false});
-
-      expect(Session.audioMuted).toBe(true);
-      expect(Session.videoMuted).toBe(false);
-      expect(Session.emit.calls[0].args[0]).toBe('muted');
-    });
-
-    it('sets neither if neither is present and does not emit muted', function() {
-      Session.mute({audio: false, video: false});
-
-      expect(Session.audioMuted).toBe(false);
-      expect(Session.videoMuted).toBe(false);
-      expect(Session.emit).not.toHaveBeenCalled();
-    });
-
-    it('sets neither if both are already muted and does not emit muted', function() {
-      Session.audioMuted = true;
-      Session.videoMuted = true;
-
-      Session.mute({audio: true, video: true});
-
-      expect(Session.audioMuted).toBe(true);
-      expect(Session.videoMuted).toBe(true);
-      expect(Session.emit).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('.unmute', function() {
-    beforeEach(function() {
-      Session.audioMuted = true;
-      Session.videoMuted = true;
-      Session.local_hold = false;
-
-      Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
-        getAudioTracks: function() {return [7];}, 
-        getVideoTracks: function() {return [7];},
-        stop: function() {}
-      }])}};
-
-      spyOn(Session, 'toggleMuteAudio').andReturn(true);
-      spyOn(Session, 'toggleMuteVideo').andReturn(true);
-
-      spyOn(Session, 'emit');
-    });
-
-    it('sets audio and video muted to false if they are both present (no options)', function() {
-      Session.unmute();
-
-      expect(Session.audioMuted).toBe(false);
-      expect(Session.videoMuted).toBe(false);
-      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
-    });
-
-    it('sets audio and video muted to false if they are both present (options)', function() {
-      Session.unmute({audio: true, video: true});
-
-      expect(Session.audioMuted).toBe(false);
-      expect(Session.videoMuted).toBe(false);
-      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
-    });
-
-    it('only sets video if audio is not present', function() {
-      Session.unmute({audio: false, video: true});
-
-      expect(Session.audioMuted).toBe(true);
-      expect(Session.videoMuted).toBe(false);
-      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
-    });
-
-    it('onlys set audio if video is not present', function() {
-      Session.unmute({audio: true, video: false});
-
-      expect(Session.audioMuted).toBe(false);
-      expect(Session.videoMuted).toBe(true);
-      expect(Session.emit.calls[0].args[0]).toBe('unmuted');
-    });
-
-    it('sets neither if neither is present and does not emit unmuted', function() {
-      Session.unmute({audio: false, video: false});
-
-      expect(Session.audioMuted).toBe(true);
-      expect(Session.videoMuted).toBe(true);
-      expect(Session.emit).not.toHaveBeenCalled();
-    });
-
-    it('sets neither if both are already unmuted and does not emit unmuted', function() {
-      Session.audioMuted = false;
-      Session.videoMuted = false;
-
-      Session.unmute({audio: true, video: true});
-
-      expect(Session.audioMuted).toBe(false);
-      expect(Session.videoMuted).toBe(false);
-      expect(Session.emit).not.toHaveBeenCalled();
-    });
-
-    //Note: the local_hold conditional doesn't change anything in terms of this code; as long as
-    //the variables are set properly the hold code will work properly with this.
-  });
-
-  describe('.isMuted', function() {
-    var result;
-
-    it('returns the audioMuted and videoMuted variables', function() {
-      Session.audioMuted = 'audio';
-      Session.videoMuted = 'video';
-
-      expect(Session.isMuted()).toEqual({audio: 'audio', video: 'video'});
-    });
-  });
-
-  describe('.toggleMuteAudio', function() {
-    var change;
-
-    beforeEach(function() {
-      change = {enabled: true};
-
-      Session.rtcMediaHandler = {peerConnection: {signalingState: 'stable'}};
-      spyOn(Session, 'getLocalStreams').andReturn([{getAudioTracks: function() { return [change]; }}]);
-    });
-
-    it('sets enabled to false', function() {
-      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
-      Session.toggleMuteAudio(true);
-      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(false);
-    });
-
-    it('sets enabled to true', function() {
-      change = {enabled: false};
-
-      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(false);
-      Session.toggleMuteAudio(false);
-      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
-    });
-
-    it('does not set enabled', function() {
-      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
-      Session.toggleMuteAudio(false);
-      expect(Session.getLocalStreams()[0].getAudioTracks()[0].enabled).toBe(true);
-    });
-  });
-
-  describe('.toggleMuteVideo', function() {
-    var change;
-
-    beforeEach(function() {
-      change = {enabled: true};
-
-      spyOn(Session, 'getLocalStreams').andReturn([{getVideoTracks: function() { return [change]; }}]);
-    });
-
-    it('sets enabled to false', function() {
-      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
-      Session.toggleMuteVideo(true);
-      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(false);
-    });
-
-    it('sets enabled to true', function() {
-      change = {enabled: false};
-
-      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(false);
-      Session.toggleMuteVideo(false);
-      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
-    });
-
-    it('does not set enabled', function() {
-      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
-      Session.toggleMuteVideo(false);
-      expect(Session.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
-    });
-  });
-
   describe('.hold', function() {
 
     beforeEach(function() {
       spyOn(Session, 'emit');
       Session.status = 12;
+      Session.mediaHandler = jasmine.createSpyObj('mediaHandler', ['hold']);
 
       spyOn(Session, 'isReadyToReinvite').andReturn(true);
 
-      spyOn(Session, 'toggleMuteAudio');
-      spyOn(Session, 'toggleMuteVideo');
       spyOn(Session, 'sendReinvite');
     });
 
@@ -650,8 +415,7 @@ describe('Session', function() {
       spyOn(Session, 'emit');
       Session.status = 12;
       Session.local_hold = true;
-      Session.audioMuted = true;
-      Session.videoMuted = true;
+      Session.mediaHandler = jasmine.createSpyObj('mediaHandler', ['unhold']);
 
       spyOn(Session, 'isReadyToReinvite').andReturn(true);
 
@@ -696,38 +460,38 @@ describe('Session', function() {
 
     beforeEach(function() {
       spyOn(Session, 'emit');
-      Session.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage')};
+      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription')};
     });
 
-    it('does not call onMessage and replies with 415 if contentType is not application/sdp', function() {
+    it('does not call setDescription and replies with 415 if contentType is not application/sdp', function() {
       spyOn(message, 'getHeader').andReturn('incorrect');
       spyOn(message, 'reply');
 
       Session.receiveReinvite(message);
 
-      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).not.toHaveBeenCalled();
       expect(message.reply).toHaveBeenCalledWith(415);
     });
 
-    it('calls onMessage on success', function() {
+    it('calls setDescription on success', function() {
       spyOn(SIP.Parser, 'parseSDP').andReturn({media: []});
 
       Session.receiveReinvite(message);
 
-      expect(Session.rtcMediaHandler.onMessage).toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).toHaveBeenCalled();
     });
   });
 
   describe('.sendReinvite', function() {
     beforeEach(function() {
-      Session.rtcMediaHandler = {createOffer: jasmine.createSpy('createOffer').andReturn(true)};
+      Session.mediaHandler = {getDescription: jasmine.createSpy('getDescription').andReturn(true)};
       spyOn(SIP.Utils, 'getAllowedMethods').andReturn(true);
     });
 
-    it('on success, sets receiveResponse, reinviteSucceeded, and reinviteFailed, and calls createOffer', function(){
+    it('on success, sets receiveResponse, reinviteSucceeded, and reinviteFailed, and calls getDescription', function(){
       Session.sendReinvite();
 
-      expect(Session.rtcMediaHandler.createOffer).toHaveBeenCalled();
+      expect(Session.mediaHandler.getDescription).toHaveBeenCalled();
       expect(Session.receiveResponse).toBe(Session.receiveReinviteResponse);
       expect(Session.reinviteSucceeded).toBeDefined();
       expect(Session.reinviteFailed).toBeDefined();
@@ -742,7 +506,7 @@ describe('Session', function() {
 
       spyOn(Session, 'sendRequest');
 
-      Session.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage').andReturn(true), close: jasmine.createSpy('close').andReturn(true)};
+      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription').andReturn(true)};
     });
 
     it('returns without calling sendRequest or reinviteFailed when status is terminated', function() {
@@ -752,7 +516,7 @@ describe('Session', function() {
 
       expect(Session.sendRequest).not.toHaveBeenCalled();
       expect(Session.reinviteFailed).not.toHaveBeenCalled();
-      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).not.toHaveBeenCalled();
     });
 
     it('returns without calling sendRequest or reinviteFailed when response status code is 1xx', function() {
@@ -762,7 +526,7 @@ describe('Session', function() {
 
       expect(Session.sendRequest).not.toHaveBeenCalled();
       expect(Session.reinviteFailed).not.toHaveBeenCalled();
-      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).not.toHaveBeenCalled();
     });
 
     it('calls reInviteFailed when the response has no body with a 2xx status code', function() {
@@ -774,7 +538,7 @@ describe('Session', function() {
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
       expect(Session.sendRequest).toHaveBeenCalled()
-      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).not.toHaveBeenCalled();
     });
 
     it('calls reInviteFailed when the response\'s content-type is not application/sdp with a 2xx status code', function() {
@@ -786,10 +550,10 @@ describe('Session', function() {
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
       expect(Session.sendRequest).toHaveBeenCalled();
-      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).not.toHaveBeenCalled();
     });
 
-    it('calls sendRequest and onMessage when response has a 2xx status code, a body, and content-type of application/sdp', function() {
+    it('calls sendRequest and setDescription when response has a 2xx status code, a body, and content-type of application/sdp', function() {
       message.status_code = 222;
       Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
@@ -797,7 +561,7 @@ describe('Session', function() {
 
       expect(Session.reinviteFailed).not.toHaveBeenCalled();
       expect(Session.sendRequest).toHaveBeenCalled();
-      expect(Session.rtcMediaHandler.onMessage).toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).toHaveBeenCalled();
     });
 
     it('returns without calling sendRequest or reinviteFailed when response status code is neither 1xx or 2xx', function() {
@@ -807,7 +571,7 @@ describe('Session', function() {
 
       expect(Session.sendRequest).not.toHaveBeenCalled();
       expect(Session.reinviteFailed).toHaveBeenCalled();
-      expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+      expect(Session.mediaHandler.setDescription).not.toHaveBeenCalled();
     });
   });
 
@@ -1162,7 +926,7 @@ describe('InviteServerContext', function() {
 
   beforeEach(function(){
 
-    ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws://server.example.com'});
+    ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws://server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server']);
     ua.transport.server.scheme = 'wss';
 
@@ -1185,23 +949,13 @@ describe('InviteServerContext', function() {
     expect(InviteServerContext.ContentDisp).toBeUndefined();
   });
 
-  it('returns from non-application/sdp content-type with a session content-disp', function() {
+  it('replies 415 from non-application/sdp content-type with a session content-disp', function() {
     request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nContent-Disposition: session\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(request, 'reply');
     
     var ISC = new SIP.InviteServerContext(ua, request);
 
     expect(request.reply).toHaveBeenCalledWith(415);
-  });
-
-  it('returns from non-application/sdp content-type with a session content-disp', function() {
-    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nContent-Disposition: render\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
-    spyOn(request, 'reply');
-
-    var ISC = new SIP.InviteServerContext(ua, request);
-    window.clearTimeout(ISC.timers.userNoAnswerTimer);
-
-    expect(ISC.contentDisp).toBe('render');
   });
 
   it('calls augment using ServerContext and Session', function() {
@@ -1237,7 +991,7 @@ describe('InviteServerContext', function() {
   });
 
   it('sets 100rel, supported', function() {
-    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound, 100rel\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound, 100rel\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(request, 'reply');
     request.transport = ua.transport;
 
@@ -1280,21 +1034,21 @@ describe('InviteServerContext', function() {
     expect(ISC.emit.calls[2].args[0]).toBe('invite');
   });
 
-  // RTCMediaHandler constructor issue (Session/*)
-  xit('calls rtcMediaHandler.onMessage otherwise', function() {
+  // MediaHandler constructor issue (Session/*) TODO - JMF 2014-3-3
+  xit('calls mediaHandler.setDescription otherwise', function() {
     var ISC;
 
     //replace these with spyOn to avoid cleanup
-    jasmine.createSpy(SIP.Session, 'rtcMediaHandler').andCallThrough();
+    jasmine.createSpy(SIP.Session, 'mediaHandler').andCallThrough();
 
-    jasmine.createSpy(SIP.Session.rtcMediaHandler.prototype, 'onMessage');
+    jasmine.createSpy(SIP.Session.mediaHandler.prototype, 'setDescription');
 
     ISC = new SIP.InviteServerContext(ua, request);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
 
-    expect(InviteServerContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+    expect(InviteServerContext.mediaHandler.setDescription).toHaveBeenCalled();
 
-    SIP.Session.rtcMediaHandler = rtcMediaHandlerCleanup;
+    SIP.Session.mediaHandler = mediaHandlerCleanup;
   });
 
   describe('.reject', function() {
@@ -1391,37 +1145,11 @@ describe('InviteServerContext', function() {
     });
   });
 
-  describe('.preaccept', function() {
-    beforeEach(function() {
-      InviteServerContext.rel100 = SIP.C.supported.REQUIRED;
-    });
-
-    it('returns InviteServerContext if rel100 is unsupported', function() {
-      InviteServerContext.rel100 = SIP.C.supported.UNSUPPORTED;
-
-      expect(InviteServerContext.preaccept()).toBe(InviteServerContext);
-    });
-
-    it('calls getUserMedia and return InviteServerContext', function() {
-      spyOn(InviteServerContext.rtcMediaHandler, 'getUserMedia');
-
-      expect(InviteServerContext.preaccept()).toBe(InviteServerContext);
-
-      expect(InviteServerContext.rtcMediaHandler.getUserMedia).toHaveBeenCalled();
-    });
-  });
-
   describe('.accept', function() {
     beforeEach(function() {
       InviteServerContext.status = 4;
 
-      spyOn(InviteServerContext.rtcMediaHandler, 'getUserMedia');
-    });
-
-    it('sets this.mediaConstraints if options.mediaConstraints is set', function() {
-      InviteServerContext.accept({mediaConstraints: 'fish'});
-
-      expect(InviteServerContext.mediaConstraints).toBe('fish');
+      spyOn(InviteServerContext.mediaHandler, 'getDescription');
     });
 
     it('changes status to ANSWERED_WAITING_FOR_PRACK and returns this if status is WAITING_FOR_PRACK', function() {
@@ -1460,29 +1188,29 @@ describe('InviteServerContext', function() {
       expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.userNoAnswerTimer);
     });
 
-    // x'ing this since the code it tests currently breaks FF accept - JMF 21-1-2014
+    // x'ing this since the code it tests currently breaks FF accept - JMF 2014-1-21
     xit('sets the constraints to false if they were set to true earlier when there is no audio or video streams', function() {
       InviteServerContext.accept({mediaConstraints:{audio: true, video: true}});
 
       expect(InviteServerContext.mediaConstraints).toEqual({audio: false, video: false});
     });
 
-    it('does not call getUserMedia and returns this when the status is EARLY_MEDIA', function() {
+    it('does not call getDescription and returns this when the status is EARLY_MEDIA', function() {
       InviteServerContext.status = 11;
 
       expect(InviteServerContext.accept()).toBe(InviteServerContext);
 
-      expect(InviteServerContext.rtcMediaHandler.getUserMedia).not.toHaveBeenCalled();
+      expect(InviteServerContext.mediaHandler.getDescription).not.toHaveBeenCalled();
     });
 
-    it('calls getUserMedia and returns this on a successful call where the status is not EARLY_MEDIA', function() {
+    it('calls getDescription and returns this on a successful call where the status is not EARLY_MEDIA', function() {
       expect(InviteServerContext.accept()).toBe(InviteServerContext);
 
-      expect(InviteServerContext.rtcMediaHandler.getUserMedia).toHaveBeenCalled();
+      expect(InviteServerContext.mediaHandler.getDescription).toHaveBeenCalled();
     });
   });
 
-  describe('receiveRequest', function() {
+  describe('.receiveRequest', function() {
     var req;
 
     describe('method is CANCELED', function() {
@@ -1557,29 +1285,29 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.status = 7;
 
-        InviteServerContext.rtcMediaHandler.localMedia = {getAudioTracks: function(){return [];},
-                                                          getVideoTracks: function(){return [];},
-                                                          stop: function() {}};
+        spyOn(InviteServerContext.mediaHandler, 'getLocalStreams').andReturn([
+          {getAudioTracks: function(){return [];},
+           getVideoTracks: function(){return [];},
+           stop: function() {}}]);
 
-        spyOn(InviteServerContext.rtcMediaHandler, "close");
+        spyOn(InviteServerContext.mediaHandler, "close");
         InviteServerContext.dialog = {id: 7, terminate: function(){}, sendRequest: function(){}};
       });
 
-      it('calls rtcMediaHandler.onMessage when the ACK contains a answer to an invite w/o sdp', function() {
-        InviteServerContext.contentDisp = 'render';
+      it('calls mediaHandler.setDescription when the ACK contains an answer to an invite w/o sdp', function() {
+        InviteServerContext.hasOffer = true;
 
         req = SIP.Parser.parseMessage('ACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
 
-        spyOn(InviteServerContext.rtcMediaHandler, 'onMessage');
+        spyOn(InviteServerContext.mediaHandler, 'setDescription');
 
         InviteServerContext.receiveRequest(req);
 
-        expect(InviteServerContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+        expect(InviteServerContext.mediaHandler.setDescription).toHaveBeenCalled();
       });
 
       it('calls confirmSession and accepted if session.early_sdp is true and above is false', function() {
         InviteServerContext.early_sdp = true;
-        InviteServerContext.contentDisp = 'render';
         spyOn(window, 'clearTimeout').andCallThrough();
         spyOn(InviteServerContext, 'accepted').andCallThrough();
         
@@ -1592,12 +1320,9 @@ describe('InviteServerContext', function() {
 
         expect(InviteServerContext.status).toBe(12);
         expect(InviteServerContext.accepted).toHaveBeenCalled();
-        expect(InviteServerContext.renderbody).toBe(InviteServerContext.request.body);
-        expect(InviteServerContext.rendertype).toBe('application/sdp');
       });
 
       it('calls failed if the above two conditions are not true', function() {
-        InviteServerContext.contentDisp = 'render';
         spyOn(InviteServerContext, 'failed');
 
         InviteServerContext.receiveRequest(req);
@@ -1606,6 +1331,9 @@ describe('InviteServerContext', function() {
       });
 
       it('calls confirmSession if there was an invite w/ sdp originally', function() {
+        InviteServerContext.hasOffer = true;
+        InviteServerContext.hasAnswer = true;
+
         spyOn(window, 'clearTimeout').andCallThrough();
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
@@ -1624,17 +1352,17 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.status = 6;
 
-        spyOn(InviteServerContext.rtcMediaHandler, "close");
+        spyOn(InviteServerContext.mediaHandler, "close");
         InviteServerContext.dialog = {id: 7, terminate: function(){}, sendRequest: function(){}};
       });
 
-      it('calls rtcMediaHandler.onMessage when the invite had no body, but the request had sdp', function(){
-        spyOn(InviteServerContext.rtcMediaHandler, 'onMessage');
+      it('calls mediaHandler.setDescription when the invite had no body, but the request had sdp', function(){
+        spyOn(InviteServerContext.mediaHandler, 'setDescription');
         InviteServerContext.request.body = null;
 
         InviteServerContext.receiveRequest(req);
 
-        expect(InviteServerContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+        expect(InviteServerContext.mediaHandler.setDescription).toHaveBeenCalled();
       });
 
       it('calls terminate and failed when invite has no body, but the request has a non-sdp body', function() {
@@ -1651,12 +1379,16 @@ describe('InviteServerContext', function() {
       });
 
       it('calls reply(200) and other smaller things when the invite had a body (accept not called)', function() {
+        InviteServerContext.hasOffer = true;
+        InviteServerContext.hasAnswer = true;
+
         spyOn(window, 'clearTimeout').andCallThrough();
         spyOn(req, 'reply');
         spyOn(InviteServerContext, 'accept');
-        InviteServerContext.rtcMediaHandler.localMedia = {getAudioTracks: function(){return [];},
-                                                          getVideoTracks: function(){return [];},
-                                                          stop: function() {}};
+        spyOn(InviteServerContext.mediaHandler, 'getLocalStreams').andReturn([
+          {getAudioTracks: function(){return [];},
+           getVideoTracks: function(){return [];},
+           stop: function() {}}]);
 
         InviteServerContext.receiveRequest(req);
 
@@ -1667,13 +1399,17 @@ describe('InviteServerContext', function() {
       });
 
       it('calls reply(200) and other smaller things when the invite had a body (accept also called)', function() {
+        InviteServerContext.hasOffer = true;
+        InviteServerContext.hasAnswer = true;
+
         spyOn(window, 'clearTimeout').andCallThrough();
         spyOn(req, 'reply');
         spyOn(InviteServerContext, 'accept');
         InviteServerContext.status = 10;
-        InviteServerContext.rtcMediaHandler.localMedia = {getAudioTracks: function(){return [];},
-                                                          getVideoTracks: function(){return [];},
-                                                          stop: function() {}};
+        spyOn(InviteServerContext.mediaHandler, 'getLocalStreams').andReturn([
+          {getAudioTracks: function(){return [];},
+           getVideoTracks: function(){return [];},
+           stop: function() {}}]);
 
         InviteServerContext.receiveRequest(req);
 
@@ -1760,7 +1496,7 @@ describe('InviteClientContext', function() {
 
   beforeEach(function(){
     target = 'bob@example.com';
-    ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
 
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server']);
     ua.transport.server.scheme = 'wss';
@@ -1820,15 +1556,15 @@ describe('InviteClientContext', function() {
   });
 
   it('throws a type error if invalid stun servers are passed in', function() {
-    spyOn(SIP.UA.configuration_check.optional, 'stun_servers');
+    spyOn(SIP.UA.configuration_check.optional, 'stunServers');
 
-    expect(function() { new SIP.InviteClientContext(ua, target, {stun_servers: 'fake'});}).toThrow('Invalid stun_servers: fake');
+    expect(function() { new SIP.InviteClientContext(ua, target, {stunServers: 'fake'});}).toThrow('Invalid stunServers: fake');
   });
 
   it('throws a type error if invalid turn servers are passed in', function() {
-    spyOn(SIP.UA.configuration_check.optional, 'turn_servers');
+    spyOn(SIP.UA.configuration_check.optional, 'turnServers');
 
-    expect(function() { new SIP.InviteClientContext(ua, target, {turn_servers: 'fake'});}).toThrow('Invalid turn_servers: fake');
+    expect(function() { new SIP.InviteClientContext(ua, target, {turnServers: 'fake'});}).toThrow('Invalid turnServers: fake');
   });
 
   it('sets anonymous, custom data, and contact', function() {
@@ -1853,13 +1589,13 @@ describe('InviteClientContext', function() {
 
   describe('.invite', function() {
 
-    it('sets RTCMediaHandler and ua.sessions', function() {
+    it('sets MediaHandler and ua.sessions', function() {
       InviteClientContext.invite();
-      expect(InviteClientContext.rtcMediaHandler).toBeDefined();
+      expect(InviteClientContext.mediaHandler).toBeDefined();
       expect(InviteClientContext.ua.sessions[InviteClientContext.id]).toBe(InviteClientContext);
     });
 
-    it('calls rtcMediaHandler.getUserMedia and returns this on success', function() {
+    it('calls mediaHandler.getDescription and returns this on success', function() {
       SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
 
       expect(InviteClientContext.invite()).toBe(InviteClientContext);
@@ -2017,20 +1753,22 @@ describe('InviteClientContext', function() {
         expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.PRACK, {extraHeaders: ['RAck: 9060 9059 INVITE']});
       });
 
-      it('calls RTCMediaHandler.onMessage for a response with a body with require: 100rel and confirms the dialog', function() {
+      it('calls MediaHandler.setDescription for a response with a body with require: 100rel and confirms the dialog', function() {
         resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
 
-        spyOn(InviteClientContext.rtcMediaHandler, 'onMessage');
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
+
+        InviteClientContext.hasOffer = true;
 
         InviteClientContext.receiveInviteResponse(resp);
 
         expect(InviteClientContext.dialog.id.toString()).toBe(resp.call_id+resp.from_tag+resp.to_tag);
-        expect(InviteClientContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+        expect(InviteClientContext.mediaHandler.setDescription).toHaveBeenCalled();
       });
 
-      //async needed
-      xit('calls RTCMediaHandler on message for a 100rel response with a body where the request had a non-sdp body', function() {
+      xit('calls MediaHandler.setDescription for a 100rel response with a body where the request had a non-sdp body', function() {
         InviteClientContext.renderbody = InviteClientContext.request.body;
+        InviteClientContext.mediaHandler = {localMedia: 'localMedia'};
 
         resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
 
@@ -2046,7 +1784,7 @@ describe('InviteClientContext', function() {
       it('returns after doing nothing because of an incorrect cseq (same as below, but the cseq is not reset)', function() {
         InviteClientContext.status = 11;
         InviteClientContext.createDialog(response, 'UAC', false);
-        InviteClientContext.rtcMediaHandler = {localMedia: {getAudioTracks: function() {return []},
+        InviteClientContext.mediaHandler = {localMedia: {getAudioTracks: function() {return []},
                                                             getVideoTracks: function() {return []},
                                                             stop: function() {}},
                                                close: function(){}};
@@ -2064,9 +1802,10 @@ describe('InviteClientContext', function() {
       it('sets the status to confirmed, ACKS, and calls accepted if the status was earlyMedia', function() {
         InviteClientContext.status = 11;
         InviteClientContext.createDialog(response, 'UAC', false);
-        InviteClientContext.rtcMediaHandler = {localMedia: {getAudioTracks: function() {return []},
+        InviteClientContext.mediaHandler = {localMedia: {getAudioTracks: function() {return []},
                                                             getVideoTracks: function() {return []},
                                                             stop: function() {}},
+                                               unmute: function(){},
                                                close: function(){}};
         spyOn(InviteClientContext, 'accepted');
 
@@ -2103,10 +1842,11 @@ describe('InviteClientContext', function() {
       it('uses the dialog with pre-established media, changes the status to confirmed, ACKS, and calls accepted if that dialog exists for this response and the request had no body', function() {
         InviteClientContext.request.body = null;
         InviteClientContext.createDialog(response, 'UAC', true);
-        InviteClientContext.earlyDialogs[response.call_id+response.from_tag+response.to_tag].rtcMediaHandler = 
+        InviteClientContext.earlyDialogs[response.call_id+response.from_tag+response.to_tag].mediaHandler =
           {localMedia: {getAudioTracks: function() {return []},
                         getVideoTracks: function() {return []},
                         stop: function() {}},
+           unmute: function(){},
            close: function(){}};
         
         spyOn(InviteClientContext, 'accepted');
@@ -2117,40 +1857,40 @@ describe('InviteClientContext', function() {
         expect(InviteClientContext.accepted).toHaveBeenCalledWith(response);
       });
 
-      it('calls rtcMediaHandler.onMessage if the request had no body and the response had no early dialog with media connected to it', function() {
+      it('calls mediaHandler.setDescription if the request had no body and the response had no early dialog with media connected to it', function() {
         InviteClientContext.request.body = null;
-        InviteClientContext.rtcMediaHandler = jasmine.createSpyObj('onMessage', ['onMessage', 'close']);
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('setDescription', ['setDescription', 'close']);
 
         InviteClientContext.receiveInviteResponse(response);
 
-        expect(InviteClientContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+        expect(InviteClientContext.mediaHandler.setDescription).toHaveBeenCalled();
       });
 
       it('same as above, but does not make the call if the createDialog fails', function() {
         InviteClientContext.request.body = null;
-        InviteClientContext.rtcMediaHandler = jasmine.createSpyObj('rtcMediaHandler', ['onMessage', 'close']);
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
         spyOn(InviteClientContext, 'createDialog').andReturn(false);
 
         InviteClientContext.receiveInviteResponse(response);
 
-        expect(InviteClientContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+        expect(InviteClientContext.mediaHandler.setDescription).not.toHaveBeenCalled();
       });
 
-      it('calls rtcMediaHandler.onMessage if the request has a body', function() {
-        InviteClientContext.rtcMediaHandler = jasmine.createSpyObj('rtcMediaHandler', ['onMessage', 'close']);
+      it('calls mediaHandler.setDescription if the request has a body', function() {
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
 
         InviteClientContext.receiveInviteResponse(response);
 
-        expect(InviteClientContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
+        expect(InviteClientContext.mediaHandler.setDescription).toHaveBeenCalled();
       });
 
       it('same as above, but does not make the call if the createDialog fails', function() {
-        InviteClientContext.rtcMediaHandler = jasmine.createSpyObj('rtcMediaHandler', ['onMessage', 'close']);
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
         spyOn(InviteClientContext, 'createDialog').andReturn(false);
 
         InviteClientContext.receiveInviteResponse(response);
 
-        expect(InviteClientContext.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
+        expect(InviteClientContext.mediaHandler.setDescription).not.toHaveBeenCalled();
       });
     });
 

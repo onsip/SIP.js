@@ -17,7 +17,7 @@ var
  * @param {SIP.UA} ua
  * @param {Object} params parameters that will have priority over ua.configuration parameters:
  * <br>
- *  - cseq, call_id, from_tag, from_uri, from_display_name, to_uri, to_tag, route_set
+ *  - cseq, call_id, from_tag, from_uri, from_displayName, to_uri, to_tag, route_set
  * @param {Object} [headers] extra headers
  * @param {String} [body]
  */
@@ -50,7 +50,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   // Route
   if (params.route_set) {
     this.setHeader('route', params.route_set);
-  } else if (ua.configuration.use_preloaded_route){
+  } else if (ua.configuration.usePreloadedRoute){
     this.setHeader('route', ua.transport.server.sip_uri);
   }
 
@@ -62,17 +62,17 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('max-forwards', SIP.UA.C.MAX_FORWARDS);
 
   // To
-  to = (params.to_display_name || params.to_display_name === 0) ? '"' + params.to_display_name + '" ' : '';
+  to = (params.to_displayName || params.to_displayName === 0) ? '"' + params.to_displayName + '" ' : '';
   to += '<' + (params.to_uri || ruri) + '>';
   to += params.to_tag ? ';tag=' + params.to_tag : '';
   this.to = new SIP.NameAddrHeader.parse(to);
   this.setHeader('to', to);
 
   // From
-  if (params.from_display_name || params.from_display_name === 0) {
-    from = '"' + params.from_display_name + '" ';
-  } else if (ua.configuration.display_name) {
-    from = '"' + ua.configuration.display_name + '" ';
+  if (params.from_displayName || params.from_displayName === 0) {
+    from = '"' + params.from_displayName + '" ';
+  } else if (ua.configuration.displayName) {
+    from = '"' + ua.configuration.displayName + '" ';
   } else {
     from = '';
   }
@@ -82,7 +82,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('from', from);
 
   // Call-ID
-  call_id = params.call_id || (ua.configuration.jssip_id + SIP.Utils.createRandomToken(15));
+  call_id = params.call_id || (ua.configuration.jssipId + SIP.Utils.createRandomToken(15));
   this.call_id = call_id;
   this.setHeader('call-id', call_id);
 

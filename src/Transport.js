@@ -45,7 +45,7 @@ Transport.prototype = {
     var message = msg.toString();
 
     if(this.ws && this.ws.readyState === WebSocket.OPEN) {
-      if (this.ua.configuration.trace_sip === true) {
+      if (this.ua.configuration.traceSip === true) {
         this.logger.log('sending WebSocket message:\n\n' + message + '\n');
       }
       this.ws.send(message);
@@ -192,7 +192,7 @@ Transport.prototype = {
 
     // CRLF Keep Alive response from server. Ignore it.
     if(data === '\r\n') {
-      if (this.ua.configuration.trace_sip === true) {
+      if (this.ua.configuration.traceSip === true) {
         this.logger.log('received WebSocket message with CRLF Keep Alive response');
       }
       return;
@@ -207,14 +207,14 @@ Transport.prototype = {
         return;
       }
 
-      if (this.ua.configuration.trace_sip === true) {
+      if (this.ua.configuration.traceSip === true) {
         this.logger.log('received WebSocket binary message:\n\n' + data + '\n');
       }
     }
 
     // WebSocket text message.
     else {
-      if (this.ua.configuration.trace_sip === true) {
+      if (this.ua.configuration.traceSip === true) {
         this.logger.log('received WebSocket text message:\n\n' + data + '\n');
       }
     }
@@ -277,7 +277,7 @@ Transport.prototype = {
 
     this.reconnection_attempts += 1;
 
-    if(this.reconnection_attempts > this.ua.configuration.ws_server_max_reconnection) {
+    if(this.reconnection_attempts > this.ua.configuration.wsServerMaxReconnection) {
       this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
       this.ua.onTransportError(this);
     } else {
@@ -286,7 +286,7 @@ Transport.prototype = {
       this.reconnectTimer = window.setTimeout(function() {
         transport.connect();
         transport.reconnectTimer = null;
-      }, this.ua.configuration.ws_server_reconnection_timeout * 1000);
+      }, this.ua.configuration.wsServerReconnectionTimeout * 1000);
     }
   }
 };

@@ -22,8 +22,8 @@ describe('SanityCheck', function () {
 
   ua = new SIP.UA();
   ua.transport = transport;
-  h.via = h.via.replace('MYHOST', ua.configuration.via_host);
-  h.v = h.v.replace('MYHOST', ua.configuration.via_host);
+  h.via = h.via.replace('MYHOST', ua.configuration.viaHost);
+  h.v = h.v.replace('MYHOST', ua.configuration.viaHost);
 
   function p(data) {
     return SIP.Parser.parseMessage(data, ua);
@@ -184,13 +184,13 @@ describe('SanityCheck', function () {
 
         it('rejects messages from itself as loops', function () {
           message = p(h.request + h.f + h.t + h.v + h.cseq +
-                      "Call-Id: " + ua.configuration.jssip_id + 'hello\r\n\r\n');
+                      "Call-Id: " + ua.configuration.jssipId + 'hello\r\n\r\n');
           expectReply(message, 482);
         });
 
         it('accepts messages from other places', function () {
           message = p(h.request + h.f + h.t + h.v + h.cseq +
-                      "Call-Id: q" + ua.configuration.jssip_id + 'hello\r\n\r\n');
+                      "Call-Id: q" + ua.configuration.jssipId + 'hello\r\n\r\n');
           expectOkay(message);
         });
       });
@@ -221,7 +221,7 @@ describe('SanityCheck', function () {
           spyOn(message, 'reply');
           ua.transactions.ist[message.via_branch] = new SIP.Transactions.InviteServerTransaction(message, ua);
           message = p(h.request + h.f + h.t + h.i + h.cseq +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532300\r\n\r\n');
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
         });
 
@@ -229,12 +229,12 @@ describe('SanityCheck', function () {
           message = p(h.request +
                       'From: "Hello World" <sip:hello@example.org;param=foo>;tag=123abc\r\n' +
                       'To: "Goodnight Moon" <sip:moon@example.co.uk;bar=baz>\r\n' +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532302\r\n' +
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532302\r\n' +
                       h.i + 'CSeq: 128102 INVITE\r\n\r\n');
           spyOn(message, 'reply');
           ua.transactions.ist[message.via_branch] = new SIP.Transactions.InviteServerTransaction(message, ua);
           message = p(h.request + h.f + h.t + h.i + h.cseq +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532300\r\n\r\n');
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
         });
 
@@ -244,7 +244,7 @@ describe('SanityCheck', function () {
           spyOn(message, 'reply');
           ua.transactions.ist[message.via_branch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
           message = p(h.ni_request + h.f + h.t + h.i + h.cseq +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532300\r\n\r\n');
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
         });
 
@@ -252,12 +252,12 @@ describe('SanityCheck', function () {
           message = p(h.ni_request +
                       'From: "Hello World" <sip:hello@example.org;param=foo>;tag=123abc\r\n' +
                       'To: "Goodnight Moon" <sip:moon@example.co.uk;bar=baz>\r\n' +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532302\r\n' +
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532302\r\n' +
                       h.i + 'CSeq: 128102 INVITE\r\n\r\n');
           spyOn(message, 'reply');
           ua.transactions.ist[message.via_branch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
           message = p(h.ni_request + h.f + h.t + h.i + h.cseq +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532300\r\n\r\n');
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
         });
       });
@@ -291,13 +291,13 @@ describe('SanityCheck', function () {
 
         it('drops messages with inappropriate via sent-by port', function () {
           message = p(h.response + h.f + h.t + h.i + h.cseq +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ':8888;branch=z9hG4bK7532297\r\n\r\n');
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ':8888;branch=z9hG4bK7532297\r\n\r\n');
           expectDropped(message);
         });
 
         it('accepts messages with correct via sent-by host', function () {
           message = p(h.response + h.f + h.t + h.i + h.cseq +
-                      'Via: SIP/2.0/WSS ' + ua.configuration.via_host + ';branch=z9hG4bK7532297\r\n\r\n');
+                      'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532297\r\n\r\n');
           expectOkay(message);
         });
       });

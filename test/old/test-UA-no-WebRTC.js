@@ -14,16 +14,16 @@ test('UA no WS connection', function() {
 
   ua.start();
 
-  strictEqual(ua.contact.toString(), '<sip:' + ua.contact.uri.user + '@' + ua.configuration.via_host + ';transport=ws>');
-  strictEqual(ua.contact.toString({outbound: false, anonymous: false, foo: true}), '<sip:' + ua.contact.uri.user + '@' + ua.configuration.via_host + ';transport=ws>');
-  strictEqual(ua.contact.toString({outbound: true}), '<sip:' + ua.contact.uri.user + '@' + ua.configuration.via_host + ';transport=ws;ob>');
+  strictEqual(ua.contact.toString(), '<sip:' + ua.contact.uri.user + '@' + ua.configuration.viaHost + ';transport=ws>');
+  strictEqual(ua.contact.toString({outbound: false, anonymous: false, foo: true}), '<sip:' + ua.contact.uri.user + '@' + ua.configuration.viaHost + ';transport=ws>');
+  strictEqual(ua.contact.toString({outbound: true}), '<sip:' + ua.contact.uri.user + '@' + ua.configuration.viaHost + ';transport=ws;ob>');
   strictEqual(ua.contact.toString({anonymous: true}), '<sip:anonymous@anonymous.invalid;transport=ws>');
   strictEqual(ua.contact.toString({anonymous: true, outbound: true}), '<sip:anonymous@anonymous.invalid;transport=ws;ob>');
 
   for (parameter in TestSIP.Helpers.DEFAULT_SIP_CONFIGURATION_AFTER_START) {
     switch(parameter) {
       case 'uri':
-      case 'registrar_server':
+      case 'registrarServer':
         deepEqual(ua.configuration[parameter].toString(), TestSIP.Helpers.DEFAULT_SIP_CONFIGURATION_AFTER_START[parameter], 'testing parameter ' + parameter);
         break;
       default:

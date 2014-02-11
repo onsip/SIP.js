@@ -15,7 +15,7 @@ describe('ClientContext', function() {
     spyOn(SIP, 'OutgoingRequest');
     SIP.OutgoingRequest.send = jasmine.createSpy('send');
 
-    ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
     method = SIP.C.INVITE;
     target = 'alice@example.com';

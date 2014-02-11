@@ -13,7 +13,7 @@ describe('SIPMessage', function() {
       ua = { 
         getLogger : getLogger ,
         configuration : {
-          use_preloaded_route : false
+          usePreloadedRoute : false
         }  
       };
       
@@ -134,7 +134,7 @@ describe('SIPMessage', function() {
       ua = {
         getLogger : getLogger ,
         configuration : {
-          use_preloaded_route : false
+          usePreloadedRoute : false
         },
         transport: {
           send: function () {}
@@ -374,7 +374,7 @@ describe('SIPMessage', function() {
       ua = { 
         getLogger : getLogger ,
         configuration : {
-          use_preloaded_route : false
+          usePreloadedRoute : false
         }  
       };
       IncomingResponse = new SIP.IncomingResponse(ua);

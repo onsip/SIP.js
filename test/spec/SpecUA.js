@@ -5,10 +5,10 @@ describe('UA', function() {
 
   beforeEach(function() {
     uri = 'alice@example.com';
-    ws_servers = 'ws://server.example.com';
-    registrar_server = 'registrar.example.com';
+    wsServers = 'ws://server.example.com';
+    registrarServer = 'registrar.example.com';
     configuration = {uri : uri,
-                     ws_servers : ws_servers };
+                     wsServers : wsServers };
 
     spyOn(SIP, 'RegisterContext').andReturn({
       on: jasmine.createSpy('on'),
@@ -38,7 +38,7 @@ describe('UA', function() {
 
     expect(noParams).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual(jasmine.any(String));
-    expect(myUA.configuration.ws_servers).toEqual([{
+    expect(myUA.configuration.wsServers).toEqual([{
       scheme: 'WSS',
       sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
       status: 0,
@@ -55,7 +55,7 @@ describe('UA', function() {
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
-    expect(myUA.configuration.ws_servers).toEqual([{
+    expect(myUA.configuration.wsServers).toEqual([{
       scheme: 'WSS',
       sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
       status: 0,
@@ -72,7 +72,7 @@ describe('UA', function() {
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
-    expect(myUA.configuration.ws_servers).toEqual([{
+    expect(myUA.configuration.wsServers).toEqual([{
       scheme: 'WSS',
       sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
       status: 0,
@@ -88,6 +88,7 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
+    expect(UA.configuration.mediaHandlerFactory).toBe(SIP.WebRTC.MediaHandler.defaultFactory);
     expect(UA.log).toBeDefined();
     expect(UA.logger).toBeDefined();
     expect(UA.cache).toBeDefined();
@@ -102,6 +103,11 @@ describe('UA', function() {
     expect(UA.error).toBeDefined();
     expect(UA.transactions).toBeDefined();
     expect(UA.transportRecoverAttempts).toBeDefined();
+
+    var mediaHandlerFactory = function(){};
+    configuration.mediaHandlerFactory = mediaHandlerFactory;
+    UA = new SIP.UA(configuration);
+    expect(UA.configuration.mediaHandlerFactory).toBe(mediaHandlerFactory);
   });
 
   it('creates a new register context', function() {
@@ -414,16 +420,10 @@ describe('UA', function() {
       spyOn(UA, 'isConnected').andReturn(true);
 
       var options = {};
+      UA.configuration.mediaHandlerFactory = function(){};
       UA.invite(target,options);
-      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA,target,options);
-    });
-
-    it('calls the Invite Client Context invite method with no arguments', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
-
-      var options = { option : 'things' };
-      UA.invite(target,options);
-      expect(inviteSpy).toHaveBeenCalledWith();
+      // invite() puts the mediaHandlerFactory into the options object
+      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA, target, options);
     });
   });
 
@@ -460,7 +460,6 @@ describe('UA', function() {
 
     it('calls the Subscription method with no arguments', function() {
       spyOn(UA, 'isConnected').andReturn(true);
-
       var options = { option : 'things' };
       UA.subscribe(target, event, options);
       expect(subscribeSpy).toHaveBeenCalledWith();
@@ -516,7 +515,7 @@ describe('UA', function() {
     it('calls SIP.Utils.normalizeTarget with the target and the hostport params', function() {
       var target = 'target';
       UA.normalizeTarget(target);
-      expect(SIP.Utils.normalizeTarget).toHaveBeenCalledWith(target, UA.configuration.hostport_params);
+      expect(SIP.Utils.normalizeTarget).toHaveBeenCalledWith(target, UA.configuration.hostportParams);
     });
 
     it('returns the result of calling SIP.Utils.normalizeTarget', function() {
@@ -735,13 +734,15 @@ describe('UA', function() {
       UA.receiveRequest(request);
     });
 
-    it('creates an invite server context and emit invite if the message is of type INVITE', function() {
+    it('creates an invite server context with the UA\'s mediaHandlerFactory and emit invite if the message is of type INVITE', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
                       reply : replySpy };
       var callback = jasmine.createSpy('callback');
       UA.on('invite',callback);
+      UA.configuration.mediaHandlerFactory = function () {};
       UA.receiveRequest(request);
+      expect(SIP.InviteServerContext).toHaveBeenCalledWith(UA, request);
       expect(callback).toHaveBeenCalledWith({});
     });
 
@@ -984,8 +985,8 @@ describe('UA', function() {
       can3 = {status: 0, weight: 1};
       can4 = {status: 0, weight: 2};
 
-      //Note: can't just set ws_servers at this point
-      UA.configuration = {ws_servers: [can1,can2,can3,can4]};
+      //Note: can't just set wsServers at this point
+      UA.configuration = {wsServers: [can1,can2,can3,can4]};
     });
 
     it('selects the candidate with the highest weight', function() {
@@ -1034,11 +1035,11 @@ describe('UA', function() {
     });
 
     it('logs if the next retry time exceeds the max_interval', function(){
-      UA.configuration = {ws_servers: [{status:1, weight: 0}], connection_recovery_min_interval: 1, connection_recovery_max_interval: -1};
+      UA.configuration = {wsServers: [{status:1, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: -1};
 
       UA.recoverTransport(UA);
 
-      expect(UA.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connection_recovery_max_interval, resetting counter');
+      expect(UA.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
     });
 
     it('calls getNextWsServer', function() {
@@ -1061,7 +1062,7 @@ describe('UA', function() {
       spyOn(SIP, 'Transport');
       SIP.Transport.C = {STATUS_READY: 0, STATUS_DISCONNECTED: 1, STATUS_ERROR: 2};
 
-      UA.configuration = {ws_servers: [{status:0, weight: 0}], connection_recovery_min_interval: 1, connection_recovery_max_interval: 7};
+      UA.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
       UA.transportRecoverAttempts = 0;
 
       UA.recoverTransport(UA);
@@ -1086,37 +1087,37 @@ describe('UA', function() {
     it('sets default settings for many parameters', function() {
       UA.loadConfig({});
 
-      expect(UA.configuration.via_host).toBeDefined();
+      expect(UA.configuration.viaHost).toBeDefined();
 
       expect(UA.configuration.uri).toBeDefined();
-      expect(UA.configuration.ws_servers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', status: 0, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
+      expect(UA.configuration.wsServers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', status: 0, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
 
       expect(UA.configuration.password).toBeNull();
 
-      expect(UA.configuration.register_expires).toBe(600);
-      expect(UA.configuration.register_min_expires).toBe(120);
+      expect(UA.configuration.registerExpires).toBe(600);
+      expect(UA.configuration.registerMinExpires).toBe(120);
       expect(UA.configuration.register).toBe(true);
-      //registrar_server is set to null here, then switched later in the function if it wasn't passed in
+      //registrarServer is set to null here, then switched later in the function if it wasn't passed in
 
-      expect(UA.configuration.ws_server_max_reconnection).toBe(3);
-      expect(UA.configuration.ws_server_reconnection_timeout).toBe(4);
+      expect(UA.configuration.wsServerMaxReconnection).toBe(3);
+      expect(UA.configuration.wsServerReconnectionTimeout).toBe(4);
 
-      expect(UA.configuration.connection_recovery_min_interval).toBe(2);
-      expect(UA.configuration.connection_recovery_max_interval).toBe(30);
+      expect(UA.configuration.connectionRecoveryMinInterval).toBe(2);
+      expect(UA.configuration.connectionRecoveryMaxInterval).toBe(30);
 
       expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
 
-      expect(UA.configuration.use_preloaded_route).toBe(false);
+      expect(UA.configuration.usePreloadedRoute).toBe(false);
 
       //defaults to 60, then multiplies by 1000 later in the function
-      expect(UA.configuration.no_answer_timeout).toBe(60000);
-      expect(UA.configuration.stun_servers).toEqual(['stun:stun.l.google.com:19302']);
-      expect(UA.configuration.turn_servers).toEqual([]);
+      expect(UA.configuration.noAnswerTimeout).toBe(60000);
+      expect(UA.configuration.stunServers).toEqual(['stun:stun.l.google.com:19302']);
+      expect(UA.configuration.turnServers).toEqual([]);
 
-      expect(UA.configuration.trace_sip).toBe(false);
+      expect(UA.configuration.traceSip).toBe(false);
 
-      expect(UA.configuration.hack_via_tcp).toBe(false);
-      expect(UA.configuration.hack_ip_in_contact).toBe(false);
+      expect(UA.configuration.hackViaTcp).toBe(false);
+      expect(UA.configuration.hackIpInContact).toBe(false);
 
       expect(UA.configuration.autostart).toBe(false);
 
@@ -1172,43 +1173,43 @@ describe('UA', function() {
     });
 
     it('makes sure the connection recovery max interval is greater than the min interval', function() {
-      expect(function(){UA.loadConfig({connection_recovery_max_interval: 1, connection_recovery_min_interval: 2});}).toThrow('Invalid value 1 for parameter "connection_recovery_max_interval"');
+      expect(function(){UA.loadConfig({connectionRecoveryMaxInterval: 1, connectionRecoveryMinInterval: 2});}).toThrow('Invalid value 1 for parameter "connectionRecoveryMaxInterval"');
     });
 
     it('allows 0 to be passed as a display name', function() {
-      UA.loadConfig({display_name: 0});
+      UA.loadConfig({displayName: 0});
 
-      expect(UA.configuration.display_name).toBe('0');
+      expect(UA.configuration.displayName).toBe('0');
     });
 
-    it('sets an instance_id if one is not passed in also sets jssip_id', function() {
+    it('sets an instanceId if one is not passed in also sets jssipId', function() {
       UA.loadConfig({});
 
-      expect(UA.configuration.instance_id).toBeDefined();
+      expect(UA.configuration.instanceId).toBeDefined();
 
-      expect(UA.configuration.jssip_id).toBeDefined();
-      expect(UA.configuration.jssip_id.length).toBe(5);
+      expect(UA.configuration.jssipId).toBeDefined();
+      expect(UA.configuration.jssipId.length).toBe(5);
     });
 
     it('sets auth user to uri user if auth user is not passed in', function() {
       UA.loadConfig({uri: 'james@onsnip.onsip.com'});
 
-      expect(UA.configuration.authorization_user).toBe(UA.configuration.uri.user);
+      expect(UA.configuration.authorizationUser).toBe(UA.configuration.uri.user);
     });
 
-    it('sets the registrar_server to the uri (without user) if it is not passed in', function() {
+    it('sets the registrarServer to the uri (without user) if it is not passed in', function() {
       UA.loadConfig({uri: 'james@onsnip.onsip.com'});
 
       var reg = UA.configuration.uri.clone();
       reg.user = null;
 
-      expect(UA.configuration.registrar_server).toEqual(reg);
+      expect(UA.configuration.registrarServer).toEqual(reg);
     });
 
-    it('uses getRandomTestNetIP for via_host if hack_ip_in_contact is set to true', function() {
+    it('uses getRandomTestNetIP for viaHost if hackIpInContact is set to true', function() {
       spyOn(SIP.Utils, 'getRandomTestNetIP').andCallThrough();
 
-      UA.loadConfig({hack_ip_in_contact: true});
+      UA.loadConfig({hackIpInContact: true});
 
       expect(SIP.Utils.getRandomTestNetIP).toHaveBeenCalled();
     });
@@ -1264,167 +1265,167 @@ describe('UA', function() {
       });
     });
 
-    describe('.ws_servers', function() {
+    describe('.wsServers', function() {
       it('fails for types that are not string or array (of strings or objects', function() {
-        expect(SIP.UA.configuration_check.optional.ws_servers(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServers(7)).toBeUndefined();
       });
 
       it('fails for an empty array', function() {
         //NOTE: this is the only case that false is returned (instead of nothing)
-        expect(SIP.UA.configuration_check.optional.ws_servers([])).toBe(false);
+        expect(SIP.UA.configuration_check.optional.wsServers([])).toBe(false);
       });
 
       it('fails if ws_uri attribute is missing', function() {
-        expect(SIP.UA.configuration_check.optional.ws_servers([{sandwich: 'ham'}])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServers([{sandwich: 'ham'}])).toBeUndefined();
       });
 
       it('fails if weight attribute is not a number', function() {
-        expect(SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'ham', weight: 'scissors'}])).toBeUndefined()
+        expect(SIP.UA.configuration_check.optional.wsServers([{ws_uri: 'ham', weight: 'scissors'}])).toBeUndefined()
       });
 
       it('fails if the ws_uri is invalid', function() {
-        expect(SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'ham'}])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServers([{ws_uri: 'ham'}])).toBeUndefined();
       });
 
       it('fails if the url scheme is not wss or ws', function() {
-        expect(SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
       });
 
       it('returns correctly if none of the above is wrong', function() {
-        expect(SIP.UA.configuration_check.optional.ws_servers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
-        expect(SIP.UA.configuration_check.optional.ws_servers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
+        expect(SIP.UA.configuration_check.optional.wsServers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
+        expect(SIP.UA.configuration_check.optional.wsServers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
       });
     });
 
-    describe('.authorization_user', function() {
+    describe('.authorizationUser', function() {
       //Try to make this fail, you can't
       xit('fails if a type besides a string is passed in', function() {
-        expect(SIP.UA.configuration_check.optional.authorization_user()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.authorizationUser()).toBeUndefined();
       });
 
       it('ALWAYS PASSES', function() {
-        expect(SIP.UA.configuration_check.optional.authorization_user()).toBe();
-        expect(SIP.UA.configuration_check.optional.authorization_user('a string')).toBe('a string');
-        expect(SIP.UA.configuration_check.optional.authorization_user(7)).toBe(7);
-        expect(SIP.UA.configuration_check.optional.authorization_user({even: 'objects'})).toEqual({even: 'objects'});
-        expect(SIP.UA.configuration_check.optional.authorization_user(['arrays'])).toEqual(['arrays']);
-        expect(SIP.UA.configuration_check.optional.authorization_user(true)).toEqual(true);
+        expect(SIP.UA.configuration_check.optional.authorizationUser()).toBe();
+        expect(SIP.UA.configuration_check.optional.authorizationUser('a string')).toBe('a string');
+        expect(SIP.UA.configuration_check.optional.authorizationUser(7)).toBe(7);
+        expect(SIP.UA.configuration_check.optional.authorizationUser({even: 'objects'})).toEqual({even: 'objects'});
+        expect(SIP.UA.configuration_check.optional.authorizationUser(['arrays'])).toEqual(['arrays']);
+        expect(SIP.UA.configuration_check.optional.authorizationUser(true)).toEqual(true);
       });
     });
 
-    describe('.connection_recovery_max_interval', function() {
+    describe('.connectionRecoveryMaxInterval', function() {
       it('fails for anything but numbers', function() {
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval(true)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval(['arrays'])).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval({even: 'objects'})).toBeUndefined();
       });
 
       it('fails for negative numbers and 0', function() {
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval(0)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval(-7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval(0)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval(-7)).toBeUndefined();
       });
 
       it('passes for positive numbers', function() {
-        expect(SIP.UA.configuration_check.optional.connection_recovery_max_interval(7)).toBe(7);
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMaxInterval(7)).toBe(7);
       });
     });
 
-    describe('.connection_recovery_min_interval', function() {
+    describe('.connectionRecoveryMinInterval', function() {
       it('fails for anything but numbers', function() {
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval(true)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval(['arrays'])).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval({even: 'objects'})).toBeUndefined();
       });
 
       it('fails for negative numbers and 0', function() {
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval(0)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval(-7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval(0)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval(-7)).toBeUndefined();
       });
 
       it('passes for positive numbers', function() {
-        expect(SIP.UA.configuration_check.optional.connection_recovery_min_interval(7)).toBe(7);
+        expect(SIP.UA.configuration_check.optional.connectionRecoveryMinInterval(7)).toBe(7);
       });
     });
 
-    describe('.display_name', function() {
+    describe('.displayName', function() {
       //Try to make this fail, you can't
       xit('fails if a type besides a string is passed in', function() {
-        expect(SIP.UA.configuration_check.optional.display_name()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.displayName()).toBeUndefined();
       });
 
       it('ALWAYS PASSES', function() {
-        expect(SIP.UA.configuration_check.optional.display_name()).toBe();
-        expect(SIP.UA.configuration_check.optional.display_name(true)).toBe(true);
-        expect(SIP.UA.configuration_check.optional.display_name('a string')).toBe('a string');
-        expect(SIP.UA.configuration_check.optional.display_name(7)).toBe(7);
-        expect(SIP.UA.configuration_check.optional.display_name({even: 'objects'})).toEqual({even: 'objects'});
-        expect(SIP.UA.configuration_check.optional.display_name(['arrays'])).toEqual(['arrays']);
+        expect(SIP.UA.configuration_check.optional.displayName()).toBe();
+        expect(SIP.UA.configuration_check.optional.displayName(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.displayName('a string')).toBe('a string');
+        expect(SIP.UA.configuration_check.optional.displayName(7)).toBe(7);
+        expect(SIP.UA.configuration_check.optional.displayName({even: 'objects'})).toEqual({even: 'objects'});
+        expect(SIP.UA.configuration_check.optional.displayName(['arrays'])).toEqual(['arrays']);
       });
     });
 
-    describe('.hack_via_tcp', function() {
+    describe('.hackViaTcp', function() {
       it('fails for all types except boolean', function() {
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp({even: 'objects'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackViaTcp()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackViaTcp(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackViaTcp('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackViaTcp({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackViaTcp(['arrays'])).toBeUndefined();
       });
 
       it('passes for boolean parameters', function() {
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp(true)).toBe(true);
-        expect(SIP.UA.configuration_check.optional.hack_via_tcp(false)).toBe(false);
+        expect(SIP.UA.configuration_check.optional.hackViaTcp(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.hackViaTcp(false)).toBe(false);
       });
     });
 
-    describe('.hack_ip_in_contact', function() {
+    describe('.hackIpInContact', function() {
       it('fails for all types except boolean', function() {
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact({even: 'objects'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact(['arrays'])).toBeUndefined();
       });
 
       it('passes for boolean parameters', function() {
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact(true)).toBe(true);
-        expect(SIP.UA.configuration_check.optional.hack_ip_in_contact(false)).toBe(false);
+        expect(SIP.UA.configuration_check.optional.hackIpInContact(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.hackIpInContact(false)).toBe(false);
       });
     });
 
-    describe('.instance_id', function() {
+    describe('.instanceId', function() {
       it('fails for everything but string hex pattern (see below)', function() {
-        expect(SIP.UA.configuration_check.optional.instance_id()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.instance_id(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.instance_id({even: 'objects'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.instance_id(['arrays'])).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.instance_id(false)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.instance_id(7)).toBeUndefined(7);
+        expect(SIP.UA.configuration_check.optional.instanceId()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.instanceId(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.instanceId({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.instanceId(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.instanceId(false)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.instanceId(7)).toBeUndefined(7);
       });
 
       it('passes if passed (hex8)-(hex4)-(hex4)-(hex4)-(hex12) as a string (may have uuid: in front, but removes this)', function() {
-        expect(SIP.UA.configuration_check.optional.instance_id('8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
-        expect(SIP.UA.configuration_check.optional.instance_id('uuid:8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
+        expect(SIP.UA.configuration_check.optional.instanceId('8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
+        expect(SIP.UA.configuration_check.optional.instanceId('uuid:8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
       });
     });
 
-    describe('.no_answer_timeout', function() {
+    describe('.noAnswerTimeout', function() {
       it('fails for anything but numbers', function() {
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout(true)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout(['arrays'])).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout({even: 'objects'})).toBeUndefined();
       });
 
       it('fails for negative numbers and 0', function() {
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout(0)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout(-7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout(0)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout(-7)).toBeUndefined();
       });
 
       it('passes for positive numbers', function() {
-        expect(SIP.UA.configuration_check.optional.no_answer_timeout(7)).toBe(7);
+        expect(SIP.UA.configuration_check.optional.noAnswerTimeout(7)).toBe(7);
       });
     });
 
@@ -1475,99 +1476,99 @@ describe('UA', function() {
       });
     });
 
-    describe('.register_expires', function() {
+    describe('.registerExpires', function() {
       it('fails for anything but numbers', function() {
-        expect(SIP.UA.configuration_check.optional.register_expires(true)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.register_expires('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.register_expires(['arrays'])).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.register_expires({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registerExpires(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registerExpires('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registerExpires(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registerExpires({even: 'objects'})).toBeUndefined();
       });
 
       it('fails for negative numbers and 0', function() {
-        expect(SIP.UA.configuration_check.optional.register_expires(0)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.register_expires(-7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registerExpires(0)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registerExpires(-7)).toBeUndefined();
       });
 
       it('passes for positive numbers', function() {
-        expect(SIP.UA.configuration_check.optional.register_expires(7)).toBe(7);
+        expect(SIP.UA.configuration_check.optional.registerExpires(7)).toBe(7);
       });
     });
 
-    describe('.registrar_server', function() {
+    describe('.registrarServer', function() {
       it('only accepts strings', function() {
-        expect(SIP.UA.configuration_check.optional.registrar_server()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.registrar_server(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.registrar_server(true)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.registrar_server({even: 'objects'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.registrar_server(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer(['arrays'])).toBeUndefined();
       });
 
       it('fails for a string that is not a valid uri (parse returns nothing)', function() {
-        expect(SIP.UA.configuration_check.optional.registrar_server('@example.com')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer('@example.com')).toBeUndefined();
       });
 
       it('fails for a string that is a valid uri, but has a user', function() {
-        expect(SIP.UA.configuration_check.optional.registrar_server('alice@example.com')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer('alice@example.com')).toBeUndefined();
       });
       it('passes for a string that is a valid uri without a user and returns a URI', function() {
-        expect(SIP.UA.configuration_check.optional.registrar_server('example.com')).toBeDefined();
-        expect(SIP.UA.configuration_check.optional.registrar_server('sip:example.com')).toBeDefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer('example.com')).toBeDefined();
+        expect(SIP.UA.configuration_check.optional.registrarServer('sip:example.com')).toBeDefined();
       });
     });
 
-    describe('.stun_servers', function() {
+    describe('.stunServers', function() {
       it('fails for anything except a string or an array', function() {
-        expect(SIP.UA.configuration_check.optional.stun_servers()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.stun_servers(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.stun_servers(true)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.stun_servers({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.stunServers()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.stunServers(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.stunServers(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.stunServers({even: 'objects'})).toBeUndefined();
       });
 
       //Note this case returns ['stun:'], which is horrible
       //Also, the argument [7] will return ['stun:7'], equally horrible
       xit('fails for an invalid stun_uri', function() {
-        expect(SIP.UA.configuration_check.optional.stun_servers([''])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.stunServers([''])).toBeUndefined();
       });
 
       it('works with a string or an array', function() {
-        expect(SIP.UA.configuration_check.optional.stun_servers(['example.com'])).toEqual(['stun:example.com']);
-        expect(SIP.UA.configuration_check.optional.stun_servers('example.com')).toEqual(['stun:example.com']);
+        expect(SIP.UA.configuration_check.optional.stunServers(['example.com'])).toEqual(['stun:example.com']);
+        expect(SIP.UA.configuration_check.optional.stunServers('example.com')).toEqual(['stun:example.com']);
       });
     });
 
-    describe('.trace_sip', function() {
+    describe('.traceSip', function() {
       it('fails for all types except boolean', function() {
-        expect(SIP.UA.configuration_check.optional.trace_sip()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.trace_sip(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.trace_sip('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.trace_sip({even: 'objects'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.trace_sip(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.traceSip()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.traceSip(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.traceSip('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.traceSip({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.traceSip(['arrays'])).toBeUndefined();
       });
 
       it('passes for boolean parameters', function() {
-        expect(SIP.UA.configuration_check.optional.trace_sip(true)).toBe(true);
-        expect(SIP.UA.configuration_check.optional.trace_sip(false)).toBe(false);
+        expect(SIP.UA.configuration_check.optional.traceSip(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.traceSip(false)).toBe(false);
       });
     });
 
-    describe('.turn_servers', function() {
+    describe('.turnServers', function() {
       it('works whether an array is passed or not', function() {
-        expect(SIP.UA.configuration_check.optional.turn_servers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
-        expect(SIP.UA.configuration_check.optional.turn_servers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: 'example.com', username: 'alice', password: 'pass'}]);
+        expect(SIP.UA.configuration_check.optional.turnServers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
+        expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: 'example.com', username: 'alice', password: 'pass'}]);
       });
 
       it('works if you pass in server instead of urls (backwards compatible', function() {
-        expect(SIP.UA.configuration_check.optional.turn_servers([{server: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{server:'example.com', urls: ['example.com'], username: 'alice', password: 'pass'}]);
+        expect(SIP.UA.configuration_check.optional.turnServers([{server: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{server:'example.com', urls: ['example.com'], username: 'alice', password: 'pass'}]);
       });
 
       it('fails if urls, username, or server is missing', function() {
-        expect(SIP.UA.configuration_check.optional.turn_servers({urls: 'example.com', username: 'alice'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.turn_servers({urls: 'example.com', password: 'pass'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.turn_servers({username: 'alice', password: 'pass'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.turnServers({urls: 'example.com', username: 'alice'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.turnServers({urls: 'example.com', password: 'pass'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.turnServers({username: 'alice', password: 'pass'})).toBeUndefined();
       });
 
       it('fails if the url passed is not a valid turn_uri', function() {
-        expect(SIP.UA.configuration_check.optional.turn_servers([{urls: '', username: 'alice', password: 'pass'}])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.turnServers([{urls: '', username: 'alice', password: 'pass'}])).toBeUndefined();
       });
     });
 
@@ -1586,18 +1587,18 @@ describe('UA', function() {
       });
     });
 
-    describe('.use_preloaded_route', function() {
+    describe('.usePreloadedRoute', function() {
       it('fails for all types except boolean', function() {
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route()).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route('string')).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route({even: 'objects'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute(['arrays'])).toBeUndefined();
       });
 
       it('passes for boolean parameters', function() {
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route(true)).toBe(true);
-        expect(SIP.UA.configuration_check.optional.use_preloaded_route(false)).toBe(false);
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.usePreloadedRoute(false)).toBe(false);
       });
     });
 

@@ -18,16 +18,17 @@ module.exports = function(grunt) {
     'src/Dialogs.js',
     'src/RequestSender.js',
     'src/RegisterContext.js',
+    'src/MediaHandler.js',
     'src/Message.js',
     'src/ClientContext.js',
     'src/ServerContext.js',
     'src/Session.js',
     'src/Subscription.js',
+    'src/WebRTC.js',
     'src/UA.js',
     'src/Utils.js',
     'src/SanityCheck.js',
     'src/DigestAuthentication.js',
-    'src/WebRTC.js',
     'src/tail.js'
   ];
 

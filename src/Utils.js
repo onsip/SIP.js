@@ -22,6 +22,18 @@ Utils= {
     constructor.apply(object, args);
   },
 
+  optionsOverride: function (options, winner, loser, isDeprecated, logger, defaultValue) {
+    if (isDeprecated && options[loser]) {
+      logger.warn(loser + ' is deprecated, please use ' + winner + ' instead');
+    }
+
+    if (options[winner] && options[loser]) {
+      logger.warn(winner + ' overriding ' + loser);
+    }
+
+    options[winner] = options[winner] || options[loser] || defaultValue;
+  },
+
   str_utf8_length: function(string) {
     return window.unescape(encodeURIComponent(string)).length;
   },

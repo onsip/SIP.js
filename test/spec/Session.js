@@ -165,7 +165,7 @@ describe('An INVITE sent from a UAC', function () {
     });
 
     it('sets the From URI from the UA', function () {
-      expect(session.request.getHeader('from')).toContain(ua.configuration.display_name);
+      expect(session.request.getHeader('from')).toContain(ua.configuration.displayName);
     });
 
     it('contains a From tag', function () {
@@ -191,13 +191,13 @@ describe('An INVITE sent from a UAC', function () {
 
     //hard to 'guarantee,' but if there is a problem here then there was almost certainly a mistake added to the code.
     it('guarantees no other UA will inadvertently overlap Call-IDs', function () {
-      var id = ua.configuration.jssip_id;
+      var id = ua.configuration.jssipId;
       var ids = {};
       ids[id] = true;
 
       for (var i = 1; i < 10; i++) {
         ua = new SIP.UA(ua_config);
-        id = ua.configuration.jssip_id;
+        id = ua.configuration.jssipId;
         expect(ids[id]).toBeUndefined();
         ids[id] = true;
       }
@@ -247,16 +247,15 @@ describe('An INVITE sent from a UAC', function () {
 
      Documented:
 
-     mediaConstraints
-     mediaStream
+     media
      RTCConstraints -> rtcConstraints
      extraHeaders
      anonymous
 
      Undocumented:
 
-     stun_servers
-     turn_servers
+     stunServers
+     turnServers
      inviteWithoutSdp -> offer
      renderbody -> renderBody
      rendertype -> renderType
@@ -266,12 +265,12 @@ describe('An INVITE sent from a UAC', function () {
 
      rel100/100rel (Currently in UA configuration)
    */
-  describe('with options.mediaConstraints', function () {
+  describe('with options.media', function () {
     it('not defined, defaults to audio+video', function () {
       var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
       waitsFor('session to be created', function () { return session; }, 100);
       runs(function () {
-        expect(session.mediaConstraints).toEqual({
+        expect(session.mediaHandler.mediaStreamManager.constraints).toEqual({
           audio: true,
           video: true
         });
@@ -288,7 +287,7 @@ describe('An INVITE sent from a UAC', function () {
       });
     });
 
-    it('defined, follows those constraints', function () {
+    it('defined as constraints, follows those constraints', function () {
       console.log('running sync');
       var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
       var myConstraints = {
@@ -301,27 +300,21 @@ describe('An INVITE sent from a UAC', function () {
           basic: 100
         }
       };
-      session_options.mediaConstraints = {
-        audio: ['Anything', 'Goes', 'Here'],
-        video: {
-          resolution: 'da best',
-          frame_rate: 'lowsy'
-        },
-        telepathy: {
-          basic: 100
-        }
-      };
-      waitsFor('session to be created', function () { return session; }, 100);
-      runs(function () {
-        expect(session.mediaConstraints).toEqual(myConstraints);
-      });
-
+      session_options.media = myConstraints;
       waitsFor('gum to be called', function () {
         return gumSpy.calls.length;
       }, 100);
       runs(function () {
         expect(gumSpy.mostRecentCall.args[0]).toEqual(myConstraints);
       });
+    });
+
+    it('TODO defined as stream, uses the stream', function () {
+      // TODO
+    });
+
+    it('TODO defined as manager, uses the manager', function () {
+      // TODO
     });
   });
   describe('with options.mediaStream', function () {
@@ -338,10 +331,10 @@ describe('An INVITE sent from a UAC', function () {
   describe('with options.anonymous', function () {
 
   });
-  describe('with options.stun_servers', function () {
+  describe('with options.stunServers', function () {
 
   });
-  describe('with options.turn_servers', function () {
+  describe('with options.turnServers', function () {
 
   });
   describe('with options.offer', function () {

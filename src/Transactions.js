@@ -44,8 +44,8 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
+  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
+  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
 
   this.request.setHeader('via', via);
 
@@ -148,8 +148,8 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.ict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
+  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
+  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
 
   this.request.setHeader('via', via);
 
@@ -337,8 +337,8 @@ var AckClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hack_via_tcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.via_host + ';branch=' + this.id;
+  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
+  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
 
   this.request.setHeader('via', via);
 };

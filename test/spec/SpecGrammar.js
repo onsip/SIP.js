@@ -44,7 +44,7 @@ describe('Grammar', function () {
       });
 
       it('has the display name', function () {
-        expect(c1.display_name).toEqual('Iñaki @ł€');
+        expect(c1.displayName).toEqual('Iñaki @ł€');
       });
 
       it('has parameter +sip.instance set to "abCD"', function () {
@@ -79,8 +79,8 @@ describe('Grammar', function () {
       });
 
       it('can alter display name and URI parameters', function () {
-        c1.display_name = '€€€';
-        expect(c1.display_name).toEqual('€€€');
+        c1.displayName = '€€€';
+        expect(c1.displayName).toEqual('€€€');
         c1.uri.user = '+999';
         expect(c1.uri.user).toEqual('+999');
         c1.setParam('+sip.instance', '"zxCV"');
@@ -103,7 +103,7 @@ describe('Grammar', function () {
       var c2Has = itHas.bind(null, c2Thunk);
       var c2Returns = itsMethodReturns.bind(null, c2Thunk);
 
-      c2Has('display_name', undefined);
+      c2Has('displayName', undefined);
 
       c2Returns('hasParam', 'HEADERPARAM', true);
       c2Returns('toString', null, '<sip:bob@biloxi.com>;headerparam');
@@ -124,7 +124,7 @@ describe('Grammar', function () {
         itsMethodReturns(uriThunk, 'hasParam', 'headerParam', false);
 
         it('can alter display name', function () {
-          c2.display_name = '@ł€ĸłæß';
+          c2.displayName = '@ł€ĸłæß';
           expect(c2.toString()).toEqual('"@ł€ĸłæß" <sip:bob@biloxi.com>;headerparam');
         });
       });
@@ -138,7 +138,7 @@ describe('Grammar', function () {
       });
 
       var c3Thunk = function () { return c3; };
-      itHas(c3Thunk, 'display_name', undefined);
+      itHas(c3Thunk, 'displayName', undefined);
       itsMethodReturns(c3Thunk, 'toString', null, '<sips:domain.com:5>');
 
       describe('its URI', function () {

@@ -158,7 +158,7 @@ SIP.Grammar = (function(){
         "Contact": parse_Contact,
         "contact_param": parse_contact_param,
         "name_addr": parse_name_addr,
-        "display_name": parse_display_name,
+        "displayName": parse_displayName,
         "contact_params": parse_contact_params,
         "c_p_q": parse_c_p_q,
         "c_p_expires": parse_c_p_expires,
@@ -239,7 +239,7 @@ SIP.Grammar = (function(){
         "protocol_name": parse_protocol_name,
         "transport": parse_transport,
         "sent_by": parse_sent_by,
-        "via_host": parse_via_host,
+        "viaHost": parse_viaHost,
         "via_port": parse_via_port,
         "ttl": parse_ttl,
         "WWW_Authenticate": parse_WWW_Authenticate,
@@ -8121,9 +8121,9 @@ SIP.Grammar = (function(){
                                 var header;
                                 if(!data.multi_header) data.multi_header = [];
                                 try {
-                                  header = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                                  header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                                   delete data.uri;
-                                  delete data.display_name;
+                                  delete data.displayName;
                                   delete data.params;
                                 } catch(e) {
                                   header = null;
@@ -8144,7 +8144,7 @@ SIP.Grammar = (function(){
         var pos0;
         
         pos0 = pos;
-        result0 = parse_display_name();
+        result0 = parse_displayName();
         result0 = result0 !== null ? result0 : "";
         if (result0 !== null) {
           result1 = parse_LAQUOT();
@@ -8173,7 +8173,7 @@ SIP.Grammar = (function(){
         return result0;
       }
       
-      function parse_display_name() {
+      function parse_displayName() {
         var result0, result1, result2, result3;
         var pos0, pos1, pos2;
         
@@ -8227,12 +8227,12 @@ SIP.Grammar = (function(){
           result0 = parse_quoted_string();
         }
         if (result0 !== null) {
-          result0 = (function(offset, display_name) {
-                                display_name = input.substring(pos, offset).trim();
-                                if (display_name[0] === '\"') {
-                                  display_name = display_name.substring(1, display_name.length-1);
+          result0 = (function(offset, displayName) {
+                                displayName = input.substring(pos, offset).trim();
+                                if (displayName[0] === '\"') {
+                                  displayName = displayName.substring(1, displayName.length-1);
                                 }
-                                data.display_name = display_name; })(pos0, result0);
+                                data.displayName = displayName; })(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
@@ -9269,7 +9269,7 @@ SIP.Grammar = (function(){
           result0 = (function(offset) {
                         var tag = data.tag;
                         try {
-                          data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                          data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                           if (tag) {data.setParam('tag',tag)}
                         } catch(e) {
                           data = -1;
@@ -9380,10 +9380,10 @@ SIP.Grammar = (function(){
         pos0 = pos;
         pos1 = pos;
         result0 = [];
-        result1 = parse_display_name();
+        result1 = parse_displayName();
         while (result1 !== null) {
           result0.push(result1);
-          result1 = parse_display_name();
+          result1 = parse_displayName();
         }
         if (result0 !== null) {
           result1 = parse_LAQUOT();
@@ -9449,7 +9449,7 @@ SIP.Grammar = (function(){
         if (result0 !== null) {
           result0 = (function(offset) {
                               try {
-                                data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                                data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                               } catch(e) {
                                 data = -1;
                               }})(pos0);
@@ -10440,9 +10440,9 @@ SIP.Grammar = (function(){
                           var header;
                           if(!data.multi_header) data.multi_header = [];
                           try {
-                            header = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                            header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                             delete data.uri;
-                            delete data.display_name;
+                            delete data.displayName;
                             delete data.params;
                           } catch(e) {
                             header = null;
@@ -10514,7 +10514,7 @@ SIP.Grammar = (function(){
         if (result0 !== null) {
           result0 = (function(offset) {
                     try {
-                      data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                      data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                     } catch(e) {
                       data = -1;
                     }})(pos0);
@@ -11131,7 +11131,7 @@ SIP.Grammar = (function(){
           result0 = (function(offset) {
                       var tag = data.tag;
                       try {
-                        data = new SIP.NameAddrHeader(data.uri, data.display_name, data.params);
+                        data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                         if (tag) {data.setParam('tag',tag)}
                       } catch(e) {
                         data = -1;
@@ -11654,7 +11654,7 @@ SIP.Grammar = (function(){
         var pos0, pos1;
         
         pos0 = pos;
-        result0 = parse_via_host();
+        result0 = parse_viaHost();
         if (result0 !== null) {
           pos1 = pos;
           result1 = parse_COLON();
@@ -11684,7 +11684,7 @@ SIP.Grammar = (function(){
         return result0;
       }
       
-      function parse_via_host() {
+      function parse_viaHost() {
         var result0;
         var pos0;
         

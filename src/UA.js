@@ -5,6 +5,11 @@
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
+ * @param {function returning SIP.MediaHandler} [configuration.mediaHandlerFactory]
+ *        A function will be invoked by each of the UA's Sessions to build the MediaHandler for that Session.
+ *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) MediaHandler.
+ *
+ * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
 (function(SIP) {
 var UA,
@@ -241,19 +246,20 @@ UA.prototype.isConnected = function() {
  *
  * @param {String} target
  * @param {Object} views
- * @param {Object} [options]
+ * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  *
  * @throws {TypeError}
  *
  */
 UA.prototype.invite = function(target, options) {
+  options = options || {};
   var context = new SIP.InviteClientContext(this, target, options);
 
   if (this.isConnected()) {
-    context.invite();
+    context.invite({media: options.media});
   } else {
     this.once('connected', function() {
-      context.invite();
+      context.invite({media: options.media});
     });
   }
   return context;
@@ -408,7 +414,7 @@ UA.prototype.start = function() {
  * @returns {SIP.URI|undefined}
  */
 UA.prototype.normalizeTarget = function(target) {
-  return SIP.Utils.normalizeTarget(target, this.configuration.hostport_params);
+  return SIP.Utils.normalizeTarget(target, this.configuration.hostportParams);
 };
 
 
@@ -648,7 +654,7 @@ UA.prototype.receiveRequest = function(request) {
         if(SIP.WebRTC.isSupported) {
           session = new SIP.InviteServerContext(this, request);
 
-          if (session.contentDisp === 'render' || !request.body) {
+          if (!session.hasOffer) {
             self.emit('invite', session);
           } else {
             session.on('invite', function() {
@@ -752,9 +758,9 @@ UA.prototype.getNextWsServer = function() {
   var idx, length, ws_server,
     candidates = [];
 
-  length = this.configuration.ws_servers.length;
+  length = this.configuration.wsServers.length;
   for (idx = 0; idx < length; idx++) {
-    ws_server = this.configuration.ws_servers[idx];
+    ws_server = this.configuration.wsServers[idx];
 
     if (ws_server.status === SIP.Transport.C.STATUS_ERROR) {
       continue;
@@ -793,19 +799,19 @@ UA.prototype.recoverTransport = function(ua) {
   ua = ua || this;
   count = ua.transportRecoverAttempts;
 
-  length = ua.configuration.ws_servers.length;
+  length = ua.configuration.wsServers.length;
   for (idx = 0; idx < length; idx++) {
-    ua.configuration.ws_servers[idx].status = 0;
+    ua.configuration.wsServers[idx].status = 0;
   }
 
   server = ua.getNextWsServer();
 
   k = Math.floor((Math.random() * Math.pow(2,count)) +1);
-  nextRetry = k * ua.configuration.connection_recovery_min_interval;
+  nextRetry = k * ua.configuration.connectionRecoveryMinInterval;
 
-  if (nextRetry > ua.configuration.connection_recovery_max_interval) {
-    this.logger.log('time for next connection attempt exceeds connection_recovery_max_interval, resetting counter');
-    nextRetry = ua.configuration.connection_recovery_min_interval;
+  if (nextRetry > ua.configuration.connectionRecoveryMaxInterval) {
+    this.logger.log('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
+    nextRetry = ua.configuration.connectionRecoveryMinInterval;
     count = 0;
   }
 
@@ -825,15 +831,15 @@ UA.prototype.recoverTransport = function(ua) {
  */
 UA.prototype.loadConfig = function(configuration) {
   // Settings and default values
-  var parameter, value, checked_value, hostport_params, registrar_server,
+  var parameter, value, checked_value, hostportParams, registrarServer,
     settings = {
       /* Host address
       * Value to be set in Via sent_by and host part of Contact FQDN
       */
-      via_host: SIP.Utils.createRandomToken(12) + '.invalid',
+      viaHost: SIP.Utils.createRandomToken(12) + '.invalid',
 
       uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
-      ws_servers: [{
+      wsServers: [{
         scheme: 'WSS',
         sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
         status: 0,
@@ -845,46 +851,68 @@ UA.prototype.loadConfig = function(configuration) {
       password: null,
 
       // Registration parameters
-      register_expires: 600,
-      register_min_expires: 120,
+      registerExpires: 600,
+      registerMinExpires: 120,
       register: true,
-      registrar_server: null,
+      registrarServer: null,
 
       // Transport related parameters
-      ws_server_max_reconnection: 3,
-      ws_server_reconnection_timeout: 4,
+      wsServerMaxReconnection: 3,
+      wsServerReconnectionTimeout: 4,
 
-      connection_recovery_min_interval: 2,
-      connection_recovery_max_interval: 30,
+      connectionRecoveryMinInterval: 2,
+      connectionRecoveryMaxInterval: 30,
 
-      use_preloaded_route: false,
+      usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
       userAgentString: SIP.C.USER_AGENT,
 
       // Session parameters
-      no_answer_timeout: 60,
-      stun_servers: ['stun:stun.l.google.com:19302'],
-      turn_servers: [],
+      noAnswerTimeout: 60,
+      stunServers: ['stun:stun.l.google.com:19302'],
+      turnServers: [],
 
       // Logging parameters
-      trace_sip: false,
+      traceSip: false,
 
       // Hacks
-      hack_via_tcp: false,
-      hack_ip_in_contact: false,
+      hackViaTcp: false,
+      hackIpInContact: false,
 
       //autostarting
       autostart: false,
 
       //Reliable Provisional Responses
-      reliable: 'none'
+      reliable: 'none',
+
+      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
     };
 
   // Pre-Configuration
+  function aliasUnderscored (parameter, logger) {
+    var underscored = parameter.replace(/([a-z][A-Z])/g, function (m) {
+      return m[0] + '_' + m[1].toLowerCase();
+    });
+
+    if (parameter === underscored) {
+      return;
+    }
+
+    var hasParameter = configuration.hasOwnProperty(parameter);
+    if (configuration.hasOwnProperty(underscored)) {
+      logger.warn(underscored + ' is deprecated, please use ' + parameter);
+      if (hasParameter) {
+        logger.warn(parameter + ' overriding ' + underscored);
+      }
+    }
+
+    configuration[parameter] = hasParameter ? configuration[parameter] : configuration[underscored];
+  }
 
   // Check Mandatory parameters
   for(parameter in UA.configuration_check.mandatory) {
+    aliasUnderscored(parameter, this.logger);
     if(!configuration.hasOwnProperty(parameter)) {
       throw new SIP.Exceptions.ConfigurationError(parameter);
     } else {
@@ -900,6 +928,7 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
+    aliasUnderscored(parameter, this.logger);
     if(configuration.hasOwnProperty(parameter)) {
       value = configuration[parameter];
 
@@ -921,56 +950,56 @@ UA.prototype.loadConfig = function(configuration) {
   // Sanity Checks
 
   // Connection recovery intervals
-  if(settings.connection_recovery_max_interval < settings.connection_recovery_min_interval) {
-    throw new SIP.Exceptions.ConfigurationError('connection_recovery_max_interval', settings.connection_recovery_max_interval);
+  if(settings.connectionRecoveryMaxInterval < settings.connectionRecoveryMinInterval) {
+    throw new SIP.Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
   }
 
   // Post Configuration Process
 
-  // Allow passing 0 number as display_name.
-  if (settings.display_name === 0) {
-    settings.display_name = '0';
+  // Allow passing 0 number as displayName.
+  if (settings.displayName === 0) {
+    settings.displayName = '0';
   }
 
   // Instance-id for GRUU
-  if (!settings.instance_id) {
-    settings.instance_id = SIP.Utils.newUUID();
+  if (!settings.instanceId) {
+    settings.instanceId = SIP.Utils.newUUID();
   }
 
-  // jssip_id instance parameter. Static random tag of length 5
-  settings.jssip_id = SIP.Utils.createRandomToken(5);
+  // jssipId instance parameter. Static random tag of length 5
+  settings.jssipId = SIP.Utils.createRandomToken(5);
 
   // String containing settings.uri without scheme and user.
-  hostport_params = settings.uri.clone();
-  hostport_params.user = null;
-  settings.hostport_params = hostport_params.toString().replace(/^sip:/i, '');
+  hostportParams = settings.uri.clone();
+  hostportParams.user = null;
+  settings.hostportParams = hostportParams.toString().replace(/^sip:/i, '');
 
-  /* Check whether authorization_user is explicitly defined.
+  /* Check whether authorizationUser is explicitly defined.
    * Take 'settings.uri.user' value if not.
    */
-  if (!settings.authorization_user) {
-    settings.authorization_user = settings.uri.user;
+  if (!settings.authorizationUser) {
+    settings.authorizationUser = settings.uri.user;
   }
 
-  /* If no 'registrar_server' is set use the 'uri' value without user portion. */
-  if (!settings.registrar_server) {
-    registrar_server = settings.uri.clone();
-    registrar_server.user = null;
-    settings.registrar_server = registrar_server;
+  /* If no 'registrarServer' is set use the 'uri' value without user portion. */
+  if (!settings.registrarServer) {
+    registrarServer = settings.uri.clone();
+    registrarServer.user = null;
+    settings.registrarServer = registrarServer;
   }
 
-  // User no_answer_timeout
-  settings.no_answer_timeout = settings.no_answer_timeout * 1000;
+  // User noAnswerTimeout
+  settings.noAnswerTimeout = settings.noAnswerTimeout * 1000;
 
   // Via Host
-  if (settings.hack_ip_in_contact) {
-    settings.via_host = SIP.Utils.getRandomTestNetIP();
+  if (settings.hackIpInContact) {
+    settings.viaHost = SIP.Utils.getRandomTestNetIP();
   }
 
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.via_host, null, {transport: 'ws'}),
+    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: 'ws'}),
     toString: function(options){
       options = options || {};
 
@@ -995,6 +1024,9 @@ UA.prototype.loadConfig = function(configuration) {
     }
   };
 
+  // media overrides mediaConstraints
+  SIP.Utils.optionsOverride(settings, 'media', 'mediaConstraints', true, this.logger);
+
   // Fill the value of the configuration_skeleton
   for(parameter in settings) {
     UA.configuration_skeleton[parameter].value = settings[parameter];
@@ -1011,7 +1043,8 @@ UA.prototype.loadConfig = function(configuration) {
   for(parameter in settings) {
     switch(parameter) {
       case 'uri':
-      case 'registrar_server':
+      case 'registrarServer':
+      case 'mediaHandlerFactory':
         this.logger.log('· ' + parameter + ': ' + settings[parameter]);
         break;
       case 'password':
@@ -1034,37 +1067,40 @@ UA.configuration_skeleton = (function() {
     skeleton = {},
     parameters = [
       // Internal parameters
-      "jssip_id",
-      "register_min_expires",
-      "ws_server_max_reconnection",
-      "ws_server_reconnection_timeout",
-      "hostport_params",
+      "jssipId",
+      "registerMinExpires",
+      "wsServerMaxReconnection",
+      "wsServerReconnectionTimeout",
+      "hostportParams",
 
       // Optional user configurable parameters
       "uri",
-      "ws_servers",
-      "authorization_user",
-      "connection_recovery_max_interval",
-      "connection_recovery_min_interval",
-      "display_name",
-      "hack_via_tcp", // false.
-      "hack_ip_in_contact", //false
-      "instance_id",
-      "no_answer_timeout", // 30 seconds.
+      "wsServers",
+      "authorizationUser",
+      "connectionRecoveryMaxInterval",
+      "connectionRecoveryMinInterval",
+      "displayName",
+      "hackViaTcp", // false.
+      "hackIpInContact", //false
+      "instanceId",
+      "noAnswerTimeout", // 30 seconds.
       "password",
-      "register_expires", // 600 seconds.
-      "registrar_server",
+      "registerExpires", // 600 seconds.
+      "registrarServer",
       "reliable",
-      "stun_servers",
-      "trace_sip",
-      "turn_servers",
       "userAgentString", //SIP.C.USER_AGENT
-      "use_preloaded_route",
       "autostart",
+      "stunServers",
+      "traceSip",
+      "turnServers",
+      "usePreloadedRoute",
+      "mediaHandlerFactory",
+      "media",
+      "mediaConstraints",
 
       // Post-configuration generated parameters
       "via_core_value",
-      "via_host"
+      "viaHost"
     ];
 
   for(idx in parameters) {
@@ -1114,129 +1150,129 @@ UA.configuration_check = {
     },
 
     //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
-    ws_servers: function(ws_servers) {
+    wsServers: function(wsServers) {
       var idx, length, url;
 
-      /* Allow defining ws_servers parameter as:
+      /* Allow defining wsServers parameter as:
        *  String: "host"
        *  Array of Strings: ["host1", "host2"]
        *  Array of Objects: [{ws_uri:"host1", weight:1}, {ws_uri:"host2", weight:0}]
        *  Array of Objects and Strings: [{ws_uri:"host1"}, "host2"]
        */
-      if (typeof ws_servers === 'string') {
-        ws_servers = [{ws_uri: ws_servers}];
-      } else if (ws_servers instanceof Array) {
-        length = ws_servers.length;
+      if (typeof wsServers === 'string') {
+        wsServers = [{ws_uri: wsServers}];
+      } else if (wsServers instanceof Array) {
+        length = wsServers.length;
         for (idx = 0; idx < length; idx++) {
-          if (typeof ws_servers[idx] === 'string'){
-            ws_servers[idx] = {ws_uri: ws_servers[idx]};
+          if (typeof wsServers[idx] === 'string'){
+            wsServers[idx] = {ws_uri: wsServers[idx]};
           }
         }
       } else {
         return;
       }
 
-      if (ws_servers.length === 0) {
+      if (wsServers.length === 0) {
         return false;
       }
 
-      length = ws_servers.length;
+      length = wsServers.length;
       for (idx = 0; idx < length; idx++) {
-        if (!ws_servers[idx].ws_uri) {
+        if (!wsServers[idx].ws_uri) {
           return;
         }
-        if (ws_servers[idx].weight && !Number(ws_servers[idx].weight)) {
+        if (wsServers[idx].weight && !Number(wsServers[idx].weight)) {
           return;
         }
 
-        url = SIP.Grammar.parse(ws_servers[idx].ws_uri, 'absoluteURI');
+        url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
 
         if(url === -1) {
           return;
         } else if(url.scheme !== 'wss' && url.scheme !== 'ws') {
           return;
         } else {
-          ws_servers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=ws;lr>';
+          wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=ws;lr>';
 
-          if (!ws_servers[idx].weight) {
-            ws_servers[idx].weight = 0;
+          if (!wsServers[idx].weight) {
+            wsServers[idx].weight = 0;
           }
 
-          ws_servers[idx].status = 0;
-          ws_servers[idx].scheme = url.scheme.toUpperCase();
+          wsServers[idx].status = 0;
+          wsServers[idx].scheme = url.scheme.toUpperCase();
         }
       }
-      return ws_servers;
+      return wsServers;
     },
 
-    authorization_user: function(authorization_user) {
-      if(SIP.Grammar.parse('"'+ authorization_user +'"', 'quoted_string') === -1) {
+    authorizationUser: function(authorizationUser) {
+      if(SIP.Grammar.parse('"'+ authorizationUser +'"', 'quoted_string') === -1) {
         return;
       } else {
-        return authorization_user;
+        return authorizationUser;
       }
     },
 
-    connection_recovery_max_interval: function(connection_recovery_max_interval) {
+    connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
-      if(SIP.Utils.isDecimal(connection_recovery_max_interval)) {
-        value = window.Number(connection_recovery_max_interval);
+      if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
+        value = window.Number(connectionRecoveryMaxInterval);
         if(value > 0) {
           return value;
         }
       }
     },
 
-    connection_recovery_min_interval: function(connection_recovery_min_interval) {
+    connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
       var value;
-      if(SIP.Utils.isDecimal(connection_recovery_min_interval)) {
-        value = window.Number(connection_recovery_min_interval);
+      if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
+        value = window.Number(connectionRecoveryMinInterval);
         if(value > 0) {
           return value;
         }
       }
     },
 
-    display_name: function(display_name) {
-      if(SIP.Grammar.parse('"' + display_name + '"', 'display_name') === -1) {
+    displayName: function(displayName) {
+      if(SIP.Grammar.parse('"' + displayName + '"', 'displayName') === -1) {
         return;
       } else {
-        return display_name;
+        return displayName;
       }
     },
 
-    hack_via_tcp: function(hack_via_tcp) {
-      if (typeof hack_via_tcp === 'boolean') {
-        return hack_via_tcp;
+    hackViaTcp: function(hackViaTcp) {
+      if (typeof hackViaTcp === 'boolean') {
+        return hackViaTcp;
       }
     },
 
-    hack_ip_in_contact: function(hack_ip_in_contact) {
-      if (typeof hack_ip_in_contact === 'boolean') {
-        return hack_ip_in_contact;
+    hackIpInContact: function(hackIpInContact) {
+      if (typeof hackIpInContact === 'boolean') {
+        return hackIpInContact;
       }
     },
 
-    instance_id: function(instance_id) {
-      if(typeof instance_id !== 'string') {
+    instanceId: function(instanceId) {
+      if(typeof instanceId !== 'string') {
         return;
       }
 
-      if ((/^uuid:/i.test(instance_id))) {
-        instance_id = instance_id.substr(5);
+      if ((/^uuid:/i.test(instanceId))) {
+        instanceId = instanceId.substr(5);
       }
 
-      if(SIP.Grammar.parse(instance_id, 'uuid') === -1) {
+      if(SIP.Grammar.parse(instanceId, 'uuid') === -1) {
         return;
       } else {
-        return instance_id;
+        return instanceId;
       }
     },
 
-    no_answer_timeout: function(no_answer_timeout) {
+    noAnswerTimeout: function(noAnswerTimeout) {
       var value;
-      if (SIP.Utils.isDecimal(no_answer_timeout)) {
-        value = window.Number(no_answer_timeout);
+      if (SIP.Utils.isDecimal(noAnswerTimeout)) {
+        value = window.Number(noAnswerTimeout);
         if (value > 0) {
           return value;
         }
@@ -1264,27 +1300,27 @@ UA.configuration_check = {
       }
     },
 
-    register_expires: function(register_expires) {
+    registerExpires: function(registerExpires) {
       var value;
-      if (SIP.Utils.isDecimal(register_expires)) {
-        value = window.Number(register_expires);
+      if (SIP.Utils.isDecimal(registerExpires)) {
+        value = window.Number(registerExpires);
         if (value > 0) {
           return value;
         }
       }
     },
 
-    registrar_server: function(registrar_server) {
+    registrarServer: function(registrarServer) {
       var parsed;
 
-      if(typeof registrar_server !== 'string') {
+      if(typeof registrarServer !== 'string') {
         return;
       }
 
-      if (!/^sip:/i.test(registrar_server)) {
-        registrar_server = SIP.C.SIP + ':' + registrar_server;
+      if (!/^sip:/i.test(registrarServer)) {
+        registrarServer = SIP.C.SIP + ':' + registrarServer;
       }
-      parsed = SIP.URI.parse(registrar_server);
+      parsed = SIP.URI.parse(registrarServer);
 
       if(!parsed) {
         return;
@@ -1295,18 +1331,18 @@ UA.configuration_check = {
       }
     },
 
-    stun_servers: function(stun_servers) {
+    stunServers: function(stunServers) {
       var idx, length, stun_server;
 
-      if (typeof stun_servers === 'string') {
-        stun_servers = [stun_servers];
-      } else if (!(stun_servers instanceof Array)) {
+      if (typeof stunServers === 'string') {
+        stunServers = [stunServers];
+      } else if (!(stunServers instanceof Array)) {
         return;
       }
 
-      length = stun_servers.length;
+      length = stunServers.length;
       for (idx = 0; idx < length; idx++) {
-        stun_server = stun_servers[idx];
+        stun_server = stunServers[idx];
         if (!(/^stuns?:/.test(stun_server))) {
           stun_server = 'stun:' + stun_server;
         }
@@ -1314,30 +1350,30 @@ UA.configuration_check = {
         if(SIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
           return;
         } else {
-          stun_servers[idx] = stun_server;
+          stunServers[idx] = stun_server;
         }
       }
-      return stun_servers;
+      return stunServers;
     },
 
-    trace_sip: function(trace_sip) {
-      if (typeof trace_sip === 'boolean') {
-        return trace_sip;
+    traceSip: function(traceSip) {
+      if (typeof traceSip === 'boolean') {
+        return traceSip;
       }
     },
 
-    turn_servers: function(turn_servers) {
+    turnServers: function(turnServers) {
       var idx, length, turn_server, url;
 
-      if (turn_servers instanceof Array) {
+      if (turnServers instanceof Array) {
         // Do nothing
       } else {
-        turn_servers = [turn_servers];
+        turnServers = [turnServers];
       }
 
-      length = turn_servers.length;
+      length = turnServers.length;
       for (idx = 0; idx < length; idx++) {
-        turn_server = turn_servers[idx];
+        turn_server = turnServers[idx];
         //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
         if (turn_server.server) {
           turn_server.urls = [turn_server.server];
@@ -1364,7 +1400,7 @@ UA.configuration_check = {
           }
         }
       }
-      return turn_servers;
+      return turnServers;
     },
 
     userAgentString: function(userAgentString) {
@@ -1373,15 +1409,21 @@ UA.configuration_check = {
       }
     },
 
-    use_preloaded_route: function(use_preloaded_route) {
-      if (typeof use_preloaded_route === 'boolean') {
-        return use_preloaded_route;
+    usePreloadedRoute: function(usePreloadedRoute) {
+      if (typeof usePreloadedRoute === 'boolean') {
+        return usePreloadedRoute;
       }
     },
 
     autostart: function(autostart) {
       if (typeof autostart === 'boolean') {
         return autostart;
+      }
+    },
+
+    mediaHandlerFactory: function(mediaHandlerFactory) {
+      if (mediaHandlerFactory instanceof Function) {
+        return mediaHandlerFactory;
       }
     }
   }

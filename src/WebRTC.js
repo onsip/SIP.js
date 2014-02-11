@@ -7,6 +7,12 @@ var WebRTC;
 
 WebRTC = {};
 
+WebRTC.MediaHandler = @@include('../src/WebRTC/MediaHandler.js')
+
+WebRTC.MediaStreamManager = @@include('../src/WebRTC/MediaStreamManager.js')
+
+WebRTC.MediaStream = window.MediaStream || window.webkitMediaStream;
+
 // getUserMedia
 if (window.navigator.getUserMedia) {
   WebRTC.getUserMedia = window.navigator.getUserMedia.bind(navigator);

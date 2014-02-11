@@ -42,7 +42,7 @@ test('Parse NameAddrHeader', function() {
 
   // Parsed data.
   ok(name instanceof(SIP.NameAddrHeader));
-  strictEqual(name.display_name, 'Iñaki ðđøþ');
+  strictEqual(name.displayName, 'Iñaki ðđøþ');
   strictEqual(name.hasParam('qwe'), true);
   strictEqual(name.hasParam('asd'), true);
   strictEqual(name.hasParam('nooo'), false);
@@ -66,10 +66,10 @@ test('Parse NameAddrHeader', function() {
   strictEqual(uri.getHeader('nooo'), undefined);
 
   // Alter data.
-  name.display_name = 'Foo Bar';
-  strictEqual(name.display_name, 'Foo Bar');
-  name.display_name = null;
-  strictEqual(name.display_name, null);
+  name.displayName = 'Foo Bar';
+  strictEqual(name.displayName, 'Foo Bar');
+  name.displayName = null;
+  strictEqual(name.displayName, null);
   strictEqual(name.toString(), '<sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd');
 
   uri.user = 'Iñaki:PASSWD';
@@ -89,7 +89,7 @@ test('Parse multiple Contact', function() {
 
   // Parsed data.
   ok(c1 instanceof(SIP.NameAddrHeader));
-  strictEqual(c1.display_name, 'Iñaki @ł€');
+  strictEqual(c1.displayName, 'Iñaki @ł€');
   strictEqual(c1.hasParam('+sip.instance'), true);
   strictEqual(c1.hasParam('nooo'), false);
   strictEqual(c1.getParam('+SIP.instance'), '"abCD"');
@@ -105,8 +105,8 @@ test('Parse multiple Contact', function() {
   strictEqual(c1.toString(), '"Iñaki @ł€" <sip:+1234@aliax.net;transport=ws>;+sip.instance="abCD"');
 
   // Alter data.
-  c1.display_name = '€€€';
-  strictEqual(c1.display_name, '€€€');
+  c1.displayName = '€€€';
+  strictEqual(c1.displayName, '€€€');
   c1.uri.user = '+999';
   strictEqual(c1.uri.user, '+999');
   c1.setParam('+sip.instance', '"zxCV"');
@@ -118,7 +118,7 @@ test('Parse multiple Contact', function() {
 
   // Parsed data.
   ok(c2 instanceof(SIP.NameAddrHeader));
-  strictEqual(c2.display_name, undefined);
+  strictEqual(c2.displayName, undefined);
   strictEqual(c2.hasParam('HEADERPARAM'), true);
   ok(c2.uri instanceof(SIP.URI));
   strictEqual(c2.uri.scheme, 'sip');
@@ -129,12 +129,12 @@ test('Parse multiple Contact', function() {
   strictEqual(c2.toString(), '<sip:bob@biloxi.com>;headerparam');
 
   // Alter data.
-  c2.display_name = '@ł€ĸłæß';
+  c2.displayName = '@ł€ĸłæß';
   strictEqual(c2.toString(), '"@ł€ĸłæß" <sip:bob@biloxi.com>;headerparam');
 
   // Parsed data.
   ok(c3 instanceof(SIP.NameAddrHeader));
-  strictEqual(c3.display_name, undefined);
+  strictEqual(c3.displayName, undefined);
   ok(c3.uri instanceof(SIP.URI));
   strictEqual(c3.uri.scheme, 'sip');
   strictEqual(c3.uri.user, undefined);

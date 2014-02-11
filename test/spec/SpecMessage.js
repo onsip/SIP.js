@@ -3,7 +3,7 @@ describe('Message', function() {
   var ua;
   
   beforeEach(function() {
-    ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
     spyOn(SIP.Utils, 'augment').andCallThrough();
   });
@@ -79,7 +79,7 @@ describe('Message', function() {
       contentType = 'text/plain';
       
       Message = new SIP.MessageClientContext(ua,target,body,contentType);
-      Message.ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+      Message.ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
 
       spyOn(Message, 'send');
     });

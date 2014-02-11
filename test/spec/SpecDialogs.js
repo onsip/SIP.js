@@ -4,7 +4,7 @@ describe('Dialogs', function() {
   var Dialog;
 
   beforeEach(function() {
-    var ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
+    var ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send']);
     message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: JsSIP 0.4.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
     spyOn(message, 'reply');
@@ -84,12 +84,23 @@ describe('Dialogs', function() {
     expect(Dialog.remote_target).toBe(message.parseHeader('contact').uri);
     expect(Dialog.route_set).toEqual(message.getHeaders('record-route').reverse());
 
-    expect(Dialog.rtcMediaHandler).toBeUndefined();
+    expect(Dialog.mediaHandler).toBeUndefined();
 
-    owner.request.body = null;
+    owner.hasOffer = false;
     Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
 
-    expect(Dialog.rtcMediaHandler).toBeDefined();
+    expect(Dialog.mediaHandler).toBeDefined();
+  });
+
+  it('uses the mediaHandlerFactory of its owner session', function () {
+    // acts like a constructor that doesn't need 'new'
+    function mediaHandlerConstructor () {
+      return Object.create(mediaHandlerConstructor.prototype);
+    };
+    owner.mediaHandlerFactory = mediaHandlerConstructor;
+    owner.hasOffer = false;
+    Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
+    expect(Dialog.mediaHandler instanceof mediaHandlerConstructor).toBe(true);
   });
 
   it('sets logger, owner, dialogs array, and logs', function() {
@@ -150,15 +161,15 @@ describe('Dialogs', function() {
       expect(owner.ua.dialogs[Dialog.id.toString()]).toBeUndefined();
     });
 
-    it('calls peerConnection.close if the dialog was in the EARLY state and there is an rtcMediaHandler', function() {
-      owner.request.body = null;
+    it('calls peerConnection.close if the dialog was in the EARLY state and there is an mediaHandler', function() {
+      owner.hasOffer = false;
       Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
 
-      spyOn(Dialog.rtcMediaHandler.peerConnection, 'close');
+      spyOn(Dialog.mediaHandler.peerConnection, 'close');
 
       Dialog.terminate();
 
-      expect(Dialog.rtcMediaHandler.peerConnection.close).toHaveBeenCalled();
+      expect(Dialog.mediaHandler.peerConnection.close).toHaveBeenCalled();
     });
   });
 

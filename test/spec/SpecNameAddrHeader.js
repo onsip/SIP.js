@@ -17,7 +17,7 @@ describe('NameAddrHeader', function() {
   });
 
   it('has the display name', function () {
-    expect(name.display_name).toBe(displayName);
+    expect(name.displayName).toBe(displayName);
   });
 
   it('can create a string of itself', function() {
@@ -25,17 +25,17 @@ describe('NameAddrHeader', function() {
   });
   
   it('can set the display name to null', function () {
-    name.display_name = null;
+    name.displayName = null;
     expect(name.toString()).toEqual(toStringUri);
   });
   
   it('can set the display name to 0', function () {
-    name.display_name = 0;
+    name.displayName = 0;
     expect(name.toString()).toEqual('"0" ' + toStringUri);
   });
   
   it('can set the display name to ""', function () {
-    name.display_name = "";
+    name.displayName = "";
     expect(name.toString()).toEqual(toStringUri);
   });
 
@@ -87,8 +87,8 @@ describe('NameAddrHeader', function() {
 
     it('can set the display name of the clone', function () {
       var newDisplayName= '@ł€';
-      name2.display_name = newDisplayName;
-      expect(name2.display_name).toEqual(newDisplayName);
+      name2.displayName = newDisplayName;
+      expect(name2.displayName).toEqual(newDisplayName);
     });
 
     it('has an undefined user', function () {
@@ -110,7 +110,7 @@ describe('NameAddrHeader', function() {
     });
 
     it('parses the display name', function () {
-      expect(header.display_name).toEqual('Iñaki ðđøþ');
+      expect(header.displayName).toEqual('Iñaki ðđøþ');
     });
 
     function itsMethod (testName, methodName, methodArg, expected) {
@@ -127,14 +127,14 @@ describe('NameAddrHeader', function() {
 
     var newDispName = "Foo Bar";
     it('can set the display name to "' + newDispName + '"', function () {
-      header.display_name = newDispName;
-      expect(header.display_name).toEqual(newDispName);
+      header.displayName = newDispName;
+      expect(header.displayName).toEqual(newDispName);
     });
 
     newDispName = null;
     it('can set the display name to ' + newDispName, function () {
-      header.display_name = newDispName;
-      expect(header.display_name).toEqual(newDispName);
+      header.displayName = newDispName;
+      expect(header.displayName).toEqual(newDispName);
       expect(header.toString()).toEqual('<sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd');
     });
 

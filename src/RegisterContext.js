@@ -10,8 +10,8 @@ RegisterContext = function (ua) {
         'unregistered'
       ];
 
-  this.registrar = ua.configuration.registrar_server;
-  this.expires = ua.configuration.register_expires;
+  this.registrar = ua.configuration.registrarServer;
+  this.expires = ua.configuration.registerExpires;
 
 
   // Contact header
@@ -19,7 +19,7 @@ RegisterContext = function (ua) {
 
   if(regId) {
     this.contact += ';reg-id='+ regId;
-    this.contact += ';+sip.instance="<urn:uuid:'+ ua.configuration.instance_id+'>"';
+    this.contact += ';+sip.instance="<urn:uuid:'+ ua.configuration.instanceId+'>"';
   }
 
   // Call-ID and CSeq values RFC3261 10.2
