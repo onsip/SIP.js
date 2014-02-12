@@ -306,7 +306,6 @@ Session.prototype = {
     var rmh = this.rtcMediaHandler,
         pc = rmh && rmh.peerConnection;
     if (pc && pc.signalingState === 'closed') {
-      this.logger.warn('peerConnection is closed, getLocalStreams returning []');
       return [];
     }
     return pc && (pc.getLocalStreams && pc.getLocalStreams()) ||
@@ -317,7 +316,6 @@ Session.prototype = {
     var rmh = this.rtcMediaHandler,
         pc = rmh && rmh.peerConnection;
     if (pc && pc.signalingState === 'closed') {
-      this.logger.warn('peerConnection is closed, getRemoteStreams returning []');
       return [];
     }
     return pc && (pc.getRemoteStreams && pc.getRemoteStreams()) ||
