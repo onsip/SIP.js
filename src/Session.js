@@ -1632,16 +1632,22 @@ InviteServerContext.prototype = {
               body: 'SIP/2.0 100 Trying'
             });
 
-            /*
-              Harmless race condition.  Both sides of REFER
-              may send a BYE, but in the end the dialogs are destroyed.
-            */
+
+            // HACK: Stop localMedia so Chrome doesn't get confused about gUM
+            if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
+              this.rtcMediaHandler.localMedia.stop();
+            }
+
             referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
               mediaConstraints: this.mediaConstraints
             });
 
             this.referred(referSession);
 
+            /*
+              Harmless race condition.  Both sides of REFER
+              may send a BYE, but in the end the dialogs are destroyed.
+            */
             this.terminate();
           }
           break;
@@ -2277,16 +2283,21 @@ InviteClientContext.prototype = {
             body: 'SIP/2.0 100 Trying'
           });
 
-          /*
-            Harmless race condition.  Both sides of REFER
-            may send a BYE, but in the end the dialogs are destroyed.
-          */
+          // HACK: Stop localMedia so Chrome doesn't get confused about gUM
+          if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
+            this.rtcMediaHandler.localMedia.stop();
+          }
+
           referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.mediaConstraints
           });
 
           this.referred(referSession);
 
+          /*
+            Harmless race condition.  Both sides of REFER
+            may send a BYE, but in the end the dialogs are destroyed.
+          */
           this.terminate();
           break;
       }
