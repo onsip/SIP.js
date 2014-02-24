@@ -1469,189 +1469,187 @@ InviteServerContext.prototype = {
       }
     }
 
-    if(request.method === SIP.C.CANCEL) {
-      /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
-       * was in progress and that the UAC MAY continue with the session established by
-       * any 2xx response, or MAY terminate with BYE. SIP does continue with the
-       * established session. So the CANCEL is processed only if the session is not yet
-       * established.
-       */
+    switch(request.method) {
+      case SIP.C.CANCEL:
+        /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
+         * was in progress and that the UAC MAY continue with the session established by
+         * any 2xx response, or MAY terminate with BYE. SIP does continue with the
+         * established session. So the CANCEL is processed only if the session is not yet
+         * established.
+         */
 
-      /*
-       * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
-       *request opening the session.
-       */
-      if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_ANSWERED) {
-        if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-          window.clearTimeout(session.timers.rel1xxTimer);
-          window.clearTimeout(session.timers.prackTimer);
-        }
-        this.status = C.STATUS_CANCELED;
-        this.request.reply(487);
-        this.canceled(request);
-        this.failed(request, SIP.C.causes.CANCELED);
-        this.terminated(request);
-      }
-    } else {
-      // Requests arriving here are in-dialog requests.
-      switch(request.method) {
-        case SIP.C.ACK:
-          if(this.status === C.STATUS_WAITING_FOR_ACK) {
-            if (!this.request.body || this.contentDisp === 'render') {
-              if(request.body && request.getHeader('content-type') === 'application/sdp') {
-                // ACK contains answer to an INVITE w/o SDP negotiation
-                this.rtcMediaHandler.onMessage(
-                  'answer',
-                  request.body,
-                  /*
-                   * onSuccess
-                   * SDP Answer fits with Offer. Media will start
-                   */
-                  confirmSession,
-                  /*
-                   * onFailure
-                   * SDP Answer does not fit the Offer.  Terminate the call.
-                   */
-                  function (e) {
-                    session.logger.warn(e);
-                    session.terminate({
-                      status_code: '488',
-                      reason_phrase: 'Bad Media Description'
-                    });
-                    session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                  }
-                );
-              } else if (session.early_sdp) {
-                confirmSession();
-              } else {
-                session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-              }
-            } else {
-              confirmSession();
-            }
-          }
-          break;
-        case SIP.C.PRACK:
+        /*
+         * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
+         *request opening the session.
+         */
+        if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_ANSWERED) {
           if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-            localMedia = session.rtcMediaHandler.localMedia;
-            if(!this.request.body) {
-              if(request.body && request.getHeader('content-type') === 'application/sdp') {
-                this.rtcMediaHandler.onMessage(
-                  'answer',
-                  request.body,
-                  /*
-                   * onSuccess
-                   * SDP Answer fits with Offer. Media will start
-                   */
-                  function() {
-                    window.clearTimeout(session.timers.rel1xxTimer);
-                    window.clearTimeout(session.timers.prackTimer);
-                    request.reply(200);
-                    if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-                      session.status = C.STATUS_EARLY_MEDIA;
-                      session.accept();
-                    }
-                    session.status = C.STATUS_EARLY_MEDIA;
-                    if (localMedia.getAudioTracks().length > 0) {
-                      localMedia.getAudioTracks()[0].enabled = false;
-                    }
-                    if (localMedia.getVideoTracks().length > 0) {
-                      localMedia.getVideoTracks()[0].enabled = false;
-                    }
-                  },
-                  function (e) {
-                    session.logger.warn(e);
-                    session.terminate({
-                      status_code: '488',
-                      reason_phrase: 'Bad Media Description'
-                    });
-                    session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                  }
-                );
-              } else {
-                session.terminate({
-                  status_code: '488',
-                  reason_phrase: 'Bad Media Description'
-                });
-                session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-              }
+            window.clearTimeout(session.timers.rel1xxTimer);
+            window.clearTimeout(session.timers.prackTimer);
+          }
+          this.status = C.STATUS_CANCELED;
+          this.request.reply(487);
+          this.canceled(request);
+          this.failed(request, SIP.C.causes.CANCELED);
+          this.terminated(request);
+        }
+        break;
+      case SIP.C.ACK:
+        if(this.status === C.STATUS_WAITING_FOR_ACK) {
+          if (!this.request.body || this.contentDisp === 'render') {
+            if(request.body && request.getHeader('content-type') === 'application/sdp') {
+              // ACK contains answer to an INVITE w/o SDP negotiation
+              this.rtcMediaHandler.onMessage(
+                'answer',
+                request.body,
+                /*
+                 * onSuccess
+                 * SDP Answer fits with Offer. Media will start
+                 */
+                confirmSession,
+                /*
+                 * onFailure
+                 * SDP Answer does not fit the Offer.  Terminate the call.
+                 */
+                function (e) {
+                  session.logger.warn(e);
+                  session.terminate({
+                    status_code: '488',
+                    reason_phrase: 'Bad Media Description'
+                  });
+                  session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                }
+              );
+            } else if (session.early_sdp) {
+              confirmSession();
             } else {
-              window.clearTimeout(session.timers.rel1xxTimer);
-              window.clearTimeout(session.timers.prackTimer);
-              request.reply(200);
+              session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
+          } else {
+            confirmSession();
+          }
+        }
+        break;
+      case SIP.C.PRACK:
+        if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+          localMedia = session.rtcMediaHandler.localMedia;
+          if(!this.request.body) {
+            if(request.body && request.getHeader('content-type') === 'application/sdp') {
+              this.rtcMediaHandler.onMessage(
+                'answer',
+                request.body,
+                /*
+                 * onSuccess
+                 * SDP Answer fits with Offer. Media will start
+                 */
+                function() {
+                  window.clearTimeout(session.timers.rel1xxTimer);
+                  window.clearTimeout(session.timers.prackTimer);
+                  request.reply(200);
+                  if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+                    session.status = C.STATUS_EARLY_MEDIA;
+                    session.accept();
+                  }
+                  session.status = C.STATUS_EARLY_MEDIA;
+                  if (localMedia.getAudioTracks().length > 0) {
+                    localMedia.getAudioTracks()[0].enabled = false;
+                  }
+                  if (localMedia.getVideoTracks().length > 0) {
+                    localMedia.getVideoTracks()[0].enabled = false;
+                  }
+                },
+                function (e) {
+                  session.logger.warn(e);
+                  session.terminate({
+                    status_code: '488',
+                    reason_phrase: 'Bad Media Description'
+                  });
+                  session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                }
+              );
+            } else {
+              session.terminate({
+                status_code: '488',
+                reason_phrase: 'Bad Media Description'
+              });
+              session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }
+          } else {
+            window.clearTimeout(session.timers.rel1xxTimer);
+            window.clearTimeout(session.timers.prackTimer);
+            request.reply(200);
 
-              if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-                this.status = C.STATUS_EARLY_MEDIA;
-                this.accept();
-              }
+            if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
               this.status = C.STATUS_EARLY_MEDIA;
-              localMedia = session.rtcMediaHandler.localMedia;
-              if (localMedia.getAudioTracks().length > 0) {
-                localMedia.getAudioTracks()[0].enabled = false;
-              }
-              if (localMedia.getVideoTracks().length > 0) {
-                localMedia.getVideoTracks()[0].enabled = false;
-              }
+              this.accept();
             }
-          } else if(this.status === C.STATUS_EARLY_MEDIA) {
-            request.reply(200);
-          }
-          break;
-        case SIP.C.BYE:
-          if(this.status === C.STATUS_CONFIRMED) {
-            request.reply(200);
-            this.bye();
-            this.terminated(request, SIP.C.causes.BYE);
-          }
-          break;
-        case SIP.C.INVITE:
-          if(this.status === C.STATUS_CONFIRMED) {
-            this.logger.log('re-INVITE received');
-            this.receiveReinvite(request);
-          }
-          break;
-        case SIP.C.INFO:
-          if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
-            contentType = request.getHeader('content-type');
-            if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-              new DTMF(this).init_incoming(request);
+            this.status = C.STATUS_EARLY_MEDIA;
+            localMedia = session.rtcMediaHandler.localMedia;
+            if (localMedia.getAudioTracks().length > 0) {
+              localMedia.getAudioTracks()[0].enabled = false;
+            }
+            if (localMedia.getVideoTracks().length > 0) {
+              localMedia.getVideoTracks()[0].enabled = false;
             }
           }
-          break;
-        case SIP.C.REFER:
-          if(this.status ===  C.STATUS_CONFIRMED) {
-            this.logger.log('REFER received');
-            request.reply(202, 'Accepted');
-
-            (new Request(this)).send(SIP.C.NOTIFY, {
-              extraHeaders: [
-                'Event: refer',
-                'Subscription-State: terminated',
-                'Content-Type: message/sipfrag'
-              ],
-              body: 'SIP/2.0 100 Trying'
-            });
-
-
-            // HACK: Stop localMedia so Chrome doesn't get confused about gUM
-            if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
-              this.rtcMediaHandler.localMedia.stop();
-            }
-
-            referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-              mediaConstraints: this.mediaConstraints
-            });
-
-            this.referred(referSession);
-
-            /*
-              Harmless race condition.  Both sides of REFER
-              may send a BYE, but in the end the dialogs are destroyed.
-            */
-            this.terminate();
+        } else if(this.status === C.STATUS_EARLY_MEDIA) {
+          request.reply(200);
+        }
+        break;
+      case SIP.C.BYE:
+        if(this.status === C.STATUS_CONFIRMED) {
+          request.reply(200);
+          this.bye();
+          this.terminated(request, SIP.C.causes.BYE);
+        }
+        break;
+      case SIP.C.INVITE:
+        if(this.status === C.STATUS_CONFIRMED) {
+          this.logger.log('re-INVITE received');
+          this.receiveReinvite(request);
+        }
+        break;
+      case SIP.C.INFO:
+        if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
+          contentType = request.getHeader('content-type');
+          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
+            new DTMF(this).init_incoming(request);
           }
-          break;
-      }
+        }
+        break;
+      case SIP.C.REFER:
+        if(this.status ===  C.STATUS_CONFIRMED) {
+          this.logger.log('REFER received');
+          request.reply(202, 'Accepted');
+
+          (new Request(this)).send(SIP.C.NOTIFY, {
+            extraHeaders: [
+              'Event: refer',
+              'Subscription-State: terminated',
+              'Content-Type: message/sipfrag'
+            ],
+            body: 'SIP/2.0 100 Trying'
+          });
+
+
+          // HACK: Stop localMedia so Chrome doesn't get confused about gUM
+          if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
+            this.rtcMediaHandler.localMedia.stop();
+          }
+
+          referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
+            mediaConstraints: this.mediaConstraints
+          });
+
+          this.referred(referSession);
+
+          /*
+            Harmless race condition.  Both sides of REFER
+            may send a BYE, but in the end the dialogs are destroyed.
+          */
+          this.terminate();
+        }
+        break;
     }
   }
 
