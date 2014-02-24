@@ -187,6 +187,10 @@ UA = function(configuration) {
   this.registerContext.on('failed', selfEmit('registrationFailed'));
   this.registerContext.on('registered', selfEmit('registered'));
   this.registerContext.on('unregistered', selfEmit('unregistered'));
+
+  if(configuration.autostart === true) {
+    this.start();
+  }
 };
 UA.prototype = new SIP.EventEmitter();
 
@@ -812,6 +816,9 @@ UA.prototype.loadConfig = function(configuration) {
       hack_via_tcp: false,
       hack_ip_in_contact: false,
 
+      //autostarting
+      autostart: false,
+
       //Reliable Provisional Responses
       reliable: 'none'
     };
@@ -994,6 +1001,7 @@ UA.configuration_skeleton = (function() {
       "trace_sip",
       "turn_servers",
       "use_preloaded_route",
+      "autostart",
 
       // Post-configuration generated parameters
       "via_core_value",
@@ -1303,6 +1311,12 @@ UA.configuration_check = {
     use_preloaded_route: function(use_preloaded_route) {
       if (typeof use_preloaded_route === 'boolean') {
         return use_preloaded_route;
+      }
+    },
+
+    autostart: function(autostart) {
+      if (typeof autostart === 'boolean') {
+        return autostart;
       }
     }
   }
