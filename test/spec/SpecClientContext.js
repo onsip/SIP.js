@@ -175,5 +175,13 @@ describe('ClientContext', function() {
 
       expect(ClientContext.request.cancel).toHaveBeenCalled();
     });
+    it('emits a canceled event', function() {
+      spyOn(ClientContext, 'emit');
+      ClientContext.request = jasmine.createSpyObj('request', ['cancel']);
+      
+      ClientContext.cancel();
+      
+      expect(ClientContext.emit).toHaveBeenCalledWith('canceled');
+    });
   });
 });

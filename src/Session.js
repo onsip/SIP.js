@@ -1,7 +1,6 @@
 (function (SIP) {
 
 // Load dependencies
-var Request         = @@include('../src/Session/Request.js')
 var RTCMediaHandler = @@include('../src/Session/RTCMediaHandler.js')
 var DTMF            = @@include('../src/Session/DTMF.js')
 
@@ -219,7 +218,9 @@ Session.prototype = {
     status_code = options.status_code,
     reason_phrase = options.reason_phrase,
     extraHeaders = options.extraHeaders || [],
-    body = options.body;
+    body = options.body,
+    self = this,
+    request;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
@@ -235,16 +236,39 @@ Session.prototype = {
     } else if (status_code) {
       extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
     }
+    request = new SIP.OutgoingRequest(
+      SIP.C.BYE,
+      this.dialog.remote_target,
+      this.ua,
+      {
+        'cseq': this.dialog.local_seqnum+=1,
+        'call_id': this.dialog.id.call_id,
+        'from_uri': this.dialog.local_uri,
+        'from_tag': this.dialog.id.local_tag,
+        'to_uri': this.dialog.remote_uri,
+        'to_tag': this.dialog.id.remote_tag,
+        'route_set': this.dialog.route_set
+      },
+      extraHeaders,
+      body
+    );
+    new SIP.RequestSender(
+      {
+        request: request,
+        onRequestTimeout: function() {
+          self.onRequestTimeout();
+        },
+        onTransportError: function() {
+          self.onTransportError();
+        },
+        receiveResponse: function(response) {
+          self.receiveNonInviteResponse(response);
+        }
+      },
+      this.ua
+    ).send();
 
-    this.sendRequest(SIP.C.BYE, {
-      extraHeaders: extraHeaders,
-      body: body
-    });
-
-    this.emit('bye', {
-      cause: reason_phrase,
-      code: status_code
-    });
+    this.emit('bye',request);
     this.terminated();
 
     this.close();
@@ -252,10 +276,10 @@ Session.prototype = {
 
   refer: function(target, options) {
     options = options || {};
-    var request,
-    invalidTarget = false,
-    extraHeaders = options.extraHeaders || [],
-    self = this;
+    var   invalidTarget = false,
+    body = options.body,
+    extraHeaders = options.extraHeaders || [];
+    
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
     } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
@@ -286,19 +310,53 @@ Session.prototype = {
     }
 
     //Send the request
-    request = new Request(this);
-    request.send(SIP.C.REFER, { extraHeaders: extraHeaders });
-    request.on('succeeded', function () {
-      self.terminate();
-    });
+    this.sendRequest(SIP.C.REFER,
+      {
+        extraHeaders: extraHeaders,
+        body: body
+      });
+    
+    this.terminate();
 
     return this;
   },
 
-  sendRequest: function(method, options) {
-    var request = new Request(this);
-
-    request.send(method, options);
+  sendRequest: function(method,options) {
+    options = options || {};
+    var self = this;
+    var request = new SIP.OutgoingRequest(
+      method,
+      this.dialog.remote_target,
+      this.ua,
+      {
+        'cseq': this.dialog.local_seqnum+=1,
+        'call_id': this.dialog.id.call_id,
+        'from_uri': this.dialog.local_uri,
+        'from_tag': this.dialog.id.local_tag,
+        'to_uri': this.dialog.remote_uri,
+        'to_tag': this.dialog.id.remote_tag,
+        'route_set': this.dialog.route_set
+      },
+      options.extraHeaders || {},
+      options.body || {}
+    );
+    
+    new SIP.RequestSender(
+      {
+        request: request,
+        onRequestTimeout: function() {
+          self.onRequestTimeout();
+        },
+        onTransportError: function() {
+          self.onTransportError();
+        },
+        receiveResponse: function(response) {
+          self.receiveNonInviteResponse(response);
+        }
+      },
+      this.ua
+    ).send();
+    
     return this;
   },
 
@@ -778,6 +836,7 @@ Session.prototype = {
         break;
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
+        
         this.sendRequest(SIP.C.ACK);
 
         if(!response.body) {
@@ -972,20 +1031,17 @@ Session.prototype = {
     });
   },
 
-  referred: function(context) {
-    return this.emit('referred', {
-      context: context || null
-    });
+  referred: function(request, referSession) {
+    return this.emit(
+      'referred',
+      request || null,
+      referSession || null
+    );
   },
 
-  canceled: function(response) {
-    var code = response ? response.status_code : null;
-
+  canceled: function() {
     this.close();
-    return this.emit('canceled', {
-      response: response || null,
-      code: code
-    });
+    return this.emit('canceled');
   },
 
   accepted: function(response) {
@@ -1174,8 +1230,6 @@ InviteServerContext.prototype = {
     options = options || {};
 
     var
-    status_code = options.status_code,
-    reason_phrase = options.reason_phrase,
     extraHeaders = options.extraHeaders || [],
     body = options.body,
     dialog,
@@ -1197,18 +1251,43 @@ InviteServerContext.prototype = {
 
       this.request.server_transaction.on('stateChanged', function(){
         if (this.state === SIP.Transactions.C.STATUS_TERMINATED) {
-          self.sendRequest(SIP.C.BYE, {
-            extraHeaders: extraHeaders,
-            body: body
-          });
+          this.request = new SIP.OutgoingRequest(
+            SIP.C.BYE,
+            this.dialog.remote_target,
+            this.ua,
+            {
+              'cseq': this.dialog.local_seqnum+=1,
+              'call_id': this.dialog.id.call_id,
+              'from_uri': this.dialog.local_uri,
+              'from_tag': this.dialog.id.local_tag,
+              'to_uri': this.dialog.remote_uri,
+              'to_tag': this.dialog.id.remote_tag,
+              'route_set': this.dialog.route_set
+            },
+            extraHeaders,
+            body
+          );
+          
+          new SIP.RequestSender(
+            {
+              request: this.request,
+              onRequestTimeout: function() {
+                self.onRequestTimeout();
+              },
+              onTransportError: function() {
+                self.onTransportError();
+              },
+              receiveResponse: function(response) {
+                self.receiveNonInviteResponse(response);
+              }
+            },
+            this.ua
+          ).send();
           dialog.terminate();
         }
       });
 
-      this.emit('bye', {
-        cause: reason_phrase,
-        code: status_code
-      });
+      this.emit('bye', this.request);
       this.terminated();
 
       // Restore the dialog into 'this' in order to be able to send the in-dialog BYE :-)
@@ -1623,16 +1702,15 @@ InviteServerContext.prototype = {
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
-
-          (new Request(this)).send(SIP.C.NOTIFY, {
-            extraHeaders: [
-              'Event: refer',
-              'Subscription-State: terminated',
-              'Content-Type: message/sipfrag'
-            ],
-            body: 'SIP/2.0 100 Trying'
-          });
-
+          this.sendRequest(SIP.C.NOTIFY,
+            { 
+              extraHeaders:[
+                'Event: refer',
+                'Subscription-State: terminated',
+                'Content-Type: message/sipfrag'
+               ],
+               body:'SIP/2.0 100 Trying'
+            });
 
           // HACK: Stop localMedia so Chrome doesn't get confused about gUM
           if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
@@ -1642,8 +1720,7 @@ InviteServerContext.prototype = {
           referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
             mediaConstraints: this.mediaConstraints
           });
-
-          this.referred(referSession);
+          this.referred(request,referSession);
 
           /*
             Harmless race condition.  Both sides of REFER
@@ -1731,6 +1808,7 @@ InviteClientContext = function(ua, target, options) {
 
   this.method = SIP.C.INVITE;
 
+  this.receiveNonInviteResponse = this.receiveResponse;
   this.receiveResponse = this.receiveInviteResponse;
 
   this.logger = ua.getLogger('sip.inviteclientcontext');
@@ -1851,6 +1929,7 @@ InviteClientContext.prototype = {
         this.canceled(null);
       } else if(response.status_code >= 200 && response.status_code < 299) {
         this.acceptAndTerminate(response);
+        this.emit('bye', this.request);
       }
       return;
     }
@@ -2273,15 +2352,16 @@ InviteClientContext.prototype = {
         case SIP.C.REFER:
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
-
-          (new Request(this)).send(SIP.C.NOTIFY, {
-            extraHeaders: [
-              'Event: refer',
-              'Subscription-State: terminated',
-              'Content-Type: message/sipfrag'
-            ],
-            body: 'SIP/2.0 100 Trying'
-          });
+          
+          this.sendRequest(SIP.C.NOTIFY,
+            {
+              extraHeaders: [
+                'Event: refer',
+                'Subscription-State: terminated',
+                'Content-Type: message/sipfrag'
+              ],
+              body: 'SIP/2.0 100 Trying'
+            });
 
           // HACK: Stop localMedia so Chrome doesn't get confused about gUM
           if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
@@ -2292,7 +2372,7 @@ InviteClientContext.prototype = {
             mediaConstraints: this.mediaConstraints
           });
 
-          this.referred(referSession);
+          this.referred(request, referSession);
 
           /*
             Harmless race condition.  Both sides of REFER

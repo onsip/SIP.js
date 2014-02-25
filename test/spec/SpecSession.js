@@ -205,6 +205,7 @@ describe('Session', function() {
   describe('.bye', function() {
     beforeEach(function() {
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
+      
 
       spyOn(Session,'emit')
       Session.status = 12;
@@ -222,7 +223,8 @@ describe('Session', function() {
       for (var i = 200; i < 700; i++) {
         Session.bye({status_code: i});
 
-        expect(Session.emit).toHaveBeenCalledWith('bye', {code: i, cause: SIP.C.REASON_PHRASE[i] || ''});
+        expect(Session.emit.mostRecentCall.args[0]).toBe('bye');
+        expect(Session.emit.mostRecentCall.args[1] instanceof SIP.OutgoingRequest).toBe(true);
         expect(Session.terminated).toHaveBeenCalled();
         
         Session.emit.reset();
@@ -244,6 +246,7 @@ describe('Session', function() {
       target = 'target';
 
       Session.status = 12;
+      Session.terminate = function() { };
     });
 
     it('throws an error if target is undefined', function() {
@@ -739,7 +742,7 @@ describe('Session', function() {
 
       spyOn(Session, 'sendRequest');
 
-      Session.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage').andReturn(true)};
+      Session.rtcMediaHandler = {onMessage: jasmine.createSpy('onMessage').andReturn(true), close: jasmine.createSpy('close').andReturn(true)};
     });
 
     it('returns without calling sendRequest or reinviteFailed when status is terminated', function() {
@@ -765,32 +768,35 @@ describe('Session', function() {
     it('calls reInviteFailed when the response has no body with a 2xx status code', function() {
       message.body = null;
       message.status_code = 222;
+      Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
-      expect(Session.sendRequest).toHaveBeenCalled()
+/*       expect(Session.sendRequest).toHaveBeenCalled() */
       expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
     it('calls reInviteFailed when the response\'s content-type is not application/sdp with a 2xx status code', function() {
       spyOn(message, 'getHeader').andReturn('wrong');
       message.status_code = 222;
+      Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
-      expect(Session.sendRequest).toHaveBeenCalled();
+/*       expect(Session.sendRequest).toHaveBeenCalled(); */
       expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
     it('calls sendRequest and onMessage when response has a 2xx status code, a body, and content-type of application/sdp', function() {
       message.status_code = 222;
+      Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).not.toHaveBeenCalled();
-      expect(Session.sendRequest).toHaveBeenCalled();
+/*       expect(Session.sendRequest).toHaveBeenCalled(); */
       expect(Session.rtcMediaHandler.onMessage).toHaveBeenCalled();
     });
 
@@ -1156,8 +1162,9 @@ describe('InviteServerContext', function() {
 
   beforeEach(function(){
 
-    ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
-    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
+    ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws://server.example.com'});
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server']);
+    ua.transport.server.scheme = 'wss';
 
     request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
 
@@ -1575,7 +1582,9 @@ describe('InviteServerContext', function() {
         InviteServerContext.early_sdp = true;
         InviteServerContext.contentDisp = 'render';
         spyOn(window, 'clearTimeout').andCallThrough();
-        spyOn(InviteServerContext, 'accepted');
+        spyOn(InviteServerContext, 'accepted').andCallThrough();
+        
+        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         InviteServerContext.receiveRequest(req);
 
@@ -1599,6 +1608,7 @@ describe('InviteServerContext', function() {
 
       it('calls confirmSession if there was an invite w/ sdp originally', function() {
         spyOn(window, 'clearTimeout').andCallThrough();
+        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         InviteServerContext.receiveRequest(req);
 
@@ -1699,7 +1709,7 @@ describe('InviteServerContext', function() {
 
         spyOn(InviteServerContext, 'receiveReinvite');
 
-        InviteServerContext.dialog = {terminate: function(){}, sendRequest: function(){}};
+       InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, InviteServerContext.request, 'UAS');
 
         InviteServerContext.receiveRequest(req);
 
@@ -1712,7 +1722,7 @@ describe('InviteServerContext', function() {
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage('INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
 
-        InviteServerContext.dialog = {terminate: function(){}, sendRequest: function(){}};
+        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         InviteServerContext.receiveRequest(req);
 
@@ -1753,7 +1763,8 @@ describe('InviteClientContext', function() {
     target = 'bob@example.com';
     ua = new SIP.UA({uri: 'alice@example.com', ws_servers: 'ws:server.example.com'});
 
-    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server']);
+    ua.transport.server.scheme = 'wss';
 
     InviteClientContext = new SIP.InviteClientContext(ua, target);
   });
@@ -2349,9 +2360,10 @@ describe('InviteClientContext', function() {
 
     it('logs, replies 202, then calls referred and terminate', function() {
       InviteClientContext.status = 12;
-      InviteClientContext.dialog = jasmine.createSpyObj('dialog', ['sendRequest', 'terminate']);
       request.method = SIP.C.REFER;
       request.parseHeader = jasmine.createSpy('parseHeader').andReturn({uri: 'uri'});
+      InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
+/*       spyOn(InviteClientContext.dialog.sendRequest); */
 
       spyOn(InviteClientContext.logger, 'log');
       spyOn(InviteClientContext, 'referred');
@@ -2363,7 +2375,7 @@ describe('InviteClientContext', function() {
 
       expect(InviteClientContext.logger.log).toHaveBeenCalledWith('REFER received');
       expect(request.reply).toHaveBeenCalledWith(202, 'Accepted');
-      expect(InviteClientContext.dialog.sendRequest).toHaveBeenCalled();
+/*       expect(InviteClientContext.dialog.sendRequest).toHaveBeenCalled(); */
       expect(InviteClientContext.ua.invite).toHaveBeenCalled();
       expect(InviteClientContext.referred).toHaveBeenCalled();
       expect(InviteClientContext.terminate).toHaveBeenCalled();
