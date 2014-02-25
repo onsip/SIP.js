@@ -23,7 +23,7 @@ describe('Grammar', function () {
     });
   });
 
-  var contactString = '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sip:DOMAIN.com:5>';
+  var contactString = '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sips:DOMAIN.com:5>';
   describe("Contacts parsed from '" + contactString + "'", function () {
     var contacts;
 
@@ -139,7 +139,7 @@ describe('Grammar', function () {
 
       var c3Thunk = function () { return c3; };
       itHas(c3Thunk, 'display_name', undefined);
-      itsMethodReturns(c3Thunk, 'toString', null, '<sip:domain.com:5>');
+      itsMethodReturns(c3Thunk, 'toString', null, '<sips:domain.com:5>');
 
       describe('its URI', function () {
         var uriThunk = function () { return c3.uri; };
@@ -149,7 +149,7 @@ describe('Grammar', function () {
 
         var uriHas = itHas.bind(null, uriThunk);
 
-        uriHas('scheme', 'sip');
+        uriHas('scheme', 'sips');
         uriHas('user', undefined);
         uriHas('host', 'domain.com');
         uriHas('port', 5);
@@ -159,7 +159,7 @@ describe('Grammar', function () {
         it('can set header params and uri params', function () {
           c3.uri.setParam('newUriParam', 'zxCV');
           c3.setParam('newHeaderParam', 'zxCV');
-          expect(c3.toString()).toEqual('<sip:domain.com:5;newuriparam=zxcv>;newheaderparam=zxCV');
+          expect(c3.toString()).toEqual('<sips:domain.com:5;newuriparam=zxcv>;newheaderparam=zxCV');
         });
       });
     });
