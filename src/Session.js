@@ -1026,17 +1026,19 @@ InviteServerContext = function(ua, request) {
   this.contentDisp = request.getHeader('Content-Disposition');
 
   // Check body and content type
-  if (request.body && contentType !== 'application/sdp') {
-    if (this.contentDisp === 'session') {
-      request.reply(415);
-      return;
-    } else {
-      this.contentDisp = 'render';
+  if (request.body) {
+    if (contentType !== 'application/sdp') {
+      if (this.contentDisp === 'session') {
+        request.reply(415);
+        return;
+      } else {
+        this.contentDisp = 'render';
+      }
     }
-  }
-  else if (window.mozRTCPeerConnection !== undefined) {
-    request.body = request.body.replace(/relay/g,"host generation 0");
-    request.body = request.body.replace(/ \r\n/g, "\r\n");
+    else if (window.mozRTCPeerConnection !== undefined) {
+      request.body = request.body.replace(/relay/g,"host generation 0");
+      request.body = request.body.replace(/ \r\n/g, "\r\n");
+    }
   }
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
