@@ -19,7 +19,7 @@ describe('An INVITE sent from a UAC', function () {
     console.log('cleared constraints');
 
     console.log('first', session_options);
-    ua = new SIP.UA(ua_config).start().on('connected', function () {
+    ua = new SIP.UA(ua_config).on('connected', function () {
       console.log(session_options);
       session = ua.invite('alice@example.com', session_options);
     });
@@ -196,7 +196,7 @@ describe('An INVITE sent from a UAC', function () {
       ids[id] = true;
 
       for (var i = 1; i < 10; i++) {
-        ua = new SIP.UA(ua_config).start();
+        ua = new SIP.UA(ua_config);
         id = ua.configuration.jssip_id;
         expect(ids[id]).toBeUndefined();
         ids[id] = true;
@@ -361,7 +361,7 @@ describe('An INVITE sent from a UAC', function () {
     beforeEach(function() {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).start();
+      uas = new SIP.UA(ua_config);
 
       waitsFor(function () {
         return sendSpy.calls.length > 0 && uas.isConnected();
@@ -390,7 +390,7 @@ describe('An INVITE sent from a UAC', function () {
     beforeEach(function() {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).start().on('invite', function (newSession) {
+      uas = new SIP.UA(ua_config).on('invite', function (newSession) {
         newSession.accept();
       });
 
@@ -435,7 +435,7 @@ describe('An INVITE sent from a UAC', function () {
     beforeEach(function() {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).start().on('invite', function (newSession) {
+      uas = new SIP.UA(ua_config).on('invite', function (newSession) {
         newSession.reject();
       });
 

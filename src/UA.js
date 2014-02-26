@@ -188,7 +188,7 @@ UA = function(configuration) {
   this.registerContext.on('registered', selfEmit('registered'));
   this.registerContext.on('unregistered', selfEmit('unregistered'));
 
-  if(configuration.autostart === true) {
+  if(configuration.autostart !== false) {
     this.start();
   }
 };
