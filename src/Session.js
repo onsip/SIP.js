@@ -1165,7 +1165,7 @@ InviteServerContext = function(ua, request) {
       }, expires);
     }
 
-    self.emit('invite');
+    self.emit('invite',request);
   }
 
   if (!request.body || this.contentDisp === 'render') {
