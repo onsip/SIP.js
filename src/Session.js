@@ -1524,7 +1524,7 @@ InviteServerContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType, session = this, localMedia, referSession, response;
+    var contentType, session = this, localMedia, referSession;
 
     function confirmSession() {
       localMedia = session.rtcMediaHandler.localMedia;
@@ -1563,15 +1563,17 @@ InviteServerContext.prototype = {
          *request opening the session.
          */
         if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_ANSWERED) {
+/*
           if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
             window.clearTimeout(session.timers.rel1xxTimer);
             window.clearTimeout(session.timers.prackTimer);
           }
+*/
           this.status = C.STATUS_CANCELED;
           this.request.reply(487);
           this.canceled(request);
+          this.rejected(request, SIP.C.causes.CANCELED);
           this.failed(request, SIP.C.causes.CANCELED);
-          this.terminated(request);
         }
         break;
       case SIP.C.ACK:
