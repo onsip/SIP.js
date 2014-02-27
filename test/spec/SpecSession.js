@@ -773,7 +773,7 @@ describe('Session', function() {
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
-/*       expect(Session.sendRequest).toHaveBeenCalled() */
+      expect(Session.sendRequest).toHaveBeenCalled()
       expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
@@ -785,7 +785,7 @@ describe('Session', function() {
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
-/*       expect(Session.sendRequest).toHaveBeenCalled(); */
+      expect(Session.sendRequest).toHaveBeenCalled();
       expect(Session.rtcMediaHandler.onMessage).not.toHaveBeenCalled();
     });
 
@@ -796,7 +796,7 @@ describe('Session', function() {
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).not.toHaveBeenCalled();
-/*       expect(Session.sendRequest).toHaveBeenCalled(); */
+      expect(Session.sendRequest).toHaveBeenCalled();
       expect(Session.rtcMediaHandler.onMessage).toHaveBeenCalled();
     });
 
@@ -1498,13 +1498,13 @@ describe('InviteServerContext', function() {
         InviteServerContext.timers.rel1xxTimer = window.setTimeout(function(){}, 100);
       });
 
-      it('status is WAITING_FOR_ANSWER, timers not cleared', function() {
+      it('status is WAITING_FOR_ANSWER, timers cleared', function() {
         InviteServerContext.status = 4;
 
         InviteServerContext.receiveRequest(req);
 
-        expect(window.clearTimeout).not.toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(window.clearTimeout).not.toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       it('status is WAITING_FOR_PRACK, timers cleared', function() {
@@ -1525,30 +1525,29 @@ describe('InviteServerContext', function() {
         expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
-      it('status is EARLY_MEDIA, timers not cleared', function() {
+      it('status is EARLY_MEDIA, timers cleared', function() {
         InviteServerContext.status = 11;
 
         InviteServerContext.receiveRequest(req);
 
-        expect(window.clearTimeout).not.toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(window.clearTimeout).not.toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
-      it('status is ANSWERED, timers not cleared', function() {
+      it('status is ANSWERED, timers cleared', function() {
         InviteServerContext.status = 5;
 
         InviteServerContext.receiveRequest(req);
 
-        expect(window.clearTimeout).not.toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(window.clearTimeout).not.toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       afterEach(function() {
-        expect(InviteServerContext.status).toBe(8);
+        expect(InviteServerContext.status).toBe(9);
         expect(InviteServerContext.request.reply).toHaveBeenCalledWith(487);
-        expect(InviteServerContext.canceled).toHaveBeenCalledWith(req);
-        expect(InviteServerContext.failed).toHaveBeenCalledWith(req, SIP.C.causes.CANCELED);
-        expect(InviteServerContext.terminated).toHaveBeenCalledWith(req);
+        expect(InviteServerContext.canceled).toHaveBeenCalled();
+        expect(InviteServerContext.failed.mostRecentCall.args[1]).toBe(SIP.C.causes.CANCELED);
       });
     });
 
@@ -2160,7 +2159,7 @@ describe('InviteClientContext', function() {
       });
     });
 
-    it('calls failed, rejected, and terminated for any other response code', function() {
+    it('calls failed, rejected for any other response code', function() {
       response.status_code = 300;
       spyOn(InviteClientContext, 'failed');
       spyOn(InviteClientContext, 'rejected');
@@ -2170,7 +2169,6 @@ describe('InviteClientContext', function() {
 
       expect(InviteClientContext.failed).toHaveBeenCalled();
       expect(InviteClientContext.rejected).toHaveBeenCalled();
-      expect(InviteClientContext.terminated).toHaveBeenCalled();
     });
   });
 
@@ -2186,7 +2184,7 @@ describe('InviteClientContext', function() {
       expect(function() {InviteClientContext.cancel({status_code: 700});}).toThrow('Invalid status_code: 700');
     });
 
-    it('sets isCanceled to true, calls canceled, failed, and terminated, and returns this if status is NULL', function() {
+    it('sets isCanceled to true, calls canceled, and returns this if status is NULL', function() {
       InviteClientContext.status = 0;
       spyOn(InviteClientContext, 'failed');
       spyOn(InviteClientContext, 'canceled');
@@ -2197,12 +2195,10 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.isCanceled).toBe(true);
-      expect(InviteClientContext.failed).toHaveBeenCalled();
       expect(InviteClientContext.canceled).toHaveBeenCalled();
-      expect(InviteClientContext.terminated).toHaveBeenCalled();
     });
 
-    it('sets isCanceled to true, calls canceled, failed, and terminated, and returns this if status is INVITE_SENT and received_100 is false', function() {
+    it('sets isCanceled to true, calls canceled, and returns this if status is INVITE_SENT and received_100 is false', function() {
       InviteClientContext.status = 1;
       spyOn(InviteClientContext, 'failed');
       spyOn(InviteClientContext, 'canceled');
@@ -2213,12 +2209,10 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.isCanceled).toBe(true);
-      expect(InviteClientContext.failed).toHaveBeenCalled();
       expect(InviteClientContext.canceled).toHaveBeenCalled();
-      expect(InviteClientContext.terminated).toHaveBeenCalled();
     });
 
-    it('calls request.cancel, canceled, failed, and terminated, and returns this if status is INVITE_SENT and received_100 is true', function() {
+    it('calls request.cancel, canceled, and returns this if status is INVITE_SENT and received_100 is true', function() {
       InviteClientContext.status = 1;
       InviteClientContext.received_100 = true;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
@@ -2230,12 +2224,10 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.request.cancel).toHaveBeenCalled();
-      expect(InviteClientContext.failed).toHaveBeenCalled();
       expect(InviteClientContext.canceled).toHaveBeenCalled();
-      expect(InviteClientContext.terminated).toHaveBeenCalled();
     });
 
-    it('calls request.cancel, canceled, failed, and terminated, and returns this if status is 1XX_RECEIVED', function() {
+    it('calls request.cancel, canceled, and returns this if status is 1XX_RECEIVED', function() {
       InviteClientContext.status = 2;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
 
@@ -2246,9 +2238,7 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.request.cancel).toHaveBeenCalled();
-      expect(InviteClientContext.failed).toHaveBeenCalled();
       expect(InviteClientContext.canceled).toHaveBeenCalled();
-      expect(InviteClientContext.terminated).toHaveBeenCalled();
     });
   });
 
@@ -2309,10 +2299,10 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveRequest(request);
 
-      expect(InviteClientContext.status).toBe(8);
+      expect(InviteClientContext.status).toBe(9);
       expect(InviteClientContext.request.reply).toHaveBeenCalledWith(487);
-      expect(InviteClientContext.canceled).toHaveBeenCalledWith(request);
-      expect(InviteClientContext.failed).toHaveBeenCalledWith(request, SIP.C.causes.CANCELED);
+      expect(InviteClientContext.canceled).toHaveBeenCalled();
+      expect(InviteClientContext.failed.mostRecentCall.args[1]).toBe(SIP.C.causes.CANCELED);
     });
 
     it('replies 200 and calls bye and terminated if the request method is BYE', function() {

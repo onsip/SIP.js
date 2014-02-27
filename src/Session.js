@@ -229,13 +229,10 @@ Session.prototype = {
 
     this.logger.log('terminating RTCSession');
 
-    reason_phrase = options.reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
-
     if (status_code && (status_code < 200 || status_code >= 700)) {
       throw new TypeError('Invalid status_code: '+ status_code);
-    } else if (status_code) {
-      extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
     }
+    
     request = new SIP.OutgoingRequest(
       SIP.C.BYE,
       this.dialog.remote_target,
@@ -247,7 +244,9 @@ Session.prototype = {
         'from_tag': this.dialog.id.local_tag,
         'to_uri': this.dialog.remote_uri,
         'to_tag': this.dialog.id.remote_tag,
-        'route_set': this.dialog.route_set
+        'route_set': this.dialog.route_set,
+        'status_code': status_code,
+        'reason_phrase': reason_phrase
       },
       extraHeaders,
       body
@@ -1525,7 +1524,7 @@ InviteServerContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType, session = this, localMedia, referSession;
+    var contentType, session = this, localMedia, referSession, response;
 
     function confirmSession() {
       localMedia = session.rtcMediaHandler.localMedia;
@@ -2239,7 +2238,6 @@ InviteClientContext.prototype = {
         cause = SIP.Utils.sipErrorCause(response.status_code);
         this.failed(response, cause);
         this.rejected(response, cause);
-        this.terminated(response, cause);
     }
   },
 
@@ -2281,8 +2279,8 @@ InviteClientContext.prototype = {
     }
 
     this.canceled(null);
-    this.failed(null, SIP.C.causes.CANCELED);
-    this.terminated();
+/*     this.failed(null, SIP.C.causes.CANCELED); */
+/*     this.terminated(); */
 
     return this;
   },
@@ -2304,7 +2302,7 @@ InviteClientContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType, referSession;
+    var contentType, referSession, response;
 
     if(request.method === SIP.C.CANCEL) {
       /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
@@ -2320,9 +2318,10 @@ InviteClientContext.prototype = {
        */
       if(this.status === C.STATUS_EARLY_MEDIA) {
         this.status = C.STATUS_CANCELED;
-        this.request.reply(487);
-        this.canceled(request);
-        this.failed(request, SIP.C.causes.CANCELED);
+        response = this.request.reply(487);
+        this.canceled(response);
+        this.rejected(response, SIP.C.causes.CANCELED);
+        this.failed(response, SIP.C.causes.CANCELED);
       }
     } else {
       // Requests arriving here are in-dialog requests.
