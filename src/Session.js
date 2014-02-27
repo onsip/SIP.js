@@ -29,7 +29,7 @@ Session = function() {
   'dtmf',
   'invite',
   'preaccepted',
-  'canceled',
+  'cancel',
   'referred',
   'bye',
   'hold',
@@ -1040,7 +1040,7 @@ Session.prototype = {
 
   canceled: function() {
     this.close();
-    return this.emit('canceled');
+    return this.emit('cancel');
   },
 
   accepted: function(response) {

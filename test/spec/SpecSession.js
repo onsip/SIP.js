@@ -27,7 +27,7 @@ describe('Session', function() {
     expect(Session.checkEvent('dtmf')).toBeTruthy();
     expect(Session.checkEvent('invite')).toBeTruthy();
     expect(Session.checkEvent('preaccepted')).toBeTruthy();
-    expect(Session.checkEvent('canceled')).toBeTruthy();
+    expect(Session.checkEvent('cancel')).toBeTruthy();
     expect(Session.checkEvent('referred')).toBeTruthy();
     expect(Session.checkEvent('bye')).toBeTruthy();
     expect(Session.checkEvent('hold')).toBeTruthy();
@@ -1109,7 +1109,7 @@ describe('Session', function() {
       expect(Session.canceled()).toBe(Session);
 
       expect(Session.close).toHaveBeenCalled();
-      expect(Session.emit.calls[0].args[0]).toBe('canceled');
+      expect(Session.emit.calls[0].args[0]).toBe('cancel');
     });
   });
 

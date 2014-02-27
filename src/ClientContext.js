@@ -9,7 +9,7 @@ ClientContext = function (ua, method, target, options) {
         'accepted',
         'rejected',
         'failed',
-        'canceled'
+        'cancel'
       ];
 
   if (target === undefined) {
@@ -71,10 +71,9 @@ ClientContext.prototype.cancel = function (options) {
     reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
     cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
   }
-  // This is going to throw an exception EG 2-20-2014
   this.request.cancel(cancel_reason);
   
-  this.emit('canceled');
+  this.emit('cancel');
 };
 
 ClientContext.prototype.receiveResponse = function (response) {
