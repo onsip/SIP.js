@@ -15,7 +15,8 @@ describe('UA', function() {
       unregister: jasmine.createSpy('unregister'),
       registered: true,
       close: jasmine.createSpy('close'),
-      onTransportClosed: jasmine.createSpy('onTransportClosed')
+      onTransportClosed: jasmine.createSpy('onTransportClosed'),
+      onTransportConnected: jasmine.createSpy('onTransportConnected')
     });
 
     UA = new SIP.UA(configuration);
