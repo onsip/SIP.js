@@ -89,7 +89,7 @@ describe('RegisterContext', function() {
       var cause = 'cause';
       
       RegisterContext.registrationFailure(response,cause);
-      expect(callback).toHaveBeenCalledWith({response : response, cause : cause});
+      expect(callback).toHaveBeenCalledWith(response, cause);
     });
     
     it('emits failed with null and the cause provided if no response is provided', function() {
@@ -98,10 +98,10 @@ describe('RegisterContext', function() {
       var cause = 'cause';
       
       RegisterContext.registrationFailure(undefined,cause);
-      expect(callback).toHaveBeenCalledWith({response : null , cause : cause});
+      expect(callback).toHaveBeenCalledWith(null, cause);
     });
     
-    it('unregisters with the response and cause if it is registered', function() {
+    it('does not unregister', function() {
       spyOn(RegisterContext, 'unregistered').andReturn('unregistered');
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('RegisterContext', function() {
       
       RegisterContext.registrationFailure(response,cause);
       
-      expect(RegisterContext.unregistered).toHaveBeenCalled();
+      expect(RegisterContext.unregistered).not.toHaveBeenCalled();
     });
   });
   
@@ -134,7 +134,7 @@ describe('RegisterContext', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
       RegisterContext.onTransportClosed();
-      expect(RegisterContext.unregistered).toHaveBeenCalledWith();
+      expect(RegisterContext.unregistered).toHaveBeenCalledWith(null, SIP.C.causes.CONNECTION_ERROR);
     });
   });
   
@@ -268,13 +268,13 @@ describe('RegisterContext', function() {
       var cause = 'cause';
       expect(callback).not.toHaveBeenCalled();
       RegisterContext.unregistered(response,cause);
-      expect(callback).toHaveBeenCalledWith({response:response, cause:cause});
+      expect(callback).toHaveBeenCalledWith(response, cause);
     });
     it('emits unregistered with a null response and a null cause if one is not provided', function() {
       RegisterContext.on('unregistered', callback);
       expect(callback).not.toHaveBeenCalled();
       RegisterContext.unregistered();
-      expect(callback).toHaveBeenCalledWith({response:null, cause:null});
+      expect(callback).toHaveBeenCalledWith(null, null);
     });
   });
 });
