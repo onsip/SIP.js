@@ -395,9 +395,42 @@ describe('UA', function() {
       expect(inviteSpy).toHaveBeenCalledWith();
     });
 
-    it('returns the result of calling the invite context invite mehtod', function() {
+    it('returns the result of calling the invite context invite method', function() {
       var options = { option : 'things' };
       expect(UA.invite(target,options)).toEqual('Invite Client Context Invite');
+    });
+  });
+
+  describe('.subscribe', function() {
+    var subscribeSpy;
+    var target;
+    var event;
+
+    beforeEach(function() {
+      target = 'target';
+      event = 'event'
+      subscribeSpy = jasmine.createSpy('subscribe').andReturn('Subscription');
+
+      spyOn(SIP, 'Subscription').andReturn({
+        subscribe: subscribeSpy
+      });
+    });
+
+    it('creates a Subscription with itself, target, and options as parameters', function() {
+      var options = {};
+      UA.subscribe(target, event, options);
+      expect(SIP.Subscription).toHaveBeenCalledWith(UA,target, event, options);
+    });
+
+    it('calls the Subscription method with no arguments', function() {
+      var options = { option : 'things' };
+      UA.subscribe(target, event, options);
+      expect(subscribeSpy).toHaveBeenCalledWith();
+    });
+
+    it('returns the result of calling the Subscribe method', function() {
+      var options = { option : 'things' };
+      expect(UA.subscribe(target, event, options)).toEqual('Subscription');
     });
   });
 

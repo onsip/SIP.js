@@ -211,7 +211,7 @@ Dialog.prototype = {
         }
         break;
       case SIP.C.NOTIFY:
-        // RFC6655 3.2 Replace the dialog`s remote target URI if the request is accepted
+        // RFC6665 3.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
           request.server_transaction.on('stateChanged', function(){
             if (this.state === SIP.Transactions.C.STATUS_COMPLETED) {

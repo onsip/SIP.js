@@ -22,6 +22,7 @@ module.exports = function(grunt) {
     'src/ClientContext.js',
     'src/ServerContext.js',
     'src/Session.js',
+    'src/Subscription.js',
     'src/UA.js',
     'src/Utils.js',
     'src/SanityCheck.js',

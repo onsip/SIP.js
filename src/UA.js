@@ -89,6 +89,7 @@ UA = function(configuration) {
 
   this.data = {};
   this.sessions = {};
+  this.subscriptions = {};
   this.transport = null;
   this.contact = null;
   this.status = C.STATUS_INIT;
@@ -247,6 +248,10 @@ UA.prototype.isConnected = function() {
  */
 UA.prototype.invite = function(target, options) {
   return new SIP.InviteClientContext(this, target, options).invite();
+};
+
+UA.prototype.subscribe = function(target, event, options) {
+  return new SIP.Subscription(this, target, event, options).subscribe();
 };
 
 /**
