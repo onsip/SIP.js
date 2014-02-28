@@ -100,7 +100,7 @@ describe('ServerContext', function() {
       for (var i = 100; i < 200; i++) {
         var options = {statusCode : i};
         ServerContext.progress(options);
-        expect(ServerContext.emit).toHaveBeenCalledWith('progress', {code: i, response: 'reply'});
+        expect(ServerContext.emit.mostRecentCall.args[0]).toBe('progress');
         ServerContext.emit.reset();
       }
     });
@@ -117,7 +117,7 @@ describe('ServerContext', function() {
 
     it('defaults to status code 200 if none is provided', function() {
       ServerContext.accept(null);
-      expect(ServerContext.request.reply).toHaveBeenCalledWith(200, undefined, [], undefined);
+      expect(ServerContext.request.reply).toHaveBeenCalledWith(200, 'OK', [], undefined);
     });
     
     it('throws an error with an invalid status code', function() {
@@ -147,7 +147,7 @@ describe('ServerContext', function() {
       for (var i = 200; i < 300; i++) {
         var options = {statusCode : i};
         ServerContext.accept(options);
-        expect(ServerContext.emit).toHaveBeenCalledWith('accepted', {code: options.statusCode, response: null});
+        expect(ServerContext.emit.mostRecentCall.args[0]).toBe('accepted');
         ServerContext.emit.reset();
       }
     });
@@ -164,7 +164,7 @@ describe('ServerContext', function() {
     
     it('defaults to status code 480 if none is provided', function() {
       ServerContext.reject(null);
-      expect(ServerContext.request.reply).toHaveBeenCalledWith(480, undefined, [], undefined);
+      expect(ServerContext.request.reply).toHaveBeenCalledWith(480, 'Temporarily Unavailable', [], undefined);
     });
     
     it('throws an error with an invalid status code', function() {
@@ -191,8 +191,8 @@ describe('ServerContext', function() {
       for (var i = 300; i < 700; i++) {
         options.statusCode = i;
         ServerContext.reject(options);
-        expect(ServerContext.emit).toHaveBeenCalledWith('rejected', {code: options.statusCode, response: null, cause: options.reasonPhrase});
-        expect(ServerContext.emit).toHaveBeenCalledWith('failed', {code: options.statusCode, response: null, cause: options.reasonPhrase});
+        expect(ServerContext.emit).toHaveBeenCalledWith('rejected', undefined, options.reasonPhrase);
+        expect(ServerContext.emit).toHaveBeenCalledWith('failed', undefined, options.reasonPhrase);
         ServerContext.emit.reset();
       }
     });
@@ -233,7 +233,7 @@ describe('ServerContext', function() {
 
       ServerContext.onRequestTimeout();
 
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed', 0, null, SIP.C.causes.REQUEST_TIMEOUT);
+      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
     });
   });
   
@@ -243,7 +243,7 @@ describe('ServerContext', function() {
 
       ServerContext.onTransportError();
       
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed', 0, null, SIP.C.causes.CONNECTION_ERROR);
+      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.CONNECTION_ERROR);
     });
   });
 });

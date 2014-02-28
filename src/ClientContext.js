@@ -77,58 +77,37 @@ ClientContext.prototype.cancel = function (options) {
 };
 
 ClientContext.prototype.receiveResponse = function (response) {
-  var cause;
+  var cause = SIP.C.REASON_PHRASE[response.status_code] || '';
 
   switch(true) {
     case /^1[0-9]{2}$/.test(response.status_code):
-      this.emit('progress', {
-        code: response.status_code,
-        response: response
-      });
+      this.emit('progress', response, cause);
       break;
 
     case /^2[0-9]{2}$/.test(response.status_code):
       if(this.ua.applicants[this]) {
         delete this.ua.applicants[this];
       }
-      this.emit('accepted', {
-        code: response.status_code,
-        response: response
-      });
+      this.emit('accepted', response, cause);
       break;
 
     default:
       if(this.ua.applicants[this]) {
         delete this.ua.applicants[this];
-      }
-      cause = SIP.Utils.sipErrorCause(response.status_code);
-      this.emit('rejected', {
-        code: response && response.status_code,
-        response: response,
-        cause: cause
-      });
-      this.emit('failed', {
-        code: response && response.status_code,
-        response: response,
-        cause: cause
-      });
+      }      
+      this.emit('rejected', response, cause);
+      this.emit('failed', response, cause);
       break;
   }
 
 };
 
 ClientContext.prototype.onRequestTimeout = function () {
-  this.emit('failed',
-            /* Status code */ 0,
-            /* Response */ null,
-            SIP.C.causes.REQUEST_TIMEOUT);
+  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
 };
 
 ClientContext.prototype.onTransportError = function () {
-  this.emit('failed',
-            /* Status code */ 0,
-            /* Response */ null,
-            SIP.C.causes.CONNECTION_ERROR);
+  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
 };
 
 SIP.ClientContext = ClientContext;
