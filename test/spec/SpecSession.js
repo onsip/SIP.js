@@ -1886,7 +1886,7 @@ describe('InviteClientContext', function() {
       spyOn(InviteClientContext, 'sendRequest');
 
       if (!SIP.WebRTC.getUserMedia.isSpy) {
-        spyOn(SIP.WebRTC.getUserMedia);
+        spyOn(SIP.WebRTC, 'getUserMedia');
       }
     });
 
