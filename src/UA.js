@@ -247,11 +247,29 @@ UA.prototype.isConnected = function() {
  *
  */
 UA.prototype.invite = function(target, options) {
-  return new SIP.InviteClientContext(this, target, options).invite();
+  var context = new SIP.InviteClientContext(this, target, options);
+
+  if (this.isConnected()) {
+    context.invite();
+  } else {
+    this.once('connected', function() {
+      context.invite();
+    });
+  }
+  return context;
 };
 
 UA.prototype.subscribe = function(target, event, options) {
-  return new SIP.Subscription(this, target, event, options).subscribe();
+  var sub = new SIP.Subscription(this, target, event, options);
+
+  if (this.isConnected()) {
+    sub.subscribe();
+  } else {
+    this.once('connected', function() {
+      sub.subscribe();
+    });
+  }
+  return sub;
 };
 
 /**
@@ -265,11 +283,31 @@ UA.prototype.subscribe = function(target, event, options) {
  *
  */
 UA.prototype.message = function(target, body, options) {
-  return new SIP.MessageClientContext(this, target, body, (options && options.contentType), options).message();
+  var mes = new SIP.MessageClientContext(this, target, body, (options && options.contentType), options);
+
+  if (this.isConnected()) {
+    mes.message();
+  } else {
+    this.once('connected', function() {
+      mes.message();
+    });
+  }
+
+  return mes;
 };
 
 UA.prototype.request = function (method, target, options) {
-  return new SIP.ClientContext(this, method, target, options).send();
+  var req = new SIP.ClientContext(this, method, target, options);
+
+  if (this.isConnected()) {
+    req.send();
+  } else {
+    this.once('connected', function() {
+      req.send();
+    });
+  }
+
+  return req;
 };
 
 /**

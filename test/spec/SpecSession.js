@@ -1871,16 +1871,11 @@ describe('InviteClientContext', function() {
   describe('.receiveInviteResponse', function() {
     var response;
     var resp;
-    var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', InviteClientContext.ua, {from: 'abcdefg'}, ['Contact: ' + InviteClientContext.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(InviteClientContext.ua)]);
-
-      request.body = 'a=sendrecv\r\n';
-
-      InviteClientContext.request = request;
-
       response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+
+      InviteClientContext.request.body = 'a=sendrecv\r\n';
 
       spyOn(SIP.Dialog.prototype, 'sendRequest');
       spyOn(InviteClientContext, 'sendRequest');
@@ -2025,7 +2020,7 @@ describe('InviteClientContext', function() {
       it('calls RTCMediaHandler.onMessage for a response with a body with require: 100rel and confirms the dialog', function() {
         resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
 
-        InviteClientContext.rtcMediaHandler = jasmine.createSpyObj('rtcMediaHandler', ['onMessage', 'close']);
+        spyOn(InviteClientContext.rtcMediaHandler, 'onMessage');
 
         InviteClientContext.receiveInviteResponse(resp);
 
@@ -2033,9 +2028,9 @@ describe('InviteClientContext', function() {
         expect(InviteClientContext.rtcMediaHandler.onMessage).toHaveBeenCalled();
       });
 
+      //async needed
       xit('calls RTCMediaHandler on message for a 100rel response with a body where the request had a non-sdp body', function() {
         InviteClientContext.renderbody = InviteClientContext.request.body;
-        InviteClientContext.rtcMediaHandler = {localMedia: 'localMedia'};
 
         resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
 

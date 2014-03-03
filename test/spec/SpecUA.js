@@ -1,6 +1,7 @@
 describe('UA', function() {
   var UA;
   var uri;
+  var connectedRestore;
 
   beforeEach(function() {
     uri = 'alice@example.com';
@@ -336,7 +337,7 @@ describe('UA', function() {
       target = 'target';
       body = 'body';
 
-      messageSpy = jasmine.createSpy('message').andReturn('Message Client Context Message');
+      messageSpy = jasmine.createSpy('message');
 
       spyOn(SIP, 'MessageClientContext').andReturn({
         message: messageSpy
@@ -344,13 +345,25 @@ describe('UA', function() {
 
     });
 
+    it('sets up a listener for connected if the transport has not connected', function() {
+      spyOn(UA, 'once');
+
+      UA.message(target, body, options);
+
+      expect(UA.once).toHaveBeenCalled();
+    });
+
     it('passes no options to message.message', function () {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       options = undefined;
       UA.message(target, body, options);
       expect(messageSpy).toHaveBeenCalledWith();
     });
 
     it('creates a MessageClientContext with itself, target, body, options.contentType and options as parameters', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
@@ -358,15 +371,12 @@ describe('UA', function() {
     });
 
     it('calls MessageClientContext.message method with no options provided to it', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       options = { option : 'config' };
 
       UA.message(target, body, options);
       expect(messageSpy).toHaveBeenCalledWith();
-    });
-
-    it('returns the result of calling the message context message method', function() {
-      var options = {};
-      expect(UA.message(target, body, options)).toEqual('Message Client Context Message');
     });
   });
 
@@ -376,28 +386,35 @@ describe('UA', function() {
 
     beforeEach(function() {
       target = 'target';
-      inviteSpy = jasmine.createSpy('invite').andReturn('Invite Client Context Invite');
+      inviteSpy = jasmine.createSpy('invite');
 
       spyOn(SIP, 'InviteClientContext').andReturn({
         invite: inviteSpy
       });
     });
 
+    it('sets up a listener for connected if the transport has not connected', function() {
+      spyOn(UA, 'once');
+
+      UA.invite(target);
+
+      expect(UA.once).toHaveBeenCalled();
+    });
+
     it('creates an Invite Client Context with itself, target, and options as parameters', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       var options = {};
       UA.invite(target,options);
       expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA,target,options);
     });
 
     it('calls the Invite Client Context invite method with no arguments', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       var options = { option : 'things' };
       UA.invite(target,options);
       expect(inviteSpy).toHaveBeenCalledWith();
-    });
-
-    it('returns the result of calling the invite context invite method', function() {
-      var options = { option : 'things' };
-      expect(UA.invite(target,options)).toEqual('Invite Client Context Invite');
     });
   });
 
@@ -409,28 +426,35 @@ describe('UA', function() {
     beforeEach(function() {
       target = 'target';
       event = 'event'
-      subscribeSpy = jasmine.createSpy('subscribe').andReturn('Subscription');
+      subscribeSpy = jasmine.createSpy('subscribe');
 
       spyOn(SIP, 'Subscription').andReturn({
         subscribe: subscribeSpy
       });
     });
 
+    it('sets up a listener for connected if the transport has not connected', function() {
+      spyOn(UA, 'once');
+
+      UA.subscribe(target, event);
+
+      expect(UA.once).toHaveBeenCalled();
+    });
+
     it('creates a Subscription with itself, target, and options as parameters', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       var options = {};
       UA.subscribe(target, event, options);
       expect(SIP.Subscription).toHaveBeenCalledWith(UA,target, event, options);
     });
 
     it('calls the Subscription method with no arguments', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       var options = { option : 'things' };
       UA.subscribe(target, event, options);
       expect(subscribeSpy).toHaveBeenCalledWith();
-    });
-
-    it('returns the result of calling the Subscribe method', function() {
-      var options = { option : 'things' };
-      expect(UA.subscribe(target, event, options)).toEqual('Subscription');
     });
   });
 
@@ -445,25 +469,33 @@ describe('UA', function() {
       target = 'target';
       options = { option : 'someField' };
 
-      requestSpy = jasmine.createSpy('send').andReturn('Client Context Send');
+      requestSpy = jasmine.createSpy('send');
 
       spyOn(SIP, 'ClientContext').andReturn({
         send: requestSpy
       });
     });
 
+    it('sets up a listener for connected if the transport has not connected', function() {
+      spyOn(UA, 'once');
+
+      UA.request(method, target, options);
+
+      expect(UA.once).toHaveBeenCalled();
+    });
+
     it('creates a ClientContext with itself, the method, target and options provided', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       UA.request(method,target,options);
       expect(SIP.ClientContext).toHaveBeenCalledWith(UA, method, target, options);
     });
 
     it('calls ClientContext.send method with no parameters', function() {
+      spyOn(UA, 'isConnected').andReturn(true);
+
       UA.request(method,target,options);
       expect(requestSpy).toHaveBeenCalledWith();
-    });
-
-    it('returns the result of calling ClientContext.send method', function() {
-      expect(UA.request(method,target,options)).toEqual('Client Context Send');
     });
   });
 

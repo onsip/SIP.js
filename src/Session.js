@@ -1836,19 +1836,20 @@ InviteClientContext = function(ua, target, options) {
 
   this.id = this.request.call_id + this.from_tag;
 
+  this.rtcMediaHandler = new RTCMediaHandler(this, {
+    RTCConstraints: this.RTCConstraints,
+    stun_servers: this.stun_servers,
+    turn_servers: this.turn_servers
+  });
+
 };
 
 InviteClientContext.prototype = {
   invite: function () {
     var self = this;
 
-    this.rtcMediaHandler = new RTCMediaHandler(this, {
-      RTCConstraints: this.RTCConstraints,
-      stun_servers: this.stun_servers,
-      turn_servers: this.turn_servers
-    });
-
     //Save the session into the ua sessions collection.
+    //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway
     this.ua.sessions[this.id] = this;
 
     if (this.inviteWithoutSdp) {
