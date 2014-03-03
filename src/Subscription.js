@@ -169,6 +169,10 @@ SIP.Subscription.prototype = {
   * @private
   */
   close: function() {
+    if(this.state !== 'terminated') {
+      this.unsubscribe();
+    }
+
     this.terminateDialog();
     window.clearTimeout(this.timers.N);
     window.clearTimeout(this.timers.sub_duration);

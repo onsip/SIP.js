@@ -199,6 +199,15 @@ describe('UA', function() {
       expect(UA.sessions[session].terminate).toHaveBeenCalled();
     });
 
+    it('closes any active subscriptions', function () {
+      var subscription = jasmine.createSpyObj('subscription', ['close']);
+      UA.subscriptions[subscription] = subscription;
+
+      UA.stop();
+
+      expect(UA.subscriptions[subscription].close).toHaveBeenCalled();
+    });
+
     it('closes any applicants', function () {
       var applicant = jasmine.createSpyObj('applicant', ['close']);
       UA.applicants[applicant] = applicant;

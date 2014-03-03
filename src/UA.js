@@ -315,7 +315,7 @@ UA.prototype.request = function (method, target, options) {
  *
  */
 UA.prototype.stop = function() {
-  var session, applicant,
+  var session, subscription, applicant,
     ua = this;
 
   function transactionsListener() {
@@ -343,6 +343,12 @@ UA.prototype.stop = function() {
   for(session in this.sessions) {
     this.logger.log('closing session ' + session);
     this.sessions[session].terminate();
+  }
+
+  //Run _close_ on every Subscription
+  for(subscription in this.subscriptions) {
+    this.logger.log('unsubscribing from subscription ' + subscription);
+    this.subscriptions[subscription].close();
   }
 
   // Run  _close_ on every applicant
