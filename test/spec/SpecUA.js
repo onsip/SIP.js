@@ -354,10 +354,14 @@ describe('UA', function() {
 
       messageSpy = jasmine.createSpy('message');
 
-      spyOn(SIP, 'MessageClientContext').andReturn({
-        message: messageSpy
+      spyOn(SIP, 'ClientContext').andReturn({
+        send: messageSpy
       });
 
+    });
+
+    it('throws an exception if body argument is missing', function() {
+      expect(function(){UA.message(target);}).toThrow('Not enough arguments');
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
@@ -368,7 +372,7 @@ describe('UA', function() {
       expect(UA.once).toHaveBeenCalled();
     });
 
-    it('passes no options to message.message', function () {
+    it('passes no options to message.send', function () {
       spyOn(UA, 'isConnected').andReturn(true);
 
       options = undefined;
@@ -376,16 +380,16 @@ describe('UA', function() {
       expect(messageSpy).toHaveBeenCalledWith();
     });
 
-    it('creates a MessageClientContext with itself, target, body, options.contentType and options as parameters', function() {
+    it('creates a ClientContext with itself, target, body, options.contentType and options as parameters', function() {
       spyOn(UA, 'isConnected').andReturn(true);
 
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
-      expect(SIP.MessageClientContext).toHaveBeenCalledWith(UA, target, body, options.contentType, options);
+      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, {contentType: 'mixedContent', body: body});
     });
 
-    it('calls MessageClientContext.message method with no options provided to it', function() {
+    it('calls ClientContext.send method with no options provided to it', function() {
       spyOn(UA, 'isConnected').andReturn(true);
 
       options = { option : 'config' };
@@ -651,7 +655,6 @@ describe('UA', function() {
 
       spyOn(SIP.Transactions, 'checkTransaction').andReturn(false);
       spyOn(SIP.Transactions, 'NonInviteServerTransaction').andReturn(true);
-      spyOn(SIP, 'MessageServerContext').andReturn(true);
       spyOn(SIP, 'ServerContext').andReturn({
         on: function() {return true;}
       });
@@ -695,7 +698,7 @@ describe('UA', function() {
       expect(replySpy).toHaveBeenCalledWith(200,null,[ 'Allow: ACK,CANCEL,BYE,OPTIONS', 'Accept: application/sdp,application/dtmf-relay' ])
     });
 
-    it('checks if there is a listener when the SIP method is message and reject if no listener is found', function() {
+    it('checks if there is a listener when the SIP method is message and rejects if no listener is found', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
@@ -708,13 +711,14 @@ describe('UA', function() {
       expect(replySpy).toHaveBeenCalledWith(405, null, [ 'Allow: ACK,CANCEL,BYE,OPTIONS' ]);
     });
 
-    it('checks if there is a listener when the SIP method is message and accept if listener is found', function() {
+    it('checks if there is a listener when the SIP method is message and accepts if listener is found', function() {
       var callback = jasmine.createSpy('callback').andCallFake(function() {
         return true;
       });
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
-                      reply : replySpy };
+                      reply : replySpy,
+                      getHeader: jasmine.createSpy('getHeader')};
       UA.checkListener = jasmine.createSpy('checkListener').andCallFake(function() {
         return true;
       });
@@ -722,8 +726,9 @@ describe('UA', function() {
 
       UA.receiveRequest(request);
 
-      expect(SIP.MessageServerContext).toHaveBeenCalledWith(UA, request);
+      expect(SIP.ServerContext).toHaveBeenCalledWith(UA, request);
       expect(replySpy).toHaveBeenCalledWith(200,null);
+      expect(request.getHeader).toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
     });
 

@@ -289,13 +289,21 @@ UA.prototype.subscribe = function(target, event, options) {
  *
  */
 UA.prototype.message = function(target, body, options) {
-  var mes = new SIP.MessageClientContext(this, target, body, (options && options.contentType), options);
+  if (body === undefined) {
+    throw new TypeError('Not enough arguments');
+  }
+
+  options = options || {};
+  options.contentType = options.contentType || 'text/plain';
+  options.body = body;
+
+  var mes = new SIP.ClientContext(this, SIP.C.MESSAGE, target, options);
 
   if (this.isConnected()) {
-    mes.message();
+    mes.send();
   } else {
     this.once('connected', function() {
-      mes.message();
+      mes.send();
     });
   }
 
@@ -638,7 +646,10 @@ UA.prototype.receiveRequest = function(request) {
       request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
       return;
     }
-    message = new SIP.MessageServerContext(this, request);
+    message = new SIP.ServerContext(this, request);
+    message.body = request.body;
+    message.content_type = request.getHeader('Content-Type') || 'text/plain';
+
     request.reply(200, null);
     this.emit('message', message);
   } else if (method !== SIP.C.INVITE &&
