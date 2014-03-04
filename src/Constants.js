@@ -8,7 +8,7 @@
  */
 
 SIP.C= {
-  USER_AGENT: SIP.name +' '+ SIP.version,
+  USER_AGENT: SIP.name +'/'+ SIP.version,
 
   // SIP scheme
   SIP:  'sip',

@@ -211,7 +211,7 @@ OutgoingRequest.prototype = {
     supported.push('outbound');
 
     msg += 'Supported: ' +  supported +'\r\n';
-    msg += 'User-Agent: ' + SIP.C.USER_AGENT +'\r\n';
+    msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
     if(this.body) {
       length = SIP.Utils.str_utf8_length(this.body);

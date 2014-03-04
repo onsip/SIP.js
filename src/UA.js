@@ -859,6 +859,9 @@ UA.prototype.loadConfig = function(configuration) {
 
       use_preloaded_route: false,
 
+      //string to be inserted into User-Agent request header
+      userAgentString: SIP.C.USER_AGENT,
+
       // Session parameters
       no_answer_timeout: 60,
       stun_servers: ['stun:stun.l.google.com:19302'],
@@ -1055,6 +1058,7 @@ UA.configuration_skeleton = (function() {
       "stun_servers",
       "trace_sip",
       "turn_servers",
+      "userAgentString", //SIP.C.USER_AGENT
       "use_preloaded_route",
       "autostart",
 
@@ -1361,6 +1365,12 @@ UA.configuration_check = {
         }
       }
       return turn_servers;
+    },
+
+    userAgentString: function(userAgentString) {
+      if (typeof userAgentString === 'string') {
+        return userAgentString;
+      }
     },
 
     use_preloaded_route: function(use_preloaded_route) {

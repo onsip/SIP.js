@@ -1104,6 +1104,8 @@ describe('UA', function() {
       expect(UA.configuration.connection_recovery_min_interval).toBe(2);
       expect(UA.configuration.connection_recovery_max_interval).toBe(30);
 
+      expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
+
       expect(UA.configuration.use_preloaded_route).toBe(false);
 
       //defaults to 60, then multiplies by 1000 later in the function
@@ -1115,6 +1117,8 @@ describe('UA', function() {
 
       expect(UA.configuration.hack_via_tcp).toBe(false);
       expect(UA.configuration.hack_ip_in_contact).toBe(false);
+
+      expect(UA.configuration.autostart).toBe(false);
 
       expect(UA.configuration.reliable).toBe('none');
     });
@@ -1567,6 +1571,21 @@ describe('UA', function() {
       });
     });
 
+    describe('.userAgentString', function() {
+      it('fails for all types except string', function() {
+        expect(SIP.UA.configuration_check.optional.userAgentString()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.userAgentString(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.userAgentString(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.userAgentString({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.userAgentString(['arrays'])).toBeUndefined();
+      });
+
+      it('passes for string parameters', function() {
+        expect(SIP.UA.configuration_check.optional.userAgentString('string')).toBe('string');
+        expect(SIP.UA.configuration_check.optional.userAgentString(SIP.C.USER_AGENT + ' string')).toBe(SIP.C.USER_AGENT + ' string');
+      });
+    });
+
     describe('.use_preloaded_route', function() {
       it('fails for all types except boolean', function() {
         expect(SIP.UA.configuration_check.optional.use_preloaded_route()).toBeUndefined();
@@ -1579,6 +1598,21 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(SIP.UA.configuration_check.optional.use_preloaded_route(true)).toBe(true);
         expect(SIP.UA.configuration_check.optional.use_preloaded_route(false)).toBe(false);
+      });
+    });
+
+    describe('.autoload', function() {
+      it('fails for all types except boolean', function() {
+        expect(SIP.UA.configuration_check.optional.autostart()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.autostart(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.autostart('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.autostart({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.autostart(['arrays'])).toBeUndefined();
+      });
+
+      it('passes for boolean parameters', function() {
+        expect(SIP.UA.configuration_check.optional.autostart(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.autostart(false)).toBe(false);
       });
     });
   });
