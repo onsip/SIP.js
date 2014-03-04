@@ -260,8 +260,8 @@ Session.prototype = {
         onTransportError: function() {
           self.onTransportError();
         },
-        receiveResponse: function(response) {
-          self.receiveNonInviteResponse(response);
+        receiveResponse: function() {
+          return;
         }
       },
       this.ua
