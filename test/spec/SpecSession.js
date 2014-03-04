@@ -474,8 +474,6 @@ describe('Session', function() {
     });
 
     it('calls setDescription on success', function() {
-      spyOn(SIP.Parser, 'parseSDP').andReturn({media: []});
-
       Session.receiveReinvite(message);
 
       expect(Session.mediaHandler.setDescription).toHaveBeenCalled();

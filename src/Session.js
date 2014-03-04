@@ -522,21 +522,17 @@ Session.prototype = {
 
     this.sendReinvite({
       mangle: function(body){
-        var idx, length;
 
-        body = SIP.Parser.parseSDP(body);
-
-        length = body.media.length;
-        for (idx=0; idx<length; idx++) {
-          if (body.media[idx].direction === undefined ||
-              body.media[idx].direction === 'sendrecv') {
-            body.media[idx].direction = 'sendonly';
-          } else if (body.media[idx].direction === 'sendonly') {
-            body.media[idx].direction = 'inactive';
-          }
+        // Don't receive media
+        // TODO - This will break for media streams with different directions.
+        if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(body)) {
+          body = body.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
+        } else {
+          body = body.replace(/a=sendrecv\r\n/g, 'a=sendonly');
+          body = body.replace(/a=recvonly\r\n/g, 'a=inactive');
         }
 
-        return SIP.Parser.writeSDP(body);
+        return body;
       }
     });
   },
@@ -587,8 +583,7 @@ Session.prototype = {
    * @private
    */
   receiveReinvite: function(request) {
-    var sdp, idx, direction,
-        self = this,
+    var self = this,
         contentType = request.getHeader('Content-Type'),
         hold = true;
 
@@ -599,15 +594,8 @@ Session.prototype = {
         return;
       }
 
-      sdp = SIP.Parser.parseSDP(request.body);
-
-      for (idx=0; idx < sdp.media.length; idx++) {
-        direction = sdp.direction || sdp.media[idx].direction || 'sendrecv';
-
-        if (direction !== 'sendonly' && direction !== 'inactive') {
-          hold = false;
-        }
-      }
+      // Are we holding?
+      hold = (/a=(sendonly|inactive)/).test(request.body);
 
       this.mediaHandler.setDescription(
         request.body,
