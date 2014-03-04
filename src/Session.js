@@ -337,7 +337,7 @@ Session.prototype = {
         'route_set': this.dialog.route_set
       },
       options.extraHeaders || {},
-      options.body || {}
+      options.body
     );
     
     new SIP.RequestSender(
