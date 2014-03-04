@@ -1685,18 +1685,18 @@ describe('InviteServerContext', function() {
     });
 
     describe('method is BYE', function() {
-      it('replies 200, calls bye, and terminates', function() {
+      it('replies 200, emits bye, and terminates', function() {
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage('BYE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
 
         spyOn(req, 'reply');
-        spyOn(InviteServerContext, 'bye');
-        spyOn(InviteServerContext, 'terminated');
+        spyOn(InviteServerContext, 'emit');
+        spyOn(InviteServerContext, 'terminated').andCallThrough();
 
         InviteServerContext.receiveRequest(req);
 
         expect(req.reply).toHaveBeenCalledWith(200);
-        expect(InviteServerContext.bye).toHaveBeenCalled();
+        expect(InviteServerContext.emit.calls[0].args[0]).toBe('bye');
         expect(InviteServerContext.terminated).toHaveBeenCalledWith(req, SIP.C.causes.BYE);
       });
     });
@@ -1905,7 +1905,7 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveInviteResponse(response);
 
-      expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK);
+      expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
     });
 
     it('PRACKS any non 200 response when the status is earlyMedia', function() {
@@ -2113,7 +2113,7 @@ describe('InviteClientContext', function() {
 
         InviteClientContext.receiveInviteResponse(response);
 
-        expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK);
+        expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
         expect(InviteClientContext.accepted).toHaveBeenCalledWith(response);
       });
 
@@ -2300,15 +2300,15 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.failed.mostRecentCall.args[1]).toBe(SIP.C.causes.CANCELED);
     });
 
-    it('replies 200 and calls bye and terminated if the request method is BYE', function() {
+    it('replies 200 and emits bye and terminated if the request method is BYE', function() {
       request.method = SIP.C.BYE;
-      spyOn(InviteClientContext, 'bye');
+      spyOn(InviteClientContext, 'emit');
       spyOn(InviteClientContext, 'terminated');
 
       InviteClientContext.receiveRequest(request);
 
       expect(request.reply).toHaveBeenCalledWith(200);
-      expect(InviteClientContext.bye).toHaveBeenCalled();
+      expect(InviteClientContext.emit.calls[0].args[0]).toBe('bye');
       expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.C.causes.BYE);
     });
 

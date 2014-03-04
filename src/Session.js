@@ -328,7 +328,7 @@ Session.prototype = {
       this.dialog.remote_target,
       this.ua,
       {
-        'cseq': this.dialog.local_seqnum+=1,
+        'cseq': options.cseq || this.dialog.local_seqnum,
         'call_id': this.dialog.id.call_id,
         'from_uri': this.dialog.local_uri,
         'from_tag': this.dialog.id.local_tag,
@@ -836,7 +836,7 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
         
-        this.sendRequest(SIP.C.ACK);
+        this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
 
         if(!response.body) {
           this.reinviteFailed();
@@ -880,7 +880,7 @@ Session.prototype = {
 
     // An error on dialog creation will fire 'failed' event
     if (this.dialog || this.createDialog(response, 'UAC')) {
-      this.sendRequest(SIP.C.ACK);
+      this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
       this.sendRequest(SIP.C.BYE, {
         extraHeaders: extraHeaders
       });
@@ -1683,7 +1683,7 @@ InviteServerContext.prototype = {
       case SIP.C.BYE:
         if(this.status === C.STATUS_CONFIRMED) {
           request.reply(200);
-          this.bye();
+          this.emit('bye', request);
           this.terminated(request, SIP.C.causes.BYE);
         }
         break;
@@ -1903,7 +1903,7 @@ InviteClientContext.prototype = {
         //session.failed(response, SIP.C.causes.WEBRTC_ERROR);
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
-        this.sendRequest(SIP.C.ACK);
+        this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
         return;
       }
     }
@@ -2078,11 +2078,13 @@ InviteClientContext.prototype = {
           if (localMedia.getVideoTracks().length > 0) {
             localMedia.getVideoTracks()[0].enabled = true;
           }
+          options = {};
           if (this.renderbody) {
             extraHeaders.push('Content-Type: ' + this.rendertype);
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
+          options.cseq = response.cseq;
           this.sendRequest(SIP.C.ACK, options);
           this.accepted(response);
           break;
@@ -2105,7 +2107,7 @@ InviteClientContext.prototype = {
               break;
             }
             session.status = C.STATUS_CONFIRMED;
-            session.sendRequest(SIP.C.ACK);
+            session.sendRequest(SIP.C.ACK,{cseq:response.cseq});
 
             localMedia = session.rtcMediaHandler.localMedia;
             if (localMedia.getAudioTracks().length > 0) {
@@ -2176,7 +2178,8 @@ InviteClientContext.prototype = {
                     }
                     session.sendRequest(SIP.C.ACK,{
                       body: sdp,
-                      extraHeaders:['Content-Type: application/sdp']
+                      extraHeaders:['Content-Type: application/sdp'],
+                      cseq:response.cseq
                     });
                     session.accepted(response);
                   },
@@ -2224,6 +2227,7 @@ InviteClientContext.prototype = {
                 options.extraHeaders = extraHeaders;
                 options.body = session.renderbody;
               }
+              options.cseq = response.cseq;
               session.sendRequest(SIP.C.ACK, options);
               session.accepted(response);
             },
@@ -2333,7 +2337,7 @@ InviteClientContext.prototype = {
       switch(request.method) {
         case SIP.C.BYE:
           request.reply(200);
-          this.bye();
+          this.emit('bye', request);
           this.terminated(request, SIP.C.causes.BYE);
           break;
         case SIP.C.INVITE:
