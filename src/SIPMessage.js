@@ -42,6 +42,8 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.ruri = ruri;
   this.body = body;
   this.extraHeaders = extraHeaders || [];
+  this.statusCode = params.status_code;
+  this.reasonPhrase = params.reason_phrase;
 
   // Fill the Common SIP Request Headers
 
