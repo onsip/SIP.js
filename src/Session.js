@@ -1126,6 +1126,7 @@ InviteServerContext.prototype = {
 
       // Set status and add extra headers
       this.status = C.STATUS_WAITING_FOR_PRACK;
+      extraHeaders.push('Contact: '+ this.contact);
       extraHeaders.push('Require: 100rel');
       extraHeaders.push('RSeq: ' + Math.floor(Math.random() * 10000));
 
