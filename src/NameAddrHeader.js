@@ -40,37 +40,15 @@ NameAddrHeader = function(uri, displayName, parameters) {
   });
 };
 NameAddrHeader.prototype = {
-  setParam: function(key, value) {
-    if (key) {
+  setParam: function (key, value) {
+    if(key) {
       this.parameters[key.toLowerCase()] = (typeof value === 'undefined' || value === null) ? null : value.toString();
     }
   },
-
-  getParam: function(key) {
-    if(key) {
-      return this.parameters[key.toLowerCase()];
-    }
-  },
-
-  hasParam: function(key) {
-    if(key) {
-      return (this.parameters.hasOwnProperty(key.toLowerCase()) && true) || false;
-    }
-  },
-
-  deleteParam: function(parameter) {
-    var value;
-    parameter = parameter.toLowerCase();
-    if (this.parameters.hasOwnProperty(parameter)) {
-      value = this.parameters[parameter];
-      delete this.parameters[parameter];
-      return value;
-    }
-  },
-
-  clearParams: function() {
-    this.parameters = {};
-  },
+  getParam: SIP.URI.prototype.getParam,
+  hasParam: SIP.URI.prototype.hasParam,
+  deleteParam: SIP.URI.prototype.deleteParam,
+  clearParams: SIP.URI.prototype.clearParams,
 
   clone: function() {
     return new NameAddrHeader(

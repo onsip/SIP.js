@@ -214,6 +214,15 @@ SIP.Subscription.prototype = {
   receiveRequest: function(request) {
     var sub_state, sub = this;
 
+    function setExpiresTimeout() {
+      if (sub_state.expires) {
+        sub_state.expires = Math.min(sub.expires,
+                                     Math.max(sub_state.expires, 3600));
+        sub.timers.sub_duration = window.setTimeout(sub.subscribe.bind(sub),
+                                                    sub_state.expires * 1000);
+      }
+    }
+
     if (!this.matchEvent(request)) { //checks event and subscription_state headers
       request.reply(489);
       return;
@@ -233,26 +242,11 @@ SIP.Subscription.prototype = {
     switch (sub_state.state) {
       case 'active':
         this.state = 'active';
-
-        if (sub_state.expires) {
-          if (sub_state.expires < 3600) {
-            sub_state.expires = 3600;
-          } else if (sub_state.expires > this.expires) {
-            sub_state.expires = this.expires;
-          }
-          this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, (sub_state.expires * 1000));
-        }
+        setExpiresTimeout();
         break;
       case 'pending':
         if (this.state === 'notify_wait') {
-          if (sub_state.expires) {
-            if (sub_state.expires < 3600) {
-              sub_state.expires = 3600;
-            } else if (sub_state.expires > this.expires) {
-              sub_state.expires = this.expires;
-            }
-            this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, (sub_state.expires * 1000));
-          }
+          setExpiresTimeout();
         }
         this.state = 'pending';
         break;

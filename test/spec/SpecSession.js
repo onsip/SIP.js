@@ -2027,7 +2027,8 @@ describe('InviteClientContext', function() {
       request.reply = jasmine.createSpy('reply');
     });
 
-    it('sets the status to CANCELED, replies 487, and calls canceled and failed if the status is EARLY_MEDIA and the request method is CANCELED', function() {
+    xit('sets the status to CANCELED, replies 487, and calls canceled and failed if the status is EARLY_MEDIA and the request method is CANCELED', function() {
+      // TODO - UAC shouldn't receive CANCEL.  Error response instead?
       InviteClientContext.status = 11;
       request.method = SIP.C.CANCEL;
 
@@ -2044,6 +2045,7 @@ describe('InviteClientContext', function() {
     });
 
     it('replies 200 and emits bye and terminated if the request method is BYE', function() {
+      InviteClientContext.status = 12;
       request.method = SIP.C.BYE;
       spyOn(InviteClientContext, 'emit');
       spyOn(InviteClientContext, 'terminated');
@@ -2056,6 +2058,7 @@ describe('InviteClientContext', function() {
     });
 
     it('logs and calls receiveReinvite if request method is INVITE', function() {
+      InviteClientContext.status = 12;
       request.method = SIP.C.INVITE;
 
       spyOn(InviteClientContext.logger, 'log');
@@ -2067,7 +2070,8 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.receiveReinvite).toHaveBeenCalledWith(request);
     });
 
-    it('clears timers and sets the status to confirmed if request method was ACK and the status was WAITING_FOR_ACK', function() {
+    xit('clears timers and sets the status to confirmed if request method was ACK and the status was WAITING_FOR_ACK', function() {
+      // TODO - UAC shouldn't ever be waiting for ACK.
       InviteClientContext.timers.ackTimer = 1;
       InviteClientContext.timers.invite2xxTimer = 2;
       InviteClientContext.status = 7;

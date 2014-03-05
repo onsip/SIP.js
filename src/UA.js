@@ -1,8 +1,4 @@
 /**
- * @fileoverview SIP User Agent
- */
-
-/**
  * @augments SIP
  * @class Class creating a SIP User Agent.
  * @param {function returning SIP.MediaHandler} [configuration.mediaHandlerFactory]
@@ -204,11 +200,6 @@ UA.prototype = new SIP.EventEmitter();
 //  High Level API
 //=================
 
-/**
- * Register.
- *
- *
- */
 UA.prototype.register = function(options) {
   this.configuration.register = true;
   this.registerContext.register(options);
@@ -457,12 +448,12 @@ UA.prototype.getLogger = function(category, label) {
 };
 
 
-//==========================
+//==============================
 // Event Handlers
-//==========================
+//==============================
 
 /**
- * Transport Close event.
+ * Transport Close event
  * @private
  * @event
  * @param {SIP.Transport} transport.

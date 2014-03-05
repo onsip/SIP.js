@@ -643,6 +643,65 @@ Session.prototype = {
     );
   },
 
+  receiveRequest: function (request) {
+    var referSession, contentType;
+    switch (request.method) {
+      case SIP.C.BYE:
+        if(this.status === C.STATUS_CONFIRMED) {
+          request.reply(200);
+          this.emit('bye', request);
+          this.terminated(request, SIP.C.causes.BYE);
+        }
+        break;
+      case SIP.C.INVITE:
+        if(this.status === C.STATUS_CONFIRMED) {
+          this.logger.log('re-INVITE received');
+          this.receiveReinvite(request);
+        }
+        break;
+      case SIP.C.INFO:
+        if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
+          contentType = request.getHeader('content-type');
+          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
+            new DTMF(this).init_incoming(request);
+          }
+        }
+        break;
+      case SIP.C.REFER:
+        if(this.status ===  C.STATUS_CONFIRMED) {
+          this.logger.log('REFER received');
+          request.reply(202, 'Accepted');
+          this.sendRequest(SIP.C.NOTIFY,
+            { 
+              extraHeaders:[
+                'Event: refer',
+                'Subscription-State: terminated',
+                'Content-Type: message/sipfrag'
+               ],
+               body:'SIP/2.0 100 Trying'
+            });
+
+          // HACK: Stop localMedia so Chrome doesn't get confused about gUM
+          if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
+            this.rtcMediaHandler.localMedia.stop();
+          }
+
+          /*
+            Harmless race condition.  Both sides of REFER
+            may send a BYE, but in the end the dialogs are destroyed.
+          */
+          referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
+            media: this.mediaHint
+          });
+
+          this.referred(request,referSession);
+
+          this.terminate();
+        }
+        break;
+    }
+  },
+
   /**
    * Reception of Response for in-dialog INVITE
    * @private
@@ -1317,215 +1376,153 @@ InviteServerContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType, session = this, referSession;//,localMedia;
+
+    // ISC RECEIVE REQUEST
 
     function confirmSession() {
-      //localMedia = session.mediaHandler.localMedia;
-      window.clearTimeout(session.timers.ackTimer);
-      window.clearTimeout(session.timers.invite2xxTimer);
-      session.status = C.STATUS_CONFIRMED;
+      var contentType;
+
+      window.clearTimeout(this.timers.ackTimer);
+      window.clearTimeout(this.timers.invite2xxTimer);
+      this.status = C.STATUS_CONFIRMED;
+      this.unmute();
+
+      // TODO - this logic assumes Content-Disposition defaults
       contentType = request.getHeader('Content-Type');
-      //REVISIT
-      session.unmute();
-      session.accepted();
       if (contentType !== 'application/sdp') {
-        //custom data will be here
-        session.renderbody = request.body;
-        session.rendertype = request.getHeader('Content-type');
+        this.renderbody = request.body;
+        this.rendertype = contentType;
       }
+
+      this.accepted();
     }
 
     switch(request.method) {
-      case SIP.C.CANCEL:
-        /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
-         * was in progress and that the UAC MAY continue with the session established by
-         * any 2xx response, or MAY terminate with BYE. SIP does continue with the
-         * established session. So the CANCEL is processed only if the session is not yet
-         * established.
-         */
+    case SIP.C.CANCEL:
+      /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
+       * was in progress and that the UAC MAY continue with the session established by
+       * any 2xx response, or MAY terminate with BYE. SIP does continue with the
+       * established session. So the CANCEL is processed only if the session is not yet
+       * established.
+       */
 
-        /*
-         * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
-         *request opening the session.
-         */
-        if(this.status === C.STATUS_WAITING_FOR_ANSWER ||
-           this.status === C.STATUS_WAITING_FOR_PRACK ||
-           this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK ||
-           this.status === C.STATUS_EARLY_MEDIA ||
-           this.status === C.STATUS_ANSWERED) {
+      /*
+       * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
+       *request opening the session.
+       */
+      if(this.status === C.STATUS_WAITING_FOR_ANSWER ||
+         this.status === C.STATUS_WAITING_FOR_PRACK ||
+         this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK ||
+         this.status === C.STATUS_EARLY_MEDIA ||
+         this.status === C.STATUS_ANSWERED) {
 
-          this.status = C.STATUS_CANCELED;
-          this.request.reply(487);
-          this.canceled(request);
-          this.rejected(request, SIP.C.causes.CANCELED);
-          this.failed(request, SIP.C.causes.CANCELED);
-        }
-        break;
-      case SIP.C.ACK:
-        if(this.status === C.STATUS_WAITING_FOR_ACK) {
-          if (!this.hasAnswer) {
-            if(request.body && request.getHeader('content-type') === 'application/sdp') {
-              // ACK contains answer to an INVITE w/o SDP negotiation
-              this.hasAnswer = true;
-              this.mediaHandler.setDescription(
-                request.body,
-                /*
-                 * onSuccess
-                 * SDP Answer fits with Offer. Media will start
-                 */
-                confirmSession,
-                /*
-                 * onFailure
-                 * SDP Answer does not fit the Offer.  Terminate the call.
-                 */
-                function (e) {
-                  session.logger.warn(e);
-                  session.terminate({
-                    statusCode: '488',
-                    reasonPhrase: 'Bad Media Description'
-                  });
-                  session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                }
-              );
-            } else if (this.early_sdp) {
-              confirmSession();
-            } else {
-              //TODO: Pass to mediahandler
-              this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-            }
+        this.status = C.STATUS_CANCELED;
+        this.request.reply(487);
+        this.canceled(request);
+        this.rejected(request, SIP.C.causes.CANCELED);
+        this.failed(request, SIP.C.causes.CANCELED);
+      }
+      break;
+    case SIP.C.ACK:
+      if(this.status === C.STATUS_WAITING_FOR_ACK) {
+        if (!this.hasAnswer) {
+          if(request.body && request.getHeader('content-type') === 'application/sdp') {
+            // ACK contains answer to an INVITE w/o SDP negotiation
+            this.hasAnswer = true;
+            this.mediaHandler.setDescription(
+              request.body,
+              /*
+               * onSuccess
+               * SDP Answer fits with Offer. Media will start
+               */
+              confirmSession.bind(this),
+              /*
+               * onFailure
+               * SDP Answer does not fit the Offer.  Terminate the call.
+               */
+              function (e) {
+                this.logger.warn(e);
+                this.terminate({
+                  statusCode: '488',
+                  reasonPhrase: 'Bad Media Description'
+                });
+                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              }.bind(this)
+            );
+          } else if (this.early_sdp) {
+            confirmSession.apply(this);
           } else {
-            confirmSession();
+            //TODO: Pass to mediahandler
+            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
+        } else {
+          confirmSession.apply(this);
         }
-        break;
-      case SIP.C.PRACK:
-        if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-          //localMedia = session.mediaHandler.localMedia;
-          if(!this.hasAnswer) {
-            if(request.body && request.getHeader('content-type') === 'application/sdp') {
-              this.hasAnswer = true;
-              this.mediaHandler.setDescription(
-                request.body,
-                /*
-                 * onSuccess
-                 * SDP Answer fits with Offer. Media will start
-                 */
-                function() {
-                  window.clearTimeout(session.timers.rel1xxTimer);
-                  window.clearTimeout(session.timers.prackTimer);
-                  request.reply(200);
-                  if (session.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-                    session.status = C.STATUS_EARLY_MEDIA;
-                    session.accept();
-                  }
-                  session.status = C.STATUS_EARLY_MEDIA;
-                  //REVISIT
-                  session.mute();
-                  /*if (localMedia.getAudioTracks().length > 0) {
-                    localMedia.getAudioTracks()[0].enabled = false;
-                  }
-                  if (localMedia.getVideoTracks().length > 0) {
-                    localMedia.getVideoTracks()[0].enabled = false;
-                  }*/
-                },
-                function (e) {
-                  //TODO: Send to media handler
-                  session.logger.warn(e);
-                  session.terminate({
-                    statusCode: '488',
-                    reasonPhrase: 'Bad Media Description'
-                  });
-                  session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+      }
+      break;
+    case SIP.C.PRACK:
+      if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+        //localMedia = session.mediaHandler.localMedia;
+        if(!this.hasAnswer) {
+          if(request.body && request.getHeader('content-type') === 'application/sdp') {
+            this.hasAnswer = true;
+            this.mediaHandler.setDescription(
+              request.body,
+              /*
+               * onSuccess
+               * SDP Answer fits with Offer. Media will start
+               */
+              function() {
+                window.clearTimeout(this.timers.rel1xxTimer);
+                window.clearTimeout(this.timers.prackTimer);
+                request.reply(200);
+                if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+                  this.status = C.STATUS_EARLY_MEDIA;
+                  this.accept();
                 }
-              );
-            } else {
-              session.terminate({
-                statusCode: '488',
-                reasonPhrase: 'Bad Media Description'
-              });
-              session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-            }
+                this.status = C.STATUS_EARLY_MEDIA;
+                //REVISIT
+                this.mute();
+              }.bind(this),
+              function (e) {
+                //TODO: Send to media handler
+                this.logger.warn(e);
+                this.terminate({
+                  statusCode: '488',
+                  reasonPhrase: 'Bad Media Description'
+                });
+                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              }.bind(this)
+            );
           } else {
-            window.clearTimeout(session.timers.rel1xxTimer);
-            window.clearTimeout(session.timers.prackTimer);
-            request.reply(200);
-
-            if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-              this.status = C.STATUS_EARLY_MEDIA;
-              this.accept();
-            }
-            this.status = C.STATUS_EARLY_MEDIA;
-            //REVISIT
-            session.mute();
-
-            /*localMedia = session.mediaHandler.localMedia;
-            if (localMedia.getAudioTracks().length > 0) {
-              localMedia.getAudioTracks()[0].enabled = false;
-            }
-            if (localMedia.getVideoTracks().length > 0) {
-              localMedia.getVideoTracks()[0].enabled = false;
-            }*/
-          }
-        } else if(this.status === C.STATUS_EARLY_MEDIA) {
-          request.reply(200);
-        }
-        break;
-      case SIP.C.BYE:
-        if(this.status === C.STATUS_CONFIRMED) {
-          request.reply(200);
-          this.emit('bye', request);
-          this.terminated(request, SIP.C.causes.BYE);
-        }
-        break;
-      case SIP.C.INVITE:
-        if(this.status === C.STATUS_CONFIRMED) {
-          this.logger.log('re-INVITE received');
-          this.receiveReinvite(request);
-        }
-        break;
-      case SIP.C.INFO:
-        if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
-          contentType = request.getHeader('content-type');
-          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-            new DTMF(this).init_incoming(request);
-          }
-        }
-        break;
-      case SIP.C.REFER:
-        if(this.status ===  C.STATUS_CONFIRMED) {
-          this.logger.log('REFER received');
-          request.reply(202, 'Accepted');
-          this.sendRequest(SIP.C.NOTIFY,
-            { 
-              extraHeaders:[
-                'Event: refer',
-                'Subscription-State: terminated',
-                'Content-Type: message/sipfrag'
-               ],
-               body:'SIP/2.0 100 Trying'
+            this.terminate({
+              statusCode: '488',
+              reasonPhrase: 'Bad Media Description'
             });
-
-          // HACK: Stop localMedia so Chrome doesn't get confused about gUM
-          if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
-            this.rtcMediaHandler.localMedia.stop();
+            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
+        } else {
+          window.clearTimeout(this.timers.rel1xxTimer);
+          window.clearTimeout(this.timers.prackTimer);
+          request.reply(200);
 
-          /*
-            Harmless race condition.  Both sides of REFER
-            may send a BYE, but in the end the dialogs are destroyed.
-          */
-          referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-            media: this.mediaHint
-          });
-
-          this.referred(request,referSession);
-
-          this.terminate();
+          if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+            this.status = C.STATUS_EARLY_MEDIA;
+            this.accept();
+          }
+          this.status = C.STATUS_EARLY_MEDIA;
+          //REVISIT
+          this.mute();
         }
-        break;
+      } else if(this.status === C.STATUS_EARLY_MEDIA) {
+        request.reply(200);
+      }
+      break;
+    default:
+      Session.prototype.receiveRequest.apply(this, [request]);
+      break;
     }
   }
-
 };
 
 SIP.InviteServerContext = InviteServerContext;
@@ -2112,85 +2109,14 @@ InviteClientContext.prototype = {
   },
 
   receiveRequest: function(request) {
-    var contentType, referSession, response;
+    // ICC RECEIVE REQUEST
 
-    if(request.method === SIP.C.CANCEL) {
-      /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
-       * was in progress and that the UAC MAY continue with the session established by
-       * any 2xx response, or MAY terminate with BYE. SIP does continue with the
-       * established session. So the CANCEL is processed only if the session is not yet
-       * established.
-       */
-
-      /*
-       * Terminate the whole session in case the user didn't accept nor reject the
-       *request opening the session.
-       */
-      if(this.status === C.STATUS_EARLY_MEDIA) {
-        this.status = C.STATUS_CANCELED;
-        response = this.request.reply(487);
-        this.canceled(response);
-        this.rejected(response, SIP.C.causes.CANCELED);
-        this.failed(response, SIP.C.causes.CANCELED);
-      }
-    } else {
-      // Requests arriving here are in-dialog requests.
-      switch(request.method) {
-        case SIP.C.BYE:
-          request.reply(200);
-          this.emit('bye', request);
-          this.terminated(request, SIP.C.causes.BYE);
-          break;
-        case SIP.C.INVITE:
-          this.logger.log('re-INVITE received');
-          this.receiveReinvite(request);
-          break;
-        case SIP.C.ACK:
-          if(this.status === C.STATUS_WAITING_FOR_ACK) {
-            window.clearTimeout(this.timers.ackTimer);
-            window.clearTimeout(this.timers.invite2xxTimer);
-            this.status = C.STATUS_CONFIRMED;
-          }
-          break;
-        case SIP.C.INFO:
-          contentType = request.getHeader('content-type');
-          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-            new DTMF(this).init_incoming(request);
-          }
-          break;
-        case SIP.C.REFER:
-          this.logger.log('REFER received');
-          request.reply(202, 'Accepted');
-          
-          this.sendRequest(SIP.C.NOTIFY,
-            {
-              extraHeaders: [
-                'Event: refer',
-                'Subscription-State: terminated',
-                'Content-Type: message/sipfrag'
-              ],
-              body: 'SIP/2.0 100 Trying'
-            });
-
-          // HACK: Stop localMedia so Chrome doesn't get confused about gUM
-          if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
-            this.rtcMediaHandler.localMedia.stop();
-          }
-
-          /*
-            Harmless race condition.  Both sides of REFER
-            may send a BYE, but in the end the dialogs are destroyed.
-          */
-          referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-            media: this.mediaHint
-          });
-
-          this.referred(request, referSession);
-
-          this.terminate();
-          break;
-      }
+    // Reject CANCELs
+    if (request.method === SIP.C.CANCEL) {
+      // TODO
     }
+
+    return Session.prototype.receiveRequest.apply(this, [request]);
   }
 };
 
