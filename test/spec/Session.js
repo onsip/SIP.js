@@ -470,3 +470,207 @@ describe('An INVITE sent from a UAC', function () {
   });
 
 });
+
+describe('A UAS receiving an INVITE', function () {
+  var ua, session, ua_config, sendSpy, ws;
+
+  afterEach(function () {
+    ua.stop();
+    ua = session = ws = null;
+  });
+
+  describe('with 100rel unsupported', function () {
+    beforeEach(function () {
+      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+      ua_config = {
+        uri: 'alice@example.com',
+        register: false
+      };
+
+      ua = new SIP.UA(ua_config).on('connected', function () {
+        ws = ua.transport.ws;
+        ws.receiveMessage(Messages.Invite.normal);
+      }).on('invite', function (s) {
+        session = s;
+      });
+
+      waitsFor('invite event to be fired', function () {
+        return session;
+      }, 2000);
+    });
+
+    describe('sending a progress response', function () {
+      it('sends 100 unreliably with no body', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 100 });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 100 Trying');
+          expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch('Content-Length: 0\r\n');
+        });
+      });
+
+      it('sends 1xx unreliably with no body', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 180 });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 180 Ringing');
+          expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch('Content-Length: 0\r\n');
+        });
+      });
+    });
+  });
+
+  describe('with 100rel supported', function () {
+    beforeEach(function () {
+      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+      ua_config = {
+        uri: 'alice@example.com',
+        register: false
+      };
+
+      ua = new SIP.UA(ua_config).on('connected', function () {
+        ws = ua.transport.ws;
+        ws.receiveMessage(Messages.Invite.rel100sup);
+      }).on('invite', function (s) {
+        session = s;
+      });
+
+      waitsFor('invite event to be fired', function () {
+        return session;
+      }, 2000);
+    });
+
+    describe('sending a progress response', function () {
+      it('sends 100 unreliably with no body', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 100 });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 100 Trying');
+          expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch('Content-Length: 0\r\n');
+        });
+      });
+
+      it('sends 1xx unreliably with no body', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 183 });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 183 Session Progress');
+          expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch('Content-Length: 0\r\n');
+        });
+      });
+
+      it('sends 1xx reliably with a body, when rel100 specified', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 183, rel100: true });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 183 Session Progress');
+          expect(packet).toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch(/Content-Length: [^0].*\r\n/);
+        });
+      });
+    });
+  });
+
+  describe('with 100rel required', function () {
+    beforeEach(function () {
+      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+      ua_config = {
+        uri: 'alice@example.com',
+        register: false
+      };
+
+      ua = new SIP.UA(ua_config).on('connected', function () {
+        ws = ua.transport.ws;
+        ws.receiveMessage(Messages.Invite.rel100req);
+      }).on('invite', function (s) {
+        session = s;
+      });
+
+      waitsFor('invite event to be fired', function () {
+        return session;
+      }, 2000);
+    });
+
+    describe('sending a progress response', function () {
+      it('sends 100 unreliably with no body', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 100 });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 100 Trying');
+          expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch('Content-Length: 0\r\n');
+        });
+      });
+
+      it('sends 1xx reliably with a body', function () {
+        runs(function () {
+          sendSpy.reset();
+          session.progress({ statusCode: 180 });
+        });
+
+        waitsFor('response to be sent', function () {
+          return sendSpy.calls.length;
+        }, 200);
+
+        runs(function () {
+          var packet = sendSpy.mostRecentCall.args[0];
+          expect(packet).toMatch('SIP/2.0 180 Ringing');
+          expect(packet).toMatch(/Require *:[^\r]*100rel/);
+          expect(packet).toMatch(/Content-Length: [^0].*\r\n/);
+        });
+      });
+    });
+  });
+});

@@ -31,7 +31,6 @@ Session = function (mediaHandlerFactory) {
   'terminated',
   'dtmf',
   'invite',
-  'preaccepted',
   'cancel',
   'referred',
   'bye',
@@ -1102,6 +1101,97 @@ InviteServerContext.prototype = {
       this.reject(options);
     }
 
+    return this;
+  },
+
+  /*
+   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+   */
+  progress: function (options) {
+    options = options || {};
+    var
+      statusCode = options.statusCode || 180,
+      reasonPhrase = options.reasonPhrase,
+      extraHeaders = options.extraHeaders || [],
+      body = options.body,
+      response;
+
+    if (statusCode < 100 || statusCode > 199) {
+      throw new TypeError('Invalid statusCode: ' + statusCode);
+    }
+
+    if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
+      return this;
+    }
+
+    function do100rel() {
+      statusCode = options.statusCode || 183;
+
+      // Set status and add extra headers
+      this.status = C.STATUS_WAITING_FOR_PRACK;
+      extraHeaders.push('Require: 100rel');
+      extraHeaders.push('RSeq: ' + Math.floor(Math.random() * 10000));
+
+      // Save media hint for later (referred sessions)
+      this.mediaHint = options.media;
+
+      // Get the session description to add to preaccept with
+      this.mediaHandler.getDescription(
+        // Success
+        function succ(body) {
+          if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
+            return;
+          }
+
+          this.early_sdp = body;
+          this[this.hasOffer ? 'hasAnswer' : 'hasOffer'] = true;
+
+          // Retransmit until we get a response or we time out (see prackTimer below)
+          var timeout = SIP.Timers.T1;
+          this.timers.rel1xxTimer = window.setTimeout(function rel1xxRetransmission() {
+            this.request.reply(statusCode, null, extraHeaders, body);
+            timeout *= 2;
+            this.timers.rel1xxTimer = window.setTimeout(rel1xxRetransmission, timeout);
+          }.bind(this), timeout);
+
+          // Timeout and reject INVITE if no response
+          this.timers.prackTimer = window.setTimeout(function () {
+            if (this.status !== C.STATUS_WAITING_FOR_PRACK) {
+              return;
+            }
+
+            this.logger.log('no PRACK received, rejecting the call');
+            window.clearTimeout(this.timers.rel1xxTimer);
+            this.request.reply(504);
+            this.terminated(null, SIP.C.causes.NO_PRACK);
+          }.bind(this), SIP.Timers.T1 * 64);
+
+          // Send the initial response
+          response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+          this.emit('progress', response); // TODO - include arguments here
+        }.bind(this),
+
+        // Failure
+        function fail() {
+          this.failed(null, SIP.C.causes.WEBRTC_ERROR);
+        }.bind(this),
+
+        // Media hint:
+        options.media);
+    } // end do100rel
+
+    function normalReply() {
+      response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+      this.emit('progress', response);
+    }
+
+    if (options.statusCode !== 100 &&
+        (this.rel100 === SIP.C.supported.REQUIRED ||
+         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100))) {
+      do100rel.apply(this);
+    } else {
+      normalReply.apply(this);
+    }
     return this;
   },
 

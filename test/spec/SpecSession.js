@@ -26,7 +26,6 @@ describe('Session', function() {
     expect(Session.checkEvent('terminated')).toBeTruthy();
     expect(Session.checkEvent('dtmf')).toBeTruthy();
     expect(Session.checkEvent('invite')).toBeTruthy();
-    expect(Session.checkEvent('preaccepted')).toBeTruthy();
     expect(Session.checkEvent('cancel')).toBeTruthy();
     expect(Session.checkEvent('referred')).toBeTruthy();
     expect(Session.checkEvent('bye')).toBeTruthy();
