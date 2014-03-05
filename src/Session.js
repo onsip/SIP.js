@@ -986,8 +986,6 @@ InviteServerContext = function(ua, request) {
   this.request = request;
   this.contact = this.ua.contact.toString();
 
-  this.receiveNonInviteResponse = SIP.ClientContext.prototype.receiveResponse;
-
   this.logger = ua.getLogger('sip.inviteservercontext', this.id);
 
   //Save the session into the ua sessions collection.
