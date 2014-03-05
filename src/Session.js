@@ -1157,8 +1157,8 @@ InviteServerContext.prototype = {
               onTransportError: function() {
                 self.onTransportError();
               },
-              receiveResponse: function(response) {
-                self.receiveNonInviteResponse(response);
+              receiveResponse: function() {
+                return;
               }
             },
             this.ua
@@ -1350,12 +1350,6 @@ InviteServerContext.prototype = {
          *request opening the session.
          */
         if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_ANSWERED) {
-/*
-          if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-            window.clearTimeout(session.timers.rel1xxTimer);
-            window.clearTimeout(session.timers.prackTimer);
-          }
-*/
           this.status = C.STATUS_CANCELED;
           this.request.reply(487);
           this.canceled(request);
