@@ -253,6 +253,8 @@ UA.prototype.isConnected = function() {
  */
 UA.prototype.invite = function(target, options) {
   options = options || {};
+  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
+
   var context = new SIP.InviteClientContext(this, target, options);
 
   if (this.isConnected()) {
