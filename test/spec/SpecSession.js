@@ -1018,8 +1018,12 @@ describe('InviteServerContext', function() {
 
     spyOn(SIP.EventEmitter.prototype,'emit');
 
+    jasmine.Clock.useMock();
+
     ISC = new SIP.InviteServerContext(ua, request);
     window.clearTimeout(ISC.timers.userNoAnswerTimer);
+
+    jasmine.Clock.tick(100);
 
     expect(ISC.emit.calls[1].args[0]).toBe('progress');
 

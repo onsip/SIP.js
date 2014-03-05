@@ -986,7 +986,7 @@ InviteServerContext = function(ua, request) {
   }
 
   if (!request.body || this.renderbody) {
-    fireNewSession();
+    setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
     this.mediaHandler.setDescription(

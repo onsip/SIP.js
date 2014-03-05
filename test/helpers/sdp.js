@@ -1,6 +1,21 @@
 /** Some valid SDP strings to pretend that browsers generated for SIP.js */
 Messages = {};
 Messages.Invite = {
+  nosdp: 'INVITE sip:alice@example.com;transport=ws SIP/2.0\r\n' +
+    'Via: SIP/2.0/WSS u3legsua5tov.invalid;branch=z9hG4bK4798355\r\n' +
+    'Max-Forwards: 65\r\n' +
+    'To: <sip:alice@example.com>\r\n' +
+    'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +
+    'Call-ID: 2e0tofg49n9qvhjlrr63\r\n' +
+    'CSeq: 7773 INVITE\r\n' +
+    'Contact: <sip:h9po1ojc@u3legsua5tov.invalid;transport=ws;ob>\r\n' +
+    'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\n' +
+    'Content-Type: application/sdp\r\n' +
+    'Supported: outbound\r\n' +
+    'User-Agent: SIP.js 0.5.0-devel\r\n' +
+    'Content-Length: 0\r\n' +
+    '\r\n',
+
   normal: 'INVITE sip:alice@example.com;transport=ws SIP/2.0\r\n' +
     'Via: SIP/2.0/WSS u3legsua5tov.invalid;branch=z9hG4bK4798355\r\n' +
     'Max-Forwards: 65\r\n' +

@@ -739,18 +739,6 @@ describe('UA', function() {
       UA.receiveRequest(request);
     });
 
-    it('creates an invite server context with the UA\'s mediaHandlerFactory and emit invite if the message is of type INVITE', function() {
-      var request = { method : SIP.C.INVITE ,
-                      ruri : { user: UA.configuration.uri.user } ,
-                      reply : replySpy };
-      var callback = jasmine.createSpy('callback');
-      UA.on('invite',callback);
-      UA.configuration.mediaHandlerFactory = function () {};
-      UA.receiveRequest(request);
-      expect(SIP.InviteServerContext).toHaveBeenCalledWith(UA, request);
-      expect(callback).toHaveBeenCalledWith({});
-    });
-
     it('sends a 488 if an invite is received but there is no WebRTC support', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,

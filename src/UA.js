@@ -665,15 +665,10 @@ UA.prototype.receiveRequest = function(request) {
     switch(method) {
       case SIP.C.INVITE:
         if(SIP.WebRTC.isSupported) {
-          session = new SIP.InviteServerContext(this, request);
-
-          if (!session.hasOffer) {
-            self.emit('invite', session);
-          } else {
-            session.on('invite', function() {
+          session = new SIP.InviteServerContext(this, request)
+            .on('invite', function() {
               self.emit('invite', this);
             });
-          }
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);

@@ -475,8 +475,39 @@ describe('A UAS receiving an INVITE', function () {
   var ua, session, ua_config, sendSpy, ws;
 
   afterEach(function () {
-    ua.stop();
+    if (ua) {
+      ua.stop();
+    }
     ua = session = ws = null;
+  });
+
+  describe('without SDP', function () {
+    it('creates an invite server context with the UA\'s mediaHandlerFactory, the ISC emits invite', function () {
+      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+      ua_config = {
+        uri: 'alice@example.com',
+        register: false,
+        mediaHandlerFactory: function () {}
+      };
+
+      spyOn(ua_config, 'mediaHandlerFactory');
+      spyOn(SIP, 'InviteServerContext').andCallThrough();
+      var callback = jasmine.createSpy('callback');
+
+      jasmine.Clock.useMock();
+
+      var ua;
+      ua = new SIP.UA(ua_config).on('connected', function () {
+        ws = ua.transport.ws;
+        ws.receiveMessage(Messages.Invite.nosdp);
+      }).on('invite', callback);
+
+      jasmine.Clock.tick(100);
+
+      expect(SIP.InviteServerContext).toHaveBeenCalled();
+      expect(ua_config.mediaHandlerFactory).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
+    });
   });
 
   describe('with 100rel unsupported', function () {
