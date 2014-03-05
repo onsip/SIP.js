@@ -842,10 +842,9 @@ Session.prototype = {
     var code = response ? response.status_code : null;
 
     this.close();
-    return this.emit('rejected', {
-      response: response || null,
-      cause: cause,
-      code: code
+    return this.emit('rejected',
+      response || null,
+      cause
     });
   },
 
