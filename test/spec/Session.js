@@ -32,7 +32,7 @@ describe('An INVITE sent from a UAC', function () {
 
     //UNBELIEVABLY IMPORTANT DON'T TOUCH IT
     runs(function() {
-      if(ua.status !== 2) {
+      if(ua.status !== SIP.C.STATUS_USER_CLOSED) {
         ua.stop();
       };
     });

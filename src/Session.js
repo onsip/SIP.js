@@ -215,14 +215,7 @@ Session.prototype = {
 
   bye: function(options) {
     options = options || {};
-
-    var
-    status_code = options.status_code,
-    reason_phrase = options.reason_phrase,
-    extraHeaders = options.extraHeaders || [],
-    body = options.body,
-    self = this,
-    request;
+    var statusCode = options.statusCode;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
@@ -231,55 +224,20 @@ Session.prototype = {
 
     this.logger.log('terminating RTCSession');
 
-    if (status_code && (status_code < 200 || status_code >= 700)) {
-      throw new TypeError('Invalid status_code: '+ status_code);
+    if (statusCode && (statusCode < 200 || statusCode >= 700)) {
+      throw new TypeError('Invalid statusCode: '+ statusCode);
     }
-    
-    request = new SIP.OutgoingRequest(
-      SIP.C.BYE,
-      this.dialog.remote_target,
-      this.ua,
-      {
-        'cseq': this.dialog.local_seqnum+=1,
-        'call_id': this.dialog.id.call_id,
-        'from_uri': this.dialog.local_uri,
-        'from_tag': this.dialog.id.local_tag,
-        'to_uri': this.dialog.remote_uri,
-        'to_tag': this.dialog.id.remote_tag,
-        'route_set': this.dialog.route_set,
-        'status_code': status_code,
-        'reason_phrase': reason_phrase
-      },
-      extraHeaders,
-      body
-    );
-    new SIP.RequestSender(
-      {
-        request: request,
-        onRequestTimeout: function() {
-          self.onRequestTimeout();
-        },
-        onTransportError: function() {
-          self.onTransportError();
-        },
-        receiveResponse: function() {
-          return;
-        }
-      },
-      this.ua
-    ).send();
 
-    this.emit('bye',request);
-    this.terminated();
+    options.receiveResponse = function () {};
 
-    this.close();
+    return this.
+      sendRequest(SIP.C.BYE, options).
+      terminated();
   },
 
   refer: function(target, options) {
     options = options || {};
-    var   invalidTarget = false,
-    body = options.body,
-    extraHeaders = options.extraHeaders || [];
+    var extraHeaders = options.extraHeaders || [], originalTarget;
     
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
@@ -298,11 +256,9 @@ Session.prototype = {
       }
 
       // Check target validity
-      try {
-        target = SIP.Utils.normalizeTarget(target, this.ua.configuration.hostportParams);
-      } catch(e) {
-        target = SIP.URI.parse(SIP.INVALID_TARGET_URI);
-        invalidTarget = true;
+      target = this.ua.normalizeTarget(target);
+      if (!target) {
+        throw new TypeError('Invalid target: ' + originalTarget);
       }
 
       extraHeaders.push('Contact: '+ this.contact);
@@ -310,16 +266,13 @@ Session.prototype = {
       extraHeaders.push('Refer-To: '+ target);
     }
 
-    //Send the request
-    this.sendRequest(SIP.C.REFER,
-      {
+    // Send the request
+    return this.
+      sendRequest(SIP.C.REFER, {
         extraHeaders: extraHeaders,
-        body: body
-      });
-    
-    this.terminate();
-
-    return this;
+        body: options.body
+      }).
+      terminate();
   },
 
   sendRequest: function(method,options) {
@@ -330,34 +283,38 @@ Session.prototype = {
       this.dialog.remote_target,
       this.ua,
       {
-        'cseq': options.cseq || this.dialog.local_seqnum,
-        'call_id': this.dialog.id.call_id,
-        'from_uri': this.dialog.local_uri,
-        'from_tag': this.dialog.id.local_tag,
-        'to_uri': this.dialog.remote_uri,
-        'to_tag': this.dialog.id.remote_tag,
-        'route_set': this.dialog.route_set
+        cseq: options.cseq || (this.dialog.local_seqnum += 1),
+        call_id: this.dialog.id.call_id,
+        from_uri: this.dialog.local_uri,
+        from_tag: this.dialog.id.local_tag,
+        to_uri: this.dialog.remote_uri,
+        to_tag: this.dialog.id.remote_tag,
+        route_set: this.dialog.route_set,
+        statusCode: options.statusCode,
+        reasonPhrase: options.reasonPhrase
       },
-      options.extraHeaders || {},
+      options.extraHeaders || [],
       options.body
     );
-    
-    new SIP.RequestSender(
-      {
-        request: request,
-        onRequestTimeout: function() {
-          self.onRequestTimeout();
-        },
-        onTransportError: function() {
-          self.onTransportError();
-        },
-        receiveResponse: function(response) {
-          self.receiveNonInviteResponse(response);
-        }
+
+    new SIP.RequestSender({
+      request: request,
+      onRequestTimeout: function() {
+        self.onRequestTimeout();
       },
-      this.ua
-    ).send();
-    
+      onTransportError: function() {
+        self.onTransportError();
+      },
+      receiveResponse: options.receiveResponse || function(response) {
+        self.receiveNonInviteResponse(response);
+      }
+    }, this.ua).send();
+
+    // Emit the request event
+    if (this.checkEvent(method.toLowerCase())) {
+      this.emit(method.toLowerCase(), request);
+    }
+
     return this;
   },
 
@@ -404,8 +361,8 @@ Session.prototype = {
 
   createDialog: function(message, type, early) {
     var dialog, early_dialog,
-      local_tag = (type === 'UAS') ? message.to_tag : message.from_tag,
-      remote_tag = (type === 'UAS') ? message.from_tag : message.to_tag,
+      local_tag = message[(type === 'UAS') ? 'to_tag' : 'from_tag'],
+      remote_tag = message[(type === 'UAS') ? 'from_tag' : 'to_tag'],
       id = message.call_id + local_tag + remote_tag;
 
     early_dialog = this.earlyDialogs[id];
@@ -428,7 +385,6 @@ Session.prototype = {
         }
       }
     }
-
     // Confirmed Dialog
     else {
       // In case the dialog is in _early_ state, update it
@@ -775,15 +731,9 @@ Session.prototype = {
 
       request.reply(200, null, ['Contact: ' + self.contact], body);
 
-      if (timeout < SIP.Timers.T2) {
-        timeout *= 2;
-        if (timeout > SIP.Timers.T2) {
-          timeout = SIP.Timers.T2;
-        }
-      }
-      self.timers.invite2xxTimer = window.setTimeout(
-        invite2xxRetransmission, timeout
-      );
+      timeout = Math.min(timeout * 2, SIP.Timers.T2);
+
+      self.timers.invite2xxTimer = window.setTimeout(invite2xxRetransmission, timeout);
     }, timeout);
   },
 
@@ -809,7 +759,7 @@ Session.prototype = {
    * @private
    */
   onReadyToReinvite: function() {
-    var action = (this.pending_actions.length() > 0)? this.pending_actions.shift() : null;
+    var action = this.pending_actions.shift();
 
     if (!action || !this[action.name]) {
       return;
@@ -961,8 +911,9 @@ InviteServerContext = function(ua, request) {
 
   //TODO: move this into media handler
   if (request.body && window.mozRTCPeerConnection !== undefined) {
-    request.body = request.body.replace(/relay/g,"host generation 0");
-    request.body = request.body.replace(/ \r\n/g, "\r\n");
+    request.body = request.body.
+      replace(/relay/g,"host generation 0").
+      replace(/ \r\n/g, "\r\n");
   }
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
@@ -985,12 +936,13 @@ InviteServerContext = function(ua, request) {
   }
 
   //Set 100rel if necessary
-  if (request.hasHeader('require') && request.getHeader('require').toLowerCase().indexOf('100rel') >= 0) {
-    this.rel100 = SIP.C.supported.REQUIRED;
+  function set100rel(h,c) {
+    if (request.hasHeader(h) && request.getHeader(h).toLowerCase().indexOf('100rel') >= 0) {
+      self.rel100 = c;
+    }
   }
-  if (request.hasHeader('supported') && request.getHeader('supported').toLowerCase().indexOf('100rel') >= 0) {
-    this.rel100 = SIP.C.supported.SUPPORTED;
-  }
+  set100rel('require', SIP.C.supported.REQUIRED);
+  set100rel('supported', SIP.C.supported.SUPPORTED);
 
   /* Set the to_tag before
    * replying a response code that will create a dialog.
@@ -1063,14 +1015,6 @@ InviteServerContext = function(ua, request) {
 
 InviteServerContext.prototype = {
   reject: function(options) {
-    options = options || {};
-
-    var
-    status_code = options.status_code,
-    reason_phrase = options.reason_phrase,
-    extraHeaders = options.extraHeaders || [],
-    body = options.body;
-
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -1078,20 +1022,8 @@ InviteServerContext.prototype = {
 
     this.logger.log('rejecting RTCSession');
 
-    status_code = status_code || 480;
-
-    if (status_code < 300 || status_code >= 700) {
-      throw new TypeError('Invalid status_code: '+ status_code);
-    }
-
-    this.request.reply(status_code, reason_phrase, extraHeaders, body);
-    this.failed(null, SIP.C.causes.REJECTED);
-    this.rejected(null, reason_phrase);
-    this.terminated();
-
-    this.close();
-
-    return this;
+    SIP.ServerContext.prototype.reject.apply(this, [options]);
+    return this.terminated();
   },
 
   terminate: function(options) {
@@ -1309,13 +1241,6 @@ InviteServerContext.prototype = {
       contentType = request.getHeader('Content-Type');
       //REVISIT
       session.unmute();
-      /*if (localMedia.getAudioTracks().length > 0) {
-        localMedia.getAudioTracks()[0].enabled = true;
-      }
-      if (localMedia.getVideoTracks().length > 0) {
-        localMedia.getVideoTracks()[0].enabled = true;
-      }*/
-      //if (request.body)
       session.accepted();
       if (contentType !== 'application/sdp') {
         //custom data will be here
@@ -1337,7 +1262,12 @@ InviteServerContext.prototype = {
          * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
          *request opening the session.
          */
-        if(this.status === C.STATUS_WAITING_FOR_ANSWER || this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK || this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_ANSWERED) {
+        if(this.status === C.STATUS_WAITING_FOR_ANSWER ||
+           this.status === C.STATUS_WAITING_FOR_PRACK ||
+           this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK ||
+           this.status === C.STATUS_EARLY_MEDIA ||
+           this.status === C.STATUS_ANSWERED) {
+
           this.status = C.STATUS_CANCELED;
           this.request.reply(487);
           this.canceled(request);
@@ -1365,8 +1295,8 @@ InviteServerContext.prototype = {
                 function (e) {
                   session.logger.warn(e);
                   session.terminate({
-                    status_code: '488',
-                    reason_phrase: 'Bad Media Description'
+                    statusCode: '488',
+                    reasonPhrase: 'Bad Media Description'
                   });
                   session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
                 }
@@ -1416,16 +1346,16 @@ InviteServerContext.prototype = {
                   //TODO: Send to media handler
                   session.logger.warn(e);
                   session.terminate({
-                    status_code: '488',
-                    reason_phrase: 'Bad Media Description'
+                    statusCode: '488',
+                    reasonPhrase: 'Bad Media Description'
                   });
                   session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
                 }
               );
             } else {
               session.terminate({
-                status_code: '488',
-                reason_phrase: 'Bad Media Description'
+                statusCode: '488',
+                reasonPhrase: 'Bad Media Description'
               });
               session.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             }
@@ -1691,7 +1621,7 @@ InviteClientContext.prototype = {
     }
 
    /* if (this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
-      if (response.status_code !== 200) {
+      if (response.statusCode !== 200) {
         return;
       }
     } else */if (this.status === C.STATUS_EARLY_MEDIA && response.status_code !== 200) {
@@ -2049,8 +1979,8 @@ InviteClientContext.prototype = {
     options = options || {};
 
     var
-    status_code = options.status_code,
-    reason_phrase = options.reason_phrase,
+    statusCode = options.status_code,
+    reasonPhrase = options.reasonPhrase,
     cancel_reason;
 
     // Check Session Status
@@ -2060,33 +1990,24 @@ InviteClientContext.prototype = {
 
     this.logger.log('canceling RTCSession');
 
-    if (status_code && (status_code < 200 || status_code >= 700)) {
-      throw new TypeError('Invalid status_code: '+ status_code);
-    } else if (status_code) {
-      reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
-      cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
+    if (statusCode && (statusCode < 200 || statusCode >= 700)) {
+      throw new TypeError('Invalid status_code: '+ statusCode);
+    } else if (statusCode) {
+      reasonPhrase = reasonPhrase || SIP.C.REASON_PHRASE[statusCode] || '';
+      cancel_reason = 'SIP ;cause=' + statusCode + ' ;text="' + reasonPhrase + '"';
     }
 
     // Check Session Status
-    if (this.status === C.STATUS_NULL) {
+    if (this.status === C.STATUS_NULL ||
+        (this.status === C.STATUS_INVITE_SENT && !this.received_100)) {
       this.isCanceled = true;
       this.cancelReason = cancel_reason;
-    } else if (this.status === C.STATUS_INVITE_SENT) {
-      if(this.received_100) {
-        this.request.cancel(cancel_reason);
-      } else {
-        this.isCanceled = true;
-        this.cancelReason = cancel_reason;
-      }
-    } else if(this.status === C.STATUS_1XX_RECEIVED) {
+    } else if (this.status === C.STATUS_INVITE_SENT ||
+               this.status === C.STATUS_1XX_RECEIVED) {
       this.request.cancel(cancel_reason);
     }
 
-    this.canceled(null);
-/*     this.failed(null, SIP.C.causes.CANCELED); */
-/*     this.terminated(); */
-
-    return this;
+    return this.canceled();
   },
 
   terminate: function(options) {
@@ -2100,9 +2021,7 @@ InviteClientContext.prototype = {
       this.cancel(options);
     }
 
-    this.terminated();
-
-    return this;
+    return this.terminated();
   },
 
   receiveRequest: function(request) {

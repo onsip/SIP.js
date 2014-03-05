@@ -217,7 +217,7 @@ describe('Session', function() {
       spyOn(Session, 'close');
 
       for (var i = 200; i < 700; i++) {
-        Session.bye({status_code: i});
+        Session.bye({statusCode: i});
 
         expect(Session.emit.mostRecentCall.args[0]).toBe('bye');
         expect(Session.emit.mostRecentCall.args[1] instanceof SIP.OutgoingRequest).toBe(true);
@@ -230,7 +230,7 @@ describe('Session', function() {
 
     it('throws an error for any other status code', function() {
       for (var i = 100; i < 200; i++) {
-        expect(function(){Session.bye({status_code: i});}).toThrow('Invalid status_code: ' + i);
+        expect(function(){Session.bye({statusCode: i});}).toThrow('Invalid statusCode: ' + i);
       }
     });
   });
@@ -242,7 +242,7 @@ describe('Session', function() {
       target = 'target';
 
       Session.status = 12;
-      Session.terminate = function() { };
+      Session.terminate = function() { return this; };
     });
 
     it('throws an error if target is undefined', function() {
@@ -1061,7 +1061,7 @@ describe('InviteServerContext', function() {
 
     it('throws a type error when the status code is valid and less than 300', function(){
       for(var i = 100; i < 300; i++) {
-        expect(function(){InviteServerContext.reject({status_code: i});}).toThrow('Invalid status_code: ' + i);
+        expect(function(){InviteServerContext.reject({statusCode: i});}).toThrow('Invalid statusCode: ' + i);
       }
     });
 
@@ -1074,14 +1074,16 @@ describe('InviteServerContext', function() {
     });
 
     it('calls rejected, failed, and terminated', function() {
-      spyOn(InviteServerContext, 'rejected');
-      spyOn(InviteServerContext, 'failed');
+      var rejected, failed;
+      reject = failed = false;
+      InviteServerContext.on('rejected', function () { rejected = true; });
+      InviteServerContext.on('failed', function () { failed = true; });
       spyOn(InviteServerContext, 'terminated');
 
       InviteServerContext.reject();
 
-      expect(InviteServerContext.rejected).toHaveBeenCalled();
-      expect(InviteServerContext.failed).toHaveBeenCalled();
+      expect(rejected).toBe(true);
+      expect(failed).toBe(true);
       expect(InviteServerContext.terminated).toHaveBeenCalled();
     });
 
@@ -1919,9 +1921,9 @@ describe('InviteClientContext', function() {
 
     it('sets isCanceled to true, calls canceled, and returns this if status is NULL', function() {
       InviteClientContext.status = 0;
-      spyOn(InviteClientContext, 'failed');
-      spyOn(InviteClientContext, 'canceled');
-      spyOn(InviteClientContext, 'terminated');
+      spyOn(InviteClientContext, 'failed').andCallThrough();
+      spyOn(InviteClientContext, 'canceled').andCallThrough();
+      spyOn(InviteClientContext, 'terminated').andCallThrough();
 
       expect(InviteClientContext.isCanceled).toBe(false);
 
@@ -1933,9 +1935,9 @@ describe('InviteClientContext', function() {
 
     it('sets isCanceled to true, calls canceled, and returns this if status is INVITE_SENT and received_100 is false', function() {
       InviteClientContext.status = 1;
-      spyOn(InviteClientContext, 'failed');
-      spyOn(InviteClientContext, 'canceled');
-      spyOn(InviteClientContext, 'terminated');
+      spyOn(InviteClientContext, 'failed').andCallThrough();
+      spyOn(InviteClientContext, 'canceled').andCallThrough();
+      spyOn(InviteClientContext, 'terminated').andCallThrough();
 
       expect(InviteClientContext.isCanceled).toBe(false);
 
@@ -1950,9 +1952,9 @@ describe('InviteClientContext', function() {
       InviteClientContext.received_100 = true;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
 
-      spyOn(InviteClientContext, 'failed');
-      spyOn(InviteClientContext, 'canceled');
-      spyOn(InviteClientContext, 'terminated');
+      spyOn(InviteClientContext, 'failed').andCallThrough();
+      spyOn(InviteClientContext, 'canceled').andCallThrough();
+      spyOn(InviteClientContext, 'terminated').andCallThrough();
 
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
@@ -1964,9 +1966,9 @@ describe('InviteClientContext', function() {
       InviteClientContext.status = 2;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
 
-      spyOn(InviteClientContext, 'failed');
-      spyOn(InviteClientContext, 'canceled');
-      spyOn(InviteClientContext, 'terminated');
+      spyOn(InviteClientContext, 'failed').andCallThrough();
+      spyOn(InviteClientContext, 'canceled').andCallThrough();
+      spyOn(InviteClientContext, 'terminated').andCallThrough();
 
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
@@ -1977,7 +1979,7 @@ describe('InviteClientContext', function() {
 
   describe('.terminate', function() {
     beforeEach(function() {
-      spyOn(InviteClientContext, 'terminated');
+      spyOn(InviteClientContext, 'terminated').andCallThrough();
     });
 
     afterEach(function() {
