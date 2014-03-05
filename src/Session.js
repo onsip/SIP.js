@@ -1149,7 +1149,7 @@ InviteServerContext.prototype = {
           this.timers.rel1xxTimer = window.setTimeout(function rel1xxRetransmission() {
             this.request.reply(statusCode, null, extraHeaders, body);
             timeout *= 2;
-            this.timers.rel1xxTimer = window.setTimeout(rel1xxRetransmission, timeout);
+            this.timers.rel1xxTimer = window.setTimeout(rel1xxRetransmission.bind(this), timeout);
           }.bind(this), timeout);
 
           // Timeout and reject INVITE if no response
@@ -1268,8 +1268,6 @@ InviteServerContext.prototype = {
     }
 
     window.clearTimeout(this.timers.userNoAnswerTimer);
-
-    extraHeaders.unshift('Contact: ' + self.contact);
 
     // this hold-related code breaks FF accepting new calls - JMF 2014-1-21
     /*
@@ -1552,7 +1550,7 @@ InviteClientContext = function(ua, target, options) {
 
   // Custom data to be sent either in INVITE or in ACK
   this.renderbody = options.renderbody || null;
-  this.rendertype = options.rendertype || null;
+  this.rendertype = options.rendertype || 'text/plain';
 
   requestParams = {from_tag: this.from_tag};
 
@@ -1802,7 +1800,8 @@ InviteClientContext.prototype = {
                 session.dialog.pracked.push(response.getHeader('rseq'));
 
                 session.sendRequest(SIP.C.PRACK, {
-                  extraHeaders: extraHeaders
+                  extraHeaders: extraHeaders,
+                  receiveResponse: function() {}
                 });
                 session.status = C.STATUS_EARLY_MEDIA;
                 session.mute();
