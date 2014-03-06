@@ -15,11 +15,10 @@ describe('Subscription', function() {
   });
 
   describe('initialization', function() {
-    it('sets id, ua, and state', function() {
+    it('sets id and state', function() {
       Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog');
 
       expect(Subscription.id).toBeNull();
-      expect(Subscription.ua).toBe(ua);
       expect(Subscription.state).toBe('init');
     });
 
@@ -70,49 +69,11 @@ describe('Subscription', function() {
       expect(Subscription.logger).toBeDefined();
       expect(Subscription.dialog).toBeNull();
       expect(Subscription.timers).toEqual({N: null, sub_duration: null});
-      expect(Subscription.error_codes).toEqual([404,405,410,416,480,481,482,483,484,485,489,501,604]);
-    });
-  });
-
-  describe('.failed', function() {
-    it('emits failed', function() {
-      spyOn(Subscription, 'emit');
-
-      Subscription.failed();
-
-      expect(Subscription.emit.calls[0].args[0]).toBe('failed');
+      expect(Subscription.errorCodes).toEqual([404,405,410,416,480,481,482,483,484,485,489,501,604]);
     });
   });
 
   describe('.subscribe', function() {
-    it('logs an error and returns if the state is anything but init', function() {
-      spyOn(Subscription.logger, 'error');
-
-      Subscription.state = 'notify_wait';
-      Subscription.subscribe();
-      expect(Subscription.logger.error).toHaveBeenCalledWith('subscription is already on');
-      Subscription.logger.error.reset();
-
-      Subscription.state = 'pending';
-      Subscription.subscribe();
-      expect(Subscription.logger.error).toHaveBeenCalledWith('subscription is already on');
-      Subscription.logger.error.reset();
-
-      Subscription.state = 'active';
-      Subscription.subscribe();
-      expect(Subscription.logger.error).toHaveBeenCalledWith('subscription is already on');
-      Subscription.logger.error.reset();
-
-      Subscription.state = 'terminated';
-      Subscription.subscribe();
-      expect(Subscription.logger.error).toHaveBeenCalledWith('subscription is already on');
-      Subscription.logger.error.reset();
-
-      Subscription.state = 'init';
-      Subscription.subscribe();
-      expect(Subscription.logger.error).not.toHaveBeenCalled();
-    });
-
     it('calls clearTimeout on each of the timers', function() {
       spyOn(window, 'clearTimeout');
       spyOn(Subscription, 'send');  //also makes calls to Timeout stuff, so it makes the checks less accurate
@@ -158,19 +119,16 @@ describe('Subscription', function() {
       response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nEvent: dialog\r\nExpires: 3600\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
     });
 
-    it('calls fail and close if the status code is one of the error codes', function() {
+    it('calls fail if the status code is one of the error codes', function() {
       var code;
-      spyOn(Subscription, 'close');
       spyOn(Subscription, 'failed');
 
-      for (code = 0; code < Subscription.error_codes.length; code++) {
-        response.status_code = Subscription.error_codes[code];
+      for (code = 0; code < Subscription.errorCodes.length; code++) {
+        response.status_code = Subscription.errorCodes[code];
         Subscription.receiveResponse(response);
 
-        expect(Subscription.close).toHaveBeenCalled();
         expect(Subscription.failed).toHaveBeenCalledWith(response, null);
 
-        Subscription.close.reset();
         Subscription.failed.reset();
       }
     });
@@ -203,8 +161,7 @@ describe('Subscription', function() {
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
 
-    it('calls close, failed, and warns if expires header was missing', function() {
-      spyOn(Subscription, 'close');
+    it('calls failed and warns if expires header was missing', function() {
       spyOn(Subscription, 'failed');
       spyOn(Subscription.logger, 'warn');
 
@@ -212,13 +169,11 @@ describe('Subscription', function() {
 
       Subscription.receiveResponse(response);
 
-      expect(Subscription.close).toHaveBeenCalled();
       expect(Subscription.logger.warn).toHaveBeenCalledWith('Expires header missing in a 200-class response to SUBSCRIBE');
       expect(Subscription.failed).toHaveBeenCalledWith(response, SIP.C.EXPIRES_HEADER_MISSING);
     });
 
     it('calls close, failed, and warns if expires header was higher than original offer', function() {
-      spyOn(Subscription, 'close');
       spyOn(Subscription, 'failed');
       spyOn(Subscription.logger, 'warn');
 
@@ -226,7 +181,6 @@ describe('Subscription', function() {
 
       Subscription.receiveResponse(response);
 
-      expect(Subscription.close).toHaveBeenCalled();
       expect(Subscription.logger.warn).toHaveBeenCalledWith('Expires header in a 200-class response to SUBSCRIBE with a higher value than the one in the request');
       expect(Subscription.failed).toHaveBeenCalledWith(response, SIP.C.INVALID_EXPIRES_HEADER);
     });
@@ -270,26 +224,6 @@ describe('Subscription', function() {
       Subscription.unsubscribe();
 
       expect(Subscription.send).toHaveBeenCalled();
-    });
-  });
-
-  describe('.onRequestTimeout', function() {
-    it('calls failed', function() {
-      spyOn(Subscription, 'failed');
-
-      Subscription.onRequestTimeout();
-
-      expect(Subscription.failed).toHaveBeenCalledWith(null, SIP.C.causes.REQUEST_TIMEOUT);
-    });
-  });
-
-  describe('.onTransportError', function() {
-    it('calls failed', function() {
-      spyOn(Subscription, 'failed');
-
-      Subscription.onTransportError();
-
-      expect(Subscription.failed).toHaveBeenCalledWith(null, SIP.C.causes.CONNECTION_ERROR);
     });
   });
 
@@ -558,6 +492,18 @@ describe('Subscription', function() {
       expect(Subscription.close.calls.length).toBe(3);
     });
 
+  });
+
+  describe('.failed', function() {
+    it('calls close and emits failed', function() {
+      spyOn(Subscription, 'close');
+      spyOn(Subscription, 'emit');
+
+      Subscription.failed();
+
+      expect(Subscription.close).toHaveBeenCalled();
+      expect(Subscription.emit.calls[0].args[0]).toBe('failed');
+    });
   });
 
   describe('.matchEvent', function() {

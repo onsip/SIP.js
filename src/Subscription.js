@@ -15,7 +15,6 @@ SIP.Subscription = function (ua, target, event, options) {
 
   events = ['notify'];
   this.id = null;
-  this.ua = ua;
   this.state = 'init';
 
   if (!event) {
@@ -53,29 +52,14 @@ SIP.Subscription = function (ua, target, event, options) {
 
   this.dialog = null;
   this.timers = {N: null, sub_duration: null};
-  this.error_codes  = [404,405,410,416,480,481,482,483,484,485,489,501,604];
+  this.errorCodes  = [404,405,410,416,480,481,482,483,484,485,489,501,604];
 
   this.initMoreEvents(events);
 };
 
 SIP.Subscription.prototype = {
-  failed: function(response, cause) {
-    var code = response ? response.status_code : null;
-
-    return this.emit('failed', {
-      response: response || null,
-      cause: cause,
-      code: code
-    });
-  },
-
   subscribe: function() {
     var sub = this;
-
-    if (['notify_wait', 'pending', 'active', 'terminated'].indexOf(this.state) !== -1) {
-      this.logger.error('subscription is already on');
-      return;
-    }
 
     window.clearTimeout(this.timers.sub_duration);
     window.clearTimeout(this.timers.N);
@@ -91,8 +75,7 @@ SIP.Subscription.prototype = {
   receiveResponse: function(response) {
     var expires, sub = this;
 
-    if (this.error_codes.indexOf(response.status_code) !== -1) {
-      this.close();
+    if (this.errorCodes.indexOf(response.status_code) !== -1) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
@@ -107,8 +90,6 @@ SIP.Subscription.prototype = {
       if (expires && expires <= this.expires) {
         this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, expires * 1000);
       } else {
-        this.close();
-
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
           this.failed(response, SIP.C.EXPIRES_HEADER_MISSING);
@@ -117,7 +98,7 @@ SIP.Subscription.prototype = {
           this.failed(response, SIP.C.INVALID_EXPIRES_HEADER);
         }
       }
-    } //Used to just ignore provisional responses; now ignores everything except error_codes and 2xx
+    } //Used to just ignore provisional responses; now ignores everything except errorCodes and 2xx
   },
 
   unsubscribe: function() {
@@ -141,14 +122,6 @@ SIP.Subscription.prototype = {
     this.timers.N = window.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
 
     this.send();
-  },
-
-  onRequestTimeout: function() {
-    this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
-  },
-
-  onTransportError: function() {
-    this.failed(null, SIP.C.causes.CONNECTION_ERROR);
   },
 
   /**
@@ -235,9 +208,7 @@ SIP.Subscription.prototype = {
     window.clearTimeout(this.timers.N);
     window.clearTimeout(this.timers.sub_duration);
 
-    this.emit('notify', {
-      request: request
-    });
+    this.emit('notify', {request: request});
 
     switch (sub_state.state) {
       case 'active':
@@ -275,6 +246,17 @@ SIP.Subscription.prototype = {
         this.close();
         break;
     }
+  },
+
+  failed: function(response, cause) {
+    var code = response ? response.status_code : null;
+
+    this.close();
+    return this.emit('failed', {
+      response: response || null,
+      cause: cause,
+      code: code
+    });
   },
 
   /**
