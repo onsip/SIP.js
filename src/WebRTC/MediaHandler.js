@@ -106,7 +106,9 @@ MediaHandler.prototype = {
 
   close: function() {
     this.logger.log('closing PeerConnection');
-    if(this.peerConnection) {
+    // have to check signalingState since this.close() gets called multiple times
+    // TODO figure out why that happens
+    if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
       this.peerConnection.close();
 
       if(this.localMedia) {
