@@ -682,8 +682,9 @@ Session.prototype = {
             });
 
           // HACK: Stop localMedia so Chrome doesn't get confused about gUM
-          if (this.rtcMediaHandler && this.rtcMediaHandler.localMedia) {
-            this.rtcMediaHandler.localMedia.stop();
+          // TODO close the mediaHandler instead?
+          if (this.mediaHandler && this.mediaHandler.localMedia) {
+            this.mediaHandler.localMedia.stop();
           }
 
           /*
