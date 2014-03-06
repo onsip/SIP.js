@@ -1689,6 +1689,10 @@ InviteClientContext.prototype = {
       extraHeaders = [],
       options = {};
 
+    if (this.status === C.STATUS_TERMINATED) {
+      return;
+    }
+
     if (this.dialog && (response.status_code >= 200 && response.status_code <= 299)) {
       if (id !== this.dialog.id.toString() ) {
         if (!this.createDialog(response, 'UAC', true)) {
