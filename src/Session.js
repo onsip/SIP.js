@@ -1689,7 +1689,7 @@ InviteClientContext.prototype = {
       extraHeaders = [],
       options = {};
 
-    if (this.status === C.STATUS_TERMINATED) {
+    if (this.status === C.STATUS_TERMINATED || response.method !== SIP.C.INVITE) {
       return;
     }
 
