@@ -1573,7 +1573,7 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Content-Type: application/sdp');
   } else if (this.renderbody) {
     extraHeaders.push('Content-Type: ' + this.rendertype);
-    extraHeaders.push('Content-Disposition: render');
+    extraHeaders.push('Content-Disposition: render;handling=optional');
   }
 
   if (ua.configuration.reliable === 'required') {
@@ -1712,11 +1712,12 @@ InviteClientContext.prototype = {
       if (response.statusCode !== 200) {
         return;
       }
-    } else */if (this.status === C.STATUS_EARLY_MEDIA && response.status_code !== 200) {
+    } else */if (this.status === C.STATUS_EARLY_MEDIA && response.status_code < 200) {
       // Early media has been set up with at least one other different branch, but a final 2xx response hasn't been received
-      if (!this.earlyDialogs[id]) {
-        this.createDialog(response, 'UAC', true);
+      if (!this.earlyDialogs[id] && !this.createDialog(response, 'UAC', true)) {
+        return;
       }
+
       extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
       this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
 
