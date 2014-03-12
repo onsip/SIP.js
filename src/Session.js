@@ -956,7 +956,7 @@ InviteServerContext = function(ua, request) {
     contentDisp = request.getHeader('Content-Disposition');
 
   // Check body and content type
-  if ((!contentDisp && contentType !== 'application/sdp') || contentDisp === 'render') {
+  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.indexOf('render') >= 0)) {
     this.renderbody = request.body;
     this.rendertype = contentType;
   } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp === 'session')) {
