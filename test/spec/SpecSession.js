@@ -1647,8 +1647,8 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
     });
 
-    it('PRACKS any non 200 response when the status is earlyMedia', function() {
-      InviteClientContext.status = 11;
+    it('PRACKS any non 200 response when it already chose a dialog', function() {
+      InviteClientContext.dialog = { terminate: function() {} };
       resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
 
       InviteClientContext.receiveInviteResponse(resp);
@@ -1720,10 +1720,10 @@ describe('InviteClientContext', function() {
         InviteClientContext.receiveInviteResponse(response);
 
         expect(InviteClientContext.status).toBe(2);
-        expect(InviteClientContext.emit).toHaveBeenCalledWith('progress', {response: response});
+        expect(InviteClientContext.emit).toHaveBeenCalledWith('progress', response);
       });
 
-      it('does not PRACK a response with no body (and requires: 100rel) if there is already a confirmed dialog', function() {
+      xit('does not PRACK a response with no body (and requires: 100rel) if there is already a confirmed dialog', function() {
         InviteClientContext.createDialog(response, 'UAC', false);
         expect(InviteClientContext.dialog).toBeDefined();
 

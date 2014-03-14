@@ -1708,12 +1708,11 @@ InviteClientContext.prototype = {
       }
     }
 
-   /* if (this.status !== C.STATUS_INVITE_SENT && this.status !== C.STATUS_1XX_RECEIVED && this.status !== C.STATUS_EARLY_MEDIA) {
-      if (response.statusCode !== 200) {
-        return;
-      }
-    } else */if (this.status === C.STATUS_EARLY_MEDIA && response.status_code < 200) {
-      // Early media has been set up with at least one other different branch, but a final 2xx response hasn't been received
+    if (this.dialog && response.status_code < 200) {
+      /*
+        Early media has been set up with at least one other different branch,
+        but a final 2xx response hasn't been received
+      */
       if (!this.earlyDialogs[id] && !this.createDialog(response, 'UAC', true)) {
         return;
       }
@@ -1759,9 +1758,6 @@ InviteClientContext.prototype = {
         }
 
         this.status = C.STATUS_1XX_RECEIVED;
-        this.emit('progress', {
-          response: response || null
-        });
 
         if(response.hasHeader('require') &&
            response.getHeader('require').indexOf('100rel') !== -1) {
@@ -1787,6 +1783,8 @@ InviteClientContext.prototype = {
             this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
               extraHeaders: extraHeaders
             });
+            this.emit('progress', response);
+
           } else if (this.hasOffer) {
             if (!this.createDialog(response, 'UAC')) {
               break;
@@ -1808,6 +1806,7 @@ InviteClientContext.prototype = {
                 });
                 session.status = C.STATUS_EARLY_MEDIA;
                 session.mute();
+                session.emit('progress', response);
                 /*
                 if (session.status === C.STATUS_EARLY_MEDIA) {
                   localMedia = session.mediaHandler.localMedia;
@@ -1842,6 +1841,8 @@ InviteClientContext.prototype = {
                       extraHeaders: extraHeaders,
                       body: sdp
                     });
+                    session.status = C.STATUS_EARLY_MEDIA;
+                    session.emit('progress', response);
                   },
                   function onFailure() {
                     if (session.status === C.STATUS_TERMINATED) {
@@ -1861,6 +1862,8 @@ InviteClientContext.prototype = {
               }
             );
           }
+        } else {
+          this.emit('progress', response);
         }
         break;
       case /^2[0-9]{2}$/.test(response.status_code):
@@ -1869,7 +1872,7 @@ InviteClientContext.prototype = {
           break;
         }
 
-        if (this.status === C.STATUS_EARLY_MEDIA) {
+        if (this.status === C.STATUS_EARLY_MEDIA && this.dialog) {
           this.status = C.STATUS_CONFIRMED;
           this.unmute();
           /*localMedia = this.mediaHandler.localMedia;
