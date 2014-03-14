@@ -181,10 +181,6 @@ MediaHandler.prototype = {
   * @param {Function} onFailure
   */
   setDescription: function(sdp, onSuccess, onFailure) {
-    if (this.peerConnection.remoteDescription) {
-      this.logger.warn('attempting to set remoteDescription twice. Currently invalid.');
-      return;
-    }
     var type = this.hasOffer('local') ? 'answer' : 'offer';
     var description = new SIP.WebRTC.RTCSessionDescription({type: type, sdp: sdp});
     this.peerConnection.setRemoteDescription(description, onSuccess, onFailure);

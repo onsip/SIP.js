@@ -84,7 +84,6 @@ Dialog = function(owner, message, type, state) {
 
     //RENDERBODY
     if (this.state === C.STATUS_EARLY && (!owner.hasOffer)) {
-    //if (this.state === C.STATUS_EARLY) {
       this.mediaHandler = owner.mediaHandlerFactory(owner);
     }
   }

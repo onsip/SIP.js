@@ -1644,12 +1644,14 @@ InviteClientContext.prototype = {
     options = options || {};
 
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
-    self.mediaHint = options.media;
+    this.mediaHint = options.media;
 
     //Save the session into the ua sessions collection.
     //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway
     this.ua.sessions[this.id] = this;
 
+    //Note: due to the way Firefox handles gUM calls, it is recommended to make the gUM call at the app level
+    // and hand sip.js a stream as the mediaHint
     if (this.inviteWithoutSdp) {
       //just send an invite with no sdp...
       this.request.body = self.renderbody;
@@ -1829,6 +1831,7 @@ InviteClientContext.prototype = {
               }
             );
           } else {
+            this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
             this.earlyDialogs[id].mediaHandler.setDescription(
               response.body,
               function onSuccess() {
@@ -1836,7 +1839,6 @@ InviteClientContext.prototype = {
                   function onSuccess(sdp) {
                     extraHeaders.push('Content-Type: application/sdp');
                     extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-                    session.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
                     session.earlyDialogs[id].sendRequest(session, SIP.C.PRACK, {
                       extraHeaders: extraHeaders,
                       body: sdp
@@ -1845,6 +1847,7 @@ InviteClientContext.prototype = {
                     session.emit('progress', response);
                   },
                   function onFailure() {
+                    session.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
                     if (session.status === C.STATUS_TERMINATED) {
                       return;
                     }
@@ -1856,6 +1859,7 @@ InviteClientContext.prototype = {
                 );
               },
               function onFailure(e) {
+                session.earlyDialogs[id].pracked.splice(session.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')), 1);
                 // Could not set remote description
                 session.logger.warn('invalid SDP');
                 session.logger.warn(e);
