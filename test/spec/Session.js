@@ -32,7 +32,7 @@ describe('An INVITE sent from a UAC', function () {
 
     //UNBELIEVABLY IMPORTANT DON'T TOUCH IT
     runs(function() {
-      if(ua.status !== SIP.C.STATUS_USER_CLOSED) {
+      if(ua.status !== SIP.UA.C.STATUS_USER_CLOSED) {
         ua.stop();
       };
     });
@@ -392,6 +392,13 @@ describe('An INVITE sent from a UAC', function () {
       }, 'Send never called', 500);
 
       runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
+    });
+
+    afterEach(function () {
+      var session;
+      for (session in uas.sessions) {
+        uas.sessions[session].close();
+      }
     });
 
     it('fires the `accepted` event', function () {
