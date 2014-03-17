@@ -1633,7 +1633,7 @@ describe('InviteClientContext', function() {
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag]).toBeDefined();
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.ACK);
+      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls[0].args[1]).toBe(SIP.C.ACK);
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.BYE);
     });
 
@@ -1654,7 +1654,7 @@ describe('InviteClientContext', function() {
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked).toContain('9060');
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.PRACK, {extraHeaders: ['RAck: 9060 9059 INVITE']});
+      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls[0].args[1]).toBe(SIP.C.PRACK);
     });
 
     it('cancels the request if the call was canceled and the response is 1xx', function() {

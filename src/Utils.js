@@ -38,6 +38,17 @@ Utils= {
     return window.unescape(encodeURIComponent(string)).length;
   },
 
+  generateFakeSDP: function(body) {
+    if (!body) {
+      return;
+    }
+
+    var start = body.indexOf('o=');
+    var end = body.indexOf('\r\n', start);
+
+    return 'v=0\r\n' + body.slice(start, end) + '\r\ns=-\r\nt=0 0\r\nc=IN IP4 0.0.0.0';
+  },
+
   isFunction: function(fn) {
     if (fn !== undefined) {
       return (Object.prototype.toString.call(fn) === '[object Function]')? true : false;

@@ -647,8 +647,8 @@ Session.prototype = {
     var referSession, contentType;
     switch (request.method) {
       case SIP.C.BYE:
+        request.reply(200);
         if(this.status === C.STATUS_CONFIRMED) {
-          request.reply(200);
           this.emit('bye', request);
           this.terminated(request, SIP.C.causes.BYE);
         }
@@ -1700,7 +1700,10 @@ InviteClientContext.prototype = {
         if (!this.createDialog(response, 'UAC', true)) {
           return;
         }
-        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK);
+        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK,
+                                          {
+                                            body: SIP.Utils.generateFakeSDP(response.body)
+                                          });
         this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
         //session.failed(response, SIP.C.causes.WEBRTC_ERROR);
         return;
@@ -1723,7 +1726,8 @@ InviteClientContext.prototype = {
       this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
 
       this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
-        extraHeaders: extraHeaders
+        extraHeaders: extraHeaders,
+        body: SIP.Utils.generateFakeSDP(response.body)
       });
       return;
     }
