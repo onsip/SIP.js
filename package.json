@@ -2,7 +2,7 @@
   "name": "sip",
   "title": "SIP.js",
   "description": "the Javascript SIP library",
-  "version": "0.5.0-devel",
+  "version": "0.5.0",
   "homepage": "http://sipjs.com",
   "author": "Will Mitchell <will@onsip.com>",
   "contributors": [
