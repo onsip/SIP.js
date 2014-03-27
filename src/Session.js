@@ -1016,6 +1016,11 @@ InviteServerContext = function(ua, request) {
     RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
   });
 
+  if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
+    this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
+    this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
+  }
+
   function fireNewSession() {
     var options = {extraHeaders: ['Contact: ' + self.contact]};
 
@@ -1633,6 +1638,11 @@ InviteClientContext = function(ua, target, options) {
     stunServers: this.stunServers,
     turnServers: this.turnServers
   });
+
+  if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
+    this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
+    this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
+  }
 };
 
 InviteClientContext.prototype = {

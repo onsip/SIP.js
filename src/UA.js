@@ -190,7 +190,7 @@ UA = function(configuration) {
   this.registerContext.on('registered', selfEmit('registered'));
   this.registerContext.on('unregistered', selfEmit('unregistered'));
 
-  if(configuration.autostart !== false) {
+  if(this.configuration.autostart) {
     this.start();
   }
 };
@@ -880,7 +880,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackIpInContact: false,
 
       //autostarting
-      autostart: false,
+      autostart: true,
 
       //Reliable Provisional Responses
       reliable: 'none',

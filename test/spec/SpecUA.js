@@ -1112,7 +1112,7 @@ describe('UA', function() {
       expect(UA.configuration.hackViaTcp).toBe(false);
       expect(UA.configuration.hackIpInContact).toBe(false);
 
-      expect(UA.configuration.autostart).toBe(false);
+      expect(UA.configuration.autostart).toBe(true);
 
       expect(UA.configuration.reliable).toBe('none');
     });
