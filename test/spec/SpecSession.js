@@ -1630,11 +1630,26 @@ describe('InviteClientContext', function() {
       InviteClientContext.createDialog(response, 'UAC', false);
       expect(InviteClientContext.dialog).toBeDefined();
 
+      InviteClientContext.status = 12;
+
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag]).toBeDefined();
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls[0].args[1]).toBe(SIP.C.ACK);
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.BYE);
+    });
+
+    it('emits failed if the branch on which early media was established is not the branch that picks up first (invite w/ sdp case)', function() {
+      resp = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+
+      InviteClientContext.createDialog(response, 'UAC', false);
+      expect(InviteClientContext.dialog).toBeDefined();
+
+      spyOn(InviteClientContext, 'failed');
+
+      InviteClientContext.receiveInviteResponse(resp);
+
+      expect(InviteClientContext.failed).toHaveBeenCalledWith(resp, SIP.C.causes.WEBRTC_ERROR);
     });
 
     it('ACKs any 200 OKs from the branch on which the call is up after the initial 200 OK', function() {

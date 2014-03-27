@@ -1705,7 +1705,14 @@ InviteClientContext.prototype = {
                                             body: SIP.Utils.generateFakeSDP(response.body)
                                           });
         this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
-        //session.failed(response, SIP.C.causes.WEBRTC_ERROR);
+
+        /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
+         * leg (due to peerConnection limitations) has been answered first. If your forking
+         * proxy does not hang up all unanswered branches on the first branch answered, remove this.
+         */
+        if(this.status !== C.STATUS_CONFIRMED) {
+          this.failed(response, SIP.C.causes.WEBRTC_ERROR);
+        }
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
         this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
