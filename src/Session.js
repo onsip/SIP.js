@@ -33,6 +33,7 @@ Session = function (mediaHandlerFactory) {
   'invite',
   'cancel',
   'referred',
+  'refer',
   'bye',
   'hold',
   'unhold',
@@ -644,7 +645,7 @@ Session.prototype = {
   },
 
   receiveRequest: function (request) {
-    var referSession, contentType;
+    var referSession, contentType, body;
     switch (request.method) {
       case SIP.C.BYE:
         request.reply(200);
@@ -671,33 +672,39 @@ Session.prototype = {
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
-          this.sendRequest(SIP.C.NOTIFY,
-            { 
-              extraHeaders:[
-                'Event: refer',
-                'Subscription-State: terminated',
-                'Content-Type: message/sipfrag'
-               ],
-               body:'SIP/2.0 100 Trying'
+          body = 'SIP/2.0 100 Trying';
+
+          if (this.checkListener('refer')) {
+            this.emit('refer', request.parseHeader('refer-to').uri, request);
+          } else if (this.checkListener('referred')) {
+            // HACK:close mediaHandler (and mediaStream) so Chrome doesn't get confused about gUM
+            this.mediaHandler.close();
+
+            /*
+              Harmless race condition.  Both sides of REFER
+              may send a BYE, but in the end the dialogs are destroyed.
+            */
+            referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
+              media: this.mediaHint
             });
 
-          // HACK: Stop localMedia so Chrome doesn't get confused about gUM
-          // TODO close the mediaHandler instead?
-          if (this.mediaHandler && this.mediaHandler.localMedia) {
-            this.mediaHandler.localMedia.stop();
+            this.referred(request,referSession);
+
+            this.terminate();
+          } else {
+            // RFC 3515.2.4.2: 'the UA MAY decline the request.'
+            body = 'SIP/2.0 603 Declined';
           }
 
-          /*
-            Harmless race condition.  Both sides of REFER
-            may send a BYE, but in the end the dialogs are destroyed.
-          */
-          referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-            media: this.mediaHint
-          });
-
-          this.referred(request,referSession);
-
-          this.terminate();
+          this.sendRequest(SIP.C.NOTIFY,
+                           { 
+                             extraHeaders:[
+                               'Event: refer',
+                               'Subscription-State: terminated',
+                               'Content-Type: message/sipfrag'
+                             ],
+                             body: body
+                           });
         }
         break;
     }
