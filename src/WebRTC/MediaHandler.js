@@ -29,10 +29,10 @@ var MediaHandler = function(session, options) {
   var idx, length, server,
     self = this,
     servers = [],
-    constraints = options.constraints || {},
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
     config = this.session.ua.configuration;
+  this.RTCConstraints = options.RTCConstraints || {};
 
   if (!stunServers) {
     stunServers = config.stunServers;
@@ -57,7 +57,7 @@ var MediaHandler = function(session, options) {
     });
   }
 
-  this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, constraints);
+  this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
 
   this.peerConnection.onaddstream = function(e) {
     self.logger.log('stream added: '+ e.stream.id);
@@ -135,7 +135,7 @@ MediaHandler.prototype = {
 
     /* Last functions first, to quiet JSLint */
     function streamAdditionSucceeded() {
-      self.createOfferOrAnswer(onSuccess, onFailure);
+      self.createOfferOrAnswer(onSuccess, onFailure, self.RTCConstraints);
     }
 
     function acquireSucceeded(stream) {
@@ -145,7 +145,8 @@ MediaHandler.prototype = {
       self.addStream(
         stream,
         streamAdditionSucceeded,
-        onFailure
+        onFailure,
+        self.RTCConstraints
       );
     }
 
