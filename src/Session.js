@@ -671,11 +671,27 @@ Session.prototype = {
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
-          var body = 'SIP/2.0 100 Trying';
+          var
+            hasReferListener = this.checkListener('refer'),
+            hasReferredListener = this.checkListener('referred'),
+            notifyBody = (hasReferListener || hasReferredListener) ?
+              'SIP/2.0 100 Trying' :
+              // RFC 3515.2.4.2: 'the UA MAY decline the request.'
+              'SIP/2.0 603 Declined'
+          ;
 
-          if (this.checkListener('refer')) {
+          this.sendRequest(SIP.C.NOTIFY, {
+            extraHeaders:[
+              'Event: refer',
+              'Subscription-State: terminated',
+              'Content-Type: message/sipfrag'
+            ],
+            body: notifyBody
+          });
+
+          if (hasReferListener) {
             this.emit('refer', request.parseHeader('refer-to').uri, request);
-          } else if (this.checkListener('referred')) {
+          } else if (hasReferredListener) {
             // HACK:close mediaHandler (and mediaStream) so Chrome doesn't get confused about gUM
             this.mediaHandler.close();
 
@@ -690,20 +706,7 @@ Session.prototype = {
             this.referred(request,referSession);
 
             this.terminate();
-          } else {
-            // RFC 3515.2.4.2: 'the UA MAY decline the request.'
-            body = 'SIP/2.0 603 Declined';
           }
-
-          this.sendRequest(SIP.C.NOTIFY,
-                           { 
-                             extraHeaders:[
-                               'Event: refer',
-                               'Subscription-State: terminated',
-                               'Content-Type: message/sipfrag'
-                             ],
-                             body: body
-                           });
         }
         break;
     }
