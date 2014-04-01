@@ -326,8 +326,17 @@ MediaHandler.prototype = {
     var self = this;
 
     function readySuccess () {
+      var sub, index, sdp = self.peerConnection.localDescription.sdp;
+
+      if (window.mozRTCPeerConnection !== undefined && sdp.indexOf('m=video 0') !== -1) {
+        index = sdp.indexOf('m=video 0');
+        sub = sdp.substr(index);
+        sub = sub.replace(/\r\nc=IN IP4.*\r\n$/,'\r\nc=IN IP4 0.0.0.0\r\na=inactive\r\n');
+        sdp = sdp.substr(0, index) + sub;
+      }
+
       self.ready = true;
-      onSuccess(self.peerConnection.localDescription.sdp);
+      onSuccess(sdp);
     }
 
     function onSetLocalDescriptionSuccess() {
