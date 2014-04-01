@@ -270,7 +270,8 @@ Session.prototype = {
     return this.
       sendRequest(SIP.C.REFER, {
         extraHeaders: extraHeaders,
-        body: options.body
+        body: options.body,
+        receiveResponse: function() {}
       }).
       terminate();
   },
@@ -686,7 +687,8 @@ Session.prototype = {
               'Subscription-State: terminated',
               'Content-Type: message/sipfrag'
             ],
-            body: notifyBody
+            body: notifyBody,
+            receiveResponse: function() {}
           });
 
           if (hasReferListener) {
