@@ -645,7 +645,6 @@ Session.prototype = {
   },
 
   receiveRequest: function (request) {
-    var referSession, contentType, body;
     switch (request.method) {
       case SIP.C.BYE:
         request.reply(200);
@@ -662,7 +661,7 @@ Session.prototype = {
         break;
       case SIP.C.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
-          contentType = request.getHeader('content-type');
+          var contentType = request.getHeader('content-type');
           if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
             new DTMF(this).init_incoming(request);
           }
@@ -672,7 +671,7 @@ Session.prototype = {
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
-          body = 'SIP/2.0 100 Trying';
+          var body = 'SIP/2.0 100 Trying';
 
           if (this.checkListener('refer')) {
             this.emit('refer', request.parseHeader('refer-to').uri, request);
@@ -684,7 +683,7 @@ Session.prototype = {
               Harmless race condition.  Both sides of REFER
               may send a BYE, but in the end the dialogs are destroyed.
             */
-            referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
+            var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
               media: this.mediaHint
             });
 
