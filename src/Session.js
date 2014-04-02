@@ -219,10 +219,11 @@ Session.prototype = {
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      this.logger.error('Error: Attempted to send BYE in a terminated session.');
+      return this;
     }
 
-    this.logger.log('terminating RTCSession');
+    this.logger.log('terminating Session');
 
     if (statusCode && (statusCode < 200 || statusCode >= 700)) {
       throw new TypeError('Invalid statusCode: '+ statusCode);

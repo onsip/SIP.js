@@ -206,9 +206,13 @@ describe('Session', function() {
       Session.status = 12;
     });
 
-    it('throws an error if the session status is terminated', function() {
+    it('logs an error and returns this if the session status is terminated', function() {
+      spyOn(Session.logger, 'error');
       Session.status = 9;
-      expect(function(){Session.bye();}).toThrow('Invalid status: 9');
+
+      expect(Session.bye()).toEqual(Session);
+
+      expect(Session.logger.error).toHaveBeenCalledWith('Error: Attempted to send BYE in a terminated session.');
     });
 
     it('emits bye and terminated on any status code >= 200', function() {
