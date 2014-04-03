@@ -280,6 +280,7 @@ Session.prototype = {
   sendRequest: function(method,options) {
     options = options || {};
     var self = this;
+
     var request = new SIP.OutgoingRequest(
       method,
       this.dialog.remote_target,
@@ -1739,6 +1740,10 @@ InviteClientContext.prototype = {
       } else if (this.status === C.STATUS_CONFIRMED) {
         this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
         return;
+      } else if (!this.hasAnswer) {
+        // invite w/o sdp is waiting for callback
+        //an invite with sdp must go on, and hasAnswer is true
+        return;
       }
     }
 
@@ -2013,6 +2018,7 @@ InviteClientContext.prototype = {
                     }
 
                     session.status = C.STATUS_CONFIRMED;
+                    session.hasAnswer = true;
 
                     session.unmute();
                     /*localMedia = session.mediaHandler.localMedia;

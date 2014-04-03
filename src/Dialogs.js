@@ -234,7 +234,7 @@ Dialog.prototype = {
       request = this.createRequest(method, extraHeaders, body),
       request_sender = new RequestSender(this, applicant, request);
 
-      request_sender.send();
+    request_sender.send();
   },
 
   /**

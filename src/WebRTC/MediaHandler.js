@@ -78,13 +78,14 @@ var MediaHandler = function(session, options) {
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
-    if (this.iceConnectionState === 'failed') {
+    //normal calls switch from failed to connected in some cases, so checking for failed and terminated
+    /*if (this.iceConnectionState === 'failed') {
       self.session.terminate({
         cause: SIP.C.causes.RTP_TIMEOUT,
         status_code: 200,
         reason_phrase: SIP.C.causes.RTP_TIMEOUT
-      });
-    }/* else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      }); 
+    } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
       self.onIceCompleted();
     }*/
   };

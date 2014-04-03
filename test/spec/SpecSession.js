@@ -1824,6 +1824,7 @@ describe('InviteClientContext', function() {
 
       it('sets the status to confirmed, ACKS, and calls accepted if the status was earlyMedia', function() {
         InviteClientContext.status = 11;
+        InviteClientContext.hasAnswer = true;
         InviteClientContext.createDialog(response, 'UAC', false);
         InviteClientContext.mediaHandler = {localMedia: {getAudioTracks: function() {return []},
                                                             getVideoTracks: function() {return []},
