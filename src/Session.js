@@ -2133,7 +2133,8 @@ InviteClientContext.prototype = {
       this.isCanceled = true;
       this.cancelReason = cancel_reason;
     } else if (this.status === C.STATUS_INVITE_SENT ||
-               this.status === C.STATUS_1XX_RECEIVED) {
+               this.status === C.STATUS_1XX_RECEIVED ||
+               this.status === C.STATUS_EARLY_MEDIA) {
       this.request.cancel(cancel_reason);
     }
 
