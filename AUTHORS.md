@@ -12,6 +12,10 @@
 
 ## Eric Green
 
+## Joseph Frazier
+
+* <joseph@onsip.com>
+
 ## JsSIP Authors
 
 SIP.js includes substantial portions of the JsSIP software.  JsSIP's authors are listed below.

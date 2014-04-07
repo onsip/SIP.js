@@ -31,6 +31,10 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ### Eric Green
 
+### Joseph Frazier
+
+* <joseph@onsip.com>
+
 ### JsSIP Authors
 
 SIP.js contains substantial portions of the JsSIP software. JsSIP's authors at time of fork are listed below. For up to date information about JsSIP, please visit [jssip.net](http://jssip.net)
