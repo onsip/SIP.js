@@ -249,14 +249,8 @@ SIP.Subscription.prototype = {
   },
 
   failed: function(response, cause) {
-    var code = response ? response.status_code : null;
-
     this.close();
-    return this.emit('failed', {
-      response: response || null,
-      cause: cause,
-      code: code
-    });
+    return this.emit('failed', response, cause);
   },
 
   /**
