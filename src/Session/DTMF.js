@@ -115,11 +115,7 @@ DTMF.prototype.receiveResponse = function(response) {
 
     default:
       cause = SIP.Utils.sipErrorCause(response.status_code);
-      this.emit('failed', {
-        originator: 'remote',
-        response: response,
-        cause: cause
-      });
+      this.emit('failed', response, cause);
       break;
   }
 };
@@ -128,10 +124,7 @@ DTMF.prototype.receiveResponse = function(response) {
  * @private
  */
 DTMF.prototype.onRequestTimeout = function() {
-  this.emit('failed', {
-    originator: 'system',
-    cause: SIP.C.causes.REQUEST_TIMEOUT
-  });
+  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
   this.owner.onRequestTimeout();
 };
 
@@ -139,10 +132,7 @@ DTMF.prototype.onRequestTimeout = function() {
  * @private
  */
 DTMF.prototype.onTransportError = function() {
-  this.emit('failed', {
-    originator: 'system',
-    cause: SIP.C.causes.CONNECTION_ERROR
-  });
+  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
   this.owner.onTransportError();
 };
 
@@ -150,11 +140,7 @@ DTMF.prototype.onTransportError = function() {
  * @private
  */
 DTMF.prototype.onDialogError = function(response) {
-  this.emit('failed', {
-    originator: 'remote',
-    response: response,
-    cause: SIP.C.causes.DIALOG_ERROR
-  });
+  this.emit('failed', response, SIP.C.causes.DIALOG_ERROR);
   this.owner.onDialogError(response);
 };
 
