@@ -973,11 +973,8 @@ InviteServerContext = function(ua, request) {
   }
 
   //TODO: move this into media handler
-  if (request.body && window.mozRTCPeerConnection !== undefined) {
-    request.body = request.body.
-      replace(/relay/g,"host generation 0").
-      replace(/ \r\n/g, "\r\n");
-  }
+  SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
+  SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
@@ -1441,6 +1438,9 @@ InviteServerContext.prototype = {
         if (!this.hasAnswer) {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
             // ACK contains answer to an INVITE w/o SDP negotiation
+            SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
+            SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
+
             this.hasAnswer = true;
             this.mediaHandler.setDescription(
               request.body,
@@ -1806,10 +1806,8 @@ InviteClientContext.prototype = {
             return;
           }
 
-          if (response.body && window.mozRTCPeerConnection !== undefined) {
-            response.body = response.body.replace(/relay/g, 'host generation 0');
-            response.body = response.body.replace(/ \r\n/g, '\r\n');
-          }
+          SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
+          SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
 
           if (!response.body) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1934,10 +1932,8 @@ InviteClientContext.prototype = {
           break;
         }
 
-        if (response.body && window.mozRTCPeerConnection !== undefined) {
-          response.body = response.body.replace(/relay/g, 'host generation 0');
-          response.body = response.body.replace(/ \r\n/g, '\r\n');
-        }
+        SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
+        SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
 
         // This is an invite without sdp
         if (!this.hasOffer) {

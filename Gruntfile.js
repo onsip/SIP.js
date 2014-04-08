@@ -26,6 +26,7 @@ module.exports = function(grunt) {
     'src/WebRTC.js',
     'src/UA.js',
     'src/Utils.js',
+    'src/Hacks.js',
     'src/SanityCheck.js',
     'src/DigestAuthentication.js',
     'src/tail.js'
