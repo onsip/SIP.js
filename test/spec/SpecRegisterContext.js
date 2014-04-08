@@ -13,7 +13,6 @@ describe('RegisterContext', function() {
         uri : 'uri',
         instanceId : 'instance'
       },
-      registrationContext : {},
       contact : 'contact',
       getLogger : function() {
         return { log : log };
@@ -44,7 +43,6 @@ describe('RegisterContext', function() {
     expect(RegisterContext.to_uri).toBe(ua.configuration.uri);
     expect(RegisterContext.registrationTimer).toBeDefined();
     expect(RegisterContext.registered).toBeFalsy();
-    expect(ua.registrationContext).toBe(RegisterContext);
     expect(RegisterContext.contact).toBeDefined();
     expect(RegisterContext.logger).toBeDefined();
   });
@@ -126,7 +124,6 @@ describe('RegisterContext', function() {
       RegisterContext.registrationTimer = window.setTimeout(function() {return;},999999);
       expect(RegisterContext.registrationTimer).not.toEqual(null);
       RegisterContext.onTransportClosed();
-      expect(RegisterContext.registrationContext).toEqual(null);
     });
     
     it('calls unregistered if it is registered', function() {

@@ -41,9 +41,6 @@ RegisterContext = function (ua) {
   // Set status
   this.registered = false;
 
-  // Save into ua instance
-  ua.registrationContext = this;
-
   this.logger = ua.getLogger('sip.registercontext');
   this.initMoreEvents(events);
 };
