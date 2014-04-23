@@ -11,6 +11,18 @@
 var Hacks;
 
 Hacks = {
+  Chrome: {
+    // related to https://code.google.com/p/webrtc/issues/detail?id=2143
+    cannotHandleIpWithPort0: function (sdp) {
+      if (sdp.indexOf('m=video 0') !== -1) {
+        var index = sdp.indexOf('m=video 0');
+        var sub = sdp.substr(index);
+        sub = sub.replace(/\r\nc=IN IP4.*\r\n$/,'\r\nc=IN IP4 0.0.0.0\r\na=inactive\r\n');
+        sdp = sdp.substr(0, index) + sub;
+      }
+      return sdp;
+    }
+  },
 
   Firefox: {
     /* Condition to detect if hacks are applicable */
