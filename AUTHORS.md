@@ -12,6 +12,8 @@
 
 ## Eric Green
 
+* <eric.green@onsip.com>
+
 ## Joseph Frazier
 
 * <joseph@onsip.com>
