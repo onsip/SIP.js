@@ -31,6 +31,8 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ### Eric Green
 
+* <eric.green@onsip.com>
+
 ### Joseph Frazier
 
 * <joseph@onsip.com>
