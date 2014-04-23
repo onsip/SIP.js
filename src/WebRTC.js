@@ -11,43 +11,14 @@ WebRTC.MediaHandler = @@include('../src/WebRTC/MediaHandler.js')
 
 WebRTC.MediaStreamManager = @@include('../src/WebRTC/MediaStreamManager.js')
 
-WebRTC.MediaStream = window.MediaStream || window.webkitMediaStream;
-
-// getUserMedia
-if (window.navigator.getUserMedia) {
-  WebRTC.getUserMedia = window.navigator.getUserMedia.bind(navigator);
-}
-else if (window.navigator.webkitGetUserMedia) {
-  WebRTC.getUserMedia = window.navigator.webkitGetUserMedia.bind(navigator);
-}
-else if (window.navigator.mozGetUserMedia) {
-  WebRTC.getUserMedia = window.navigator.mozGetUserMedia.bind(navigator);
-}
-
-// RTCPeerConnection
-if (window.RTCPeerConnection) {
-  WebRTC.RTCPeerConnection = window.RTCPeerConnection;
-}
-else if (window.webkitRTCPeerConnection) {
-  WebRTC.RTCPeerConnection = window.webkitRTCPeerConnection;
-}
-else if (window.mozRTCPeerConnection) {
-  WebRTC.RTCPeerConnection = window.mozRTCPeerConnection;
-}
-
-// RTCSessionDescription
-if (window.RTCSessionDescription) {
-  WebRTC.RTCSessionDescription = window.RTCSessionDescription;
-}
-else if (window.webkitRTCSessionDescription) {
-  WebRTC.RTCSessionDescription = window.webkitRTCSessionDescription;
-}
-else if (window.mozRTCSessionDescription) {
-  WebRTC.RTCSessionDescription = window.mozRTCSessionDescription;
-}
+WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(window, 'MediaStream');
+WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(window.navigator, 'getUserMedia');
+WebRTC.RTCPeerConnection = SIP.Utils.getPrefixedProperty(window, 'RTCPeerConnection');
+WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(window, 'RTCSessionDescription');
 
 // isSupported attribute.
 if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
+  WebRTC.getUserMedia = WebRTC.getUserMedia.bind(window.navigator);
   WebRTC.isSupported = true;
 }
 else {
