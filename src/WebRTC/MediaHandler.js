@@ -329,7 +329,7 @@ MediaHandler.prototype = {
     function readySuccess () {
       var sdp = self.peerConnection.localDescription.sdp;
 
-      sdp = SIP.Hacks.Chrome.cannotHandleIpWithPort0(sdp);
+      sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
 
       self.ready = true;
       onSuccess(sdp);

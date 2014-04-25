@@ -696,8 +696,7 @@ Session.prototype = {
           if (hasReferListener) {
             this.emit('refer', request.parseHeader('refer-to').uri, request);
           } else if (hasReferredListener) {
-            // HACK:close mediaHandler (and mediaStream) so Chrome doesn't get confused about gUM
-            this.mediaHandler.close();
+            SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
 
             /*
               Harmless race condition.  Both sides of REFER
@@ -1977,35 +1976,8 @@ InviteClientContext.prototype = {
                     if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
                       return;
                     }
-                    /*
-                     * This is a Firefox hack to insert valid sdp when getDescription is
-                     * called with the constraint offerToReceiveVideo = false.
-                     * We search for either a c-line at the top of the sdp above all
-                     * m-lines. If that does not exist then we search for a c-line
-                     * beneath each m-line. If it is missing a c-line, we insert
-                     * a fake c-line with the ip address 0.0.0.0. This is then valid
-                     * sdp and no media will be sent for that m-line.
-                     *
-                     * Valid SDP is:
-                     * m=
-                     * i=
-                     * c=
-                     */
-                    if (sdp.indexOf('c=') > sdp.indexOf('m=')) {
-                      var insertAt;
-                      var mlines = (sdp.match(/m=.*\r\n.*/g));
-                      for (var i=0; i<mlines.length; i++) {
-                        if (mlines[i].toString().search(/i=.*/) >= 0) {
-                          insertAt = sdp.indexOf(mlines[i].toString())+mlines[i].toString().length;
-                          if (sdp.substr(insertAt,2)!=='c=') {
-                            sdp = sdp.substr(0,insertAt) + '\r\nc=IN IP 4 0.0.0.0' + sdp.substr(insertAt);
-                          }
-                        } else if (mlines[i].toString().search(/c=.*/) < 0) {
-                          insertAt = sdp.indexOf(mlines[i].toString().match(/.*/))+mlines[i].toString().match(/.*/).toString().length;
-                          sdp = sdp.substr(0,insertAt) + '\r\nc=IN IP4 0.0.0.0' + sdp.substr(insertAt);
-                        }
-                      }
-                    }
+
+                    sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
 
                     session.status = C.STATUS_CONFIRMED;
                     session.hasAnswer = true;
