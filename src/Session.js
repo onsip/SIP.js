@@ -1285,9 +1285,6 @@ InviteServerContext.prototype = {
 
             self.setInvite2xxTimer(request, body);
             self.setACKTimer();
-            if (self.hasAnswer) {
-              self.accepted();
-            }
           },
 
           // run for reply failure callback
