@@ -1088,7 +1088,6 @@ describe('UA', function() {
       expect(UA.configuration.password).toBeNull();
 
       expect(UA.configuration.registerExpires).toBe(600);
-      expect(UA.configuration.registerMinExpires).toBe(120);
       expect(UA.configuration.register).toBe(true);
       //registrarServer is set to null here, then switched later in the function if it wasn't passed in
 

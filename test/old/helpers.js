@@ -10,7 +10,6 @@ TestSIP.Helpers = {
   DEFAULT_SIP_CONFIGURATION_AFTER_START: {
     password: null,
     registerExpires: 600,
-    registerMinExpires: 120,
     register: false,
     connectionRecoveryMinInterval: 2,
     connectionRecoveryMaxInterval: 30,
