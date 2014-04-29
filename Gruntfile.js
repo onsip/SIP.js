@@ -73,7 +73,7 @@ module.exports = function(grunt) {
     concat: {
       dist: {
         src: srcFiles,
-        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+        dest: 'dist/<%= pkg.name %>.js',
         options: {
           banner: '<%= meta.banner %>',
           separator: '\n\n',
@@ -83,15 +83,15 @@ module.exports = function(grunt) {
       },
       post_dist: {
         src: [
-          'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+          'dist/<%= pkg.name %>.js',
           'src/Grammar/dist/Grammar.js'
         ],
-        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+        dest: 'dist/<%= pkg.name %>.js',
         nonull: true
       },
       devel: {
         src: srcFiles,
-        dest: 'dist/<%= pkg.name %>-devel.js',
+        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
         options: {
           banner: '<%= meta.banner %>',
           separator: '\n\n',
@@ -101,28 +101,28 @@ module.exports = function(grunt) {
       },
       post_devel: {
         src: [
-          'dist/<%= pkg.name %>-devel.js',
+          'dist/<%= pkg.name %>-<%= pkg.version %>.js',
           'src/Grammar/dist/Grammar.js'
         ],
-        dest: 'dist/<%= pkg.name %>-devel.js',
+        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
         nonull: true
       }
     },
     includereplace: {
       dist: {
         files: {
-          'dist': 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
+          'dist': 'dist/<%= pkg.name %>.js'
         }
       },
       devel: {
         files: {
-          'dist': 'dist/<%= pkg.name %>-devel.js'
+          'dist': 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
         }
       }
     },
     jshint: {
-      dist: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
-      devel: 'dist/<%= pkg.name %>-devel.js',
+      dist: 'dist/<%= pkg.name %>.js',
+      devel: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
       options: {
         browser: true,
         curly: true,
@@ -147,7 +147,12 @@ module.exports = function(grunt) {
     uglify: {
       dist: {
         files: {
-          'dist/<%= pkg.name %>-<%= pkg.version %>.min.js': ['dist/<%= pkg.name %>-<%= pkg.version %>.js']
+          'dist/<%= pkg.name %>.min.js': ['dist/<%= pkg.name %>.js']
+        }
+      },
+      devel: {
+        files: {
+	  'dist/<%= pkg.name %>-<%= pkg.version %>.min.js': ['dist/<%= pkg.name %>-<%= pkg.version %>.js']
         }
       },
       options: {
@@ -157,7 +162,7 @@ module.exports = function(grunt) {
     jasmine: {
       components: {
         src: [
-        'dist/sip-devel.js'
+        'dist/sip.js'
         ],
         options: {
           specs: 'test/spec/*.js',
@@ -208,7 +213,7 @@ module.exports = function(grunt) {
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-  grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'concat:post_dist', 'uglify:dist']);
+grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'concat:post_dist', 'uglify:dist', 'uglify:devel']);
 
   // Task for building sip-devel.js (uncompressed).
   grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel']);
