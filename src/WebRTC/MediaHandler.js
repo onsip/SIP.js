@@ -383,42 +383,21 @@ MediaHandler.prototype = {
     onSuccess();
   },
 
-  /*
-   * @private
-   */
-  toggleMuteAudio: function(mute) {
-    var streamIdx, trackIdx, tracks,
-        streamLen, trackLen,
-        localStreams = this.getLocalStreams();
-
-    for (streamIdx = 0, streamLen = localStreams.length;
-         streamIdx < streamLen; streamIdx++) {
-      tracks = localStreams[streamIdx].getAudioTracks();
-      for (trackIdx = 0, trackLen = tracks.length;
-           trackIdx < trackLen; trackIdx++) {
-        tracks[trackIdx].enabled = !mute;
-      }
-    }
+  toggleMuteHelper: function toggleMuteHelper (trackGetter, mute) {
+    this.getLocalStreams().forEach(function (stream) {
+      stream[trackGetter]().forEach(function (track) {
+        track.enabled = !mute;
+      });
+    });
   },
 
-  /*
-   * @private
-   */
+  toggleMuteAudio: function(mute) {
+    this.toggleMuteHelper('getAudioTracks', mute);
+  },
+
   toggleMuteVideo: function(mute) {
-    var streamIdx, trackIdx, tracks,
-        streamLen, trackLen,
-        localStreams = this.getLocalStreams();
-
-    for (streamIdx = 0, streamLen = localStreams.length;
-         streamIdx < streamLen; streamIdx++) {
-      tracks = localStreams[streamIdx].getVideoTracks();
-      for (trackIdx = 0, trackLen = tracks.length;
-           trackIdx < trackLen; trackIdx++) {
-        tracks[trackIdx].enabled = !mute;
-      }
-    }
+    this.toggleMuteHelper('getVideoTracks', mute);
   }
-
 };
 
 // Return since it will be assigned to a variable.
