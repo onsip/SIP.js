@@ -162,7 +162,7 @@ module.exports = function(grunt) {
     jasmine: {
       components: {
         src: [
-        'dist/sip.js'
+        'dist/<%= pkg.name %>-<%= pkg.version %>.js'
         ],
         options: {
           specs: 'test/spec/*.js',
