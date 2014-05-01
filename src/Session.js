@@ -694,7 +694,7 @@ Session.prototype = {
           });
 
           if (hasReferListener) {
-            this.emit('refer', request.parseHeader('refer-to').uri, request);
+            this.emit('refer', request);
           } else if (hasReferredListener) {
             SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
 
