@@ -121,13 +121,10 @@ Session = function (mediaHandlerFactory) {
 
 Session.prototype = {
   dtmf: function(tones, options) {
-    var duration, interToneGap,
-      position = 0,
-      self = this;
+    var tone, dtmfs = [],
+        self = this;
 
     options = options || {};
-    duration = options.duration || null;
-    interToneGap = options.interToneGap || null;
 
     if (tones === undefined) {
       throw new TypeError('Not enough arguments');
@@ -143,72 +140,40 @@ Session.prototype = {
       throw new TypeError('Invalid tones: '+ tones);
     }
 
-    tones = tones.toString();
+    tones = tones.toString().split('');
 
-    // Check duration
-    if (duration && !SIP.Utils.isDecimal(duration)) {
-      throw new TypeError('Invalid tone duration: '+ duration);
-    } else if (!duration) {
-      duration = DTMF.C.DEFAULT_DURATION;
-    } else if (duration < DTMF.C.MIN_DURATION) {
-      this.logger.warn('"duration" value is lower than the minimum allowed, setting it to '+ DTMF.C.MIN_DURATION+ ' milliseconds');
-      duration = DTMF.C.MIN_DURATION;
-    } else if (duration > DTMF.C.MAX_DURATION) {
-      this.logger.warn('"duration" value is greater than the maximum allowed, setting it to '+ DTMF.C.MAX_DURATION +' milliseconds');
-      duration = DTMF.C.MAX_DURATION;
-    } else {
-      duration = Math.abs(duration);
-    }
-    options.duration = duration;
-
-    // Check interToneGap
-    if (interToneGap && !SIP.Utils.isDecimal(interToneGap)) {
-      throw new TypeError('Invalid interToneGap: '+ interToneGap);
-    } else if (!interToneGap) {
-      interToneGap = DTMF.C.DEFAULT_INTER_TONE_GAP;
-    } else if (interToneGap < DTMF.C.MIN_INTER_TONE_GAP) {
-      this.logger.warn('"interToneGap" value is lower than the minimum allowed, setting it to '+ DTMF.C.MIN_INTER_TONE_GAP +' milliseconds');
-      interToneGap = DTMF.C.MIN_INTER_TONE_GAP;
-    } else {
-      interToneGap = Math.abs(interToneGap);
-    }
+    while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
 
     if (this.tones) {
       // Tones are already queued, just add to the queue
-      this.tones += tones;
+      this.tones =  this.tones.concat(dtmfs);
       return this;
     }
 
-    // New set of tones to start sending
-    this.tones = tones;
-
     var sendDTMF = function () {
-      var tone, timeout,
-      tones = self.tones;
+      var dtmf, timeout;
 
-      if (self.status === C.STATUS_TERMINATED || !tones || position >= tones.length) {
+      if (self.status === C.STATUS_TERMINATED || !self.tones || self.tones.length === 0) {
         // Stop sending DTMF
         self.tones = null;
         return this;
       }
 
-      tone = tones[position];
-      position += 1;
+      dtmf = self.tones.shift();
 
       if (tone === ',') {
         timeout = 2000;
       } else {
-        var dtmf = new DTMF(self);
         dtmf.on('failed', function(){self.tones = null;});
-        dtmf.send(tone, options);
-        timeout = duration + interToneGap;
+        dtmf.send(options);
+        timeout = dtmf.duration + dtmf.interToneGap;
       }
 
       // Set timeout for the next tone
       window.setTimeout(sendDTMF, timeout);
     };
 
-    // Send the first tone
+    this.tones = dtmfs;
     sendDTMF();
     return this;
   },
@@ -664,9 +629,25 @@ Session.prototype = {
         break;
       case SIP.C.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
-          var contentType = request.getHeader('content-type');
+          var body, tone, duration,
+              contentType = request.getHeader('content-type'),
+              reg_tone = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/,
+              reg_duration = /^(Duration\s?=\s?)([0-9]{1,4})(\s)?.*/;
+
           if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-            new DTMF(this).init_incoming(request);
+            if (request.body) {
+              body = request.body.split('\r\n');
+              if (body.length === 2) {
+                if (reg_tone.test(body[0])) {
+                  tone = body[0].replace(reg_tone,"$2");
+                }
+                if (reg_duration.test(body[1])) {
+                  duration = parseInt(body[1].replace(reg_duration,"$2"), 10);
+                }
+              }
+            }
+
+            new DTMF(this, tone, {duration: duration}).init_incoming(request);
           }
         }
         break;
