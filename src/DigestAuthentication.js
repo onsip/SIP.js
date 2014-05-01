@@ -13,7 +13,7 @@
 var DigestAuthentication;
 
 DigestAuthentication = function(ua) {
-  this.logger = ua.getLogger('jssip.digestauthentication');
+  this.logger = ua.getLogger('sipjs.digestauthentication');
   this.username = ua.configuration.authorizationUser;
   this.password = ua.configuration.password;
   this.cnonce = null;

@@ -964,8 +964,8 @@ UA.prototype.loadConfig = function(configuration) {
     settings.instanceId = SIP.Utils.newUUID();
   }
 
-  // jssipId instance parameter. Static random tag of length 5
-  settings.jssipId = SIP.Utils.createRandomToken(5);
+  // sipjsId instance parameter. Static random tag of length 5
+  settings.sipjsId = SIP.Utils.createRandomToken(5);
 
   // String containing settings.uri without scheme and user.
   hostportParams = settings.uri.clone();
@@ -1065,7 +1065,7 @@ UA.configuration_skeleton = (function() {
     skeleton = {},
     parameters = [
       // Internal parameters
-      "jssipId",
+      "sipjsId",
       "wsServerMaxReconnection",
       "wsServerReconnectionTimeout",
       "hostportParams",

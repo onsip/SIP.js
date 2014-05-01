@@ -82,7 +82,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('from', from);
 
   // Call-ID
-  call_id = params.call_id || (ua.configuration.jssipId + SIP.Utils.createRandomToken(15));
+  call_id = params.call_id || (ua.configuration.sipjsId + SIP.Utils.createRandomToken(15));
   this.call_id = call_id;
   this.setHeader('call-id', call_id);
 
