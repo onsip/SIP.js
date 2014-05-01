@@ -665,8 +665,12 @@ Session.prototype = {
       case SIP.C.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
           var contentType = request.getHeader('content-type');
-          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-            new DTMF(this).init_incoming(request);
+          if (contentType) {
+            if (contentType.match(/^application\/dtmf-relay/i)) {
+              new DTMF(this).init_incoming(request);
+            } else {
+              request.reply(415, null, ["Accept: application/dtmf-relay"]);
+            }
           }
         }
         break;
