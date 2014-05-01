@@ -1565,7 +1565,7 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Content-Disposition: render;handling=optional');
   }
 
-  if (ua.configuration.reliable === 'required') {
+  if (ua.configuration.rel100 === 'required') {
     extraHeaders.push('Require: 100rel');
   }
 

@@ -882,7 +882,7 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      reliable: 'none',
+      rel100: 'none',
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
     };
@@ -923,6 +923,8 @@ UA.prototype.loadConfig = function(configuration) {
       }
     }
   }
+  
+  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, 'none');
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
@@ -1085,6 +1087,7 @@ UA.configuration_skeleton = (function() {
       "registerExpires", // 600 seconds.
       "registrarServer",
       "reliable",
+      "rel100",
       "userAgentString", //SIP.C.USER_AGENT
       "autostart",
       "stunServers",
@@ -1279,13 +1282,13 @@ UA.configuration_check = {
     password: function(password) {
       return String(password);
     },
-
-    reliable: function(reliable) {
-      if(reliable === 'required') {
-        return reliable;
-      } else if (reliable === 'supported') {
+    
+    rel100: function(rel100) {
+      if(rel100 === 'required') {
+        return rel100;
+      } else if (rel100 === 'supported') {
         SIP.UA.C.SUPPORTED = SIP.UA.C.SUPPORTED + ', 100rel';
-        return reliable;
+        return rel100;
       } else  {
         return "none";
       }

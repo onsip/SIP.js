@@ -1113,7 +1113,7 @@ describe('UA', function() {
 
       expect(UA.configuration.autostart).toBe(true);
 
-      expect(UA.configuration.reliable).toBe('none');
+      expect(UA.configuration.rel100).toBe('none');
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1433,23 +1433,23 @@ describe('UA', function() {
       });
     });
 
-    describe('.reliable', function() {
+    describe('.rel100', function() {
       it('returns "required" if "required" is passed in', function(){
-        expect(SIP.UA.configuration_check.optional.reliable('required')).toBe('required');
+        expect(SIP.UA.configuration_check.optional.rel100('required')).toBe('required');
       });
 
       it('returns "supported" if "supported" is passed in as well as adding it to the supported list', function(){
-        expect(SIP.UA.configuration_check.optional.reliable('supported')).toBe('supported');
+        expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe('supported');
         expect(SIP.UA.C.SUPPORTED).toContain(', 100rel');
       });
 
       it('returns "none" for all other arguments passed in', function() {
-        expect(SIP.UA.configuration_check.optional.reliable()).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable(true)).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable('a string')).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable(7)).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable({even: 'objects'})).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable(['arrays'])).toBe('none');
+        expect(SIP.UA.configuration_check.optional.rel100()).toBe('none');
+        expect(SIP.UA.configuration_check.optional.rel100(true)).toBe('none');
+        expect(SIP.UA.configuration_check.optional.rel100('a string')).toBe('none');
+        expect(SIP.UA.configuration_check.optional.rel100(7)).toBe('none');
+        expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe('none');
+        expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe('none');
       });
     });
 
