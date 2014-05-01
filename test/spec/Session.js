@@ -191,13 +191,13 @@ describe('An INVITE sent from a UAC', function () {
 
     //hard to 'guarantee,' but if there is a problem here then there was almost certainly a mistake added to the code.
     it('guarantees no other UA will inadvertently overlap Call-IDs', function () {
-      var id = ua.configuration.jssipId;
+      var id = ua.configuration.sipjsId;
       var ids = {};
       ids[id] = true;
 
       for (var i = 1; i < 10; i++) {
         ua = new SIP.UA(ua_config);
-        id = ua.configuration.jssipId;
+        id = ua.configuration.sipjsId;
         expect(ids[id]).toBeUndefined();
         ids[id] = true;
       }

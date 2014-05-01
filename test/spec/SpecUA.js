@@ -1174,13 +1174,13 @@ describe('UA', function() {
       expect(UA.configuration.displayName).toBe('0');
     });
 
-    it('sets an instanceId if one is not passed in also sets jssipId', function() {
+    it('sets an instanceId if one is not passed in also sets sipjsId', function() {
       UA.loadConfig({});
 
       expect(UA.configuration.instanceId).toBeDefined();
 
-      expect(UA.configuration.jssipId).toBeDefined();
-      expect(UA.configuration.jssipId.length).toBe(5);
+      expect(UA.configuration.sipjsId).toBeDefined();
+      expect(UA.configuration.sipjsId.length).toBe(5);
     });
 
     it('sets auth user to uri user if auth user is not passed in', function() {
