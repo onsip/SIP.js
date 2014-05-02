@@ -93,7 +93,7 @@ Utils= {
     if (!host) {
       return;
     } else {
-      host = SIP.Grammar.parse(host,'host');
+      host = SIP.Grammar.parse(host,{startRule: 'host'});
       if (host !== -1) {
         return host.host_type;
       }
