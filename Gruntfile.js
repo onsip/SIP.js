@@ -191,7 +191,7 @@ module.exports = function(grunt) {
 
     // First compile SIP.js grammar with PEGjs.
     console.log('"grammar" task: compiling SIP.js PEGjs grammar into Grammar.js ...');
-    child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS -e SIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
+    child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS --extra-options-file pegjs-options.json -e SIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
       if (error) {
         sys.print('ERROR: ' + stderr);
         done(false);  // Tell grunt that async task has failed.
