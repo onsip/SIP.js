@@ -452,8 +452,8 @@ Session.prototype = {
         if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(body)) {
           body = body.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
         } else {
-          body = body.replace(/a=sendrecv\r\n/g, 'a=sendonly');
-          body = body.replace(/a=recvonly\r\n/g, 'a=inactive');
+          body = body.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
+          body = body.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
         }
 
         return body;
