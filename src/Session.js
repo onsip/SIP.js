@@ -785,6 +785,8 @@ Session.prototype = {
         return;
       }
 
+      self.logger.log('no ACK received, attempting to retransmit OK');
+
       request.reply(200, null, ['Contact: ' + self.contact], body);
 
       timeout = Math.min(timeout * 2, SIP.Timers.T2);
@@ -803,7 +805,7 @@ Session.prototype = {
 
     this.timers.ackTimer = window.setTimeout(function() {
       if(self.status === C.STATUS_WAITING_FOR_ACK) {
-        self.logger.log('no ACK received, terminating the call');
+        self.logger.log('no ACK received for an extended period of time, terminating the call');
         window.clearTimeout(self.timers.invite2xxTimer);
         self.sendRequest(SIP.C.BYE);
         self.terminated(null, SIP.C.causes.NO_ACK);
@@ -2110,7 +2112,16 @@ InviteClientContext.prototype = {
 
     // Reject CANCELs
     if (request.method === SIP.C.CANCEL) {
-      // TODO
+      // TODO; make this a switch when it gets added
+    }
+
+    if (request.method === SIP.C.ACK & this.state === C.STATUS_WAITING_FOR_ACK) {
+      window.clearTimeout(this.timers.ackTimer);
+      window.clearTimeout(this.timers.invite2xxTimer);
+      this.status = C.STATUS_CONFIRMED;
+      this.unmute();
+
+      this.accepted();
     }
 
     return Session.prototype.receiveRequest.apply(this, [request]);
