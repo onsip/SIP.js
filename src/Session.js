@@ -2115,7 +2115,7 @@ InviteClientContext.prototype = {
       // TODO; make this a switch when it gets added
     }
 
-    if (request.method === SIP.C.ACK & this.state === C.STATUS_WAITING_FOR_ACK) {
+    if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
       window.clearTimeout(this.timers.ackTimer);
       window.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
