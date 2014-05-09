@@ -634,20 +634,24 @@ Session.prototype = {
               reg_tone = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/,
               reg_duration = /^(Duration\s?=\s?)([0-9]{1,4})(\s)?.*/;
 
-          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-            if (request.body) {
-              body = request.body.split('\r\n');
-              if (body.length === 2) {
-                if (reg_tone.test(body[0])) {
-                  tone = body[0].replace(reg_tone,"$2");
-                }
-                if (reg_duration.test(body[1])) {
-                  duration = parseInt(body[1].replace(reg_duration,"$2"), 10);
+          if (contentType) {
+            if (contentType.match(/^application\/dtmf-relay/i)) {
+              if (request.body) {
+                body = request.body.split('\r\n', 2);
+                if (body.length === 2) {
+                  if (reg_tone.test(body[0])) {
+                    tone = body[0].replace(reg_tone,"$2");
+                  }
+                  if (reg_duration.test(body[1])) {
+                    duration = parseInt(body[1].replace(reg_duration,"$2"), 10);
+                  }
                 }
               }
-            }
 
-            new DTMF(this, tone, {duration: duration}).init_incoming(request);
+              new DTMF(this, tone, {duration: duration}).init_incoming(request);
+            } else {
+              request.reply(415, null, ["Accept: application/dtmf-relay"]);
+            }
           }
         }
         break;
