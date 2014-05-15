@@ -1313,7 +1313,7 @@ describe('InviteServerContext', function() {
         expect(InviteServerContext.mediaHandler.setDescription).toHaveBeenCalled();
       });
 
-      it('calls confirmSession and accepted if session.early_sdp is true and above is false', function() {
+      it('calls confirmSession if session.early_sdp is true and above is false', function() {
         InviteServerContext.early_sdp = true;
         spyOn(window, 'clearTimeout').andCallThrough();
         spyOn(InviteServerContext, 'accepted').andCallThrough();
@@ -1326,7 +1326,7 @@ describe('InviteServerContext', function() {
         expect(window.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
 
         expect(InviteServerContext.status).toBe(12);
-        expect(InviteServerContext.accepted).toHaveBeenCalled();
+        expect(InviteServerContext.accepted).not.toHaveBeenCalled();
       });
 
       it('calls failed if the above two conditions are not true', function() {
