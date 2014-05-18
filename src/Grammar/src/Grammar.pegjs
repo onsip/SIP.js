@@ -280,6 +280,7 @@ Request_Line      = Method SP parsed:Request_URI SP SIP_Version {return parsed;}
 Request_URI       = SIP_URI / absoluteURI
 
 absoluteURI       = scheme ":" ( hier_part / opaque_part )
+                    {return data;}
 
 hier_part         = ( net_path / abs_path ) ( "?" query )?
 
@@ -352,6 +353,7 @@ extension_method  = token
 // STATUS LINE
 
 Status_Line     = SIP_Version SP Status_Code SP Reason_Phrase
+                  {return data;}
 
 Status_Code     = status_code: extension_code {
                   data.status_code = parseInt(status_code.join('')); }
@@ -527,7 +529,7 @@ Expires     = expires: delta_seconds {data = expires; return data; }
 
 
 Event             = event_type: event_type ( SEMI event_param )* {
-                       data.event = event_type.join('').toLowerCase(); }
+                       data.event = event_type.join('').toLowerCase(); return data;}
 
 event_type        = event_package ( "." event_template )*
 
@@ -575,9 +577,11 @@ Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param 
 // PROXY-AUTHENTICATE
 
 Proxy_Authenticate  = proxy_authenticate: challenge
+                      {return data;}
 
 challenge           = ("Digest"i LWS digest_cln (COMMA digest_cln)*)
                       / other_challenge
+                      {return data;}
 
 other_challenge     = auth_scheme LWS auth_param (COMMA auth_param)*
 
@@ -701,6 +705,7 @@ RSeq    = rseq_value: DIGIT + {
 // SUBSCRIPTION-STATE
 
 Subscription_State   = substate_value ( SEMI subexp_params )*
+                       {return data;}
 
 substate_value       = ( "active"i / "pending"i / "terminated"i
                        / extension_substate ) {
@@ -754,6 +759,7 @@ to_param   = tag_param / generic_param
 // VIA
 
 Via               = via_parm (COMMA via_parm)*
+                    {return data;}
 
 via_parm          = sent_protocol LWS sent_by ( SEMI via_params )*
 
@@ -802,6 +808,7 @@ ttl               = ttl: (DIGIT DIGIT ? DIGIT ?) {
 // WWW-AUTHENTICATE
 
 WWW_Authenticate  = www_authenticate: challenge
+                    {return data;}
 
 
 // EXTENSION-HEADER
@@ -818,6 +825,7 @@ message_body      = OCTET*
 // STUN URI (draft-nandakumar-rtcweb-stun-uri)
 
 stun_URI          = stun_scheme ":" stun_host_port
+                    {return data;}
 
 stun_scheme       = scheme: ("stuns"i / "stun"i) {
                       data.scheme = scheme; }
@@ -838,6 +846,7 @@ sub_delims        = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / 
 // TURN URI (draft-petithuguenin-behave-turn-uris)
 
 turn_URI          = turn_scheme ":" stun_host_port ( "?transport=" transport )?
+                    {return data;}
 
 turn_scheme       = scheme: ("turns"i / "turn"i) {
                       data.scheme = scheme; }
