@@ -230,7 +230,13 @@ lr_param          = "lr"i ('=' token)? {
 
 other_param       = param: pname value: ( "=" pvalue )? {
                       if(!data.uri_params) data.uri_params = {};
-                      data.uri_params[param.toLowerCase()] = value && value[1].toLowerCase();}
+                      if (value === null){
+                        value = undefined;
+                      }
+                      else {
+                        value = value[1];
+                      }
+                      data.uri_params[param.toLowerCase()] = value && value.toLowerCase();}
 
 pname             = pname: paramchar + {return pname.join(''); }
 
@@ -436,7 +442,13 @@ qvalue              = "0" ( "." DIGIT? DIGIT? DIGIT? )? {
 
 generic_param       = param: token  value: ( EQUAL gen_value )? {
                         if(!data.params) data.params = {};
-                        data.params[param.toLowerCase()] = value ? value[1] : undefined;}
+                        if (value === null){
+                          value = undefined;
+                        }
+                        else {
+                          value = value[1];
+                        }
+                        data.params[param.toLowerCase()] = value;}
 
 gen_value           = token / host / quoted_string
 
