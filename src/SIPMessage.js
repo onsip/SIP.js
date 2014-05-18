@@ -342,7 +342,7 @@ IncomingMessage.prototype = {
     }
 
     //substitute '-' by '_' for grammar rule matching.
-    parsed = SIP.Grammar.parse(value,{startRule: name.replace(/-/g, '_')});
+    parsed = SIP.Grammar.parse(value, name.replace(/-/g, '_'));
 
     if(parsed === -1) {
       this.headers[name].splice(idx, 1); //delete from headers

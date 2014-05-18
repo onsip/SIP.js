@@ -1276,6 +1276,6 @@ SIP.Grammar = (function() {
 
   return {
     SyntaxError: SyntaxError,
-    parse:       parse
+    parse:       function (input, startRule) {return parse(input, {startRule: startRule});}
   };
 })();

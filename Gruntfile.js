@@ -229,6 +229,7 @@ module.exports = function(grunt) {
     var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
     var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
     modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
+    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
     fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
     console.log('OK');
   });
