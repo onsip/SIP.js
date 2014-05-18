@@ -579,8 +579,8 @@ Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param 
 Proxy_Authenticate  = proxy_authenticate: challenge
                       {return data;}
 
-challenge           = ("Digest"i LWS digest_cln (COMMA digest_cln)*)
-                      / other_challenge
+challenge           = (("Digest"i LWS digest_cln (COMMA digest_cln)*)
+                      / other_challenge)
                       {return data;}
 
 other_challenge     = auth_scheme LWS auth_param (COMMA auth_param)*
