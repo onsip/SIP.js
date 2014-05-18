@@ -202,7 +202,7 @@ module.exports = function(grunt) {
       console.log('"grammar" task: applying custom changes to Grammar.js ...');
       var fs = require('fs');
       var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-      var modified_grammar = grammar.replace(/throw new this\.SyntaxError\(([\s\S]*?)\);([\s\S]*?)}([\s\S]*?)return result;/, 'new this.SyntaxError($1);\n        return -1;$2}$3return data;');
+      var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return undefined;');
       fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
       console.log('OK');
       done();  // Tell grunt that async task has succeeded.

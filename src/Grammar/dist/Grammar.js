@@ -160,7 +160,7 @@ SIP.Grammar = (function() {
                                 delete data.host_type;
                                 delete data.port;
                               } catch(e) {
-                                data = -1;
+                                data = undefined;
                               }return data;},
         peg$c117 = function() {
                             var header;
@@ -175,7 +175,7 @@ SIP.Grammar = (function() {
 
                                 if (options.startRule === 'SIP_URI') { data = data.uri;}
                               } catch(e) {
-                                data = -1;
+                                data = undefined;
                               }return data;},
         peg$c118 = "sips",
         peg$c119 = { type: "literal", value: "sips", description: "\"sips\"" },
@@ -337,7 +337,7 @@ SIP.Grammar = (function() {
                                 if (data !== null) {
                                   data = data.multi_header;
                                 } else {
-                                  data = -1;
+                                  data = undefined;
                                 } return data;},
         peg$c215 = function() {
                                 var header;
@@ -359,7 +359,7 @@ SIP.Grammar = (function() {
                                 if (displayName[0] === '\"') {
                                   displayName = displayName.substring(1, displayName.length-1);
                                 }
-                                data.displayName = displayName; },
+                                data.displayName = displayName; return displayName;},
         peg$c217 = "q",
         peg$c218 = { type: "literal", value: "q", description: "\"q\"" },
         peg$c219 = function(q) {
@@ -430,7 +430,7 @@ SIP.Grammar = (function() {
                           data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                           if (tag) {data.setParam('tag',tag)}
                         } catch(e) {
-                          data = -1;
+                          data = undefined;
                         }return data;},
         peg$c265 = "tag",
         peg$c266 = { type: "literal", value: "tag", description: "\"tag\"" },
@@ -442,7 +442,7 @@ SIP.Grammar = (function() {
                               try {
                                 data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                               } catch(e) {
-                                data = -1;
+                                data = undefined;
                               }return data;},
         peg$c271 = function(proxy_authenticate) {return data;},
         peg$c272 = "digest",
@@ -497,7 +497,7 @@ SIP.Grammar = (function() {
                           if (data !== null) {
                             data = data.multi_header;
                           } else {
-                            data = -1;
+                            data = undefined;
                           } return data;},
         peg$c309 = function() {
                           var header;
@@ -518,7 +518,7 @@ SIP.Grammar = (function() {
                     try {
                       data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                     } catch(e) {
-                      data = -1;
+                      data = undefined;
                     }return data;},
         peg$c311 = function(rseq_value) {
                           data.value=parseInt(rseq_value.join('')); },
@@ -560,7 +560,7 @@ SIP.Grammar = (function() {
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                         if (tag) {data.setParam('tag',tag)}
                       } catch(e) {
-                        data = -1;
+                        data = undefined;
                       }return data;},
         peg$c341 = "ttl",
         peg$c342 = { type: "literal", value: "ttl", description: "\"ttl\"" },
@@ -12026,7 +12026,7 @@ SIP.Grammar = (function() {
         peg$fail({ type: "end", description: "end of input" });
       }
 
-      throw peg$buildException(null, peg$maxFailExpected, peg$maxFailPos);
+      return undefined;
     }
   }
 

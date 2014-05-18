@@ -186,7 +186,7 @@ URI.prototype = {
 URI.parse = function(uri) {
   uri = SIP.Grammar.parse(uri,{startRule: 'SIP_URI'});
 
-  if (uri !== -1) {
+  if (uri !== undefined) {
     return uri;
   } else {
     return undefined;

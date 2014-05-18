@@ -86,7 +86,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
     case 'record-route':
       parsed = SIP.Grammar.parse(headerValue,{startRule: 'Record_Route'});
 
-      if (parsed === -1) {
+      if (parsed === undefined) {
         parsed = undefined;
       }
 
@@ -109,7 +109,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
     case 'm':
       parsed = SIP.Grammar.parse(headerValue,{startRule: 'Contact'});
 
-      if (parsed === -1) {
+      if (parsed === undefined) {
         parsed = undefined;
       }
 
@@ -197,7 +197,7 @@ Parser.parseMessage = function(data, ua) {
   firstLine = data.substring(0, headerEnd);
   parsed = SIP.Grammar.parse(firstLine,{startRule: 'Request_Response'});
 
-  if(parsed === -1) {
+  if(parsed === undefined) {
     logger.warn('error parsing first line of SIP message: "' + firstLine + '"');
     return;
   } else if(!parsed.status_code) {

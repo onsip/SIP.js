@@ -94,7 +94,7 @@ Utils= {
       return;
     } else {
       host = SIP.Grammar.parse(host,{startRule: 'host'});
-      if (host !== -1) {
+      if (host !== undefined) {
         return host.host_type;
       }
     }

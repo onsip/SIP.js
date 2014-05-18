@@ -102,7 +102,7 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                         delete data.host_type;
                         delete data.port;
                       } catch(e) {
-                        data = -1;
+                        data = undefined;
                       }return data;}
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
@@ -118,7 +118,7 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
 
                         if (options.startRule === 'SIP_URI') { data = data.uri;}
                       } catch(e) {
-                        data = -1;
+                        data = undefined;
                       }return data;}
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
@@ -393,7 +393,7 @@ Contact             = ( STAR / (contact_param (COMMA contact_param)*) ) {
                         if (data !== null) {
                           data = data.multi_header;
                         } else {
-                          data = -1;
+                          data = undefined;
                         } return data;}
 
 contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
@@ -421,7 +421,7 @@ displayName        = displayName: (token ( LWS token )* / quoted_string) {
                         if (displayName[0] === '\"') {
                           displayName = displayName.substring(1, displayName.length-1);
                         }
-                        data.displayName = displayName; }
+                        data.displayName = displayName; return displayName;}
                         // The previous rule is corrected from RFC3261
 
 contact_params      = c_p_q / c_p_expires / contact_extension
@@ -547,7 +547,7 @@ From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                   data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                   if (tag) {data.setParam('tag',tag)}
                 } catch(e) {
-                  data = -1;
+                  data = undefined;
                 }return data;}
 
 from_param  = tag_param / generic_param
@@ -571,7 +571,7 @@ Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param 
                       try {
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                       } catch(e) {
-                        data = -1;
+                        data = undefined;
                       }return data;}
 
 // PROXY-AUTHENTICATE
@@ -652,7 +652,7 @@ Record_Route  = rec_route (COMMA rec_route)* {
                   if (data !== null) {
                     data = data.multi_header;
                   } else {
-                    data = -1;
+                    data = undefined;
                   } return data;}
 
 rec_route     = name_addr ( SEMI rr_param )* {
@@ -679,7 +679,7 @@ Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
             try {
               data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
             } catch(e) {
-              data = -1;
+              data = undefined;
             }return data;}
 
 r_param = generic_param
@@ -751,7 +751,7 @@ To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
                 data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                 if (tag) {data.setParam('tag',tag)}
               } catch(e) {
-                data = -1;
+                data = undefined;
               }return data;}
 
 to_param   = tag_param / generic_param
