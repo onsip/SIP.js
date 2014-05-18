@@ -83,13 +83,7 @@ NameAddrHeader.prototype = {
   * @param {String} name_addr_header
   */
 NameAddrHeader.parse = function(name_addr_header) {
-  name_addr_header = SIP.Grammar.parse(name_addr_header,{startRule:'Name_Addr_Header'});
-
-  if (name_addr_header !== undefined) {
-    return name_addr_header;
-  } else {
-    return undefined;
-  }
+  return SIP.Grammar.parse(name_addr_header,{startRule:'Name_Addr_Header'});
 };
 
 SIP.NameAddrHeader = NameAddrHeader;

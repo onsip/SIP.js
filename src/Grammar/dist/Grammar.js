@@ -269,13 +269,7 @@ SIP.Grammar = (function() {
                                 data.uri_params['lr'] = undefined; },
           function(param, value) {
                                 if(!data.uri_params) data.uri_params = {};
-                                if (value === null || typeof value === 'undefined'){
-                                  value = undefined;
-                                }
-                                else {
-                                  value = value[1];
-                                }
-                                data.uri_params[param.toLowerCase()] = value && value.toLowerCase();},
+                                data.uri_params[param.toLowerCase()] = value && value[1].toLowerCase();},
           function(pname) {return pname.join(''); },
           function(pvalue) {return pvalue.join(''); },
           function(hname, hvalue) {
@@ -379,13 +373,7 @@ SIP.Grammar = (function() {
                                   return parseFloat(input.substring(peg$currPos, offset())); },
           function(param, value) {
                                   if(!data.params) data.params = {};
-                                  if (value === null || typeof value === 'undefined'){
-                                    value = undefined;
-                                  }
-                                  else {
-                                    value = value[1];
-                                  }
-                                  data.params[param.toLowerCase()] = value;},
+                                  data.params[param.toLowerCase()] = value ? value[1] : undefined;},
           "render",
           { type: "literal", value: "render", description: "\"render\"" },
           "session",

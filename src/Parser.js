@@ -86,10 +86,6 @@ function parseHeader(message, data, headerStart, headerEnd) {
     case 'record-route':
       parsed = SIP.Grammar.parse(headerValue,{startRule: 'Record_Route'});
 
-      if (parsed === undefined) {
-        parsed = undefined;
-      }
-
       length = parsed.length;
       for (idx = 0; idx < length; idx++) {
         header = parsed[idx];
@@ -108,10 +104,6 @@ function parseHeader(message, data, headerStart, headerEnd) {
     case 'contact':
     case 'm':
       parsed = SIP.Grammar.parse(headerValue,{startRule: 'Contact'});
-
-      if (parsed === undefined) {
-        parsed = undefined;
-      }
 
       length = parsed.length;
       for (idx = 0; idx < length; idx++) {

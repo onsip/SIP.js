@@ -184,13 +184,7 @@ URI.prototype = {
   * @param {String} uri
   */
 URI.parse = function(uri) {
-  uri = SIP.Grammar.parse(uri,{startRule: 'SIP_URI'});
-
-  if (uri !== undefined) {
-    return uri;
-  } else {
-    return undefined;
-  }
+  return SIP.Grammar.parse(uri,{startRule: 'SIP_URI'});
 };
 
 SIP.URI = URI;
