@@ -27,4 +27,5 @@
     ,"WWW_Authenticate"
     ,"challenge"
   ]
+  ,"optimize": "size"
 }
