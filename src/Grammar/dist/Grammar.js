@@ -173,7 +173,7 @@ SIP.Grammar = (function() {
                                 delete data.port;
                                 delete data.uri_params;
 
-                                if (startRule === 'SIP_URI') { data = data.uri;}
+                                if (options.startRule === 'SIP_URI') { data = data.uri;}
                               } catch(e) {
                                 data = -1;
                               }},
