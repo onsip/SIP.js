@@ -227,7 +227,8 @@ module.exports = function(grunt) {
     console.log('"grammar" task: applying custom changes to Grammar.js ...');
     var fs = require('fs');
     var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-    var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return undefined;');
+    var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
+    modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
     fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
     console.log('OK');
   });

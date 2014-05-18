@@ -344,7 +344,7 @@ IncomingMessage.prototype = {
     //substitute '-' by '_' for grammar rule matching.
     parsed = SIP.Grammar.parse(value,{startRule: name.replace(/-/g, '_')});
 
-    if(parsed === undefined) {
+    if(parsed === -1) {
       this.headers[name].splice(idx, 1); //delete from headers
       this.logger.warn('error parsing "' + name + '" header field with value "' + value + '"');
       return;

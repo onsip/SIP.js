@@ -161,7 +161,7 @@ SIP.Grammar = (function() {
                                   delete data.host_type;
                                   delete data.port;
                                 } catch(e) {
-                                  data = undefined;
+                                  data = -1;
                                 }return data;},
           function() {
                               var header;
@@ -176,7 +176,7 @@ SIP.Grammar = (function() {
 
                                   if (options.startRule === 'SIP_URI') { data = data.uri;}
                                 } catch(e) {
-                                  data = undefined;
+                                  data = -1;
                                 }return data;},
           "sips",
           { type: "literal", value: "sips", description: "\"sips\"" },
@@ -332,7 +332,7 @@ SIP.Grammar = (function() {
                                   if (data !== null) {
                                     data = data.multi_header;
                                   } else {
-                                    data = undefined;
+                                    data = -1;
                                   } return data;},
           function() {
                                   var header;
@@ -354,7 +354,7 @@ SIP.Grammar = (function() {
                                   if (displayName[0] === '\"') {
                                     displayName = displayName.substring(1, displayName.length-1);
                                   }
-                                  data.displayName = displayName; return displayName;},
+                                  data.displayName = displayName; },
           "q",
           { type: "literal", value: "q", description: "\"q\"" },
           function(q) {
@@ -419,7 +419,7 @@ SIP.Grammar = (function() {
                             data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                             if (tag) {data.setParam('tag',tag)}
                           } catch(e) {
-                            data = undefined;
+                            data = -1;
                           }return data;},
           "tag",
           { type: "literal", value: "tag", description: "\"tag\"" },
@@ -431,7 +431,7 @@ SIP.Grammar = (function() {
                                 try {
                                   data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                                 } catch(e) {
-                                  data = undefined;
+                                  data = -1;
                                 }return data;},
           function(proxy_authenticate) {return data;},
           "digest",
@@ -486,7 +486,7 @@ SIP.Grammar = (function() {
                             if (data !== null) {
                               data = data.multi_header;
                             } else {
-                              data = undefined;
+                              data = -1;
                             } return data;},
           function() {
                             var header;
@@ -507,7 +507,7 @@ SIP.Grammar = (function() {
                       try {
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                       } catch(e) {
-                        data = undefined;
+                        data = -1;
                       }return data;},
           function(rseq_value) {
                             data.value=parseInt(rseq_value.join('')); },
@@ -549,7 +549,7 @@ SIP.Grammar = (function() {
                           data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                           if (tag) {data.setParam('tag',tag)}
                         } catch(e) {
-                          data = undefined;
+                          data = -1;
                         }return data;},
           "ttl",
           { type: "literal", value: "ttl", description: "\"ttl\"" },
@@ -1268,13 +1268,13 @@ SIP.Grammar = (function() {
     peg$result = peg$parseRule(peg$startRuleIndex);
 
     if (peg$result !== peg$FAILED && peg$currPos === input.length) {
-      return peg$result;
+      return data;
     } else {
       if (peg$result !== peg$FAILED && peg$currPos < input.length) {
         peg$fail({ type: "end", description: "end of input" });
       }
 
-      return undefined;
+      return -1;
     }
   }
 

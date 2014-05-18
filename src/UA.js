@@ -1187,7 +1187,7 @@ UA.configuration_check = {
 
         url = SIP.Grammar.parse(wsServers[idx].ws_uri,{startRule: 'absoluteURI'});
 
-        if(url === undefined) {
+        if(url === -1) {
           return;
         } else if(url.scheme !== 'wss' && url.scheme !== 'ws') {
           return;
@@ -1206,7 +1206,7 @@ UA.configuration_check = {
     },
 
     authorizationUser: function(authorizationUser) {
-      if(SIP.Grammar.parse('"'+ authorizationUser +'"',{startRule: 'quoted_string'}) === undefined) {
+      if(SIP.Grammar.parse('"'+ authorizationUser +'"',{startRule: 'quoted_string'}) === -1) {
         return;
       } else {
         return authorizationUser;
@@ -1234,7 +1234,7 @@ UA.configuration_check = {
     },
 
     displayName: function(displayName) {
-      if(SIP.Grammar.parse('"' + displayName + '"',{startRule: 'displayName'}) === undefined) {
+      if(SIP.Grammar.parse('"' + displayName + '"',{startRule: 'displayName'}) === -1) {
         return;
       } else {
         return displayName;
@@ -1262,7 +1262,7 @@ UA.configuration_check = {
         instanceId = instanceId.substr(5);
       }
 
-      if(SIP.Grammar.parse(instanceId,{startRule: 'uuid'}) === undefined) {
+      if(SIP.Grammar.parse(instanceId,{startRule: 'uuid'}) === -1) {
         return;
       } else {
         return instanceId;
@@ -1347,7 +1347,7 @@ UA.configuration_check = {
           stun_server = 'stun:' + stun_server;
         }
 
-        if(SIP.Grammar.parse(stun_server,{startRule: 'stun_URI'}) === undefined) {
+        if(SIP.Grammar.parse(stun_server,{startRule: 'stun_URI'}) === -1) {
           return;
         } else {
           stunServers[idx] = stun_server;
@@ -1395,7 +1395,7 @@ UA.configuration_check = {
             url = 'turn:' + url;
           }
 
-          if(SIP.Grammar.parse(url,{startRule: 'turn_URI'}) === undefined) {
+          if(SIP.Grammar.parse(url,{startRule: 'turn_URI'}) === -1) {
             return;
           }
         }
