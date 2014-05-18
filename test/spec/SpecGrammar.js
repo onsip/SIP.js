@@ -18,7 +18,7 @@ describe('Grammar', function () {
     var contacts;
 
     beforeEach(function () {
-      contacts = SIP.Grammar.parse(contactString, 'Contact');
+      contacts = SIP.Grammar.parse(contactString, {startRule: 'Contact'});
       expect(contacts.length).toEqual(3);
     });
 
@@ -160,7 +160,7 @@ describe('Grammar', function () {
     var via;
 
     beforeEach(function () {
-      via = SIP.Grammar.parse(viaString, 'Via');
+      via = SIP.Grammar.parse(viaString, {startRule: 'Via'});
     });
 
     var viaHas = itHas.bind(null, function () { return via; });
@@ -179,7 +179,7 @@ describe('Grammar', function () {
     var cseq;
 
     beforeEach(function () {
-      cseq = SIP.Grammar.parse(cseqString, 'CSeq');
+      cseq = SIP.Grammar.parse(cseqString, {startRule: 'CSeq'});
     });
 
     var cseqHas = itHas.bind(null, function () { return cseq; });
@@ -193,7 +193,7 @@ describe('Grammar', function () {
     var challenge;
 
     beforeEach(function () {
-      challenge = SIP.Grammar.parse(challengeString, 'challenge');
+      challenge = SIP.Grammar.parse(challengeString, {startRule: 'challenge'});
     });
 
     var challengeHas = itHas.bind(null, function () { return challenge; });
@@ -211,7 +211,7 @@ describe('Grammar', function () {
     var evt;
 
     beforeEach(function () {
-      evt = SIP.Grammar.parse(eventString, 'Event');
+      evt = SIP.Grammar.parse(eventString, {startRule: 'Event'});
     });
 
     eventHas = itHas.bind(null, function () { return evt; });
