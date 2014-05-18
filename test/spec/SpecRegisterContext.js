@@ -10,7 +10,7 @@ describe('RegisterContext', function() {
       configuration : {
         registrarServer : 'registrar' ,
         registerExpires : 999,
-        uri : 'sip:uri@domain.com',
+        uri : 'uri',
         instanceId : 'instance'
       },
       contact : 'contact',
