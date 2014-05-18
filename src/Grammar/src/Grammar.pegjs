@@ -275,7 +275,7 @@ Request_Response  = Status_Line / Request_Line
 
 // REQUEST LINE
 
-Request_Line      = Method SP Request_URI SP SIP_Version
+Request_Line      = Method SP parsed:Request_URI SP SIP_Version {return parsed;}
 
 Request_URI       = SIP_URI / absoluteURI
 
@@ -513,10 +513,10 @@ m_value             = token / quoted_string
 
 // CSEQ
 
-CSeq          = CSeq_value LWS CSeq_method
+CSeq          = value:CSeq_value LWS method:CSeq_method
+                { return {value: value, method: method}; }
 
-CSeq_value    = cseq_value: DIGIT + {
-                  data.value=parseInt(cseq_value.join('')); }
+CSeq_value    = DIGIT + { return parseInt(text()); }
 
 CSeq_method   = Method
 
