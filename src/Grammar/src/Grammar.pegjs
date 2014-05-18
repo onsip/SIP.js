@@ -230,7 +230,7 @@ lr_param          = "lr"i ('=' token)? {
 
 other_param       = param: pname value: ( "=" pvalue )? {
                       if(!data.uri_params) data.uri_params = {};
-                      if (typeof value === 'undefined'){
+                      if (value === null || typeof value === 'undefined'){
                         value = undefined;
                       }
                       else {
@@ -442,7 +442,7 @@ qvalue              = "0" ( "." DIGIT? DIGIT? DIGIT? )? {
 
 generic_param       = param: token  value: ( EQUAL gen_value )? {
                         if(!data.params) data.params = {};
-                        if (typeof value === 'undefined'){
+                        if (value === null || typeof value === 'undefined'){
                           value = undefined;
                         }
                         else {

@@ -268,7 +268,7 @@ SIP.Grammar = (function() {
                               data.uri_params['lr'] = undefined; },
         peg$c179 = function(param, value) {
                               if(!data.uri_params) data.uri_params = {};
-                              if (typeof value === 'undefined'){
+                              if (value === null || typeof value === 'undefined'){
                                 value = undefined;
                               }
                               else {
@@ -376,7 +376,7 @@ SIP.Grammar = (function() {
                                 return parseFloat(input.substring(peg$currPos, offset())); },
         peg$c225 = function(param, value) {
                                 if(!data.params) data.params = {};
-                                if (typeof value === 'undefined'){
+                                if (value === null || typeof value === 'undefined'){
                                   value = undefined;
                                 }
                                 else {
