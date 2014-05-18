@@ -170,6 +170,44 @@ module.exports = function(grunt) {
           helpers: 'test/helpers/*.js'
         }
       }
+    },
+    peg: {
+      grammar: {
+        src: 'src/Grammar/src/Grammar.pegjs',
+        dest: 'src/Grammar/dist/Grammar.js',
+        options: {
+          exportVar: 'SIP.Grammar',
+          optimize: 'size',
+          allowedStartRules: [
+             'Contact',
+             'Name_Addr_Header',
+             'Record_Route',
+             'Request_Response',
+             'SIP_URI',
+             'Subscription_State',
+             'Via',
+             'absoluteURI',
+             'Call_ID',
+             'Content_Length',
+             'Content_Type',
+             'CSeq',
+             'displayName',
+             'Event',
+             'From',
+             'host',
+             'Max_Forwards',
+             'Proxy_Authenticate',
+             'quoted_string',
+             'Refer_To',
+             'stun_URI',
+             'To',
+             'turn_URI',
+             'uuid',
+             'WWW_Authenticate',
+             'challenge'
+          ]
+        }
+      }
     }
   });
 
@@ -180,35 +218,23 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
+  grunt.loadNpmTasks('grunt-peg');
 
 
   // Task for building SIP.js Grammar.js and Grammar.min.js files.
-  grunt.registerTask('grammar', function(){
-    var done = this.async();  // This is an async task.
-    var sys = require('sys');
-    var exec = require('child_process').exec;
-    var child;
-
-    // First compile SIP.js grammar with PEGjs.
-    console.log('"grammar" task: compiling SIP.js PEGjs grammar into Grammar.js ...');
-    child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS -e SIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
-      if (error) {
-        sys.print('ERROR: ' + stderr);
-        done(false);  // Tell grunt that async task has failed.
-      }
-      console.log('OK');
-
-      // Then modify the generated Grammar.js file with custom changes.
-      console.log('"grammar" task: applying custom changes to Grammar.js ...');
-      var fs = require('fs');
-      var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-      var modified_grammar = grammar.replace(/throw new this\.SyntaxError\(([\s\S]*?)\);([\s\S]*?)}([\s\S]*?)return result;/, 'new this.SyntaxError($1);\n        return -1;$2}$3return data;');
-      fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
-      console.log('OK');
-      done();  // Tell grunt that async task has succeeded.
-
-    });
+  grunt.registerTask('post_peg', function(){
+    // Modify the generated Grammar.js file with custom changes.
+    console.log('"grammar" task: applying custom changes to Grammar.js ...');
+    var fs = require('fs');
+    var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
+    var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
+    modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
+    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
+    fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
+    console.log('OK');
   });
+
+  grunt.registerTask('grammar', ['peg', 'post_peg']);
 
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
