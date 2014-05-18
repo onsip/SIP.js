@@ -2059,7 +2059,7 @@ describe('InviteClientContext', function() {
     var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', InviteClientContext.ua, {from: 'abcdefg'}, ['Contact: ' + InviteClientContext.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(InviteClientContext.ua)]);
+      request = new SIP.OutgoingRequest('INVITE', 'sip:bob@example.com', InviteClientContext.ua, {from: 'abcdefg'}, ['Contact: ' + InviteClientContext.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(InviteClientContext.ua)]);
 
       request.body = 'a=sendrecv\r\n';
       request.reply = jasmine.createSpy('reply');
@@ -2131,7 +2131,7 @@ describe('InviteClientContext', function() {
     it('logs, replies 202, then calls referred and terminate if referred listener present', function() {
       InviteClientContext.status = 12;
       request.method = SIP.C.REFER;
-      request.parseHeader = jasmine.createSpy('parseHeader').andReturn({uri: 'uri'});
+      request.parseHeader = jasmine.createSpy('parseHeader').andReturn({uri: 'sip:uri@domain.com'});
       InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
 /*       spyOn(InviteClientContext.dialog.sendRequest); */
 
