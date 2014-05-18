@@ -162,7 +162,7 @@ SIP.Grammar = (function() {
                                   delete data.port;
                                 } catch(e) {
                                   data = -1;
-                                }return data;},
+                                }},
           function() {
                               var header;
                               try {
@@ -177,7 +177,7 @@ SIP.Grammar = (function() {
                                   if (options.startRule === 'SIP_URI') { data = data.uri;}
                                 } catch(e) {
                                   data = -1;
-                                }return data;},
+                                }},
           "sips",
           { type: "literal", value: "sips", description: "\"sips\"" },
           "sip",
@@ -317,7 +317,7 @@ SIP.Grammar = (function() {
           function() {
                             data.reason_phrase = input.substring(peg$currPos, offset()); },
           function() {
-                        data = input.substring(peg$currPos, offset()); return data; },
+                        data = input.substring(peg$currPos, offset()); },
           function() {
                                   var idx, length;
                                   length = data.multi_header.length;
@@ -331,7 +331,7 @@ SIP.Grammar = (function() {
                                     data = data.multi_header;
                                   } else {
                                     data = -1;
-                                  } return data;},
+                                  }},
           function() {
                                   var header;
                                   if(!data.multi_header) data.multi_header = [];
@@ -346,7 +346,7 @@ SIP.Grammar = (function() {
                                   data.multi_header.push( { 'possition': peg$currPos,
                                                             'offset': offset(),
                                                             'parsed': header
-                                                          });return data;},
+                                                          });},
           function(displayName) {
                                   displayName = input.substring(peg$currPos, offset()).trim();
                                   if (displayName[0] === '\"') {
@@ -387,9 +387,9 @@ SIP.Grammar = (function() {
           "required",
           { type: "literal", value: "required", description: "\"required\"" },
           function(length) {
-                                  data = parseInt(length.join('')); return data; },
+                                  data = parseInt(length.join('')); },
           function() {
-                                  data = input.substring(peg$currPos, offset()); return data; },
+                                  data = input.substring(peg$currPos, offset()); },
           "text",
           { type: "literal", value: "text", description: "\"text\"" },
           "image",
@@ -408,7 +408,7 @@ SIP.Grammar = (function() {
           { type: "literal", value: "x-", description: "\"x-\"" },
           function(cseq_value) {
                             data.value=parseInt(cseq_value.join('')); },
-          function(expires) {data = expires; return data; },
+          function(expires) {data = expires; },
           function(event_type) {
                                  data.event = event_type.join('').toLowerCase(); },
           function() {
@@ -418,19 +418,19 @@ SIP.Grammar = (function() {
                             if (tag) {data.setParam('tag',tag)}
                           } catch(e) {
                             data = -1;
-                          }return data;},
+                          }},
           "tag",
           { type: "literal", value: "tag", description: "\"tag\"" },
           function(tag) {data.tag = tag; },
           function(forwards) {
-                            data = parseInt(forwards.join('')); return data; },
-          function(min_expires) {data = min_expires; return data; },
+                            data = parseInt(forwards.join('')); },
+          function(min_expires) {data = min_expires; },
           function() {
                                 try {
                                   data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                                 } catch(e) {
                                   data = -1;
-                                }return data;},
+                                }},
           "digest",
           { type: "literal", value: "Digest", description: "\"Digest\"" },
           "realm",
@@ -484,7 +484,7 @@ SIP.Grammar = (function() {
                               data = data.multi_header;
                             } else {
                               data = -1;
-                            } return data;},
+                            }},
           function() {
                             var header;
                             if(!data.multi_header) data.multi_header = [];
@@ -499,13 +499,13 @@ SIP.Grammar = (function() {
                             data.multi_header.push( { 'possition': peg$currPos,
                                                       'offset': offset(),
                                                       'parsed': header
-                                                    });return data;},
+                                                    });},
           function() {
                       try {
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                       } catch(e) {
                         data = -1;
-                      }return data;},
+                      }},
           function(rseq_value) {
                             data.value=parseInt(rseq_value.join('')); },
           "active",
@@ -547,7 +547,7 @@ SIP.Grammar = (function() {
                           if (tag) {data.setParam('tag',tag)}
                         } catch(e) {
                           data = -1;
-                        }return data;},
+                        }},
           "ttl",
           { type: "literal", value: "ttl", description: "\"ttl\"" },
           function(via_ttl_value) {
@@ -604,7 +604,7 @@ SIP.Grammar = (function() {
           "uuid:",
           { type: "literal", value: "uuid:", description: "\"uuid:\"" },
           function(uuid) {
-                            data = input.substring(peg$currPos+5, offset()); return data; }
+                            data = input.substring(peg$currPos+5, offset()); }
         ],
 
         peg$bytecode = [

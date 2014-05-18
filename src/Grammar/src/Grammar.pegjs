@@ -103,7 +103,7 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                         delete data.port;
                       } catch(e) {
                         data = -1;
-                      }return data;}
+                      }}
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                     var header;
@@ -119,7 +119,7 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                         if (options.startRule === 'SIP_URI') { data = data.uri;}
                       } catch(e) {
                         data = -1;
-                      }return data;}
+                      }}
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
                     data.scheme = uri_scheme.toLowerCase(); }
@@ -369,7 +369,7 @@ Allow_Events = event_type (COMMA event_type)*
 // CALL-ID
 
 Call_ID  =  word ( "@" word )? {
-              data = input.substring(peg$currPos, offset()); return data; }
+              data = input.substring(peg$currPos, offset()); }
 
 // CONTACT
 
@@ -386,7 +386,7 @@ Contact             = ( STAR / (contact_param (COMMA contact_param)*) ) {
                           data = data.multi_header;
                         } else {
                           data = -1;
-                        } return data;}
+                        }}
 
 contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         var header;
@@ -402,7 +402,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         data.multi_header.push( { 'possition': peg$currPos,
                                                   'offset': offset(),
                                                   'parsed': header
-                                                });return data;}
+                                                });}
 
 name_addr           = ( displayName )? LAQUOT SIP_URI RAQUOT
 
@@ -466,12 +466,12 @@ content_coding      = token
 // CONTENT-LENGTH
 
 Content_Length      = length: (DIGIT +) {
-                        data = parseInt(length.join('')); return data; }
+                        data = parseInt(length.join('')); }
 
 // CONTENT-TYPE
 
 Content_Type        = media_type {
-                        data = input.substring(peg$currPos, offset()); return data; }
+                        data = input.substring(peg$currPos, offset()); }
 
 media_type          = m_type SLASH m_subtype (SEMI m_parameter)*
 
@@ -511,7 +511,7 @@ CSeq_method   = Method
 
 // EXPIRES
 
-Expires     = expires: delta_seconds {data = expires; return data; }
+Expires     = expires: delta_seconds {data = expires; }
 
 
 Event             = event_type: event_type ( SEMI event_param )* {
@@ -534,7 +534,7 @@ From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                   if (tag) {data.setParam('tag',tag)}
                 } catch(e) {
                   data = -1;
-                }return data;}
+                }}
 
 from_param  = tag_param / generic_param
 
@@ -544,12 +544,12 @@ tag_param   = "tag"i EQUAL tag: token {data.tag = tag; }
 //MAX-FORWARDS
 
 Max_Forwards  = forwards: DIGIT+ {
-                  data = parseInt(forwards.join('')); return data; }
+                  data = parseInt(forwards.join('')); }
 
 
 // MIN-EXPIRES
 
-Min_Expires  = min_expires: delta_seconds {data = min_expires; return data; }
+Min_Expires  = min_expires: delta_seconds {data = min_expires; }
 
 // Name_Addr
 
@@ -558,7 +558,7 @@ Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param 
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                       } catch(e) {
                         data = -1;
-                      }return data;}
+                      }}
 
 // PROXY-AUTHENTICATE
 
@@ -637,7 +637,7 @@ Record_Route  = rec_route (COMMA rec_route)* {
                     data = data.multi_header;
                   } else {
                     data = -1;
-                  } return data;}
+                  }}
 
 rec_route     = name_addr ( SEMI rr_param )* {
                   var header;
@@ -653,7 +653,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   data.multi_header.push( { 'possition': peg$currPos,
                                             'offset': offset(),
                                             'parsed': header
-                                          });return data;}
+                                          });}
 
 rr_param      = generic_param
 
@@ -664,7 +664,7 @@ Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
               data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
             } catch(e) {
               data = -1;
-            }return data;}
+            }}
 
 r_param = generic_param
 
@@ -735,7 +735,7 @@ To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
                 if (tag) {data.setParam('tag',tag)}
               } catch(e) {
                 data = -1;
-              }return data;}
+              }}
 
 to_param   = tag_param / generic_param
 
@@ -836,7 +836,7 @@ turn_transport    = transport ("udp"i / "tcp"i / unreserved*) {
 // UUID URI
 uuid_URI      = "uuid:" uuid
 uuid          = uuid: hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
-                  data = input.substring(peg$currPos+5, offset()); return data; }
+                  data = input.substring(peg$currPos+5, offset()); }
 hex4          = HEXDIG HEXDIG HEXDIG HEXDIG
 hex8          = hex4 hex4
 hex12         = hex4 hex4 hex4
