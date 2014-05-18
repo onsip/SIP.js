@@ -32,7 +32,8 @@
     "pegjs": "0.8.0",
     "node-minify": "~0.7.2",
     "browserify": "~2.36.0",
-    "sdp-transform": "~0.4.0"
+    "sdp-transform": "~0.4.0",
+    "grunt-peg": "~1.3.1"
   },
   "engines": {
     "node": ">=0.8"
