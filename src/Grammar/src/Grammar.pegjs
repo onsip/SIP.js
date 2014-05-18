@@ -405,7 +405,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         } catch(e) {
                           header = null;
                         }
-                        data.multi_header.push( { 'possition': pos,
+                        data.multi_header.push( { 'possition': peg$currPos,
                                                   'offset': offset(),
                                                   'parsed': header
                                                 });}
@@ -662,7 +662,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   } catch(e) {
                     header = null;
                   }
-                  data.multi_header.push( { 'possition': pos,
+                  data.multi_header.push( { 'possition': peg$currPos,
                                             'offset': offset(),
                                             'parsed': header
                                           });}
