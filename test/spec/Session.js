@@ -360,9 +360,7 @@ describe('An INVITE sent from a UAC', function () {
         return sendSpy.calls.length > 0 && uas.isConnected();
       }, 'Send never called', 500);
 
-      runs(function(){
-        uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
+      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
     });
 
     it('fires the `progress` event', function () {
@@ -393,9 +391,7 @@ describe('An INVITE sent from a UAC', function () {
         return sendSpy.calls.length > 0 && uas.isConnected();
       }, 'Send never called', 500);
 
-      runs(function(){
-        uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
+      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
     });
 
     afterEach(function () {
@@ -447,9 +443,7 @@ describe('An INVITE sent from a UAC', function () {
         return sendSpy.calls.length > 0 && uas.isConnected();
       }, 'Send never called', 500);
 
-      runs(function(){
-        uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
+      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
     });
 
     it('fires the `rejected` event', function () {
