@@ -602,7 +602,9 @@ UA.prototype.receiveRequest = function(request) {
     self = this;
 
   // Check that request URI points to us
-  if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
+  if(request.ruri.user !== this.configuration.uri.user &&
+     request.ruri.user !== this.contact.uri.user &&
+     [this.contact.pub_gruu, this.contact.temp_gruu].indexOf(request.ruri.toString()) < 0) {
     this.logger.warn('Request-URI does not point to us');
     if (request.method !== SIP.C.ACK) {
       request.reply_sl(404);
