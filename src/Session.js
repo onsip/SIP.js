@@ -1240,7 +1240,8 @@ InviteServerContext.prototype = {
 
     if (options.statusCode !== 100 &&
         (this.rel100 === SIP.C.supported.REQUIRED ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100))) {
+         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) || 
+         (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === 'required')))) {
       do100rel.apply(this);
     } else {
       normalReply.apply(this);
