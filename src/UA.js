@@ -601,8 +601,15 @@ UA.prototype.receiveRequest = function(request) {
     methodLower = request.method.toLowerCase(),
     self = this;
 
+  function ruriMatches (uri) {
+    return uri && uri.user === request.ruri.user;
+  }
+
   // Check that request URI points to us
-  if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
+  if(!(ruriMatches(this.configuration.uri) ||
+       ruriMatches(this.contact.uri) ||
+       ruriMatches(this.contact.pub_gruu) ||
+       ruriMatches(this.contact.temp_gruu))) {
     this.logger.warn('Request-URI does not point to us');
     if (request.method !== SIP.C.ACK) {
       request.reply_sl(404);
@@ -1009,9 +1016,9 @@ UA.prototype.loadConfig = function(configuration) {
         contact = '<';
 
       if (anonymous) {
-        contact += this.temp_gruu || 'sip:anonymous@anonymous.invalid;transport=ws';
+        contact += (this.temp_gruu || 'sip:anonymous@anonymous.invalid;transport=ws').toString();
       } else {
-        contact += this.pub_gruu || this.uri.toString();
+        contact += (this.pub_gruu || this.uri).toString();
       }
 
       if (outbound) {
