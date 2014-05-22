@@ -38,6 +38,17 @@ Utils= {
     return window.unescape(encodeURIComponent(string)).length;
   },
 
+  getPrefixedProperty: function (object, name) {
+    var capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    var prefixedNames = [name, 'webkit' + capitalizedName, 'moz' + capitalizedName];
+    for (var i in prefixedNames) {
+      var property = object[prefixedNames[i]];
+      if (property) {
+        return property;
+      }
+    }
+  },
+
   generateFakeSDP: function(body) {
     if (!body) {
       return;

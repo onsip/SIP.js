@@ -4,6 +4,7 @@ module.exports = function(grunt) {
 
   var srcFiles = [
     'src/SIP.js',
+    'src/Utils.js',
     'src/LoggerFactory.js',
     'src/EventEmitter.js',
     'src/Constants.js',
@@ -25,7 +26,6 @@ module.exports = function(grunt) {
     'src/Subscription.js',
     'src/WebRTC.js',
     'src/UA.js',
-    'src/Utils.js',
     'src/Hacks.js',
     'src/SanityCheck.js',
     'src/DigestAuthentication.js',
