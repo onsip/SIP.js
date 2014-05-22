@@ -10,27 +10,34 @@
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (defaultConstraints) {
+  var events = [
+  ];
   this.setConstraints(defaultConstraints);
+
+  this.initEvents(events);
 };
-MediaStreamManager.prototype = {
-  'acquire': function acquire (onSuccess, onFailure, constraints) {
+MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
+  'acquire': {value: function acquire (onSuccess, onFailure, constraints) {
     constraints = constraints || this.constraints;
     SIP.WebRTC.getUserMedia(constraints, onSuccess, onFailure);
-  },
+  }},
 
-  'release': function release (stream) {
+  'release': {value: function release (stream) {
     stream.stop();
-  },
+  }},
 
-  'setConstraints': function setConstraints (constraints) {
+  'setConstraints': {value: function setConstraints (constraints) {
     // Assume audio/video if no default constraints passed.
     this.constraints = constraints || {audio: true, video: true};
-  }
-};
+  }}
+});
 
 // A MediaStreamManager that reuses a given MediaStream in parallel, giving it out freely.
 MediaStreamManager.ofStream = function ofStream (stream) {
+  var events = [
+  ];
   this.stream = stream;
+  this.initEvents(events);
 };
 MediaStreamManager.ofStream.prototype = Object.create(MediaStreamManager.prototype, {
   'acquire': {value: function acquire (onSuccess) {

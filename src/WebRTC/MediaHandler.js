@@ -15,6 +15,8 @@
 (function(SIP){
 
 var MediaHandler = function(session, options) {
+  var events = [
+  ];
   options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);
@@ -93,19 +95,21 @@ var MediaHandler = function(session, options) {
   this.peerConnection.onstatechange = function() {
     self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
   };
+
+  this.initEvents(events);
 };
 
 MediaHandler.defaultFactory = function defaultFactory (session, options) {
   return new MediaHandler(session, options);
 };
 
-MediaHandler.prototype = {
+MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 // Functions the session can use
-  isReady: function() {
+  isReady: {value: function isReady () {
     return this.ready;
-  },
+  }},
 
-  close: function() {
+  close: {value: function close () {
     this.logger.log('closing PeerConnection');
     // have to check signalingState since this.close() gets called multiple times
     // TODO figure out why that happens
@@ -116,7 +120,7 @@ MediaHandler.prototype = {
         this.mediaStreamManager.release(this.localMedia);
       }
     }
-  },
+  }},
 
   /**
    * @param {Function} onSuccess
@@ -124,7 +128,7 @@ MediaHandler.prototype = {
    * @param {SIP.WebRTC.MediaStream | (getUserMedia constraints)} [mediaHint]
    *        the MediaStream (or the constraints describing it) to be used for the session
    */
-  getDescription: function(onSuccess, onFailure, mediaHint) {
+  getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
     var self = this;
 
     /*
@@ -173,7 +177,7 @@ MediaHandler.prototype = {
       },
       mediaHint
     );
-  },
+  }},
 
   /**
   * Message reception.
@@ -182,21 +186,21 @@ MediaHandler.prototype = {
   * @param {Function} onSuccess
   * @param {Function} onFailure
   */
-  setDescription: function(sdp, onSuccess, onFailure) {
+  setDescription: {value: function setDescription (sdp, onSuccess, onFailure) {
     var type = this.hasOffer('local') ? 'answer' : 'offer';
     var description = new SIP.WebRTC.RTCSessionDescription({type: type, sdp: sdp});
     this.peerConnection.setRemoteDescription(description, onSuccess, onFailure);
-  },
+  }},
 
 // Functions the session can use, but only because it's convenient for the application
-  isMuted: function() {
+  isMuted: {value: function isMuted () {
     return {
       audio: this.audioMuted,
       video: this.videoMuted
     };
-  },
+  }},
 
-  mute: function(options) {
+  mute: {value: function mute (options) {
     if (this.getLocalStreams().length === 0) {
       return;
     }
@@ -232,9 +236,9 @@ MediaHandler.prototype = {
         video: videoMuted
       });*/
     }
-  },
+  }},
 
-  unmute: function(options) {
+  unmute: {value: function unmute (options) {
     if (this.getLocalStreams().length === 0) {
       return;
     }
@@ -278,14 +282,14 @@ MediaHandler.prototype = {
         video: videoUnMuted
       });*/
     }
-  },
+  }},
 
-  hold: function() {
+  hold: {value: function hold () {
     this.toggleMuteAudio(true);
     this.toggleMuteVideo(true);
-  },
+  }},
 
-  unhold: function() {
+  unhold: {value: function unhold () {
     if (!this.audioMuted) {
       this.toggleMuteAudio(false);
     }
@@ -293,10 +297,10 @@ MediaHandler.prototype = {
     if (!this.videoMuted) {
       this.toggleMuteVideo(false);
     }
-  },
+  }},
 
 // Functions the application can use, but not the session
-  getLocalStreams: function() {
+  getLocalStreams: {value: function getLocalStreams () {
     var pc = this.peerConnection;
     if (pc && pc.signalingState === 'closed') {
       this.logger.warn('peerConnection is closed, getLocalStreams returning []');
@@ -304,9 +308,9 @@ MediaHandler.prototype = {
     }
     return (pc.getLocalStreams && pc.getLocalStreams()) ||
       pc.localStreams || [];
-  },
+  }},
 
-  getRemoteStreams: function() {
+  getRemoteStreams: {value: function getRemoteStreams () {
     var pc = this.peerConnection;
     if (pc && pc.signalingState === 'closed') {
       this.logger.warn('peerConnection is closed, getRemoteStreams returning []');
@@ -314,16 +318,16 @@ MediaHandler.prototype = {
     }
     return(pc.getRemoteStreams && pc.getRemoteStreams()) ||
       pc.remoteStreams || [];
-  },
+  }},
 
 // Internal functions
-  hasOffer: function (where) {
+  hasOffer: {value: function hasOffer (where) {
     var offerState = 'have-' + where + '-offer';
     return this.peerConnection.signalingState === offerState;
     // TODO consider signalingStates with 'pranswer'?
-  },
+  }},
 
-  createOfferOrAnswer: function(onSuccess, onFailure, constraints) {
+  createOfferOrAnswer: {value: function createOfferOrAnswer (onSuccess, onFailure, constraints) {
     var self = this;
 
     function readySuccess () {
@@ -368,9 +372,9 @@ MediaHandler.prototype = {
       methodFailed.bind(null, methodName),
       constraints
     );
-  },
+  }},
 
-  addStream: function(stream, onSuccess, onFailure, constraints) {
+  addStream: {value: function addStream (stream, onSuccess, onFailure, constraints) {
     try {
       this.peerConnection.addStream(stream, constraints);
     } catch(e) {
@@ -381,24 +385,24 @@ MediaHandler.prototype = {
     }
 
     onSuccess();
-  },
+  }},
 
-  toggleMuteHelper: function toggleMuteHelper (trackGetter, mute) {
+  toggleMuteHelper: {value: function toggleMuteHelper (trackGetter, mute) {
     this.getLocalStreams().forEach(function (stream) {
       stream[trackGetter]().forEach(function (track) {
         track.enabled = !mute;
       });
     });
-  },
+  }},
 
-  toggleMuteAudio: function(mute) {
+  toggleMuteAudio: {value: function toggleMuteAudio (mute) {
     this.toggleMuteHelper('getAudioTracks', mute);
-  },
+  }},
 
-  toggleMuteVideo: function(mute) {
+  toggleMuteVideo: {value: function toggleMuteVideo (mute) {
     this.toggleMuteHelper('getVideoTracks', mute);
-  }
-};
+  }}
+});
 
 // Return since it will be assigned to a variable.
 return MediaHandler;
