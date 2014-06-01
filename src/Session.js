@@ -1041,7 +1041,7 @@ InviteServerContext = function(ua, request) {
   }
 
   if (!request.body || this.renderbody) {
-    setTimeout(fireNewSession, 0);
+    window.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
     this.mediaHandler.setDescription(
@@ -1984,7 +1984,7 @@ InviteClientContext.prototype = {
                   },
                   function onFailure() {
                     // TODO do something here
-                    console.log("there was a problem");
+                    session.logger.warn("there was a problem");
                   },
                   session.mediaHint
                 );

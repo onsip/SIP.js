@@ -137,8 +137,8 @@ URI.prototype = {
       this.user,
       this.host,
       this.port,
-      window.JSON.parse(window.JSON.stringify(this.parameters)),
-      window.JSON.parse(window.JSON.stringify(this.headers)));
+      JSON.parse(JSON.stringify(this.parameters)),
+      JSON.parse(JSON.stringify(this.headers)));
   },
 
   toString: function(){

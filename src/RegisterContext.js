@@ -119,7 +119,7 @@ RegisterContext.prototype = {
             self.register(options);
           }, (expires * 1000) - 3000);
           this.registrationExpiredTimer = window.setTimeout(function () {
-            console.warn('registration expired');
+            self.logger.warn('registration expired');
             if (self.registered) {
               self.unregistered(null, SIP.C.causes.EXPIRES);
             }

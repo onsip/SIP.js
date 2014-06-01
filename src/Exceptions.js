@@ -16,7 +16,7 @@ Exceptions= {
       this.name = 'CONFIGURATION_ERROR';
       this.parameter = parameter;
       this.value = value;
-      this.message = (!this.value)? 'Missing parameter: '+ this.parameter : 'Invalid value '+ window.JSON.stringify(this.value) +' for parameter "'+ this.parameter +'"';
+      this.message = (!this.value)? 'Missing parameter: '+ this.parameter : 'Invalid value '+ JSON.stringify(this.value) +' for parameter "'+ this.parameter +'"';
     };
     exception.prototype = new Error();
     return exception;

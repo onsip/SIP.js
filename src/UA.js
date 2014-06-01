@@ -779,7 +779,7 @@ UA.prototype.getNextWsServer = function() {
     }
   }
 
-  idx = Math.floor((Math.random()* candidates.length));
+  idx = Math.floor(Math.random() * candidates.length);
 
   return candidates[idx];
 };
@@ -943,7 +943,7 @@ UA.prototype.loadConfig = function(configuration) {
       if(value === null || value === "" || value === undefined || (value instanceof Array && value.length === 0)) { continue; }
       // If it's a number with NaN value then also apply its default value.
       // NOTE: JS does not allow "value === NaN", the following does the work:
-      else if(typeof(value) === 'number' && window.isNaN(value)) { continue; }
+      else if(typeof(value) === 'number' && isNaN(value)) { continue; }
 
       checked_value = UA.configuration_check.optional[parameter](value);
       if (checked_value !== undefined) {
@@ -1058,7 +1058,7 @@ UA.prototype.loadConfig = function(configuration) {
         this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
         break;
       default:
-        this.logger.log('· ' + parameter + ': ' + window.JSON.stringify(settings[parameter]));
+        this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
     }
   }
 
@@ -1223,7 +1223,7 @@ UA.configuration_check = {
     connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
-        value = window.Number(connectionRecoveryMaxInterval);
+        value = Number(connectionRecoveryMaxInterval);
         if(value > 0) {
           return value;
         }
@@ -1233,7 +1233,7 @@ UA.configuration_check = {
     connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
-        value = window.Number(connectionRecoveryMinInterval);
+        value = Number(connectionRecoveryMinInterval);
         if(value > 0) {
           return value;
         }
@@ -1279,7 +1279,7 @@ UA.configuration_check = {
     noAnswerTimeout: function(noAnswerTimeout) {
       var value;
       if (SIP.Utils.isDecimal(noAnswerTimeout)) {
-        value = window.Number(noAnswerTimeout);
+        value = Number(noAnswerTimeout);
         if (value > 0) {
           return value;
         }
@@ -1310,7 +1310,7 @@ UA.configuration_check = {
     registerExpires: function(registerExpires) {
       var value;
       if (SIP.Utils.isDecimal(registerExpires)) {
-        value = window.Number(registerExpires);
+        value = Number(registerExpires);
         if (value > 0) {
           return value;
         }

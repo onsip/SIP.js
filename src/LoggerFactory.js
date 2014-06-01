@@ -1,6 +1,14 @@
 
 (function(SIP) {
 
+// Console is not defined in ECMAScript, so just in case...
+var console = window.console || {
+  debug: function () {},
+  log: function () {},
+  warn: function () {},
+  error: function () {}
+};
+
 var Logger = @@include('../src/Logger.js')
 
 var LoggerFactory = function() {
@@ -28,7 +36,7 @@ var LoggerFactory = function() {
         if (typeof value === 'boolean') {
           builtinEnabled = value;
         } else {
-          logger.error('invalid "builtinEnabled" parameter value: '+ window.JSON.stringify(value));
+          logger.error('invalid "builtinEnabled" parameter value: '+ JSON.stringify(value));
         }
       }
     },
@@ -43,7 +51,7 @@ var LoggerFactory = function() {
         } else if (levels.hasOwnProperty(value)) {
           level = levels[value];
         } else {
-          logger.error('invalid "level" parameter value: '+ window.JSON.stringify(value));
+          logger.error('invalid "level" parameter value: '+ JSON.stringify(value));
         }
       }
     },
@@ -56,7 +64,7 @@ var LoggerFactory = function() {
         } else if (typeof value === 'function') {
           connector = value;
         } else {
-          logger.error('invalid "connector" parameter value: '+ window.JSON.stringify(value));
+          logger.error('invalid "connector" parameter value: '+ JSON.stringify(value));
         }
       }
     }

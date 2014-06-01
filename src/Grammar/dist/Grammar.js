@@ -185,7 +185,7 @@ SIP.Grammar = (function() {
           function(uri_scheme) {
                               data.scheme = uri_scheme.toLowerCase(); },
           function() {
-                              data.user = window.decodeURIComponent(input.substring(peg$currPos-1, offset()));},
+                              data.user = decodeURIComponent(input.substring(peg$currPos-1, offset()));},
           function() {
                               data.password = input.substring(peg$currPos, offset()); },
           function() {

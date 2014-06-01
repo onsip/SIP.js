@@ -125,7 +125,7 @@ uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
                     data.scheme = uri_scheme.toLowerCase(); }
 
 userinfo        = user (":" password)? "@" {
-                    data.user = window.decodeURIComponent(input.substring(peg$currPos-1, offset()));}
+                    data.user = decodeURIComponent(input.substring(peg$currPos-1, offset()));}
 
 user            = ( unreserved / escaped / user_unreserved )+
 

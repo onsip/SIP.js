@@ -140,7 +140,8 @@ module.exports = function(grunt) {
         supernew: true,
         globals: {
           module: true,
-          define: true
+          define: true,
+          global: true
         }
       }
     },

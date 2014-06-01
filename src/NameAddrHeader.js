@@ -54,7 +54,7 @@ NameAddrHeader.prototype = {
     return new NameAddrHeader(
       this.uri.clone(),
       this.displayName,
-      window.JSON.parse(window.JSON.stringify(this.parameters)));
+      JSON.parse(JSON.stringify(this.parameters)));
   },
 
   toString: function() {
