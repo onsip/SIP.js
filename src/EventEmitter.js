@@ -194,10 +194,11 @@ EventEmitter.prototype = {
 
     // Fire event listeners
     listeners = this.events[event];
-    var args = Array.apply(arguments);
+    var args = Array.prototype.slice.call(arguments, 1);
     listeners.map(function (listener) {
-      args[0] = listener.bindTarget || this;
-      return listener.listener.bind.apply(listener.listener, args);
+      return function () {
+        listener.listener.apply(this, args);
+      }.bind(listener.bindTarget || this);
     }, this).forEach(function (boundListener) {
       try {
         boundListener();
