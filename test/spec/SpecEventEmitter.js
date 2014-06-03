@@ -456,6 +456,9 @@ describe('EventEmitter', function () {
   /* EMIT */
   describe('.emit', function () {
     var foo, bar, that;
+    function removeSelf () {
+      EventEmitter.off('aaa', removeSelf);
+    }
 
     beforeEach(function () {
       foo = jasmine.createSpy('foo');
@@ -463,6 +466,7 @@ describe('EventEmitter', function () {
       that = jasmine.createSpy('that');
 
       EventEmitter.initEvents(setD);
+      EventEmitter.on('aaa', removeSelf);
       EventEmitter.on('aaa', foo);
       EventEmitter.on('aaa', bar, that);
     });
