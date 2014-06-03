@@ -77,6 +77,14 @@ var MediaHandler = function(session, options) {
     }
   };
 
+  this.peerConnection.onicegatheringstatechange = function () {
+    self.logger.log('RTCIceGatheringState changed: ' + this.iceGatheringState);
+    if (this.iceGatheringState === 'complete' &&
+        self.onIceCompleted !== undefined) {
+      self.onIceCompleted();
+    }
+  };
+
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
@@ -344,6 +352,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         readySuccess();
       } else {
         self.onIceCompleted = function() {
+          self.logger.log('ICE Gathering Completed');
           self.onIceCompleted = undefined;
           readySuccess();
         };
