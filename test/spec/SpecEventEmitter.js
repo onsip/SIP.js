@@ -219,16 +219,6 @@ describe('EventEmitter', function () {
     it('adds a listener', function () {
       EventEmitter.once('aaa', spy);
       expect(EventEmitter.checkListener('aaa')).toBe(true);
-      expect(EventEmitter.oneTimeListeners['aaa']).toEqual([{
-        listener: spy,
-        bindTarget: undefined
-      }]);
-    });
-
-    it('does not leak memory', function () {
-      EventEmitter.once('aaa', 'foobar');
-      expect(EventEmitter.checkListener('aaa')).toBe(false);
-      expect(EventEmitter.oneTimeListeners['aaa']).toEqual([]);
     });
 
     it('calls the callback synchronously on emission', function () {
