@@ -194,14 +194,18 @@ EventEmitter.prototype = {
 
     // Fire event listeners
     listeners = this.events[event];
-    for (idx in listeners) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    listeners.map(function (listener) {
+      return function () {
+        listener.listener.apply(this, args);
+      }.bind(listener.bindTarget || this);
+    }, this).forEach(function (boundListener) {
       try {
-        listeners[idx].listener.apply(listeners[idx].bindTarget || this,
-                                      Array.prototype.slice.apply(arguments, [1]));
+        boundListener();
       } catch(err) {
         this.logger.error(err.stack);
       }
-    }
+    }, this);
 
     // Remove one time listeners
     for (idx in this.oneTimeListeners[event]) {
