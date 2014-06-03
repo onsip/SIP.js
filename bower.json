@@ -1,28 +1,25 @@
 {
-  "name": "sip.js",
-  "version": "0.5.0",
-  "authors": [
-    "Ptah Dunbar <ptah@liveninja.com>",
-    "Emilio Cueto <emilio@liveninja.com>",
-    "Michael Chacon <mike@liveninja.com>"
-  ],
-  "description": "A JavaScript SIP stack for WebRTC, instant messaging, and more!",
-  "keywords": [
-    "sip",
-    "javascript",
-    "webrtc"
-  ],
-  "license": "MIT",
-  "homepage": "http://katana.co",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "test",
-    "*.md",
-    "Gruntfile.js",
-    "*.html",
-    "*.json",
-    "LICENSE",
-    "src"
-  ]
+    "name": "SIP.js",
+    "version": "0.5.0",
+    "authors": [
+        "Ptah Dunbar <ptah@liveninja.com>",
+        "Emilio Cueto <emilio@liveninja.com>",
+        "Michael Chacon <mike@liveninja.com>"
+    ],
+    "description": "A JavaScript SIP stack for WebRTC, instant messaging, and more!",
+    "main": "dist/sip.js",
+    "keywords": [
+        "sip",
+        "javascript",
+        "webrtc"
+    ],
+    "license": "MIT",
+    "private": true,
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ]
 }
