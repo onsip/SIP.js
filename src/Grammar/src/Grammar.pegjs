@@ -94,20 +94,16 @@ quoted_pair = "\\" ( [\x00-\x09] / [\x0B-\x0C] / [\x0E-\x7F] )
 //=======================
 
 SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
-                    try {
                         data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port);
                         delete data.scheme;
                         delete data.user;
                         delete data.host;
                         delete data.host_type;
                         delete data.port;
-                      } catch(e) {
-                        data = -1;
-                      }}
+                      }
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                     var header;
-                    try {
                         data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
                         delete data.scheme;
                         delete data.user;
@@ -117,9 +113,7 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                         delete data.uri_params;
 
                         if (options.startRule === 'SIP_URI') { data = data.uri;}
-                      } catch(e) {
-                        data = -1;
-                      }}
+                      }
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
                     data.scheme = uri_scheme.toLowerCase(); }
@@ -541,12 +535,9 @@ event_param       = generic_param
 
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                 var tag = data.tag;
-                try {
                   data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                   if (tag) {data.setParam('tag',tag)}
-                } catch(e) {
-                  data = -1;
-                }}
+                }
 
 from_param  = tag_param / generic_param
 
@@ -566,11 +557,8 @@ Min_Expires  = min_expires: delta_seconds {data = min_expires; }
 // Name_Addr
 
 Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
-                      try {
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-                      } catch(e) {
-                        data = -1;
-                      }}
+                      }
 
 // PROXY-AUTHENTICATE
 
@@ -672,11 +660,8 @@ rr_param      = generic_param
 // REFER-TO
 
 Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
-            try {
               data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-            } catch(e) {
-              data = -1;
-            }}
+            }
 
 r_param = generic_param
 
@@ -742,12 +727,9 @@ Supported  = ( option_tag (COMMA option_tag)* )?
 
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
               var tag = data.tag;
-              try {
                 data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                 if (tag) {data.setParam('tag',tag)}
-              } catch(e) {
-                data = -1;
-              }}
+              }
 
 to_param   = tag_param / generic_param
 

@@ -29,6 +29,7 @@ module.exports = function(grunt) {
     'src/Hacks.js',
     'src/SanityCheck.js',
     'src/DigestAuthentication.js',
+    'src/Grammar/dist/Grammar.js',
     'src/tail.js'
   ];
 
@@ -81,14 +82,6 @@ module.exports = function(grunt) {
         },
         nonull: true
       },
-      post_dist: {
-        src: [
-          'dist/<%= pkg.name %>.js',
-          'src/Grammar/dist/Grammar.js'
-        ],
-        dest: 'dist/<%= pkg.name %>.js',
-        nonull: true
-      },
       devel: {
         src: srcFiles,
         dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
@@ -97,14 +90,6 @@ module.exports = function(grunt) {
           separator: '\n\n',
           process: true
         },
-        nonull: true
-      },
-      post_devel: {
-        src: [
-          'dist/<%= pkg.name %>-<%= pkg.version %>.js',
-          'src/Grammar/dist/Grammar.js'
-        ],
-        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
         nonull: true
       }
     },
@@ -231,6 +216,13 @@ module.exports = function(grunt) {
     var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
     modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
     modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
+
+    // Don't jshint this big chunk of minified code
+    modified_grammar =
+      "/* jshint ignore:start */\n" +
+      modified_grammar +
+      "\n/* jshint ignore:end */\n"
+
     fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
     console.log('OK');
   });
@@ -240,10 +232,12 @@ module.exports = function(grunt) {
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'concat:post_dist', 'uglify:dist', 'uglify:devel']);
+  grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'uglify:dist', 'uglify:devel']);
 
   // Task for building sip-devel.js (uncompressed).
-  grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel']);
+  grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel']);
+
+  grunt.registerTask('quick', ['concat:dist', 'includereplace:dist']);
 
   // Test tasks.
   grunt.registerTask('test',['jasmine']);

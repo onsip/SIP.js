@@ -9,7 +9,9 @@
  */
 (function(SIP){
 var MediaHandler = function(session, options) {
-  session = session, options = options; // keep jshint happy
+  // keep jshint happy
+  session = session;
+  options = options;
 };
 
 MediaHandler.prototype = Object.create(SIP.EventEmitter.prototype, {
@@ -23,7 +25,10 @@ MediaHandler.prototype = Object.create(SIP.EventEmitter.prototype, {
    * @param {Object} [mediaHint] A custom object describing the media to be used during this session.
    */
   getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
-    onSuccess = onSuccess, onFailure = onFailure, mediaHint = mediaHint; // keep jshint happy
+    // keep jshint happy
+    onSuccess = onSuccess;
+    onFailure = onFailure;
+    mediaHint = mediaHint;
   }},
 
   /**
@@ -34,7 +39,10 @@ MediaHandler.prototype = Object.create(SIP.EventEmitter.prototype, {
   * @param {Function} onFailure
   */
   setDescription: {value: function setDescription (description, onSuccess, onFailure) {
-    description = description, onSuccess = onSuccess, onFailure = onFailure; // keep jshint happy
+    // keep jshint happy
+    description = description;
+    onSuccess = onSuccess;
+    onFailure = onFailure;
   }}
 });
 
