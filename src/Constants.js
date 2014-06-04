@@ -7,9 +7,9 @@
  * @augments SIP
  */
 
-module.exports = function (SIP) {
-SIP.C= {
-  USER_AGENT: SIP.name +'/'+ SIP.version,
+module.exports = function (name, version) {
+return {
+  USER_AGENT: name +'/'+ version,
 
   // SIP scheme
   SIP:  'sip',

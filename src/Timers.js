@@ -5,13 +5,11 @@
 /**
  * @augments SIP
  */
-module.exports = function (SIP) {
-var Timers,
+var
   T1 = 500,
   T2 = 4000,
   T4 = 5000;
-
-Timers = {
+module.exports = {
   T1: T1,
   T2: T2,
   T4: T4,
@@ -26,7 +24,4 @@ Timers = {
   TIMER_M: 64 * T1,
   TIMER_N: 64 * T1,
   PROVISIONAL_RESPONSE_INTERVAL: 60000  // See RFC 3261 Section 13.3.1.1
-};
-
-SIP.Timers = Timers;
 };

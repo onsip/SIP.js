@@ -1,5 +1,5 @@
 
-module.exports = function (SIP, window, Logger) {
+module.exports = function (window, Logger) {
 
 // Console is not defined in ECMAScript, so just in case...
 var console = window.console || {
@@ -149,5 +149,5 @@ LoggerFactory.prototype.getLogger = function(category, label) {
   }
 };
 
-SIP.LoggerFactory = LoggerFactory;
+return LoggerFactory;
 };

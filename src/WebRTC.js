@@ -2,7 +2,7 @@
  * @fileoverview WebRTC
  */
 
-module.exports = function (SIP, window, MediaHandler, MediaStreamManager) {
+module.exports = function (Utils, window, MediaHandler, MediaStreamManager) {
 var WebRTC;
 
 WebRTC = {};
@@ -10,10 +10,10 @@ WebRTC = {};
 WebRTC.MediaHandler = MediaHandler;
 WebRTC.MediaStreamManager = MediaStreamManager;
 
-WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(window, 'MediaStream');
-WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(window.navigator, 'getUserMedia');
-WebRTC.RTCPeerConnection = SIP.Utils.getPrefixedProperty(window, 'RTCPeerConnection');
-WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(window, 'RTCSessionDescription');
+WebRTC.MediaStream = Utils.getPrefixedProperty(window, 'MediaStream');
+WebRTC.getUserMedia = Utils.getPrefixedProperty(window.navigator, 'getUserMedia');
+WebRTC.RTCPeerConnection = Utils.getPrefixedProperty(window, 'RTCPeerConnection');
+WebRTC.RTCSessionDescription = Utils.getPrefixedProperty(window, 'RTCSessionDescription');
 
 if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
   WebRTC.getUserMedia = WebRTC.getUserMedia.bind(window.navigator);
@@ -23,5 +23,5 @@ else {
   WebRTC.isSupported = false;
 }
 
-SIP.WebRTC = WebRTC;
+return WebRTC;
 };

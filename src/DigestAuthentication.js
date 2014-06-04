@@ -9,7 +9,7 @@
  * @function Digest Authentication
  * @param {SIP.UA} ua
  */
-module.exports = function (SIP) {
+module.exports = function (Utils) {
 var DigestAuthentication;
 
 DigestAuthentication = function(ua) {
@@ -78,7 +78,7 @@ DigestAuthentication.prototype.authenticate = function(request, challenge) {
 
   this.method = request.method;
   this.uri = request.ruri;
-  this.cnonce = SIP.Utils.createRandomToken(12);
+  this.cnonce = Utils.createRandomToken(12);
   this.nc += 1;
   this.updateNcHex();
 
@@ -103,25 +103,25 @@ DigestAuthentication.prototype.calculateResponse = function() {
   var ha1, ha2;
 
   // HA1 = MD5(A1) = MD5(username:realm:password)
-  ha1 = SIP.Utils.calculateMD5(this.username + ":" + this.realm + ":" + this.password);
+  ha1 = Utils.calculateMD5(this.username + ":" + this.realm + ":" + this.password);
 
   if (this.qop === 'auth') {
     // HA2 = MD5(A2) = MD5(method:digestURI)
-    ha2 = SIP.Utils.calculateMD5(this.method + ":" + this.uri);
+    ha2 = Utils.calculateMD5(this.method + ":" + this.uri);
     // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)
-    this.response = SIP.Utils.calculateMD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth:" + ha2);
+    this.response = Utils.calculateMD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth:" + ha2);
 
   } else if (this.qop === 'auth-int') {
     // HA2 = MD5(A2) = MD5(method:digestURI:MD5(entityBody))
-    ha2 = SIP.Utils.calculateMD5(this.method + ":" + this.uri + ":" + SIP.Utils.calculateMD5(this.body ? this.body : ""));
+    ha2 = Utils.calculateMD5(this.method + ":" + this.uri + ":" + Utils.calculateMD5(this.body ? this.body : ""));
     // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)
-    this.response = SIP.Utils.calculateMD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth-int:" + ha2);
+    this.response = Utils.calculateMD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth-int:" + ha2);
 
   } else if (this.qop === null) {
     // HA2 = MD5(A2) = MD5(method:digestURI)
-    ha2 = SIP.Utils.calculateMD5(this.method + ":" + this.uri);
+    ha2 = Utils.calculateMD5(this.method + ":" + this.uri);
     // response = MD5(HA1:nonce:HA2)
-    this.response = SIP.Utils.calculateMD5(ha1 + ":" + this.nonce + ":" + ha2);
+    this.response = Utils.calculateMD5(ha1 + ":" + this.nonce + ":" + ha2);
   }
 };
 
@@ -164,5 +164,5 @@ DigestAuthentication.prototype.updateNcHex = function() {
   this.ncHex = '00000000'.substr(0, 8-hex.length) + hex;
 };
 
-SIP.DigestAuthentication = DigestAuthentication;
+return DigestAuthentication;
 };

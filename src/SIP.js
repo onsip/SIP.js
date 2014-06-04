@@ -18,11 +18,11 @@ module.exports = (function(window) {
 
   require('./Utils.js')(SIP);
   var Logger = require('./Logger.js');
-  require('./LoggerFactory.js')(SIP, window, Logger);
+  SIP.LoggerFactory = require('./LoggerFactory.js')(window, Logger);
   require('./EventEmitter.js')(SIP);
-  require('./Constants.js')(SIP);
-  require('./Exceptions.js')(SIP);
-  require('./Timers.js')(SIP);
+  SIP.C = require('./Constants.js')(SIP.name, SIP.version);
+  SIP.Exceptions = require('./Exceptions.js');
+  SIP.Timers = require('./Timers.js');
   require('./Transport.js')(SIP, window);
   require('./Parser.js')(SIP);
   require('./SIPMessage.js')(SIP);
@@ -33,7 +33,7 @@ module.exports = (function(window) {
   require('./Dialogs.js')(SIP, DialogRequestSender);
   require('./RequestSender.js')(SIP);
   require('./RegisterContext.js')(SIP, window);
-  require('./MediaHandler.js')(SIP);
+  SIP.MediaHandler = require('./MediaHandler.js')(SIP.EventEmitter);
   require('./ClientContext.js')(SIP);
   require('./ServerContext.js')(SIP);
   var SessionDTMF = require('./Session/DTMF.js')(SIP);
@@ -41,11 +41,11 @@ module.exports = (function(window) {
   require('./Subscription.js')(SIP, window);
   var WebRTCMediaHandler = require('./WebRTC/MediaHandler.js')(SIP);
   var WebRTCMediaStreamManager = require('./WebRTC/MediaStreamManager.js')(SIP);
-  require('./WebRTC.js')(SIP, window, WebRTCMediaHandler, WebRTCMediaStreamManager);
+  SIP.WebRTC = require('./WebRTC.js')(SIP.Utils, window, WebRTCMediaHandler, WebRTCMediaStreamManager);
   require('./UA.js')(SIP, window);
-  require('./Hacks.js')(SIP, window);
+  SIP.Hacks = require('./Hacks.js')(window);
   require('./SanityCheck.js')(SIP);
-  require('./DigestAuthentication.js')(SIP);
+  SIP.DigestAuthentication = require('./DigestAuthentication.js')(SIP.Utils);
   SIP.Grammar = require('./Grammar/dist/Grammar');
 
   return SIP;
