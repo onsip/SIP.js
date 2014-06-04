@@ -2,7 +2,7 @@
  * @fileoverview SIP Message
  */
 
-(function(SIP) {
+module.exports = function (SIP) {
 var
   OutgoingRequest,
   IncomingMessage,
@@ -549,4 +549,4 @@ IncomingResponse.prototype = new IncomingMessage();
 SIP.OutgoingRequest = OutgoingRequest;
 SIP.IncomingRequest = IncomingRequest;
 SIP.IncomingResponse = IncomingResponse;
-}(SIP));
+};

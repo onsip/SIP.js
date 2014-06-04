@@ -9,7 +9,7 @@
  * @function Digest Authentication
  * @param {SIP.UA} ua
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var DigestAuthentication;
 
 DigestAuthentication = function(ua) {
@@ -165,4 +165,4 @@ DigestAuthentication.prototype.updateNcHex = function() {
 };
 
 SIP.DigestAuthentication = DigestAuthentication;
-}(SIP));
+};

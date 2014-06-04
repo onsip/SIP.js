@@ -14,7 +14,7 @@
  * @fileoverview in-Dialog Request Sender
  */
 
-(function(SIP) {
+module.exports = function (SIP) {
 var RequestSender;
 
 RequestSender = function(dialog, applicant, request) {
@@ -90,4 +90,4 @@ RequestSender.prototype = {
 };
 
 return RequestSender;
-}(SIP));
+};

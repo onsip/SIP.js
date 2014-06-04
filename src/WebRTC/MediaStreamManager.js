@@ -6,7 +6,7 @@
  * @class Manages the acquisition and release of MediaStreams.
  * @param {(getUserMedia constraints)} [defaultConstraints] The getUserMedia constraints to use if none are provided to acquire()
  */
-(function(SIP){
+module.exports = function (SIP) {
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (defaultConstraints) {
@@ -67,4 +67,4 @@ MediaStreamManager.cast = function cast (obj) {
 
 // Return since it will be assigned to a variable.
 return MediaStreamManager;
-}(SIP));
+};

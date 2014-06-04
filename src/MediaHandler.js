@@ -7,7 +7,7 @@
  * @param {SIP.Session} session
  * @param {Object} [options]
  */
-(function(SIP){
+module.exports = function (SIP) {
 var MediaHandler = function(session, options) {
   // keep jshint happy
   session = session;
@@ -47,4 +47,4 @@ MediaHandler.prototype = Object.create(SIP.EventEmitter.prototype, {
 });
 
 SIP.MediaHandler = MediaHandler;
-}(SIP));
+};

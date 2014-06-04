@@ -7,6 +7,7 @@
  * @augments SIP
  */
 
+module.exports = function (SIP) {
 SIP.C= {
   USER_AGENT: SIP.name +'/'+ SIP.version,
 
@@ -155,4 +156,5 @@ SIP.C= {
     604: 'Does Not Exist Anywhere',
     606: 'Not Acceptable'
   }
+};
 };

@@ -12,7 +12,7 @@
  *        it will be converted to a MediaStreamManager.
  *        If not provided, a default MediaStreamManager will be used.
  */
-(function(SIP){
+module.exports = function (SIP) {
 
 var MediaHandler = function(session, options) {
   var events = [
@@ -415,4 +415,4 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
 // Return since it will be assigned to a variable.
 return MediaHandler;
-}(SIP));
+};

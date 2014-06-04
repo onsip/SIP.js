@@ -6,7 +6,7 @@
  * SIP Exceptions.
  * @augments SIP
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var Exceptions;
 
 Exceptions= {
@@ -55,4 +55,4 @@ Exceptions= {
 };
 
 SIP.Exceptions = Exceptions;
-}(SIP));
+};

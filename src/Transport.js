@@ -8,7 +8,7 @@
  * @param {SIP.UA} ua
  * @param {Object} server ws_server Object
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var Transport,
   C = {
     // Transport status codes
@@ -293,4 +293,4 @@ Transport.prototype = {
 
 Transport.C = C;
 SIP.Transport = Transport;
-}(SIP));
+};

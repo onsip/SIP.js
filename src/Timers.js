@@ -5,7 +5,7 @@
 /**
  * @augments SIP
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var Timers,
   T1 = 500,
   T2 = 4000,
@@ -29,4 +29,4 @@ Timers = {
 };
 
 SIP.Timers = Timers;
-}(SIP));
+};

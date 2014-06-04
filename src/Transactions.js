@@ -6,7 +6,7 @@
  * SIP Transactions module.
  * @augments SIP
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var
   C = {
     // Transaction states
@@ -725,4 +725,4 @@ SIP.Transactions = {
   InviteServerTransaction: InviteServerTransaction
 };
 
-}(SIP));
+};
