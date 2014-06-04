@@ -2,7 +2,7 @@
  * @fileoverview Utils
  */
 
-(function(SIP) {
+module.exports = function (SIP) {
 var Utils;
 
 Utils= {
@@ -460,4 +460,4 @@ Utils= {
 };
 
 SIP.Utils = Utils;
-}(SIP));
+};

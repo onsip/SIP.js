@@ -6,7 +6,7 @@
  * @augments SIP
  * @class Class creating an event emitter.
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var
   EventEmitter,
   Event,
@@ -209,4 +209,4 @@ EventEmitter.C = C;
 
 SIP.EventEmitter = EventEmitter;
 SIP.Event = Event;
-}(SIP));
+};

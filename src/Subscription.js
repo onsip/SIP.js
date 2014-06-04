@@ -7,6 +7,7 @@
  * @augments SIP
  * @class Class creating a SIP Subscription.
  */
+module.exports = function (SIP) {
 SIP.Subscription = function (ua, target, event, options) {
   var events;
 
@@ -281,4 +282,5 @@ SIP.Subscription.prototype = {
       return true;
     }
   }
+};
 };

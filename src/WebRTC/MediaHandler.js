@@ -10,7 +10,7 @@
  *        The MediaStreamManager to acquire/release streams from/to.
  *        If not provided, a default MediaStreamManager will be used.
  */
-(function(SIP){
+module.exports = function (SIP) {
 
 var MediaHandler = function(session, options) {
   var events = [
@@ -107,7 +107,7 @@ var MediaHandler = function(session, options) {
         cause: SIP.C.causes.RTP_TIMEOUT,
         status_code: 200,
         reason_phrase: SIP.C.causes.RTP_TIMEOUT
-      }); 
+      });
     } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
       self.onIceCompleted(this);
     }*/
@@ -483,4 +483,4 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
 // Return since it will be assigned to a variable.
 return MediaHandler;
-}(SIP));
+};
