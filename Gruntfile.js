@@ -176,6 +176,7 @@ module.exports = function(grunt) {
     var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
     modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
     modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
+    modified_grammar = modified_grammar.replace(/\(function\(\)/, 'function(SIP)').replace(/\}\)\(\)/, '}');
 
     // Don't jshint this big chunk of minified code
     modified_grammar =

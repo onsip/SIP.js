@@ -46,7 +46,7 @@ module.exports = (function(window) {
   SIP.Hacks = require('./Hacks.js')(window);
   require('./SanityCheck.js')(SIP);
   SIP.DigestAuthentication = require('./DigestAuthentication.js')(SIP.Utils);
-  SIP.Grammar = require('./Grammar/dist/Grammar');
+  SIP.Grammar = require('./Grammar/dist/Grammar')(SIP);
 
   return SIP;
 })((typeof window !== 'undefined') ? window : global);
