@@ -7,8 +7,8 @@ var WebRTC;
 
 WebRTC = {};
 
-WebRTC.MediaHandler = require('./WebRTC/MediaHandler.js')(SIP);
-WebRTC.MediaStreamManager = require('./WebRTC/MediaStreamManager.js')(SIP);
+WebRTC.MediaHandler = require('./MediaHandler')(SIP);
+WebRTC.MediaStreamManager = require('./MediaStreamManager')(SIP);
 
 WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(window, 'MediaStream');
 WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(window.navigator, 'getUserMedia');

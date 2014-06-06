@@ -12,7 +12,7 @@
  */
 module.exports = function (SIP, window) {
 
-var RequestSender = require('./Dialog/RequestSender.js')(SIP, window);
+var RequestSender = require('./RequestSender')(SIP, window);
 
 var Dialog,
   C = {

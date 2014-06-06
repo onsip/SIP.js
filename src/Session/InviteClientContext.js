@@ -1,4 +1,4 @@
-var C = require('./Constants.js');
+var C = require('./Constants');
 
 module.exports = function (SIP) {
 

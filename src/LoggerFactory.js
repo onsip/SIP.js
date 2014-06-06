@@ -1,4 +1,4 @@
-var Logger = require('./Logger.js');
+var Logger = require('./Logger');
 
 module.exports = function (window) {
 

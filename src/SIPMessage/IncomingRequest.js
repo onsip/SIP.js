@@ -1,6 +1,6 @@
 module.exports = function (SIP) {
 
-var IncomingMessage = require('./IncomingMessage.js')(SIP);
+var IncomingMessage = require('./IncomingMessage')(SIP);
 
 /**
  * @augments IncomingMessage
