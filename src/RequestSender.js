@@ -134,5 +134,5 @@ RequestSender.prototype = {
   }
 };
 
-SIP.RequestSender = RequestSender;
+return RequestSender;
 };

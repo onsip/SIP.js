@@ -193,5 +193,5 @@ URI.parse = function(uri) {
   }
 };
 
-SIP.URI = URI;
+return URI;
 };

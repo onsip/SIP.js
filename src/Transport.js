@@ -292,5 +292,5 @@ Transport.prototype = {
 };
 
 Transport.C = C;
-SIP.Transport = Transport;
+return Transport;
 };

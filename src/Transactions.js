@@ -715,7 +715,7 @@ var checkTransaction = function(ua, request) {
   }
 };
 
-SIP.Transactions = {
+return {
   C: C,
   checkTransaction: checkTransaction,
   NonInviteClientTransaction: NonInviteClientTransaction,

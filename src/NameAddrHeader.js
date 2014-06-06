@@ -92,5 +92,5 @@ NameAddrHeader.parse = function(name_addr_header) {
   }
 };
 
-SIP.NameAddrHeader = NameAddrHeader;
+return NameAddrHeader;
 };

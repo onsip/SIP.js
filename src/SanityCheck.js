@@ -223,5 +223,5 @@ sanityCheck = function(m, u, t) {
   return true;
 };
 
-SIP.sanityCheck = sanityCheck;
+return sanityCheck;
 };

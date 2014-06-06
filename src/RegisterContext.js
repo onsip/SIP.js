@@ -273,5 +273,5 @@ RegisterContext.prototype = {
 };
 
 
-SIP.RegisterContext = RegisterContext;
+return RegisterContext;
 };

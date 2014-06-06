@@ -110,5 +110,5 @@ ClientContext.prototype.onTransportError = function () {
   this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
 };
 
-SIP.ClientContext = ClientContext;
+return ClientContext;
 };
