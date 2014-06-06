@@ -1,4 +1,8 @@
-module.exports = function (SIP, window, C, DTMF) {
+var C = require('./Session/Constants.js');
+
+module.exports = function (SIP, window) {
+
+var DTMF = require('./Session/DTMF.js')(SIP);
 
 /*
  * @param {function returning SIP.MediaHandler} [mediaHandlerFactory]

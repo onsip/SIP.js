@@ -14,7 +14,7 @@
  * @fileoverview in-Dialog Request Sender
  */
 
-module.exports = function (SIP) {
+module.exports = function (SIP, window) {
 var RequestSender;
 
 RequestSender = function(dialog, applicant, request) {

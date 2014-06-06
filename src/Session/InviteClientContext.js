@@ -1,4 +1,6 @@
-module.exports = function (SIP, C) {
+var C = require('./Constants.js');
+
+module.exports = function (SIP) {
 
 function InviteClientContext (ua, target, options) {
   options = options || {};
