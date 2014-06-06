@@ -142,7 +142,7 @@ SIP.C= {
     491: 'Request Pending',
     493: 'Undecipherable',
     494: 'Security Agreement Required',  // RFC 3329
-    500: 'Server Internal Error',
+    500: 'Internal Server Error',
     501: 'Not Implemented',
     502: 'Bad Gateway',
     503: 'Service Unavailable',
