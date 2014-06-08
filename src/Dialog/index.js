@@ -10,9 +10,9 @@
  * @param {Enum} type UAC / UAS
  * @param {Enum} state SIP.Dialog.C.STATUS_EARLY / SIP.Dialog.C.STATUS_CONFIRMED
  */
-module.exports = function (SIP, window) {
+module.exports = function (SIP) {
 
-var RequestSender = require('./RequestSender')(SIP, window);
+var RequestSender = require('./RequestSender')(SIP);
 
 var Dialog,
   C = {

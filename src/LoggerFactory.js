@@ -1,9 +1,9 @@
 var Logger = require('./Logger');
 
-module.exports = function (window) {
+module.exports = function (console) {
 
 // Console is not defined in ECMAScript, so just in case...
-var console = window.console || {
+console = console || {
   debug: function () {},
   log: function () {},
   warn: function () {},
