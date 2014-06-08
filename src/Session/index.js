@@ -1,6 +1,6 @@
 var C = require('./Constants');
 
-module.exports = function (SIP, window) {
+module.exports = function (SIP) {
 
 var DTMF = require('./DTMF')(SIP);
 
@@ -153,7 +153,7 @@ Session.prototype = {
       }
 
       // Set timeout for the next tone
-      window.setTimeout(sendDTMF, timeout);
+      SIP.Timers.setTimeout(sendDTMF, timeout);
     };
 
     this.tones = dtmfs;
@@ -287,7 +287,7 @@ Session.prototype = {
 
     // Clear session timers
     for(idx in this.timers) {
-      window.clearTimeout(this.timers[idx]);
+      SIP.Timers.clearTimeout(this.timers[idx]);
     }
 
     // Terminate dialogs
@@ -557,8 +557,8 @@ Session.prototype = {
       this.reinviteSucceeded = eventHandlers.succeeded;
     } else {
       this.reinviteSucceeded = function(){
-        window.clearTimeout(self.timers.ackTimer);
-        window.clearTimeout(self.timers.invite2xxTimer);
+        SIP.Timers.clearTimeout(self.timers.ackTimer);
+        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
         self.status = C.STATUS_CONFIRMED;
       };
     }
@@ -763,7 +763,7 @@ Session.prototype = {
     var self = this,
         timeout = SIP.Timers.T1;
 
-    this.timers.invite2xxTimer = window.setTimeout(function invite2xxRetransmission() {
+    this.timers.invite2xxTimer = SIP.Timers.setTimeout(function invite2xxRetransmission() {
       if (self.status !== C.STATUS_WAITING_FOR_ACK) {
         return;
       }
@@ -774,7 +774,7 @@ Session.prototype = {
 
       timeout = Math.min(timeout * 2, SIP.Timers.T2);
 
-      self.timers.invite2xxTimer = window.setTimeout(invite2xxRetransmission, timeout);
+      self.timers.invite2xxTimer = SIP.Timers.setTimeout(invite2xxRetransmission, timeout);
     }, timeout);
   },
 
@@ -786,10 +786,10 @@ Session.prototype = {
   setACKTimer: function() {
     var self = this;
 
-    this.timers.ackTimer = window.setTimeout(function() {
+    this.timers.ackTimer = SIP.Timers.setTimeout(function() {
       if(self.status === C.STATUS_WAITING_FOR_ACK) {
         self.logger.log('no ACK received for an extended period of time, terminating the call');
-        window.clearTimeout(self.timers.invite2xxTimer);
+        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
         self.sendRequest(SIP.C.BYE);
         self.terminated(null, SIP.C.causes.NO_ACK);
       }

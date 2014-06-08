@@ -340,7 +340,7 @@ UA.prototype.stop = function() {
   }
 
   // Clear transportRecoveryTimer
-  window.clearTimeout(this.transportRecoveryTimer);
+  SIP.Timers.clearTimeout(this.transportRecoveryTimer);
 
   // Close registerContext
   this.logger.log('closing registerContext');
@@ -823,7 +823,7 @@ UA.prototype.recoverTransport = function(ua) {
 
   this.logger.log('next connection attempt in '+ nextRetry +' seconds');
 
-  this.transportRecoveryTimer = window.setTimeout(
+  this.transportRecoveryTimer = SIP.Timers.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
       new SIP.Transport(ua, server);

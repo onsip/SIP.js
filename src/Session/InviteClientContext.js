@@ -595,8 +595,8 @@ InviteClientContext.prototype = {
     }
 
     if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
-      window.clearTimeout(this.timers.ackTimer);
-      window.clearTimeout(this.timers.invite2xxTimer);
+      SIP.Timers.clearTimeout(this.timers.ackTimer);
+      SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
       this.unmute();
 
