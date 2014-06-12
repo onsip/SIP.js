@@ -113,11 +113,11 @@ MediaHandler.defaultFactory = function defaultFactory (session, options) {
 
 MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 // Functions the session can use
-  isReady: {value: function isReady () {
+  isReady: {writable: true, value: function isReady () {
     return this.ready;
   }},
 
-  close: {value: function close () {
+  close: {writable: true, value: function close () {
     this.logger.log('closing PeerConnection');
     // have to check signalingState since this.close() gets called multiple times
     // TODO figure out why that happens
@@ -136,7 +136,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
    * @param {SIP.WebRTC.MediaStream | (getUserMedia constraints)} [mediaHint]
    *        the MediaStream (or the constraints describing it) to be used for the session
    */
-  getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
+  getDescription: {writable: true, value: function getDescription (onSuccess, onFailure, mediaHint) {
     var self = this;
 
     /*
@@ -194,21 +194,21 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   * @param {Function} onSuccess
   * @param {Function} onFailure
   */
-  setDescription: {value: function setDescription (sdp, onSuccess, onFailure) {
+  setDescription: {writable: true, value: function setDescription (sdp, onSuccess, onFailure) {
     var type = this.hasOffer('local') ? 'answer' : 'offer';
     var description = new SIP.WebRTC.RTCSessionDescription({type: type, sdp: sdp});
     this.peerConnection.setRemoteDescription(description, onSuccess, onFailure);
   }},
 
 // Functions the session can use, but only because it's convenient for the application
-  isMuted: {value: function isMuted () {
+  isMuted: {writable: true, value: function isMuted () {
     return {
       audio: this.audioMuted,
       video: this.videoMuted
     };
   }},
 
-  mute: {value: function mute (options) {
+  mute: {writable: true, value: function mute (options) {
     if (this.getLocalStreams().length === 0) {
       return;
     }
@@ -246,7 +246,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
   }},
 
-  unmute: {value: function unmute (options) {
+  unmute: {writable: true, value: function unmute (options) {
     if (this.getLocalStreams().length === 0) {
       return;
     }
@@ -292,12 +292,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
   }},
 
-  hold: {value: function hold () {
+  hold: {writable: true, value: function hold () {
     this.toggleMuteAudio(true);
     this.toggleMuteVideo(true);
   }},
 
-  unhold: {value: function unhold () {
+  unhold: {writable: true, value: function unhold () {
     if (!this.audioMuted) {
       this.toggleMuteAudio(false);
     }
@@ -308,7 +308,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
 // Functions the application can use, but not the session
-  getLocalStreams: {value: function getLocalStreams () {
+  getLocalStreams: {writable: true, value: function getLocalStreams () {
     var pc = this.peerConnection;
     if (pc && pc.signalingState === 'closed') {
       this.logger.warn('peerConnection is closed, getLocalStreams returning []');
@@ -318,7 +318,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       pc.localStreams || [];
   }},
 
-  getRemoteStreams: {value: function getRemoteStreams () {
+  getRemoteStreams: {writable: true, value: function getRemoteStreams () {
     var pc = this.peerConnection;
     if (pc && pc.signalingState === 'closed') {
       this.logger.warn('peerConnection is closed, getRemoteStreams returning []');
@@ -329,13 +329,13 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
 // Internal functions
-  hasOffer: {value: function hasOffer (where) {
+  hasOffer: {writable: true, value: function hasOffer (where) {
     var offerState = 'have-' + where + '-offer';
     return this.peerConnection.signalingState === offerState;
     // TODO consider signalingStates with 'pranswer'?
   }},
 
-  createOfferOrAnswer: {value: function createOfferOrAnswer (onSuccess, onFailure, constraints) {
+  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (onSuccess, onFailure, constraints) {
     var self = this;
 
     function readySuccess () {
@@ -383,7 +383,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     );
   }},
 
-  addStream: {value: function addStream (stream, onSuccess, onFailure, constraints) {
+  addStream: {writable: true, value: function addStream (stream, onSuccess, onFailure, constraints) {
     try {
       this.peerConnection.addStream(stream, constraints);
     } catch(e) {
@@ -396,7 +396,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     onSuccess();
   }},
 
-  toggleMuteHelper: {value: function toggleMuteHelper (trackGetter, mute) {
+  toggleMuteHelper: {writable: true, value: function toggleMuteHelper (trackGetter, mute) {
     this.getLocalStreams().forEach(function (stream) {
       stream[trackGetter]().forEach(function (track) {
         track.enabled = !mute;
@@ -404,11 +404,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     });
   }},
 
-  toggleMuteAudio: {value: function toggleMuteAudio (mute) {
+  toggleMuteAudio: {writable: true, value: function toggleMuteAudio (mute) {
     this.toggleMuteHelper('getAudioTracks', mute);
   }},
 
-  toggleMuteVideo: {value: function toggleMuteVideo (mute) {
+  toggleMuteVideo: {writable: true, value: function toggleMuteVideo (mute) {
     this.toggleMuteHelper('getVideoTracks', mute);
   }}
 });
