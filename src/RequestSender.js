@@ -9,7 +9,7 @@
  * @param {Object} applicant
  * @param {SIP.UA} ua
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var RequestSender;
 
 RequestSender = function(applicant, ua) {
@@ -134,5 +134,5 @@ RequestSender.prototype = {
   }
 };
 
-SIP.RequestSender = RequestSender;
-}(SIP));
+return RequestSender;
+};

@@ -7,7 +7,8 @@
  * @augments SIP
  * @class Class creating a SIP Subscription.
  */
-SIP.Subscription = function (ua, target, event, options) {
+module.exports = function (SIP) {
+function Subscription (ua, target, event, options) {
   var events;
 
   options = options || {};
@@ -55,15 +56,15 @@ SIP.Subscription = function (ua, target, event, options) {
   this.errorCodes  = [404,405,410,416,480,481,482,483,484,485,489,501,604];
 
   this.initMoreEvents(events);
-};
+}
 
-SIP.Subscription.prototype = {
+Subscription.prototype = {
   subscribe: function() {
     var sub = this;
 
-    window.clearTimeout(this.timers.sub_duration);
-    window.clearTimeout(this.timers.N);
-    this.timers.N = window.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    this.timers.N = SIP.Timers.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
 
     this.send();
 
@@ -79,7 +80,7 @@ SIP.Subscription.prototype = {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
-      window.clearTimeout(this.timers.N);
+      SIP.Timers.clearTimeout(this.timers.N);
 
       if (this.createConfirmedDialog(response,'UAC')) {
         this.id = this.dialog.id.toString();
@@ -88,7 +89,7 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
-        this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, expires * 1000);
+        this.timers.sub_duration = SIP.Timers.setTimeout(function(){sub.subscribe();}, expires * 1000);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
@@ -117,9 +118,9 @@ SIP.Subscription.prototype = {
     //MAYBE, may want to see state
     this.receiveResponse = function(){};
 
-    window.clearTimeout(this.timers.sub_duration);
-    window.clearTimeout(this.timers.N);
-    this.timers.N = window.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    this.timers.N = SIP.Timers.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
 
     this.send();
   },
@@ -147,8 +148,8 @@ SIP.Subscription.prototype = {
     }
 
     this.terminateDialog();
-    window.clearTimeout(this.timers.N);
-    window.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
 
     delete this.ua.subscriptions[this.id];
   },
@@ -191,7 +192,7 @@ SIP.Subscription.prototype = {
       if (sub_state.expires) {
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 3600));
-        sub.timers.sub_duration = window.setTimeout(sub.subscribe.bind(sub),
+        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub),
                                                     sub_state.expires * 1000);
       }
     }
@@ -205,8 +206,8 @@ SIP.Subscription.prototype = {
 
     request.reply(200, SIP.C.REASON_200);
 
-    window.clearTimeout(this.timers.N);
-    window.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
 
     this.emit('notify', {request: request});
 
@@ -232,7 +233,7 @@ SIP.Subscription.prototype = {
             case 'probation':
             case 'giveup':
               if(sub_state.params && sub_state.params['retry-after']) {
-                this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, sub_state.params['retry-after']);
+                this.timers.sub_duration = SIP.Timers.setTimeout(function(){sub.subscribe();}, sub_state.params['retry-after']);
               } else {
                 this.subscribe();
               }
@@ -281,4 +282,7 @@ SIP.Subscription.prototype = {
       return true;
     }
   }
+};
+
+return Subscription;
 };

@@ -14,7 +14,7 @@
  * @param {Object} [headers]
  *
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var URI;
 
 URI = function(scheme, user, host, port, parameters, headers) {
@@ -193,5 +193,5 @@ URI.parse = function(uri) {
   }
 };
 
-SIP.URI = URI;
-}(SIP));
+return URI;
+};

@@ -6,7 +6,7 @@
  * @class DTMF
  * @param {SIP.Session} session
  */
-(function(SIP) {
+module.exports = function (SIP) {
 
 var DTMF,
   C = {
@@ -188,4 +188,4 @@ DTMF.prototype.init_incoming = function(request) {
 
 DTMF.C = C;
 return DTMF;
-}(SIP));
+};

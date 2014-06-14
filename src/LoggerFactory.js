@@ -1,15 +1,14 @@
+var Logger = require('./Logger');
 
-(function(SIP) {
+module.exports = function (console) {
 
 // Console is not defined in ECMAScript, so just in case...
-var console = window.console || {
+console = console || {
   debug: function () {},
   log: function () {},
   warn: function () {},
   error: function () {}
 };
-
-var Logger = @@include('../src/Logger.js')
 
 var LoggerFactory = function() {
   var logger,
@@ -151,5 +150,5 @@ LoggerFactory.prototype.getLogger = function(category, label) {
   }
 };
 
-SIP.LoggerFactory = LoggerFactory;
-}(SIP));
+return LoggerFactory;
+};

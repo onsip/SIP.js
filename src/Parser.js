@@ -7,7 +7,7 @@
  * @augments SIP
  * @namespace
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var Parser;
 
 function getHeader(data, headerStart) {
@@ -254,5 +254,5 @@ Parser.parseMessage = function(data, ua) {
   return message;
 };
 
-SIP.Parser = Parser;
-}(SIP));
+return Parser;
+};

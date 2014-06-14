@@ -8,7 +8,7 @@
  * @param {SIP.UA} ua
  * @param {Object} server ws_server Object
  */
-(function(SIP) {
+module.exports = function (SIP, WebSocket) {
 var Transport,
   C = {
     // Transport status codes
@@ -44,7 +44,7 @@ Transport.prototype = {
   send: function(msg) {
     var message = msg.toString();
 
-    if(this.ws && this.ws.readyState === window.WebSocket.OPEN) {
+    if(this.ws && this.ws.readyState === WebSocket.OPEN) {
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('sending WebSocket message:\n\n' + message + '\n');
       }
@@ -62,7 +62,7 @@ Transport.prototype = {
   disconnect: function() {
     if(this.ws) {
       // Clear reconnectTimer
-      window.clearTimeout(this.reconnectTimer);
+      SIP.Timers.clearTimeout(this.reconnectTimer);
       
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
@@ -70,7 +70,7 @@ Transport.prototype = {
     }
 
     if (this.reconnectTimer !== null) {
-      window.clearTimeout(this.reconnectTimer);
+      SIP.Timers.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
       this.ua.emit('disconnected', {
         transport: this,
@@ -100,7 +100,7 @@ Transport.prototype = {
       (this.reconnection_attempts === 0)?1:this.reconnection_attempts);
 
     try {
-      this.ws = new window.WebSocket(this.server.ws_uri, 'sip');
+      this.ws = new WebSocket(this.server.ws_uri, 'sip');
     } catch(e) {
       this.logger.warn('error connecting to WebSocket ' + this.server.ws_uri + ': ' + e);
     }
@@ -136,7 +136,7 @@ Transport.prototype = {
     this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
     // Clear reconnectTimer since we are not disconnected
     if (this.reconnectTimer !== null) {
-      window.clearTimeout(this.reconnectTimer);
+      SIP.Timers.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
     // Reset reconnection_attempts
@@ -283,7 +283,7 @@ Transport.prototype = {
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
-      this.reconnectTimer = window.setTimeout(function() {
+      this.reconnectTimer = SIP.Timers.setTimeout(function() {
         transport.connect();
         transport.reconnectTimer = null;
       }, this.ua.configuration.wsServerReconnectionTimeout * 1000);
@@ -292,5 +292,5 @@ Transport.prototype = {
 };
 
 Transport.C = C;
-SIP.Transport = Transport;
-}(SIP));
+return Transport;
+};

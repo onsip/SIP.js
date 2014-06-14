@@ -6,10 +6,9 @@
  * @augments SIP
  * @class Class creating an event emitter.
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var
   EventEmitter,
-  Event,
   logger = new SIP.LoggerFactory().getLogger('sip.eventemitter'),
   C = {
     MAX_LISTENERS: 10
@@ -199,14 +198,7 @@ EventEmitter.prototype = {
   }
 };
 
-Event = function(type, sender, data) {
-  this.type = type;
-  this.sender= sender;
-  this.data = data;
-};
-
 EventEmitter.C = C;
 
-SIP.EventEmitter = EventEmitter;
-SIP.Event = Event;
-}(SIP));
+return EventEmitter;
+};

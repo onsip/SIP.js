@@ -1,4 +1,4 @@
-(function (SIP) {
+module.exports = function (SIP) {
 var ServerContext;
 
 ServerContext = function (ua, request) {
@@ -111,5 +111,5 @@ ServerContext.prototype.onTransportError = function () {
   this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
 };
 
-SIP.ServerContext = ServerContext;
-}(SIP));
+return ServerContext;
+};

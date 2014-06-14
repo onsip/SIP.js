@@ -2,14 +2,13 @@
  * @fileoverview WebRTC
  */
 
-(function(SIP) {
+module.exports = function (SIP, window) {
 var WebRTC;
 
 WebRTC = {};
 
-WebRTC.MediaHandler = @@include('../src/WebRTC/MediaHandler.js')
-
-WebRTC.MediaStreamManager = @@include('../src/WebRTC/MediaStreamManager.js')
+WebRTC.MediaHandler = require('./MediaHandler')(SIP);
+WebRTC.MediaStreamManager = require('./MediaStreamManager')(SIP);
 
 WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(window, 'MediaStream');
 WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(window.navigator, 'getUserMedia');
@@ -24,5 +23,5 @@ else {
   WebRTC.isSupported = false;
 }
 
-SIP.WebRTC = WebRTC;
-}(SIP));
+return WebRTC;
+};

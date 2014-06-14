@@ -6,10 +6,7 @@
  * SIP Exceptions.
  * @augments SIP
  */
-(function(SIP) {
-var Exceptions;
-
-Exceptions= {
+module.exports = {
   ConfigurationError: (function(){
     var exception = function(parameter, value) {
       this.code = 1;
@@ -53,6 +50,3 @@ Exceptions= {
     return exception;
   }())
 };
-
-SIP.Exceptions = Exceptions;
-}(SIP));
