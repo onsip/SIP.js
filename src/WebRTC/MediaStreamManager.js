@@ -15,6 +15,9 @@ var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
   }
 
   var events = [
+    'userMediaRequest',
+    'userMedia',
+    'userMediaFailed'
   ];
   this.setMediaHint(defaultMediaHint);
 
@@ -45,7 +48,22 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     if (mediaHint.stream) {
       saveSuccess(mediaHint.stream, true);
     } else if (mediaHint.constraints) {
-      SIP.WebRTC.getUserMedia(mediaHint.constraints, saveSuccess, onFailure);
+      this.emit('userMediaRequest', mediaHint.constraints);
+
+      var emitThenCall = function (eventName, callback) {
+        var callbackArgs = Array.prototype.slice.call(arguments, 2);
+        // Emit with all of the arguments from the real callback.
+        var newArgs = [eventName].concat(callbackArgs);
+
+        this.emit.apply(this, newArgs);
+
+        callback.apply(null, callbackArgs);
+      }.bind(this);
+
+      SIP.WebRTC.getUserMedia(mediaHint.constraints,
+        emitThenCall.bind(this, 'userMedia', saveSuccess),
+        emitThenCall.bind(this, 'userMediaFailed', onFailure)
+      );
     } else {
       var errorMessage = 'mediaHint specifies neither constraints nor stream: ';
       errorMessage += JSON.stringify(mediaHint);
