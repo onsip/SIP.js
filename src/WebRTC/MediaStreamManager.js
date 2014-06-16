@@ -10,6 +10,10 @@
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (defaultConstraints) {
+  if (!SIP.WebRTC.isSupported()) {
+    throw new SIP.Exceptions.NotSupportedError('Media not supported');
+  }
+
   var events = [
   ];
   this.setConstraints(defaultConstraints);

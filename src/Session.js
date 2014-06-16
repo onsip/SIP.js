@@ -1531,11 +1531,12 @@ InviteClientContext = function(ua, target, options) {
   var requestParams, iceServers,
     extraHeaders = options.extraHeaders || [],
     stunServers = options.stunServers || null,
-    turnServers = options.turnServers || null;
+    turnServers = options.turnServers || null,
+    isMediaSupported = ua.configuration.mediaHandlerFactory.isSupported;
 
   // Check WebRTC support
-  if (!SIP.WebRTC.isSupported) {
-    throw new SIP.Exceptions.NotSupportedError('WebRTC not supported');
+  if (isMediaSupported && !isMediaSupported()) {
+    throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
 
   this.RTCConstraints = options.RTCConstraints || {};
