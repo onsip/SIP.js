@@ -662,7 +662,8 @@ UA.prototype.receiveRequest = function(request) {
   if(!request.to_tag) {
     switch(method) {
       case SIP.C.INVITE:
-        if(SIP.WebRTC.isSupported) {
+        var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
+        if(!isMediaSupported || isMediaSupported()) {
           session = new SIP.InviteServerContext(this, request)
             .on('invite', function() {
               self.emit('invite', this);

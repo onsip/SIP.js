@@ -1540,11 +1540,11 @@ describe('InviteClientContext', function() {
   });
 
   it('throws a not supported error if WebRTC is not supported', function() {
-    SIP.WebRTC.isSupported = false;
+    spyOn(SIP.WebRTC, 'isSupported').andCallFake(function () {
+      return false;
+    });
 
-    expect(function() {new SIP.InviteClientContext(ua, target);}).toThrow('WebRTC not supported');
-
-    SIP.WebRTC.isSupported = true;
+    expect(function() {new SIP.InviteClientContext(ua, target);}).toThrow('Media not supported');
   });
 
   it('throws a type error if normalizeTarget fails with the given target', function() {

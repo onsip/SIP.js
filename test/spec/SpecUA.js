@@ -744,12 +744,12 @@ describe('UA', function() {
                       ruri : { user: UA.configuration.uri.user } ,
                       reply : replySpy };
       var webrtc = SIP.WebRTC.isSupported;
-      SIP.WebRTC.isSupported = false;
+      spyOn(SIP.WebRTC, 'isSupported').andCallFake(function () {
+        return false;
+      });
 
       UA.receiveRequest(request);
       expect(replySpy).toHaveBeenCalledWith(488);
-
-      SIP.WebRTC.isSupported = webrtc;
     });
 
     it('sends a 481 if a BYE is received', function() {

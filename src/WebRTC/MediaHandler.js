@@ -110,6 +110,9 @@ var MediaHandler = function(session, options) {
 MediaHandler.defaultFactory = function defaultFactory (session, options) {
   return new MediaHandler(session, options);
 };
+MediaHandler.defaultFactory.isSupported = function () {
+  return SIP.WebRTC.isSupported();
+};
 
 MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 // Functions the session can use
