@@ -268,13 +268,6 @@ describe('An INVITE sent from a UAC', function () {
   describe('with options.media', function () {
     it('not defined, defaults to audio+video', function () {
       var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
-      waitsFor('session to be created', function () { return session; }, 100);
-      runs(function () {
-        expect(session.mediaHandler.mediaStreamManager.constraints).toEqual({
-          audio: true,
-          video: true
-        });
-      });
 
       waitsFor('gum to be called', function () {
         return gumSpy.calls.length;
@@ -300,7 +293,7 @@ describe('An INVITE sent from a UAC', function () {
           basic: 100
         }
       };
-      session_options.media = myConstraints;
+      session_options.media = {constraints: myConstraints};
       waitsFor('gum to be called', function () {
         return gumSpy.calls.length;
       }, 100);

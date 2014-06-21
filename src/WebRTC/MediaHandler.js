@@ -6,10 +6,8 @@
  * @class PeerConnection helper Class.
  * @param {SIP.Session} session
  * @param {Object} [options]
- * @param {SIP.WebRTC.MediaStreamManager | SIP.WebRTC.MediaStream | (getUserMedia constraints)} [options.mediaStreamManager]
+ * @param {SIP.WebRTC.MediaStreamManager} [options.mediaStreamManager]
  *        The MediaStreamManager to acquire/release streams from/to.
- *        If a MediaStream or a getUserMedia constraints object is provided,
- *        it will be converted to a MediaStreamManager.
  *        If not provided, a default MediaStreamManager will be used.
  */
 (function(SIP){
@@ -23,7 +21,7 @@ var MediaHandler = function(session, options) {
   this.session = session;
   this.localMedia = null;
   this.ready = true;
-  this.mediaStreamManager = SIP.WebRTC.MediaStreamManager.cast(options.mediaStreamManager);
+  this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager();
   this.audioMuted = false;
   this.videoMuted = false;
 
@@ -170,11 +168,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       self.logger.log('already have local media');
       streamAdditionSucceeded();
       return;
-    }
-
-    if (mediaHint instanceof SIP.WebRTC.MediaStream) {
-      self.logger.log('mediaHint provided to getDescription is a MediaStream, casting to MediaStreamManager:', mediaHint);
-      self.mediaStreamManager = SIP.WebRTC.MediaStreamManager.cast(mediaHint);
     }
 
     self.logger.log('acquiring local media');

@@ -4,70 +4,61 @@
 
 /* MediaStreamManager
  * @class Manages the acquisition and release of MediaStreams.
- * @param {(getUserMedia constraints)} [defaultConstraints] The getUserMedia constraints to use if none are provided to acquire()
+ * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
  */
 (function(SIP){
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
-var MediaStreamManager = function MediaStreamManager (defaultConstraints) {
+var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
   if (!SIP.WebRTC.isSupported()) {
     throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
 
   var events = [
   ];
-  this.setConstraints(defaultConstraints);
+  this.setMediaHint(defaultMediaHint);
 
   this.initEvents(events);
+
+  // map of streams to acquisition manner:
+  // true -> passed in as mediaHint.stream
+  // false -> getUserMedia
+  this.acquisitions = {};
 };
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
-  'acquire': {value: function acquire (onSuccess, onFailure, constraints) {
-    constraints = constraints || this.constraints;
-    SIP.WebRTC.getUserMedia(constraints, onSuccess, onFailure);
+  'acquire': {value: function acquire (onSuccess, onFailure, mediaHint) {
+    mediaHint = mediaHint || this.mediaHint;
+
+    var saveSuccess = function (onSuccess, stream, isHintStream) {
+      this.acquisitions[stream] = !!isHintStream;
+      onSuccess(stream);
+    }.bind(this, onSuccess);
+
+    if (mediaHint.stream) {
+      saveSuccess(mediaHint.stream, true);
+    } else if (mediaHint.constraints) {
+      SIP.WebRTC.getUserMedia(mediaHint.constraints, saveSuccess, onFailure);
+    } else {
+      var errorMessage = 'mediaHint specifies neither constraints nor stream: ';
+      errorMessage += JSON.stringify(mediaHint);
+      onFailure(new Error(errorMessage));
+    }
   }},
 
   'release': {value: function release (stream) {
-    stream.stop();
+    if (this.acquisitions[stream] === false) {
+      stream.stop();
+    }
+    delete this.acquisitions[stream];
   }},
 
-  'setConstraints': {value: function setConstraints (constraints) {
-    // Assume audio/video if no default constraints passed.
-    this.constraints = constraints || {audio: true, video: true};
+  'setMediaHint': {value: function setMediaHint (mediaHint) {
+    // Assume audio/video constraints if no default mediaHint passed.
+    this.mediaHint = mediaHint || {
+      constraints: {audio: true, video: true}
+    };
   }}
 });
-
-// A MediaStreamManager that reuses a given MediaStream in parallel, giving it out freely.
-MediaStreamManager.ofStream = function ofStream (stream) {
-  var events = [
-  ];
-  this.stream = stream;
-  this.initEvents(events);
-};
-MediaStreamManager.ofStream.prototype = Object.create(MediaStreamManager.prototype, {
-  'acquire': {value: function acquire (onSuccess) {
-    onSuccess(this.stream);
-  }},
-
-  // don't stop the stream
-  'release': {value: function release () {} }
-});
-
-MediaStreamManager.cast = function cast (obj) {
-  if (!obj) {
-    return new MediaStreamManager();
-  }
-
-  if (obj instanceof MediaStreamManager) {
-    return obj;
-  }
-
-  if (SIP.WebRTC.MediaStream && obj instanceof SIP.WebRTC.MediaStream) {
-    return new MediaStreamManager.ofStream(obj);
-  }
-
-  // if it's not a stream or a manager, assume it's a constraints object
-  return new MediaStreamManager(obj);
-};
 
 // Return since it will be assigned to a variable.
 return MediaStreamManager;
