@@ -695,7 +695,7 @@ describe('UA', function() {
                       reply : replySpy };
       UA.receiveRequest(request);
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request, UA);
-      expect(replySpy).toHaveBeenCalledWith(200,null,[ 'Allow: ACK,CANCEL,BYE,OPTIONS', 'Accept: application/sdp,application/dtmf-relay' ])
+      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array))
     });
 
     it('checks if there is a listener when the SIP method is message and rejects if no listener is found', function() {
@@ -708,7 +708,7 @@ describe('UA', function() {
       expect(UA.receiveRequest(request)).toBeUndefined();
       expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
-      expect(replySpy).toHaveBeenCalledWith(405, null, [ 'Allow: ACK,CANCEL,BYE,OPTIONS' ]);
+      expect(replySpy).toHaveBeenCalledWith(405, null, jasmine.any(Array));
     });
 
     it('checks if there is a listener when the SIP method is message and accepts if listener is found', function() {

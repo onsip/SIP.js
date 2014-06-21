@@ -33,7 +33,9 @@ var UA,
       'ACK',
       'CANCEL',
       'BYE',
-      'OPTIONS'
+      'OPTIONS',
+      'INFO',
+      'NOTIFY'
     ],
 
     ACCEPTED_BODY_TYPES: [
