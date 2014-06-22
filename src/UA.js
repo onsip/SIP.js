@@ -935,6 +935,9 @@ UA.prototype.loadConfig = function(configuration) {
   }
   
   SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, 'none');
+  if(configuration.rel100 === 'required' || configuration.rel100 === 'supported' || configuration.rel100 === 'none') {
+    this.logger.warn('Setting rel100 options with a String is deprecated, please use SIP.C.supported constants instead.');
+  }
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
