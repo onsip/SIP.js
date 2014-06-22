@@ -37,7 +37,7 @@ MediaStreamManager.streamId = function (stream) {
 };
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
   'acquire': {value: function acquire (onSuccess, onFailure, mediaHint) {
-    mediaHint = mediaHint || this.mediaHint;
+    mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
     var saveSuccess = function (onSuccess, stream, isHintStream) {
       var streamId = MediaStreamManager.streamId(stream);

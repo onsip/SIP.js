@@ -21,7 +21,8 @@ var MediaHandler = function(session, options) {
     'iceComplete',
     'iceFailed',
     'getDescription',
-    'setDescription'
+    'setDescription',
+    'dataChannel'
   ];
   options = options || {};
 
@@ -164,6 +165,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
    */
   getDescription: {writable: true, value: function getDescription (onSuccess, onFailure, mediaHint) {
     var self = this;
+    mediaHint = mediaHint || {};
+    if (mediaHint.dataChannel === true) {
+      mediaHint.dataChannel = {};
+    }
 
     /*
      * 1. acquire stream (skip if MediaStream passed in)
@@ -174,6 +179,20 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     /* Last functions first, to quiet JSLint */
     function streamAdditionSucceeded() {
+      if (self.hasOffer('remote')) {
+        self.peerConnection.ondatachannel = function (evt) {
+          self.dataChannel = evt.channel;
+          self.emit('dataChannel', self.dataChannel);
+        };
+      } else if (mediaHint.dataChannel &&
+                 self.peerConnection.createDataChannel) {
+        self.dataChannel = self.peerConnection.createDataChannel(
+          'sipjs',
+          mediaHint.dataChannel
+        );
+        self.emit('dataChannel', self.dataChannel);
+      }
+
       self.createOfferOrAnswer(onSuccess, onFailure, self.RTCConstraints);
     }
 
