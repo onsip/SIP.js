@@ -36,11 +36,22 @@
   /** WebRTC **/
   function getUserMedia(constraints, success, failure) {
     if (getUserMedia.fail) {
-      setTimeout(function () { failure(); }, 0);
+      setTimeout(failure, 0);
     } else {
-      setTimeout(function () { success({getAudioTracks: function(){return [];}, getVideoTracks: function(){return [];}, stop: function(){} })}, 0);
+      setTimeout(success.bind(null, getUserMedia.fakeStream()), 0);
     }
   }
+  getUserMedia.fakeStream = function () {
+    return {
+      getAudioTracks: function(id){
+        return [{
+          id: id
+        }];
+      }.bind(null, Math.random().toString()),
+      getVideoTracks: function(){return [];},
+      stop: jasmine.createSpy('stop')
+    };
+  };
   getUserMedia.orig = window.navigator.getUserMedia;
   window.navigator.getUserMedia = getUserMedia;
 

@@ -25,12 +25,20 @@ var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
   // false -> getUserMedia
   this.acquisitions = {};
 };
+MediaStreamManager.streamId = function (stream) {
+  return stream.getAudioTracks().concat(stream.getVideoTracks())
+    .map(function trackId (track) {
+      return track.id;
+    })
+    .join('');
+};
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
   'acquire': {value: function acquire (onSuccess, onFailure, mediaHint) {
     mediaHint = mediaHint || this.mediaHint;
 
     var saveSuccess = function (onSuccess, stream, isHintStream) {
-      this.acquisitions[stream] = !!isHintStream;
+      var streamId = MediaStreamManager.streamId(stream);
+      this.acquisitions[streamId] = !!isHintStream;
       onSuccess(stream);
     }.bind(this, onSuccess);
 
@@ -46,10 +54,11 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
   }},
 
   'release': {value: function release (stream) {
-    if (this.acquisitions[stream] === false) {
+    var streamId = MediaStreamManager.streamId(stream);
+    if (this.acquisitions[streamId] === false) {
       stream.stop();
     }
-    delete this.acquisitions[stream];
+    delete this.acquisitions[streamId];
   }},
 
   'setMediaHint': {value: function setMediaHint (mediaHint) {
