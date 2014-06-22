@@ -1113,7 +1113,7 @@ describe('UA', function() {
 
       expect(UA.configuration.autostart).toBe(true);
 
-      expect(UA.configuration.rel100).toBe('none');
+      expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1434,22 +1434,31 @@ describe('UA', function() {
     });
 
     describe('.rel100', function() {
-      it('returns "required" if "required" is passed in', function(){
-        expect(SIP.UA.configuration_check.optional.rel100('required')).toBe('required');
+      it('returns SIP.C.supported.REQUIRED if SIP.C.supported.REQUIRED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.REQUIRED)).toBe(SIP.C.supported.REQUIRED);
+      });
+      
+      // Legacy Support
+      it('returns SIP.C.supported.REQUIRED if "required" is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100("required")).toBe(SIP.C.supported.REQUIRED);
+      });
+      
+      it('returns SIP.C.supported.SUPPORTED if SIP.C.supported.SUPPORTED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.SUPPORTED)).toBe(SIP.C.supported.SUPPORTED);
+      });
+      
+      // Legacy Support
+      it('returns SIP.C.supported.SUPPORTED if "supported" is passed in as well as adding it to the supported list', function(){
+        expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe(SIP.C.supported.SUPPORTED);
       });
 
-      it('returns "supported" if "supported" is passed in as well as adding it to the supported list', function(){
-        expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe('supported');
-        expect(SIP.UA.C.SUPPORTED).toContain(', 100rel');
-      });
-
-      it('returns "none" for all other arguments passed in', function() {
-        expect(SIP.UA.configuration_check.optional.rel100()).toBe('none');
-        expect(SIP.UA.configuration_check.optional.rel100(true)).toBe('none');
-        expect(SIP.UA.configuration_check.optional.rel100('a string')).toBe('none');
-        expect(SIP.UA.configuration_check.optional.rel100(7)).toBe('none');
-        expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe('none');
-        expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe('none');
+      it('returns SIP.C.supported.NONE for all other arguments passed in', function() {
+        expect(SIP.UA.configuration_check.optional.rel100()).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(true)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100('a string')).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(7)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
       });
     });
 

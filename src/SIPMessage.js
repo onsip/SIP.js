@@ -206,7 +206,7 @@ OutgoingRequest.prototype = {
       supported.push('gruu');
     }
 
-    if (this.ua.configuration.rel100 === 'supported') {
+    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
       supported.push('100rel');
     }
 
@@ -465,7 +465,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     supported.push('gruu');
   }
 
-  if (this.ua.configuration.rel100 === 'supported') {
+  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
     supported.push('100rel');
   }
 
