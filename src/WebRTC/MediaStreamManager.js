@@ -19,7 +19,9 @@ var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
     'userMedia',
     'userMediaFailed'
   ];
-  this.setMediaHint(defaultMediaHint);
+  this.mediaHint = defaultMediaHint || {
+    constraints: {audio: true, video: true}
+  };
 
   this.initEvents(events);
 
@@ -35,6 +37,53 @@ MediaStreamManager.streamId = function (stream) {
     })
     .join('');
 };
+
+MediaStreamManager.render = function render (stream, elements) {
+  if (!elements) {
+    return false;
+  }
+
+  function attachAndPlay (element, stream) {
+    attachMediaStream(element, stream);
+    ensureMediaPlaying(element);
+  }
+
+  function attachMediaStream(element, stream) {
+    if (typeof element.src !== 'undefined') {
+      URL.revokeObjectURL(element.src);
+      element.src = URL.createObjectURL(stream);
+    } else if (typeof (element.srcObject || element.mozSrcObject) !== 'undefined') {
+      element.srcObject = element.mozSrcObject = stream;
+    } else {
+      return false;
+    }
+
+    return true;
+  }
+
+  function ensureMediaPlaying (mediaElement) {
+    var interval = 100;
+    mediaElement.ensurePlayingIntervalId = setInterval(function () {
+      if (mediaElement.paused) {
+        mediaElement.play();
+      }
+      else {
+        clearInterval(mediaElement.ensurePlayingIntervalId);
+      }
+    }, interval);
+  }
+
+  if (elements.video) {
+    if (elements.audio) {
+      elements.video.volume = 0;
+    }
+    attachAndPlay(elements.video, stream);
+  }
+  if (elements.audio) {
+    attachAndPlay(elements.audio, stream);
+  }
+};
+
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
   'acquire': {value: function acquire (onSuccess, onFailure, mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
@@ -47,8 +96,13 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 
     if (mediaHint.stream) {
       saveSuccess(mediaHint.stream, true);
-    } else if (mediaHint.constraints) {
-      this.emit('userMediaRequest', mediaHint.constraints);
+    } else {
+      // Fallback to audio/video enabled if no mediaHint can be found.
+      var constraints = mediaHint.constraints ||
+        (this.mediaHint && this.mediaHint.constraints) ||
+        {audio: true, video: true};
+
+      this.emit('userMediaRequest', constraints);
 
       var emitThenCall = function (eventName, callback) {
         var callbackArgs = Array.prototype.slice.call(arguments, 2);
@@ -60,14 +114,10 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         callback.apply(null, callbackArgs);
       }.bind(this);
 
-      SIP.WebRTC.getUserMedia(mediaHint.constraints,
+      SIP.WebRTC.getUserMedia(constraints,
         emitThenCall.bind(this, 'userMedia', saveSuccess),
         emitThenCall.bind(this, 'userMediaFailed', onFailure)
       );
-    } else {
-      var errorMessage = 'mediaHint specifies neither constraints nor stream: ';
-      errorMessage += JSON.stringify(mediaHint);
-      onFailure(new Error(errorMessage));
     }
   }},
 
@@ -78,13 +128,6 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     }
     delete this.acquisitions[streamId];
   }},
-
-  'setMediaHint': {value: function setMediaHint (mediaHint) {
-    // Assume audio/video constraints if no default mediaHint passed.
-    this.mediaHint = mediaHint || {
-      constraints: {audio: true, video: true}
-    };
-  }}
 });
 
 // Return since it will be assigned to a variable.

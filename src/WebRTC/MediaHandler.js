@@ -70,6 +70,7 @@ var MediaHandler = function(session, options) {
 
   this.peerConnection.onaddstream = function(e) {
     self.logger.log('stream added: '+ e.stream.id);
+    self.render();
   };
 
   this.peerConnection.onremovestream = function(e) {
@@ -169,6 +170,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     if (mediaHint.dataChannel === true) {
       mediaHint.dataChannel = {};
     }
+    this.mediaHint = mediaHint;
 
     /*
      * 1. acquire stream (skip if MediaStream passed in)
@@ -372,6 +374,24 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
     return(pc.getRemoteStreams && pc.getRemoteStreams()) ||
       pc.remoteStreams || [];
+  }},
+
+  render: {writable: true, value: function render (renderHint) {
+    renderHint = renderHint || this.mediaHint.render;
+    if (!renderHint) {
+      return false;
+    }
+    var streamGetters = {
+      local: 'getLocalStreams',
+      remote: 'getRemoteStreams'
+    };
+    Object.keys(streamGetters).forEach(function (loc) {
+      var streamGetter = streamGetters[loc];
+      var streams = this[streamGetter]();
+      if (streams.length) {
+        SIP.WebRTC.MediaStreamManager.render(streams[0], renderHint[loc]);
+      }
+    }.bind(this));
   }},
 
 // Internal functions
