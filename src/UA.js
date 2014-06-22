@@ -892,7 +892,7 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      rel100: 'none',
+      rel100: SIP.C.supported.UNSUPPORTED,
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
     };
@@ -934,7 +934,7 @@ UA.prototype.loadConfig = function(configuration) {
     }
   }
   
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, 'none');
+  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
   if(configuration.rel100 === 'required' || configuration.rel100 === 'supported' || configuration.rel100 === 'none') {
     this.logger.warn('Setting rel100 options with a String is deprecated, please use SIP.C.supported constants instead.');
   }
