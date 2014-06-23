@@ -892,7 +892,7 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      rel100: 'none',
+      rel100: SIP.C.supported.UNSUPPORTED,
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
     };
@@ -934,7 +934,7 @@ UA.prototype.loadConfig = function(configuration) {
     }
   }
   
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, 'none');
+  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
@@ -1294,13 +1294,12 @@ UA.configuration_check = {
     },
     
     rel100: function(rel100) {
-      if(rel100 === 'required') {
-        return rel100;
-      } else if (rel100 === 'supported') {
-        SIP.UA.C.SUPPORTED = SIP.UA.C.SUPPORTED + ', 100rel';
-        return rel100;
+      if(rel100 === SIP.C.supported.REQUIRED) {
+        return SIP.C.supported.REQUIRED;
+      } else if (rel100 === SIP.C.supported.SUPPORTED) {
+        return SIP.C.supported.SUPPORTED;
       } else  {
-        return "none";
+        return SIP.C.supported.UNSUPPORTED;
       }
     },
 

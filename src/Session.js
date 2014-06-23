@@ -1243,7 +1243,7 @@ InviteServerContext.prototype = {
     if (options.statusCode !== 100 &&
         (this.rel100 === SIP.C.supported.REQUIRED ||
          (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) || 
-         (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === 'required')))) {
+         (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
       do100rel.apply(this);
     } else {
       normalReply.apply(this);
@@ -1575,7 +1575,7 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Content-Disposition: render;handling=optional');
   }
 
-  if (ua.configuration.rel100 === 'required') {
+  if (ua.configuration.rel100 === SIP.C.supported.REQUIRED) {
     extraHeaders.push('Require: 100rel');
   }
 

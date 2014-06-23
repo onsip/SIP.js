@@ -47,9 +47,9 @@ SIP.C= {
   },
   
   supported: {
-    UNSUPPORTED:        0,
-    SUPPORTED:          1,
-    REQUIRED:           2
+    UNSUPPORTED:        'none',
+    SUPPORTED:          'supported',
+    REQUIRED:           'required'
   },
 
   SIP_ERROR_CAUSES: {
