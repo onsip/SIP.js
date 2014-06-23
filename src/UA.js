@@ -1294,9 +1294,9 @@ UA.configuration_check = {
     },
     
     rel100: function(rel100) {
-      if(rel100 === 'required' || rel100 === SIP.C.supported.REQUIRED) {
+      if(rel100 === SIP.C.supported.REQUIRED) {
         return SIP.C.supported.REQUIRED;
-      } else if (rel100 === 'supported' || rel100 === SIP.C.supported.SUPPORTED) {
+      } else if (rel100 === SIP.C.supported.SUPPORTED) {
         return SIP.C.supported.SUPPORTED;
       } else  {
         return SIP.C.supported.UNSUPPORTED;
