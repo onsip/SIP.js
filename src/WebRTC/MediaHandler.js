@@ -22,7 +22,8 @@ var MediaHandler = function(session, options) {
     'iceFailed',
     'getDescription',
     'setDescription',
-    'dataChannel'
+    'dataChannel',
+    'addStream'
   ];
   options = options || {};
 
@@ -71,6 +72,7 @@ var MediaHandler = function(session, options) {
   this.peerConnection.onaddstream = function(e) {
     self.logger.log('stream added: '+ e.stream.id);
     self.render();
+    self.emit('addStream', e);
   };
 
   this.peerConnection.onremovestream = function(e) {
