@@ -310,21 +310,13 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     if (options.audio && this.audioMuted) {
       audioUnMuted = true;
       this.audioMuted = false;
-
-      //REVISIT
-      if (!options.local_hold) {
-        this.toggleMuteAudio(false);
-      }
+      this.toggleMuteAudio(false);
     }
 
     if (options.video && this.videoMuted) {
       videoUnMuted = true;
       this.videoMuted = false;
-
-      //REVISIT
-      if (!options.local_hold) {
-        this.toggleMuteVideo(false);
-      }
+      this.toggleMuteVideo(false);
     }
 
     //REVISIT

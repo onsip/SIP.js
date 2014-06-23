@@ -407,8 +407,6 @@ Session.prototype = {
    * Unmute
    */
   unmute: function(options) {
-    options = options || {};
-    options.local_hold = this.local_hold;
     var ret = this.mediaHandler.unmute(options);
     if (ret) {
       this.onunmute(ret);
