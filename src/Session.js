@@ -910,15 +910,12 @@ Session.prototype = {
     return this.emit('cancel');
   },
 
-  accepted: function(response) {
-    var code = response ? response.status_code : null;
+  accepted: function(response, cause) {
+    cause = cause || (response && SIP.C.REASON_PHRASE[response.status_code]) || '';
 
     this.startTime = new Date();
 
-    return this.emit('accepted', {
-      code: code,
-      response: response || null
-    });
+    return this.emit('accepted', response, cause);
   },
 
   terminated: function(message, cause) {
@@ -1221,7 +1218,7 @@ InviteServerContext.prototype = {
 
           // Send the initial response
           response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-          this.emit('progress', response); // TODO - include arguments here
+          this.emit('progress', response, reasonPhrase);
         }.bind(this),
 
         // Failure
@@ -1235,7 +1232,7 @@ InviteServerContext.prototype = {
 
     function normalReply() {
       response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-      this.emit('progress', response);
+      this.emit('progress', response, reasonPhrase);
     }
 
     if (options.statusCode !== 100 &&
@@ -1267,6 +1264,7 @@ InviteServerContext.prototype = {
     //mediaStream = options.mediaStream || null,
       sdpCreationSucceeded = function(body) {
         var
+          response,
           // run for reply success callback
           replySucceeded = function() {
             self.status = C.STATUS_WAITING_FOR_ACK;
@@ -1287,11 +1285,14 @@ InviteServerContext.prototype = {
         } else {
           self.hasAnswer = true;
         }
-        request.reply(200, null, extraHeaders,
+        response = request.reply(200, null, extraHeaders,
                       body,
                       replySucceeded,
                       replyFailed
                      );
+        if (self.status !== C.STATUS_TERMINATED) { // Didn't fail
+          self.accepted(response, SIP.C.REASON_PHRASE[200]);
+        }
       },
 
       sdpCreationFailed = function() {
@@ -1387,8 +1388,6 @@ InviteServerContext.prototype = {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
-
-      this.accepted();
     }
 
     switch(request.method) {
