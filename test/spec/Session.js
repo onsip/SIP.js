@@ -60,7 +60,6 @@ describe('An INVITE sent from a UAC', function () {
     runs(function () {
       expect(session.checkEvent('connecting')).toBe(true);
       expect(session.checkEvent('cancel')).toBe(true);
-      expect(session.checkEvent('referred')).toBe(true);
       expect(session.checkEvent('dtmf')).toBe(true);
       expect(session.checkEvent('bye')).toBe(true);
     });

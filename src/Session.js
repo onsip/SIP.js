@@ -32,7 +32,6 @@ Session = function (mediaHandlerFactory) {
   'dtmf',
   'invite',
   'cancel',
-  'referred',
   'refer',
   'bye',
   'hold',
@@ -240,6 +239,24 @@ Session.prototype = {
         receiveResponse: function() {}
       }).
       terminate();
+  },
+
+  followRefer: function followRefer (callback) {
+    return function referListener (callback, request) {
+      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+
+      /*
+        Harmless race condition.  Both sides of REFER
+        may send a BYE, but in the end the dialogs are destroyed.
+      */
+      var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
+        media: this.mediaHint
+      });
+
+      callback.call(this, request, referSession);
+
+      this.terminate();
+    }.bind(this, callback);
   },
 
   sendRequest: function(method,options) {
@@ -659,8 +676,7 @@ Session.prototype = {
           request.reply(202, 'Accepted');
           var
             hasReferListener = this.checkListener('refer'),
-            hasReferredListener = this.checkListener('referred'),
-            notifyBody = (hasReferListener || hasReferredListener) ?
+            notifyBody = hasReferListener ?
               'SIP/2.0 100 Trying' :
               // RFC 3515.2.4.2: 'the UA MAY decline the request.'
               'SIP/2.0 603 Declined'
@@ -678,20 +694,6 @@ Session.prototype = {
 
           if (hasReferListener) {
             this.emit('refer', request);
-          } else if (hasReferredListener) {
-            SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
-
-            /*
-              Harmless race condition.  Both sides of REFER
-              may send a BYE, but in the end the dialogs are destroyed.
-            */
-            var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-              media: this.mediaHint
-            });
-
-            this.referred(request,referSession);
-
-            this.terminate();
           }
         }
         break;
@@ -894,14 +896,6 @@ Session.prototype = {
     return this.emit('rejected',
       response || null,
       cause
-    );
-  },
-
-  referred: function(request, referSession) {
-    return this.emit(
-      'referred',
-      request || null,
-      referSession || null
     );
   },
 
