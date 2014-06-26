@@ -371,7 +371,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   render: {writable: true, value: function render (renderHint) {
-    renderHint = renderHint || this.mediaHint.render;
+    renderHint = renderHint || (this.mediaHint && this.mediaHint.render);
     if (!renderHint) {
       return false;
     }

@@ -59,6 +59,13 @@ describe('WebRTC.MediaHandler', function() {
     expect(MediaHandler.videoMuted).toBe(false);
   });
 
+  describe('.render', function () {
+    it("doesn't throw if renderHint and this.mediaHint are missing", function () {
+      expect(MediaHandler.render).not.toThrow();
+    });
+  });
+
+
   describe('.getLocalStreams', function() {
     it('returns peerConnection.getLocalStreams()', function() {
       MediaHandler.peerConnection = {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([])};
