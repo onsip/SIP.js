@@ -207,8 +207,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       self.addStream(
         stream,
         streamAdditionSucceeded,
-        onFailure,
-        self.RTCConstraints
+        onFailure
       );
     }
 
@@ -452,9 +451,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     );
   }},
 
-  addStream: {writable: true, value: function addStream (stream, onSuccess, onFailure, constraints) {
+  addStream: {writable: true, value: function addStream (stream, onSuccess, onFailure) {
     try {
-      this.peerConnection.addStream(stream, constraints);
+      this.peerConnection.addStream(stream);
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
