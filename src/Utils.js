@@ -71,6 +71,14 @@ Utils= {
     }
   },
 
+  isMediaStream: function(obj) {
+    if (obj !== undefined) {
+      return Object.prototype.toString.call(obj) === '[object MediaStream]';
+    } else {
+      return false;
+    }
+  },
+
   isDecimal: function (num) {
     return !isNaN(num) && (parseFloat(num) === parseInt(num,10));
   },

@@ -19,6 +19,7 @@ You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com
 
 * [Install PhantomJS](http://phantomjs.org/download.html)
 * In modern Debian/Ubuntu systems PhantomJS can be installed via `apt-get install phantomjs`
+* On OSX with [homebrew](http://brew.sh/) PhantomJS can be installed via `brew install phantomjs`
 
 
 ## How to build SIP.js
@@ -58,7 +59,7 @@ Run `grunt devel` for just generating the `dist/sip-devel.js` file. An uncompres
 
 ## Test units
 
-SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/). Test units use the `dist/sip-devel.js` file. Run the tests as follows:
+SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/). Test units use the `dist/sip-devel.js` file. **If you made changes, be sure to run `grunt devel` before running the tests.** Run the tests as follows:
 ```
 $ grunt test
 

@@ -137,6 +137,16 @@ describe('MediaStreamManager', function() {
       expect(onFailure).not.toHaveBeenCalled();
     });
 
+    it('.acquire when mediaHint is a stream', function() {
+      spyOn(SIP.WebRTC, 'getUserMedia');
+      spyOn(SIP.Utils, 'isMediaStream').andReturn(true);
+
+      mediaStreamManager.acquire(onSuccess, onFailure, stream);
+      expect(SIP.Utils.isMediaStream(stream)).toEqual(true);
+      expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
+      expect(onSuccess).toHaveBeenCalledWith(stream);
+    });
+
     it('.release does not stop the stream', function () {
       mediaStreamManager.acquire(onSuccess, onFailure, mediaHint);
       mediaStreamManager.release(stream);
