@@ -96,6 +96,8 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 
     if (mediaHint.stream) {
       saveSuccess(mediaHint.stream, true);
+    } else if (SIP.Utils.isMediaStream(mediaHint)) {
+      saveSuccess(mediaHint, true);
     } else {
       // Fallback to audio/video enabled if no mediaHint can be found.
       var constraints = mediaHint.constraints ||
