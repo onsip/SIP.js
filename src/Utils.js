@@ -35,7 +35,7 @@ Utils= {
   },
 
   str_utf8_length: function(string) {
-    return decodeURIComponent(encodeURIComponent(string)).length;
+    return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
   },
 
   getPrefixedProperty: function (object, name) {
