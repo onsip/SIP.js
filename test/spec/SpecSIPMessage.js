@@ -81,11 +81,20 @@ describe('SIPMessage', function() {
       });
 
       it('returns the header from extra headers if it is not in headers', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+        OutgoingRequest.extraHeaders.push('Allow: ' + 'extraAllow');
 
+        expect(OutgoingRequest.getHeader('event')).toBe('extraEvent');
+        expect(OutgoingRequest.getHeader('Allow')).toBe('extraAllow');
       });
 
       it('returns undefined if the header does not exist in headers or extraHeaders', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+        OutgoingRequest.extraHeaders.push('Allow: ' + 'extraAllow');
 
+        expect(OutgoingRequest.getHeader('Contact')).toBe(undefined);
       });
     });
 
@@ -100,25 +109,42 @@ describe('SIPMessage', function() {
         expect(OutgoingRequest.getHeaders(name)).toEqual(value);
       });
 
-      it('returns all of the headers in an array with the given name from extraHeaders if the header is not in headers', function() {
+      it('returns all the headers in an array with the given name from extraHeaders if the header is not in headers', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
 
+        expect(OutgoingRequest.getHeaders('event')).toEqual(['extraEvent']);
       });
 
-      it('returns undefined if the header is not found in headers and the header is not found in extraHeaders', function() {
+      it('returns an empty array if the header is not found in headers and the header is not found in extraHeaders', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
 
+        expect(OutgoingRequest.getHeaders('Contact')).toEqual([]);
       });
     });
 
     describe('.hasHeader', function() {
       it('returns true if the header exists in headers', function() {
+        var name = 'name';
+        var value = 'value';
 
+        OutgoingRequest.setHeader(name, value);
+        expect(OutgoingRequest.hasHeader(name)).toBe(true);
       });
 
       it('returns true if the header exists in extraHeaders', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
 
+        expect(OutgoingRequest.hasHeader('event')).toBe(true);
       });
-      it('returns false if the header does not exist in headers or extraHeaders', function() {
 
+      it('returns false if the header does not exist in headers or extraHeaders', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+
+        expect(OutgoingRequest.hasHeader('Contact')).toBe(false);
       });
     });
 
@@ -143,6 +169,7 @@ describe('SIPMessage', function() {
       });
     });
   });
+
   describe('IncomingRequest', function() {
     var IncomingRequest,
     ua, transaction;
