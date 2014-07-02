@@ -411,7 +411,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       self.emit('getDescription', sdpWrapper);
 
       self.ready = true;
-      onSuccess(sdp);
+      onSuccess(sdpWrapper.sdp);
     }
 
     function onSetLocalDescriptionSuccess() {
