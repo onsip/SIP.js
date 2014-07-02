@@ -105,16 +105,12 @@ DTMF.prototype.send = function(options) {
   body = "Signal= " + this.tone + "\r\n";
   body += "Duration= " + this.duration;
 
-  this.owner.emit('dtmf', {
-    originator: 'local',
-    dtmf: this,
-    request: this.request
-  });
-
-  this.owner.dialog.sendRequest(this, SIP.C.INFO, {
+  this.request = this.owner.dialog.sendRequest(this, SIP.C.INFO, {
     extraHeaders: extraHeaders,
     body: body
   });
+
+  this.owner.emit('dtmf', this.request, this);
 };
 
 /**
@@ -178,11 +174,7 @@ DTMF.prototype.init_incoming = function(request) {
   if (!this.tone || !this.duration) {
     this.logger.warn('invalid INFO DTMF received, discarded');
   } else {
-    this.owner.emit('dtmf', {
-      originator: 'remote',
-      dtmf: this,
-      request: request
-    });
+    this.owner.emit('dtmf', request, this);
   }
 };
 
