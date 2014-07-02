@@ -1555,7 +1555,7 @@ describe('UA', function() {
     describe('.turnServers', function() {
       it('works whether an array is passed or not', function() {
         expect(SIP.UA.configuration_check.optional.turnServers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
-        expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: 'example.com', username: 'alice', password: 'pass'}]);
+        expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
       });
 
       it('works if you pass in server instead of urls (backwards compatible', function() {
