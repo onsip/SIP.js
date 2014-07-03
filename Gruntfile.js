@@ -33,9 +33,12 @@ module.exports = function(grunt) {
     'src/tail.js'
   ];
 
+  var pkg = grunt.file.readJSON('package.json');
+
   // Project configuration.
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
+    pkg: pkg,
+    name: pkg.name.replace(/\.js$/, ''),
     meta: {
       banner: '\
 /*\n\
@@ -74,7 +77,7 @@ module.exports = function(grunt) {
     concat: {
       dist: {
         src: srcFiles,
-        dest: 'dist/<%= pkg.name %>.js',
+        dest: 'dist/<%= name %>.js',
         options: {
           banner: '<%= meta.banner %>',
           separator: '\n\n',
@@ -84,7 +87,7 @@ module.exports = function(grunt) {
       },
       devel: {
         src: srcFiles,
-        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+        dest: 'dist/<%= name %>-<%= pkg.version %>.js',
         options: {
           banner: '<%= meta.banner %>',
           separator: '\n\n',
@@ -96,18 +99,18 @@ module.exports = function(grunt) {
     includereplace: {
       dist: {
         files: {
-          'dist': 'dist/<%= pkg.name %>.js'
+          'dist': 'dist/<%= name %>.js'
         }
       },
       devel: {
         files: {
-          'dist': 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
+          'dist': 'dist/<%= name %>-<%= pkg.version %>.js'
         }
       }
     },
     jshint: {
-      dist: 'dist/<%= pkg.name %>.js',
-      devel: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+      dist: 'dist/<%= name %>.js',
+      devel: 'dist/<%= name %>-<%= pkg.version %>.js',
       options: {
         browser: true,
         curly: true,
@@ -133,12 +136,12 @@ module.exports = function(grunt) {
     uglify: {
       dist: {
         files: {
-          'dist/<%= pkg.name %>.min.js': ['dist/<%= pkg.name %>.js']
+          'dist/<%= name %>.min.js': ['dist/<%= name %>.js']
         }
       },
       devel: {
         files: {
-	  'dist/<%= pkg.name %>-<%= pkg.version %>.min.js': ['dist/<%= pkg.name %>-<%= pkg.version %>.js']
+	  'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
         }
       },
       options: {
@@ -148,7 +151,7 @@ module.exports = function(grunt) {
     jasmine: {
       components: {
         src: [
-        'dist/<%= pkg.name %>-<%= pkg.version %>.js'
+        'dist/<%= name %>-<%= pkg.version %>.js'
         ],
         options: {
           specs: 'test/spec/*.js',
