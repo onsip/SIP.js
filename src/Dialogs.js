@@ -127,7 +127,7 @@ Dialog.prototype = {
   // RFC 3261 12.2.1.1
   createRequest: function(method, extraHeaders, body) {
     var cseq, request;
-    extraHeaders = extraHeaders || [];
+    extraHeaders = (extraHeaders || []).slice();
 
     if(!this.local_seqnum) { this.local_seqnum = Math.floor(Math.random() * 10000); }
 
@@ -229,7 +229,7 @@ Dialog.prototype = {
     options = options || {};
 
     var
-      extraHeaders = options.extraHeaders || [],
+      extraHeaders = (options.extraHeaders || []).slice(),
       body = options.body || null,
       request = this.createRequest(method, extraHeaders, body),
       request_sender = new RequestSender(this, applicant, request);

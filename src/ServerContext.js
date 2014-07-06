@@ -40,7 +40,7 @@ ServerContext.prototype.progress = function (options) {
   var
     statusCode = options.statusCode || 180,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
@@ -58,7 +58,7 @@ ServerContext.prototype.accept = function (options) {
   var
     statusCode = options.statusCode || 200,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
@@ -76,7 +76,7 @@ ServerContext.prototype.reject = function (options) {
   var
     statusCode = options.statusCode || 480,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
@@ -95,7 +95,7 @@ ServerContext.prototype.reply = function (options) {
   var
     statusCode = options.statusCode,
     reasonPhrase = options.reasonPhrase,
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body;
 
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);

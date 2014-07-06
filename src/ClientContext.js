@@ -27,7 +27,7 @@ ClientContext = function (ua, method, target, options) {
   this.method = method;
 
   params = options && options.params;
-  extraHeaders = (options && options.extraHeaders) || [];
+  extraHeaders = (options && options.extraHeaders || []).slice();
 
   if (options && options.body) {
     this.body = options.body;
