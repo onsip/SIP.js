@@ -344,7 +344,7 @@ SIP.Grammar = (function() {
                                   } catch(e) {
                                     header = null;
                                   }
-                                  data.multi_header.push( { 'possition': peg$currPos,
+                                  data.multi_header.push( { 'position': peg$currPos,
                                                             'offset': offset(),
                                                             'parsed': header
                                                           });},
@@ -497,7 +497,7 @@ SIP.Grammar = (function() {
                             } catch(e) {
                               header = null;
                             }
-                            data.multi_header.push( { 'possition': peg$currPos,
+                            data.multi_header.push( { 'position': peg$currPos,
                                                       'offset': offset(),
                                                       'parsed': header
                                                     });},
