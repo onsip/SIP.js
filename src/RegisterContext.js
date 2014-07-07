@@ -51,7 +51,7 @@ RegisterContext.prototype = {
 
     // Handle Options
     options = options || {};
-    extraHeaders = options.extraHeaders || [];
+    extraHeaders = (options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
@@ -208,7 +208,7 @@ RegisterContext.prototype = {
     }
 
     options = options || {};
-    extraHeaders = options.extraHeaders || [];
+    extraHeaders = (options.extraHeaders || []).slice();
 
     this.registered = false;
 

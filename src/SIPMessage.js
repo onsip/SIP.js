@@ -41,7 +41,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.method = method;
   this.ruri = ruri;
   this.body = body;
-  this.extraHeaders = extraHeaders || [];
+  this.extraHeaders = (extraHeaders || []).slice();
   this.statusCode = params.status_code;
   this.reasonPhrase = params.reason_phrase;
 
@@ -423,7 +423,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   reason = reason || SIP.C.REASON_PHRASE[code] || '';
-  extraHeaders = extraHeaders || [];
+  extraHeaders = (extraHeaders || []).slice();
 
   response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
 

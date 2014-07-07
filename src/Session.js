@@ -202,7 +202,7 @@ Session.prototype = {
 
   refer: function(target, options) {
     options = options || {};
-    var extraHeaders = options.extraHeaders || [], originalTarget;
+    var extraHeaders = (options.extraHeaders || []).slice(), originalTarget;
     
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
@@ -581,7 +581,7 @@ Session.prototype = {
 
     var
       self = this,
-       extraHeaders = options.extraHeaders || [],
+       extraHeaders = (options.extraHeaders || []).slice(),
        eventHandlers = options.eventHandlers || {},
        mangle = options.mangle || null;
 
@@ -1074,7 +1074,7 @@ InviteServerContext.prototype = {
     options = options || {};
 
     var
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     dialog,
     self = this;
@@ -1157,7 +1157,7 @@ InviteServerContext.prototype = {
     var
       statusCode = options.statusCode || 180,
       reasonPhrase = options.reasonPhrase,
-      extraHeaders = options.extraHeaders || [],
+      extraHeaders = (options.extraHeaders || []).slice(),
       body = options.body,
       response;
 
@@ -1256,7 +1256,7 @@ InviteServerContext.prototype = {
       //idx, length, hasAudio, hasVideo,
       self = this,
       request = this.request,
-      extraHeaders = options.extraHeaders || [],
+      extraHeaders = (options.extraHeaders || []).slice(),
     //mediaStream = options.mediaStream || null,
       sdpCreationSucceeded = function(body) {
         var
@@ -1522,7 +1522,7 @@ SIP.InviteServerContext = InviteServerContext;
 InviteClientContext = function(ua, target, options) {
   options = options || {};
   var requestParams, iceServers,
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
     isMediaSupported = ua.configuration.mediaHandlerFactory.isSupported;
