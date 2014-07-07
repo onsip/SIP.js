@@ -1274,6 +1274,14 @@ InviteServerContext.prototype = {
             self.failed(null, SIP.C.causes.CONNECTION_ERROR);
           };
 
+        // Chrome might call onaddstream before accept() is called, which means
+        // mediaHandler.render() was called without a renderHint, so we need to
+        // re-render now that mediaHint.render has been set.
+        //
+        // Chrome seems to be in the right regarding this, see
+        // http://dev.w3.org/2011/webrtc/editor/webrtc.html#widl-RTCPeerConnection-onaddstream
+        self.mediaHandler.render();
+
         extraHeaders.push('Contact: ' + self.contact);
 
         if(!self.hasOffer) {
