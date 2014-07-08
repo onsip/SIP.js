@@ -1,5 +1,3 @@
-/*global console: false*/
-
 /**
  * @name SIP
  * @namespace

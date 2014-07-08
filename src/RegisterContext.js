@@ -119,7 +119,7 @@ RegisterContext.prototype = {
             self.register(options);
           }, (expires * 1000) - 3000);
           this.registrationExpiredTimer = window.setTimeout(function () {
-            console.warn('registration expired');
+            self.logger.warn('registration expired');
             if (self.registered) {
               self.unregistered(null, SIP.C.causes.EXPIRES);
             }
@@ -127,10 +127,10 @@ RegisterContext.prototype = {
 
           //Save gruu values
           if (contact.hasParam('temp-gruu')) {
-            this.ua.contact.temp_gruu = contact.getParam('temp-gruu').replace(/"/g,'');
+            this.ua.contact.temp_gruu = SIP.URI.parse(contact.getParam('temp-gruu').replace(/"/g,''));
           }
           if (contact.hasParam('pub-gruu')) {
-            this.ua.contact.pub_gruu = contact.getParam('pub-gruu').replace(/"/g,'');
+            this.ua.contact.pub_gruu = SIP.URI.parse(contact.getParam('pub-gruu').replace(/"/g,''));
           }
 
           this.registered = true;

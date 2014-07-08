@@ -9,22 +9,27 @@
  */
 (function(SIP){
 var MediaHandler = function(session, options) {
-  session = session, options = options; // keep jshint happy
+  // keep jshint happy
+  session = session;
+  options = options;
 };
 
-MediaHandler.prototype = {
-  isReady: function() {},
+MediaHandler.prototype = Object.create(SIP.EventEmitter.prototype, {
+  isReady: {value: function isReady () {}},
 
-  close: function() {},
+  close: {value: function close () {}},
 
   /**
    * @param {Function} onSuccess called with the obtained local media description
    * @param {Function} onFailure
    * @param {Object} [mediaHint] A custom object describing the media to be used during this session.
    */
-  getDescription: function(onSuccess, onFailure, mediaHint) {
-    onSuccess = onSuccess, onFailure = onFailure, mediaHint = mediaHint; // keep jshint happy
-  },
+  getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
+    // keep jshint happy
+    onSuccess = onSuccess;
+    onFailure = onFailure;
+    mediaHint = mediaHint;
+  }},
 
   /**
   * Message reception.
@@ -33,10 +38,13 @@ MediaHandler.prototype = {
   * @param {Function} onSuccess
   * @param {Function} onFailure
   */
-  setDescription: function(description, onSuccess, onFailure) {
-    description = description, onSuccess = onSuccess, onFailure = onFailure; // keep jshint happy
-  }
-};
+  setDescription: {value: function setDescription (description, onSuccess, onFailure) {
+    // keep jshint happy
+    description = description;
+    onSuccess = onSuccess;
+    onFailure = onFailure;
+  }}
+});
 
 SIP.MediaHandler = MediaHandler;
 }(SIP));

@@ -7,34 +7,34 @@ describe('SIPMessage', function() {
       params,
       extraHeaders,
       body;
-          
+
     beforeEach(function() {
       var getLogger = jasmine.createSpy('getLogger').andReturn('getLogger');
-      ua = { 
+      ua = {
         getLogger : getLogger ,
         configuration : {
           usePreloadedRoute : false
-        }  
+        }
       };
-      
+
       method = 'method';
       ruri = 'ruri';
       body = 'body';
       extraHeaders = 'extraHeaders';
-      
+
       spyOn(SIP, 'NameAddrHeader');
-      SIP.NameAddrHeader.parse = jasmine.createSpy('NameAddrHeaderParse').andCallFake(function(param) { 
+      SIP.NameAddrHeader.parse = jasmine.createSpy('NameAddrHeaderParse').andCallFake(function(param) {
         return param.toString();
       });
-            
+
       OutgoingRequest = new SIP.OutgoingRequest(method,ruri,ua,params,extraHeaders,body);
-      
+
     });
-    
+
     it('sets up instance variables', function() {
       OutgoingRequest = undefined;
       expect(OutgoingRequest).toBeUndefined();
-      
+
       OutgoingRequest = new SIP.OutgoingRequest(method,ruri,ua,params,extraHeaders,body);
       expect(OutgoingRequest).toBeDefined();
       expect(OutgoingRequest.logger).toBe(ua.getLogger());
@@ -48,7 +48,7 @@ describe('SIPMessage', function() {
       expect(OutgoingRequest.call_id).toBeDefined();
       expect(OutgoingRequest.cseq).toBeDefined();
     });
-    
+
     describe('.setHeader', function() {
       it('sets the headers headerized name property to an array of the value', function() {
         OutgoingRequest.headers = {};
@@ -58,7 +58,7 @@ describe('SIPMessage', function() {
         OutgoingRequest.setHeader(name,value);
         expect(OutgoingRequest.headers[SIP.Utils.headerize(name)]).toEqual([value]);
       });
-      
+
       it('sets the headers headerized name property to the array passed to it', function() {
         OutgoingRequest.headers = {};
         expect(OutgoingRequest.headers).toEqual({});
@@ -68,7 +68,7 @@ describe('SIPMessage', function() {
         expect(OutgoingRequest.headers[SIP.Utils.headerize(name)]).toEqual(value);
       });
     });
-    
+
     describe('.getHeader', function() {
       it('returns the header that exists', function() {
         OutgoingRequest.headers = {};
@@ -79,16 +79,25 @@ describe('SIPMessage', function() {
         expect(OutgoingRequest.headers[SIP.Utils.headerize(name)]).toEqual([value]);
         expect(OutgoingRequest.getHeader(name)).toBe(value);
       });
-      
+
       it('returns the header from extra headers if it is not in headers', function() {
-        
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+        OutgoingRequest.extraHeaders.push('Allow: ' + 'extraAllow');
+
+        expect(OutgoingRequest.getHeader('event')).toBe('extraEvent');
+        expect(OutgoingRequest.getHeader('Allow')).toBe('extraAllow');
       });
-      
+
       it('returns undefined if the header does not exist in headers or extraHeaders', function() {
-        
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+        OutgoingRequest.extraHeaders.push('Allow: ' + 'extraAllow');
+
+        expect(OutgoingRequest.getHeader('Contact')).toBe(undefined);
       });
     });
-    
+
     describe('.getHeaders', function() {
       it('returns all of the headers in an array with the given name', function() {
         OutgoingRequest.headers = {};
@@ -99,33 +108,68 @@ describe('SIPMessage', function() {
         expect(OutgoingRequest.headers[SIP.Utils.headerize(name)]).toEqual(value);
         expect(OutgoingRequest.getHeaders(name)).toEqual(value);
       });
-      
-      it('returns all of the headers in an array with the given name from extraHeaders if the header is not in headers', function() {
-        
+
+      it('returns all the headers in an array with the given name from extraHeaders if the header is not in headers', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+
+        expect(OutgoingRequest.getHeaders('event')).toEqual(['extraEvent']);
       });
-      
-      it('returns undefined if the header is not found in headers and the header is not found in extraHeaders', function() {
-        
+
+      it('returns an empty array if the header is not found in headers and the header is not found in extraHeaders', function() {
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+
+        expect(OutgoingRequest.getHeaders('Contact')).toEqual([]);
       });
     });
-    
+
     describe('.hasHeader', function() {
       it('returns true if the header exists in headers', function() {
-        
+        var name = 'name';
+        var value = 'value';
+
+        OutgoingRequest.setHeader(name, value);
+        expect(OutgoingRequest.hasHeader(name)).toBe(true);
       });
-      
+
       it('returns true if the header exists in extraHeaders', function() {
-        
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+
+        expect(OutgoingRequest.hasHeader('event')).toBe(true);
       });
+
       it('returns false if the header does not exist in headers or extraHeaders', function() {
-        
+        OutgoingRequest.extraHeaders = [];
+        OutgoingRequest.extraHeaders.push('Event: ' + 'extraEvent');
+
+        expect(OutgoingRequest.hasHeader('Contact')).toBe(false);
       });
     });
-    
+
     describe('.toString', function() {
-      
+      it('calculates the correct Content-lenght for a given body', function(){
+        var body = 'a';
+
+        var length = SIP.Utils.str_utf8_length(body);
+        expect(length).toBe(1);
+
+        body = 'ä';
+        length = SIP.Utils.str_utf8_length(body);
+        expect(length).toBe(2);
+
+        body = 'test€';
+        length = SIP.Utils.str_utf8_length(body);
+        expect(length).toBe(7);
+
+        body = 'test€fantasticääüüöööööö€€€';
+        length = SIP.Utils.str_utf8_length(body);
+        expect(length).toBe(45);
+      });
     });
   });
+
   describe('IncomingRequest', function() {
     var IncomingRequest,
     ua, transaction;
@@ -143,7 +187,7 @@ describe('SIPMessage', function() {
       IncomingRequest = new SIP.IncomingRequest(ua);
       IncomingRequest.transport = ua.transport;
     });
-    
+
     it('initialize the instance variables', function() {
       expect(IncomingRequest.data).toBeDefined();
       expect(IncomingRequest.headers).toBeDefined();
@@ -164,7 +208,7 @@ describe('SIPMessage', function() {
       expect(IncomingRequest.transport).toBeDefined();
       expect(IncomingRequest.server_transaction).toBeDefined();
     });
-    
+
     describe('.addHeader', function() {
       it('creates the header in the headers object if it does not already exist', function() {
         expect(IncomingRequest.headers).toEqual({});
@@ -173,7 +217,7 @@ describe('SIPMessage', function() {
         IncomingRequest.addHeader(name,value);
         expect(IncomingRequest.headers[SIP.Utils.headerize(name)]).toEqual([{raw : value}]);
       });
-      
+
       it('adds the header to the array in the headers object if it already exists', function() {
         expect(IncomingRequest.headers).toEqual({});
         var name = 'name';
@@ -185,7 +229,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.headers[SIP.Utils.headerize(name)]).toEqual([{raw : value1},{raw : value2}]);
       });
     });
-    
+
     describe('.getHeader', function() {
       it('returns undefined if the header does not exist', function() {
         expect(IncomingRequest.headers).toEqual({});
@@ -211,7 +255,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.getHeader(name)).not.toBe(value2);
       });
     });
-    
+
     describe('.getHeaders', function() {
       it('returns an empty array if the header does not exist', function() {
         expect(IncomingRequest.headers).toEqual({});
@@ -228,7 +272,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.getHeaders(name).length).toEqual(1);
         expect(IncomingRequest.getHeaders(name)).toEqual([value]);
       });
-      
+
       it('returns an array with all of the values if they exist for the header provided', function() {
         expect(IncomingRequest.headers).toEqual({});
         var name = 'name';
@@ -241,7 +285,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.getHeaders(name)).toEqual([value1, value2]);
       });
     });
-    
+
     describe('.hasHeader', function() {
       it('returns true if the header exists', function() {
         expect(IncomingRequest.headers).toEqual({});
@@ -257,7 +301,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.hasHeader(name)).toBe(false);
       });
     });
-    
+
     describe('.parseHeader', function() {
       beforeEach(function() {
         IncomingRequest.logger = {};
@@ -281,7 +325,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.parseHeader(name,index)).toBeUndefined();
         expect(IncomingRequest.getHeaders(name).length).toBeGreaterThan(index-1);
       });
-      
+
       it('returns the already parsed header if it exists', function() {
         expect(IncomingRequest.headers).toEqual({});
         var name = 'call-ID';
@@ -295,7 +339,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.parseHeader(name,0)).toBe(IncomingRequest.headers[SIP.Utils.headerize(name)][0].parsed);
         expect(SIP.Grammar.parse.calls.length).toEqual(1);
       });
-      
+
       it('returns a newly parsed header and creates a parsed property', function() {
         expect(IncomingRequest.headers).toEqual({});
         var name = 'call-ID';
@@ -307,7 +351,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.headers[SIP.Utils.headerize(name)][0].parsed).toBe(value);
       });
     });
-    
+
     describe('.setHeader', function() {
       it('adds the header if it does not alredy exist', function() {
         expect(IncomingRequest.headers).toEqual({});
@@ -328,7 +372,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.headers[SIP.Utils.headerize(name)]).toEqual([{raw : new_value}]);
       });
     });
-    
+
     describe('.toString', function() {
       it('returns the data instance variable', function() {
         var data = 'data';
@@ -337,7 +381,7 @@ describe('SIPMessage', function() {
         expect(IncomingRequest.toString()).toBe(IncomingRequest.data);
       });
     });
-    
+
     describe('.reply', function() {
       beforeEach(function() {
         IncomingRequest.addHeader('To','alice@example.com');
@@ -345,7 +389,7 @@ describe('SIPMessage', function() {
       it('throws a TypeError if no code exists', function() {
         expect(function() {IncomingRequest.reply(null); }).toThrow(new TypeError('Invalid status_code: null'));
       });
-      
+
       it('throws a TypeError if the code is less than 100 or greater than 699', function() {
         for (var i = 1; i < 100; i++) {
           expect(function() {IncomingRequest.reply(i);}).toThrow(new TypeError('Invalid status_code: '+ i));
@@ -354,16 +398,16 @@ describe('SIPMessage', function() {
           expect(function() {IncomingRequest.reply(i);}).toThrow(new TypeError('Invalid status_code: '+ i));
         }
       });
-      
+
       it('throws a TypeError if a valid code is provided but reason is not a string', function() {
         for (var i = 100; i <700; i++) {
           expect(function() {IncomingRequest.reply(i,[5]);}).toThrow(new TypeError('Invalid reason_phrase: 5'));
         }
       });
     });
-    
+
     describe('.reply_sl', function() {
-      
+
     })
   });
   describe('IncomingResponse', function() {
@@ -371,15 +415,15 @@ describe('SIPMessage', function() {
 
     beforeEach(function(){
       var getLogger = jasmine.createSpy('getLogger').andReturn('logger');
-      ua = { 
+      ua = {
         getLogger : getLogger ,
         configuration : {
           usePreloadedRoute : false
-        }  
+        }
       };
       IncomingResponse = new SIP.IncomingResponse(ua);
     });
-    
+
     it('initialize the instance variables', function() {
       expect(IncomingResponse.data).toBeDefined();
       expect(IncomingResponse.headers).toBeDefined();
@@ -398,7 +442,7 @@ describe('SIPMessage', function() {
       expect(IncomingResponse.status_code).toBeDefined();
       expect(IncomingResponse.reason_phrase).toBeDefined();
     });
-    
+
     describe('.addHeader', function() {
       it('creates the header in the headers object if it does not already exist', function() {
         expect(IncomingResponse.headers).toEqual({});
@@ -407,7 +451,7 @@ describe('SIPMessage', function() {
         IncomingResponse.addHeader(name,value);
         expect(IncomingResponse.headers[SIP.Utils.headerize(name)]).toEqual([{raw : value}]);
       });
-      
+
       it('adds the header to the array in the headers object if it already exists', function() {
         expect(IncomingResponse.headers).toEqual({});
         var name = 'name';
@@ -419,7 +463,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.headers[SIP.Utils.headerize(name)]).toEqual([{raw : value1},{raw : value2}]);
       });
     });
-    
+
     describe('.getHeader', function() {
       it('returns undefined if the header does not exist', function() {
         expect(IncomingResponse.headers).toEqual({});
@@ -445,7 +489,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.getHeader(name)).not.toBe(value2);
       });
     });
-    
+
     describe('.getHeaders', function() {
       it('returns an empty array if the header does not exist', function() {
         expect(IncomingResponse.headers).toEqual({});
@@ -462,7 +506,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.getHeaders(name).length).toEqual(1);
         expect(IncomingResponse.getHeaders(name)).toEqual([value]);
       });
-      
+
       it('returns an array with all of the values if they exist for the header provided', function() {
         expect(IncomingResponse.headers).toEqual({});
         var name = 'name';
@@ -475,7 +519,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.getHeaders(name)).toEqual([value1, value2]);
       });
     });
-    
+
     describe('.hasHeader', function() {
       it('returns true if the header exists', function() {
         expect(IncomingResponse.headers).toEqual({});
@@ -491,7 +535,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.hasHeader(name)).toBe(false);
       });
     });
-    
+
     describe('.parseHeader', function() {
       beforeEach(function() {
         IncomingResponse.logger = {};
@@ -515,7 +559,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.parseHeader(name,index)).toBeUndefined();
         expect(IncomingResponse.getHeaders(name).length).toBeGreaterThan(index-1);
       });
-      
+
       it('returns the already parsed header if it exists', function() {
         expect(IncomingResponse.headers).toEqual({});
         var name = 'call-ID';
@@ -529,7 +573,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.parseHeader(name,0)).toBe(IncomingResponse.headers[SIP.Utils.headerize(name)][0].parsed);
         expect(SIP.Grammar.parse.calls.length).toEqual(1);
       });
-      
+
       it('returns a newly parsed header and creates a parsed property', function() {
         expect(IncomingResponse.headers).toEqual({});
         var name = 'call-ID';
@@ -541,7 +585,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.headers[SIP.Utils.headerize(name)][0].parsed).toBe(value);
       });
     });
-    
+
     describe('.setHeader', function() {
       it('adds the header if it does not alredy exist', function() {
         expect(IncomingResponse.headers).toEqual({});
@@ -562,7 +606,7 @@ describe('SIPMessage', function() {
         expect(IncomingResponse.headers[SIP.Utils.headerize(name)]).toEqual([{raw : new_value}]);
       });
     });
-    
+
     describe('.toString', function() {
       it('returns the data instance variable', function() {
         var data = 'data';

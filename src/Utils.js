@@ -35,7 +35,21 @@ Utils= {
   },
 
   str_utf8_length: function(string) {
-    return window.unescape(encodeURIComponent(string)).length;
+    return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
+  },
+
+  getPrefixedProperty: function (object, name) {
+    if (object == null) {
+      return;
+    }
+    var capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    var prefixedNames = [name, 'webkit' + capitalizedName, 'moz' + capitalizedName];
+    for (var i in prefixedNames) {
+      var property = object[prefixedNames[i]];
+      if (property) {
+        return property;
+      }
+    }
   },
 
   generateFakeSDP: function(body) {
@@ -51,7 +65,7 @@ Utils= {
 
   isFunction: function(fn) {
     if (fn !== undefined) {
-      return (Object.prototype.toString.call(fn) === '[object Function]')? true : false;
+      return Object.prototype.toString.call(fn) === '[object Function]';
     } else {
       return false;
     }
@@ -172,7 +186,7 @@ Utils= {
   */
   escapeUser: function(user) {
     // Don't hex-escape ':' (%3A), '+' (%2B), '?' (%3F"), '/' (%2F).
-    return window.encodeURIComponent(window.decodeURIComponent(user)).replace(/%3A/ig, ':').replace(/%2B/ig, '+').replace(/%3F/ig, '?').replace(/%2F/ig, '/');
+    return encodeURIComponent(decodeURIComponent(user)).replace(/%3A/ig, ':').replace(/%2B/ig, '+').replace(/%3F/ig, '?').replace(/%2F/ig, '/');
   },
 
   headerize: function(string) {
@@ -217,7 +231,7 @@ Utils= {
   */
   getRandomTestNetIP: function() {
     function getOctet(from,to) {
-      return window.Math.floor(window.Math.random()*(to-from+1)+from);
+      return Math.floor(Math.random()*(to-from+1)+from);
     }
     return '192.0.2.' + getOctet(1, 254);
   },

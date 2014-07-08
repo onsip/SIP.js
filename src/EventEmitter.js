@@ -23,7 +23,6 @@ EventEmitter.prototype = {
    */
   initEvents: function(events) {
     this.events = {};
-    this.oneTimeListeners = {};
 
     return this.initMoreEvents(events);
   },
@@ -41,7 +40,6 @@ EventEmitter.prototype = {
       if (!this.events[events[idx]]) {
         this.logger.log('adding event '+ events[idx]);
         this.events[events[idx]] = [];
-        this.oneTimeListeners[events[idx]] = [];
       } else {
         this.logger.log('skipping event '+ events[idx]+ ' - Event exists');
       }
@@ -106,19 +104,13 @@ EventEmitter.prototype = {
   * @param {Function} listener
   */
   once: function(event, listener, bindTarget) {
-    var listeners = this.events && this.events[event] && this.events[event].length;
-
-    this.on(event, listener, bindTarget);
-
-    var listenersNow = this.events && this.events[event] && this.events[event].length;
-    if (listenersNow === listeners + 1) {
-      this.oneTimeListeners[event].push({
-        listener: listener,
-        bindTarget: bindTarget
-      });
+    var self = this;
+    function listenOnce () {
+      listener.apply(this, arguments);
+      self.off(event, listenOnce, bindTarget);
     }
 
-    return this;
+    return this.on(event, listenOnce, bindTarget);
   },
 
   /**
@@ -137,7 +129,6 @@ EventEmitter.prototype = {
     } else if (!event) {
       for (idx in this.events) {
         this.events[idx] = [];
-        this.oneTimeListeners[idx] = [];
       }
       return this;
     } else if (!this.checkEvent(event)) {
@@ -183,8 +174,6 @@ EventEmitter.prototype = {
   * @param {Array} args
   */
   emit: function(event) {
-    var listeners, idx, l;
-
     if (!this.checkEvent(event)) {
       this.logger.error('unable to emit a nonexistent event '+ event);
       throw new TypeError('Invalid or uninitialized event: ' + event);
@@ -193,23 +182,19 @@ EventEmitter.prototype = {
     this.logger.log('emitting event '+ event);
 
     // Fire event listeners
-    listeners = this.events[event];
-    for (idx in listeners) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    this.events[event].map(function (listener) {
+      return function () {
+        listener.listener.apply(this, args);
+      }.bind(listener.bindTarget || this);
+    }, this).forEach(function (boundListener) {
       try {
-        listeners[idx].listener.apply(listeners[idx].bindTarget || this,
-                                      Array.prototype.slice.apply(arguments, [1]));
+        boundListener();
       } catch(err) {
         this.logger.error(err.stack);
       }
-    }
+    }, this);
 
-    // Remove one time listeners
-    for (idx in this.oneTimeListeners[event]) {
-      l = this.oneTimeListeners[event][idx];
-      this.off(event, l.listener, l.bindTarget);
-    }
-
-    this.oneTimeListeners[event] = [];
     return this;
   }
 };

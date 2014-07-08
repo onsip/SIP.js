@@ -31,7 +31,7 @@ SWS = LWS?
 HCOLON  = ( SP / HTAB )* ":" SWS {return ':'; }
 
 TEXT_UTF8_TRIM  = TEXT_UTF8char+ ( LWS* TEXT_UTF8char)* {
-                    return input.substring(pos, offset); }
+                    return input.substring(peg$currPos, offset()); }
 
 TEXT_UTF8char   = [\x21-\x7E] / UTF8_NONASCII
 
@@ -43,11 +43,11 @@ LHEX            = DIGIT / [\x61-\x66]
 
 token           = (alphanum / "-" / "." / "!" / "%" / "*"
                   / "_" / "+" / "`" / "'" / "~" )+ {
-                  return input.substring(pos, offset); }
+                  return input.substring(peg$currPos, offset()); }
 
 token_nodot     = ( alphanum / "-"  / "!" / "%" / "*"
                   / "_" / "+" / "`" / "'" / "~" )+ {
-                  return input.substring(pos, offset); }
+                  return input.substring(peg$currPos, offset()); }
 
 separators      = "(" / ")" / "<" / ">" / "@" / "," / ";" / ":" / "\\"
                   / DQUOTE / "/" / "[" / "]" / "?" / "=" / "{" / "}"
@@ -59,7 +59,7 @@ word            = (alphanum / "-" / "." / "!" / "%" / "*" /
                   ":" / "\\" / DQUOTE /
                   "/" / "[" / "]" / "?" /
                   "{" / "}" )+ {
-                  return input.substring(pos, offset); }
+                  return input.substring(peg$currPos, offset()); }
 
 STAR        = SWS "*" SWS   {return "*"; }
 SLASH       = SWS "/" SWS   {return "/"; }
@@ -79,10 +79,10 @@ comment     = LPAREN (ctext / quoted_pair / comment)* RPAREN
 ctext       = [\x21-\x27] / [\x2A-\x5B] / [\x5D-\x7E] / UTF8_NONASCII / LWS
 
 quoted_string = SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE {
-                  return input.substring(pos, offset); }
+                  return input.substring(peg$currPos, offset()); }
 
 quoted_string_clean = SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE {
-                        return input.substring(pos-1, offset+1); }
+                        return input.substring(peg$currPos-1, offset()+1); }
 
 qdtext  = LWS / "\x21" / [\x23-\x5B] / [\x5D-\x7E] / UTF8_NONASCII
 
@@ -94,20 +94,16 @@ quoted_pair = "\\" ( [\x00-\x09] / [\x0B-\x0C] / [\x0E-\x7F] )
 //=======================
 
 SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
-                    try {
                         data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port);
                         delete data.scheme;
                         delete data.user;
                         delete data.host;
                         delete data.host_type;
                         delete data.port;
-                      } catch(e) {
-                        data = -1;
-                      }}
+                      }
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                     var header;
-                    try {
                         data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
                         delete data.scheme;
                         delete data.user;
@@ -116,33 +112,31 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                         delete data.port;
                         delete data.uri_params;
 
-                        if (startRule === 'SIP_URI') { data = data.uri;}
-                      } catch(e) {
-                        data = -1;
-                      }}
+                        if (options.startRule === 'SIP_URI') { data = data.uri;}
+                      }
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
                     data.scheme = uri_scheme.toLowerCase(); }
 
 userinfo        = user (":" password)? "@" {
-                    data.user = window.decodeURIComponent(input.substring(pos-1, offset));}
+                    data.user = decodeURIComponent(input.substring(peg$currPos-1, offset()));}
 
 user            = ( unreserved / escaped / user_unreserved )+
 
 user_unreserved = "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
 
 password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
-                    data.password = input.substring(pos, offset); }
+                    data.password = input.substring(peg$currPos, offset()); }
 
 hostport        = host ( ":" port )?
 
 host            = ( hostname / IPv4address / IPv6reference ) {
-                    data.host = input.substring(pos, offset).toLowerCase();
+                    data.host = input.substring(peg$currPos, offset()).toLowerCase();
                     return data.host; }
 
 hostname        = ( domainlabel "." )* toplabel  "." ? {
                   data.host_type = 'domain';
-                  return input.substring(pos, offset); }
+                  return input.substring(peg$currPos, offset()); }
 
 domainlabel     = domainlabel: ( [a-zA-Z0-9_-]+ )
 
@@ -150,7 +144,7 @@ toplabel        = toplabel: ( [a-zA-Z_-]+ )
 
 IPv6reference   = "[" IPv6address "]" {
                     data.host_type = 'IPv6';
-                    return input.substring(pos, offset); }
+                    return input.substring(peg$currPos, offset()); }
 
 IPv6address     = ( h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
                   / "::" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
@@ -169,7 +163,7 @@ IPv6address     = ( h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
                   / h16 (":" h16)? (":" h16)? (":" h16)? (":" h16)? (":" h16)? (":" h16)? "::"
                   ) {
                   data.host_type = 'IPv6';
-                  return input.substring(pos, offset); }
+                  return input.substring(peg$currPos, offset()); }
 
 
 h16             = HEXDIG HEXDIG? HEXDIG? HEXDIG?
@@ -179,7 +173,7 @@ ls32            = ( h16 ":" h16 ) / IPv4address
 
 IPv4address     = dec_octet "." dec_octet "." dec_octet "." dec_octet {
                     data.host_type = 'IPv4';
-                    return input.substring(pos, offset); }
+                    return input.substring(peg$currPos, offset()); }
 
 dec_octet       = "25" [\x30-\x35]          // 250-255
                 / "2" [\x30-\x34] DIGIT     // 200-249
@@ -230,7 +224,7 @@ lr_param          = "lr"i ('=' token)? {
 
 other_param       = param: pname value: ( "=" pvalue )? {
                       if(!data.uri_params) data.uri_params = {};
-                      if (typeof value === 'undefined'){
+                      if (value === null){
                         value = undefined;
                       }
                       else {
@@ -304,7 +298,7 @@ pchar             = unreserved / escaped /
                     ":" / "@" / "&" / "=" / "+" / "$" / ","
 
 scheme            = ( ALPHA ( ALPHA / DIGIT / "+" / "-" / "." )* ){
-                    data.scheme= input.substring(pos, offset); }
+                    data.scheme= input.substring(peg$currPos, offset()); }
 
 authority         = srvr / reg_name
 
@@ -316,7 +310,7 @@ reg_name          = ( unreserved / escaped / "$" / ","
 query             = uric *
 
 SIP_Version       = "SIP"i "/" DIGIT + "." DIGIT + {
-                    data.sip_version = input.substring(pos, offset); }
+                    data.sip_version = input.substring(peg$currPos, offset()); }
 
 // SIP METHODS
 
@@ -343,7 +337,7 @@ REFERm            = "\x52\x45\x46\x45\x52" // REFER in caps
 Method            = ( INVITEm / ACKm / OPTIONSm / BYEm / CANCELm / REGISTERm
                     / SUBSCRIBEm / NOTIFYm / REFERm / extension_method ){
 
-                    data.method = input.substring(pos, offset);
+                    data.method = input.substring(peg$currPos, offset());
                     return data.method; }
 
 extension_method  = token
@@ -360,7 +354,7 @@ extension_code  = DIGIT DIGIT DIGIT
 
 Reason_Phrase   = (reserved / unreserved / escaped
                   / UTF8_NONASCII / UTF8_CONT / SP / HTAB)* {
-                  data.reason_phrase = input.substring(pos, offset); }
+                  data.reason_phrase = input.substring(peg$currPos, offset()); }
 
 
 //=======================
@@ -375,7 +369,7 @@ Allow_Events = event_type (COMMA event_type)*
 // CALL-ID
 
 Call_ID  =  word ( "@" word )? {
-              data = input.substring(pos, offset); }
+              data = input.substring(peg$currPos, offset()); }
 
 // CONTACT
 
@@ -405,8 +399,8 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         } catch(e) {
                           header = null;
                         }
-                        data.multi_header.push( { 'possition': pos,
-                                                  'offset': offset,
+                        data.multi_header.push( { 'possition': peg$currPos,
+                                                  'offset': offset(),
                                                   'parsed': header
                                                 });}
 
@@ -415,7 +409,7 @@ name_addr           = ( displayName )? LAQUOT SIP_URI RAQUOT
 addr_spec           = SIP_URI_noparams
 
 displayName        = displayName: (token ( LWS token )* / quoted_string) {
-                        displayName = input.substring(pos, offset).trim();
+                        displayName = input.substring(peg$currPos, offset()).trim();
                         if (displayName[0] === '\"') {
                           displayName = displayName.substring(1, displayName.length-1);
                         }
@@ -438,11 +432,11 @@ delta_seconds       = delta_seconds: DIGIT+ {
                         return parseInt(delta_seconds.join('')); }
 
 qvalue              = "0" ( "." DIGIT? DIGIT? DIGIT? )? {
-                        return parseFloat(input.substring(pos, offset)); }
+                        return parseFloat(input.substring(peg$currPos, offset())); }
 
 generic_param       = param: token  value: ( EQUAL gen_value )? {
                         if(!data.params) data.params = {};
-                        if (typeof value === 'undefined'){
+                        if (value === null){
                           value = undefined;
                         }
                         else {
@@ -483,7 +477,7 @@ Content_Length      = length: (DIGIT +) {
 // CONTENT-TYPE
 
 Content_Type        = media_type {
-                        data = input.substring(pos, offset); }
+                        data = input.substring(peg$currPos, offset()); }
 
 media_type          = m_type SLASH m_subtype (SEMI m_parameter)*
 
@@ -541,12 +535,9 @@ event_param       = generic_param
 
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                 var tag = data.tag;
-                try {
                   data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                   if (tag) {data.setParam('tag',tag)}
-                } catch(e) {
-                  data = -1;
-                }}
+                }
 
 from_param  = tag_param / generic_param
 
@@ -566,11 +557,8 @@ Min_Expires  = min_expires: delta_seconds {data = min_expires; }
 // Name_Addr
 
 Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
-                      try {
                         data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-                      } catch(e) {
-                        data = -1;
-                      }}
+                      }
 
 // PROXY-AUTHENTICATE
 
@@ -662,8 +650,8 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   } catch(e) {
                     header = null;
                   }
-                  data.multi_header.push( { 'possition': pos,
-                                            'offset': offset,
+                  data.multi_header.push( { 'possition': peg$currPos,
+                                            'offset': offset(),
                                             'parsed': header
                                           });}
 
@@ -672,11 +660,8 @@ rr_param      = generic_param
 // REFER-TO
 
 Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
-            try {
               data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-            } catch(e) {
-              data = -1;
-            }}
+            }
 
 r_param = generic_param
 
@@ -704,7 +689,7 @@ Subscription_State   = substate_value ( SEMI subexp_params )*
 
 substate_value       = ( "active"i / "pending"i / "terminated"i
                        / extension_substate ) {
-                        data.state = input.substring(pos, offset); }
+                        data.state = input.substring(peg$currPos, offset()); }
 
 extension_substate   = token
 
@@ -742,12 +727,9 @@ Supported  = ( option_tag (COMMA option_tag)* )?
 
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
               var tag = data.tag;
-              try {
                 data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
                 if (tag) {data.setParam('tag',tag)}
-              } catch(e) {
-                data = -1;
-              }}
+              }
 
 to_param   = tag_param / generic_param
 
@@ -790,7 +772,7 @@ transport         = via_transport: ("UDP"i / "TCP"i / "TLS"i / "SCTP"i / other_t
 sent_by           = viaHost ( COLON via_port )?
 
 viaHost          = ( hostname / IPv4address / IPv6reference ) {
-                      data.host = input.substring(pos, offset); }
+                      data.host = input.substring(peg$currPos, offset()); }
 
 via_port          = via_sent_by_port: (DIGIT ? DIGIT ? DIGIT ? DIGIT ? DIGIT ?) {
                       data.port = parseInt(via_sent_by_port.join('')); }
@@ -828,7 +810,7 @@ stun_host         = host: (IPv4address / IPv6reference / reg_name) {
                       data.host = host; }
 
 reg_name          = ( stun_unreserved / escaped / sub_delims )* {
-                      return input.substring(pos, offset); }
+                      return input.substring(peg$currPos, offset()); }
 
 stun_unreserved   = ALPHA / DIGIT / "-" / "." / "_" / "~"
 
@@ -848,7 +830,7 @@ turn_transport    = transport ("udp"i / "tcp"i / unreserved*) {
 // UUID URI
 uuid_URI      = "uuid:" uuid
 uuid          = uuid: hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
-                  data = input.substring(pos+5, offset); }
+                  data = input.substring(peg$currPos+5, offset()); }
 hex4          = HEXDIG HEXDIG HEXDIG HEXDIG
 hex8          = hex4 hex4
 hex12         = hex4 hex4 hex4

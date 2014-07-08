@@ -32,7 +32,6 @@ Session = function (mediaHandlerFactory) {
   'dtmf',
   'invite',
   'cancel',
-  'referred',
   'refer',
   'bye',
   'hold',
@@ -121,13 +120,10 @@ Session = function (mediaHandlerFactory) {
 
 Session.prototype = {
   dtmf: function(tones, options) {
-    var duration, interToneGap,
-      position = 0,
-      self = this;
+    var tone, dtmfs = [],
+        self = this;
 
     options = options || {};
-    duration = options.duration || null;
-    interToneGap = options.interToneGap || null;
 
     if (tones === undefined) {
       throw new TypeError('Not enough arguments');
@@ -143,72 +139,40 @@ Session.prototype = {
       throw new TypeError('Invalid tones: '+ tones);
     }
 
-    tones = tones.toString();
+    tones = tones.toString().split('');
 
-    // Check duration
-    if (duration && !SIP.Utils.isDecimal(duration)) {
-      throw new TypeError('Invalid tone duration: '+ duration);
-    } else if (!duration) {
-      duration = DTMF.C.DEFAULT_DURATION;
-    } else if (duration < DTMF.C.MIN_DURATION) {
-      this.logger.warn('"duration" value is lower than the minimum allowed, setting it to '+ DTMF.C.MIN_DURATION+ ' milliseconds');
-      duration = DTMF.C.MIN_DURATION;
-    } else if (duration > DTMF.C.MAX_DURATION) {
-      this.logger.warn('"duration" value is greater than the maximum allowed, setting it to '+ DTMF.C.MAX_DURATION +' milliseconds');
-      duration = DTMF.C.MAX_DURATION;
-    } else {
-      duration = Math.abs(duration);
-    }
-    options.duration = duration;
-
-    // Check interToneGap
-    if (interToneGap && !SIP.Utils.isDecimal(interToneGap)) {
-      throw new TypeError('Invalid interToneGap: '+ interToneGap);
-    } else if (!interToneGap) {
-      interToneGap = DTMF.C.DEFAULT_INTER_TONE_GAP;
-    } else if (interToneGap < DTMF.C.MIN_INTER_TONE_GAP) {
-      this.logger.warn('"interToneGap" value is lower than the minimum allowed, setting it to '+ DTMF.C.MIN_INTER_TONE_GAP +' milliseconds');
-      interToneGap = DTMF.C.MIN_INTER_TONE_GAP;
-    } else {
-      interToneGap = Math.abs(interToneGap);
-    }
+    while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
 
     if (this.tones) {
       // Tones are already queued, just add to the queue
-      this.tones += tones;
+      this.tones =  this.tones.concat(dtmfs);
       return this;
     }
 
-    // New set of tones to start sending
-    this.tones = tones;
-
     var sendDTMF = function () {
-      var tone, timeout,
-      tones = self.tones;
+      var dtmf, timeout;
 
-      if (self.status === C.STATUS_TERMINATED || !tones || position >= tones.length) {
+      if (self.status === C.STATUS_TERMINATED || !self.tones || self.tones.length === 0) {
         // Stop sending DTMF
         self.tones = null;
         return this;
       }
 
-      tone = tones[position];
-      position += 1;
+      dtmf = self.tones.shift();
 
       if (tone === ',') {
         timeout = 2000;
       } else {
-        var dtmf = new DTMF(self);
         dtmf.on('failed', function(){self.tones = null;});
-        dtmf.send(tone, options);
-        timeout = duration + interToneGap;
+        dtmf.send(options);
+        timeout = dtmf.duration + dtmf.interToneGap;
       }
 
       // Set timeout for the next tone
       window.setTimeout(sendDTMF, timeout);
     };
 
-    // Send the first tone
+    this.tones = dtmfs;
     sendDTMF();
     return this;
   },
@@ -275,6 +239,24 @@ Session.prototype = {
         receiveResponse: function() {}
       }).
       terminate();
+  },
+
+  followRefer: function followRefer (callback) {
+    return function referListener (callback, request) {
+      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+
+      /*
+        Harmless race condition.  Both sides of REFER
+        may send a BYE, but in the end the dialogs are destroyed.
+      */
+      var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
+        media: this.mediaHint
+      });
+
+      callback.call(this, request, referSession);
+
+      this.terminate();
+    }.bind(this, callback);
   },
 
   sendRequest: function(method,options) {
@@ -442,8 +424,6 @@ Session.prototype = {
    * Unmute
    */
   unmute: function(options) {
-    options = options || {};
-    options.local_hold = this.local_hold;
     var ret = this.mediaHandler.unmute(options);
     if (ret) {
       this.onunmute(ret);
@@ -487,8 +467,8 @@ Session.prototype = {
         if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(body)) {
           body = body.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
         } else {
-          body = body.replace(/a=sendrecv\r\n/g, 'a=sendonly');
-          body = body.replace(/a=recvonly\r\n/g, 'a=inactive');
+          body = body.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
+          body = body.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
         }
 
         return body;
@@ -659,14 +639,36 @@ Session.prototype = {
       case SIP.C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
-          this.receiveReinvite(request);
+          // Switch these two lines to try re-INVITEs:
+          //this.receiveReinvite(request);
+          request.reply(488, null, ["Warning: Cannot update media description"]);
         }
         break;
       case SIP.C.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
-          var contentType = request.getHeader('content-type');
-          if (contentType && (contentType.match(/^application\/dtmf-relay/i))) {
-            new DTMF(this).init_incoming(request);
+          var body, tone, duration,
+              contentType = request.getHeader('content-type'),
+              reg_tone = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/,
+              reg_duration = /^(Duration\s?=\s?)([0-9]{1,4})(\s)?.*/;
+
+          if (contentType) {
+            if (contentType.match(/^application\/dtmf-relay/i)) {
+              if (request.body) {
+                body = request.body.split('\r\n', 2);
+                if (body.length === 2) {
+                  if (reg_tone.test(body[0])) {
+                    tone = body[0].replace(reg_tone,"$2");
+                  }
+                  if (reg_duration.test(body[1])) {
+                    duration = parseInt(body[1].replace(reg_duration,"$2"), 10);
+                  }
+                }
+              }
+
+              new DTMF(this, tone, {duration: duration}).init_incoming(request);
+            } else {
+              request.reply(415, null, ["Accept: application/dtmf-relay"]);
+            }
           }
         }
         break;
@@ -676,8 +678,7 @@ Session.prototype = {
           request.reply(202, 'Accepted');
           var
             hasReferListener = this.checkListener('refer'),
-            hasReferredListener = this.checkListener('referred'),
-            notifyBody = (hasReferListener || hasReferredListener) ?
+            notifyBody = hasReferListener ?
               'SIP/2.0 100 Trying' :
               // RFC 3515.2.4.2: 'the UA MAY decline the request.'
               'SIP/2.0 603 Declined'
@@ -694,21 +695,7 @@ Session.prototype = {
           });
 
           if (hasReferListener) {
-            this.emit('refer', request.parseHeader('refer-to').uri, request);
-          } else if (hasReferredListener) {
-            SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
-
-            /*
-              Harmless race condition.  Both sides of REFER
-              may send a BYE, but in the end the dialogs are destroyed.
-            */
-            var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-              media: this.mediaHint
-            });
-
-            this.referred(request,referSession);
-
-            this.terminate();
+            this.emit('refer', request);
           }
         }
         break;
@@ -800,6 +787,8 @@ Session.prototype = {
         return;
       }
 
+      self.logger.log('no ACK received, attempting to retransmit OK');
+
       request.reply(200, null, ['Contact: ' + self.contact], body);
 
       timeout = Math.min(timeout * 2, SIP.Timers.T2);
@@ -818,7 +807,7 @@ Session.prototype = {
 
     this.timers.ackTimer = window.setTimeout(function() {
       if(self.status === C.STATUS_WAITING_FOR_ACK) {
-        self.logger.log('no ACK received, terminating the call');
+        self.logger.log('no ACK received for an extended period of time, terminating the call');
         window.clearTimeout(self.timers.invite2xxTimer);
         self.sendRequest(SIP.C.BYE);
         self.terminated(null, SIP.C.causes.NO_ACK);
@@ -912,28 +901,17 @@ Session.prototype = {
     );
   },
 
-  referred: function(request, referSession) {
-    return this.emit(
-      'referred',
-      request || null,
-      referSession || null
-    );
-  },
-
   canceled: function() {
     this.close();
     return this.emit('cancel');
   },
 
-  accepted: function(response) {
-    var code = response ? response.status_code : null;
+  accepted: function(response, cause) {
+    cause = cause || (response && SIP.C.REASON_PHRASE[response.status_code]) || '';
 
     this.startTime = new Date();
 
-    return this.emit('accepted', {
-      code: code,
-      response: response || null
-    });
+    return this.emit('accepted', response, cause);
   },
 
   terminated: function(message, cause) {
@@ -983,6 +961,8 @@ InviteServerContext = function(ua, request) {
   this.id = request.call_id + this.from_tag;
   this.request = request;
   this.contact = this.ua.contact.toString();
+
+  this.receiveNonInviteResponse = function () {}; // intentional no-op
 
   this.logger = ua.getLogger('sip.inviteservercontext', this.id);
 
@@ -1054,7 +1034,7 @@ InviteServerContext = function(ua, request) {
   }
 
   if (!request.body || this.renderbody) {
-    setTimeout(fireNewSession, 0);
+    window.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
     this.mediaHandler.setDescription(
@@ -1234,7 +1214,7 @@ InviteServerContext.prototype = {
 
           // Send the initial response
           response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-          this.emit('progress', response); // TODO - include arguments here
+          this.emit('progress', response, reasonPhrase);
         }.bind(this),
 
         // Failure
@@ -1248,12 +1228,13 @@ InviteServerContext.prototype = {
 
     function normalReply() {
       response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-      this.emit('progress', response);
+      this.emit('progress', response, reasonPhrase);
     }
 
     if (options.statusCode !== 100 &&
         (this.rel100 === SIP.C.supported.REQUIRED ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100))) {
+         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) || 
+         (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
       do100rel.apply(this);
     } else {
       normalReply.apply(this);
@@ -1279,6 +1260,7 @@ InviteServerContext.prototype = {
     //mediaStream = options.mediaStream || null,
       sdpCreationSucceeded = function(body) {
         var
+          response,
           // run for reply success callback
           replySucceeded = function() {
             self.status = C.STATUS_WAITING_FOR_ACK;
@@ -1292,6 +1274,14 @@ InviteServerContext.prototype = {
             self.failed(null, SIP.C.causes.CONNECTION_ERROR);
           };
 
+        // Chrome might call onaddstream before accept() is called, which means
+        // mediaHandler.render() was called without a renderHint, so we need to
+        // re-render now that mediaHint.render has been set.
+        //
+        // Chrome seems to be in the right regarding this, see
+        // http://dev.w3.org/2011/webrtc/editor/webrtc.html#widl-RTCPeerConnection-onaddstream
+        self.mediaHandler.render();
+
         extraHeaders.push('Contact: ' + self.contact);
 
         if(!self.hasOffer) {
@@ -1299,11 +1289,14 @@ InviteServerContext.prototype = {
         } else {
           self.hasAnswer = true;
         }
-        request.reply(200, null, extraHeaders,
+        response = request.reply(200, null, extraHeaders,
                       body,
                       replySucceeded,
                       replyFailed
                      );
+        if (self.status !== C.STATUS_TERMINATED) { // Didn't fail
+          self.accepted(response, SIP.C.REASON_PHRASE[200]);
+        }
       },
 
       sdpCreationFailed = function() {
@@ -1399,8 +1392,6 @@ InviteServerContext.prototype = {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
-
-      this.accepted();
     }
 
     switch(request.method) {
@@ -1541,11 +1532,12 @@ InviteClientContext = function(ua, target, options) {
   var requestParams, iceServers,
     extraHeaders = options.extraHeaders || [],
     stunServers = options.stunServers || null,
-    turnServers = options.turnServers || null;
+    turnServers = options.turnServers || null,
+    isMediaSupported = ua.configuration.mediaHandlerFactory.isSupported;
 
   // Check WebRTC support
-  if (!SIP.WebRTC.isSupported) {
-    throw new SIP.Exceptions.NotSupportedError('WebRTC not supported');
+  if (isMediaSupported && !isMediaSupported()) {
+    throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
 
   this.RTCConstraints = options.RTCConstraints || {};
@@ -1584,7 +1576,7 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Content-Disposition: render;handling=optional');
   }
 
-  if (ua.configuration.reliable === 'required') {
+  if (ua.configuration.rel100 === SIP.C.supported.REQUIRED) {
     extraHeaders.push('Require: 100rel');
   }
 
@@ -1996,7 +1988,7 @@ InviteClientContext.prototype = {
                   },
                   function onFailure() {
                     // TODO do something here
-                    console.log("there was a problem");
+                    session.logger.warn("there was a problem");
                   },
                   session.mediaHint
                 );
@@ -2125,7 +2117,16 @@ InviteClientContext.prototype = {
 
     // Reject CANCELs
     if (request.method === SIP.C.CANCEL) {
-      // TODO
+      // TODO; make this a switch when it gets added
+    }
+
+    if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
+      window.clearTimeout(this.timers.ackTimer);
+      window.clearTimeout(this.timers.invite2xxTimer);
+      this.status = C.STATUS_CONFIRMED;
+      this.unmute();
+
+      this.accepted();
     }
 
     return Session.prototype.receiveRequest.apply(this, [request]);

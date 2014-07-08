@@ -695,7 +695,7 @@ describe('UA', function() {
                       reply : replySpy };
       UA.receiveRequest(request);
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request, UA);
-      expect(replySpy).toHaveBeenCalledWith(200,null,[ 'Allow: ACK,CANCEL,BYE,OPTIONS', 'Accept: application/sdp,application/dtmf-relay' ])
+      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array))
     });
 
     it('checks if there is a listener when the SIP method is message and rejects if no listener is found', function() {
@@ -708,7 +708,7 @@ describe('UA', function() {
       expect(UA.receiveRequest(request)).toBeUndefined();
       expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
-      expect(replySpy).toHaveBeenCalledWith(405, null, [ 'Allow: ACK,CANCEL,BYE,OPTIONS' ]);
+      expect(replySpy).toHaveBeenCalledWith(405, null, jasmine.any(Array));
     });
 
     it('checks if there is a listener when the SIP method is message and accepts if listener is found', function() {
@@ -744,12 +744,12 @@ describe('UA', function() {
                       ruri : { user: UA.configuration.uri.user } ,
                       reply : replySpy };
       var webrtc = SIP.WebRTC.isSupported;
-      SIP.WebRTC.isSupported = false;
+      spyOn(SIP.WebRTC, 'isSupported').andCallFake(function () {
+        return false;
+      });
 
       UA.receiveRequest(request);
       expect(replySpy).toHaveBeenCalledWith(488);
-
-      SIP.WebRTC.isSupported = webrtc;
     });
 
     it('sends a 481 if a BYE is received', function() {
@@ -1113,7 +1113,7 @@ describe('UA', function() {
 
       expect(UA.configuration.autostart).toBe(true);
 
-      expect(UA.configuration.reliable).toBe('none');
+      expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1174,13 +1174,13 @@ describe('UA', function() {
       expect(UA.configuration.displayName).toBe('0');
     });
 
-    it('sets an instanceId if one is not passed in also sets jssipId', function() {
+    it('sets an instanceId if one is not passed in also sets sipjsId', function() {
       UA.loadConfig({});
 
       expect(UA.configuration.instanceId).toBeDefined();
 
-      expect(UA.configuration.jssipId).toBeDefined();
-      expect(UA.configuration.jssipId.length).toBe(5);
+      expect(UA.configuration.sipjsId).toBeDefined();
+      expect(UA.configuration.sipjsId.length).toBe(5);
     });
 
     it('sets auth user to uri user if auth user is not passed in', function() {
@@ -1433,23 +1433,32 @@ describe('UA', function() {
       });
     });
 
-    describe('.reliable', function() {
-      it('returns "required" if "required" is passed in', function(){
-        expect(SIP.UA.configuration_check.optional.reliable('required')).toBe('required');
+    describe('.rel100', function() {
+      it('returns SIP.C.supported.REQUIRED if SIP.C.supported.REQUIRED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.REQUIRED)).toBe(SIP.C.supported.REQUIRED);
+      });
+      
+      // Legacy Support
+      it('returns SIP.C.supported.REQUIRED if "required" is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100("required")).toBe(SIP.C.supported.REQUIRED);
+      });
+      
+      it('returns SIP.C.supported.SUPPORTED if SIP.C.supported.SUPPORTED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.SUPPORTED)).toBe(SIP.C.supported.SUPPORTED);
+      });
+      
+      // Legacy Support
+      it('returns SIP.C.supported.SUPPORTED if "supported" is passed in as well as adding it to the supported list', function(){
+        expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe(SIP.C.supported.SUPPORTED);
       });
 
-      it('returns "supported" if "supported" is passed in as well as adding it to the supported list', function(){
-        expect(SIP.UA.configuration_check.optional.reliable('supported')).toBe('supported');
-        expect(SIP.UA.C.SUPPORTED).toContain(', 100rel');
-      });
-
-      it('returns "none" for all other arguments passed in', function() {
-        expect(SIP.UA.configuration_check.optional.reliable()).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable(true)).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable('a string')).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable(7)).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable({even: 'objects'})).toBe('none');
-        expect(SIP.UA.configuration_check.optional.reliable(['arrays'])).toBe('none');
+      it('returns SIP.C.supported.NONE for all other arguments passed in', function() {
+        expect(SIP.UA.configuration_check.optional.rel100()).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(true)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100('a string')).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(7)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
       });
     });
 
@@ -1546,7 +1555,7 @@ describe('UA', function() {
     describe('.turnServers', function() {
       it('works whether an array is passed or not', function() {
         expect(SIP.UA.configuration_check.optional.turnServers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
-        expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: 'example.com', username: 'alice', password: 'pass'}]);
+        expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
       });
 
       it('works if you pass in server instead of urls (backwards compatible', function() {

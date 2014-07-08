@@ -184,13 +184,13 @@ describe('SanityCheck', function () {
 
         it('rejects messages from itself as loops', function () {
           message = p(h.request + h.f + h.t + h.v + h.cseq +
-                      "Call-Id: " + ua.configuration.jssipId + 'hello\r\n\r\n');
+                      "Call-Id: " + ua.configuration.sipjsId + 'hello\r\n\r\n');
           expectReply(message, 482);
         });
 
         it('accepts messages from other places', function () {
           message = p(h.request + h.f + h.t + h.v + h.cseq +
-                      "Call-Id: q" + ua.configuration.jssipId + 'hello\r\n\r\n');
+                      "Call-Id: q" + ua.configuration.sipjsId + 'hello\r\n\r\n');
           expectOkay(message);
         });
       });

@@ -60,7 +60,6 @@ describe('An INVITE sent from a UAC', function () {
     runs(function () {
       expect(session.checkEvent('connecting')).toBe(true);
       expect(session.checkEvent('cancel')).toBe(true);
-      expect(session.checkEvent('referred')).toBe(true);
       expect(session.checkEvent('dtmf')).toBe(true);
       expect(session.checkEvent('bye')).toBe(true);
     });
@@ -191,13 +190,13 @@ describe('An INVITE sent from a UAC', function () {
 
     //hard to 'guarantee,' but if there is a problem here then there was almost certainly a mistake added to the code.
     it('guarantees no other UA will inadvertently overlap Call-IDs', function () {
-      var id = ua.configuration.jssipId;
+      var id = ua.configuration.sipjsId;
       var ids = {};
       ids[id] = true;
 
       for (var i = 1; i < 10; i++) {
         ua = new SIP.UA(ua_config);
-        id = ua.configuration.jssipId;
+        id = ua.configuration.sipjsId;
         expect(ids[id]).toBeUndefined();
         ids[id] = true;
       }
@@ -268,13 +267,6 @@ describe('An INVITE sent from a UAC', function () {
   describe('with options.media', function () {
     it('not defined, defaults to audio+video', function () {
       var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
-      waitsFor('session to be created', function () { return session; }, 100);
-      runs(function () {
-        expect(session.mediaHandler.mediaStreamManager.constraints).toEqual({
-          audio: true,
-          video: true
-        });
-      });
 
       waitsFor('gum to be called', function () {
         return gumSpy.calls.length;
@@ -300,7 +292,7 @@ describe('An INVITE sent from a UAC', function () {
           basic: 100
         }
       };
-      session_options.media = myConstraints;
+      session_options.media = {constraints: myConstraints};
       waitsFor('gum to be called', function () {
         return gumSpy.calls.length;
       }, 100);

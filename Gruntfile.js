@@ -4,6 +4,7 @@ module.exports = function(grunt) {
 
   var srcFiles = [
     'src/SIP.js',
+    'src/Utils.js',
     'src/LoggerFactory.js',
     'src/EventEmitter.js',
     'src/Constants.js',
@@ -25,16 +26,19 @@ module.exports = function(grunt) {
     'src/Subscription.js',
     'src/WebRTC.js',
     'src/UA.js',
-    'src/Utils.js',
     'src/Hacks.js',
     'src/SanityCheck.js',
     'src/DigestAuthentication.js',
+    'src/Grammar/dist/Grammar.js',
     'src/tail.js'
   ];
 
+  var pkg = grunt.file.readJSON('package.json');
+
   // Project configuration.
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
+    pkg: pkg,
+    name: pkg.name.replace(/\.js$/, ''),
     meta: {
       banner: '\
 /*\n\
@@ -73,56 +77,40 @@ module.exports = function(grunt) {
     concat: {
       dist: {
         src: srcFiles,
-        dest: 'dist/<%= pkg.name %>.js',
+        dest: 'dist/<%= name %>.js',
         options: {
           banner: '<%= meta.banner %>',
           separator: '\n\n',
           process: true
         },
-        nonull: true
-      },
-      post_dist: {
-        src: [
-          'dist/<%= pkg.name %>.js',
-          'src/Grammar/dist/Grammar.js'
-        ],
-        dest: 'dist/<%= pkg.name %>.js',
         nonull: true
       },
       devel: {
         src: srcFiles,
-        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+        dest: 'dist/<%= name %>-<%= pkg.version %>.js',
         options: {
           banner: '<%= meta.banner %>',
           separator: '\n\n',
           process: true
         },
-        nonull: true
-      },
-      post_devel: {
-        src: [
-          'dist/<%= pkg.name %>-<%= pkg.version %>.js',
-          'src/Grammar/dist/Grammar.js'
-        ],
-        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
         nonull: true
       }
     },
     includereplace: {
       dist: {
         files: {
-          'dist': 'dist/<%= pkg.name %>.js'
+          'dist': 'dist/<%= name %>.js'
         }
       },
       devel: {
         files: {
-          'dist': 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
+          'dist': 'dist/<%= name %>-<%= pkg.version %>.js'
         }
       }
     },
     jshint: {
-      dist: 'dist/<%= pkg.name %>.js',
-      devel: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+      dist: 'dist/<%= name %>.js',
+      devel: 'dist/<%= name %>-<%= pkg.version %>.js',
       options: {
         browser: true,
         curly: true,
@@ -140,19 +128,20 @@ module.exports = function(grunt) {
         supernew: true,
         globals: {
           module: true,
-          define: true
+          define: true,
+          global: true
         }
       }
     },
     uglify: {
       dist: {
         files: {
-          'dist/<%= pkg.name %>.min.js': ['dist/<%= pkg.name %>.js']
+          'dist/<%= name %>.min.js': ['dist/<%= name %>.js']
         }
       },
       devel: {
         files: {
-	  'dist/<%= pkg.name %>-<%= pkg.version %>.min.js': ['dist/<%= pkg.name %>-<%= pkg.version %>.js']
+	  'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
         }
       },
       options: {
@@ -162,12 +151,50 @@ module.exports = function(grunt) {
     jasmine: {
       components: {
         src: [
-        'dist/sip.js'
+        'dist/<%= name %>-<%= pkg.version %>.js'
         ],
         options: {
           specs: 'test/spec/*.js',
           keepRunner : true,
           helpers: 'test/helpers/*.js'
+        }
+      }
+    },
+    peg: {
+      grammar: {
+        src: 'src/Grammar/src/Grammar.pegjs',
+        dest: 'src/Grammar/dist/Grammar.js',
+        options: {
+          exportVar: 'SIP.Grammar',
+          optimize: 'size',
+          allowedStartRules: [
+             'Contact',
+             'Name_Addr_Header',
+             'Record_Route',
+             'Request_Response',
+             'SIP_URI',
+             'Subscription_State',
+             'Via',
+             'absoluteURI',
+             'Call_ID',
+             'Content_Length',
+             'Content_Type',
+             'CSeq',
+             'displayName',
+             'Event',
+             'From',
+             'host',
+             'Max_Forwards',
+             'Proxy_Authenticate',
+             'quoted_string',
+             'Refer_To',
+             'stun_URI',
+             'To',
+             'turn_URI',
+             'uuid',
+             'WWW_Authenticate',
+             'challenge'
+          ]
         }
       }
     }
@@ -180,43 +207,40 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
+  grunt.loadNpmTasks('grunt-peg');
 
 
   // Task for building SIP.js Grammar.js and Grammar.min.js files.
-  grunt.registerTask('grammar', function(){
-    var done = this.async();  // This is an async task.
-    var sys = require('sys');
-    var exec = require('child_process').exec;
-    var child;
+  grunt.registerTask('post_peg', function(){
+    // Modify the generated Grammar.js file with custom changes.
+    console.log('"grammar" task: applying custom changes to Grammar.js ...');
+    var fs = require('fs');
+    var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
+    var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
+    modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
+    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
 
-    // First compile SIP.js grammar with PEGjs.
-    console.log('"grammar" task: compiling SIP.js PEGjs grammar into Grammar.js ...');
-    child = exec('if [ -x "./node_modules/pegjs/bin/pegjs" ] ; then PEGJS="./node_modules/pegjs/bin/pegjs"; else PEGJS="pegjs" ; fi && $PEGJS -e SIP.Grammar src/Grammar/src/Grammar.pegjs src/Grammar/dist/Grammar.js', function(error, stdout, stderr) {
-      if (error) {
-        sys.print('ERROR: ' + stderr);
-        done(false);  // Tell grunt that async task has failed.
-      }
-      console.log('OK');
+    // Don't jshint this big chunk of minified code
+    modified_grammar =
+      "/* jshint ignore:start */\n" +
+      modified_grammar +
+      "\n/* jshint ignore:end */\n"
 
-      // Then modify the generated Grammar.js file with custom changes.
-      console.log('"grammar" task: applying custom changes to Grammar.js ...');
-      var fs = require('fs');
-      var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-      var modified_grammar = grammar.replace(/throw new this\.SyntaxError\(([\s\S]*?)\);([\s\S]*?)}([\s\S]*?)return result;/, 'new this.SyntaxError($1);\n        return -1;$2}$3return data;');
-      fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
-      console.log('OK');
-      done();  // Tell grunt that async task has succeeded.
-
-    });
+    fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
+    console.log('OK');
   });
+
+  grunt.registerTask('grammar', ['peg', 'post_peg']);
 
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'concat:post_dist', 'uglify:dist', 'uglify:devel']);
+  grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'uglify:dist', 'uglify:devel']);
 
   // Task for building sip-devel.js (uncompressed).
-  grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel']);
+  grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel']);
+
+  grunt.registerTask('quick', ['concat:dist', 'includereplace:dist']);
 
   // Test tasks.
   grunt.registerTask('test',['jasmine']);

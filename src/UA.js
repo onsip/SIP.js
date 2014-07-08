@@ -33,7 +33,9 @@ var UA,
       'ACK',
       'CANCEL',
       'BYE',
-      'OPTIONS'
+      'OPTIONS',
+      'INFO',
+      'NOTIFY'
     ],
 
     ACCEPTED_BODY_TYPES: [
@@ -601,8 +603,15 @@ UA.prototype.receiveRequest = function(request) {
     methodLower = request.method.toLowerCase(),
     self = this;
 
+  function ruriMatches (uri) {
+    return uri && uri.user === request.ruri.user;
+  }
+
   // Check that request URI points to us
-  if(request.ruri.user !== this.configuration.uri.user && request.ruri.user !== this.contact.uri.user) {
+  if(!(ruriMatches(this.configuration.uri) ||
+       ruriMatches(this.contact.uri) ||
+       ruriMatches(this.contact.pub_gruu) ||
+       ruriMatches(this.contact.temp_gruu))) {
     this.logger.warn('Request-URI does not point to us');
     if (request.method !== SIP.C.ACK) {
       request.reply_sl(404);
@@ -655,7 +664,8 @@ UA.prototype.receiveRequest = function(request) {
   if(!request.to_tag) {
     switch(method) {
       case SIP.C.INVITE:
-        if(SIP.WebRTC.isSupported) {
+        var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
+        if(!isMediaSupported || isMediaSupported()) {
           session = new SIP.InviteServerContext(this, request)
             .on('invite', function() {
               self.emit('invite', this);
@@ -772,7 +782,7 @@ UA.prototype.getNextWsServer = function() {
     }
   }
 
-  idx = Math.floor((Math.random()* candidates.length));
+  idx = Math.floor(Math.random() * candidates.length);
 
   return candidates[idx];
 };
@@ -882,7 +892,7 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      reliable: 'none',
+      rel100: SIP.C.supported.UNSUPPORTED,
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
     };
@@ -923,6 +933,8 @@ UA.prototype.loadConfig = function(configuration) {
       }
     }
   }
+  
+  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
@@ -934,7 +946,7 @@ UA.prototype.loadConfig = function(configuration) {
       if(value === null || value === "" || value === undefined || (value instanceof Array && value.length === 0)) { continue; }
       // If it's a number with NaN value then also apply its default value.
       // NOTE: JS does not allow "value === NaN", the following does the work:
-      else if(typeof(value) === 'number' && window.isNaN(value)) { continue; }
+      else if(typeof(value) === 'number' && isNaN(value)) { continue; }
 
       checked_value = UA.configuration_check.optional[parameter](value);
       if (checked_value !== undefined) {
@@ -964,8 +976,8 @@ UA.prototype.loadConfig = function(configuration) {
     settings.instanceId = SIP.Utils.newUUID();
   }
 
-  // jssipId instance parameter. Static random tag of length 5
-  settings.jssipId = SIP.Utils.createRandomToken(5);
+  // sipjsId instance parameter. Static random tag of length 5
+  settings.sipjsId = SIP.Utils.createRandomToken(5);
 
   // String containing settings.uri without scheme and user.
   hostportParams = settings.uri.clone();
@@ -1007,9 +1019,9 @@ UA.prototype.loadConfig = function(configuration) {
         contact = '<';
 
       if (anonymous) {
-        contact += this.temp_gruu || 'sip:anonymous@anonymous.invalid;transport=ws';
+        contact += (this.temp_gruu || 'sip:anonymous@anonymous.invalid;transport=ws').toString();
       } else {
-        contact += this.pub_gruu || this.uri.toString();
+        contact += (this.pub_gruu || this.uri).toString();
       }
 
       if (outbound) {
@@ -1049,7 +1061,7 @@ UA.prototype.loadConfig = function(configuration) {
         this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
         break;
       default:
-        this.logger.log('· ' + parameter + ': ' + window.JSON.stringify(settings[parameter]));
+        this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
     }
   }
 
@@ -1065,7 +1077,7 @@ UA.configuration_skeleton = (function() {
     skeleton = {},
     parameters = [
       // Internal parameters
-      "jssipId",
+      "sipjsId",
       "wsServerMaxReconnection",
       "wsServerReconnectionTimeout",
       "hostportParams",
@@ -1085,6 +1097,7 @@ UA.configuration_skeleton = (function() {
       "registerExpires", // 600 seconds.
       "registrarServer",
       "reliable",
+      "rel100",
       "userAgentString", //SIP.C.USER_AGENT
       "autostart",
       "stunServers",
@@ -1213,7 +1226,7 @@ UA.configuration_check = {
     connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
-        value = window.Number(connectionRecoveryMaxInterval);
+        value = Number(connectionRecoveryMaxInterval);
         if(value > 0) {
           return value;
         }
@@ -1223,7 +1236,7 @@ UA.configuration_check = {
     connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
-        value = window.Number(connectionRecoveryMinInterval);
+        value = Number(connectionRecoveryMinInterval);
         if(value > 0) {
           return value;
         }
@@ -1269,7 +1282,7 @@ UA.configuration_check = {
     noAnswerTimeout: function(noAnswerTimeout) {
       var value;
       if (SIP.Utils.isDecimal(noAnswerTimeout)) {
-        value = window.Number(noAnswerTimeout);
+        value = Number(noAnswerTimeout);
         if (value > 0) {
           return value;
         }
@@ -1279,15 +1292,14 @@ UA.configuration_check = {
     password: function(password) {
       return String(password);
     },
-
-    reliable: function(reliable) {
-      if(reliable === 'required') {
-        return reliable;
-      } else if (reliable === 'supported') {
-        SIP.UA.C.SUPPORTED = SIP.UA.C.SUPPORTED + ', 100rel';
-        return reliable;
+    
+    rel100: function(rel100) {
+      if(rel100 === SIP.C.supported.REQUIRED) {
+        return SIP.C.supported.REQUIRED;
+      } else if (rel100 === SIP.C.supported.SUPPORTED) {
+        return SIP.C.supported.SUPPORTED;
       } else  {
-        return "none";
+        return SIP.C.supported.UNSUPPORTED;
       }
     },
 
@@ -1300,7 +1312,7 @@ UA.configuration_check = {
     registerExpires: function(registerExpires) {
       var value;
       if (SIP.Utils.isDecimal(registerExpires)) {
-        value = window.Number(registerExpires);
+        value = Number(registerExpires);
         if (value > 0) {
           return value;
         }
@@ -1380,7 +1392,7 @@ UA.configuration_check = {
           return;
         }
 
-        if (!turn_server.urls instanceof Array) {
+        if (!(turn_server.urls instanceof Array)) {
           turn_server.urls = [turn_server.urls];
         }
 
