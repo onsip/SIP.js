@@ -197,6 +197,16 @@ module.exports = function(grunt) {
           ]
         }
       }
+    },
+    trimtrailingspaces: {
+      main: {
+        src: srcFiles,
+        options: {
+          filter: 'isFile',
+          encoding: 'utf8',
+          failIfTrimmed: true
+        }
+      }
     }
   });
 
@@ -208,6 +218,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-peg');
+  grunt.loadNpmTasks('grunt-trimtrailingspaces');
 
 
   // Task for building SIP.js Grammar.js and Grammar.min.js files.
@@ -235,7 +246,7 @@ module.exports = function(grunt) {
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-  grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'uglify:dist', 'uglify:devel']);
+  grunt.registerTask('build', ['trimtrailingspaces:main', 'concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'uglify:dist', 'uglify:devel']);
 
   // Task for building sip-devel.js (uncompressed).
   grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel']);

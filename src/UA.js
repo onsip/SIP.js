@@ -933,7 +933,7 @@ UA.prototype.loadConfig = function(configuration) {
       }
     }
   }
-  
+
   SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
 
   // Check Optional parameters
@@ -1292,7 +1292,7 @@ UA.configuration_check = {
     password: function(password) {
       return String(password);
     },
-    
+
     rel100: function(rel100) {
       if(rel100 === SIP.C.supported.REQUIRED) {
         return SIP.C.supported.REQUIRED;

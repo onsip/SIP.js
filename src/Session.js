@@ -203,7 +203,7 @@ Session.prototype = {
   refer: function(target, options) {
     options = options || {};
     var extraHeaders = (options.extraHeaders || []).slice(), originalTarget;
-    
+
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
     } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
@@ -719,7 +719,7 @@ Session.prototype = {
         break;
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
-        
+
         this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
 
         if(!response.body) {
@@ -1111,7 +1111,7 @@ InviteServerContext.prototype = {
             extraHeaders,
             body
           );
-          
+
           new SIP.RequestSender(
             {
               request: this.request,
@@ -1233,7 +1233,7 @@ InviteServerContext.prototype = {
 
     if (options.statusCode !== 100 &&
         (this.rel100 === SIP.C.supported.REQUIRED ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) || 
+         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
          (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
       do100rel.apply(this);
     } else {
@@ -1951,7 +1951,7 @@ InviteClientContext.prototype = {
               this.acceptAndTerminate(response, 400, 'Missing session description');
               this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               break;
-            } 
+            }
             if (!this.createDialog(response, 'UAC')) {
               break;
             }
@@ -2012,7 +2012,7 @@ InviteClientContext.prototype = {
             this.acceptAndTerminate(response, 400, 'Missing session description');
             this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             break;
-          } 
+          }
           if (!this.createDialog(response, 'UAC')) {
             break;
           }

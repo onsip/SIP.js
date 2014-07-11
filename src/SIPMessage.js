@@ -201,7 +201,7 @@ OutgoingRequest.prototype = {
     //Supported
     if (this.method === SIP.C.REGISTER) {
       supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE && 
+    } else if (this.method === SIP.C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
       supported.push('gruu');
     }
@@ -460,7 +460,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   //Supported
-  if (this.method === SIP.C.INVITE && 
+  if (this.method === SIP.C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
     supported.push('gruu');
   }

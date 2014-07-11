@@ -482,7 +482,7 @@ var InviteServerTransaction = function(request, ua) {
   ua.newTransaction(this);
 
   this.resendProvisionalTimer = null;
-  
+
   request.reply(100);
 
   this.initEvents(events);
@@ -530,7 +530,7 @@ InviteServerTransaction.prototype.onTransportError = function() {
       window.clearInterval(this.resendProvisionalTimer);
       this.resendProvisionalTimer = null;
     }
-    
+
     window.clearTimeout(this.L);
     window.clearTimeout(this.H);
     window.clearTimeout(this.I);
@@ -575,7 +575,7 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
         this.L = window.setTimeout(function() {
           tr.timer_L();
         }, SIP.Timers.TIMER_L);
-        
+
         if (this.resendProvisionalTimer !== null) {
           window.clearInterval(this.resendProvisionalTimer);
           this.resendProvisionalTimer = null;
@@ -600,7 +600,7 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           window.clearInterval(this.resendProvisionalTimer);
           this.resendProvisionalTimer = null;
         }
-        
+
         if(!this.transport.send(response)) {
           this.onTransportError();
           if (onFailure) {

@@ -21,7 +21,7 @@ describe('UA', function() {
     });
 
     UA = new SIP.UA(configuration);
-    
+
     UA.logger = jasmine.createSpyObj('logger', ['log', 'error', 'warn']);
   });
 

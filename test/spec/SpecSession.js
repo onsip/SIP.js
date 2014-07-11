@@ -199,7 +199,7 @@ describe('Session', function() {
   describe('.bye', function() {
     beforeEach(function() {
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
-      
+
 
       spyOn(Session,'emit')
       Session.status = 12;
@@ -578,7 +578,7 @@ describe('Session', function() {
   describe('.acceptAndTerminate', function() {
     beforeEach(function() {
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
-        
+
       spyOn(Session, 'createDialog').andReturn(true);
       spyOn(Session, 'sendRequest');
     });

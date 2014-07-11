@@ -45,7 +45,7 @@ SIP.C= {
     BAD_MEDIA_DESCRIPTION:    'Bad Media Description',
     RTP_TIMEOUT:              'RTP Timeout'
   },
-  
+
   supported: {
     UNSUPPORTED:        'none',
     SUPPORTED:          'supported',

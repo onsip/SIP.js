@@ -7,7 +7,7 @@ if (typeof module === "object" && module && typeof module.exports === "object") 
 } else {
   // Otherwise expose SIP to the global object as usual.
   window.SIP = SIP;
-  
+
   // Register as a named AMD module, since SIP can be concatenated with other
   // files that may use define, but not via a proper concatenation script that
   // understands anonymous AMD modules. A named AMD is safest and most robust

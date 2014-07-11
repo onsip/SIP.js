@@ -12,7 +12,7 @@ ServerContext = function (ua, request) {
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
   if (request.method === SIP.C.INVITE) {
-    this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua); 
+    this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua);
   } else {
     this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
   }

@@ -269,7 +269,7 @@ RegisterContext.prototype = {
     this.registered = false;
     this.emit('unregistered', response || null, cause || null);
   }
-  
+
 };
 
 

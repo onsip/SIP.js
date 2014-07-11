@@ -72,7 +72,7 @@ ClientContext.prototype.cancel = function (options) {
     cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
   }
   this.request.cancel(cancel_reason);
-  
+
   this.emit('cancel');
 };
 
@@ -94,7 +94,7 @@ ClientContext.prototype.receiveResponse = function (response) {
     default:
       if(this.ua.applicants[this]) {
         delete this.ua.applicants[this];
-      }      
+      }
       this.emit('rejected', response, cause);
       this.emit('failed', response, cause);
       break;

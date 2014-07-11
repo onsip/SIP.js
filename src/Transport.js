@@ -63,7 +63,7 @@ Transport.prototype = {
     if(this.ws) {
       // Clear reconnectTimer
       window.clearTimeout(this.reconnectTimer);
-      
+
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
       this.ws.close();
