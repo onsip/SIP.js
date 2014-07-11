@@ -14,30 +14,49 @@ describe('MediaStreamManager', function() {
 
   describe('.acquire({constraints})', function () {
     it('passes constraints to SIP.WebRTC.getUserMedia', function () {
-      spyOn(SIP.WebRTC, 'getUserMedia');
-      var onSuccess = function yay () {};
-      var onFailure = function boo () {};
-      var constraints = {audio: false, video: true};
-      mediaStreamManager.acquire(onSuccess, onFailure, {constraints: constraints});
-      expect(SIP.WebRTC.getUserMedia.mostRecentCall.args[0]).toEqual(constraints);
+      var onSuccess, onFailure, constraints;
+      runs(function () {
+        spyOn(SIP.WebRTC, 'getUserMedia');
+        onSuccess = function yay () {};
+        onFailure = function boo () {};
+        constraints = {audio: false, video: true};
+        mediaStreamManager.acquire(onSuccess, onFailure, {constraints: constraints});
+      });
+
+      waitsFor('getUserMedia to have been called', function () {
+        return SIP.WebRTC.getUserMedia.calls.length > 0;
+      });
+
+      runs(function () {
+        expect(SIP.WebRTC.getUserMedia.mostRecentCall.args[0]).toEqual(constraints);
+      });
     });
 
     it('emits userMediaRequest before calling getUserMedia', function () {
-      spyOn(SIP.WebRTC, 'getUserMedia');
-      var onUMR = jasmine.createSpy().andCallFake(function () {
-        expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
-      });
-      mediaStreamManager.on('userMediaRequest', onUMR);
+      var onUMR;
+      runs(function () {
+        spyOn(SIP.WebRTC, 'getUserMedia');
+        onUMR = jasmine.createSpy().andCallFake(function () {
+          expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
+        });
+        mediaStreamManager.on('userMediaRequest', onUMR);
 
-      mediaStreamManager.acquire(new Function(), new Function(), {
-        constraints: {
-          audio: true,
-          video: true
-        }
+        mediaStreamManager.acquire(new Function(), new Function(), {
+          constraints: {
+            audio: true,
+            video: true
+          }
+        });
       });
 
-      expect(onUMR).toHaveBeenCalled();
-      expect(SIP.WebRTC.getUserMedia).toHaveBeenCalled();
+      waitsFor('onUMR to have been called', function () {
+        return onUMR.calls.length > 0;
+      });
+
+      runs(function () {
+        expect(onUMR).toHaveBeenCalled();
+        expect(SIP.WebRTC.getUserMedia).toHaveBeenCalled();
+      });
     });
 
     it('emits userMedia when getUserMedia calls a success callback', function () {
@@ -67,26 +86,36 @@ describe('MediaStreamManager', function() {
     });
 
     it('emits userMediaFailed when getUserMedia calls a failure callback', function () {
-      spyOn(SIP.WebRTC, 'getUserMedia').andCallFake(function (c, s, f) {
-        f();
+      var success, failure, onUMF;
+
+      runs(function () {
+        spyOn(SIP.WebRTC, 'getUserMedia').andCallFake(function (c, s, f) {
+          f();
+        });
+
+        success = jasmine.createSpy('success');
+        failure = jasmine.createSpy('failure');
+        onUMF = jasmine.createSpy('userMediaFailed');
+
+        mediaStreamManager.on('userMediaFailed', onUMF);
+
+        mediaStreamManager.acquire(success, failure, {
+          constraints: {
+            audio: true,
+            video: true
+          }
+        });
       });
 
-      var success = jasmine.createSpy('success');
-      var failure = jasmine.createSpy('failure');
-      var onUMF = jasmine.createSpy('userMediaFailed');
-
-      mediaStreamManager.on('userMediaFailed', onUMF);
-
-      mediaStreamManager.acquire(success, failure, {
-        constraints: {
-          audio: true,
-          video: true
-        }
+      waitsFor('getUserMedia to fail', function () {
+        return onUMF.calls.length > 0;
       });
 
-      expect(onUMF).toHaveBeenCalled();
-      expect(success).not.toHaveBeenCalled();
-      expect(failure).toHaveBeenCalled();
+      runs(function () {
+        expect(onUMF).toHaveBeenCalled();
+        expect(success).not.toHaveBeenCalled();
+        expect(failure).toHaveBeenCalled();
+      });
     });
 
   });

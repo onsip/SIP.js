@@ -102,22 +102,29 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         (this.mediaHint && this.mediaHint.constraints) ||
         {audio: true, video: true};
 
-      this.emit('userMediaRequest', constraints);
+      /*
+       * Make the call asynchronous, so that ICCs have a chance
+       * to define callbacks to `userMediaRequest`
+       */
+      window.setTimeout(function () {
+        this.emit('userMediaRequest', constraints);
 
-      var emitThenCall = function (eventName, callback) {
-        var callbackArgs = Array.prototype.slice.call(arguments, 2);
-        // Emit with all of the arguments from the real callback.
-        var newArgs = [eventName].concat(callbackArgs);
+        var emitThenCall = function (eventName, callback) {
+          var callbackArgs = Array.prototype.slice.call(arguments, 2);
+          // Emit with all of the arguments from the real callback.
+          var newArgs = [eventName].concat(callbackArgs);
 
-        this.emit.apply(this, newArgs);
+          this.emit.apply(this, newArgs);
 
-        callback.apply(null, callbackArgs);
-      }.bind(this);
+          callback.apply(null, callbackArgs);
+        }.bind(this);
 
-      SIP.WebRTC.getUserMedia(constraints,
-        emitThenCall.bind(this, 'userMedia', saveSuccess),
-        emitThenCall.bind(this, 'userMediaFailed', onFailure)
-      );
+        SIP.WebRTC.getUserMedia(
+          constraints,
+          emitThenCall.bind(this, 'userMedia', saveSuccess),
+          emitThenCall.bind(this, 'userMediaFailed', onFailure)
+        );
+      }.bind(this), 0);
     }
   }},
 

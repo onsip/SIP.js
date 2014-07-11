@@ -1607,12 +1607,28 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.ua.sessions[InviteClientContext.id]).toBe(InviteClientContext);
     });
 
-    it('calls mediaHandler.getDescription and returns this on success', function() {
-      SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
+    it('calls mediaHandler.getDescription async and returns this on success', function() {
+      var callback, s;
 
-      expect(InviteClientContext.invite()).toBe(InviteClientContext);
+      runs(function () {
+        SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
+        callback = jasmine.createSpy('callback');
+        s = InviteClientContext.invite();
+        expect(s).toBe(InviteClientContext);
 
-      expect(SIP.WebRTC.getUserMedia).toHaveBeenCalled();
+        s.mediaHandler.on('userMediaRequest', callback);
+
+        expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
+        expect(callback).not.toHaveBeenCalled();
+      });
+
+      waitsFor('getUserMedia to be called', function () {
+        return SIP.WebRTC.getUserMedia.calls.length > 0;
+      });
+
+      runs(function () {
+        expect(callback).toHaveBeenCalled();
+      });
     });
   });
 
