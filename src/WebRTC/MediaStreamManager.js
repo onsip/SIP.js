@@ -63,12 +63,12 @@ MediaStreamManager.render = function render (stream, elements) {
 
   function ensureMediaPlaying (mediaElement) {
     var interval = 100;
-    mediaElement.ensurePlayingIntervalId = setInterval(function () {
+    mediaElement.ensurePlayingIntervalId = SIP.Timers.setInterval(function () {
       if (mediaElement.paused) {
         mediaElement.play();
       }
       else {
-        clearInterval(mediaElement.ensurePlayingIntervalId);
+        SIP.Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
       }
     }, interval);
   }
@@ -106,7 +106,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
        */
-      window.setTimeout(function () {
+      SIP.Timers.setTimeout(function () {
         this.emit('userMediaRequest', constraints);
 
         var emitThenCall = function (eventName, callback) {

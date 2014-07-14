@@ -183,11 +183,11 @@ describe('UA', function() {
     });
 
     it('clears the transportRecoveryTimer', function() {
-      spyOn(window, 'clearTimeout');
+      spyOn(SIP.Timers, 'clearTimeout');
 
       UA.stop();
 
-      expect(window.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
+      expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
     });
 
     it('unregisters', function () {
