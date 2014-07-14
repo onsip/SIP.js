@@ -64,7 +64,7 @@ NonInviteClientTransaction.prototype.send = function() {
   var tr = this;
 
   this.stateChanged(C.STATUS_TRYING);
-  this.F = SIP.Timers.setTimeout(function() {tr.timer_F();}, SIP.Timers.TIMER_F);
+  this.F = SIP.Timers.setTimeout(tr.timer_F.bind(tr), SIP.Timers.TIMER_F);
 
   if(!this.transport.send(this.request)) {
     this.onTransportError();
@@ -118,7 +118,7 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
           this.request_sender.receiveResponse(response);
         }
 
-        this.K = SIP.Timers.setTimeout(function() {tr.timer_K();}, SIP.Timers.TIMER_K);
+        this.K = SIP.Timers.setTimeout(tr.timer_K.bind(tr), SIP.Timers.TIMER_K);
         break;
       case C.STATUS_COMPLETED:
         break;
@@ -173,9 +173,7 @@ InviteClientTransaction.prototype.stateChanged = function(state) {
 InviteClientTransaction.prototype.send = function() {
   var tr = this;
   this.stateChanged(C.STATUS_CALLING);
-  this.B = SIP.Timers.setTimeout(function() {
-    tr.timer_B();
-  }, SIP.Timers.TIMER_B);
+  this.B = SIP.Timers.setTimeout(tr.timer_B.bind(tr), SIP.Timers.TIMER_B);
 
   if(!this.transport.send(this.request)) {
     this.onTransportError();
@@ -239,7 +237,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
   this.ack += 'CSeq: ' + this.request.headers['CSeq'].toString().split(' ')[0];
   this.ack += ' ACK\r\n\r\n';
 
-  this.D = SIP.Timers.setTimeout(function() {tr.timer_D();}, SIP.Timers.TIMER_D);
+  this.D = SIP.Timers.setTimeout(tr.timer_D.bind(tr), SIP.Timers.TIMER_D);
 
   this.transport.send(this.ack);
 };
@@ -295,9 +293,7 @@ InviteClientTransaction.prototype.receiveResponse = function(response) {
       case C.STATUS_CALLING:
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_ACCEPTED);
-        this.M = SIP.Timers.setTimeout(function() {
-          tr.timer_M();
-        }, SIP.Timers.TIMER_M);
+        this.M = SIP.Timers.setTimeout(tr.timer_M.bind(tr), SIP.Timers.TIMER_M);
         this.request_sender.receiveResponse(response);
         break;
       case C.STATUS_ACCEPTED:
@@ -440,9 +436,7 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_COMPLETED);
         this.last_response = response;
-        this.J = SIP.Timers.setTimeout(function() {
-          tr.timer_J();
-        }, SIP.Timers.TIMER_J);
+        this.J = SIP.Timers.setTimeout(tr.timer_J.bind(tr), SIP.Timers.TIMER_J);
         if(!this.transport.send(response)) {
           this.onTransportError();
           if (onFailure) {
@@ -564,17 +558,15 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
   if(status_code > 100 && status_code <= 199 && this.state === C.STATUS_PROCEEDING) {
     // Trigger the resendProvisionalTimer only for the first non 100 provisional response.
     if(this.resendProvisionalTimer === null) {
-      this.resendProvisionalTimer = SIP.Timers.setInterval(function() {
-        tr.resend_provisional();}, SIP.Timers.PROVISIONAL_RESPONSE_INTERVAL);
+      this.resendProvisionalTimer = SIP.Timers.setInterval(tr.resend_provisional.bind(tr),
+        SIP.Timers.PROVISIONAL_RESPONSE_INTERVAL);
     }
   } else if(status_code >= 200 && status_code <= 299) {
     switch(this.state) {
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_ACCEPTED);
         this.last_response = response;
-        this.L = SIP.Timers.setTimeout(function() {
-          tr.timer_L();
-        }, SIP.Timers.TIMER_L);
+        this.L = SIP.Timers.setTimeout(tr.timer_L.bind(tr), SIP.Timers.TIMER_L);
 
         if (this.resendProvisionalTimer !== null) {
           SIP.Timers.clearInterval(this.resendProvisionalTimer);
@@ -608,9 +600,7 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           }
         } else {
           this.stateChanged(C.STATUS_COMPLETED);
-          this.H = SIP.Timers.setTimeout(function() {
-            tr.timer_H();
-          }, SIP.Timers.TIMER_H);
+          this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
           if (onSuccess) {
             onSuccess();
           }
@@ -672,7 +662,7 @@ var checkTransaction = function(ua, request) {
           return false;
         } else if(tr.state === C.STATUS_COMPLETED) {
           tr.state = C.STATUS_CONFIRMED;
-          tr.I = SIP.Timers.setTimeout(function() {tr.timer_I();}, SIP.Timers.TIMER_I);
+          tr.I = SIP.Timers.setTimeout(tr.timer_I.bind(tr), SIP.Timers.TIMER_I);
           return true;
         }
       }

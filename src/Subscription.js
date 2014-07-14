@@ -63,7 +63,7 @@ SIP.Subscription.prototype = {
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
-    this.timers.N = SIP.Timers.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
+    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
 
     this.send();
 
@@ -88,7 +88,7 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
-        this.timers.sub_duration = SIP.Timers.setTimeout(function(){sub.subscribe();}, expires * 1000);
+        this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), expires * 1000);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
@@ -119,7 +119,7 @@ SIP.Subscription.prototype = {
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
-    this.timers.N = SIP.Timers.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
+    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
 
     this.send();
   },
@@ -232,7 +232,7 @@ SIP.Subscription.prototype = {
             case 'probation':
             case 'giveup':
               if(sub_state.params && sub_state.params['retry-after']) {
-                this.timers.sub_duration = SIP.Timers.setTimeout(function(){sub.subscribe();}, sub_state.params['retry-after']);
+                this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), sub_state.params['retry-after']);
               } else {
                 this.subscribe();
               }
