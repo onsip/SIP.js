@@ -65,9 +65,8 @@ UA = function(configuration) {
 
   // Helper function for forwarding events
   function selfEmit(type) {
-    return function (data) {
-      self.emit(type, data);
-    };
+  	//registrationFailed handler is invoked with two arguments. Allow event handlers to be invoked with a variable no. of arguments
+  	return self.emit.bind(self, type);
   }
 
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
