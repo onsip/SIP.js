@@ -4,6 +4,7 @@
   function FakeWebSocket(server, protocol) {
     this.readyState = 0; // CONNECTING
     var that = this;
+    spyOn(this, 'send');
     setTimeout(function () {
       that.readyState = 1; // OPEN
       if (that.onopen) {
@@ -12,7 +13,7 @@
     }, 0);
   }
   FakeWebSocket.prototype = {
-    send: function (msg) {},
+    send: function() {},
     close: function () {
       this.readyState = 3; // CLOSED
       if (this.onclose) this.onclose({code:3});
@@ -67,7 +68,7 @@
           success({
             type: 'offer',
             body: '',
-            sdp: 'Hello'
+            sdp: 'HelloOffer'
           });
         }, 0);
       }
@@ -80,7 +81,7 @@
           success({
             type: 'answer',
             body: '',
-            sdp: 'Hello'
+            sdp: 'HelloAnswer'
           });
         }, 0);
       }
@@ -105,7 +106,7 @@
         }, 0);
       }
     },
-    addStream: function () {},
+    addStream: jasmine.createSpy('addStream').and.callFake(function () {}),
     close: function () {},
     signalingState: function () {}
   };

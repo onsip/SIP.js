@@ -3,7 +3,7 @@ describe('RegisterContext', function() {
   var ua;
   
   beforeEach(function() {
-    var log = jasmine.createSpy('log').andCallFake(function() {
+    var log = jasmine.createSpy('log').and.callFake(function() {
       return 'log';
     });
     ua = {
@@ -23,9 +23,9 @@ describe('RegisterContext', function() {
     RegisterContext = new SIP.RegisterContext(ua);
     
     
-    RegisterContext.logger = jasmine.createSpy('logger').andReturn('logger');
-    RegisterContext.logger.log = jasmine.createSpy('log').andReturn('log');
-    RegisterContext.logger.warn = jasmine.createSpy('warn').andReturn('warn');
+    RegisterContext.logger = jasmine.createSpy('logger').and.returnValue('logger');
+    RegisterContext.logger.log = jasmine.createSpy('log').and.returnValue('log');
+    RegisterContext.logger.warn = jasmine.createSpy('warn').and.returnValue('warn');
   });
   
   it('initialize instance variables', function() {
@@ -51,7 +51,7 @@ describe('RegisterContext', function() {
     var options;
     beforeEach(function() {
       options = {};
-      spyOn(RegisterContext, 'send').andReturn('send');
+      spyOn(RegisterContext, 'send').and.returnValue('send');
     });
     
     it('sets up the receiveResponse function', function() {
@@ -100,7 +100,7 @@ describe('RegisterContext', function() {
     });
     
     it('does not unregister', function() {
-      spyOn(RegisterContext, 'unregistered').andReturn('unregistered');
+      spyOn(RegisterContext, 'unregistered').and.returnValue('unregistered');
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
       
@@ -127,7 +127,7 @@ describe('RegisterContext', function() {
     });
     
     it('calls unregistered if it is registered', function() {
-      spyOn(RegisterContext, 'unregistered').andReturn('unregister');
+      spyOn(RegisterContext, 'unregistered').and.returnValue('unregister');
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
       RegisterContext.onTransportClosed();
@@ -137,7 +137,7 @@ describe('RegisterContext', function() {
   
   describe('.onTransportConnected', function(){
     it('calls register', function() {
-      spyOn(RegisterContext, 'register').andReturn('register');
+      spyOn(RegisterContext, 'register').and.returnValue('register');
       expect(RegisterContext.register).not.toHaveBeenCalled();
       
       RegisterContext.onTransportConnected();
@@ -148,7 +148,7 @@ describe('RegisterContext', function() {
   
   describe('.close', function() {
     beforeEach(function(){
-      spyOn(RegisterContext, 'unregister').andReturn('unregister');
+      spyOn(RegisterContext, 'unregister').and.returnValue('unregister');
     });
     it('takes registered and move it to registerd_before', function() {
       expect(RegisterContext.registered).not.toBe(RegisterContext.registered_before); 
@@ -165,7 +165,7 @@ describe('RegisterContext', function() {
   
   describe('.unregister', function() {
     beforeEach(function() {
-      RegisterContext.send = jasmine.createSpy('send').andReturn('send');
+      RegisterContext.send = jasmine.createSpy('send').and.returnValue('send');
     });
     it('does nothing if the registered variable is false', function() {
       RegisterContext.registered = false;

@@ -23,7 +23,7 @@ describe('Subscription', function() {
     });
 
     it('throws a type error if event is not set', function() {
-      expect(function() {new SIP.Subscription(ua, 'alice@example.com');}).toThrow('Event necessary to create a subscription.');
+      expect(function() {new SIP.Subscription(ua, 'alice@example.com');}).toThrowError('Event necessary to create a subscription.');
     });
 
     it('sets expires to default if nothing is passed, a number < 3600 is passed, or a non-number is passed', function() {
@@ -56,11 +56,11 @@ describe('Subscription', function() {
     });
 
     it('calls augment with ClientContext', function() {
-      spyOn(SIP.Utils, 'augment').andCallThrough();
+      spyOn(SIP.Utils, 'augment').and.callThrough();
 
       Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog');
 
-      expect(SIP.Utils.augment.calls[0].args[1]).toBe(SIP.ClientContext);
+      expect(SIP.Utils.augment.calls.argsFor(0)[1]).toBe(SIP.ClientContext);
     });
 
     it('sets logger, dialog, timers, and error codes', function() {
@@ -80,17 +80,17 @@ describe('Subscription', function() {
 
       Subscription.subscribe();
 
-      expect(window.clearTimeout.calls.length).toBe(2);
+      expect(window.clearTimeout.calls.count()).toBe(2);
     });
 
     it('sets Timer_N to fire timer_fire after TIMER_N time', function() {
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
       spyOn(Subscription, 'send');
 
       Subscription.subscribe();
 
       expect(Subscription.timers.N).toBeDefined();
-      expect(window.setTimeout.calls.length).toBe(1);
+      expect(window.setTimeout.calls.count()).toBe(1);
     });
 
     it('calls send', function() {
@@ -129,7 +129,7 @@ describe('Subscription', function() {
 
         expect(Subscription.failed).toHaveBeenCalledWith(response, null);
 
-        Subscription.failed.reset();
+        Subscription.failed.calls.reset();
       }
     });
 
@@ -142,7 +142,7 @@ describe('Subscription', function() {
     });
 
     it('creates a dialog, sets the id, and puts this subscription in the ua\'s subscriptions array', function() {
-      spyOn(Subscription, 'createConfirmedDialog').andCallThrough();
+      spyOn(Subscription, 'createConfirmedDialog').and.callThrough();
       expect(Subscription.dialog).toBeNull();
 
       Subscription.receiveResponse(response);
@@ -153,7 +153,7 @@ describe('Subscription', function() {
     });
 
     it('sets the sub_duration timer if there was a valid expires header', function() {
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
 
       Subscription.receiveResponse(response);
 
@@ -205,17 +205,17 @@ describe('Subscription', function() {
 
       Subscription.unsubscribe();
 
-      expect(window.clearTimeout.calls.length).toBe(2);
+      expect(window.clearTimeout.calls.count()).toBe(2);
     });
 
     it('sets Timer_N to fire timer_fire after TIMER_N time', function() {
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
       spyOn(Subscription, 'send');
 
       Subscription.unsubscribe();
 
       expect(Subscription.timers.N).toBeDefined();
-      expect(window.setTimeout.calls.length).toBe(1);
+      expect(window.setTimeout.calls.count()).toBe(1);
     });
 
     it('calls send', function() {
@@ -246,7 +246,7 @@ describe('Subscription', function() {
       expect(Subscription.close).toHaveBeenCalled();
       expect(Subscription.state).toBe('terminated');
 
-      Subscription.close.reset();
+      Subscription.close.calls.reset();
       Subscription.state = 'notify_wait';
 
       Subscription.timer_fire();
@@ -263,7 +263,7 @@ describe('Subscription', function() {
 
       expect(Subscription.subscribe).toHaveBeenCalled();
 
-      Subscription.subscribe.reset();
+      Subscription.subscribe.calls.reset();
       Subscription.state = 'init'; //Note: there's no way this can be called with a state of init
 
       Subscription.timer_fire();
@@ -283,7 +283,7 @@ describe('Subscription', function() {
 
       Subscription.close();
 
-      expect(Subscription.unsubscribe.calls.length).toBe(1);
+      expect(Subscription.unsubscribe.calls.count()).toBe(1);
     });
 
     it('calls terminateDialog', function() {
@@ -300,7 +300,7 @@ describe('Subscription', function() {
 
       Subscription.close();
 
-      expect(window.clearTimeout.calls.length).toBe(2);
+      expect(window.clearTimeout.calls.count()).toBe(2);
     });
 
     it('deletes the subscription from ua.subscriptions', function() {
@@ -358,7 +358,7 @@ describe('Subscription', function() {
     });
 
     it('replies 489 returns if matchEvent fails', function() {
-      spyOn(Subscription, 'matchEvent').andReturn(false);
+      spyOn(Subscription, 'matchEvent').and.returnValue(false);
 
       Subscription.receiveRequest(request);
 
@@ -376,7 +376,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(window.clearTimeout.calls.length).toBe(2);
+      expect(window.clearTimeout.calls.count()).toBe(2);
     });
 
     it('emits notify', function() {
@@ -389,45 +389,45 @@ describe('Subscription', function() {
 
     it('if sub_state.state is active, changes state to active and sets the duration timer if there is an expires as well', function() {
       request.setHeader('Subscription-State', 'active;expires=3600');
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
 
       Subscription.receiveRequest(request);
 
-      expect(window.setTimeout.calls[0].args[1]).toBe(3600000);
+      expect(window.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
 
     it('expires is reset correctly if too low', function() {
       request.setHeader('Subscription-State', 'active;expires=700');
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
 
       Subscription.receiveRequest(request);
 
-      expect(window.setTimeout.calls[0].args[1]).toBe(3600000);
+      expect(window.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
 
     it('expires is reset correctly if too high', function() {
       request.setHeader('Subscription-State', 'active;expires=77777777777777');
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
 
       Subscription.receiveRequest(request);
 
-      expect(window.setTimeout.calls[0].args[1]).toBe(3600000);
+      expect(window.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
 
     it('if sub_state.state is pending and current state is notify_wait, set sub_duration, otherwise just change state', function() {
       request.setHeader('Subscription-State', 'pending;expires=3600');
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
       Subscription.state = 'notify_wait';
 
       Subscription.receiveRequest(request);
 
-      expect(window.setTimeout.calls[0].args[1]).toBe(3600000);
+      expect(window.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
       expect(Subscription.state).toBe('pending');
@@ -436,7 +436,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(window.setTimeout.calls.length).toBe(1);
+      expect(window.setTimeout.calls.count()).toBe(1);
       expect(Subscription.state).toBe('pending');
     });
 
@@ -451,7 +451,7 @@ describe('Subscription', function() {
       expect(Subscription.logger.log).toHaveBeenCalledWith('terminating subscription with reason deactivated');
       expect(Subscription.subscribe).toHaveBeenCalled();
 
-      Subscription.subscribe.reset();
+      Subscription.subscribe.calls.reset();
       request.setHeader('Subscription-State', 'terminated;expires=3600;reason=timeout');
 
       Subscription.receiveRequest(request);
@@ -463,7 +463,7 @@ describe('Subscription', function() {
     it('if sub_state.state is terminated with reason probation or giveup, subscribe will be called or the sub_duration timer will be set if retry-after is present, both without close', function() {
       request.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=probation');
       spyOn(Subscription, 'subscribe');
-      spyOn(window, 'setTimeout').andCallThrough();
+      spyOn(window, 'setTimeout').and.callThrough();
       spyOn(Subscription, 'close');
 
       Subscription.receiveRequest(request);
@@ -472,8 +472,8 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(window.setTimeout.calls.length).toBe(1);
-      expect(Subscription.subscribe.calls.length).toBe(1);
+      expect(window.setTimeout.calls.count()).toBe(1);
+      expect(Subscription.subscribe.calls.count()).toBe(1);
       expect(Subscription.close).not.toHaveBeenCalled();
     });
 
@@ -489,7 +489,7 @@ describe('Subscription', function() {
       request.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=invariant');
       Subscription.receiveRequest(request);
 
-      expect(Subscription.close.calls.length).toBe(3);
+      expect(Subscription.close.calls.count()).toBe(3);
     });
 
   });
@@ -502,7 +502,7 @@ describe('Subscription', function() {
       Subscription.failed();
 
       expect(Subscription.close).toHaveBeenCalled();
-      expect(Subscription.emit.calls[0].args[0]).toBe('failed');
+      expect(Subscription.emit.calls.mostRecent().args[0]).toBe('failed');
     });
   });
 
