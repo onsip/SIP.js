@@ -7,7 +7,7 @@
  *
  * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var UA,
   C = {
     // UA status codes
@@ -1439,4 +1439,4 @@ UA.configuration_check = {
 
 UA.C = C;
 SIP.UA = UA;
-}(SIP));
+};

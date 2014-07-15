@@ -6,7 +6,7 @@
  * as to most easily track when particular hacks may not be necessary anymore.
  */
 
-(function (SIP) {
+module.exports = function (window) {
 
 var Hacks;
 
@@ -94,5 +94,5 @@ Hacks = {
 };
 
 
-SIP.Hacks = Hacks;
-}(SIP));
+return Hacks;
+};

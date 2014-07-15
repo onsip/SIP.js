@@ -1,4 +1,4 @@
-(function (SIP) {
+module.exports = function (SIP) {
 
 var RegisterContext;
 
@@ -274,4 +274,4 @@ RegisterContext.prototype = {
 
 
 SIP.RegisterContext = RegisterContext;
-}(SIP));
+};

@@ -11,7 +11,7 @@
  * @param {SIP.Transport} transport
  * @returns {Boolean}
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var sanityCheck,
  logger,
  message, ua, transport,
@@ -224,4 +224,4 @@ sanityCheck = function(m, u, t) {
 };
 
 SIP.sanityCheck = sanityCheck;
-}(SIP));
+};

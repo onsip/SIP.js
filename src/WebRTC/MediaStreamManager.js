@@ -6,7 +6,7 @@
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
  */
-(function(SIP){
+module.exports = function (SIP) {
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
@@ -139,4 +139,4 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 
 // Return since it will be assigned to a variable.
 return MediaStreamManager;
-}(SIP));
+};

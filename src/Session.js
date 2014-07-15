@@ -1,7 +1,4 @@
-(function (SIP) {
-
-// Load dependencies
-var DTMF            = @@include('../src/Session/DTMF.js')
+module.exports = function (SIP, window, DTMF) {
 
 var Session, InviteServerContext, InviteClientContext,
  C = {
@@ -2135,4 +2132,4 @@ InviteClientContext.prototype = {
 
 SIP.InviteClientContext = InviteClientContext;
 
-}(SIP));
+};
