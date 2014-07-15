@@ -1254,7 +1254,7 @@ SIP.Grammar = (function() {
       return stack[0];
     }
 
-     var data = {};
+    var data = {};
 
     peg$result = peg$parseRule(peg$startRuleIndex);
 

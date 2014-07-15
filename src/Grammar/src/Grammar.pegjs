@@ -1,4 +1,4 @@
-{ var data = {}; } // Object to which header attributes will be assigned during parsing
+{var data = {};} // Object to which header attributes will be assigned during parsing
 
 // ABNF BASIC
 
