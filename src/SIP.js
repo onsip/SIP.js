@@ -7,12 +7,14 @@ module.exports = (function(window) {
 
   var SIP = {};
 
+  var pkg = require('../package.json');
+
   Object.defineProperties(SIP, {
     version: {
-      get: function(){ return '<%= pkg.version %>'; }
+      get: function(){ return pkg.version; }
     },
     name: {
-      get: function(){ return '<%= pkg.title %>'; }
+      get: function(){ return pkg.title; }
     }
   });
 
