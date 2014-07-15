@@ -19,20 +19,6 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
-  it('inits ClientContext events', function () {
-    expect(session.checkEvent('progress')).toBe(true);
-    expect(session.checkEvent('accepted')).toBe(true);
-    expect(session.checkEvent('rejected')).toBe(true);
-    expect(session.checkEvent('failed')).toBe(true);
-  });
-
-  it('inits Session events', function () {
-    expect(session.checkEvent('connecting')).toBe(true);
-    expect(session.checkEvent('cancel')).toBe(true);
-    expect(session.checkEvent('dtmf')).toBe(true);
-    expect(session.checkEvent('bye')).toBe(true);
-  });
-
   it('inits instance attributes', function () {
     expect(session.ua).toBe(ua);
     expect(session.method).toBe(SIP.C.INVITE);

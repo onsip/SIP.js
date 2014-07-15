@@ -48,29 +48,12 @@ var UA,
   };
 
 UA = function(configuration) {
-  var self = this,
-  events = [
-    'connecting',
-    'connected',
-    'disconnected',
-    'newTransaction',
-    'transactionDestroyed',
-    'registered',
-    'unregistered',
-    'registrationFailed',
-    'invite',
-    'newSession',
-    'message'
-  ], i, len;
+  var self = this;
 
   // Helper function for forwarding events
   function selfEmit(type) {
     //registrationFailed handler is invoked with two arguments. Allow event handlers to be invoked with a variable no. of arguments
     return self.emit.bind(self, type);
-  }
-
-  for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
-    events.push(C.ALLOWED_METHODS[i].toLowerCase());
   }
 
   // Set Accepted Body Types
@@ -178,7 +161,6 @@ UA = function(configuration) {
 
   try {
     this.loadConfig(configuration);
-    this.initEvents(events);
   } catch(e) {
     this.status = C.STATUS_NOT_READY;
     this.error = C.CONFIGURATION_ERROR;

@@ -14,17 +14,9 @@ var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) 
     throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
 
-  var events = [
-    'userMediaRequest',
-    'userMedia',
-    'userMediaFailed'
-  ];
   this.mediaHint = defaultMediaHint || {
     constraints: {audio: true, video: true}
   };
-
-  this.logger = logger;
-  this.initEvents(events);
 
   // map of streams to acquisition manner:
   // true -> passed in as mediaHint.stream

@@ -64,13 +64,6 @@ describe('ClientContext', function() {
     expect(ClientContext.data).toBeDefined();
   });
 
-  it('initializes events', function() {
-    expect(ClientContext.checkEvent('progress')).toBeTruthy();
-    expect(ClientContext.checkEvent('accepted')).toBeTruthy();
-    expect(ClientContext.checkEvent('rejected')).toBeTruthy();
-    expect(ClientContext.checkEvent('failed')).toBeTruthy();
-  });
-
   it('checks that the target is not undefined', function() {
     expect(function () { new SIP.ClientContext(ua,method); }).toThrowError('Not enough arguments');
   });

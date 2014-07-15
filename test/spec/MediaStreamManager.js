@@ -11,12 +11,6 @@ describe('MediaStreamManager', function () {
     expect(function() {new MediaStreamManager();}).toThrow(new SIP.Exceptions.NotSupportedError('Media not supported'));
   });
 
-  it('initializes its events', function () {
-    expect(mediaStreamManager.checkEvent('userMediaRequest')).toEqual(true);
-    expect(mediaStreamManager.checkEvent('userMedia')).toEqual(true);
-    expect(mediaStreamManager.checkEvent('userMediaFailed')).toEqual(true);
-  });
-
   it('defines mediaHint and acquisitions', function () {
     expect(mediaStreamManager.mediaHint).toBeDefined();
     expect(mediaStreamManager.acquisitions).toBeDefined();

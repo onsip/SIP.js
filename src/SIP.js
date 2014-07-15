@@ -20,7 +20,10 @@
 
   require('./Utils')(SIP);
   SIP.LoggerFactory = require('./LoggerFactory');
-  require('./EventEmitter')(SIP);
+  SIP.EventEmitter = require('events').EventEmitter;
+  SIP.EventEmitter.prototype.checkListener = function checkListener (event) {
+    return this.listeners(event).length > 0;
+  };
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
   SIP.Timers = require('./Timers');
