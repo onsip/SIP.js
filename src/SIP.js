@@ -20,16 +20,7 @@
 
   require('./Utils')(SIP);
   SIP.LoggerFactory = require('./LoggerFactory');
-
   SIP.EventEmitter = require('events').EventEmitter;
-  SIP.EventEmitter.prototype.off = function off (type, listener) {
-    if (arguments.length < 2) {
-      return this.removeAllListeners.apply(this, arguments);
-    } else {
-      return this.removeListener(type, listener);
-    }
-  };
-
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
   SIP.Timers = require('./Timers');

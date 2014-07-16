@@ -289,7 +289,7 @@ UA.prototype.stop = function() {
 
   function transactionsListener() {
     if (ua.nistTransactionsCount === 0 && ua.nictTransactionsCount === 0) {
-        ua.off('transactionDestroyed', transactionsListener);
+        ua.removeListener('transactionDestroyed', transactionsListener);
         ua.transport.disconnect();
     }
   }

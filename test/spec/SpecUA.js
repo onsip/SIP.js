@@ -232,7 +232,7 @@ describe('UA', function() {
     });
 
     it('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
-      spyOn(UA, 'off');
+      spyOn(UA, 'removeListener');
 
       //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
 
@@ -250,7 +250,7 @@ describe('UA', function() {
       UA.transactions['nict'] = [];
       UA.emit('transactionDestroyed');
       expect(UA.transport.disconnect).toHaveBeenCalled();
-      expect(UA.off).toHaveBeenCalled();
+      expect(UA.removeListener).toHaveBeenCalled();
     });
   });
 
