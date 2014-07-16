@@ -195,7 +195,7 @@ UA = function(configuration) {
     this.start();
   }
 };
-UA.prototype = new SIP.EventEmitter();
+UA.prototype = Object.create(SIP.EventEmitter.prototype);
 
 //=================
 //  High Level API

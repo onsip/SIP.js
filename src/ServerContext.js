@@ -33,7 +33,7 @@ ServerContext = function (ua, request) {
   this.initEvents(events);
 };
 
-ServerContext.prototype = new SIP.EventEmitter();
+ServerContext.prototype = Object.create(SIP.EventEmitter.prototype);
 
 ServerContext.prototype.progress = function (options) {
   return replyHelper.call(this, options, 180, 100, 199, ['progress']);
