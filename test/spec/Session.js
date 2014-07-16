@@ -58,9 +58,7 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   it('gets user media', function (done) {
-    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
-      done();
-    });
+    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(done);
     session = ua.invite('alice@example.com', session_options);
   });
 
