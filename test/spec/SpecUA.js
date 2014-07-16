@@ -696,11 +696,7 @@ describe('UA', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return false;
-      });
       expect(UA.receiveRequest(request)).toBeUndefined();
-      expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
       expect(replySpy).toHaveBeenCalledWith(405, null, jasmine.any(Array));
     });
@@ -713,9 +709,6 @@ describe('UA', function() {
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
                       getHeader: jasmine.createSpy('getHeader')};
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return true;
-      });
       UA.on('message',callback);
 
       UA.receiveRequest(request);

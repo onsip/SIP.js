@@ -22,9 +22,6 @@
   SIP.LoggerFactory = require('./LoggerFactory');
 
   SIP.EventEmitter = require('events').EventEmitter;
-  SIP.EventEmitter.prototype.checkListener = function checkListener (event) {
-    return this.listeners(event).length > 0;
-  };
   SIP.EventEmitter.prototype.off = function off (type, listener) {
     if (arguments.length < 2) {
       return this.removeAllListeners.apply(this, arguments);
