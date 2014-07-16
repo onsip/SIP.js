@@ -307,7 +307,7 @@ Utils= {
       allowed = SIP.UA.C.ALLOWED_METHODS.toString();
 
     for (event in SIP.UA.C.EVENT_METHODS) {
-      if (SIP.EventEmitter.listenerCount(ua, event)) {
+      if (SIP.EventEmitter.listenerCount(ua, event) > 1) {
         allowed += ','+ SIP.UA.C.EVENT_METHODS[event];
       }
     }

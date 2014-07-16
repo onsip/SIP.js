@@ -684,7 +684,7 @@ Session.prototype = {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
           var
-            hasReferListener = SIP.EventEmitter.listenerCount(this, 'refer'),
+            hasReferListener = SIP.EventEmitter.listenerCount(this, 'refer') > 1,
             notifyBody = hasReferListener ?
               'SIP/2.0 100 Trying' :
               // RFC 3515.2.4.2: 'the UA MAY decline the request.'

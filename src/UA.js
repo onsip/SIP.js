@@ -620,7 +620,7 @@ UA.prototype.receiveRequest = function(request) {
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!SIP.EventEmitter.listenerCount(this, methodLower)) {
+    if (SIP.EventEmitter.listenerCount(this, methodLower) <= 1) {
       // UA is not listening for this.  Reject immediately.
       new SIP.Transactions.NonInviteServerTransaction(request, this);
       request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
