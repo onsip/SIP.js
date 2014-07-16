@@ -13,7 +13,7 @@ describe('An INVITE sent from a UAC', function () {
     };
     session_options = {};
 
-    ua = new SIP.UA(ua_config).on('connected', function () {
+    ua = new SIP.UA(ua_config).once('connected', function () {
       session = ua.invite('alice@example.com', session_options);
       setTimeout(done, 0);
     });
@@ -57,19 +57,11 @@ describe('An INVITE sent from a UAC', function () {
     expect(session.data).toEqual({});
   });
 
-  describe('gets user media', function () {
-    var gumSpy;
-
-    beforeEach (function (done) {
-      gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
-        setTimeout(done, 0);
-      });
-      session = ua.invite('alice@example.com', session_options);
+  it('gets user media', function (done) {
+    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
+      done();
     });
-
-    it('asynchronously', function() {
-      expect(gumSpy).toHaveBeenCalled();
-    })
+    session = ua.invite('alice@example.com', session_options);
   });
 
   it('sends an INVITE on the WebSocket', function (done) {
@@ -303,7 +295,7 @@ describe('An INVITE sent from a UAC', function () {
     beforeEach(function(done) {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).on('connected', function () {
+      uas = new SIP.UA(ua_config).once('connected', function () {
         uas.transport.ws.send.and.callFake(function (){
           var arg0 = uas.transport.ws.send.calls.mostRecent().args[0];
           if (arg0.indexOf('180 Ringing') >= 0) {
@@ -338,7 +330,7 @@ describe('An INVITE sent from a UAC', function () {
     beforeEach(function(done) {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).on('invite', function (newSession) {
+      uas = new SIP.UA(ua_config).once('invite', function (newSession) {
         spyOn(session, 'accepted').and.callFake(function() {
           setTimeout(done, 0);
         });
@@ -350,7 +342,7 @@ describe('An INVITE sent from a UAC', function () {
         });
 
         newSession.accept();
-      }).on('connected', function () {
+      }).once('connected', function () {
         if (ua.transport.ws.send.calls.mostRecent() && ua.transport.ws.send.calls.mostRecent().args[0].indexOf('INVITE') >= 0) {
           uas.transport.ws.receiveMessage(ua.transport.ws.send.calls.mostRecent().args[0]);
         } else {
@@ -379,7 +371,7 @@ describe('An INVITE sent from a UAC', function () {
     beforeEach(function(done) {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).on('invite', function (newSession) {
+      uas = new SIP.UA(ua_config).once('invite', function (newSession) {
         spyOn(session, 'rejected').and.callFake(function () {
           setTimeout(done, 0);
         });
@@ -391,7 +383,7 @@ describe('An INVITE sent from a UAC', function () {
         });
 
         newSession.reject();
-      }).on('connected', function () {
+      }).once('connected', function () {
         if (ua.transport.ws.send.calls.mostRecent() && ua.transport.ws.send.calls.mostRecent().args[0].indexOf('INVITE') >= 0) {
           uas.transport.ws.receiveMessage(ua.transport.ws.send.calls.mostRecent().args[0]);
         } else {
@@ -433,10 +425,10 @@ describe('A UAS receiving an INVITE', function () {
 
       jasmine.clock().install();
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
+      ua = new SIP.UA(ua_config).once('connected', function () {
         ws = ua.transport.ws;
         ws.receiveMessage(Messages.Invite.nosdp);
-      }).on('invite', callback);
+      }).once('invite', callback);
 
       jasmine.clock().tick(100);
 
@@ -455,9 +447,9 @@ describe('A UAS receiving an INVITE', function () {
         register: false
       };
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
+      ua = new SIP.UA(ua_config).once('connected', function () {
         ua.transport.ws.receiveMessage(Messages.Invite.normal);
-      }).on('invite', function (s) {
+      }).once('invite', function (s) {
         session = s;
         setTimeout(done, 0);
       });
@@ -497,9 +489,9 @@ describe('A UAS receiving an INVITE', function () {
         register: false
       };
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
+      ua = new SIP.UA(ua_config).once('connected', function () {
         ua.transport.ws.receiveMessage(Messages.Invite.rel100sup);
-      }).on('invite', function (s) {
+      }).once('invite', function (s) {
         session = s;
         setTimeout(done, 0);
       });
@@ -551,9 +543,9 @@ describe('A UAS receiving an INVITE', function () {
         register: false
       };
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
+      ua = new SIP.UA(ua_config).once('connected', function () {
         ua.transport.ws.receiveMessage(Messages.Invite.rel100req);
-      }).on('invite', function (s) {
+      }).once('invite', function (s) {
         session = s;
         setTimeout(done, 0);
       });
