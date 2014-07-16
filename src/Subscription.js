@@ -9,9 +9,12 @@
  */
 module.exports = function (SIP) {
 SIP.Subscription = function (ua, target, event, options) {
+  //var events;
+
   options = options || {};
   options.extraHeaders = (options.extraHeaders || []).slice();
 
+  //events = ['notify'];
   this.id = null;
   this.state = 'init';
 

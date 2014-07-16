@@ -18,6 +18,11 @@ var DTMF,
   };
 
 DTMF = function(session, tone, options) {
+  /*
+  var events = [
+  'succeeded',
+  'failed'
+  ]; */
   var duration, interToneGap;
 
   if (tone === undefined) {

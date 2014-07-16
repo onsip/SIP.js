@@ -13,6 +13,20 @@
 module.exports = function (SIP) {
 
 var MediaHandler = function(session, options) {
+  /*
+  var events = [
+    'userMediaRequest',
+    'userMedia',
+    'userMediaFailed',
+    'iceGathering',
+    'iceComplete',
+    'iceFailed',
+    'getDescription',
+    'setDescription',
+    'dataChannel',
+    'addStream'
+  ];
+  */
   options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);

@@ -5,6 +5,12 @@ var RegisterContext;
 RegisterContext = function (ua) {
   var params = {},
       regId = 1;
+      /*
+      events = [
+        'registered',
+        'unregistered'
+      ];
+      */
 
   this.registrar = ua.configuration.registrarServer;
   this.expires = ua.configuration.registerExpires;

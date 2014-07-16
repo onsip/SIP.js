@@ -34,6 +34,7 @@ var
 */
 var NonInviteClientTransaction = function(request_sender, request, transport) {
   var via;
+  //var events = ['stateChanged'];
 
   this.type = C.NON_INVITE_CLIENT;
   this.transport = transport;
@@ -135,6 +136,7 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
 var InviteClientTransaction = function(request_sender, request, transport) {
   var via,
     tr = this;
+  //var events = ['stateChanged'];
 
   this.type = C.INVITE_CLIENT;
   this.transport = transport;
@@ -353,6 +355,8 @@ AckClientTransaction.prototype.onTransportError = function() {
 * @param {SIP.UA} ua
 */
 var NonInviteServerTransaction = function(request, ua) {
+  //var events = ['stateChanged'];
+
   this.type = C.NON_INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
@@ -448,6 +452,8 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
 * @param {SIP.UA} ua
 */
 var InviteServerTransaction = function(request, ua) {
+  //var events = ['stateChanged'];
+
   this.type = C.INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;

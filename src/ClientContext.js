@@ -4,6 +4,15 @@ var ClientContext;
 ClientContext = function (ua, method, target, options) {
   var params, extraHeaders,
       originalTarget = target;
+      /*
+      events = [
+        'progress',
+        'accepted',
+        'rejected',
+        'failed',
+        'cancel'
+      ];
+      */
 
   if (target === undefined) {
     throw new TypeError('Not enough arguments');
