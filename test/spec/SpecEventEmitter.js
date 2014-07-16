@@ -16,6 +16,16 @@ describe('EventEmitter', function () {
       warn: function () {},
       log: function () {}
     };
+    EventEmitter.checkListener = function checkListener (name) {
+      return SIP.EventEmitter.listenerCount(this, name) > 0;
+    };
+    EventEmitter.off = function off (name, listener) {
+      if (arguments.length < 2) {
+        return this.removeAllListeners.apply(this, arguments);
+      } else {
+        return this.removeListener(name, listener);
+      }
+    };
   });
 
   it('starts with no events', function () {
@@ -26,38 +36,13 @@ describe('EventEmitter', function () {
     EventEmitter.events = {};
     expect(EventEmitter.checkListener('aaa')).toBe(false);
 
-    EventEmitter.events = {
-      'aaa': []
-    };
-
-    expect(EventEmitter.checkListener('aaa')).toBe(false);
-
-    EventEmitter.events = {
-      'aaa': [function () {}]
-    };
+    EventEmitter.on('aaa', new Function());
 
     expect(EventEmitter.checkListener('aaa')).toBe(true);
 
-    EventEmitter.events = {};
+    EventEmitter.removeAllListeners();
 
     expect(EventEmitter.checkListener('aaa')).toBe(false);
-  });
-
-  /* Deprecated JsSIP functions */
-  it('has no method addListener', function () {
-    expect(EventEmitter.addListener).not.toBeDefined();
-  });
-
-  it('has no method removeListener', function () {
-    expect(EventEmitter.removeListener).not.toBeDefined();
-  });
-
-  it('has no method removeAllListener', function () {
-    expect(EventEmitter.removeAllListener).not.toBeDefined();
-  });
-
-  it('has no method listeners', function () {
-    expect(EventEmitter.listeners).not.toBeDefined();
   });
 
   /* ON */
@@ -69,20 +54,26 @@ describe('EventEmitter', function () {
     });
 
     it('only accepts functions', function () {
+      function expectOnToThrow () {
+        expect(function shouldThrow () {
+          EventEmitter.on.apply(EventEmitter, arguments);
+        }.bind(null, arguments)).toThrow();
+      };
+
       EventEmitter.on('aaa', function () {});
-      EventEmitter.on('bbb', 'Iamastring');
-      EventEmitter.on('ccc', 'stuff', function () {});
-      EventEmitter.on('ddd', 789);
-      EventEmitter.on('eee', {
+      expectOnToThrow('bbb', 'Iamastring');
+      expectOnToThrow('ccc', 'stuff', function () {});
+      expectOnToThrow('ddd', 789);
+      expectOnToThrow('eee', {
         call: function () {},
         apply: function () {}
       });
 
       expect(EventEmitter.checkListener('aaa')).toBe(true);
-
       expect(EventEmitter.checkListener('bbb')).toBe(false);
       expect(EventEmitter.checkListener('ccc')).toBe(false);
       expect(EventEmitter.checkListener('ddd')).toBe(false);
+      expect(EventEmitter.checkListener('eee')).toBe(false);
     });
 
     it('calls the callback synchronously on emission', function () {
@@ -101,15 +92,6 @@ describe('EventEmitter', function () {
         EventEmitter.emit('aaa');
       }
       expect(spy.calls.count()).toEqual(n);
-    });
-
-    it('binds to third argument', function () {
-      var that = jasmine.createSpy('foo');
-
-      EventEmitter.on('aaa', function () {
-        expect(this.identity).toBe(that.identity);
-      }, that);
-      EventEmitter.emit('aaa');
     });
 
     it('binds to the emitter by default', function () {
@@ -149,15 +131,6 @@ describe('EventEmitter', function () {
       expect(spy.calls.count()).toEqual(1);
     });
 
-    it('binds to third argument', function () {
-      var that = jasmine.createSpy('foo');
-
-      EventEmitter.once('aaa', function () {
-        expect(this.identity).toBe(that.identity);
-      }, that);
-      EventEmitter.emit('aaa');
-    });
-
     it('binds to the emitter by default', function () {
       EventEmitter.once('aaa', function () {
         expect(this).toBe(EventEmitter);
@@ -184,24 +157,6 @@ describe('EventEmitter', function () {
       baz = jasmine.createSpy('baz');
     });
 
-    it('refuses unknown events', function () {
-      function bad() {
-        EventEmitter.off('zed');
-      }
-
-      function badTwo() {
-        EventEmitter.off('zed', function () {});
-      }
-
-      function badThree() {
-        EventEmitter.off('zed', function () {}, foo);
-      }
-
-      expect(bad).toThrow();
-      expect(badTwo).toThrow();
-      expect(badThree).toThrow();
-    });
-
     it('removes the matching listener', function () {
       EventEmitter.on('aaa', foo);
       expect(EventEmitter.checkListener('aaa')).toBe(true);
@@ -214,9 +169,10 @@ describe('EventEmitter', function () {
       EventEmitter.off('aaa', bar);
       EventEmitter.off('aaa', baz);
       expect(EventEmitter.checkListener('aaa')).toBe(true);
-      expect(EventEmitter.events.aaa.length).toBe(2);
+      expect(EventEmitter.listeners('aaa').length).toBe(2);
 
       EventEmitter.off('aaa', foo);
+      EventEmitter.off('aaa', foo); // removeListener() doesn't remove duplicates like the old off() did
       expect(EventEmitter.checkListener('aaa')).toBe(false);
     });
 
@@ -232,38 +188,16 @@ describe('EventEmitter', function () {
       EventEmitter.off('aaa', bar);
       EventEmitter.off('aaa', baz);
       expect(EventEmitter.checkListener('aaa')).toBe(true);
-      expect(EventEmitter.events.aaa.length).toBe(2);
+      expect(EventEmitter.listeners('aaa').length).toBe(2);
 
       EventEmitter.off('aaa', foo);
+      EventEmitter.off('aaa', foo); // removeListener() doesn't remove duplicates like the old off() did
       expect(EventEmitter.checkListener('aaa')).toBe(false);
 
       EventEmitter.emit('aaa');
       expect(foo).not.toHaveBeenCalled();
       expect(bar).not.toHaveBeenCalled();
       expect(baz).not.toHaveBeenCalled();
-    });
-
-    it('tries to match third argument', function () {
-      var that = jasmine.createSpy('that');
-      EventEmitter.on('aaa', foo, that);
-
-      EventEmitter.off('aaa', foo, that);
-      expect(EventEmitter.checkListener('aaa')).toBe(false);
-
-      EventEmitter.on('aaa', foo);
-      EventEmitter.off('aaa', foo, that);
-      expect(EventEmitter.checkListener('aaa')).toBe(true);
-
-      EventEmitter.off('aaa', foo);
-      expect(EventEmitter.checkListener('aaa')).toBe(false);
-
-      EventEmitter.on('aaa', foo, that);
-      EventEmitter.off('aaa', foo);
-      expect(EventEmitter.checkListener('aaa')).toBe(false);
-
-      EventEmitter.on('aaa', foo, that);
-      EventEmitter.off('aaa', foo, bar);
-      expect(EventEmitter.checkListener('aaa')).toBe(true);
     });
 
     it('can remove all listeners for an event', function () {
@@ -323,30 +257,6 @@ describe('EventEmitter', function () {
   });
 
   /* Max Listeners */
-  it('prevents too many listeners', function () {
-    var i, n = 1000;
-
-    for (i = 0; i < n; i++) {
-      EventEmitter.on('aaa', function () {});
-    }
-
-    expect(EventEmitter.checkListener('aaa')).toBe(true);
-    expect(EventEmitter.events.aaa.length).toBe(SIP.EventEmitter.C.MAX_LISTENERS);
-  });
-
-  it('can have configurable max listeners', function () {
-    var i, n = 1000;
-    EventEmitter.
-      setMaxListeners(723);
-
-    for (i = 0; i < n; i++) {
-      EventEmitter.on('aaa', function () {});
-    }
-
-    expect(EventEmitter.checkListener('aaa')).toBe(true);
-    expect(EventEmitter.events.aaa.length).toBe(723);
-  });
-
   it('returns this from setMaxListeners', function () {
     expect(EventEmitter.setMaxListeners(100)).toBe(EventEmitter);
   });
@@ -368,14 +278,6 @@ describe('EventEmitter', function () {
       EventEmitter.on('aaa', bar, that);
     });
 
-    it('refuses to emit bad events', function () {
-      function bad() {
-        EventEmitter.emit('zed');
-      };
-
-      expect(bad).toThrow();
-    });
-
     it('handles no listeners gracefully', function () {
       function good() {
         EventEmitter.emit('bbb');
@@ -395,15 +297,6 @@ describe('EventEmitter', function () {
         expect(this).toBe(EventEmitter);
       });
       EventEmitter.on('bbb', bar);
-      EventEmitter.emit('bbb');
-      expect(bar).toHaveBeenCalled();
-    });
-
-    it('binds to the third argument', function () {
-      bar.and.callFake(function () {
-        expect(this).toBe(that);
-      });
-      EventEmitter.on('bbb', bar, that);
       EventEmitter.emit('bbb');
       expect(bar).toHaveBeenCalled();
     });
