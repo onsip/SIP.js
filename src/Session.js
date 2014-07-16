@@ -872,20 +872,23 @@ Session.prototype = {
 
   failed: function(response, cause) {
     this.close();
-    return this.emit('failed', response, cause);
+    this.emit('failed', response, cause);
+    return this;
   },
 
   rejected: function(response, cause) {
     this.close();
-    return this.emit('rejected',
+    this.emit('rejected',
       response || null,
       cause
     );
+    return this;
   },
 
   canceled: function() {
     this.close();
-    return this.emit('cancel');
+    this.emit('cancel');
+    return this;
   },
 
   accepted: function(response, cause) {
@@ -893,21 +896,24 @@ Session.prototype = {
 
     this.startTime = new Date();
 
-    return this.emit('accepted', response, cause);
+    this.emit('accepted', response, cause);
+    return this;
   },
 
   terminated: function(message, cause) {
     this.endTime = new Date();
 
     this.close();
-    return this.emit('terminated', {
+    this.emit('terminated', {
       message: message || null,
       cause: cause || null
     });
+    return this;
   },
 
   connecting: function(request) {
-    return this.emit('connecting', { request: request });
+    this.emit('connecting', { request: request });
+    return this;
   }
 };
 
