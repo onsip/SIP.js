@@ -7,6 +7,7 @@ describe('Session', function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
 
     Session = new SIP.EventEmitter();
+    Session.initEvents(['progress','accepted','rejected','failed']);
     SIP.Utils.augment(Session, SIP.Session, []);
 
     Session.logger = new SIP.LoggerFactory().getLogger('sip.session');

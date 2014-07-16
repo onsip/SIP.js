@@ -25,7 +25,6 @@ var Session, InviteServerContext, InviteClientContext,
  *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
  */
 Session = function (mediaHandlerFactory) {
-  /*
   var events = [
   'connecting',
   'terminated',
@@ -39,7 +38,6 @@ Session = function (mediaHandlerFactory) {
   'muted',
   'unmuted'
   ];
-  */
 
   this.status = C.STATUS_NULL;
   this.dialog = null;
@@ -115,6 +113,8 @@ Session = function (mediaHandlerFactory) {
 
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
+
+  this.initMoreEvents(events);
 };
 
 Session.prototype = {

@@ -8,6 +8,7 @@ describe('WebRTC.MediaHandler', function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
 
     Session = new SIP.EventEmitter();
+    Session.initEvents(['progress','accepted','rejected','failed']);
     SIP.Utils.augment(Session, SIP.Session, []);
 
     Session.ua = ua;

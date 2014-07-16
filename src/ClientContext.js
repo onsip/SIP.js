@@ -3,8 +3,7 @@ var ClientContext;
 
 ClientContext = function (ua, method, target, options) {
   var params, extraHeaders,
-      originalTarget = target;
-      /*
+      originalTarget = target,
       events = [
         'progress',
         'accepted',
@@ -12,7 +11,6 @@ ClientContext = function (ua, method, target, options) {
         'failed',
         'cancel'
       ];
-      */
 
   if (target === undefined) {
     throw new TypeError('Not enough arguments');
@@ -49,6 +47,8 @@ ClientContext = function (ua, method, target, options) {
   }
 
   this.data = {};
+
+  this.initEvents(events);
 };
 ClientContext.prototype = new SIP.EventEmitter();
 

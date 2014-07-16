@@ -48,8 +48,7 @@ var UA,
   };
 
 UA = function(configuration) {
-  var self = this;
-  /*
+  var self = this,
   events = [
     'connecting',
     'connected',
@@ -63,7 +62,6 @@ UA = function(configuration) {
     'newSession',
     'message'
   ], i, len;
-  */
 
   // Helper function for forwarding events
   function selfEmit(type) {
@@ -71,11 +69,9 @@ UA = function(configuration) {
     return self.emit.bind(self, type);
   }
 
-  /*
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
     events.push(C.ALLOWED_METHODS[i].toLowerCase());
   }
-  */
 
   // Set Accepted Body Types
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
@@ -182,6 +178,7 @@ UA = function(configuration) {
 
   try {
     this.loadConfig(configuration);
+    this.initEvents(events);
   } catch(e) {
     this.status = C.STATUS_NOT_READY;
     this.error = C.CONFIGURATION_ERROR;

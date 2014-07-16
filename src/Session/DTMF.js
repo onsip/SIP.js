@@ -18,12 +18,10 @@ var DTMF,
   };
 
 DTMF = function(session, tone, options) {
-  /*
   var events = [
   'succeeded',
   'failed'
-  ]; */
-  var duration, interToneGap;
+  ], duration, interToneGap;
 
   if (tone === undefined) {
     throw new TypeError('Not enough arguments');
@@ -81,6 +79,8 @@ DTMF = function(session, tone, options) {
     interToneGap = Math.abs(interToneGap);
   }
   this.interToneGap = interToneGap;
+
+  this.initEvents(events);
 };
 DTMF.prototype = new SIP.EventEmitter();
 
