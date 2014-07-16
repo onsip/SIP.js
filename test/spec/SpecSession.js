@@ -9,6 +9,8 @@ describe('Session', function() {
     Session = new SIP.EventEmitter();
     SIP.Utils.augment(Session, SIP.Session, []);
 
+    Session.logger = new SIP.LoggerFactory().getLogger('sip.session');
+
     Session.ua = ua;
 
     message = SIP.Parser.parseMessage([
