@@ -2,12 +2,6 @@ module.exports = function (SIP) {
 var ServerContext;
 
 ServerContext = function (ua, request) {
-  var events = [
-      'progress',
-      'accepted',
-      'rejected',
-      'failed'
-    ];
   this.ua = ua;
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
@@ -29,8 +23,6 @@ ServerContext = function (ua, request) {
 
   this.localIdentity = request.to;
   this.remoteIdentity = request.from;
-
-  this.initEvents(events);
 };
 
 ServerContext.prototype = new SIP.EventEmitter();
