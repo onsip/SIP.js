@@ -183,13 +183,9 @@ EventEmitter.prototype = {
 
     // Fire event listeners
     var args = Array.prototype.slice.call(arguments, 1);
-    this.events[event].map(function (listener) {
-      return function () {
-        listener.listener.apply(this, args);
-      }.bind(listener.bindTarget || this);
-    }, this).forEach(function (boundListener) {
+    this.events[event].slice().forEach(function (listener) {
       try {
-        boundListener();
+        listener.listener.apply(listener.bindTarget || this, args);
       } catch(err) {
         this.logger.error(err.stack);
       }
