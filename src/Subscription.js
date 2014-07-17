@@ -10,12 +10,9 @@
  */
 module.exports = function (SIP) {
 SIP.Subscription = function (ua, target, event, options) {
-  var events;
-
   options = Object.create(options || Object.prototype);
   this.extraHeaders = options.extraHeaders = (options.extraHeaders || []).slice();
 
-  events = ['notify', 'dialog'];
   this.id = null;
   this.state = 'init';
 
@@ -53,8 +50,6 @@ SIP.Subscription = function (ua, target, event, options) {
   this.dialog = null;
   this.timers = {N: null, sub_duration: null};
   this.errorCodes  = [404,405,410,416,480,481,482,483,484,485,489,501,604];
-
-  this.initMoreEvents(events);
 };
 
 SIP.Subscription.prototype = {
@@ -265,7 +260,8 @@ SIP.Subscription.prototype = {
 
   failed: function(response, cause) {
     this.close();
-    return this.emit('failed', response, cause);
+    this.emit('failed', response, cause);
+    return this;
   },
 
   /**

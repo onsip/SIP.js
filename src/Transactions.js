@@ -34,8 +34,7 @@ var
 * @param {SIP.Transport} transport
 */
 var NonInviteClientTransaction = function(request_sender, request, transport) {
-  var via,
-    events = ['stateChanged'];
+  var via;
 
   this.type = C.NON_INVITE_CLIENT;
   this.transport = transport;
@@ -51,8 +50,6 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
   this.request.setHeader('via', via);
 
   this.request_sender.ua.newTransaction(this);
-
-  this.initEvents(events);
 };
 NonInviteClientTransaction.prototype = new SIP.EventEmitter();
 
@@ -138,8 +135,7 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
 */
 var InviteClientTransaction = function(request_sender, request, transport) {
   var via,
-    tr = this,
-    events = ['stateChanged'];
+    tr = this;
 
   this.type = C.INVITE_CLIENT;
   this.transport = transport;
@@ -161,8 +157,6 @@ var InviteClientTransaction = function(request_sender, request, transport) {
   this.request.cancel = function(reason) {
     tr.cancel_request(tr, reason);
   };
-
-  this.initEvents(events);
 };
 InviteClientTransaction.prototype = new SIP.EventEmitter();
 
@@ -360,8 +354,6 @@ AckClientTransaction.prototype.onTransportError = function() {
 * @param {SIP.UA} ua
 */
 var NonInviteServerTransaction = function(request, ua) {
-  var events = ['stateChanged'];
-
   this.type = C.NON_INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
@@ -375,8 +367,6 @@ var NonInviteServerTransaction = function(request, ua) {
   this.state = C.STATUS_TRYING;
 
   ua.newTransaction(this);
-
-  this.initEvents(events);
 };
 NonInviteServerTransaction.prototype = new SIP.EventEmitter();
 
@@ -459,8 +449,6 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
 * @param {SIP.UA} ua
 */
 var InviteServerTransaction = function(request, ua) {
-  var events = ['stateChanged'];
-
   this.type = C.INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
@@ -478,8 +466,6 @@ var InviteServerTransaction = function(request, ua) {
   this.resendProvisionalTimer = null;
 
   request.reply(100);
-
-  this.initEvents(events);
 };
 InviteServerTransaction.prototype = new SIP.EventEmitter();
 

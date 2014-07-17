@@ -72,13 +72,6 @@ describe('ServerContext', function() {
     expect(ServerContext.data).toBeDefined();
   });
 
-  it('initializes events', function() {
-    expect(ServerContext.checkEvent('progress')).toBeTruthy();
-    expect(ServerContext.checkEvent('accepted')).toBeTruthy();
-    expect(ServerContext.checkEvent('rejected')).toBeTruthy();
-    expect(ServerContext.checkEvent('failed')).toBeTruthy();
-  });
-
   describe('.progress', function() {
     beforeEach(function() {
       spyOn(ServerContext.request, 'reply').and.returnValue('reply');

@@ -3,14 +3,7 @@ module.exports = function (SIP) {
 var ClientContext;
 
 ClientContext = function (ua, method, target, options) {
-  var originalTarget = target,
-      events = [
-        'progress',
-        'accepted',
-        'rejected',
-        'failed',
-        'cancel'
-      ];
+  var originalTarget = target;
 
   // Validate arguments
   if (target === undefined) {
@@ -54,7 +47,6 @@ ClientContext = function (ua, method, target, options) {
   this.localIdentity = this.request.from;
   this.remoteIdentity = this.request.to;
 
-  this.initEvents(events);
   this.data = {};
 };
 ClientContext.prototype = new SIP.EventEmitter();

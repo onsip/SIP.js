@@ -26,22 +26,6 @@ var Session, InviteServerContext, InviteClientContext,
  *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
  */
 Session = function (mediaHandlerFactory) {
-  var events = [
-  'dialog',
-  'connecting',
-  'terminated',
-  'dtmf',
-  'invite',
-  'cancel',
-  'refer',
-  'replaced',
-  'bye',
-  'hold',
-  'unhold',
-  'muted',
-  'unmuted'
-  ];
-
   this.status = C.STATUS_NULL;
   this.dialog = null;
   this.earlyDialogs = {};
@@ -116,8 +100,6 @@ Session = function (mediaHandlerFactory) {
 
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
-
-  this.initMoreEvents(events);
 };
 
 Session.prototype = {
@@ -354,9 +336,7 @@ Session.prototype = {
     }, this.ua).send();
 
     // Emit the request event
-    if (this.checkEvent(method.toLowerCase())) {
-      this.emit(method.toLowerCase(), request);
-    }
+    this.emit(method.toLowerCase(), request);
 
     return this;
   },
@@ -721,7 +701,7 @@ Session.prototype = {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
           var
-            hasReferListener = this.checkListener('refer'),
+            hasReferListener = this.listeners('refer').length,
             notifyBody = hasReferListener ?
               'SIP/2.0 100 Trying' :
               // RFC 3515.2.4.2: 'the UA MAY decline the request.'
@@ -927,18 +907,21 @@ Session.prototype = {
     if (this.status === C.STATUS_TERMINATED) {
       return this;
     }
-    return this.emit('failed', response || null, cause || null);
+    this.emit('failed', response || null, cause || null);
+    return this;
   },
 
   rejected: function(response, cause) {
-    return this.emit('rejected',
+    this.emit('rejected',
       response || null,
       cause || null
     );
+    return this;
   },
 
   canceled: function() {
-    return this.emit('cancel');
+    this.emit('cancel');
+    return this;
   },
 
   accepted: function(response, cause) {
@@ -950,7 +933,8 @@ Session.prototype = {
       this.replacee.emit('replaced', this);
       this.replacee.terminate();
     }
-    return this.emit('accepted', response, cause);
+    this.emit('accepted', response, cause);
+    return this;
   },
 
   terminated: function(message, cause) {
@@ -961,14 +945,16 @@ Session.prototype = {
     this.endTime = new Date();
 
     this.close();
-    return this.emit('terminated', {
+    this.emit('terminated', {
       message: message || null,
       cause: cause || null
     });
+    return this;
   },
 
   connecting: function(request) {
-    return this.emit('connecting', { request: request });
+    this.emit('connecting', { request: request });
+    return this;
   }
 };
 

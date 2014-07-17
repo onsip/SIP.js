@@ -7,8 +7,9 @@ describe('Session', function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
 
     Session = new SIP.EventEmitter();
-    Session.initEvents(['progress','accepted','rejected','failed']);
     SIP.Utils.augment(Session, SIP.Session, []);
+
+    Session.logger = new SIP.LoggerFactory().getLogger('sip.session');
 
     Session.ua = ua;
 
@@ -34,19 +35,6 @@ describe('Session', function() {
     if(ua.status !== 2) {
       ua.stop();
     };
-  });
-
-  it('initializes events', function() {
-    expect(Session.checkEvent('connecting')).toBeTruthy();
-    expect(Session.checkEvent('terminated')).toBeTruthy();
-    expect(Session.checkEvent('dtmf')).toBeTruthy();
-    expect(Session.checkEvent('invite')).toBeTruthy();
-    expect(Session.checkEvent('cancel')).toBeTruthy();
-    expect(Session.checkEvent('bye')).toBeTruthy();
-    expect(Session.checkEvent('hold')).toBeTruthy();
-    expect(Session.checkEvent('unhold')).toBeTruthy();
-    expect(Session.checkEvent('muted')).toBeTruthy();
-    expect(Session.checkEvent('unmuted')).toBeTruthy();
   });
 
   it('initializes session objects', function() {
