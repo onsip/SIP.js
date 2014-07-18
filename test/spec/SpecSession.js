@@ -1119,12 +1119,11 @@ describe('InviteServerContext', function() {
       InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, request, 'UAS');
     });
 
-    it('emits bye and calls terminated if the status is WAITING_FOR_ACK', function() {
+    it('calls terminated if the status is WAITING_FOR_ACK', function() {
       spyOn(InviteServerContext, 'terminated');
 
       InviteServerContext.terminate();
 
-      expect(InviteServerContext.emit.calls.mostRecent().args[0]).toBe('bye');
       expect(InviteServerContext.terminated).toHaveBeenCalled();
     });
 
@@ -1227,7 +1226,7 @@ describe('InviteServerContext', function() {
       beforeEach(function() {
         req = SIP.Parser.parseMessage('CANCEL sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
 
-        spyOn(InviteServerContext, 'canceled');
+        spyOn(InviteServerContext, 'canceled').and.callThrough();
         spyOn(InviteServerContext, 'failed');
         spyOn(InviteServerContext, 'terminated');
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
@@ -1715,12 +1714,10 @@ describe('InviteClientContext', function() {
       resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
 
       InviteClientContext.request.cancel = jasmine.createSpy('cancel');
-      spyOn(InviteClientContext, 'canceled');
 
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.request.cancel).toHaveBeenCalledWith('TESTING');
-      expect(InviteClientContext.canceled).toHaveBeenCalledWith(null);
     });
     it('accepts and terminates the response if the call was canceled and the response is 2xx', function() {
       InviteClientContext.isCanceled = true;
@@ -1975,10 +1972,10 @@ describe('InviteClientContext', function() {
       expect(function() {InviteClientContext.cancel({status_code: 700});}).toThrowError('Invalid status_code: 700');
     });
 
-    it('sets isCanceled to true, calls canceled, and returns this if status is NULL', function() {
+    it('sets isCanceled to true, calls close, and returns this if status is NULL', function() {
       InviteClientContext.status = 0;
       spyOn(InviteClientContext, 'failed').and.callThrough();
-      spyOn(InviteClientContext, 'canceled').and.callThrough();
+      spyOn(InviteClientContext, 'close').and.callThrough();
       spyOn(InviteClientContext, 'terminated').and.callThrough();
 
       expect(InviteClientContext.isCanceled).toBe(false);
@@ -1986,13 +1983,13 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.isCanceled).toBe(true);
-      expect(InviteClientContext.canceled).toHaveBeenCalled();
+      expect(InviteClientContext.close).toHaveBeenCalled();
     });
 
-    it('sets isCanceled to true, calls canceled, and returns this if status is INVITE_SENT and received_100 is false', function() {
+    it('sets isCanceled to true, calls close, and returns this if status is INVITE_SENT and received_100 is false', function() {
       InviteClientContext.status = 1;
       spyOn(InviteClientContext, 'failed').and.callThrough();
-      spyOn(InviteClientContext, 'canceled').and.callThrough();
+      spyOn(InviteClientContext, 'close').and.callThrough();
       spyOn(InviteClientContext, 'terminated').and.callThrough();
 
       expect(InviteClientContext.isCanceled).toBe(false);
@@ -2000,36 +1997,36 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.isCanceled).toBe(true);
-      expect(InviteClientContext.canceled).toHaveBeenCalled();
+      expect(InviteClientContext.close).toHaveBeenCalled();
     });
 
-    it('calls request.cancel, canceled, and returns this if status is INVITE_SENT and received_100 is true', function() {
+    it('calls request.cancel, close, and returns this if status is INVITE_SENT and received_100 is true', function() {
       InviteClientContext.status = 1;
       InviteClientContext.received_100 = true;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
 
       spyOn(InviteClientContext, 'failed').and.callThrough();
-      spyOn(InviteClientContext, 'canceled').and.callThrough();
+      spyOn(InviteClientContext, 'close').and.callThrough();
       spyOn(InviteClientContext, 'terminated').and.callThrough();
 
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.request.cancel).toHaveBeenCalled();
-      expect(InviteClientContext.canceled).toHaveBeenCalled();
+      expect(InviteClientContext.close).toHaveBeenCalled();
     });
 
-    it('calls request.cancel, canceled, and returns this if status is 1XX_RECEIVED', function() {
+    it('calls request.cancel, close, and returns this if status is 1XX_RECEIVED', function() {
       InviteClientContext.status = 2;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
 
       spyOn(InviteClientContext, 'failed').and.callThrough();
-      spyOn(InviteClientContext, 'canceled').and.callThrough();
+      spyOn(InviteClientContext, 'close').and.callThrough();
       spyOn(InviteClientContext, 'terminated').and.callThrough();
 
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
       expect(InviteClientContext.request.cancel).toHaveBeenCalled();
-      expect(InviteClientContext.canceled).toHaveBeenCalled();
+      expect(InviteClientContext.close).toHaveBeenCalled();
     });
   });
 

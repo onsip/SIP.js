@@ -1128,7 +1128,6 @@ InviteServerContext.prototype = {
         }
       });
 
-      this.emit('bye', this.request);
       this.terminated();
 
       // Restore the dialog into 'this' in order to be able to send the in-dialog BYE :-)
@@ -1413,7 +1412,6 @@ InviteServerContext.prototype = {
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
         this.canceled(request);
-        this.rejected(request, SIP.C.causes.CANCELED);
         this.failed(request, SIP.C.causes.CANCELED);
       }
       break;
@@ -1749,10 +1747,9 @@ InviteClientContext.prototype = {
     if(this.isCanceled) {
       if(response.status_code >= 100 && response.status_code < 200) {
         this.request.cancel(this.cancelReason);
-        this.canceled(null);
+        this.close();
       } else if(response.status_code >= 200 && response.status_code < 299) {
         this.acceptAndTerminate(response);
-        this.emit('bye', this.request);
       }
       return;
     }
@@ -2054,8 +2051,8 @@ InviteClientContext.prototype = {
         break;
       default:
         cause = SIP.Utils.sipErrorCause(response.status_code);
-        this.failed(response, cause);
         this.rejected(response, cause);
+        this.failed(response, cause);
     }
   },
 
@@ -2081,10 +2078,10 @@ InviteClientContext.prototype = {
       cancel_reason = 'SIP ;cause=' + statusCode + ' ;text="' + reasonPhrase + '"';
     }
 
+    this.isCanceled = true;
     // Check Session Status
     if (this.status === C.STATUS_NULL ||
         (this.status === C.STATUS_INVITE_SENT && !this.received_100)) {
-      this.isCanceled = true;
       this.cancelReason = cancel_reason;
     } else if (this.status === C.STATUS_INVITE_SENT ||
                this.status === C.STATUS_1XX_RECEIVED ||
@@ -2092,7 +2089,7 @@ InviteClientContext.prototype = {
       this.request.cancel(cancel_reason);
     }
 
-    return this.canceled();
+    return this.close();
   },
 
   terminate: function(options) {
