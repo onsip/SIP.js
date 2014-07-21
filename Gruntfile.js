@@ -1,3 +1,4 @@
+/*jshint multistr:true, devel:true*/
 /*global module:false*/
 
 module.exports = function(grunt) {
@@ -56,7 +57,8 @@ module.exports = function(grunt) {
         postBundleCB: function (err, src, next) {
           // prepend the banner and fill in placeholders
           src = (banner + src).replace(/<%=(.*)%>/g, function (match, expr) {
-            return eval(expr)
+            // jshint evil:true
+            return eval(expr);
           });
           next(err, src);
         }
@@ -71,25 +73,7 @@ module.exports = function(grunt) {
     jshint: {
       src: 'src/**/*.js',
       options: {
-        browser: true,
-        curly: true,
-        eqeqeq: true,
-        immed: true,
-        latedef: true,
-        newcap: false,
-        noarg: true,
-        sub: true,
-        undef: true,
-        boss: true,
-        eqnull: true,
-        onecase: true,
-        unused: true,
-        supernew: true,
-        globals: {
-          module: true,
-          require: true,
-          global: true
-        }
+        jshintrc: true
       }
     },
     uglify: {
@@ -100,7 +84,7 @@ module.exports = function(grunt) {
       },
       devel: {
         files: {
-	  'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
+          'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
         }
       },
       options: {
@@ -194,7 +178,7 @@ module.exports = function(grunt) {
     modified_grammar =
       "/* jshint ignore:start */\n" +
       modified_grammar +
-      "\n/* jshint ignore:end */\n"
+      "\n/* jshint ignore:end */\n";
 
     fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
     console.log('OK');
