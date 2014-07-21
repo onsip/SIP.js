@@ -71,25 +71,7 @@ module.exports = function(grunt) {
     jshint: {
       src: 'src/**/*.js',
       options: {
-        browser: true,
-        curly: true,
-        eqeqeq: true,
-        immed: true,
-        latedef: true,
-        newcap: false,
-        noarg: true,
-        sub: true,
-        undef: true,
-        boss: true,
-        eqnull: true,
-        onecase: true,
-        unused: true,
-        supernew: true,
-        globals: {
-          module: true,
-          require: true,
-          global: true
-        }
+        jshintrc: true
       }
     },
     uglify: {
