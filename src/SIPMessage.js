@@ -2,7 +2,7 @@
  * @fileoverview SIP Message
  */
 
-(function(SIP) {
+module.exports = function (SIP) {
 var
   OutgoingRequest,
   IncomingMessage,
@@ -41,7 +41,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.method = method;
   this.ruri = ruri;
   this.body = body;
-  this.extraHeaders = extraHeaders || [];
+  this.extraHeaders = (extraHeaders || []).slice();
   this.statusCode = params.status_code;
   this.reasonPhrase = params.reason_phrase;
 
@@ -201,7 +201,7 @@ OutgoingRequest.prototype = {
     //Supported
     if (this.method === SIP.C.REGISTER) {
       supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE && 
+    } else if (this.method === SIP.C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
       supported.push('gruu');
     }
@@ -423,7 +423,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   reason = reason || SIP.C.REASON_PHRASE[code] || '';
-  extraHeaders = extraHeaders || [];
+  extraHeaders = (extraHeaders || []).slice();
 
   response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
 
@@ -460,7 +460,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   //Supported
-  if (this.method === SIP.C.INVITE && 
+  if (this.method === SIP.C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
     supported.push('gruu');
   }
@@ -549,4 +549,4 @@ IncomingResponse.prototype = new IncomingMessage();
 SIP.OutgoingRequest = OutgoingRequest;
 SIP.IncomingRequest = IncomingRequest;
 SIP.IncomingResponse = IncomingResponse;
-}(SIP));
+};

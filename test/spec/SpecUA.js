@@ -10,7 +10,7 @@ describe('UA', function() {
     configuration = {uri : uri,
                      wsServers : wsServers };
 
-    spyOn(SIP, 'RegisterContext').andReturn({
+    spyOn(SIP, 'RegisterContext').and.returnValue({
       on: jasmine.createSpy('on'),
       register: jasmine.createSpy('register'),
       unregister: jasmine.createSpy('unregister'),
@@ -21,7 +21,7 @@ describe('UA', function() {
     });
 
     UA = new SIP.UA(configuration);
-    
+
     UA.logger = jasmine.createSpyObj('logger', ['log', 'error', 'warn']);
   });
 
@@ -113,7 +113,7 @@ describe('UA', function() {
   it('creates a new register context', function() {
     UA = undefined;
 
-    SIP.RegisterContext.reset();
+    SIP.RegisterContext.calls.reset();
 
     UA = new SIP.UA(configuration);
 
@@ -134,7 +134,7 @@ describe('UA', function() {
 
     it('creates a SIP transport if the status is C.STATUS_INIT', function() {
       UA.status = SIP.UA.C.STATUS_INIT;
-      UA.getNextWsServer = jasmine.createSpy('getNextWsServer').andCallFake(function() {
+      UA.getNextWsServer = jasmine.createSpy('getNextWsServer').and.callFake(function() {
         return 'ws-server';
       });
       UA.start();
@@ -183,11 +183,11 @@ describe('UA', function() {
     });
 
     it('clears the transportRecoveryTimer', function() {
-      spyOn(window, 'clearTimeout');
+      spyOn(SIP.Timers, 'clearTimeout');
 
       UA.stop();
 
-      expect(window.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
+      expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
     });
 
     it('unregisters', function () {
@@ -354,14 +354,14 @@ describe('UA', function() {
 
       messageSpy = jasmine.createSpy('message');
 
-      spyOn(SIP, 'ClientContext').andReturn({
+      spyOn(SIP, 'ClientContext').and.returnValue({
         send: messageSpy
       });
 
     });
 
     it('throws an exception if body argument is missing', function() {
-      expect(function(){UA.message(target);}).toThrow('Not enough arguments');
+      expect(function(){UA.message(target);}).toThrowError('Not enough arguments');
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
@@ -373,7 +373,7 @@ describe('UA', function() {
     });
 
     it('passes no options to message.send', function () {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       options = undefined;
       UA.message(target, body, options);
@@ -381,7 +381,7 @@ describe('UA', function() {
     });
 
     it('creates a ClientContext with itself, target, body, options.contentType and options as parameters', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       options = {contentType : 'mixedContent' };
 
@@ -390,7 +390,7 @@ describe('UA', function() {
     });
 
     it('calls ClientContext.send method with no options provided to it', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       options = { option : 'config' };
 
@@ -407,7 +407,7 @@ describe('UA', function() {
       target = 'target';
       inviteSpy = jasmine.createSpy('invite');
 
-      spyOn(SIP, 'InviteClientContext').andReturn({
+      spyOn(SIP, 'InviteClientContext').and.returnValue({
         invite: inviteSpy
       });
     });
@@ -421,7 +421,7 @@ describe('UA', function() {
     });
 
     it('creates an Invite Client Context with itself, target, and options as parameters', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       var options = {};
       UA.configuration.mediaHandlerFactory = function(){};
@@ -441,7 +441,7 @@ describe('UA', function() {
       event = 'event'
       subscribeSpy = jasmine.createSpy('subscribe');
 
-      spyOn(SIP, 'Subscription').andReturn({
+      spyOn(SIP, 'Subscription').and.returnValue({
         subscribe: subscribeSpy
       });
     });
@@ -455,7 +455,7 @@ describe('UA', function() {
     });
 
     it('creates a Subscription with itself, target, and options as parameters', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       var options = {};
       UA.subscribe(target, event, options);
@@ -463,7 +463,7 @@ describe('UA', function() {
     });
 
     it('calls the Subscription method with no arguments', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
       var options = { option : 'things' };
       UA.subscribe(target, event, options);
       expect(subscribeSpy).toHaveBeenCalledWith();
@@ -483,7 +483,7 @@ describe('UA', function() {
 
       requestSpy = jasmine.createSpy('send');
 
-      spyOn(SIP, 'ClientContext').andReturn({
+      spyOn(SIP, 'ClientContext').and.returnValue({
         send: requestSpy
       });
     });
@@ -497,14 +497,14 @@ describe('UA', function() {
     });
 
     it('creates a ClientContext with itself, the method, target and options provided', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       UA.request(method,target,options);
       expect(SIP.ClientContext).toHaveBeenCalledWith(UA, method, target, options);
     });
 
     it('calls ClientContext.send method with no parameters', function() {
-      spyOn(UA, 'isConnected').andReturn(true);
+      spyOn(UA, 'isConnected').and.returnValue(true);
 
       UA.request(method,target,options);
       expect(requestSpy).toHaveBeenCalledWith();
@@ -513,7 +513,7 @@ describe('UA', function() {
 
   describe('.normalizeTarget', function() {
     beforeEach(function() {
-      spyOn(SIP.Utils, 'normalizeTarget').andReturn('Normalize Target');
+      spyOn(SIP.Utils, 'normalizeTarget').and.returnValue('Normalize Target');
     });
 
     it('calls SIP.Utils.normalizeTarget with the target and the hostport params', function() {
@@ -570,7 +570,7 @@ describe('UA', function() {
 
   describe('.getLogger', function() {
     it('calls this.log.getLogger function with the category and label passed to it and return the result', function() {
-      spyOn(UA.log, 'getLogger').andReturn('logger');
+      spyOn(UA.log, 'getLogger').and.returnValue('logger');
       var category = 'category';
       var label = 'label';
       expect(UA.getLogger(category,label)).toEqual('logger');
@@ -597,7 +597,7 @@ describe('UA', function() {
       var transport = 'transport';
       var attempts = 'attempts';
       UA.onTransportConnecting(transport,attempts);
-      expect(callback.calls[0].args[0]).toEqual( { transport : 'transport', attempts : 'attempts' } );
+      expect(callback.calls.mostRecent().args[0]).toEqual( { transport : 'transport', attempts : 'attempts' } );
     });
   });
 
@@ -612,7 +612,7 @@ describe('UA', function() {
       var callback = jasmine.createSpy('callback');
       UA.on('newTransaction', callback);
       UA.newTransaction(transaction);
-      expect(callback.calls[0].args[0]).toEqual( { transaction : { type : 'transaction-type', id : 'id' } } );
+      expect(callback.calls.mostRecent().args[0]).toEqual( { transaction : { type : 'transaction-type', id : 'id' } } );
     });
 
     it('adds the trasaction to the transactions object', function() {
@@ -637,7 +637,7 @@ describe('UA', function() {
       UA.newTransaction(transaction);
       expect(callback).not.toHaveBeenCalled();
       UA.destroyTransaction(transaction);
-      expect(callback.calls[0].args[0]).toEqual({ transaction : { type : 'transaction-type', id : 'id' } });
+      expect(callback.calls.mostRecent().args[0]).toEqual({ transaction : { type : 'transaction-type', id : 'id' } });
     });
 
     it('deletes the transaction from the transactions object', function() {
@@ -653,13 +653,13 @@ describe('UA', function() {
     beforeEach(function() {
       replySpy = jasmine.createSpy('reply');
 
-      spyOn(SIP.Transactions, 'checkTransaction').andReturn(false);
-      spyOn(SIP.Transactions, 'NonInviteServerTransaction').andReturn(true);
-      spyOn(SIP, 'ServerContext').andReturn({
+      spyOn(SIP.Transactions, 'checkTransaction').and.returnValue(false);
+      spyOn(SIP.Transactions, 'NonInviteServerTransaction').and.returnValue(true);
+      spyOn(SIP, 'ServerContext').and.returnValue({
         on: function() {return true;}
       });
-      spyOn(SIP, 'InviteServerContext').andReturn(true);
-      spyOn(SIP.Transactions, 'InviteServerTransaction').andReturn(true);
+      spyOn(SIP, 'InviteServerContext').and.returnValue(true);
+      spyOn(SIP.Transactions, 'InviteServerTransaction').and.returnValue(true);
     });
 
     it('checks that the ruri points to us', function() {
@@ -702,7 +702,7 @@ describe('UA', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
-      UA.checkListener = jasmine.createSpy('checkListener').andCallFake(function() {
+      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
         return false;
       });
       expect(UA.receiveRequest(request)).toBeUndefined();
@@ -712,14 +712,14 @@ describe('UA', function() {
     });
 
     it('checks if there is a listener when the SIP method is message and accepts if listener is found', function() {
-      var callback = jasmine.createSpy('callback').andCallFake(function() {
+      var callback = jasmine.createSpy('callback').and.callFake(function() {
         return true;
       });
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
                       getHeader: jasmine.createSpy('getHeader')};
-      UA.checkListener = jasmine.createSpy('checkListener').andCallFake(function() {
+      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
         return true;
       });
       UA.on('message',callback);
@@ -744,7 +744,7 @@ describe('UA', function() {
                       ruri : { user: UA.configuration.uri.user } ,
                       reply : replySpy };
       var webrtc = SIP.WebRTC.isSupported;
-      spyOn(SIP.WebRTC, 'isSupported').andCallFake(function () {
+      spyOn(SIP.WebRTC, 'isSupported').and.callFake(function () {
         return false;
       });
 
@@ -762,7 +762,7 @@ describe('UA', function() {
 
     it('finds the session and call receiveRequest on the session if it exists if a CANCEL is received', function() {
       var receiveRequestSpy = jasmine.createSpy('receiveRequest');
-      spyOn(UA, 'findSession').andReturn({receiveRequest : receiveRequestSpy });
+      spyOn(UA, 'findSession').and.returnValue({receiveRequest : receiveRequestSpy });
       var request = { method : SIP.C.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy };
@@ -772,7 +772,7 @@ describe('UA', function() {
     });
 
     it('logs a warning if the session does not exist if a CANCEL is a received', function() {
-      spyOn(UA, 'findSession').andReturn(false);
+      spyOn(UA, 'findSession').and.returnValue(false);
       var request = { method : SIP.C.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy };
@@ -798,10 +798,10 @@ describe('UA', function() {
     });
 
     it('creates a new Invite Server Transaction and call receive request if it receives an in dialog invite request', function() {
-      var receiveRequest = jasmine.createSpy('receiveRequest').andCallFake(function() {
+      var receiveRequest = jasmine.createSpy('receiveRequest').and.callFake(function() {
         return 'Receive Request';
       });
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return {receiveRequest : receiveRequest };
       });
       var request = { method : SIP.C.INVITE ,
@@ -815,10 +815,10 @@ describe('UA', function() {
     });
 
     it('should not create a new Invite Server Transaction and just call receive request if it receives an in dialog request other than invite', function() {
-      var receiveRequest = jasmine.createSpy('receiveRequest').andCallFake(function() {
+      var receiveRequest = jasmine.createSpy('receiveRequest').and.callFake(function() {
         return 'Receive Request';
       });
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return {receiveRequest : receiveRequest };
       });
       var request = { method : 'some method' ,
@@ -832,7 +832,7 @@ describe('UA', function() {
     });
 
     it('replies 481 on the request if the dialog is not found and the request is an invite', function() {
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
       var request = { method : SIP.C.INVITE ,
@@ -845,10 +845,10 @@ describe('UA', function() {
     });
 
     it('calls receiveRequest on the dialog if there is one', function() {
-      var receiveRequest = jasmine.createSpy('dialogReceiveRequest').andCallFake(function() {
+      var receiveRequest = jasmine.createSpy('dialogReceiveRequest').and.callFake(function() {
         return 'Receive Request';
       });
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return {receiveRequest : receiveRequest };
       });
       var request = { method : SIP.C.NOTIFY ,
@@ -861,13 +861,13 @@ describe('UA', function() {
     });
 
     it('calls receive response on the session if it exists and the dialog does not for an in dialog notify request', function() {
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
-      var receiveRequest = jasmine.createSpy('receiveRequest').andCallFake(function() {
+      var receiveRequest = jasmine.createSpy('receiveRequest').and.callFake(function() {
         return 'Receive Request';
       });
-      UA.findSession = jasmine.createSpy('findSession').andCallFake(function() {
+      UA.findSession = jasmine.createSpy('findSession').and.callFake(function() {
         return {receiveRequest : receiveRequest};
       });
       var request = { method : SIP.C.NOTIFY ,
@@ -881,10 +881,10 @@ describe('UA', function() {
     });
 
     it('replies with a 481 and subscription does not exist if an in dialog notify request is received and no dialog or session is found', function() {
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
-      UA.findSession = jasmine.createSpy('findSession').andCallFake(function() {
+      UA.findSession = jasmine.createSpy('findSession').and.callFake(function() {
         return false;
       });
       var request = { method : SIP.C.NOTIFY ,
@@ -898,7 +898,7 @@ describe('UA', function() {
     });
 
     it ('replies with a 481 if an in dialog request is received that is not a NOTIFY OR ACK and no dialog is found', function() {
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
       var request = { method : SIP.C.INVITE ,
@@ -911,7 +911,7 @@ describe('UA', function() {
     });
 
     it('should not do anything if an ACK is received and no dialog is found', function() {
-      UA.findDialog = jasmine.createSpy('findDialog').andCallFake(function() {
+      UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
       var request = { method : SIP.C.ACK ,
@@ -989,11 +989,11 @@ describe('UA', function() {
     it('selects one of the candidates with the highest weight', function() {
       can4.weight = 0;
 
-      spyOn(Math, 'random').andReturn(0.9);
+      spyOn(Math, 'random').and.returnValue(0.9);
 
       expect(UA.getNextWsServer()).toBe(can3);
 
-      Math.random.andReturn(0.4);
+      Math.random.and.returnValue(0.4);
 
       expect(UA.getNextWsServer()).toBe(can2);
     });
@@ -1024,7 +1024,7 @@ describe('UA', function() {
 
   describe('.recoverTransport', function() {
     beforeEach(function() {
-      spyOn(Math, 'random').andReturn(0);
+      spyOn(Math, 'random').and.returnValue(0);
     });
 
     it('logs if the next retry time exceeds the max_interval', function(){
@@ -1036,7 +1036,7 @@ describe('UA', function() {
     });
 
     it('calls getNextWsServer', function() {
-      spyOn(UA, 'getNextWsServer').andCallThrough();
+      spyOn(UA, 'getNextWsServer').and.callThrough();
 
       UA.recoverTransport(UA);
 
@@ -1045,28 +1045,32 @@ describe('UA', function() {
 
     it('sets the transportRecoveryTimer', function() {
       expect(UA.transportRecoveryTimer).toBeNull();
-      
+
       UA.recoverTransport(UA);
 
       expect(UA.transportRecoveryTimer).toBeDefined();
     });
 
-    it('logs before setting the transport recovery timer, then attempts to make a new transport', function() {
-      spyOn(SIP, 'Transport');
-      SIP.Transport.C = {STATUS_READY: 0, STATUS_DISCONNECTED: 1, STATUS_ERROR: 2};
+    describe('logs before setting the transport recovery timer, then attempts to make a new transport', function() {
+      beforeEach(function (done) {
+        spyOn(SIP, 'Transport');
+        SIP.Transport.C = {STATUS_READY: 0, STATUS_DISCONNECTED: 1, STATUS_ERROR: 2};
 
-      UA.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
-      UA.transportRecoverAttempts = 0;
+        UA.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
+        UA.transportRecoverAttempts = 0;
 
-      UA.recoverTransport(UA);
+        UA.recoverTransport(UA);
 
-      expect(UA.logger.log).toHaveBeenCalledWith('next connection attempt in 1 seconds');
+        expect(UA.logger.log).toHaveBeenCalledWith('next connection attempt in 1 seconds');
 
-      waitsFor(function() {
-        return UA.transportRecoverAttempts === 1;
-      }, 'transportRecoveryTimer must fire', 1100);
+        setTimeout(function () {
+          if (UA.transportRecoverAttempts > 0) {
+            done();
+          }
+        },1100);
+      });
 
-      runs(function() {
+      it('asynchronously', function () {
         expect(SIP.Transport).toHaveBeenCalled();
       });
     })
@@ -1119,7 +1123,7 @@ describe('UA', function() {
     it('throws a configuration error when a mandatory parameter is missing', function() {
       SIP.UA.configuration_check.mandatory.fake = function(value) {return;};
 
-      expect(function(){UA.loadConfig({});}).toThrow('Missing parameter: fake');
+      expect(function(){UA.loadConfig({});}).toThrowError('Missing parameter: fake');
 
       delete SIP.UA.configuration_check.mandatory.fake;
     });
@@ -1127,7 +1131,7 @@ describe('UA', function() {
     it('throws a configuration error if a mandatory parameter\'s passed-in value is invalid', function() {
       SIP.UA.configuration_check.mandatory.fake = function(value) {return;};
 
-      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrow('Invalid value "fake" for parameter "fake"');
+      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
 
       delete SIP.UA.configuration_check.mandatory.fake;
     });
@@ -1147,7 +1151,7 @@ describe('UA', function() {
     it('throws a ConfigurationError if an optional value is passed in which is invalid', function() {
       SIP.UA.configuration_check.optional.fake = function(value) {return;};
 
-      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrow('Invalid value "fake" for parameter "fake"');
+      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
 
       delete SIP.UA.configuration_check.optional.fake;
     });
@@ -1165,7 +1169,7 @@ describe('UA', function() {
     });
 
     it('makes sure the connection recovery max interval is greater than the min interval', function() {
-      expect(function(){UA.loadConfig({connectionRecoveryMaxInterval: 1, connectionRecoveryMinInterval: 2});}).toThrow('Invalid value 1 for parameter "connectionRecoveryMaxInterval"');
+      expect(function(){UA.loadConfig({connectionRecoveryMaxInterval: 1, connectionRecoveryMinInterval: 2});}).toThrowError('Invalid value 1 for parameter "connectionRecoveryMaxInterval"');
     });
 
     it('allows 0 to be passed as a display name', function() {
@@ -1199,7 +1203,7 @@ describe('UA', function() {
     });
 
     it('uses getRandomTestNetIP for viaHost if hackIpInContact is set to true', function() {
-      spyOn(SIP.Utils, 'getRandomTestNetIP').andCallThrough();
+      spyOn(SIP.Utils, 'getRandomTestNetIP').and.callThrough();
 
       UA.loadConfig({hackIpInContact: true});
 
@@ -1437,16 +1441,16 @@ describe('UA', function() {
       it('returns SIP.C.supported.REQUIRED if SIP.C.supported.REQUIRED is passed in', function(){
         expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.REQUIRED)).toBe(SIP.C.supported.REQUIRED);
       });
-      
+
       // Legacy Support
       it('returns SIP.C.supported.REQUIRED if "required" is passed in', function(){
         expect(SIP.UA.configuration_check.optional.rel100("required")).toBe(SIP.C.supported.REQUIRED);
       });
-      
+
       it('returns SIP.C.supported.SUPPORTED if SIP.C.supported.SUPPORTED is passed in', function(){
         expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.SUPPORTED)).toBe(SIP.C.supported.SUPPORTED);
       });
-      
+
       // Legacy Support
       it('returns SIP.C.supported.SUPPORTED if "supported" is passed in as well as adding it to the supported list', function(){
         expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe(SIP.C.supported.SUPPORTED);

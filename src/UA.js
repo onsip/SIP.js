@@ -7,7 +7,7 @@
  *
  * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var UA,
   C = {
     // UA status codes
@@ -65,9 +65,8 @@ UA = function(configuration) {
 
   // Helper function for forwarding events
   function selfEmit(type) {
-    return function (data) {
-      self.emit(type, data);
-    };
+    //registrationFailed handler is invoked with two arguments. Allow event handlers to be invoked with a variable no. of arguments
+    return self.emit.bind(self, type);
   }
 
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
@@ -342,7 +341,7 @@ UA.prototype.stop = function() {
   }
 
   // Clear transportRecoveryTimer
-  window.clearTimeout(this.transportRecoveryTimer);
+  SIP.Timers.clearTimeout(this.transportRecoveryTimer);
 
   // Close registerContext
   this.logger.log('closing registerContext');
@@ -826,7 +825,7 @@ UA.prototype.recoverTransport = function(ua) {
 
   this.logger.log('next connection attempt in '+ nextRetry +' seconds');
 
-  this.transportRecoveryTimer = window.setTimeout(
+  this.transportRecoveryTimer = SIP.Timers.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
       new SIP.Transport(ua, server);
@@ -933,7 +932,7 @@ UA.prototype.loadConfig = function(configuration) {
       }
     }
   }
-  
+
   SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
 
   // Check Optional parameters
@@ -1292,7 +1291,7 @@ UA.configuration_check = {
     password: function(password) {
       return String(password);
     },
-    
+
     rel100: function(rel100) {
       if(rel100 === SIP.C.supported.REQUIRED) {
         return SIP.C.supported.REQUIRED;
@@ -1440,4 +1439,4 @@ UA.configuration_check = {
 
 UA.C = C;
 SIP.UA = UA;
-}(SIP));
+};

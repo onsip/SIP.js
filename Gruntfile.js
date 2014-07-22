@@ -1,46 +1,10 @@
+/*jshint multistr:true, devel:true*/
 /*global module:false*/
 
 module.exports = function(grunt) {
 
-  var srcFiles = [
-    'src/SIP.js',
-    'src/Utils.js',
-    'src/LoggerFactory.js',
-    'src/EventEmitter.js',
-    'src/Constants.js',
-    'src/Exceptions.js',
-    'src/Timers.js',
-    'src/Transport.js',
-    'src/Parser.js',
-    'src/SIPMessage.js',
-    'src/URI.js',
-    'src/NameAddrHeader.js',
-    'src/Transactions.js',
-    'src/Dialogs.js',
-    'src/RequestSender.js',
-    'src/RegisterContext.js',
-    'src/MediaHandler.js',
-    'src/ClientContext.js',
-    'src/ServerContext.js',
-    'src/Session.js',
-    'src/Subscription.js',
-    'src/WebRTC.js',
-    'src/UA.js',
-    'src/Hacks.js',
-    'src/SanityCheck.js',
-    'src/DigestAuthentication.js',
-    'src/Grammar/dist/Grammar.js',
-    'src/tail.js'
-  ];
-
   var pkg = grunt.file.readJSON('package.json');
-
-  // Project configuration.
-  grunt.initConfig({
-    pkg: pkg,
-    name: pkg.name.replace(/\.js$/, ''),
-    meta: {
-      banner: '\
+  var banner = '\
 /*\n\
  * SIP version <%= pkg.version %>\n\
  * Copyright (c) 2014-<%= grunt.template.today("yyyy") %> Junction Networks, Inc <http://www.onsip.com>\n\
@@ -72,65 +36,44 @@ module.exports = function(grunt) {
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\
  *\n\
  * ~~~ end JsSIP license ~~~\n\
- */\n\n\n'
+ */\n\n\n';
+
+  // Project configuration.
+  grunt.initConfig({
+    pkg: pkg,
+    name: pkg.name.replace(/\.js$/, ''),
+    meta: {
+      banner: banner
     },
-    concat: {
-      dist: {
-        src: srcFiles,
-        dest: 'dist/<%= name %>.js',
-        options: {
-          banner: '<%= meta.banner %>',
-          separator: '\n\n',
-          process: true
-        },
-        nonull: true
-      },
+    browserify: {
       devel: {
-        src: srcFiles,
-        dest: 'dist/<%= name %>-<%= pkg.version %>.js',
-        options: {
-          banner: '<%= meta.banner %>',
-          separator: '\n\n',
-          process: true
+        src: 'src/SIP.js',
+        dest: 'dist/<%= name %>-<%= pkg.version %>.js'
+      },
+      options: {
+        bundleOptions: {
+          standalone: 'SIP'
         },
-        nonull: true
+        postBundleCB: function (err, src, next) {
+          // prepend the banner and fill in placeholders
+          src = (banner + src).replace(/<%=(.*)%>/g, function (match, expr) {
+            // jshint evil:true
+            return eval(expr);
+          });
+          next(err, src);
+        }
       }
     },
-    includereplace: {
+    copy: {
       dist: {
-        files: {
-          'dist': 'dist/<%= name %>.js'
-        }
-      },
-      devel: {
-        files: {
-          'dist': 'dist/<%= name %>-<%= pkg.version %>.js'
-        }
+        src: 'dist/<%= name %>-<%= pkg.version %>.js',
+        dest: 'dist/<%= name %>.js'
       }
     },
     jshint: {
-      dist: 'dist/<%= name %>.js',
-      devel: 'dist/<%= name %>-<%= pkg.version %>.js',
+      src: 'src/**/*.js',
       options: {
-        browser: true,
-        curly: true,
-        eqeqeq: true,
-        immed: true,
-        latedef: true,
-        newcap: false,
-        noarg: true,
-        sub: true,
-        undef: true,
-        boss: true,
-        eqnull: true,
-        onecase: true,
-        unused: true,
-        supernew: true,
-        globals: {
-          module: true,
-          define: true,
-          global: true
-        }
+        jshintrc: true
       }
     },
     uglify: {
@@ -141,7 +84,7 @@ module.exports = function(grunt) {
       },
       devel: {
         files: {
-	  'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
+          'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
         }
       },
       options: {
@@ -165,7 +108,6 @@ module.exports = function(grunt) {
         src: 'src/Grammar/src/Grammar.pegjs',
         dest: 'src/Grammar/dist/Grammar.js',
         options: {
-          exportVar: 'SIP.Grammar',
           optimize: 'size',
           allowedStartRules: [
              'Contact',
@@ -197,17 +139,28 @@ module.exports = function(grunt) {
           ]
         }
       }
+    },
+    trimtrailingspaces: {
+      main: {
+        src: "src/**/*.js",
+        options: {
+          filter: 'isFile',
+          encoding: 'utf8',
+          failIfTrimmed: true
+        }
+      }
     }
   });
 
 
   // Load Grunt plugins.
-  grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-include-replace');
+  grunt.loadNpmTasks('grunt-browserify');
+  grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-peg');
+  grunt.loadNpmTasks('grunt-trimtrailingspaces');
 
 
   // Task for building SIP.js Grammar.js and Grammar.min.js files.
@@ -219,12 +172,13 @@ module.exports = function(grunt) {
     var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
     modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
     modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
+    modified_grammar = modified_grammar.replace(/\(function\(\)/, 'function(SIP)').replace(/\}\)\(\)/, '}');
 
     // Don't jshint this big chunk of minified code
     modified_grammar =
       "/* jshint ignore:start */\n" +
       modified_grammar +
-      "\n/* jshint ignore:end */\n"
+      "\n/* jshint ignore:end */\n";
 
     fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
     console.log('OK');
@@ -235,12 +189,12 @@ module.exports = function(grunt) {
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-  grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:dist', 'includereplace:dist', 'jshint:dist', 'uglify:dist', 'uglify:devel']);
+  grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'copy', 'uglify']);
 
   // Task for building sip-devel.js (uncompressed).
-  grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel']);
+  grunt.registerTask('devel', ['jshint', 'browserify']);
 
-  grunt.registerTask('quick', ['concat:dist', 'includereplace:dist']);
+  grunt.registerTask('quick', ['browserify']);
 
   // Test tasks.
   grunt.registerTask('test',['jasmine']);

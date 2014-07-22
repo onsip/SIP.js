@@ -104,7 +104,7 @@ describe('Dialogs', function() {
   });
 
   it('sets logger, owner, dialogs array, and logs', function() {
-    var logger = owner.ua.getLogger('sip.dialog', this.id.toString());
+    var logger = owner.ua.getLogger('sip.dialog', Dialog.id.toString());
 
     spyOn(logger, 'log');
 
@@ -175,7 +175,7 @@ describe('Dialogs', function() {
 
   describe('.createRequest', function() {
     beforeEach(function() {
-      spyOn(SIP, 'OutgoingRequest').andReturn({made: 'successful'});
+      spyOn(SIP, 'OutgoingRequest').and.returnValue({made: 'successful'});
     });
 
     it('returns a request with proper settings, doesn\'t increment local_seqnum', function() {
@@ -256,19 +256,19 @@ describe('Dialogs', function() {
 
       expect(Dialog.checkInDialogRequest(request)).toBe(false);
 
-      expect(request.reply.calls[0].args[0]).toBe(500);
+      expect(request.reply.calls.mostRecent().args[0]).toBe(500);
     });
 
     it('returns true and calls server_transaction.on once if neither of the *_pending_reply properties are true, the request method is INVITE, and the request does not have a contact header', function() {
       expect(Dialog.uac_pending_reply).toBe(false);
       expect(Dialog.uas_pending_reply).toBe(false);
 
-      spyOn(request, 'hasHeader').andReturn(false);
+      spyOn(request, 'hasHeader').and.returnValue(false);
 
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
       expect(request.server_transaction.on).toHaveBeenCalled();
-      expect(request.server_transaction.on.calls.length).toBe(1);
+      expect(request.server_transaction.on.calls.count()).toBe(1);
     });
 
     it('returns true and calls server_transaction.on twice if neither of the *_pending_reply properties are true, the request method is INVITE, and the request has have a contact header', function() {
@@ -278,7 +278,7 @@ describe('Dialogs', function() {
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
       expect(request.server_transaction.on).toHaveBeenCalled();
-      expect(request.server_transaction.on.calls.length).toBe(2);
+      expect(request.server_transaction.on.calls.count()).toBe(2);
     });
 
     it('returns true and calls server.transaction.on once if the request method is NOTIFY and the request has a contact header', function() {
@@ -287,7 +287,7 @@ describe('Dialogs', function() {
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
       expect(request.server_transaction.on).toHaveBeenCalled();
-      expect(request.server_transaction.on.calls.length).toBe(1);
+      expect(request.server_transaction.on.calls.count()).toBe(1);
     });
   });
 
@@ -308,7 +308,7 @@ describe('Dialogs', function() {
     });
 
     it('does not call owner.receiveRequest if checkInDialogRequest returns false', function() {
-      spyOn(Dialog, 'checkInDialogRequest').andReturn(false);
+      spyOn(Dialog, 'checkInDialogRequest').and.returnValue(false);
 
       Dialog.receiveRequest(request);
 
@@ -316,7 +316,7 @@ describe('Dialogs', function() {
     });
 
     it('calls owner.receiveRequest if checkInDialogRequest returns false', function() {
-      spyOn(Dialog, 'checkInDialogRequest').andReturn(true);
+      spyOn(Dialog, 'checkInDialogRequest').and.returnValue(true);
 
       Dialog.receiveRequest(request);
 

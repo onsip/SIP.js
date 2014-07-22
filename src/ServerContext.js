@@ -1,4 +1,4 @@
-(function (SIP) {
+module.exports = function (SIP) {
 var ServerContext;
 
 ServerContext = function (ua, request) {
@@ -12,7 +12,7 @@ ServerContext = function (ua, request) {
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
   if (request.method === SIP.C.INVITE) {
-    this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua); 
+    this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua);
   } else {
     this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
   }
@@ -40,7 +40,7 @@ ServerContext.prototype.progress = function (options) {
   var
     statusCode = options.statusCode || 180,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
@@ -58,7 +58,7 @@ ServerContext.prototype.accept = function (options) {
   var
     statusCode = options.statusCode || 200,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
@@ -76,7 +76,7 @@ ServerContext.prototype.reject = function (options) {
   var
     statusCode = options.statusCode || 480,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
@@ -95,7 +95,7 @@ ServerContext.prototype.reply = function (options) {
   var
     statusCode = options.statusCode,
     reasonPhrase = options.reasonPhrase,
-    extraHeaders = options.extraHeaders || [],
+    extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body;
 
   this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
@@ -112,4 +112,4 @@ ServerContext.prototype.onTransportError = function () {
 };
 
 SIP.ServerContext = ServerContext;
-}(SIP));
+};

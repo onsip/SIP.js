@@ -38,7 +38,7 @@ describe('SanityCheck', function () {
     expect(SIP.sanityCheck(message, ua, transport)).toBe(false);
     expect(transport.send).toHaveBeenCalled();
     if (code) {
-      expect(transport.send.mostRecentCall.args[0]).toMatch('SIP/2.0 ' + code + ' ');
+      expect(transport.send.calls.mostRecent().args[0]).toMatch('SIP/2.0 ' + code + ' ');
     }
   }
 

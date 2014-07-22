@@ -1,4 +1,4 @@
-(function (SIP) {
+module.exports = function (SIP) {
 var ClientContext;
 
 ClientContext = function (ua, method, target, options) {
@@ -27,7 +27,7 @@ ClientContext = function (ua, method, target, options) {
   this.method = method;
 
   params = options && options.params;
-  extraHeaders = (options && options.extraHeaders) || [];
+  extraHeaders = (options && options.extraHeaders || []).slice();
 
   if (options && options.body) {
     this.body = options.body;
@@ -72,7 +72,7 @@ ClientContext.prototype.cancel = function (options) {
     cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
   }
   this.request.cancel(cancel_reason);
-  
+
   this.emit('cancel');
 };
 
@@ -94,7 +94,7 @@ ClientContext.prototype.receiveResponse = function (response) {
     default:
       if(this.ua.applicants[this]) {
         delete this.ua.applicants[this];
-      }      
+      }
       this.emit('rejected', response, cause);
       this.emit('failed', response, cause);
       break;
@@ -111,4 +111,4 @@ ClientContext.prototype.onTransportError = function () {
 };
 
 SIP.ClientContext = ClientContext;
-}(SIP));
+};

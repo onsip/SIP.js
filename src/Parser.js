@@ -7,7 +7,7 @@
  * @augments SIP
  * @namespace
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var Parser;
 
 function getHeader(data, headerStart) {
@@ -93,7 +93,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       length = parsed.length;
       for (idx = 0; idx < length; idx++) {
         header = parsed[idx];
-        message.addHeader('record-route', headerValue.substring(header.possition, header.offset));
+        message.addHeader('record-route', headerValue.substring(header.position, header.offset));
         message.headers['Record-Route'][message.getHeaders('record-route').length - 1].parsed = header.parsed;
       }
       break;
@@ -116,7 +116,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       length = parsed.length;
       for (idx = 0; idx < length; idx++) {
         header = parsed[idx];
-        message.addHeader('contact', headerValue.substring(header.possition, header.offset));
+        message.addHeader('contact', headerValue.substring(header.position, header.offset));
         message.headers['Contact'][message.getHeaders('contact').length - 1].parsed = header.parsed;
       }
       break;
@@ -255,4 +255,4 @@ Parser.parseMessage = function(data, ua) {
 };
 
 SIP.Parser = Parser;
-}(SIP));
+};

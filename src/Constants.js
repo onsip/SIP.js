@@ -7,8 +7,9 @@
  * @augments SIP
  */
 
-SIP.C= {
-  USER_AGENT: SIP.name +'/'+ SIP.version,
+module.exports = function (name, version) {
+return {
+  USER_AGENT: name +'/'+ version,
 
   // SIP scheme
   SIP:  'sip',
@@ -45,7 +46,7 @@ SIP.C= {
     BAD_MEDIA_DESCRIPTION:    'Bad Media Description',
     RTP_TIMEOUT:              'RTP Timeout'
   },
-  
+
   supported: {
     UNSUPPORTED:        'none',
     SUPPORTED:          'supported',
@@ -155,4 +156,5 @@ SIP.C= {
     604: 'Does Not Exist Anywhere',
     606: 'Not Acceptable'
   }
+};
 };

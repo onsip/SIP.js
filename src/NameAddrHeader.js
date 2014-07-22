@@ -11,7 +11,7 @@
  * @param {Object} [parameters]
  *
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var NameAddrHeader;
 
 NameAddrHeader = function(uri, displayName, parameters) {
@@ -93,4 +93,4 @@ NameAddrHeader.parse = function(name_addr_header) {
 };
 
 SIP.NameAddrHeader = NameAddrHeader;
-}(SIP));
+};

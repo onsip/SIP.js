@@ -6,7 +6,7 @@
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
  */
-(function(SIP){
+module.exports = function (SIP) {
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
@@ -63,12 +63,12 @@ MediaStreamManager.render = function render (stream, elements) {
 
   function ensureMediaPlaying (mediaElement) {
     var interval = 100;
-    mediaElement.ensurePlayingIntervalId = setInterval(function () {
+    mediaElement.ensurePlayingIntervalId = SIP.Timers.setInterval(function () {
       if (mediaElement.paused) {
         mediaElement.play();
       }
       else {
-        clearInterval(mediaElement.ensurePlayingIntervalId);
+        SIP.Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
       }
     }, interval);
   }
@@ -102,22 +102,29 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         (this.mediaHint && this.mediaHint.constraints) ||
         {audio: true, video: true};
 
-      this.emit('userMediaRequest', constraints);
+      /*
+       * Make the call asynchronous, so that ICCs have a chance
+       * to define callbacks to `userMediaRequest`
+       */
+      SIP.Timers.setTimeout(function () {
+        this.emit('userMediaRequest', constraints);
 
-      var emitThenCall = function (eventName, callback) {
-        var callbackArgs = Array.prototype.slice.call(arguments, 2);
-        // Emit with all of the arguments from the real callback.
-        var newArgs = [eventName].concat(callbackArgs);
+        var emitThenCall = function (eventName, callback) {
+          var callbackArgs = Array.prototype.slice.call(arguments, 2);
+          // Emit with all of the arguments from the real callback.
+          var newArgs = [eventName].concat(callbackArgs);
 
-        this.emit.apply(this, newArgs);
+          this.emit.apply(this, newArgs);
 
-        callback.apply(null, callbackArgs);
-      }.bind(this);
+          callback.apply(null, callbackArgs);
+        }.bind(this);
 
-      SIP.WebRTC.getUserMedia(constraints,
-        emitThenCall.bind(this, 'userMedia', saveSuccess),
-        emitThenCall.bind(this, 'userMediaFailed', onFailure)
-      );
+        SIP.WebRTC.getUserMedia(
+          constraints,
+          emitThenCall.bind(this, 'userMedia', saveSuccess),
+          emitThenCall.bind(this, 'userMediaFailed', onFailure)
+        );
+      }.bind(this), 0);
     }
   }},
 
@@ -132,4 +139,4 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 
 // Return since it will be assigned to a variable.
 return MediaStreamManager;
-}(SIP));
+};

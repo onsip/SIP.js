@@ -1,4 +1,4 @@
-(function (SIP) {
+module.exports = function (SIP) {
 
 var RegisterContext;
 
@@ -51,7 +51,7 @@ RegisterContext.prototype = {
 
     // Handle Options
     options = options || {};
-    extraHeaders = options.extraHeaders || [];
+    extraHeaders = (options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
@@ -67,7 +67,7 @@ RegisterContext.prototype = {
 
       // Clear registration timer
       if (this.registrationTimer !== null) {
-        window.clearTimeout(this.registrationTimer);
+        SIP.Timers.clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
 
@@ -83,7 +83,7 @@ RegisterContext.prototype = {
           }
 
           if (this.registrationExpiredTimer !== null) {
-            window.clearTimeout(this.registrationExpiredTimer);
+            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
 
@@ -114,11 +114,11 @@ RegisterContext.prototype = {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
-          this.registrationTimer = window.setTimeout(function() {
+          this.registrationTimer = SIP.Timers.setTimeout(function() {
             self.registrationTimer = null;
             self.register(options);
           }, (expires * 1000) - 3000);
-          this.registrationExpiredTimer = window.setTimeout(function () {
+          this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
             self.logger.warn('registration expired');
             if (self.registered) {
               self.unregistered(null, SIP.C.causes.EXPIRES);
@@ -176,12 +176,12 @@ RegisterContext.prototype = {
   onTransportClosed: function() {
     this.registered_before = this.registered;
     if (this.registrationTimer !== null) {
-      window.clearTimeout(this.registrationTimer);
+      SIP.Timers.clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
     if (this.registrationExpiredTimer !== null) {
-      window.clearTimeout(this.registrationExpiredTimer);
+      SIP.Timers.clearTimeout(this.registrationExpiredTimer);
       this.registrationExpiredTimer = null;
     }
 
@@ -208,13 +208,13 @@ RegisterContext.prototype = {
     }
 
     options = options || {};
-    extraHeaders = options.extraHeaders || [];
+    extraHeaders = (options.extraHeaders || []).slice();
 
     this.registered = false;
 
     // Clear the registration timer.
     if (this.registrationTimer !== null) {
-      window.clearTimeout(this.registrationTimer);
+      SIP.Timers.clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
@@ -236,7 +236,7 @@ RegisterContext.prototype = {
         case /^2[0-9]{2}$/.test(response.status_code):
           this.emit('accepted', response);
           if (this.registrationExpiredTimer !== null) {
-            window.clearTimeout(this.registrationExpiredTimer);
+            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
           this.unregistered(response);
@@ -269,9 +269,9 @@ RegisterContext.prototype = {
     this.registered = false;
     this.emit('unregistered', response || null, cause || null);
   }
-  
+
 };
 
 
 SIP.RegisterContext = RegisterContext;
-}(SIP));
+};

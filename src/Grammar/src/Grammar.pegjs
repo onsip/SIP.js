@@ -1,4 +1,4 @@
-{ var data = {}; } // Object to which header attributes will be assigned during parsing
+{var data = {};} // Object to which header attributes will be assigned during parsing
 
 // ABNF BASIC
 
@@ -399,7 +399,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         } catch(e) {
                           header = null;
                         }
-                        data.multi_header.push( { 'possition': peg$currPos,
+                        data.multi_header.push( { 'position': peg$currPos,
                                                   'offset': offset(),
                                                   'parsed': header
                                                 });}
@@ -650,7 +650,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   } catch(e) {
                     header = null;
                   }
-                  data.multi_header.push( { 'possition': peg$currPos,
+                  data.multi_header.push( { 'position': peg$currPos,
                                             'offset': offset(),
                                             'parsed': header
                                           });}

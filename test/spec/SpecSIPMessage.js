@@ -9,7 +9,7 @@ describe('SIPMessage', function() {
       body;
 
     beforeEach(function() {
-      var getLogger = jasmine.createSpy('getLogger').andReturn('getLogger');
+      var getLogger = jasmine.createSpy('getLogger').and.returnValue('getLogger');
       ua = {
         getLogger : getLogger ,
         configuration : {
@@ -23,7 +23,7 @@ describe('SIPMessage', function() {
       extraHeaders = 'extraHeaders';
 
       spyOn(SIP, 'NameAddrHeader');
-      SIP.NameAddrHeader.parse = jasmine.createSpy('NameAddrHeaderParse').andCallFake(function(param) {
+      SIP.NameAddrHeader.parse = jasmine.createSpy('NameAddrHeaderParse').and.callFake(function(param) {
         return param.toString();
       });
 
@@ -174,7 +174,7 @@ describe('SIPMessage', function() {
     var IncomingRequest,
     ua, transaction;
     beforeEach(function(){
-      var getLogger = jasmine.createSpy('getLogger').andReturn('logger');
+      var getLogger = jasmine.createSpy('getLogger').and.returnValue('logger');
       ua = {
         getLogger : getLogger ,
         configuration : {
@@ -305,9 +305,9 @@ describe('SIPMessage', function() {
     describe('.parseHeader', function() {
       beforeEach(function() {
         IncomingRequest.logger = {};
-        IncomingRequest.logger.log = jasmine.createSpy('log').andReturn('log');
-        IncomingRequest.logger.warn = jasmine.createSpy('warn').andReturn('warn');
-        spyOn(SIP.Grammar,'parse').andCallThrough();
+        IncomingRequest.logger.log = jasmine.createSpy('log').and.returnValue('log');
+        IncomingRequest.logger.warn = jasmine.createSpy('warn').and.returnValue('warn');
+        spyOn(SIP.Grammar,'parse').and.callThrough();
       });
 
       it('returns undefined if the header does not exist in the headers object', function() {
@@ -333,11 +333,11 @@ describe('SIPMessage', function() {
         IncomingRequest.addHeader(name,value);
         expect(IncomingRequest.headers[SIP.Utils.headerize(name)]).toEqual([{raw : value}]);
         IncomingRequest.parseHeader(name,0);
-        expect(SIP.Grammar.parse.calls.length).toEqual(1);
+        expect(SIP.Grammar.parse.calls.count()).toEqual(1);
         expect(IncomingRequest.logger.warn).not.toHaveBeenCalled();
         expect(IncomingRequest.headers[SIP.Utils.headerize(name)][0].parsed).toBeDefined();
         expect(IncomingRequest.parseHeader(name,0)).toBe(IncomingRequest.headers[SIP.Utils.headerize(name)][0].parsed);
-        expect(SIP.Grammar.parse.calls.length).toEqual(1);
+        expect(SIP.Grammar.parse.calls.count()).toEqual(1);
       });
 
       it('returns a newly parsed header and creates a parsed property', function() {
@@ -414,7 +414,7 @@ describe('SIPMessage', function() {
     var IncomingResponse, ua;
 
     beforeEach(function(){
-      var getLogger = jasmine.createSpy('getLogger').andReturn('logger');
+      var getLogger = jasmine.createSpy('getLogger').and.returnValue('logger');
       ua = {
         getLogger : getLogger ,
         configuration : {
@@ -539,9 +539,9 @@ describe('SIPMessage', function() {
     describe('.parseHeader', function() {
       beforeEach(function() {
         IncomingResponse.logger = {};
-        IncomingResponse.logger.log = jasmine.createSpy('log').andReturn('log');
-        IncomingResponse.logger.warn = jasmine.createSpy('warn').andReturn('warn');
-        spyOn(SIP.Grammar,'parse').andCallThrough();
+        IncomingResponse.logger.log = jasmine.createSpy('log').and.returnValue('log');
+        IncomingResponse.logger.warn = jasmine.createSpy('warn').and.returnValue('warn');
+        spyOn(SIP.Grammar,'parse').and.callThrough();
       });
 
       it('returns undefined if the header does not exist in the headers object', function() {
@@ -567,11 +567,11 @@ describe('SIPMessage', function() {
         IncomingResponse.addHeader(name,value);
         expect(IncomingResponse.headers[SIP.Utils.headerize(name)]).toEqual([{raw : value}]);
         IncomingResponse.parseHeader(name,0);
-        expect(SIP.Grammar.parse.calls.length).toEqual(1);
+        expect(SIP.Grammar.parse.calls.count()).toEqual(1);
         expect(IncomingResponse.logger.warn).not.toHaveBeenCalled();
         expect(IncomingResponse.headers[SIP.Utils.headerize(name)][0].parsed).toBeDefined();
         expect(IncomingResponse.parseHeader(name,0)).toBe(IncomingResponse.headers[SIP.Utils.headerize(name)][0].parsed);
-        expect(SIP.Grammar.parse.calls.length).toEqual(1);
+        expect(SIP.Grammar.parse.calls.count()).toEqual(1);
       });
 
       it('returns a newly parsed header and creates a parsed property', function() {
