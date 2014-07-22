@@ -638,7 +638,7 @@ Session.prototype = {
           this.logger.log('re-INVITE received');
           // Switch these two lines to try re-INVITEs:
           //this.receiveReinvite(request);
-          request.reply(488, null, ["Warning: Cannot update media description"]);
+          request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
         }
         break;
       case SIP.C.INFO:
