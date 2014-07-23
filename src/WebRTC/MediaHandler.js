@@ -81,7 +81,7 @@ var MediaHandler = function(session, options) {
 
   this.peerConnection.onicecandidate = function(e) {
     if (e.candidate) {
-      self.logger.log('ICE candidate received: '+ e.candidate.candidate);
+      self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
     } else if (self.onIceCompleted !== undefined) {
       self.onIceCompleted(this);
     }
