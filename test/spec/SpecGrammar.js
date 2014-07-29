@@ -219,4 +219,14 @@ describe('Grammar', function () {
     eventHas('event', 'presence');
     eventHas('params', {param1: 'QWe', param2: undefined});
   });
+
+  describe('Content-Disposition', function () {
+    ['session', 'render'].forEach(function (dispString) {
+      itHas(
+        SIP.Grammar.parse.bind(SIP.Grammar, dispString, 'Content_Disposition'),
+        'type',
+        dispString
+      );
+    })
+  });
 });

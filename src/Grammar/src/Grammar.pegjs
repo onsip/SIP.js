@@ -451,7 +451,12 @@ gen_value           = token / host / quoted_string
 
 Content_Disposition     = disp_type ( SEMI disp_param )*
 
-disp_type               = "render"i / "session"i / "icon"i / "alert"i / disp_extension_token
+disp_type               = ("render"i / "session"i / "icon"i / "alert"i / disp_extension_token)
+                          {
+                            if (options.startRule === 'Content_Disposition') {
+                              data.type = text().toLowerCase();
+                            }
+                          }
 
 disp_param              = handling_param / generic_param
 

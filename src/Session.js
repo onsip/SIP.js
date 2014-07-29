@@ -934,13 +934,13 @@ InviteServerContext = function(ua, request) {
   var expires,
     self = this,
     contentType = request.getHeader('Content-Type'),
-    contentDisp = request.getHeader('Content-Disposition');
+    contentDisp = request.parseHeader('Content-Disposition');
 
   // Check body and content type
-  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.indexOf('render') >= 0)) {
+  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.type === 'render')) {
     this.renderbody = request.body;
     this.rendertype = contentType;
-  } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp === 'session')) {
+  } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp.type === 'session')) {
     request.reply(415);
     //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
     return;
