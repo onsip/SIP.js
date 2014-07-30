@@ -99,7 +99,7 @@ module.exports = function(SIP) {
           function() {return " "; },
           function() {return ':'; },
           function() {
-                              return input.substring(peg$currPos, offset()); },
+                              return text(); },
           /^[!-~]/,
           { type: "class", value: "[!-~]", description: "[!-~]" },
           /^[\x80-\uFFFF]/,
@@ -111,7 +111,7 @@ module.exports = function(SIP) {
           "`",
           { type: "literal", value: "`", description: "\"`\"" },
           function() {
-                            return input.substring(peg$currPos, offset()); },
+                            return text(); },
           "<",
           { type: "literal", value: "<", description: "\"<\"" },
           ">",
@@ -182,28 +182,28 @@ module.exports = function(SIP) {
           function() {
                               data.user = decodeURIComponent(input.substring(peg$currPos-1, offset()));},
           function() {
-                              data.password = input.substring(peg$currPos, offset()); },
+                              data.password = text(); },
           function() {
-                              data.host = input.substring(peg$currPos, offset()).toLowerCase();
+                              data.host = text().toLowerCase();
                               return data.host; },
           function() {
                             data.host_type = 'domain';
-                            return input.substring(peg$currPos, offset()); },
+                            return text(); },
           /^[a-zA-Z0-9_\-]/,
           { type: "class", value: "[a-zA-Z0-9_\\-]", description: "[a-zA-Z0-9_\\-]" },
           /^[a-zA-Z_\-]/,
           { type: "class", value: "[a-zA-Z_\\-]", description: "[a-zA-Z_\\-]" },
           function() {
                               data.host_type = 'IPv6';
-                              return input.substring(peg$currPos, offset()); },
+                              return text(); },
           "::",
           { type: "literal", value: "::", description: "\"::\"" },
           function() {
                             data.host_type = 'IPv6';
-                            return input.substring(peg$currPos, offset()); },
+                            return text(); },
           function() {
                               data.host_type = 'IPv4';
-                              return input.substring(peg$currPos, offset()); },
+                              return text(); },
           "25",
           { type: "literal", value: "25", description: "\"25\"" },
           /^[0-5]/,
@@ -285,10 +285,10 @@ module.exports = function(SIP) {
           "//",
           { type: "literal", value: "//", description: "\"//\"" },
           function() {
-                              data.scheme= input.substring(peg$currPos, offset()); },
+                              data.scheme= text(); },
           { type: "literal", value: "SIP", description: "\"SIP\"" },
           function() {
-                              data.sip_version = input.substring(peg$currPos, offset()); },
+                              data.sip_version = text(); },
           "INVITE",
           { type: "literal", value: "INVITE", description: "\"INVITE\"" },
           "ACK",
@@ -311,14 +311,14 @@ module.exports = function(SIP) {
           { type: "literal", value: "REFER", description: "\"REFER\"" },
           function() {
 
-                              data.method = input.substring(peg$currPos, offset());
+                              data.method = text();
                               return data.method; },
           function(status_code) {
                             data.status_code = parseInt(status_code.join('')); },
           function() {
-                            data.reason_phrase = input.substring(peg$currPos, offset()); },
+                            data.reason_phrase = text(); },
           function() {
-                        data = input.substring(peg$currPos, offset()); },
+                        data = text(); },
           function() {
                                   var idx, length;
                                   length = data.multi_header.length;
@@ -349,7 +349,7 @@ module.exports = function(SIP) {
                                                             'parsed': header
                                                           });},
           function(displayName) {
-                                  displayName = input.substring(peg$currPos, offset()).trim();
+                                  displayName = text().trim();
                                   if (displayName[0] === '\"') {
                                     displayName = displayName.substring(1, displayName.length-1);
                                   }
@@ -369,7 +369,7 @@ module.exports = function(SIP) {
           "0",
           { type: "literal", value: "0", description: "\"0\"" },
           function() {
-                                  return parseFloat(input.substring(peg$currPos, offset())); },
+                                  return parseFloat(text()); },
           function(param, value) {
                                   if(!data.params) data.params = {};
                                   if (value === null){
@@ -401,7 +401,7 @@ module.exports = function(SIP) {
           function(length) {
                                   data = parseInt(length.join('')); },
           function() {
-                                  data = input.substring(peg$currPos, offset()); },
+                                  data = text(); },
           "text",
           { type: "literal", value: "text", description: "\"text\"" },
           "image",
@@ -518,7 +518,7 @@ module.exports = function(SIP) {
           "terminated",
           { type: "literal", value: "terminated", description: "\"terminated\"" },
           function() {
-                                  data.state = input.substring(peg$currPos, offset()); },
+                                  data.state = text(); },
           "reason",
           { type: "literal", value: "reason", description: "\"reason\"" },
           function(reason) {
@@ -578,7 +578,7 @@ module.exports = function(SIP) {
           function(via_transport) {
                                 data.transport = via_transport; },
           function() {
-                                data.host = input.substring(peg$currPos, offset()); },
+                                data.host = text(); },
           function(via_sent_by_port) {
                                 data.port = parseInt(via_sent_by_port.join('')); },
           function(ttl) {
@@ -592,7 +592,7 @@ module.exports = function(SIP) {
           function(host) {
                                 data.host = host; },
           function() {
-                                return input.substring(peg$currPos, offset()); },
+                                return text(); },
           "?transport=",
           { type: "literal", value: "?transport=", description: "\"?transport=\"" },
           "turns",
