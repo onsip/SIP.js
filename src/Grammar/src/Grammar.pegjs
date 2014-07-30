@@ -81,8 +81,8 @@ ctext       = [\x21-\x27] / [\x2A-\x5B] / [\x5D-\x7E] / UTF8_NONASCII / LWS
 quoted_string = SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE {
                   return text(); }
 
-quoted_string_clean = SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE {
-                        return input.substring(peg$currPos-1, offset()+1); }
+quoted_string_clean = SWS DQUOTE contents: $( qdtext / quoted_pair )* DQUOTE {
+                        return contents; }
 
 qdtext  = LWS / "\x21" / [\x23-\x5B] / [\x5D-\x7E] / UTF8_NONASCII
 
