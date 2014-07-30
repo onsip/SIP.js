@@ -180,7 +180,7 @@ module.exports = function(SIP) {
           function(uri_scheme) {
                               data.scheme = uri_scheme.toLowerCase(); },
           function() {
-                              data.user = decodeURIComponent(input.substring(peg$currPos-1, offset()));},
+                              data.user = decodeURIComponent(text().slice(0, -1));},
           function() {
                               data.password = text(); },
           function() {
