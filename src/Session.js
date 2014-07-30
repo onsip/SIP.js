@@ -209,6 +209,7 @@ Session.prototype = {
       extraHeaders.push('Contact: '+ this.contact);
       extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
       extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
+      extraHeaders.push('Referred-By: ' + this.dialog.local_uri.toString());
     } else {
       //Blind Transfer
 
@@ -225,7 +226,8 @@ Session.prototype = {
 
       extraHeaders.push('Contact: '+ this.contact);
       extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: '+ target);
+      extraHeaders.push('Refer-To: ' + target);
+      extraHeaders.push('Referred-By: ' + this.dialog.local_uri.toString());
     }
 
     // Send the request
