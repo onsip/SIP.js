@@ -143,8 +143,8 @@ module.exports = function(SIP) {
           { type: "class", value: "[*-[]", description: "[*-[]" },
           /^[\]-~]/,
           { type: "class", value: "[\\]-~]", description: "[\\]-~]" },
-          function() {
-                                  return input.substring(peg$currPos-1, offset()+1); },
+          function(contents) {
+                                  return contents; },
           /^[#-[]/,
           { type: "class", value: "[#-[]", description: "[#-[]" },
           /^[\0-\t]/,
@@ -647,7 +647,7 @@ module.exports = function(SIP) {
           peg$decode("!7=+W$ ]7G*) \"7K*# \"7F,/&7G*) \"7K*# \"7F\"+-%7>+#%'#%$## X$\"# X\"# X"),
           peg$decode("0\x85\"\"1!3\x86*A \"0\x87\"\"1!3\x88*5 \"0\x89\"\"1!3\x8A*) \"73*# \"7."),
           peg$decode("!7/+Y$7&+O% ]7J*# \"7K,)&7J*# \"7K\"+1%7&+'%4$6k$ %$$# X$## X$\"# X\"# X"),
-          peg$decode("!7/+Y$7&+O% ]7J*# \"7K,)&7J*# \"7K\"+1%7&+'%4$6\x8B$ %$$# X$## X$\"# X\"# X"),
+          peg$decode("!7/+`$7&+V%! ]7J*# \"7K,)&7J*# \"7K\"+! (%+2%7&+(%4$6\x8B$!!%$$# X$## X$\"# X\"# X"),
           peg$decode("7.*G \".L\"\"2L3M*; \"0\x8C\"\"1!3\x8D*/ \"0\x89\"\"1!3\x8A*# \"73"),
           peg$decode("!.p\"\"2p3q+K$0\x8E\"\"1!3\x8F*5 \"0\x90\"\"1!3\x91*) \"0\x92\"\"1!3\x93+#%'\"%$\"# X\"# X"),
           peg$decode("!7N+Q$.8\"\"2839+A%7O*# \" \\+1%7S+'%4$6\x94$ %$$# X$## X$\"# X\"# X"),
