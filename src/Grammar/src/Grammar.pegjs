@@ -833,9 +833,8 @@ turn_transport    = transport ("udp"i / "tcp"i / unreserved*) {
                       data.transport = transport; }
 
 // UUID URI
-uuid_URI      = "uuid:" uuid
-uuid          = uuid: hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
-                  data = input.substring(peg$currPos+5, offset()); }
+uuid          = hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
+                  data = text(); }
 hex4          = HEXDIG HEXDIG HEXDIG HEXDIG
 hex8          = hex4 hex4
 hex12         = hex4 hex4 hex4

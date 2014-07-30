@@ -30,7 +30,7 @@ module.exports = function(SIP) {
 
         peg$FAILED = {},
 
-        peg$startRuleIndices = { Contact: 118, Name_Addr_Header: 155, Record_Route: 175, Request_Response: 81, SIP_URI: 45, Subscription_State: 182, Via: 190, absoluteURI: 84, Call_ID: 117, Content_Disposition: 129, Content_Length: 134, Content_Type: 135, CSeq: 145, displayName: 121, Event: 148, From: 150, host: 52, Max_Forwards: 153, Proxy_Authenticate: 156, quoted_string: 40, Refer_To: 177, stun_URI: 209, To: 188, turn_URI: 216, uuid: 220, WWW_Authenticate: 205, challenge: 157 },
+        peg$startRuleIndices = { Contact: 118, Name_Addr_Header: 155, Record_Route: 175, Request_Response: 81, SIP_URI: 45, Subscription_State: 182, Via: 190, absoluteURI: 84, Call_ID: 117, Content_Disposition: 129, Content_Length: 134, Content_Type: 135, CSeq: 145, displayName: 121, Event: 148, From: 150, host: 52, Max_Forwards: 153, Proxy_Authenticate: 156, quoted_string: 40, Refer_To: 177, stun_URI: 209, To: 188, turn_URI: 216, uuid: 219, WWW_Authenticate: 205, challenge: 157 },
         peg$startRuleIndex   = 118,
 
         peg$consts = [
@@ -601,10 +601,8 @@ module.exports = function(SIP) {
           { type: "literal", value: "turn", description: "\"turn\"" },
           function() {
                                 data.transport = transport; },
-          "uuid:",
-          { type: "literal", value: "uuid:", description: "\"uuid:\"" },
-          function(uuid) {
-                            data = input.substring(peg$currPos+5, offset()); }
+          function() {
+                            data = text(); }
         ],
 
         peg$bytecode = [
@@ -827,11 +825,10 @@ module.exports = function(SIP) {
           peg$decode("!7\xF9+h$.8\"\"2839+X%7\xF3+N%!.\u0191\"\"2\u01913\u0192+-$7\xE8+#%'\"%$\"# X\"# X*# \" \\+#%'$%$$# X$## X$\"# X\"# X"),
           peg$decode("!/\u0193\"\"1%3\u0194*) \"/\u0195\"\"1$3\u0196+' 4!6\u018E!! %"),
           peg$decode("!7\xE8+Q$/\xB7\"\"1#3\xB8*7 \"/\xB9\"\"1#3\xBA*+ \" ]7+,#&7+\"+'%4\"6\u0197\" %$\"# X\"# X"),
-          peg$decode("!.\u0198\"\"2\u01983\u0199+-$7\xFC+#%'\"%$\"# X\"# X"),
-          peg$decode("!7\xFE+\x90$.F\"\"2F3G+\x80%7\xFD+v%.F\"\"2F3G+f%7\xFD+\\%.F\"\"2F3G+L%7\xFD+B%.F\"\"2F3G+2%7\xFF+(%4)6\u019A)!(%$)# X$(# X$'# X$&# X$%# X$$# X$## X$\"# X\"# X"),
+          peg$decode("!7\xFD+\x8F$.F\"\"2F3G+%7\xFC+u%.F\"\"2F3G+e%7\xFC+[%.F\"\"2F3G+K%7\xFC+A%.F\"\"2F3G+1%7\xFE+'%4)6\u0198) %$)# X$(# X$'# X$&# X$%# X$$# X$## X$\"# X\"# X"),
           peg$decode("!7#+A$7#+7%7#+-%7#+#%'$%$$# X$## X$\"# X\"# X"),
-          peg$decode("!7\xFD+-$7\xFD+#%'\"%$\"# X\"# X"),
-          peg$decode("!7\xFD+7$7\xFD+-%7\xFD+#%'#%$## X$\"# X\"# X")
+          peg$decode("!7\xFC+-$7\xFC+#%'\"%$\"# X\"# X"),
+          peg$decode("!7\xFC+7$7\xFC+-%7\xFC+#%'#%$## X$\"# X\"# X")
         ],
 
         peg$currPos          = 0,
