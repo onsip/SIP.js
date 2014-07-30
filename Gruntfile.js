@@ -119,6 +119,7 @@ module.exports = function(grunt) {
              'Via',
              'absoluteURI',
              'Call_ID',
+             'Content_Disposition',
              'Content_Length',
              'Content_Type',
              'CSeq',
