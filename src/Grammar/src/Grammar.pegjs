@@ -273,6 +273,18 @@ Request_Line      = Method SP Request_URI SP SIP_Version
 Request_URI       = SIP_URI / absoluteURI
 
 absoluteURI       = scheme ":" ( hier_part / opaque_part )
+                    {
+                      // lots of tests fail if this isn't guarded...
+                      if (options.startRule === 'Refer_To') {
+                        data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
+                        delete data.scheme;
+                        delete data.user;
+                        delete data.host;
+                        delete data.host_type;
+                        delete data.port;
+                        delete data.uri_params;
+                      }
+                    }
 
 hier_part         = ( net_path / abs_path ) ( "?" query )?
 
@@ -663,7 +675,7 @@ rr_param      = generic_param
 
 // REFER-TO
 
-Refer_To = ( addr_spec / name_addr ) ( SEMI r_param )* {
+Refer_To = ( addr_spec / name_addr / absoluteURI ) ( SEMI r_param )* {
               data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
             }
 
