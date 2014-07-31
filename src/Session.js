@@ -238,17 +238,32 @@ Session.prototype = {
     }
 
     // Send the request
-    return this.
-      sendRequest(SIP.C.REFER, {
-        extraHeaders: extraHeaders,
-        body: options.body,
-        receiveResponse: function() {}
-      }).
-      terminate();
+    this.sendRequest(SIP.C.REFER, {
+      extraHeaders: extraHeaders,
+      body: options.body,
+      receiveResponse: function() {}
+    });
+    // hang up only if we transferred to a SIP address
+    if (target.scheme.match("^sips?$")) {
+      this.terminate();
+    }
+    return this;
   },
 
   followRefer: function followRefer (callback) {
     return function referListener (callback, request) {
+      // window.open non-SIP URIs if possible and keep session open
+      var target = request.parseHeader('refer-to').uri;
+      if (!target.scheme.match("^sips?$")) {
+        var targetString = target.toString();
+        if (typeof window !== "undefined" && typeof window.open === "function") {
+          window.open(targetString);
+        } else {
+          this.logger.warn("referred to non-SIP URI but window.open isn't a function: " + targetString);
+        }
+        return;
+      }
+
       SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
 
       /*
