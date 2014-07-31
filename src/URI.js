@@ -146,6 +146,10 @@ URI.prototype = {
       headers = [];
 
     uri  = this.scheme + ':';
+    // add slashes if it's not a sip(s) URI
+    if (!this.scheme.match("^sips?$")) {
+      uri += "//";
+    }
     if (this.user) {
       uri += SIP.Utils.escapeUser(this.user) + '@';
     }
