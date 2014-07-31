@@ -103,7 +103,6 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                       }
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
-                    var header;
                         data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
                         delete data.scheme;
                         delete data.user;
