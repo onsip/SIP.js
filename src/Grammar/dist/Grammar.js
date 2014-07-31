@@ -162,7 +162,6 @@ module.exports = function(SIP) {
                                   delete data.port;
                                 },
           function() {
-                              var header;
                                   data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
                                   delete data.scheme;
                                   delete data.user;
