@@ -217,6 +217,15 @@ Session.prototype = {
         throw new SIP.Exceptions.InvalidStateError(this.status);
       }
 
+      // normalizeTarget allows instances of SIP.URI to pass through unaltered,
+      // so try to make one ahead of time
+      try {
+        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
+      } catch (e) {
+        this.logger.debug(".refer() cannot parse Refer_To from", target);
+        this.logger.debug("...falling through to normalizeTarget()");
+      }
+
       // Check target validity
       target = this.ua.normalizeTarget(target);
       if (!target) {
@@ -229,17 +238,32 @@ Session.prototype = {
     }
 
     // Send the request
-    return this.
-      sendRequest(SIP.C.REFER, {
-        extraHeaders: extraHeaders,
-        body: options.body,
-        receiveResponse: function() {}
-      }).
-      terminate();
+    this.sendRequest(SIP.C.REFER, {
+      extraHeaders: extraHeaders,
+      body: options.body,
+      receiveResponse: function() {}
+    });
+    // hang up only if we transferred to a SIP address
+    if (target.scheme.match("^sips?$")) {
+      this.terminate();
+    }
+    return this;
   },
 
   followRefer: function followRefer (callback) {
     return function referListener (callback, request) {
+      // window.open non-SIP URIs if possible and keep session open
+      var target = request.parseHeader('refer-to').uri;
+      if (!target.scheme.match("^sips?$")) {
+        var targetString = target.toString();
+        if (typeof window !== "undefined" && typeof window.open === "function") {
+          window.open(targetString);
+        } else {
+          this.logger.warn("referred to non-SIP URI but window.open isn't a function: " + targetString);
+        }
+        return;
+      }
+
       SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
 
       /*
@@ -934,13 +958,13 @@ InviteServerContext = function(ua, request) {
   var expires,
     self = this,
     contentType = request.getHeader('Content-Type'),
-    contentDisp = request.getHeader('Content-Disposition');
+    contentDisp = request.parseHeader('Content-Disposition');
 
   // Check body and content type
-  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.indexOf('render') >= 0)) {
+  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.type === 'render')) {
     this.renderbody = request.body;
     this.rendertype = contentType;
-  } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp === 'session')) {
+  } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp.type === 'session')) {
     request.reply(415);
     //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
     return;

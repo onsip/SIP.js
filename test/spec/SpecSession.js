@@ -2146,7 +2146,7 @@ describe('InviteClientContext', function() {
     it('logs, replies 202, then calls callback and terminate if session.followRefer listener present', function() {
       InviteClientContext.status = 12;
       request.method = SIP.C.REFER;
-      request.parseHeader = jasmine.createSpy('parseHeader').and.returnValue({uri: 'uri'});
+      request.parseHeader = jasmine.createSpy('parseHeader').and.returnValue({uri: SIP.URI.parse('sip:carol@example.com')});
       InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
 /*       spyOn(InviteClientContext.dialog.sendRequest); */
 
