@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "main": "src/SIP.js",
   "homepage": "http://sipjs.com",
   "author": "Will Mitchell <will@onsip.com>",
