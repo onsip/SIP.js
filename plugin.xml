@@ -5,5 +5,5 @@
       Using src/SIP.js has issues with require('../package.json')
       TODO fix this?
     -->
-    <js-module name="sipjs" src="dist/SIP.js" />
+    <js-module name="sipjs" src="dist/sip.js" />
 </plugin>
