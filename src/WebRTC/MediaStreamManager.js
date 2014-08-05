@@ -9,7 +9,7 @@
 module.exports = function (SIP) {
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
-var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
+var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) {
   if (!SIP.WebRTC.isSupported()) {
     throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
@@ -23,6 +23,7 @@ var MediaStreamManager = function MediaStreamManager (defaultMediaHint) {
     constraints: {audio: true, video: true}
   };
 
+  this.logger = logger;
   this.initEvents(events);
 
   // map of streams to acquisition manner:
