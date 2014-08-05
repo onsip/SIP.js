@@ -19,8 +19,7 @@ module.exports = (function(window) {
   });
 
   require('./Utils')(SIP);
-  var Logger = require('./Logger');
-  SIP.LoggerFactory = require('./LoggerFactory')(window, Logger);
+  SIP.LoggerFactory = require('./LoggerFactory')(window);
   require('./EventEmitter')(SIP);
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
@@ -31,19 +30,15 @@ module.exports = (function(window) {
   require('./URI')(SIP);
   require('./NameAddrHeader')(SIP);
   require('./Transactions')(SIP, window);
-  var DialogRequestSender = require('./Dialog/RequestSender')(SIP, window);
-  require('./Dialogs')(SIP, DialogRequestSender);
+  require('./Dialogs')(SIP);
   require('./RequestSender')(SIP);
   require('./RegisterContext')(SIP, window);
   SIP.MediaHandler = require('./MediaHandler')(SIP.EventEmitter);
   require('./ClientContext')(SIP);
   require('./ServerContext')(SIP);
-  var SessionDTMF = require('./Session/DTMF')(SIP);
-  require('./Session')(SIP, window, SessionDTMF);
+  require('./Session')(SIP, window);
   require('./Subscription')(SIP, window);
-  var WebRTCMediaHandler = require('./WebRTC/MediaHandler')(SIP);
-  var WebRTCMediaStreamManager = require('./WebRTC/MediaStreamManager')(SIP);
-  SIP.WebRTC = require('./WebRTC')(SIP.Utils, window, WebRTCMediaHandler, WebRTCMediaStreamManager);
+  SIP.WebRTC = require('./WebRTC')(SIP, window);
   require('./UA')(SIP, window);
   SIP.Hacks = require('./Hacks')(window);
   require('./SanityCheck')(SIP);

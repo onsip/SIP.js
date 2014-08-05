@@ -1,5 +1,7 @@
 
-module.exports = function (window, Logger) {
+module.exports = function (window) {
+
+var Logger = require('./Logger');
 
 // Console is not defined in ECMAScript, so just in case...
 var console = window.console || {

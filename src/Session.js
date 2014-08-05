@@ -1,4 +1,6 @@
-module.exports = function (SIP, window, DTMF) {
+module.exports = function (SIP, window) {
+
+var DTMF = require('./Session/DTMF')(SIP);
 
 var Session, InviteServerContext, InviteClientContext,
  C = {
