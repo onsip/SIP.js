@@ -6,16 +6,11 @@
  * as to most easily track when particular hacks may not be necessary anymore.
  */
 
-module.exports = function (window) {
-
-var Hacks;
-
-Hacks = {
-
+var Hacks = module.exports = {
   Firefox: {
     /* Condition to detect if hacks are applicable */
     isFirefox: function () {
-      return window.mozRTCPeerConnection !== undefined;
+      return typeof mozRTCPeerConnection !== 'undefined';
     },
 
     cannotHandleRelayCandidates: function (message) {
@@ -91,8 +86,4 @@ Hacks = {
       }
     }
   }
-};
-
-
-return Hacks;
 };
