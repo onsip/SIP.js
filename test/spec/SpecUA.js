@@ -578,16 +578,16 @@ describe('UA', function() {
     });
   });
 
-  xdescribe('.onTransportClosed', function() {
-
+  describe('.onTransportClosed', function() {
+    it('needs to be tested', function () {});
   });
 
-  xdescribe('.onTransportError', function() {
-
+  describe('.onTransportError', function() {
+    it('needs to be tested', function () {});
   });
 
-  xdescribe('.onTransportConnected', function() {
-
+  describe('.onTransportConnected', function() {
+    it('needs to be tested', function () {});
   });
 
   describe('.onTransportConnecting', function() {
