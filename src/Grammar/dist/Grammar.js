@@ -433,7 +433,7 @@ module.exports = function(SIP) {
                             data.value=parseInt(cseq_value.join('')); },
           function(expires) {data = expires; },
           function(event_type) {
-                                 data.event = event_type.join('').toLowerCase(); },
+                                 data.event = event_type.toLowerCase(); },
           function() {
                           var tag = data.tag;
                             data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
@@ -766,7 +766,7 @@ module.exports = function(SIP) {
           peg$decode("! ]7!+&$,#&7!\"\"\" X+' 4!6\u0124!! %"),
           peg$decode("!7\x9D+' 4!6\u0125!! %"),
           peg$decode("!7\xB5+d$ ]!7B+-$7\x9F+#%'\"%$\"# X\"# X,8&!7B+-$7\x9F+#%'\"%$\"# X\"# X\"+(%4\"6\u0126\"!!%$\"# X\"# X"),
-          peg$decode("!77+k$ ]!.J\"\"2J3K+-$77+#%'\"%$\"# X\"# X,>&!.J\"\"2J3K+-$77+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X"),
+          peg$decode("!!77+k$ ]!.J\"\"2J3K+-$77+#%'\"%$\"# X\"# X,>&!.J\"\"2J3K+-$77+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X+! (%"),
           peg$decode("!7L*# \"7\x98+c$ ]!7B+-$7\xB7+#%'\"%$\"# X\"# X,8&!7B+-$7\xB7+#%'\"%$\"# X\"# X\"+'%4\"6\u0127\" %$\"# X\"# X"),
           peg$decode("7\xB8*# \"7\x9F"),
           peg$decode("!/\u0128\"\"1#3\u0129+<$7<+2%76+(%4#6\u012A#! %$## X$\"# X\"# X"),
