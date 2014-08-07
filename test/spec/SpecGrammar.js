@@ -206,7 +206,7 @@ describe('Grammar', function () {
     challengeHas('opaque', '00000188');
   });
 
-  var eventString = 'Presence;Param1=QWe;paraM2';
+  var eventString = 'Presence.winfo;Param1=QWe;paraM2';
   describe('Event parsed from "' + eventString + '"', function () {
     var evt;
 
@@ -216,7 +216,7 @@ describe('Grammar', function () {
 
     eventHas = itHas.bind(null, function () { return evt; });
 
-    eventHas('event', 'presence');
+    eventHas('event', 'presence.winfo');
     eventHas('params', {param1: 'QWe', param2: undefined});
   });
 

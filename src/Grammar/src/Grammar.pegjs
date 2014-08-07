@@ -537,9 +537,9 @@ Expires     = expires: delta_seconds {data = expires; }
 
 
 Event             = event_type: event_type ( SEMI event_param )* {
-                       data.event = event_type.join('').toLowerCase(); }
+                       data.event = event_type.toLowerCase(); }
 
-event_type        = event_package ( "." event_template )*
+event_type        = $( event_package ( "." event_template )* )
 
 event_package     = token_nodot
 
