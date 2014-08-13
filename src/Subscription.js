@@ -74,7 +74,8 @@ SIP.Subscription.prototype = {
   },
 
   receiveResponse: function(response) {
-    var expires, sub = this;
+    var expires, sub = this,
+        cause = SIP.C.REASON_PHRASE[response.status_code] || '';
 
     if (this.errorCodes.indexOf(response.status_code) !== -1) {
       this.failed(response, null);
@@ -85,6 +86,7 @@ SIP.Subscription.prototype = {
       if (this.createConfirmedDialog(response,'UAC')) {
         this.id = this.dialog.id.toString();
         this.ua.subscriptions[this.id] = this;
+        this.emit('accepted', response, cause);
         // UPDATE ROUTE SET TO BE BACKWARDS COMPATIBLE?
       }
 

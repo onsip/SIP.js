@@ -141,14 +141,17 @@ describe('Subscription', function() {
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
     });
 
-    it('creates a dialog, sets the id, and puts this subscription in the ua\'s subscriptions array', function() {
+    it('creates a dialog, sets the id, emits accepted, and puts this subscription in the ua\'s subscriptions array', function() {
       spyOn(Subscription, 'createConfirmedDialog').and.callThrough();
+      spyOn(Subscription, 'emit');
+
       expect(Subscription.dialog).toBeNull();
 
       Subscription.receiveResponse(response);
 
       expect(Subscription.createConfirmedDialog).toHaveBeenCalledWith(response, 'UAC');
       expect(Subscription.id).toBe(Subscription.dialog.id.toString());
+      expect(Subscription.emit).toHaveBeenCalledWith('accepted', response, 'OK');
       expect(ua.subscriptions[Subscription.id]).toBe(Subscription);
     });
 
