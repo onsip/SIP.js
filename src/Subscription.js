@@ -162,6 +162,7 @@ SIP.Subscription.prototype = {
   createConfirmedDialog: function(message, type) {
     var dialog;
 
+    this.terminateDialog();
     dialog = new SIP.Dialog(this, message, type);
 
     if(!dialog.error) {
@@ -179,6 +180,7 @@ SIP.Subscription.prototype = {
   */
   terminateDialog: function() {
     if(this.dialog) {
+      delete this.ua.subscriptions[this.id];
       this.dialog.terminate();
       delete this.dialog;
     }
