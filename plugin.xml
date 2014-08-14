@@ -4,6 +4,9 @@
     <js-module name="sipjs" src="src/SIP.js" />
 
     <!-- This is the line that makes require('../package.json') work -->
+    <!-- TODO change src to "package.json" once Cordova is released with
+         https://github.com/apache/cordova-lib/pull/71
+    -->
     <js-module name="/package.json" src="cordova_package.json.js" />
 
     <js-module name="Utils" src="src/Utils.js" />
