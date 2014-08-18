@@ -415,7 +415,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
 
     function onSetLocalDescriptionSuccess() {
-      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection.iceConnectionState === 'connected') {
+      if (self.peerConnection.iceGatheringState === 'complete' && (self.peerConnection.iceConnectionState === 'connected' || self.peerConnection.iceConnectionState === 'completed')) {
         readySuccess();
       } else {
         self.onIceCompleted = function(pc) {
