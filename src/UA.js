@@ -233,6 +233,14 @@ UA.prototype.isConnected = function() {
   return this.transport ? this.transport.connected : false;
 };
 
+UA.prototype.afterConnected = function afterConnected (callback) {
+  if (this.isConnected()) {
+    callback();
+  } else {
+    this.once('connected', callback);
+  }
+};
+
 /**
  * Make an outgoing call.
  *
@@ -249,26 +257,14 @@ UA.prototype.invite = function(target, options) {
 
   var context = new SIP.InviteClientContext(this, target, options);
 
-  if (this.isConnected()) {
-    context.invite({media: options.media});
-  } else {
-    this.once('connected', function() {
-      context.invite({media: options.media});
-    });
-  }
+  this.afterConnected(context.invite.bind(context, {media: options.media}));
   return context;
 };
 
 UA.prototype.subscribe = function(target, event, options) {
   var sub = new SIP.Subscription(this, target, event, options);
 
-  if (this.isConnected()) {
-    sub.subscribe();
-  } else {
-    this.once('connected', function() {
-      sub.subscribe();
-    });
-  }
+  this.afterConnected(sub.subscribe.bind(sub));
   return sub;
 };
 
@@ -293,28 +289,14 @@ UA.prototype.message = function(target, body, options) {
 
   var mes = new SIP.ClientContext(this, SIP.C.MESSAGE, target, options);
 
-  if (this.isConnected()) {
-    mes.send();
-  } else {
-    this.once('connected', function() {
-      mes.send();
-    });
-  }
-
+  this.afterConnected(mes.send.bind(mes));
   return mes;
 };
 
 UA.prototype.request = function (method, target, options) {
   var req = new SIP.ClientContext(this, method, target, options);
 
-  if (this.isConnected()) {
-    req.send();
-  } else {
-    this.once('connected', function() {
-      req.send();
-    });
-  }
-
+  this.afterConnected(req.send.bind(req));
   return req;
 };
 
