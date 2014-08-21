@@ -199,7 +199,8 @@ Session.prototype = {
 
   refer: function(target, options) {
     options = options || {};
-    var extraHeaders = (options.extraHeaders || []).slice(), originalTarget;
+    var extraHeaders = (options.extraHeaders || []).slice(),
+        originalTarget = target;
 
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
