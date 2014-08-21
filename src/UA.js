@@ -287,10 +287,7 @@ UA.prototype.message = function(target, body, options) {
   options.contentType = options.contentType || 'text/plain';
   options.body = body;
 
-  var mes = new SIP.ClientContext(this, SIP.C.MESSAGE, target, options);
-
-  this.afterConnected(mes.send.bind(mes));
-  return mes;
+  return this.request(SIP.C.MESSAGE, target, options);
 };
 
 UA.prototype.request = function (method, target, options) {
