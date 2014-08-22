@@ -20,14 +20,10 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   close: {value: function close () {}},
 
   /**
-   * @param {Function} onSuccess called with the obtained local media description
-   * @param {Function} onFailure
    * @param {Object} [mediaHint] A custom object describing the media to be used during this session.
    */
-  getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
+  getDescription: {value: function getDescription (mediaHint) {
     // keep jshint happy
-    onSuccess = onSuccess;
-    onFailure = onFailure;
     mediaHint = mediaHint;
   }},
 

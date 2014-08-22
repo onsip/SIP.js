@@ -161,12 +161,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   /**
-   * @param {Function} onSuccess
-   * @param {Function} onFailure
    * @param {SIP.WebRTC.MediaStream | (getUserMedia constraints)} [mediaHint]
    *        the MediaStream (or the constraints describing it) to be used for the session
    */
-  getDescription: {writable: true, value: function getDescription (onSuccess, onFailure, mediaHint) {
+  getDescription: {writable: true, value: function getDescription (mediaHint) {
     var self = this;
     mediaHint = mediaHint || {};
     if (mediaHint.dataChannel === true) {
@@ -200,29 +198,25 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       return new window.Promise(self.createOfferOrAnswer.bind(self, self.RTCConstraints));
     }
 
-    function acquireSucceeded(stream) {
-      self.logger.log('acquired local media stream');
-      self.localMedia = stream;
-      self.session.connecting();
-      return new window.Promise(self.addStream.bind(self, stream));
-    }
-
     if (self.localMedia) {
       self.logger.log('already have local media');
-      streamAdditionSucceeded();
-      return;
+      return streamAdditionSucceeded();
     }
 
     self.logger.log('acquiring local media');
     return self.mediaStreamManager.acquire(mediaHint)
-      .then(acquireSucceeded, function acquireFailed(err) {
+      .then(function acquireSucceeded(stream) {
+        self.logger.log('acquired local media stream');
+        self.localMedia = stream;
+        self.session.connecting();
+        return new window.Promise(self.addStream.bind(self, stream));
+      }, function acquireFailed(err) {
         self.logger.error('unable to acquire stream');
         self.logger.error(err);
         self.session.connecting();
         throw err;
       })
       .then(streamAdditionSucceeded)
-      .then(onSuccess, onFailure)
     ;
   }},
 

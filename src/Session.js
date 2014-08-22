@@ -568,6 +568,7 @@ Session.prototype = {
          */
         function() {
           self.mediaHandler.getDescription(
+            self.mediaHint).then(
             function(body) {
               request.reply(200, null, ['Contact: ' + self.contact], body,
                 function() {
@@ -584,8 +585,7 @@ Session.prototype = {
             },
             function() {
               request.reply(500);
-            },
-            self.mediaHint
+            }
           );
         },
         /*
@@ -631,6 +631,7 @@ Session.prototype = {
     this.receiveResponse = this.receiveReinviteResponse;
     //REVISIT
     this.mediaHandler.getDescription(
+      self.mediaHint).then(
       function(body){
         if (mangle) {
           body = mangle(body);
@@ -646,8 +647,7 @@ Session.prototype = {
           self.onReadyToReinvite();
         }
         self.reinviteFailed();
-      },
-      self.mediaHint
+      }
     );
   },
 
@@ -1206,6 +1206,7 @@ InviteServerContext.prototype = {
 
       // Get the session description to add to preaccept with
       this.mediaHandler.getDescription(
+        options.media).then(
         // Success
         function succ(body) {
           if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
@@ -1243,10 +1244,8 @@ InviteServerContext.prototype = {
         // Failure
         function fail() {
           this.failed(null, SIP.C.causes.WEBRTC_ERROR);
-        }.bind(this),
-
-        // Media hint:
-        options.media);
+        }.bind(this)
+      );
     } // end do100rel
 
     function normalReply() {
@@ -1388,9 +1387,9 @@ InviteServerContext.prototype = {
       sdpCreationSucceeded();
     } else {
       this.mediaHandler.getDescription(
+        self.mediaHint).then(
         sdpCreationSucceeded,
-        sdpCreationFailed,
-        self.mediaHint
+        sdpCreationFailed
       );
     }
 
@@ -1687,6 +1686,7 @@ InviteClientContext.prototype = {
       this.send();
     } else {
       this.mediaHandler.getDescription(
+        self.mediaHint).then(
         function onSuccess(offer) {
           if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
             return;
@@ -1704,8 +1704,7 @@ InviteClientContext.prototype = {
           //self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
           //self.failed(null, SIP.C.causes.WEBRTC_ERROR);
           self.failed(null, SIP.C.causes.WEBRTC_ERROR);
-        },
-        self.mediaHint
+        }
       );
     }
 
@@ -1877,6 +1876,7 @@ InviteClientContext.prototype = {
               response.body,
               function onSuccess() {
                 session.earlyDialogs[id].mediaHandler.getDescription(
+                  session.mediaHint).then(
                   function onSuccess(sdp) {
                     extraHeaders.push('Content-Type: application/sdp');
                     extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1895,8 +1895,7 @@ InviteClientContext.prototype = {
                     // TODO - fail out on error
                     // session.failed(gum error);
                     session.failed(null, SIP.C.causes.WEBRTC_ERROR);
-                  },
-                  session.mediaHint
+                  }
                 );
               },
               function onFailure(e) {
@@ -1983,6 +1982,7 @@ InviteClientContext.prototype = {
               response.body,
               function onSuccess() {
                 session.mediaHandler.getDescription(
+                  session.mediaHint).then(
                   function onSuccess(sdp) {
                     //var localMedia;
                     if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
@@ -2012,8 +2012,7 @@ InviteClientContext.prototype = {
                   function onFailure() {
                     // TODO do something here
                     session.logger.warn("there was a problem");
-                  },
-                  session.mediaHint
+                  }
                 );
               },
               function onFailure(e) {

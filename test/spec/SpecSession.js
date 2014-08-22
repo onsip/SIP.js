@@ -499,7 +499,7 @@ describe('Session', function() {
 
   describe('.sendReinvite', function() {
     beforeEach(function() {
-      Session.mediaHandler = {getDescription: jasmine.createSpy('getDescription').and.returnValue(true)};
+      Session.mediaHandler = {getDescription: jasmine.createSpy('getDescription').and.returnValue(Promise.resolve(true))};
       spyOn(SIP.Utils, 'getAllowedMethods').and.returnValue(true);
     });
 
@@ -1251,7 +1251,7 @@ describe('InviteServerContext', function() {
     beforeEach(function() {
       InviteServerContext.status = 4;
 
-      spyOn(InviteServerContext.mediaHandler, 'getDescription');
+      spyOn(InviteServerContext.mediaHandler, 'getDescription').and.returnValue(Promise.resolve(true));
     });
 
     it('changes status to ANSWERED_WAITING_FOR_PRACK and returns this if status is WAITING_FOR_PRACK', function() {
