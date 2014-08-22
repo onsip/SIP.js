@@ -58,7 +58,9 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   it('gets user media', function (done) {
-    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(done);
+    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function () {
+      return Promise.resolve().then(done)
+    });
     session = ua.invite('alice@example.com', session_options);
   });
 
@@ -69,7 +71,7 @@ describe('An INVITE sent from a UAC', function () {
       expect(ua.transport.ws.send.calls.mostRecent().args[0]).toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
       expect(session.status).toBe(SIP.Session.C.STATUS_INVITE_SENT);
       done();
-    }, 100);
+    }, 200);
   });
 
   it('has no dialogs at first', function () {
@@ -220,6 +222,7 @@ describe('An INVITE sent from a UAC', function () {
           audio: true,
           video: true
         });
+        return Promise.resolve();
       });
       session = ua.invite('alice@example.com', session_options);
     });
@@ -229,6 +232,7 @@ describe('An INVITE sent from a UAC', function () {
 
       gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
         expect(gumSpy.calls.mostRecent().args[0]).toEqual(myConstraints);
+        return Promise.resolve();
       });
 
       myConstraints = {

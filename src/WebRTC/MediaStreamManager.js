@@ -86,23 +86,24 @@ MediaStreamManager.render = function render (stream, elements) {
 };
 
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
-  'acquire': {value: function acquire (onSuccess, onFailure, mediaHint) {
+  'acquire': {value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
-    var saveSuccess = function (onSuccess, stream, isHintStream) {
+    var saveSuccess = function (isHintStream, stream) {
       var streamId = MediaStreamManager.streamId(stream);
       this.acquisitions[streamId] = !!isHintStream;
-      onSuccess(stream);
-    }.bind(this, onSuccess);
+      return window.Promise.resolve(stream);
+    }.bind(this);
 
     if (mediaHint.stream) {
-      saveSuccess(mediaHint.stream, true);
+      return saveSuccess(true, mediaHint.stream);
     } else {
       // Fallback to audio/video enabled if no mediaHint can be found.
       var constraints = mediaHint.constraints ||
         (this.mediaHint && this.mediaHint.constraints) ||
         {audio: true, video: true};
 
+      return new window.Promise(function (resolve) {
       /*
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
@@ -117,15 +118,16 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 
           this.emit.apply(this, newArgs);
 
-          callback.apply(null, callbackArgs);
+          return callback.apply(null, callbackArgs);
         }.bind(this);
 
-        SIP.WebRTC.getUserMedia(
-          constraints,
-          emitThenCall.bind(this, 'userMedia', saveSuccess),
-          emitThenCall.bind(this, 'userMediaFailed', onFailure)
-        );
+        resolve(SIP.WebRTC.getUserMedia(constraints)
+        .then(
+          emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
+          emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
+        ));
       }.bind(this), 0);
+      }.bind(this));
     }
   }},
 

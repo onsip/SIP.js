@@ -1868,7 +1868,7 @@ describe('InviteClientContext', function() {
     it('calls mediaHandler.getDescription async and returns this on success', function() {
       var callback, s;
 
-      spyOn(SIP.WebRTC, 'getUserMedia');
+      spyOn(SIP.WebRTC, 'getUserMedia').and.callThrough();
       callback = jasmine.createSpy('callback').and.callFake(function () {
         done();
         //jasmine.clock().uninstall();

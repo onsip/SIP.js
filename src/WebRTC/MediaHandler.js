@@ -197,18 +197,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.emit('dataChannel', self.dataChannel);
       }
 
-      self.createOfferOrAnswer(onSuccess, onFailure, self.RTCConstraints);
+      return new window.Promise(self.createOfferOrAnswer.bind(self, self.RTCConstraints));
     }
 
     function acquireSucceeded(stream) {
       self.logger.log('acquired local media stream');
       self.localMedia = stream;
       self.session.connecting();
-      self.addStream(
-        stream,
-        streamAdditionSucceeded,
-        onFailure
-      );
+      return new window.Promise(self.addStream.bind(self, stream));
     }
 
     if (self.localMedia) {
@@ -218,16 +214,16 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
 
     self.logger.log('acquiring local media');
-    self.mediaStreamManager.acquire(
-      acquireSucceeded,
-      function acquireFailed(err) {
+    return self.mediaStreamManager.acquire(mediaHint)
+      .then(acquireSucceeded, function acquireFailed(err) {
         self.logger.error('unable to acquire stream');
         self.logger.error(err);
         self.session.connecting();
-        onFailure(err);
-      },
-      mediaHint
-    );
+        throw err;
+      })
+      .then(streamAdditionSucceeded)
+      .then(onSuccess, onFailure)
+    ;
   }},
 
   /**
@@ -394,7 +390,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     // TODO consider signalingStates with 'pranswer'?
   }},
 
-  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (onSuccess, onFailure, constraints) {
+  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints, onSuccess, onFailure) {
     var self = this;
     var methodName;
 
