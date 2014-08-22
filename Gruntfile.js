@@ -99,6 +99,7 @@ module.exports = function(grunt) {
         options: {
           specs: 'test/spec/*.js',
           keepRunner : true,
+          vendor: 'test/polyfills/*.js',
           helpers: 'test/helpers/*.js'
         }
       }
