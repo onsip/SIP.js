@@ -7,6 +7,20 @@ var Utils;
 
 Utils= {
 
+  addPromise: function addPromise (f, thisArg) {
+    var callbacksIndex = f.length - 2;
+    return function withPromise () {
+      var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
+      var bound = f.bind.apply(f, [thisArg].concat(nonCallbacks));
+      var promise = new window.Promise(bound);
+      var callbacks = [].slice.call(arguments, callbacksIndex);
+      if (callbacks.length) {
+        promise.then.apply(promise, callbacks);
+      }
+      return promise;
+    };
+  },
+
   augment: function (object, constructor, args, override) {
     var idx, proto;
 

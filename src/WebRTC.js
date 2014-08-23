@@ -23,7 +23,7 @@ WebRTC.isSupported = function () {
   WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(window, 'RTCSessionDescription');
 
   if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
-    WebRTC.getUserMedia = WebRTC.getUserMedia.bind(window.navigator);
+    WebRTC.getUserMedia = SIP.Utils.addPromise(WebRTC.getUserMedia, window.navigator);
     _isSupported = true;
   }
   else {
