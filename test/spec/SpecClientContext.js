@@ -110,7 +110,20 @@ describe('ClientContext', function() {
   describe('.receiveResponse', function() {
 
     beforeEach(function() {
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
     });
 
     it('emits progress on a 1xx response', function() {
