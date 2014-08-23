@@ -12,7 +12,22 @@ describe('Session', function() {
 
     Session.ua = ua;
 
-    message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', Session.ua);
+    message = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), Session.ua);
   });
 
   afterEach(function() {
@@ -932,7 +947,22 @@ describe('InviteServerContext', function() {
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server']);
     ua.transport.server.scheme = 'wss';
 
-    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
 
     request.transport = ua.transport
 
@@ -952,7 +982,23 @@ describe('InviteServerContext', function() {
   });
 
   it('replies 415 from non-application/sdp content-type with a session content-disp', function() {
-    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nContent-Disposition: session\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/json',
+      'Content-Disposition: session',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
     spyOn(request, 'reply');
 
     var ISC = new SIP.InviteServerContext(ua, request);
@@ -982,7 +1028,23 @@ describe('InviteServerContext', function() {
   });
 
   it('sets 100rel, requires', function() {
-    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nRequire: 100rel\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Require: 100rel',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
     spyOn(request, 'reply');
     request.transport = ua.transport;
 
@@ -993,7 +1055,22 @@ describe('InviteServerContext', function() {
   });
 
   it('sets 100rel, supported', function() {
-    request = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound, 100rel\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound, 100rel',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
     spyOn(request, 'reply');
     request.transport = ua.transport;
 
@@ -1005,7 +1082,22 @@ describe('InviteServerContext', function() {
 
   it('replies 500 and returns if the createDialog call fails', function() {
     var ISC, fakereq;
-    fakereq = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    fakereq = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
     spyOn(fakereq, 'reply');
     fakereq.transport = ua.transport;
 
@@ -1225,7 +1317,22 @@ describe('InviteServerContext', function() {
 
     describe('method is CANCELED', function() {
       beforeEach(function() {
-        req = SIP.Parser.parseMessage('CANCEL sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+        req = SIP.Parser.parseMessage([
+          'CANCEL sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/sdp',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), ua);
 
         spyOn(InviteServerContext, 'canceled');
         spyOn(InviteServerContext, 'failed');
@@ -1291,7 +1398,20 @@ describe('InviteServerContext', function() {
 
     describe('method is ACK', function() {
       beforeEach(function() {
-        req = SIP.Parser.parseMessage('ACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 0\r\n\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'ACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 0',
+          '',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         InviteServerContext.status = 7;
 
@@ -1307,7 +1427,22 @@ describe('InviteServerContext', function() {
       it('calls mediaHandler.setDescription when the ACK contains an answer to an invite w/o sdp', function() {
         InviteServerContext.hasOffer = true;
 
-        req = SIP.Parser.parseMessage('ACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'ACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/sdp',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         spyOn(InviteServerContext.mediaHandler, 'setDescription');
 
@@ -1358,7 +1493,22 @@ describe('InviteServerContext', function() {
 
     describe('method is PRACK', function() {
       beforeEach(function() {
-        req = SIP.Parser.parseMessage('PRACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'PRACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/sdp',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         InviteServerContext.status = 6;
 
@@ -1380,7 +1530,22 @@ describe('InviteServerContext', function() {
         spyOn(InviteServerContext, 'terminate');
         spyOn(InviteServerContext, 'failed');
 
-        req = SIP.Parser.parseMessage('PRACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'PRACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/json',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         InviteServerContext.receiveRequest(req);
 
@@ -1433,7 +1598,22 @@ describe('InviteServerContext', function() {
     describe('method is BYE', function() {
       it('replies 200, emits bye, and terminates', function() {
         InviteServerContext.status = 12;
-        req = SIP.Parser.parseMessage('BYE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'BYE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/json',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         spyOn(req, 'reply');
         spyOn(InviteServerContext, 'emit');
@@ -1450,7 +1630,22 @@ describe('InviteServerContext', function() {
     describe('method is INVITE', function() {
       xit('calls receiveReinvite', function() {
         InviteServerContext.status = 12;
-        req = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/json',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         spyOn(InviteServerContext, 'receiveReinvite');
 
@@ -1465,7 +1660,23 @@ describe('InviteServerContext', function() {
     describe('method is INFO', function() {
       it('makes a new DTMF', function() {
         InviteServerContext.status = 12;
-        req = SIP.Parser.parseMessage('INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/dtmf-relay\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 26\r\n\r\nSignal= 6\r\nDuration= 100\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/dtmf-relay',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 26',
+          '',
+          'Signal= 6',
+          'Duration= 100',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
@@ -1480,7 +1691,22 @@ describe('InviteServerContext', function() {
 
       it('returns a 415 if DTMF packet had the wrong content-type header', function() {
         InviteServerContext.status = 12;
-        req = SIP.Parser.parseMessage('INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/json',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
@@ -1495,7 +1721,23 @@ describe('InviteServerContext', function() {
     describe('method is REFER', function() {
       it('replies 202, then calls callback and terminate if there is a session.followRefer listener', function() {
         InviteServerContext.status = 12;
-        req = SIP.Parser.parseMessage('REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nrefer-to: <sip:charles@example.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/json\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', InviteServerContext.ua);
+        req = SIP.Parser.parseMessage([
+          'REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'refer-to: <sip:charles@example.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/json',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 11',
+          '',
+          'a=sendrecv',
+          ''].join('\r\n'), InviteServerContext.ua);
 
         spyOn(req, 'reply');
         var referFollowed = jasmine.createSpy('referFollowed');
@@ -1651,9 +1893,23 @@ describe('InviteClientContext', function() {
     var resp;
 
     beforeEach(function() {
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
-      InviteClientContext.request.body = 'a=sendrecv\r\n';
+      InviteClientContext.request.body = 'a=sendrecv',
+      '';
 
       spyOn(SIP.Dialog.prototype, 'sendRequest');
       spyOn(InviteClientContext, 'sendRequest');
@@ -1662,7 +1918,20 @@ describe('InviteClientContext', function() {
     });
 
     it('accepts and terminates a 200 OK from a branch that\'s replying after the call has been established', function() {
-      resp = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      resp = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: aaaaaaaaaaaaaa',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       InviteClientContext.createDialog(response, 'UAC', false);
       expect(InviteClientContext.dialog).toBeDefined();
@@ -1677,7 +1946,20 @@ describe('InviteClientContext', function() {
     });
 
     it('emits failed if the branch on which early media was established is not the branch that picks up first (invite w/ sdp case)', function() {
-      resp = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      resp = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: aaaaaaaaaaaaaa',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       InviteClientContext.createDialog(response, 'UAC', false);
       expect(InviteClientContext.dialog).toBeDefined();
@@ -1701,7 +1983,21 @@ describe('InviteClientContext', function() {
 
     it('PRACKS any non 200 response when it already chose a dialog', function() {
       InviteClientContext.dialog = { terminate: function() {} };
-      resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      resp = SIP.Parser.parseMessage([
+        'SIP/2.0 183 Session In Progress',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: aaaaaaaaaaaaaa',
+        'CSeq: 9059 INVITE',
+        'RSeq: 9060',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       InviteClientContext.receiveInviteResponse(resp);
 
@@ -1712,7 +2008,21 @@ describe('InviteClientContext', function() {
     it('cancels the request if the call was canceled and the response is 1xx', function() {
       InviteClientContext.isCanceled = true;
       InviteClientContext.cancelReason = 'TESTING';
-      resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      resp = SIP.Parser.parseMessage([
+        'SIP/2.0 183 Session In Progress',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: aaaaaaaaaaaaaa',
+        'CSeq: 9059 INVITE',
+        'RSeq: 9060',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       InviteClientContext.request.cancel = jasmine.createSpy('cancel');
       spyOn(InviteClientContext, 'canceled');
@@ -1779,7 +2089,21 @@ describe('InviteClientContext', function() {
         InviteClientContext.createDialog(response, 'UAC', false);
         expect(InviteClientContext.dialog).toBeDefined();
 
-        resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 0\r\n\r\n', ua);
+        resp = SIP.Parser.parseMessage([
+          'SIP/2.0 183 Session In Progress',
+          'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+          'Call-ID: aaaaaaaaaaaaaa',
+          'CSeq: 9059 INVITE',
+          'RSeq: 9060',
+          'require: 100rel',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Supported: outbound',
+          'Content-Type: application/sdp',
+          'Content-Length: 0',
+          '',
+          ''].join('\r\n'), ua);
 
         InviteClientContext.receiveInviteResponse(resp);
 
@@ -1787,7 +2111,21 @@ describe('InviteClientContext', function() {
       });
 
       it('does not PRACK a response with no body (and requires: 100rel) if there is an illegal rseq header', function() {
-        resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 0\r\n\r\n', ua);
+        resp = SIP.Parser.parseMessage([
+          'SIP/2.0 183 Session In Progress',
+          'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+          'Call-ID: aaaaaaaaaaaaaa',
+          'CSeq: 9059 INVITE',
+          'RSeq: 9060',
+          'require: 100rel',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Supported: outbound',
+          'Content-Type: application/sdp',
+          'Content-Length: 0',
+          '',
+          ''].join('\r\n'), ua);
 
         !InviteClientContext.createDialog(resp, 'UAC', true);
         InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked.push(9060);
@@ -1800,7 +2138,21 @@ describe('InviteClientContext', function() {
       });
 
       it('PRACKs (when require: 100rel is present) a response without a body', function() {
-        resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 0\r\n\r\n', ua);
+        resp = SIP.Parser.parseMessage([
+          'SIP/2.0 183 Session In Progress',
+          'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+          'Call-ID: aaaaaaaaaaaaaa',
+          'CSeq: 9059 INVITE',
+          'RSeq: 9060',
+          'require: 100rel',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Supported: outbound',
+          'Content-Type: application/sdp',
+          'Content-Length: 0',
+          '',
+          ''].join('\r\n'), ua);
 
         InviteClientContext.receiveInviteResponse(resp);
 
@@ -1809,7 +2161,22 @@ describe('InviteClientContext', function() {
       });
 
       it('calls MediaHandler.setDescription for a response with a body with require: 100rel and confirms the dialog', function() {
-        resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+        resp = SIP.Parser.parseMessage([
+          'SIP/2.0 183 Session In Progress',
+          'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+          'Call-ID: aaaaaaaaaaaaaa',
+          'CSeq: 9059 INVITE',
+          'RSeq: 9060',
+          'require: 100rel',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Supported: outbound',
+          'Content-Type: application/sdp',
+          'Content-Length: 11',
+          '',
+          'a= sendrecv',
+          ''].join('\r\n'), ua);
 
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
 
@@ -1825,7 +2192,22 @@ describe('InviteClientContext', function() {
         InviteClientContext.renderbody = InviteClientContext.request.body;
         InviteClientContext.mediaHandler = {localMedia: 'localMedia'};
 
-        resp = SIP.Parser.parseMessage('SIP/2.0 183 Session In Progress\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: aaaaaaaaaaaaaa\r\nCSeq: 9059 INVITE\r\nRSeq: 9060\r\nrequire: 100rel\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+        resp = SIP.Parser.parseMessage([
+          'SIP/2.0 183 Session In Progress',
+          'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+          'Call-ID: aaaaaaaaaaaaaa',
+          'CSeq: 9059 INVITE',
+          'RSeq: 9060',
+          'require: 100rel',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+          'Supported: outbound',
+          'Content-Type: application/sdp',
+          'Content-Length: 11',
+          '',
+          'a= sendrecv',
+          ''].join('\r\n'), ua);
 
         InviteClientContext.receiveInviteResponse(resp);
       });
@@ -2076,7 +2458,8 @@ describe('InviteClientContext', function() {
     beforeEach(function() {
       request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', InviteClientContext.ua, {from: 'abcdefg'}, ['Contact: ' + InviteClientContext.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(InviteClientContext.ua)]);
 
-      request.body = 'a=sendrecv\r\n';
+      request.body = 'a=sendrecv',
+      '';
       request.reply = jasmine.createSpy('reply');
     });
 
