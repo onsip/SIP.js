@@ -31,14 +31,10 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   * Message reception.
   * @param {String} type
   * @param {String} description
-  * @param {Function} onSuccess
-  * @param {Function} onFailure
   */
-  setDescription: {value: function setDescription (description, onSuccess, onFailure) {
+  setDescription: {value: function setDescription (description) {
     // keep jshint happy
     description = description;
-    onSuccess = onSuccess;
-    onFailure = onFailure;
   }}
 });
 

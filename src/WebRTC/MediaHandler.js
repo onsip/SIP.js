@@ -224,10 +224,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   * Message reception.
   * @param {String} type
   * @param {String} sdp
-  * @param {Function} onSuccess
-  * @param {Function} onFailure
   */
-  setDescription: {writable: true, value: function setDescription (sdp, onSuccess, onFailure) {
+  setDescription: {writable: true, value: function setDescription (sdp) {
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
       sdp: sdp
@@ -236,7 +234,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    this.peerConnection.setRemoteDescription(description, onSuccess, onFailure);
+    return new window.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
   }},
 
 // Functions the session can use, but only because it's convenient for the application

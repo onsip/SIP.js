@@ -561,7 +561,7 @@ Session.prototype = {
       hold = (/a=(sendonly|inactive)/).test(request.body);
 
       this.mediaHandler.setDescription(
-        request.body,
+        request.body).then(
         /*
          * onSuccess
          * SDP Offer is valid
@@ -756,7 +756,7 @@ Session.prototype = {
 
         //REVISIT
         this.mediaHandler.setDescription(
-          response.body,
+          response.body).then(
           /*
            * onSuccess
            * SDP Answer fits with Offer.
@@ -1061,7 +1061,7 @@ InviteServerContext = function(ua, request) {
   } else {
     this.hasOffer = true;
     this.mediaHandler.setDescription(
-      request.body,
+      request.body).then(
       /*
        * onSuccess
        * SDP Offer is valid. Fire UA newRTCSession
@@ -1452,7 +1452,7 @@ InviteServerContext.prototype = {
 
             this.hasAnswer = true;
             this.mediaHandler.setDescription(
-              request.body,
+              request.body).then(
               /*
                * onSuccess
                * SDP Answer fits with Offer. Media will start
@@ -1489,7 +1489,7 @@ InviteServerContext.prototype = {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
             this.hasAnswer = true;
             this.mediaHandler.setDescription(
-              request.body,
+              request.body).then(
               /*
                * onSuccess
                * SDP Answer fits with Offer. Media will start
@@ -1833,7 +1833,7 @@ InviteClientContext.prototype = {
             }
             this.hasAnswer = true;
             this.mediaHandler.setDescription(
-              response.body,
+              response.body).then(
               /*
                * onSuccess
                * SDP Answer fits with Offer. Media will start
@@ -1873,7 +1873,7 @@ InviteClientContext.prototype = {
           } else {
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
             this.earlyDialogs[id].mediaHandler.setDescription(
-              response.body,
+              response.body).then(
               function onSuccess() {
                 session.earlyDialogs[id].mediaHandler.getDescription(
                   session.mediaHint).then(
@@ -1979,7 +1979,7 @@ InviteClientContext.prototype = {
             }
             this.hasOffer = true;
             this.mediaHandler.setDescription(
-              response.body,
+              response.body).then(
               function onSuccess() {
                 session.mediaHandler.getDescription(
                   session.mediaHint).then(
@@ -2040,7 +2040,7 @@ InviteClientContext.prototype = {
           }
           this.hasAnswer = true;
           this.mediaHandler.setDescription(
-            response.body,
+            response.body).then(
             /*
              * onSuccess
              * SDP Answer fits with Offer. Media will start

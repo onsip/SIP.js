@@ -477,7 +477,7 @@ describe('Session', function() {
 
     beforeEach(function() {
       spyOn(Session, 'emit');
-      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription')};
+      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription').and.returnValue(Promise.resolve(true))};
     });
 
     it('does not call setDescription and replies with 415 if contentType is not application/sdp', function() {
@@ -521,7 +521,7 @@ describe('Session', function() {
 
       spyOn(Session, 'sendRequest');
 
-      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription').and.returnValue(true)};
+      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription').and.returnValue(Promise.resolve(true))};
     });
 
     it('returns without calling sendRequest or reinviteFailed when status is terminated', function() {
@@ -1141,7 +1141,7 @@ describe('InviteServerContext', function() {
     //replace these with spyOn to avoid cleanup
     jasmine.createSpy(SIP.Session, 'mediaHandler').and.callThrough();
 
-    jasmine.createSpy(SIP.Session.mediaHandler.prototype, 'setDescription');
+    jasmine.createSpy(SIP.Session.mediaHandler.prototype, 'setDescription').and.returnValue(Promise.resolve(true));
 
     ISC = new SIP.InviteServerContext(ua, request);
     SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
@@ -1444,7 +1444,7 @@ describe('InviteServerContext', function() {
           'a=sendrecv',
           ''].join('\r\n'), InviteServerContext.ua);
 
-        spyOn(InviteServerContext.mediaHandler, 'setDescription');
+        spyOn(InviteServerContext.mediaHandler, 'setDescription').and.returnValue(Promise.resolve(true));
 
         InviteServerContext.receiveRequest(req);
 
@@ -1517,7 +1517,7 @@ describe('InviteServerContext', function() {
       });
 
       it('calls mediaHandler.setDescription when the invite had no body, but the request had sdp', function(){
-        spyOn(InviteServerContext.mediaHandler, 'setDescription');
+        spyOn(InviteServerContext.mediaHandler, 'setDescription').and.returnValue(Promise.resolve(true));
         InviteServerContext.request.body = null;
 
         InviteServerContext.receiveRequest(req);
@@ -2179,6 +2179,7 @@ describe('InviteClientContext', function() {
           ''].join('\r\n'), ua);
 
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
 
         InviteClientContext.hasOffer = true;
 
@@ -2298,6 +2299,7 @@ describe('InviteClientContext', function() {
       it('calls mediaHandler.setDescription if the request had no body and the response had no early dialog with media connected to it', function() {
         InviteClientContext.request.body = null;
         InviteClientContext.mediaHandler = jasmine.createSpyObj('setDescription', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
 
         InviteClientContext.receiveInviteResponse(response);
 
@@ -2307,6 +2309,7 @@ describe('InviteClientContext', function() {
       it('same as above, but does not make the call if the createDialog fails', function() {
         InviteClientContext.request.body = null;
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
         spyOn(InviteClientContext, 'createDialog').and.returnValue(false);
 
         InviteClientContext.receiveInviteResponse(response);
@@ -2316,6 +2319,7 @@ describe('InviteClientContext', function() {
 
       it('calls mediaHandler.setDescription if the request has a body', function() {
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
 
         InviteClientContext.receiveInviteResponse(response);
 
@@ -2324,6 +2328,7 @@ describe('InviteClientContext', function() {
 
       it('same as above, but does not make the call if the createDialog fails', function() {
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
         spyOn(InviteClientContext, 'createDialog').and.returnValue(false);
 
         InviteClientContext.receiveInviteResponse(response);
