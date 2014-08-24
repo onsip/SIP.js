@@ -62,14 +62,12 @@ ClientContext.prototype.cancel = function (options) {
 
   var
   status_code = options.status_code,
-  reason_phrase = options.reason_phrase,
   cancel_reason;
 
   if (status_code && status_code < 200 || status_code > 699) {
     throw new TypeError('Invalid status_code: ' + status_code);
   } else if (status_code) {
-    reason_phrase = SIP.Utils.getReasonPhrase(status_code, reason_phrase);
-    cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
+    cancel_reason = SIP.Utils.getReasonHeaderValue(status_code, options.reason_phrase);
   }
   this.request.cancel(cancel_reason);
 

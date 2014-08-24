@@ -229,6 +229,11 @@ Utils= {
     return specific || SIP.C.REASON_PHRASE[code] || '';
   },
 
+  getReasonHeaderValue: function getReasonHeaderValue (code, reason) {
+    reason = SIP.Utils.getReasonPhrase(code, reason);
+    return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
+  },
+
   buildStatusLine: function buildStatusLine (code, reason) {
     code = code || null;
     reason = reason || null;

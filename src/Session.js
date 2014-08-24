@@ -782,8 +782,7 @@ Session.prototype = {
     var extraHeaders = [];
 
     if (status_code) {
-      reason_phrase = SIP.Utils.getReasonPhrase(status_code, reason_phrase);
-      extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
+      extraHeaders.push('Reason: ' + SIP.Utils.getReasonHeaderValue(status_code, reason_phrase));
     }
 
     // An error on dialog creation will fire 'failed' event
@@ -2091,7 +2090,6 @@ InviteClientContext.prototype = {
 
     var
     statusCode = options.status_code,
-    reasonPhrase = options.reasonPhrase,
     cancel_reason;
 
     // Check Session Status
@@ -2104,8 +2102,7 @@ InviteClientContext.prototype = {
     if (statusCode && (statusCode < 200 || statusCode >= 700)) {
       throw new TypeError('Invalid status_code: '+ statusCode);
     } else if (statusCode) {
-      reasonPhrase = SIP.Utils.getReasonPhrase(statusCode, reasonPhrase);
-      cancel_reason = 'SIP ;cause=' + statusCode + ' ;text="' + reasonPhrase + '"';
+      cancel_reason = SIP.Utils.getReasonHeaderValue(statusCode, options.reasonPhrase);
     }
 
     // Check Session Status
