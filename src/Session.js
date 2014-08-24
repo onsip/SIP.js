@@ -2088,10 +2088,6 @@ InviteClientContext.prototype = {
   cancel: function(options) {
     options = options || {};
 
-    var
-    statusCode = options.status_code,
-    cancel_reason;
-
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -2099,11 +2095,7 @@ InviteClientContext.prototype = {
 
     this.logger.log('canceling RTCSession');
 
-    if (statusCode && (statusCode < 200 || statusCode >= 700)) {
-      throw new TypeError('Invalid status_code: '+ statusCode);
-    } else if (statusCode) {
-      cancel_reason = SIP.Utils.getReasonHeaderValue(statusCode, options.reasonPhrase);
-    }
+    var cancel_reason = SIP.Utils.getCancelReason(options.status_code, options.reason_phrase);
 
     // Check Session Status
     if (this.status === C.STATUS_NULL ||

@@ -234,6 +234,14 @@ Utils= {
     return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
   },
 
+  getCancelReason: function getCancelReason (code, reason) {
+    if (code && code < 200 || code > 699) {
+      throw new TypeError('Invalid status_code: ' + code);
+    } else if (code) {
+      return SIP.Utils.getReasonHeaderValue(code, reason);
+    }
+  },
+
   buildStatusLine: function buildStatusLine (code, reason) {
     code = code || null;
     reason = reason || null;
