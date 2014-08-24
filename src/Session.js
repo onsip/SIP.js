@@ -782,7 +782,7 @@ Session.prototype = {
     var extraHeaders = [];
 
     if (status_code) {
-      reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+      reason_phrase = SIP.Utils.getReasonPhrase(status_code, reason_phrase);
       extraHeaders.push('Reason: SIP ;cause=' + status_code + '; text="' + reason_phrase + '"');
     }
 
@@ -931,7 +931,7 @@ Session.prototype = {
   },
 
   accepted: function(response, cause) {
-    cause = cause || (response && SIP.C.REASON_PHRASE[response.status_code]) || '';
+    cause = SIP.Utils.getReasonPhrase(response && response.status_code, cause);
 
     this.startTime = new Date();
 
@@ -1319,7 +1319,7 @@ InviteServerContext.prototype = {
                       replyFailed
                      );
         if (self.status !== C.STATUS_TERMINATED) { // Didn't fail
-          self.accepted(response, SIP.C.REASON_PHRASE[200]);
+          self.accepted(response, SIP.Utils.getReasonPhrase(200));
         }
       },
 
@@ -2104,7 +2104,7 @@ InviteClientContext.prototype = {
     if (statusCode && (statusCode < 200 || statusCode >= 700)) {
       throw new TypeError('Invalid status_code: '+ statusCode);
     } else if (statusCode) {
-      reasonPhrase = reasonPhrase || SIP.C.REASON_PHRASE[statusCode] || '';
+      reasonPhrase = SIP.Utils.getReasonPhrase(statusCode, reasonPhrase);
       cancel_reason = 'SIP ;cause=' + statusCode + ' ;text="' + reasonPhrase + '"';
     }
 

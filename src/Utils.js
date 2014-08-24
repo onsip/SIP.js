@@ -225,6 +225,10 @@ Utils= {
     return SIP.C.causes.SIP_FAILURE_CODE;
   },
 
+  getReasonPhrase: function getReasonPhrase (code, specific) {
+    return specific || SIP.C.REASON_PHRASE[code] || '';
+  },
+
   /**
   * Generate a random Test-Net IP (http://tools.ietf.org/html/rfc5735)
   * @private

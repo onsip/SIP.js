@@ -51,7 +51,7 @@ function replyHelper (options, defaultCode, minCode, maxCode, events) {
   options = options || {};
   var
     statusCode = options.statusCode || defaultCode,
-    reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
+    reasonPhrase = SIP.Utils.getReasonPhrase(statusCode, options.reasonPhrase),
     extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;

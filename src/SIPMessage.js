@@ -422,7 +422,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     throw new TypeError('Invalid reason_phrase: '+ reason);
   }
 
-  reason = reason || SIP.C.REASON_PHRASE[code] || '';
+  reason = SIP.Utils.getReasonPhrase(code, reason);
   extraHeaders = (extraHeaders || []).slice();
 
   response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
@@ -508,7 +508,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
     throw new TypeError('Invalid reason_phrase: '+ reason);
   }
 
-  reason = reason || SIP.C.REASON_PHRASE[code] || '';
+  reason = SIP.Utils.getReasonPhrase(code, reason);
 
   response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
 

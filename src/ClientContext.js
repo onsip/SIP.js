@@ -68,7 +68,7 @@ ClientContext.prototype.cancel = function (options) {
   if (status_code && status_code < 200 || status_code > 699) {
     throw new TypeError('Invalid status_code: ' + status_code);
   } else if (status_code) {
-    reason_phrase = reason_phrase || SIP.C.REASON_PHRASE[status_code] || '';
+    reason_phrase = SIP.Utils.getReasonPhrase(status_code, reason_phrase);
     cancel_reason = 'SIP ;cause=' + status_code + ' ;text="' + reason_phrase + '"';
   }
   this.request.cancel(cancel_reason);
@@ -77,7 +77,7 @@ ClientContext.prototype.cancel = function (options) {
 };
 
 ClientContext.prototype.receiveResponse = function (response) {
-  var cause = SIP.C.REASON_PHRASE[response.status_code] || '';
+  var cause = SIP.Utils.getReasonPhrase(response.status_code);
 
   switch(true) {
     case /^1[0-9]{2}$/.test(response.status_code):

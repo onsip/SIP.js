@@ -73,7 +73,7 @@ SIP.Subscription.prototype = {
 
   receiveResponse: function(response) {
     var expires, sub = this,
-        cause = SIP.C.REASON_PHRASE[response.status_code] || '';
+        cause = SIP.Utils.getReasonPhrase(response.status_code);
 
     if (this.errorCodes.indexOf(response.status_code) !== -1) {
       this.failed(response, null);
