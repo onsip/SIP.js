@@ -36,71 +36,39 @@ ServerContext = function (ua, request) {
 ServerContext.prototype = new SIP.EventEmitter();
 
 ServerContext.prototype.progress = function (options) {
-  options = options || {};
-  var
-    statusCode = options.statusCode || 180,
-    reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body,
-    response;
-
-  if (statusCode < 100 || statusCode > 199) {
-    throw new TypeError('Invalid statusCode: ' + statusCode);
-  }
-  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('progress', response, reasonPhrase);
-
-  return this;
+  return replyHelper.call(this, options, 180, 100, 199, ['progress']);
 };
 
 ServerContext.prototype.accept = function (options) {
-  options = options || {};
-  var
-    statusCode = options.statusCode || 200,
-    reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body,
-    response;
-
-  if (statusCode < 200 || statusCode > 299) {
-    throw new TypeError('Invalid statusCode: ' + statusCode);
-  }
-  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('accepted', response, reasonPhrase);
-
-  return this;
+  return replyHelper.call(this, options, 200, 200, 299, ['accepted']);
 };
 
 ServerContext.prototype.reject = function (options) {
+  return replyHelper.call(this, options, 480, 300, 699, ['rejected', 'failed']);
+};
+
+function replyHelper (options, defaultCode, minCode, maxCode, events) {
   options = options || {};
   var
-    statusCode = options.statusCode || 480,
+    statusCode = options.statusCode || defaultCode,
     reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
     extraHeaders = (options.extraHeaders || []).slice(),
     body = options.body,
     response;
 
-  if (statusCode < 300 || statusCode > 699) {
+  if (statusCode < minCode || statusCode > maxCode) {
     throw new TypeError('Invalid statusCode: ' + statusCode);
   }
   response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('rejected', response, reasonPhrase);
-  this.emit('failed', response, reasonPhrase);
+  events.forEach(function (event) {
+    this.emit(event, response, reasonPhrase);
+  }, this);
 
   return this;
-};
+}
 
 ServerContext.prototype.reply = function (options) {
-  options = options || {};
-  var
-    statusCode = options.statusCode,
-    reasonPhrase = options.reasonPhrase,
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body;
-
-  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-
-  return this;
+  return replyHelper.call(this, options, 100, 0, 699, []);
 };
 
 ServerContext.prototype.onRequestTimeout = function () {
