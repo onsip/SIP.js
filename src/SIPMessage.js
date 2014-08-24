@@ -412,20 +412,8 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     r = 0,
     v = 0;
 
-  code = code || null;
-  reason = reason || null;
-
-  // Validate code and reason values
-  if (!code || (code < 100 || code > 699)) {
-    throw new TypeError('Invalid status_code: '+ code);
-  } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
-    throw new TypeError('Invalid reason_phrase: '+ reason);
-  }
-
-  reason = SIP.Utils.getReasonPhrase(code, reason);
+  response = SIP.Utils.buildStatusLine(code, reason);
   extraHeaders = (extraHeaders || []).slice();
-
-  response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
 
   if(this.method === SIP.C.INVITE && code > 100 && code <= 200) {
     rr = this.getHeaders('record-route');
@@ -498,19 +486,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
     vias = this.getHeaders('via'),
     length = vias.length;
 
-  code = code || null;
-  reason = reason || null;
-
-  // Validate code and reason values
-  if (!code || (code < 100 || code > 699)) {
-    throw new TypeError('Invalid status_code: '+ code);
-  } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
-    throw new TypeError('Invalid reason_phrase: '+ reason);
-  }
-
-  reason = SIP.Utils.getReasonPhrase(code, reason);
-
-  response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  response = SIP.Utils.buildStatusLine(code, reason);
 
   for(v; v < length; v++) {
     response += 'Via: ' + vias[v] + '\r\n';

@@ -229,6 +229,22 @@ Utils= {
     return specific || SIP.C.REASON_PHRASE[code] || '';
   },
 
+  buildStatusLine: function buildStatusLine (code, reason) {
+    code = code || null;
+    reason = reason || null;
+
+    // Validate code and reason values
+    if (!code || (code < 100 || code > 699)) {
+      throw new TypeError('Invalid status_code: '+ code);
+    } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
+      throw new TypeError('Invalid reason_phrase: '+ reason);
+    }
+
+    reason = Utils.getReasonPhrase(code, reason);
+
+    return 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  },
+
   /**
   * Generate a random Test-Net IP (http://tools.ietf.org/html/rfc5735)
   * @private
