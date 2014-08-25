@@ -560,15 +560,15 @@ Session.prototype = {
       // Are we holding?
       hold = (/a=(sendonly|inactive)/).test(request.body);
 
-      this.mediaHandler.setDescription(
-        request.body).then(
+      this.mediaHandler.setDescription(request.body)
+      .then(
         /*
          * onSuccess
          * SDP Offer is valid
          */
         function() {
-          self.mediaHandler.getDescription(
-            self.mediaHint).then(
+          self.mediaHandler.getDescription(self.mediaHint)
+          .then(
             function(body) {
               request.reply(200, null, ['Contact: ' + self.contact], body,
                 function() {
@@ -630,8 +630,8 @@ Session.prototype = {
 
     this.receiveResponse = this.receiveReinviteResponse;
     //REVISIT
-    this.mediaHandler.getDescription(
-      self.mediaHint).then(
+    this.mediaHandler.getDescription(self.mediaHint)
+    .then(
       function(body){
         if (mangle) {
           body = mangle(body);
@@ -755,8 +755,8 @@ Session.prototype = {
         }
 
         //REVISIT
-        this.mediaHandler.setDescription(
-          response.body).then(
+        this.mediaHandler.setDescription(response.body)
+        .then(
           /*
            * onSuccess
            * SDP Answer fits with Offer.
@@ -1060,8 +1060,8 @@ InviteServerContext = function(ua, request) {
     SIP.Timers.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
-    this.mediaHandler.setDescription(
-      request.body).then(
+    this.mediaHandler.setDescription(request.body)
+    .then(
       /*
        * onSuccess
        * SDP Offer is valid. Fire UA newRTCSession
@@ -1205,8 +1205,8 @@ InviteServerContext.prototype = {
       this.mediaHint = options.media;
 
       // Get the session description to add to preaccept with
-      this.mediaHandler.getDescription(
-        options.media).then(
+      this.mediaHandler.getDescription(options.media)
+      .then(
         // Success
         function succ(body) {
           if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
@@ -1386,8 +1386,8 @@ InviteServerContext.prototype = {
     if (this.status === C.STATUS_EARLY_MEDIA) {
       sdpCreationSucceeded();
     } else {
-      this.mediaHandler.getDescription(
-        self.mediaHint).then(
+      this.mediaHandler.getDescription(self.mediaHint)
+      .then(
         sdpCreationSucceeded,
         sdpCreationFailed
       );
@@ -1451,8 +1451,8 @@ InviteServerContext.prototype = {
             SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
 
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(
-              request.body).then(
+            this.mediaHandler.setDescription(request.body)
+            .then(
               /*
                * onSuccess
                * SDP Answer fits with Offer. Media will start
@@ -1488,8 +1488,8 @@ InviteServerContext.prototype = {
         if(!this.hasAnswer) {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(
-              request.body).then(
+            this.mediaHandler.setDescription(request.body)
+            .then(
               /*
                * onSuccess
                * SDP Answer fits with Offer. Media will start
@@ -1685,8 +1685,8 @@ InviteClientContext.prototype = {
       this.status = C.STATUS_INVITE_SENT;
       this.send();
     } else {
-      this.mediaHandler.getDescription(
-        self.mediaHint).then(
+      this.mediaHandler.getDescription(self.mediaHint)
+      .then(
         function onSuccess(offer) {
           if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
             return;
@@ -1832,8 +1832,8 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(
-              response.body).then(
+            this.mediaHandler.setDescription(response.body)
+            .then(
               /*
                * onSuccess
                * SDP Answer fits with Offer. Media will start
@@ -1872,11 +1872,11 @@ InviteClientContext.prototype = {
             );
           } else {
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-            this.earlyDialogs[id].mediaHandler.setDescription(
-              response.body).then(
+            this.earlyDialogs[id].mediaHandler.setDescription(response.body)
+            .then(
               function onSuccess() {
-                session.earlyDialogs[id].mediaHandler.getDescription(
-                  session.mediaHint).then(
+                session.earlyDialogs[id].mediaHandler.getDescription(session.mediaHint)
+                .then(
                   function onSuccess(sdp) {
                     extraHeaders.push('Content-Type: application/sdp');
                     extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1978,11 +1978,11 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasOffer = true;
-            this.mediaHandler.setDescription(
-              response.body).then(
+            this.mediaHandler.setDescription(response.body)
+            .then(
               function onSuccess() {
-                session.mediaHandler.getDescription(
-                  session.mediaHint).then(
+                session.mediaHandler.getDescription(session.mediaHint)
+                .then(
                   function onSuccess(sdp) {
                     //var localMedia;
                     if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
@@ -2039,8 +2039,8 @@ InviteClientContext.prototype = {
             break;
           }
           this.hasAnswer = true;
-          this.mediaHandler.setDescription(
-            response.body).then(
+          this.mediaHandler.setDescription(response.body)
+          .then(
             /*
              * onSuccess
              * SDP Answer fits with Offer. Media will start
