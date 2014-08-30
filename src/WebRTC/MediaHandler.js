@@ -209,13 +209,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.logger.log('acquired local media stream');
         self.localMedia = stream;
         self.session.connecting();
-        return new window.Promise(self.addStream.bind(self, stream));
+        return stream;
       }, function acquireFailed(err) {
         self.logger.error('unable to acquire stream');
         self.logger.error(err);
         self.session.connecting();
         throw err;
       })
+      .then(this.addStream.bind(this))
       .then(streamAdditionSucceeded)
     ;
   }},
@@ -439,17 +440,16 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     );
   }},
 
-  addStream: {writable: true, value: function addStream (stream, onSuccess, onFailure) {
+  addStream: {writable: true, value: function addStream (stream) {
     try {
       this.peerConnection.addStream(stream);
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
-      onFailure(e);
-      return;
+      return window.Promise.reject(e);
     }
 
-    onSuccess();
+    return window.Promise.resolve();
   }},
 
   toggleMuteHelper: {writable: true, value: function toggleMuteHelper (trackGetter, mute) {
