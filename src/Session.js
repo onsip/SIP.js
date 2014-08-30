@@ -631,12 +631,9 @@ Session.prototype = {
     this.receiveResponse = this.receiveReinviteResponse;
     //REVISIT
     this.mediaHandler.getDescription(self.mediaHint)
+    .then(mangle)
     .then(
       function(body){
-        if (mangle) {
-          body = mangle(body);
-        }
-
         self.dialog.sendRequest(self, SIP.C.INVITE, {
           extraHeaders: extraHeaders,
           body: body
