@@ -562,11 +562,7 @@ Session.prototype = {
 
       this.mediaHandler.setDescription(request.body)
       .then(
-        /*
-         * onSuccess
-         * SDP Offer is valid
-         */
-        function() {
+        function onSuccess () {
           self.mediaHandler.getDescription(self.mediaHint)
           .then(
             function(body) {
@@ -588,11 +584,7 @@ Session.prototype = {
             }
           );
         },
-        /*
-         * onFailure
-         * Bad media description
-         */
-        function(e) {
+        function onFailure (e) {
           self.logger.error(e);
           request.reply(488);
         }
@@ -754,18 +746,10 @@ Session.prototype = {
         //REVISIT
         this.mediaHandler.setDescription(response.body)
         .then(
-          /*
-           * onSuccess
-           * SDP Answer fits with Offer.
-           */
-          function() {
+          function onSuccess () {
             self.reinviteSucceeded();
           },
-          /*
-           * onFailure
-           * SDP Answer does not fit the Offer.
-           */
-          function() {
+          function onFailure () {
             self.reinviteFailed();
           }
         );
@@ -1059,16 +1043,8 @@ InviteServerContext = function(ua, request) {
     this.hasOffer = true;
     this.mediaHandler.setDescription(request.body)
     .then(
-      /*
-       * onSuccess
-       * SDP Offer is valid. Fire UA newRTCSession
-       */
       fireNewSession,
-      /*
-       * onFailure
-       * Bad media description
-       */
-      function(e) {
+      function onFailure (e) {
         self.logger.warn('invalid SDP');
         self.logger.warn(e);
         request.reply(488);
@@ -1204,8 +1180,7 @@ InviteServerContext.prototype = {
       // Get the session description to add to preaccept with
       this.mediaHandler.getDescription(options.media)
       .then(
-        // Success
-        function succ(body) {
+        function onSuccess (body) {
           if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
             return;
           }
@@ -1238,8 +1213,7 @@ InviteServerContext.prototype = {
           this.emit('progress', response, reasonPhrase);
         }.bind(this),
 
-        // Failure
-        function fail() {
+        function onFailure () {
           this.failed(null, SIP.C.causes.WEBRTC_ERROR);
         }.bind(this)
       );
@@ -1450,16 +1424,8 @@ InviteServerContext.prototype = {
             this.hasAnswer = true;
             this.mediaHandler.setDescription(request.body)
             .then(
-              /*
-               * onSuccess
-               * SDP Answer fits with Offer. Media will start
-               */
               confirmSession.bind(this),
-              /*
-               * onFailure
-               * SDP Answer does not fit the Offer.  Terminate the call.
-               */
-              function (e) {
+              function onFailure (e) {
                 this.logger.warn(e);
                 this.terminate({
                   statusCode: '488',
@@ -1487,11 +1453,7 @@ InviteServerContext.prototype = {
             this.hasAnswer = true;
             this.mediaHandler.setDescription(request.body)
             .then(
-              /*
-               * onSuccess
-               * SDP Answer fits with Offer. Media will start
-               */
-              function() {
+              function onSuccess () {
                 SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
                 SIP.Timers.clearTimeout(this.timers.prackTimer);
                 request.reply(200);
@@ -1503,7 +1465,7 @@ InviteServerContext.prototype = {
                 //REVISIT
                 this.mute();
               }.bind(this),
-              function (e) {
+              function onFailure (e) {
                 //TODO: Send to media handler
                 this.logger.warn(e);
                 this.terminate({
@@ -1831,11 +1793,7 @@ InviteClientContext.prototype = {
             this.hasAnswer = true;
             this.mediaHandler.setDescription(response.body)
             .then(
-              /*
-               * onSuccess
-               * SDP Answer fits with Offer. Media will start
-               */
-              function () {
+              function onSuccess () {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
                 session.dialog.pracked.push(response.getHeader('rseq'));
 
@@ -1857,11 +1815,7 @@ InviteClientContext.prototype = {
                   }
                 }*/
               },
-              /*
-               * onFailure
-               * SDP Answer does not fit the Offer. Accept the call and Terminate.
-               */
-              function(e) {
+              function onFailure (e) {
                 session.logger.warn(e);
                 session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
                 session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
@@ -2038,11 +1992,7 @@ InviteClientContext.prototype = {
           this.hasAnswer = true;
           this.mediaHandler.setDescription(response.body)
           .then(
-            /*
-             * onSuccess
-             * SDP Answer fits with Offer. Media will start
-             */
-            function() {
+            function onSuccess () {
               var options = {};//,localMedia;
               session.status = C.STATUS_CONFIRMED;
               session.unmute();
@@ -2062,11 +2012,7 @@ InviteClientContext.prototype = {
               session.sendRequest(SIP.C.ACK, options);
               session.accepted(response);
             },
-            /*
-             * onFailure
-             * SDP Answer does not fit the Offer. Accept the call and Terminate.
-             */
-            function(e) {
+            function onFailure (e) {
               session.logger.warn(e);
               session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
               session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
