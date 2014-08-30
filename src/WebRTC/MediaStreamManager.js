@@ -104,29 +104,31 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         {audio: true, video: true};
 
       return new window.Promise(function (resolve) {
-      /*
-       * Make the call asynchronous, so that ICCs have a chance
-       * to define callbacks to `userMediaRequest`
-       */
-      SIP.Timers.setTimeout(function () {
-        this.emit('userMediaRequest', constraints);
+        /*
+         * Make the call asynchronous, so that ICCs have a chance
+         * to define callbacks to `userMediaRequest`
+         */
+        SIP.Timers.setTimeout(function () {
+          this.emit('userMediaRequest', constraints);
 
-        var emitThenCall = function (eventName, callback) {
-          var callbackArgs = Array.prototype.slice.call(arguments, 2);
-          // Emit with all of the arguments from the real callback.
-          var newArgs = [eventName].concat(callbackArgs);
+          var emitThenCall = function (eventName, callback) {
+            var callbackArgs = Array.prototype.slice.call(arguments, 2);
+            // Emit with all of the arguments from the real callback.
+            var newArgs = [eventName].concat(callbackArgs);
 
-          this.emit.apply(this, newArgs);
+            this.emit.apply(this, newArgs);
 
-          return callback.apply(null, callbackArgs);
-        }.bind(this);
+            return callback.apply(null, callbackArgs);
+          }.bind(this);
 
-        resolve(SIP.WebRTC.getUserMedia(constraints)
-        .then(
-          emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
-          emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
-        ));
-      }.bind(this), 0);
+          resolve(
+            SIP.WebRTC.getUserMedia(constraints)
+            .then(
+              emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
+              emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
+            )
+          );
+        }.bind(this), 0);
       }.bind(this));
     }
   }},
