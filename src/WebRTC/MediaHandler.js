@@ -179,32 +179,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
      * 4. call onSuccess()
      */
 
-    /* Last functions first, to quiet JSLint */
-    function streamAdditionSucceeded() {
-      if (self.hasOffer('remote')) {
-        self.peerConnection.ondatachannel = function (evt) {
-          self.dataChannel = evt.channel;
-          self.emit('dataChannel', self.dataChannel);
-        };
-      } else if (mediaHint.dataChannel &&
-                 self.peerConnection.createDataChannel) {
-        self.dataChannel = self.peerConnection.createDataChannel(
-          'sipjs',
-          mediaHint.dataChannel
-        );
-        self.emit('dataChannel', self.dataChannel);
-      }
-
-      return new window.Promise(self.createOfferOrAnswer.bind(self, self.RTCConstraints));
-    }
-
+    var streamPromise;
     if (self.localMedia) {
       self.logger.log('already have local media');
-      return streamAdditionSucceeded();
+      streamPromise = window.Promise.resolve(self.localMedia);
     }
-
+    else {
     self.logger.log('acquiring local media');
-    return self.mediaStreamManager.acquire(mediaHint)
+    streamPromise = self.mediaStreamManager.acquire(mediaHint)
       .then(function acquireSucceeded(stream) {
         self.logger.log('acquired local media stream');
         self.localMedia = stream;
@@ -217,7 +199,27 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         throw err;
       })
       .then(this.addStream.bind(this))
-      .then(streamAdditionSucceeded)
+    ;
+    }
+
+    return streamPromise
+      .then(function streamAdditionSucceeded() {
+        if (self.hasOffer('remote')) {
+          self.peerConnection.ondatachannel = function (evt) {
+            self.dataChannel = evt.channel;
+            self.emit('dataChannel', self.dataChannel);
+          };
+        } else if (mediaHint.dataChannel &&
+                   self.peerConnection.createDataChannel) {
+          self.dataChannel = self.peerConnection.createDataChannel(
+            'sipjs',
+            mediaHint.dataChannel
+          );
+          self.emit('dataChannel', self.dataChannel);
+        }
+
+        return new window.Promise(self.createOfferOrAnswer.bind(self, self.RTCConstraints));
+      })
     ;
   }},
 
