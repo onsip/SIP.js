@@ -185,21 +185,21 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       streamPromise = window.Promise.resolve(self.localMedia);
     }
     else {
-    self.logger.log('acquiring local media');
-    streamPromise = self.mediaStreamManager.acquire(mediaHint)
-      .then(function acquireSucceeded(stream) {
-        self.logger.log('acquired local media stream');
-        self.localMedia = stream;
-        self.session.connecting();
-        return stream;
-      }, function acquireFailed(err) {
-        self.logger.error('unable to acquire stream');
-        self.logger.error(err);
-        self.session.connecting();
-        throw err;
-      })
-      .then(this.addStream.bind(this))
-    ;
+      self.logger.log('acquiring local media');
+      streamPromise = self.mediaStreamManager.acquire(mediaHint)
+        .then(function acquireSucceeded(stream) {
+          self.logger.log('acquired local media stream');
+          self.localMedia = stream;
+          self.session.connecting();
+          return stream;
+        }, function acquireFailed(err) {
+          self.logger.error('unable to acquire stream');
+          self.logger.error(err);
+          self.session.connecting();
+          throw err;
+        })
+        .then(this.addStream.bind(this))
+      ;
     }
 
     return streamPromise
