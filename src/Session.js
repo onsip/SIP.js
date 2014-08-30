@@ -561,9 +561,13 @@ Session.prototype = {
       hold = (/a=(sendonly|inactive)/).test(request.body);
 
       this.mediaHandler.setDescription(request.body)
+      .catch(function onFailure (e) {
+        self.logger.error(e);
+        throw 488;
+      })
       .then(
         function onSuccess () {
-          self.mediaHandler.getDescription(self.mediaHint)
+          return self.mediaHandler.getDescription(self.mediaHint)
           .then(
             function(body) {
               request.reply(200, null, ['Contact: ' + self.contact], body,
@@ -580,15 +584,12 @@ Session.prototype = {
                 });
             },
             function() {
-              request.reply(500);
+              throw 500;
             }
           );
-        },
-        function onFailure (e) {
-          self.logger.error(e);
-          request.reply(488);
         }
-      );
+      )
+      .catch(request.reply.bind(request));
     }
   },
 
