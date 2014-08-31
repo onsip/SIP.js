@@ -550,43 +550,45 @@ Session.prototype = {
         contentType = request.getHeader('Content-Type'),
         hold = true;
 
-    if (request.body) {
-      if (contentType !== 'application/sdp') {
-        this.logger.warn('invalid Content-Type');
-        request.reply(415);
-        return;
-      }
-
-      // Are we holding?
-      hold = (/a=(sendonly|inactive)/).test(request.body);
-
-      this.mediaHandler.setDescription(request.body)
-      .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
-      .then(function(body) {
-        request.reply(200, null, ['Contact: ' + self.contact], body,
-          function() {
-            self.status = C.STATUS_WAITING_FOR_ACK;
-            self.setInvite2xxTimer(request, body);
-            self.setACKTimer();
-
-            if (self.remote_hold && !hold) {
-              self.onunhold('remote');
-            } else if (!self.remote_hold && hold) {
-              self.onhold('remote');
-            }
-          });
-      })
-      .catch(function onFailure (e) {
-        var statusCode;
-        if (e instanceof SIP.Exceptions.GetDescriptionError) {
-          statusCode = 500;
-        } else {
-          self.logger.error(e);
-          statusCode = 488;
-        }
-        request.reply(statusCode);
-      });
+    if (!request.body) {
+      return;
     }
+
+    if (contentType !== 'application/sdp') {
+      this.logger.warn('invalid Content-Type');
+      request.reply(415);
+      return;
+    }
+
+    // Are we holding?
+    hold = (/a=(sendonly|inactive)/).test(request.body);
+
+    this.mediaHandler.setDescription(request.body)
+    .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
+    .then(function(body) {
+      request.reply(200, null, ['Contact: ' + self.contact], body,
+        function() {
+          self.status = C.STATUS_WAITING_FOR_ACK;
+          self.setInvite2xxTimer(request, body);
+          self.setACKTimer();
+
+          if (self.remote_hold && !hold) {
+            self.onunhold('remote');
+          } else if (!self.remote_hold && hold) {
+            self.onhold('remote');
+          }
+        });
+    })
+    .catch(function onFailure (e) {
+      var statusCode;
+      if (e instanceof SIP.Exceptions.GetDescriptionError) {
+        statusCode = 500;
+      } else {
+        self.logger.error(e);
+        statusCode = 488;
+      }
+      request.reply(statusCode);
+    });
   },
 
   sendReinvite: function(options) {
