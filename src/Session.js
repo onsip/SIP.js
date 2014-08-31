@@ -546,22 +546,17 @@ Session.prototype = {
    * @private
    */
   receiveReinvite: function(request) {
-    var self = this,
-        contentType = request.getHeader('Content-Type'),
-        hold = true;
+    var self = this;
 
     if (!request.body) {
       return;
     }
 
-    if (contentType !== 'application/sdp') {
+    if (request.getHeader('Content-Type') !== 'application/sdp') {
       this.logger.warn('invalid Content-Type');
       request.reply(415);
       return;
     }
-
-    // Are we holding?
-    hold = (/a=(sendonly|inactive)/).test(request.body);
 
     this.mediaHandler.setDescription(request.body)
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
@@ -571,6 +566,9 @@ Session.prototype = {
           self.status = C.STATUS_WAITING_FOR_ACK;
           self.setInvite2xxTimer(request, body);
           self.setACKTimer();
+
+          // Are we holding?
+          var hold = (/a=(sendonly|inactive)/).test(request.body);
 
           if (self.remote_hold && !hold) {
             self.onunhold('remote');
