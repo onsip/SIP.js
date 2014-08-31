@@ -561,35 +561,31 @@ Session.prototype = {
       hold = (/a=(sendonly|inactive)/).test(request.body);
 
       this.mediaHandler.setDescription(request.body)
-      .catch(function onFailure (e) {
-        self.logger.error(e);
-        throw 488;
-      })
-      .then(
-        function onSuccess () {
-          return self.mediaHandler.getDescription(self.mediaHint)
-          .then(
-            function(body) {
-              request.reply(200, null, ['Contact: ' + self.contact], body,
-                function() {
-                  self.status = C.STATUS_WAITING_FOR_ACK;
-                  self.setInvite2xxTimer(request, body);
-                  self.setACKTimer();
+      .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
+      .then(function(body) {
+        request.reply(200, null, ['Contact: ' + self.contact], body,
+          function() {
+            self.status = C.STATUS_WAITING_FOR_ACK;
+            self.setInvite2xxTimer(request, body);
+            self.setACKTimer();
 
-                  if (self.remote_hold && !hold) {
-                    self.onunhold('remote');
-                  } else if (!self.remote_hold && hold) {
-                    self.onhold('remote');
-                  }
-                });
-            },
-            function() {
-              throw 500;
+            if (self.remote_hold && !hold) {
+              self.onunhold('remote');
+            } else if (!self.remote_hold && hold) {
+              self.onhold('remote');
             }
-          );
+          });
+      })
+      .catch(function onFailure (e) {
+        var statusCode;
+        if (e instanceof SIP.Exceptions.GetDescriptionError) {
+          statusCode = 500;
+        } else {
+          self.logger.error(e);
+          statusCode = 488;
         }
-      )
-      .catch(request.reply.bind(request));
+        request.reply(statusCode);
+      });
     }
   },
 

@@ -422,7 +422,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       self.logger.error('peerConnection.' + methodName + ' failed');
       self.logger.error(e);
       self.ready = true;
-      onFailure(e);
+      onFailure(new SIP.Exceptions.GetDescriptionError(e));
     }
 
     self.ready = false;

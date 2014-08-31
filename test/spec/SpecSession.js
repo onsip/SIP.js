@@ -477,7 +477,10 @@ describe('Session', function() {
 
     beforeEach(function() {
       spyOn(Session, 'emit');
-      Session.mediaHandler = {setDescription: jasmine.createSpy('setDescription').and.returnValue(Promise.resolve(true))};
+      Session.mediaHandler = {
+        setDescription: jasmine.createSpy('setDescription').and.returnValue(Promise.resolve(true)),
+        getDescription: jasmine.createSpy('getDescription').and.returnValue(Promise.resolve(true))
+      };
     });
 
     it('does not call setDescription and replies with 415 if contentType is not application/sdp', function() {
