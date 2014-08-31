@@ -2301,8 +2301,9 @@ describe('InviteClientContext', function() {
 
       it('calls mediaHandler.setDescription if the request had no body and the response had no early dialog with media connected to it', function() {
         InviteClientContext.request.body = null;
-        InviteClientContext.mediaHandler = jasmine.createSpyObj('setDescription', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'getDescription', 'close']);
         InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
+        InviteClientContext.mediaHandler.getDescription.and.returnValue(Promise.resolve(true));
 
         InviteClientContext.receiveInviteResponse(response);
 
@@ -2321,8 +2322,9 @@ describe('InviteClientContext', function() {
       });
 
       it('calls mediaHandler.setDescription if the request has a body', function() {
-        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'close']);
+        InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['setDescription', 'getDescription', 'close']);
         InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
+        InviteClientContext.mediaHandler.getDescription.and.returnValue(Promise.resolve(true));
 
         InviteClientContext.receiveInviteResponse(response);
 

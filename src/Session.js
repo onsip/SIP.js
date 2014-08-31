@@ -1926,48 +1926,43 @@ InviteClientContext.prototype = {
             }
             this.hasOffer = true;
             this.mediaHandler.setDescription(response.body)
-            .then(
-              function onSuccess() {
-                session.mediaHandler.getDescription(session.mediaHint)
-                .then(
-                  function onSuccess(sdp) {
-                    //var localMedia;
-                    if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
-                      return;
-                    }
+            .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
+            .then(function onSuccess(sdp) {
+              //var localMedia;
+              if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
+                return;
+              }
 
-                    sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
+              sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
 
-                    session.status = C.STATUS_CONFIRMED;
-                    session.hasAnswer = true;
+              session.status = C.STATUS_CONFIRMED;
+              session.hasAnswer = true;
 
-                    session.unmute();
-                    /*localMedia = session.mediaHandler.localMedia;
-                    if (localMedia.getAudioTracks().length > 0) {
-                      localMedia.getAudioTracks()[0].enabled = true;
-                    }
-                    if (localMedia.getVideoTracks().length > 0) {
-                      localMedia.getVideoTracks()[0].enabled = true;
-                    }*/
-                    session.sendRequest(SIP.C.ACK,{
-                      body: sdp,
-                      extraHeaders:['Content-Type: application/sdp'],
-                      cseq:response.cseq
-                    });
-                    session.accepted(response);
-                  },
-                  function onFailure() {
-                    // TODO do something here
-                    session.logger.warn("there was a problem");
-                  }
-                );
-              },
-              function onFailure(e) {
+              session.unmute();
+              /*localMedia = session.mediaHandler.localMedia;
+              if (localMedia.getAudioTracks().length > 0) {
+                localMedia.getAudioTracks()[0].enabled = true;
+              }
+              if (localMedia.getVideoTracks().length > 0) {
+                localMedia.getVideoTracks()[0].enabled = true;
+              }*/
+              session.sendRequest(SIP.C.ACK,{
+                body: sdp,
+                extraHeaders:['Content-Type: application/sdp'],
+                cseq:response.cseq
+              });
+              session.accepted(response);
+            })
+            .catch(function onFailure(e) {
+              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+                // TODO do something here
+                session.logger.warn("there was a problem");
+              } else {
                 session.logger.warn('invalid SDP');
                 session.logger.warn(e);
                 response.reply(488);
               }
-            );
+            });
           }
         } else if (this.hasAnswer){
           if (this.renderbody) {
