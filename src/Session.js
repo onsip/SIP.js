@@ -1819,40 +1819,39 @@ InviteClientContext.prototype = {
               }
             );
           } else {
-            this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-            this.earlyDialogs[id].mediaHandler.setDescription(response.body)
-            .then(
-              function onSuccess() {
-                session.earlyDialogs[id].mediaHandler.getDescription(session.mediaHint)
-                .then(
-                  function onSuccess(sdp) {
-                    extraHeaders.push('Content-Type: application/sdp');
-                    extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-                    session.earlyDialogs[id].sendRequest(session, SIP.C.PRACK, {
-                      extraHeaders: extraHeaders,
-                      body: sdp
-                    });
-                    session.status = C.STATUS_EARLY_MEDIA;
-                    session.emit('progress', response);
-                  },
-                  function onFailure() {
-                    session.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-                    if (session.status === C.STATUS_TERMINATED) {
-                      return;
-                    }
-                    // TODO - fail out on error
-                    // session.failed(gum error);
-                    session.failed(null, SIP.C.causes.WEBRTC_ERROR);
-                  }
-                );
-              },
-              function onFailure(e) {
-                session.earlyDialogs[id].pracked.splice(session.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')), 1);
+            var earlyDialog = this.earlyDialogs[id];
+            var earlyMedia = earlyDialog.mediaHandler;
+
+            earlyDialog.pracked.push(response.getHeader('rseq'));
+
+            earlyMedia.setDescription(response.body)
+            .then(earlyMedia.getDescription.bind(earlyMedia, session.mediaHint))
+            .then(function onSuccess(sdp) {
+              extraHeaders.push('Content-Type: application/sdp');
+              extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
+              earlyDialog.sendRequest(session, SIP.C.PRACK, {
+                extraHeaders: extraHeaders,
+                body: sdp
+              });
+              session.status = C.STATUS_EARLY_MEDIA;
+              session.emit('progress', response);
+            })
+            .catch(function onFailure(e) {
+              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+                earlyDialog.pracked.push(response.getHeader('rseq'));
+                if (session.status === C.STATUS_TERMINATED) {
+                  return;
+                }
+                // TODO - fail out on error
+                // session.failed(gum error);
+                session.failed(null, SIP.C.causes.WEBRTC_ERROR);
+              } else {
+                earlyDialog.pracked.splice(earlyDialog.pracked.indexOf(response.getHeader('rseq')), 1);
                 // Could not set remote description
                 session.logger.warn('invalid SDP');
                 session.logger.warn(e);
               }
-            );
+            });
           }
         } else {
           this.emit('progress', response);
