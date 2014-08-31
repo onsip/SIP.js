@@ -176,9 +176,9 @@ describe('MediaStreamManager', function () {
     it('.release does not stop the stream', function (done) {
       mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure)
       .then(function () {
-      mediaStreamManager.release(stream);
-      expect(stream.stop).not.toHaveBeenCalled();
-      done();
+        mediaStreamManager.release(stream);
+        expect(stream.stop).not.toHaveBeenCalled();
+        done();
       });
     });
   });
