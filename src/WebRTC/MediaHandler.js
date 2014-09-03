@@ -202,6 +202,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.emit('dataChannel', self.dataChannel);
       }
 
+      self.render();
       self.createOfferOrAnswer(onSuccess, onFailure, self.RTCConstraints);
     }
 
