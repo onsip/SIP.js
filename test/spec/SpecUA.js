@@ -1607,6 +1607,42 @@ describe('UA', function() {
       });
     });
 
+    describe('.wsServerMaxReconnection', function() {
+      it('fails for anything but numbers', function() {
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection({even: 'objects'})).toBeUndefined();
+      });
+
+      it('fails for negative numbers and 0', function() {
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection(0)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection(-7)).toBeUndefined();
+      });
+
+      it('passes for positive numbers', function() {
+        expect(SIP.UA.configuration_check.optional.wsServerMaxReconnection(7)).toBe(7);
+      });
+    });
+
+    describe('.wsServerReconnectionTimeout', function() {
+      it('fails for anything but numbers', function() {
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout(true)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout(['arrays'])).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout({even: 'objects'})).toBeUndefined();
+      });
+
+      it('fails for negative numbers and 0', function() {
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout(0)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout(-7)).toBeUndefined();
+      });
+
+      it('passes for positive numbers', function() {
+        expect(SIP.UA.configuration_check.optional.wsServerReconnectionTimeout(7)).toBe(7);
+      });
+    });
+
     describe('.autoload', function() {
       it('fails for all types except boolean', function() {
         expect(SIP.UA.configuration_check.optional.autostart()).toBeUndefined();
