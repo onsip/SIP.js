@@ -1077,8 +1077,6 @@ UA.configuration_skeleton = (function() {
     parameters = [
       // Internal parameters
       "sipjsId",
-      "wsServerMaxReconnection",
-      "wsServerReconnectionTimeout",
       "hostportParams",
 
       // Optional user configurable parameters
@@ -1103,6 +1101,8 @@ UA.configuration_skeleton = (function() {
       "traceSip",
       "turnServers",
       "usePreloadedRoute",
+      "wsServerMaxReconnection",
+      "wsServerReconnectionTimeout",
       "mediaHandlerFactory",
       "media",
       "mediaConstraints",
@@ -1420,6 +1420,26 @@ UA.configuration_check = {
     usePreloadedRoute: function(usePreloadedRoute) {
       if (typeof usePreloadedRoute === 'boolean') {
         return usePreloadedRoute;
+      }
+    },
+
+    wsServerMaxReconnection: function(wsServerMaxReconnection) {
+      var value;
+      if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
+        value = Number(wsServerMaxReconnection);
+        if (value > 0) {
+          return value;
+        }
+      }
+    },
+
+    wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
+      var value;
+      if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
+        value = Number(wsServerReconnectionTimeout);
+        if (value > 0) {
+          return value;
+        }
       }
     },
 
