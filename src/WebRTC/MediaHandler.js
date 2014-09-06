@@ -219,7 +219,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         }
 
         self.render();
-        return new window.Promise(self.createOfferOrAnswer.bind(self, self.RTCConstraints));
+        return self.createOfferOrAnswer(self.RTCConstraints);
       })
     ;
   }},
@@ -386,7 +386,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     // TODO consider signalingStates with 'pranswer'?
   }},
 
-  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints, onSuccess, onFailure) {
+  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints) {
     var self = this;
     var methodName, promisifiedMethod;
     var pc = self.peerConnection;
@@ -397,7 +397,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
     promisifiedMethod = SIP.Utils.addPromise(SIP.Utils.callbacksLast(pc[methodName], pc));
 
-    promisifiedMethod(constraints)
+    return promisifiedMethod(constraints)
       .then(setLocalDescription)
       .then(function onSetLocalDescriptionSuccess() {
         var deferred = SIP.Utils.defer();
@@ -426,12 +426,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.emit('getDescription', sdpWrapper);
 
         self.ready = true;
-        onSuccess(sdpWrapper.sdp);
+        return sdpWrapper.sdp;
       })
       .catch(function methodFailed (e) {
         self.logger.error(e);
         self.ready = true;
-        onFailure(new SIP.Exceptions.GetDescriptionError(e));
+        throw new SIP.Exceptions.GetDescriptionError(e);
       })
     ;
   }},
