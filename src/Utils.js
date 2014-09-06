@@ -7,6 +7,15 @@ var Utils;
 
 Utils= {
 
+  defer: function defer () {
+    var o = {};
+    o.promise = new window.Promise(function (resolve, reject) {
+      o.resolve = resolve;
+      o.reject = reject;
+    });
+    return o;
+  },
+
   callbacksLast: function callbacksLast (f, thisArg) {
     return function (arg, onSuccess, onFailure) {
       return f.call(thisArg, onSuccess, onFailure, arg);
