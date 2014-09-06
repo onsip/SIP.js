@@ -7,8 +7,14 @@ var Utils;
 
 Utils= {
 
-  addPromise: function addPromise (f, thisArg) {
-    var callbacksIndex = f.length - 2;
+  callbacksLast: function callbacksLast (f, thisArg) {
+    return function (arg, onSuccess, onFailure) {
+      return f.call(thisArg, onSuccess, onFailure, arg);
+    };
+  },
+
+  addPromise: function addPromise (f, thisArg, length) {
+    var callbacksIndex = (length || f.length) - 2;
     return function withPromise () {
       var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
       var bound = f.bind.apply(f, [thisArg].concat(nonCallbacks));

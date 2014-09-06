@@ -388,8 +388,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints, onSuccess, onFailure) {
     var self = this;
-    var methodName;
+    var methodName, promisifiedMethod;
     var pc = self.peerConnection;
+    var setLocalDescription = SIP.Utils.addPromise(pc.setLocalDescription, pc, 3);
 
     function readySuccess () {
       var sdp = pc.localDescription.sdp;
@@ -420,8 +421,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       }
     }
 
-    function methodFailed (methodName, e) {
-      self.logger.error('peerConnection.' + methodName + ' failed');
+    function methodFailed (e) {
       self.logger.error(e);
       self.ready = true;
       onFailure(new SIP.Exceptions.GetDescriptionError(e));
@@ -430,18 +430,13 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     self.ready = false;
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
+    promisifiedMethod = SIP.Utils.addPromise(SIP.Utils.callbacksLast(pc[methodName], pc));
 
-    pc[methodName](
-      function(sessionDescription){
-        pc.setLocalDescription(
-          sessionDescription,
-          onSetLocalDescriptionSuccess,
-          methodFailed.bind(null, 'setLocalDescription')
-        );
-      },
-      methodFailed.bind(null, methodName),
-      constraints
-    );
+    promisifiedMethod(constraints)
+      .then(setLocalDescription)
+      .then(onSetLocalDescriptionSuccess)
+      .catch(methodFailed)
+    ;
   }},
 
   addStream: {writable: true, value: function addStream (stream) {
