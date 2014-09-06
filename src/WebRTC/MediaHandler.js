@@ -409,16 +409,18 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
 
     function onSetLocalDescriptionSuccess() {
+      var deferred = SIP.Utils.defer();
       if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
-        readySuccess();
+        deferred.resolve();
       } else {
         self.onIceCompleted = function(pc) {
           self.logger.log('ICE Gathering Completed');
           self.onIceCompleted = undefined;
           self.emit('iceComplete', pc);
-          readySuccess();
+          deferred.resolve();
         };
       }
+      return deferred.promise;
     }
 
     function methodFailed (e) {
@@ -435,6 +437,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     promisifiedMethod(constraints)
       .then(setLocalDescription)
       .then(onSetLocalDescriptionSuccess)
+      .then(readySuccess)
       .catch(methodFailed)
     ;
   }},
