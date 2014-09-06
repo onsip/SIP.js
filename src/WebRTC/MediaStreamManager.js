@@ -103,33 +103,35 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         (this.mediaHint && this.mediaHint.constraints) ||
         {audio: true, video: true};
 
-      return new window.Promise(function (resolve) {
-        /*
-         * Make the call asynchronous, so that ICCs have a chance
-         * to define callbacks to `userMediaRequest`
-         */
-        SIP.Timers.setTimeout(function () {
-          this.emit('userMediaRequest', constraints);
+      var deferred = SIP.Utils.defer();
 
-          var emitThenCall = function (eventName, callback) {
-            var callbackArgs = Array.prototype.slice.call(arguments, 2);
-            // Emit with all of the arguments from the real callback.
-            var newArgs = [eventName].concat(callbackArgs);
+      /*
+       * Make the call asynchronous, so that ICCs have a chance
+       * to define callbacks to `userMediaRequest`
+       */
+      SIP.Timers.setTimeout(function () {
+        this.emit('userMediaRequest', constraints);
 
-            this.emit.apply(this, newArgs);
+        var emitThenCall = function (eventName, callback) {
+          var callbackArgs = Array.prototype.slice.call(arguments, 2);
+          // Emit with all of the arguments from the real callback.
+          var newArgs = [eventName].concat(callbackArgs);
 
-            return callback.apply(null, callbackArgs);
-          }.bind(this);
+          this.emit.apply(this, newArgs);
 
-          resolve(
-            SIP.WebRTC.getUserMedia(constraints)
-            .then(
-              emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
-              emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
-            )
-          );
-        }.bind(this), 0);
-      }.bind(this));
+          return callback.apply(null, callbackArgs);
+        }.bind(this);
+
+        deferred.resolve(
+          SIP.WebRTC.getUserMedia(constraints)
+          .then(
+            emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
+            emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
+          )
+        );
+      }.bind(this), 0);
+
+      return deferred.promise;
     }
   }},
 
