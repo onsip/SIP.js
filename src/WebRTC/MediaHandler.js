@@ -67,6 +67,12 @@ var MediaHandler = function(session, options) {
     });
   }
 
+  this.onIceCompleted = SIP.Utils.defer();
+  this.onIceCompleted.promise.then(function(pc) {
+    self.logger.log('ICE Gathering Completed');
+    self.emit('iceComplete', pc);
+  });
+
   this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
 
   this.peerConnection.onaddstream = function(e) {
@@ -82,8 +88,8 @@ var MediaHandler = function(session, options) {
   this.peerConnection.onicecandidate = function(e) {
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
-    } else if (self.onIceCompleted !== undefined) {
-      self.onIceCompleted(this);
+    } else {
+      self.onIceCompleted.resolve(this);
     }
   };
 
@@ -92,9 +98,8 @@ var MediaHandler = function(session, options) {
     if (this.iceGatheringState === 'gathering') {
       self.emit('iceGathering', this);
     }
-    if (this.iceGatheringState === 'complete' &&
-        self.onIceCompleted !== undefined) {
-      self.onIceCompleted(this);
+    if (this.iceGatheringState === 'complete') {
+      self.onIceCompleted.resolve(this);
     }
   };
 
@@ -404,12 +409,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
           deferred.resolve();
         } else {
-          self.onIceCompleted = function(pc) {
-            self.logger.log('ICE Gathering Completed');
-            self.onIceCompleted = undefined;
-            self.emit('iceComplete', pc);
-            deferred.resolve();
-          };
+          self.onIceCompleted.promise.then(deferred.resolve);
         }
         return deferred.promise;
       })
