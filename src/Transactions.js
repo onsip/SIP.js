@@ -402,7 +402,7 @@ NonInviteServerTransaction.prototype.onTransportError = function() {
   }
 };
 
-NonInviteServerTransaction.prototype.receiveResponse = function(status_code, response, onSuccess, onFailure) {
+NonInviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
 
   if(status_code === 100) {
@@ -422,11 +422,9 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
         this.last_response = response;
         if(!this.transport.send(response)) {
           this.onTransportError();
-          if (onFailure) {
-            onFailure();
-          }
-        } else if (onSuccess) {
-          onSuccess();
+          return window.Promise.reject();
+        } else {
+          return window.Promise.resolve();
         }
         break;
     }
@@ -439,17 +437,17 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
         this.J = SIP.Timers.setTimeout(tr.timer_J.bind(tr), SIP.Timers.TIMER_J);
         if(!this.transport.send(response)) {
           this.onTransportError();
-          if (onFailure) {
-            onFailure();
-          }
-        } else if (onSuccess) {
-          onSuccess();
+          return window.Promise.reject();
+        } else {
+          return window.Promise.resolve();
         }
         break;
       case C.STATUS_COMPLETED:
         break;
     }
   }
+
+  return new window.Promise(function(){});
 };
 
 /**
@@ -541,7 +539,7 @@ InviteServerTransaction.prototype.resend_provisional = function() {
 };
 
 // INVITE Server Transaction RFC 3261 17.2.1
-InviteServerTransaction.prototype.receiveResponse = function(status_code, response, onSuccess, onFailure) {
+InviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
 
   if(status_code >= 100 && status_code <= 199) {
@@ -577,11 +575,9 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           // Note that this point will be reached for proceeding tr.state also.
           if(!this.transport.send(response)) {
             this.onTransportError();
-            if (onFailure) {
-              onFailure();
-            }
-          } else if (onSuccess) {
-            onSuccess();
+            return window.Promise.reject();
+          } else {
+            return window.Promise.resolve();
           }
           break;
     }
@@ -595,19 +591,17 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
 
         if(!this.transport.send(response)) {
           this.onTransportError();
-          if (onFailure) {
-            onFailure();
-          }
+          return window.Promise.reject();
         } else {
           this.stateChanged(C.STATUS_COMPLETED);
           this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
-          if (onSuccess) {
-            onSuccess();
-          }
+          return window.Promise.resolve();
         }
         break;
     }
   }
+
+  return new window.Promise(function(){});
 };
 
 /**

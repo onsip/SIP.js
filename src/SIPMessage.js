@@ -470,7 +470,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     response += 'Content-Length: ' + 0 + '\r\n\r\n';
   }
 
-  this.server_transaction.receiveResponse(code, response, onSuccess, onFailure);
+  this.server_transaction.receiveResponse(code, response).then(onSuccess, onFailure);
 
   return response;
 };
