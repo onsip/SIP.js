@@ -392,43 +392,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var pc = self.peerConnection;
     var setLocalDescription = SIP.Utils.addPromise(pc.setLocalDescription, pc, 3);
 
-    function readySuccess () {
-      var sdp = pc.localDescription.sdp;
-
-      sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
-
-      var sdpWrapper = {
-        type: methodName === 'createOffer' ? 'offer' : 'answer',
-        sdp: sdp
-      };
-
-      self.emit('getDescription', sdpWrapper);
-
-      self.ready = true;
-      onSuccess(sdpWrapper.sdp);
-    }
-
-    function onSetLocalDescriptionSuccess() {
-      var deferred = SIP.Utils.defer();
-      if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
-        deferred.resolve();
-      } else {
-        self.onIceCompleted = function(pc) {
-          self.logger.log('ICE Gathering Completed');
-          self.onIceCompleted = undefined;
-          self.emit('iceComplete', pc);
-          deferred.resolve();
-        };
-      }
-      return deferred.promise;
-    }
-
-    function methodFailed (e) {
-      self.logger.error(e);
-      self.ready = true;
-      onFailure(new SIP.Exceptions.GetDescriptionError(e));
-    }
-
     self.ready = false;
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
@@ -436,9 +399,40 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     promisifiedMethod(constraints)
       .then(setLocalDescription)
-      .then(onSetLocalDescriptionSuccess)
-      .then(readySuccess)
-      .catch(methodFailed)
+      .then(function onSetLocalDescriptionSuccess() {
+        var deferred = SIP.Utils.defer();
+        if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
+          deferred.resolve();
+        } else {
+          self.onIceCompleted = function(pc) {
+            self.logger.log('ICE Gathering Completed');
+            self.onIceCompleted = undefined;
+            self.emit('iceComplete', pc);
+            deferred.resolve();
+          };
+        }
+        return deferred.promise;
+      })
+      .then(function readySuccess () {
+        var sdp = pc.localDescription.sdp;
+
+        sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
+
+        var sdpWrapper = {
+          type: methodName === 'createOffer' ? 'offer' : 'answer',
+          sdp: sdp
+        };
+
+        self.emit('getDescription', sdpWrapper);
+
+        self.ready = true;
+        onSuccess(sdpWrapper.sdp);
+      })
+      .catch(function methodFailed (e) {
+        self.logger.error(e);
+        self.ready = true;
+        onFailure(new SIP.Exceptions.GetDescriptionError(e));
+      })
     ;
   }},
 
