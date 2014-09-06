@@ -389,9 +389,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints, onSuccess, onFailure) {
     var self = this;
     var methodName;
+    var pc = self.peerConnection;
 
     function readySuccess () {
-      var sdp = self.peerConnection.localDescription.sdp;
+      var sdp = pc.localDescription.sdp;
 
       sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
 
@@ -407,7 +408,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
 
     function onSetLocalDescriptionSuccess() {
-      if (self.peerConnection.iceGatheringState === 'complete' && (self.peerConnection.iceConnectionState === 'connected' || self.peerConnection.iceConnectionState === 'completed')) {
+      if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
         readySuccess();
       } else {
         self.onIceCompleted = function(pc) {
@@ -430,9 +431,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
-    self.peerConnection[methodName](
+    pc[methodName](
       function(sessionDescription){
-        self.peerConnection.setLocalDescription(
+        pc.setLocalDescription(
           sessionDescription,
           onSetLocalDescriptionSuccess,
           methodFailed.bind(null, 'setLocalDescription')
