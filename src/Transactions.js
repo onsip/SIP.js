@@ -404,6 +404,7 @@ NonInviteServerTransaction.prototype.onTransportError = function() {
 
 NonInviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
+  var deferred = SIP.Utils.defer();
 
   if(status_code === 100) {
     /* RFC 4320 4.1
@@ -422,9 +423,9 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
         this.last_response = response;
         if(!this.transport.send(response)) {
           this.onTransportError();
-          return window.Promise.reject();
+          deferred.reject();
         } else {
-          return window.Promise.resolve();
+          deferred.resolve();
         }
         break;
     }
@@ -437,9 +438,9 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
         this.J = SIP.Timers.setTimeout(tr.timer_J.bind(tr), SIP.Timers.TIMER_J);
         if(!this.transport.send(response)) {
           this.onTransportError();
-          return window.Promise.reject();
+          deferred.reject();
         } else {
-          return window.Promise.resolve();
+          deferred.resolve();
         }
         break;
       case C.STATUS_COMPLETED:
@@ -447,7 +448,7 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
     }
   }
 
-  return new window.Promise(function(){});
+  return deferred.promise;
 };
 
 /**
@@ -541,6 +542,7 @@ InviteServerTransaction.prototype.resend_provisional = function() {
 // INVITE Server Transaction RFC 3261 17.2.1
 InviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
+  var deferred = SIP.Utils.defer();
 
   if(status_code >= 100 && status_code <= 199) {
     switch(this.state) {
@@ -575,9 +577,9 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           // Note that this point will be reached for proceeding tr.state also.
           if(!this.transport.send(response)) {
             this.onTransportError();
-            return window.Promise.reject();
+            deferred.reject();
           } else {
-            return window.Promise.resolve();
+            deferred.resolve();
           }
           break;
     }
@@ -591,17 +593,17 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
 
         if(!this.transport.send(response)) {
           this.onTransportError();
-          return window.Promise.reject();
+          deferred.reject();
         } else {
           this.stateChanged(C.STATUS_COMPLETED);
           this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
-          return window.Promise.resolve();
+          deferred.resolve();
         }
         break;
     }
   }
 
-  return new window.Promise(function(){});
+  return deferred.promise;
 };
 
 /**
