@@ -99,7 +99,7 @@ RequestSender.prototype = {
 
       if (!this.challenged || (!this.staled && challenge.stale === true)) {
         if (!this.credentials) {
-          this.credentials = new SIP.DigestAuthentication(this.ua);
+          this.credentials = this.ua.configuration.authenticationFactory(this.ua);
         }
 
         // Verify that the challenge is really valid.

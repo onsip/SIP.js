@@ -872,7 +872,11 @@ UA.prototype.loadConfig = function(configuration) {
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
 
-      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
+      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+
+      authenticationFactory: function (ua) {
+        return new SIP.DigestAuthentication(ua);
+      }
     };
 
   // Pre-Configuration
@@ -1085,6 +1089,7 @@ UA.configuration_skeleton = (function() {
       "mediaHandlerFactory",
       "media",
       "mediaConstraints",
+      "authenticationFactory",
 
       // Post-configuration generated parameters
       "via_core_value",
@@ -1431,6 +1436,12 @@ UA.configuration_check = {
     mediaHandlerFactory: function(mediaHandlerFactory) {
       if (mediaHandlerFactory instanceof Function) {
         return mediaHandlerFactory;
+      }
+    },
+
+    authenticationFactory: function(authenticationFactory) {
+      if (authenticationFactory instanceof Function) {
+        return authenticationFactory;
       }
     }
   }
