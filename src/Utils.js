@@ -8,12 +8,12 @@ var Utils;
 Utils= {
 
   defer: function defer () {
-    var o = {};
-    o.promise = new window.Promise(function (resolve, reject) {
-      o.resolve = resolve;
-      o.reject = reject;
+    var deferred = {};
+    deferred.promise = new window.Promise(function (resolve, reject) {
+      deferred.resolve = resolve;
+      deferred.reject = reject;
     });
-    return o;
+    return deferred;
   },
 
   callbacksLast: function callbacksLast (f, thisArg) {
