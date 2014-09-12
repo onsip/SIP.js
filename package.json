@@ -43,5 +43,8 @@
   "license": "MIT",
   "scripts": {
     "test": "grunt travis --verbose"
+  },
+  "dependencies": {
+    "promise": "^6.0.0"
   }
 }
