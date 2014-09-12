@@ -23,7 +23,7 @@
   require('./EventEmitter')(SIP);
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
-  SIP.Timers = require('./Timers')(global);
+  SIP.Timers = require('./Timers');
   require('./Transport')(SIP, global.WebSocket);
   require('./Parser')(SIP);
   require('./SIPMessage')(SIP);

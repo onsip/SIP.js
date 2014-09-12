@@ -6,11 +6,11 @@
  * @augments SIP
  */
 var
+  timers = require('timers'),
   T1 = 500,
   T2 = 4000,
   T4 = 5000;
-module.exports = function (timers) {
-  var exports = {
+module.exports = {
     T1: T1,
     T2: T2,
     T4: T4,
@@ -31,10 +31,7 @@ module.exports = function (timers) {
   .forEach(function (name) {
     // can't just use timers[name].bind(timers) since it bypasses jasmine's
     // clock-mocking
-    exports[name] = function () {
+    module.exports[name] = function () {
       return timers[name].apply(timers, arguments);
     };
   });
-
-  return exports;
-};
