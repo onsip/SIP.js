@@ -1,17 +1,8 @@
-
-module.exports = function (console) {
-
 var Logger = require('./Logger');
 
-// Console is not defined in ECMAScript, so just in case...
-console = console || {
-  debug: function () {},
-  log: function () {},
-  warn: function () {},
-  error: function () {}
-};
+var console = require('console');
 
-var LoggerFactory = function() {
+var LoggerFactory = module.exports = function () {
   var logger,
     levels = {
     'error': 0,
@@ -149,7 +140,4 @@ LoggerFactory.prototype.getLogger = function(category, label) {
     this.loggers[category] = logger;
     return logger;
   }
-};
-
-return LoggerFactory;
 };

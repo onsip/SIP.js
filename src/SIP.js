@@ -19,7 +19,7 @@
   });
 
   require('./Utils')(SIP);
-  SIP.LoggerFactory = require('./LoggerFactory')(global.console);
+  SIP.LoggerFactory = require('./LoggerFactory');
   require('./EventEmitter')(SIP);
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
