@@ -187,7 +187,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var streamPromise;
     if (self.localMedia) {
       self.logger.log('already have local media');
-      streamPromise = window.Promise.resolve(self.localMedia);
+      streamPromise = SIP.Utils.Promise.resolve(self.localMedia);
     }
     else {
       self.logger.log('acquiring local media');
@@ -243,7 +243,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    return new window.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
+    return new SIP.Utils.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
   }},
 
 // Functions the session can use, but only because it's convenient for the application
@@ -442,10 +442,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
-      return window.Promise.reject(e);
+      return SIP.Utils.Promise.reject(e);
     }
 
-    return window.Promise.resolve();
+    return SIP.Utils.Promise.resolve();
   }},
 
   toggleMuteHelper: {writable: true, value: function toggleMuteHelper (trackGetter, mute) {

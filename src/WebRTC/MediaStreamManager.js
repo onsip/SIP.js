@@ -92,7 +92,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     var saveSuccess = function (isHintStream, stream) {
       var streamId = MediaStreamManager.streamId(stream);
       this.acquisitions[streamId] = !!isHintStream;
-      return window.Promise.resolve(stream);
+      return SIP.Utils.Promise.resolve(stream);
     }.bind(this);
 
     if (mediaHint.stream) {

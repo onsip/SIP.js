@@ -7,9 +7,11 @@ var Utils;
 
 Utils= {
 
+  Promise: window.Promise,
+
   defer: function defer () {
     var deferred = {};
-    deferred.promise = new window.Promise(function (resolve, reject) {
+    deferred.promise = new Utils.Promise(function (resolve, reject) {
       deferred.resolve = resolve;
       deferred.reject = reject;
     });
@@ -27,7 +29,7 @@ Utils= {
     return function withPromise () {
       var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
       var bound = f.bind.apply(f, [thisArg].concat(nonCallbacks));
-      var promise = new window.Promise(bound);
+      var promise = new Utils.Promise(bound);
       var callbacks = [].slice.call(arguments, callbacksIndex);
       if (callbacks.length) {
         promise.then.apply(promise, callbacks);
