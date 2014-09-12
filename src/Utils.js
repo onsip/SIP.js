@@ -7,7 +7,7 @@ var Utils;
 
 Utils= {
 
-  Promise: window.Promise,
+  Promise: global.Promise,
 
   defer: function defer () {
     var deferred = {};

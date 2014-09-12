@@ -1,4 +1,4 @@
-module.exports = function (SIP, window) {
+module.exports = function (SIP) {
 
 var DTMF = require('./Session/DTMF')(SIP);
 
@@ -255,14 +255,14 @@ Session.prototype = {
 
   followRefer: function followRefer (callback) {
     return function referListener (callback, request) {
-      // window.open non-SIP URIs if possible and keep session open
+      // open non-SIP URIs if possible and keep session open
       var target = request.parseHeader('refer-to').uri;
       if (!target.scheme.match("^sips?$")) {
         var targetString = target.toString();
-        if (typeof window !== "undefined" && typeof window.open === "function") {
-          window.open(targetString);
+        if (typeof global.open === "function") {
+          global.open(targetString);
         } else {
-          this.logger.warn("referred to non-SIP URI but window.open isn't a function: " + targetString);
+          this.logger.warn("referred to non-SIP URI but `open` isn't a global function: " + targetString);
         }
         return;
       }

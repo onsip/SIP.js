@@ -2,7 +2,7 @@
  * @fileoverview WebRTC
  */
 
-module.exports = function (SIP, window) {
+module.exports = function (SIP) {
 var WebRTC;
 
 WebRTC = {};
@@ -17,13 +17,13 @@ WebRTC.isSupported = function () {
     return _isSupported;
   }
 
-  WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(window, 'MediaStream');
-  WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(window.navigator, 'getUserMedia');
-  WebRTC.RTCPeerConnection = SIP.Utils.getPrefixedProperty(window, 'RTCPeerConnection');
-  WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(window, 'RTCSessionDescription');
+  WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(global, 'MediaStream');
+  WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(global.navigator, 'getUserMedia');
+  WebRTC.RTCPeerConnection = SIP.Utils.getPrefixedProperty(global, 'RTCPeerConnection');
+  WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(global, 'RTCSessionDescription');
 
   if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
-    WebRTC.getUserMedia = SIP.Utils.addPromise(WebRTC.getUserMedia, window.navigator);
+    WebRTC.getUserMedia = SIP.Utils.addPromise(WebRTC.getUserMedia, global.navigator);
     _isSupported = true;
   }
   else {

@@ -45,14 +45,14 @@ MediaStreamManager.render = function render (stream, elements) {
   }
 
   function attachAndPlay (element, stream) {
-    (window.attachMediaStream || attachMediaStream)(element, stream);
+    (global.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
 
   function attachMediaStream(element, stream) {
     if (typeof element.src !== 'undefined') {
-      URL.revokeObjectURL(element.src);
-      element.src = URL.createObjectURL(stream);
+      global.URL.revokeObjectURL(element.src);
+      element.src = global.URL.createObjectURL(stream);
     } else if (typeof (element.srcObject || element.mozSrcObject) !== 'undefined') {
       element.srcObject = element.mozSrcObject = stream;
     } else {

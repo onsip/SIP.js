@@ -2,10 +2,10 @@
  * @name SIP
  * @namespace
  */
-module.exports = (function(window) {
   "use strict";
 
   var SIP = {};
+  module.exports = SIP;
 
   var pkg = require('../package.json');
 
@@ -19,12 +19,12 @@ module.exports = (function(window) {
   });
 
   require('./Utils')(SIP);
-  SIP.LoggerFactory = require('./LoggerFactory')(window.console);
+  SIP.LoggerFactory = require('./LoggerFactory')(global.console);
   require('./EventEmitter')(SIP);
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
-  SIP.Timers = require('./Timers')(window);
-  require('./Transport')(SIP, window.WebSocket);
+  SIP.Timers = require('./Timers')(global);
+  require('./Transport')(SIP, global.WebSocket);
   require('./Parser')(SIP);
   require('./SIPMessage')(SIP);
   require('./URI')(SIP);
@@ -36,14 +36,11 @@ module.exports = (function(window) {
   SIP.MediaHandler = require('./MediaHandler')(SIP.EventEmitter);
   require('./ClientContext')(SIP);
   require('./ServerContext')(SIP);
-  require('./Session')(SIP, window);
+  require('./Session')(SIP);
   require('./Subscription')(SIP);
-  SIP.WebRTC = require('./WebRTC')(SIP, window);
+  SIP.WebRTC = require('./WebRTC')(SIP);
   require('./UA')(SIP);
   SIP.Hacks = require('./Hacks');
   require('./SanityCheck')(SIP);
   SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
   SIP.Grammar = require('./Grammar/dist/Grammar')(SIP);
-
-  return SIP;
-})((typeof window !== 'undefined') ? window : global);
