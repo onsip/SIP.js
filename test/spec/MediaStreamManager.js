@@ -48,7 +48,7 @@ describe('MediaStreamManager', function () {
       var onUMR = function () {
         expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
         SIP.WebRTC.getUserMedia.and.callFake(function () {
-          return Promise.resolve().then(done);
+          return SIP.Utils.Promise.resolve().then(done);
         });
       };
       mediaStreamManager.on('userMediaRequest', onUMR);
@@ -93,7 +93,7 @@ describe('MediaStreamManager', function () {
       var success, failure, onUMF;
 
       SIP.WebRTC.getUserMedia.and.callFake(function (c) {
-        return Promise.reject();
+        return SIP.Utils.Promise.reject();
       });
 
       success = jasmine.createSpy('success');
