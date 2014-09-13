@@ -4,6 +4,9 @@
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
   "version": "0.6.2",
   "main": "src/SIP.js",
+  "browser": {
+    "promiscuous": "./src/polyfills/promiscuous.js"
+  },
   "homepage": "http://sipjs.com",
   "author": "Will Mitchell <will@onsip.com>",
   "contributors": [
@@ -43,5 +46,8 @@
   "license": "MIT",
   "scripts": {
     "test": "grunt travis --verbose"
+  },
+  "optionalDependencies": {
+    "promiscuous": "^0.6.0"
   }
 }

@@ -71,7 +71,7 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      src: 'src/**/*.js',
+      src: ['src/**/*.js', "!src/polyfills/**/*.js"],
       options: {
         jshintrc: true
       }
@@ -99,7 +99,6 @@ module.exports = function(grunt) {
         options: {
           specs: 'test/spec/*.js',
           keepRunner : true,
-          vendor: 'test/polyfills/*.js',
           helpers: 'test/helpers/*.js'
         }
       }

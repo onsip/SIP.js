@@ -2,12 +2,14 @@
  * @fileoverview Utils
  */
 
+var Promise = global.Promise || require('promiscuous');
+
 module.exports = function (SIP) {
 var Utils;
 
 Utils= {
 
-  Promise: global.Promise,
+  Promise: Promise,
 
   defer: function defer () {
     var deferred = {};
