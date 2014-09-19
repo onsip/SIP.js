@@ -578,17 +578,11 @@ describe('UA', function() {
     });
   });
 
-  describe('.onTransportClosed', function() {
-    it('needs to be tested', function () {});
-  });
+  xdescribe('.onTransportClosed', function () {});
 
-  describe('.onTransportError', function() {
-    it('needs to be tested', function () {});
-  });
+  xdescribe('.onTransportError', function() {});
 
-  describe('.onTransportConnected', function() {
-    it('needs to be tested', function () {});
-  });
+  xdescribe('.onTransportConnected', function() {});
 
   describe('.onTransportConnecting', function() {
     it('emits a connecting event', function() {
