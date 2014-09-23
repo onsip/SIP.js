@@ -66,7 +66,7 @@ var Hacks = module.exports = {
   },
 
   Chrome: {
-    is_opera : (navigator.userAgent.match(/Opera|OPR\//) ? true : false), // jshint ignore:line
+    is_opera : (navigator.userAgent.match(/Opera|OPR\//) ? true : false),
 
     maskDTLS: function (message) {
       if (!this.is_opera && message.body) {
