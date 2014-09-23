@@ -1,5 +1,4 @@
 node_modules/
-.idea/
 dist/sip*
 .grunt
 _SpecRunner.html

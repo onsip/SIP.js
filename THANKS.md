@@ -3,13 +3,6 @@ THANKS
 
 Thank you to all of the contributors with code and patches to the SIP.js project, as well as to the JsSIP project, without which this would not be possible.
 
-## OnSip
-
-* [Will Mitchell](will@onsip.com)
-* [James Criscuolo](james@onsip.com)
-* [Eric Green](eric.green@onsip.com)
-* [Joseph Frazier](joseph@onsip.com)
-
 * [Joseph Frazier](joseph@onsip.com)
 
 Much credit goes to the original authors of the JsSIP project.  Thank you to all.

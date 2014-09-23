@@ -4,13 +4,13 @@
 
 A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
+
 ## Website and Documentation
 
 * [SIPjs.com](http://sipjs.com)
 * [Mailing List](https://groups.google.com/forum/#!forum/sip_js)
 * [Issue Tracking](https://github.com/onsip/sip.js/issues)
 
-## Setup
 
 ## Download
 
@@ -66,8 +66,12 @@ the following conditions:
 The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
 
-## Maintainers
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-* [Emilio Cueto](emilio@liveninja.com)
-* [Ptah Dunbar](ptah@liveninja.com)
-* [Michael Chacon](mike@liveninja.com)
+~~~
