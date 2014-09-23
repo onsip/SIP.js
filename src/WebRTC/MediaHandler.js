@@ -105,6 +105,11 @@ var MediaHandler = function(session, options) {
 
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
+
+    if (this.iceConnectionState === 'failed') {
+      self.emit('iceFailed', this);
+    }
+
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
     //normal calls switch from failed to connected in some cases, so checking for failed and terminated
     /*if (this.iceConnectionState === 'failed') {
