@@ -126,16 +126,10 @@ describe('ClientContext', function() {
         ''].join('\r\n'), ua);
     });
 
-    it('emits progress on a 101-199 response (not 100)', function() {
+    it('emits progress on a 100-199 response', function() {
       spyOn(ClientContext, 'emit');
 
-      response.status_code = 100;
-      ClientContext.receiveResponse(response);
-
-      expect(ClientContext.emit).not.toHaveBeenCalled();
-      ClientContext.emit.calls.reset();
-
-      for (var i = 101; i < 200; i++) {
+      for (var i = 100; i < 200; i++) {
         response.status_code = i;
         ClientContext.receiveResponse(response);
 

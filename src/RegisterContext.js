@@ -72,8 +72,6 @@ RegisterContext.prototype = {
       }
 
       switch(true) {
-        case /^100$/.test(response.status_code):
-          break;
         case /^1[0-9]{2}$/.test(response.status_code):
           this.emit('progress', response);
           break;

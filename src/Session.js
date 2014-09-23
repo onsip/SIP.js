@@ -1741,6 +1741,7 @@ InviteClientContext.prototype = {
     switch(true) {
       case /^100$/.test(response.status_code):
         this.received_100 = true;
+        this.emit('progress', response);
         break;
       case (/^1[0-9]{2}$/.test(response.status_code)):
         // Do nothing with 1xx responses without To tag.
