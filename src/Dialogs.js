@@ -10,10 +10,9 @@
  * @param {Enum} type UAC / UAS
  * @param {Enum} state SIP.Dialog.C.STATUS_EARLY / SIP.Dialog.C.STATUS_CONFIRMED
  */
-(function(SIP) {
+module.exports = function (SIP) {
 
-// Load dependencies
-var RequestSender   = @@include('../src/Dialog/RequestSender.js')
+var RequestSender = require('./Dialog/RequestSender')(SIP);
 
 var Dialog,
   C = {
@@ -127,7 +126,7 @@ Dialog.prototype = {
   // RFC 3261 12.2.1.1
   createRequest: function(method, extraHeaders, body) {
     var cseq, request;
-    extraHeaders = extraHeaders || [];
+    extraHeaders = (extraHeaders || []).slice();
 
     if(!this.local_seqnum) { this.local_seqnum = Math.floor(Math.random() * 10000); }
 
@@ -229,12 +228,14 @@ Dialog.prototype = {
     options = options || {};
 
     var
-      extraHeaders = options.extraHeaders || [],
+      extraHeaders = (options.extraHeaders || []).slice(),
       body = options.body || null,
       request = this.createRequest(method, extraHeaders, body),
       request_sender = new RequestSender(this, applicant, request);
 
     request_sender.send();
+
+    return request;
   },
 
   /**
@@ -252,4 +253,4 @@ Dialog.prototype = {
 
 Dialog.C = C;
 SIP.Dialog = Dialog;
-}(SIP));
+};

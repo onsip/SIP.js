@@ -1,25 +1,31 @@
 {
-    "name": "SIP.js",
-    "version": "0.5.0",
-    "authors": [
-        "Ptah Dunbar <ptah@liveninja.com>",
-        "Emilio Cueto <emilio@liveninja.com>",
-        "Michael Chacon <mike@liveninja.com>"
-    ],
-    "description": "A JavaScript SIP stack for WebRTC, instant messaging, and more!",
-    "main": "dist/sip.js",
-    "keywords": [
-        "sip",
-        "javascript",
-        "webrtc"
-    ],
-    "license": "MIT",
-    "private": true,
-    "ignore": [
-        "**/.*",
-        "node_modules",
-        "bower_components",
-        "test",
-        "tests"
-    ]
+  "name": "sip.js",
+  "version": "0.6.2",
+  "authors": [
+    "Will Mitchell <will@onsip.com>",
+    "James Criscuolo <james@onsip.com>",
+    "Eric Green <eric.green@onsip.com>",
+    "Joseph Frazier <joseph@onsip.com>"
+  ],
+  "description": "A JavaScript SIP stack for WebRTC, instant messaging, and more!",
+  "main": "dist/sip.js",
+  "keywords": [
+    "sip",
+    "javascript",
+    "webrtc"
+  ],
+  "license": "MIT",
+  "homepage": "http://sipjs.com",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "test",
+    "*.md",
+    "Gruntfile.js",
+    "*.html",
+    "*.json",
+    "LICENSE",
+    "src",
+    "sip-*.*"
+  ]
 }

@@ -7,7 +7,7 @@
  *
  * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var UA,
   C = {
     // UA status codes
@@ -33,7 +33,9 @@ var UA,
       'ACK',
       'CANCEL',
       'BYE',
-      'OPTIONS'
+      'OPTIONS',
+      'INFO',
+      'NOTIFY'
     ],
 
     ACCEPTED_BODY_TYPES: [
@@ -63,9 +65,8 @@ UA = function(configuration) {
 
   // Helper function for forwarding events
   function selfEmit(type) {
-    return function (data) {
-      self.emit(type, data);
-    };
+    //registrationFailed handler is invoked with two arguments. Allow event handlers to be invoked with a variable no. of arguments
+    return self.emit.bind(self, type);
   }
 
   for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
@@ -232,6 +233,14 @@ UA.prototype.isConnected = function() {
   return this.transport ? this.transport.connected : false;
 };
 
+UA.prototype.afterConnected = function afterConnected (callback) {
+  if (this.isConnected()) {
+    callback();
+  } else {
+    this.once('connected', callback);
+  }
+};
+
 /**
  * Make an outgoing call.
  *
@@ -248,26 +257,14 @@ UA.prototype.invite = function(target, options) {
 
   var context = new SIP.InviteClientContext(this, target, options);
 
-  if (this.isConnected()) {
-    context.invite({media: options.media});
-  } else {
-    this.once('connected', function() {
-      context.invite({media: options.media});
-    });
-  }
+  this.afterConnected(context.invite.bind(context, {media: options.media}));
   return context;
 };
 
 UA.prototype.subscribe = function(target, event, options) {
   var sub = new SIP.Subscription(this, target, event, options);
 
-  if (this.isConnected()) {
-    sub.subscribe();
-  } else {
-    this.once('connected', function() {
-      sub.subscribe();
-    });
-  }
+  this.afterConnected(sub.subscribe.bind(sub));
   return sub;
 };
 
@@ -290,30 +287,13 @@ UA.prototype.message = function(target, body, options) {
   options.contentType = options.contentType || 'text/plain';
   options.body = body;
 
-  var mes = new SIP.ClientContext(this, SIP.C.MESSAGE, target, options);
-
-  if (this.isConnected()) {
-    mes.send();
-  } else {
-    this.once('connected', function() {
-      mes.send();
-    });
-  }
-
-  return mes;
+  return this.request(SIP.C.MESSAGE, target, options);
 };
 
 UA.prototype.request = function (method, target, options) {
   var req = new SIP.ClientContext(this, method, target, options);
 
-  if (this.isConnected()) {
-    req.send();
-  } else {
-    this.once('connected', function() {
-      req.send();
-    });
-  }
-
+  this.afterConnected(req.send.bind(req));
   return req;
 };
 
@@ -340,7 +320,7 @@ UA.prototype.stop = function() {
   }
 
   // Clear transportRecoveryTimer
-  window.clearTimeout(this.transportRecoveryTimer);
+  SIP.Timers.clearTimeout(this.transportRecoveryTimer);
 
   // Close registerContext
   this.logger.log('closing registerContext');
@@ -662,7 +642,8 @@ UA.prototype.receiveRequest = function(request) {
   if(!request.to_tag) {
     switch(method) {
       case SIP.C.INVITE:
-        if(SIP.WebRTC.isSupported) {
+        var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
+        if(!isMediaSupported || isMediaSupported()) {
           session = new SIP.InviteServerContext(this, request)
             .on('invite', function() {
               self.emit('invite', this);
@@ -779,7 +760,7 @@ UA.prototype.getNextWsServer = function() {
     }
   }
 
-  idx = Math.floor((Math.random()* candidates.length));
+  idx = Math.floor(Math.random() * candidates.length);
 
   return candidates[idx];
 };
@@ -823,7 +804,7 @@ UA.prototype.recoverTransport = function(ua) {
 
   this.logger.log('next connection attempt in '+ nextRetry +' seconds');
 
-  this.transportRecoveryTimer = window.setTimeout(
+  this.transportRecoveryTimer = SIP.Timers.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
       new SIP.Transport(ua, server);
@@ -889,9 +870,13 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      rel100: 'none',
+      rel100: SIP.C.supported.UNSUPPORTED,
 
-      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
+      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+
+      authenticationFactory: function (ua) {
+        return new SIP.DigestAuthentication(ua);
+      }
     };
 
   // Pre-Configuration
@@ -930,8 +915,8 @@ UA.prototype.loadConfig = function(configuration) {
       }
     }
   }
-  
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, 'none');
+
+  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
@@ -943,7 +928,7 @@ UA.prototype.loadConfig = function(configuration) {
       if(value === null || value === "" || value === undefined || (value instanceof Array && value.length === 0)) { continue; }
       // If it's a number with NaN value then also apply its default value.
       // NOTE: JS does not allow "value === NaN", the following does the work:
-      else if(typeof(value) === 'number' && window.isNaN(value)) { continue; }
+      else if(typeof(value) === 'number' && isNaN(value)) { continue; }
 
       checked_value = UA.configuration_check.optional[parameter](value);
       if (checked_value !== undefined) {
@@ -1058,7 +1043,7 @@ UA.prototype.loadConfig = function(configuration) {
         this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
         break;
       default:
-        this.logger.log('· ' + parameter + ': ' + window.JSON.stringify(settings[parameter]));
+        this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
     }
   }
 
@@ -1075,8 +1060,6 @@ UA.configuration_skeleton = (function() {
     parameters = [
       // Internal parameters
       "sipjsId",
-      "wsServerMaxReconnection",
-      "wsServerReconnectionTimeout",
       "hostportParams",
 
       // Optional user configurable parameters
@@ -1101,9 +1084,12 @@ UA.configuration_skeleton = (function() {
       "traceSip",
       "turnServers",
       "usePreloadedRoute",
+      "wsServerMaxReconnection",
+      "wsServerReconnectionTimeout",
       "mediaHandlerFactory",
       "media",
       "mediaConstraints",
+      "authenticationFactory",
 
       // Post-configuration generated parameters
       "via_core_value",
@@ -1223,7 +1209,7 @@ UA.configuration_check = {
     connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
-        value = window.Number(connectionRecoveryMaxInterval);
+        value = Number(connectionRecoveryMaxInterval);
         if(value > 0) {
           return value;
         }
@@ -1233,7 +1219,7 @@ UA.configuration_check = {
     connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
-        value = window.Number(connectionRecoveryMinInterval);
+        value = Number(connectionRecoveryMinInterval);
         if(value > 0) {
           return value;
         }
@@ -1279,7 +1265,7 @@ UA.configuration_check = {
     noAnswerTimeout: function(noAnswerTimeout) {
       var value;
       if (SIP.Utils.isDecimal(noAnswerTimeout)) {
-        value = window.Number(noAnswerTimeout);
+        value = Number(noAnswerTimeout);
         if (value > 0) {
           return value;
         }
@@ -1289,15 +1275,14 @@ UA.configuration_check = {
     password: function(password) {
       return String(password);
     },
-    
+
     rel100: function(rel100) {
-      if(rel100 === 'required') {
-        return rel100;
-      } else if (rel100 === 'supported') {
-        SIP.UA.C.SUPPORTED = SIP.UA.C.SUPPORTED + ', 100rel';
-        return rel100;
+      if(rel100 === SIP.C.supported.REQUIRED) {
+        return SIP.C.supported.REQUIRED;
+      } else if (rel100 === SIP.C.supported.SUPPORTED) {
+        return SIP.C.supported.SUPPORTED;
       } else  {
-        return "none";
+        return SIP.C.supported.UNSUPPORTED;
       }
     },
 
@@ -1310,7 +1295,7 @@ UA.configuration_check = {
     registerExpires: function(registerExpires) {
       var value;
       if (SIP.Utils.isDecimal(registerExpires)) {
-        value = window.Number(registerExpires);
+        value = Number(registerExpires);
         if (value > 0) {
           return value;
         }
@@ -1390,7 +1375,7 @@ UA.configuration_check = {
           return;
         }
 
-        if (!turn_server.urls instanceof Array) {
+        if (!(turn_server.urls instanceof Array)) {
           turn_server.urls = [turn_server.urls];
         }
 
@@ -1422,6 +1407,26 @@ UA.configuration_check = {
       }
     },
 
+    wsServerMaxReconnection: function(wsServerMaxReconnection) {
+      var value;
+      if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
+        value = Number(wsServerMaxReconnection);
+        if (value > 0) {
+          return value;
+        }
+      }
+    },
+
+    wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
+      var value;
+      if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
+        value = Number(wsServerReconnectionTimeout);
+        if (value > 0) {
+          return value;
+        }
+      }
+    },
+
     autostart: function(autostart) {
       if (typeof autostart === 'boolean') {
         return autostart;
@@ -1432,10 +1437,16 @@ UA.configuration_check = {
       if (mediaHandlerFactory instanceof Function) {
         return mediaHandlerFactory;
       }
+    },
+
+    authenticationFactory: function(authenticationFactory) {
+      if (authenticationFactory instanceof Function) {
+        return authenticationFactory;
+      }
     }
   }
 };
 
 UA.C = C;
 SIP.UA = UA;
-}(SIP));
+};

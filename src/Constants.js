@@ -7,8 +7,9 @@
  * @augments SIP
  */
 
-SIP.C= {
-  USER_AGENT: SIP.name +'/'+ SIP.version,
+module.exports = function (name, version) {
+return {
+  USER_AGENT: name +'/'+ version,
 
   // SIP scheme
   SIP:  'sip',
@@ -45,11 +46,11 @@ SIP.C= {
     BAD_MEDIA_DESCRIPTION:    'Bad Media Description',
     RTP_TIMEOUT:              'RTP Timeout'
   },
-  
+
   supported: {
-    UNSUPPORTED:        0,
-    SUPPORTED:          1,
-    REQUIRED:           2
+    UNSUPPORTED:        'none',
+    SUPPORTED:          'supported',
+    REQUIRED:           'required'
   },
 
   SIP_ERROR_CAUSES: {
@@ -142,7 +143,7 @@ SIP.C= {
     491: 'Request Pending',
     493: 'Undecipherable',
     494: 'Security Agreement Required',  // RFC 3329
-    500: 'Server Internal Error',
+    500: 'Internal Server Error',
     501: 'Not Implemented',
     502: 'Bad Gateway',
     503: 'Service Unavailable',
@@ -155,4 +156,5 @@ SIP.C= {
     604: 'Does Not Exist Anywhere',
     606: 'Not Acceptable'
   }
+};
 };

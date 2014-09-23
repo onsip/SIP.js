@@ -1,5 +1,5 @@
 
-(function() {
+module.exports = (function() {
 
 var Logger = function(logger, category, label) {
   this.logger = logger;
@@ -25,4 +25,4 @@ Logger.prototype.error = function(content) {
 };
 
 return Logger;
-}());
+})();

@@ -7,36 +7,36 @@
  * @param {SIP.Session} session
  * @param {Object} [options]
  */
-(function(SIP){
+module.exports = function (EventEmitter) {
 var MediaHandler = function(session, options) {
-  session = session, options = options; // keep jshint happy
+  // keep jshint happy
+  session = session;
+  options = options;
 };
 
-MediaHandler.prototype = Object.create(SIP.EventEmitter.prototype, {
+MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   isReady: {value: function isReady () {}},
 
   close: {value: function close () {}},
 
   /**
-   * @param {Function} onSuccess called with the obtained local media description
-   * @param {Function} onFailure
    * @param {Object} [mediaHint] A custom object describing the media to be used during this session.
    */
-  getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
-    onSuccess = onSuccess, onFailure = onFailure, mediaHint = mediaHint; // keep jshint happy
+  getDescription: {value: function getDescription (mediaHint) {
+    // keep jshint happy
+    mediaHint = mediaHint;
   }},
 
   /**
   * Message reception.
   * @param {String} type
   * @param {String} description
-  * @param {Function} onSuccess
-  * @param {Function} onFailure
   */
-  setDescription: {value: function setDescription (description, onSuccess, onFailure) {
-    description = description, onSuccess = onSuccess, onFailure = onFailure; // keep jshint happy
+  setDescription: {value: function setDescription (description) {
+    // keep jshint happy
+    description = description;
   }}
 });
 
-SIP.MediaHandler = MediaHandler;
-}(SIP));
+return MediaHandler;
+};

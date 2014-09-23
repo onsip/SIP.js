@@ -11,7 +11,7 @@
  * @param {Object} [parameters]
  *
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var NameAddrHeader;
 
 NameAddrHeader = function(uri, displayName, parameters) {
@@ -54,7 +54,7 @@ NameAddrHeader.prototype = {
     return new NameAddrHeader(
       this.uri.clone(),
       this.displayName,
-      window.JSON.parse(window.JSON.stringify(this.parameters)));
+      JSON.parse(JSON.stringify(this.parameters)));
   },
 
   toString: function() {
@@ -93,4 +93,4 @@ NameAddrHeader.parse = function(name_addr_header) {
 };
 
 SIP.NameAddrHeader = NameAddrHeader;
-}(SIP));
+};

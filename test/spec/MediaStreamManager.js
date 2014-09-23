@@ -1,4 +1,4 @@
-describe('MediaStreamManager', function() {
+describe('MediaStreamManager', function () {
   var mediaStreamManager;
   var MediaStreamManager = SIP.WebRTC.MediaStreamManager;
 
@@ -6,105 +6,181 @@ describe('MediaStreamManager', function() {
     mediaStreamManager = new MediaStreamManager();
   });
 
-  describe('.acquire', function () {
-    it('passes its arguments to SIP.WebRTC.getUserMedia', function () {
-      spyOn(SIP.WebRTC, 'getUserMedia');
-      var onSuccess = function yay () {};
-      var onFailure = function boo () {};
+  it('throws an exception if WebRTC is not supported', function () {
+    spyOn(SIP.WebRTC, 'isSupported').and.returnValue(false);
+    expect(function() {new MediaStreamManager();}).toThrow(new SIP.Exceptions.NotSupportedError('Media not supported'));
+  });
+
+  it('initializes its events', function () {
+    expect(mediaStreamManager.checkEvent('userMediaRequest')).toEqual(true);
+    expect(mediaStreamManager.checkEvent('userMedia')).toEqual(true);
+    expect(mediaStreamManager.checkEvent('userMediaFailed')).toEqual(true);
+  });
+
+  it('defines mediaHint and acquisitions', function () {
+    expect(mediaStreamManager.mediaHint).toBeDefined();
+    expect(mediaStreamManager.acquisitions).toBeDefined();
+  });
+
+  describe('.acquire({constraints})', function () {
+    var onSuccess, onFailure;
+
+    beforeEach(function () {
+      spyOn(SIP.WebRTC, 'getUserMedia').and.callThrough();
+      onSuccess = function yay () {};
+      onFailure = function boo () {};
+    });
+
+    afterEach(function() {
+      SIP.WebRTC.getUserMedia.calls.reset();
+    })
+
+    it('passes constraints to SIP.WebRTC.getUserMedia', function (done) {
       var constraints = {audio: false, video: true};
-      mediaStreamManager.acquire(onSuccess, onFailure, constraints);
-      expect(SIP.WebRTC.getUserMedia).toHaveBeenCalledWith(constraints, onSuccess, onFailure);
+      mediaStreamManager.acquire({constraints: constraints}).then(onSuccess, onFailure)
+      .then(function () {
+        expect(SIP.WebRTC.getUserMedia.calls.mostRecent().args[0]).toEqual(constraints);
+        done();
+      });
+    });
+
+    it('emits userMediaRequest before calling getUserMedia', function (done) {
+      var onUMR = function () {
+        expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
+        SIP.WebRTC.getUserMedia.and.callFake(function () {
+          return SIP.Utils.Promise.resolve().then(done);
+        });
+      };
+      mediaStreamManager.on('userMediaRequest', onUMR);
+
+      mediaStreamManager.acquire({
+        constraints: {
+          audio: true,
+          video: true
+        }
+      }).then(onSuccess, onFailure);
+    });
+
+    describe('emits userMedia when getUserMedia calls a success callback', function () {
+
+      var myStream = { foo: 'bar' };
+
+      var success = jasmine.createSpy('success');
+      var failure = jasmine.createSpy('failure');
+      var onUM = jasmine.createSpy('userMedia');
+
+      beforeEach(function (done) {
+        success.and.callFake(function(){done();});
+
+        SIP.WebRTC.getUserMedia.and.callThrough();
+        mediaStreamManager.on('userMedia', onUM);
+        mediaStreamManager.acquire({
+          constraints: {
+            audio: true,
+            video: true
+          }
+        }).then(success, failure);
+      });
+
+      it('asynchronously', function () {
+        expect(onUM).toHaveBeenCalled();
+        expect(success).toHaveBeenCalled();
+        expect(failure).not.toHaveBeenCalled();
+      });
+    });
+
+    it('emits userMediaFailed when getUserMedia calls a failure callback', function (done) {
+      var success, failure, onUMF;
+
+      SIP.WebRTC.getUserMedia.and.callFake(function (c) {
+        return SIP.Utils.Promise.reject();
+      });
+
+      success = jasmine.createSpy('success');
+      failure = jasmine.createSpy('failure');
+      onUMF = jasmine.createSpy('userMediaFailed');
+
+      mediaStreamManager.on('userMediaFailed', onUMF);
+
+      mediaStreamManager.acquire({
+        constraints: {
+          audio: true,
+          video: true
+        }
+      }).then(success, failure)
+      .then(function () {
+        expect(onUMF).toHaveBeenCalled();
+        expect(success).not.toHaveBeenCalled();
+        expect(failure).toHaveBeenCalled();
+        done();
+      });
     });
   });
 
   describe('.release', function () {
+    var acquiredStream = null;
+
+    beforeEach(function(done) {
+      mediaStreamManager.acquire(
+        {constraints: {audio: true}}).then(
+        function onSuccess (stream) {
+          acquiredStream = stream;
+          mediaStreamManager.release(stream);
+          done();
+        },
+        function onFailure () {
+          throw new Error();
+        }
+      );
+    });
+
     it('calls stop() on the MediaStream it was passed', function () {
-      var stream = {
-        stop: function () {}
-      };
-      spyOn(stream, 'stop');
-      mediaStreamManager.release(stream);
-      expect(stream.stop).toHaveBeenCalled();
+        expect(acquiredStream).not.toBeNull();
+        expect(acquiredStream.stop).toHaveBeenCalled();
     });
   });
 
-  describe('.ofStream called with {}', function () {
+  describe('.acquire({stream})', function () {
     var stream;
-    var managerOfStream;
     var onSuccess;
     var onFailure;
+    var mediaHint;
 
     beforeEach(function () {
-      stream = jasmine.createSpyObj('stream', ['stop']);
-      managerOfStream = new MediaStreamManager.ofStream(stream);
+      stream = navigator.getUserMedia.fakeStream();
       onSuccess = jasmine.createSpy('onSuccess');
       onFailure = jasmine.createSpy('onFailure');
+      mediaHint = {stream: stream, constraints: {audio: true}};
     });
 
-    it('is a MediaStreamManager', function () {
-      expect(managerOfStream instanceof MediaStreamManager).toBe(true);
+    it('.acquire ignores constraints and succeeds with the stream', function (done) {
+      mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure)
+      .then(function () {
+      expect(onSuccess).toHaveBeenCalledWith(mediaHint.stream);
+      done();
+      });
     });
 
-    it('.acquire ignores constraints and succeeds with the stream', function () {
-      var constraints = {doesnt: 'matter'};
-      managerOfStream.acquire(onSuccess, onFailure, constraints);
-      expect(onSuccess).toHaveBeenCalledWith(stream);
+    it('.acquire called twice in a row does not fail', function (done) {
+      mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure).
+        then(mediaStreamManager.acquire(mediaHint)).then(onSuccess, onFailure).
+        then(function () {
+          expect(onSuccess).toHaveBeenCalled();
+          done();
+        }).
+        catch(function () {
+          expect(onFailure).not.toHaveBeenCalled();
+          done();
+        });
     });
 
-    it('.acquire called twice in a row does not fail', function () {
-      managerOfStream.acquire(onSuccess, onFailure);
-      managerOfStream.acquire(onSuccess, onFailure);
-      expect(onFailure).not.toHaveBeenCalled();
-    });
-
-    it('.release does not stop the stream', function () {
-      managerOfStream.acquire(onSuccess, onFailure);
-      managerOfStream.release(stream);
-      expect(stream.stop).not.toHaveBeenCalled();
-    });
-
-    it('second .acquire succeeds if called after .release was called with the stream', function () {
-      managerOfStream.acquire(onSuccess, onFailure);
-      managerOfStream.release(stream);
-      managerOfStream.acquire(onSuccess, onFailure);
-
-      expect(onSuccess.callCount).toBe(2);
-      expect(onFailure.callCount).toBe(0);
-    });
-
-    it('second .acquire fails if called after .release was called with not-the-stream', function () {
-      managerOfStream.acquire(onSuccess, onFailure);
-      spyOn(console, 'error'); // suppress expected error message
-      managerOfStream.release({});
-      managerOfStream.acquire(onSuccess, onFailure);
-
-      expect(onSuccess.callCount).toBe(2);
-      expect(onFailure.callCount).toBe(0);
-    });
-  });
-
-  describe('.cast', function () {
-    it('when called with a falsy argument, returns a (default) MediaStreamManager', function () {
-      expect(MediaStreamManager.cast() instanceof MediaStreamManager).toBe(true);
-    });
-
-    it('when called with a MediaStreamManager, returns it', function () {
-      var manager = new MediaStreamManager();
-      expect(MediaStreamManager.cast(manager)).toBe(manager);
-    });
-
-    it('when called with a MediaStream, returns a MediaStreamManager.ofStream', function () {
-      SIP.WebRTC.MediaStream = function () {};
-      spyOn(SIP.WebRTC, 'MediaStream');
-      var stream = new SIP.WebRTC.MediaStream();
-      var manager = MediaStreamManager.cast(stream);
-      expect(manager instanceof MediaStreamManager.ofStream).toBe(true);
-    });
-
-    it('when called with anything else, returns a MediaStreamManager', function () {
-      var constraints = {asdf: 'asdf'};
-      var manager = MediaStreamManager.cast(constraints);
-      expect(manager instanceof MediaStreamManager).toBe(true);
+    it('.release does not stop the stream', function (done) {
+      mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure)
+      .then(function () {
+        mediaStreamManager.release(stream);
+        expect(stream.stop).not.toHaveBeenCalled();
+        done();
+      });
     });
   });
 });

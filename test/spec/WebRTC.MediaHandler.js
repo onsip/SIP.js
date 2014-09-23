@@ -33,14 +33,42 @@ describe('WebRTC.MediaHandler', function() {
     expect(MediaHandler.mediaStreamManager).toBe(mediaStreamManager);
   });
 
+  it('echoes MediaStreamManager events', function () {
+    var callbacks = {
+      umr: jasmine.createSpy('request'),
+      um: jasmine.createSpy('success'),
+      umf: jasmine.createSpy('failure')
+    };
+
+    MediaHandler.on('userMedia', callbacks.um);
+    MediaHandler.on('userMediaRequest', callbacks.umr);
+    MediaHandler.on('userMediaFailed', callbacks.umf);
+
+    MediaHandler.mediaStreamManager.emit('userMedia', 1, 2, 3);
+    expect(callbacks.um).toHaveBeenCalledWith(1, 2, 3);
+
+    MediaHandler.mediaStreamManager.emit('userMediaRequest', 4, 5, 6);
+    expect(callbacks.umr).toHaveBeenCalledWith(4, 5, 6);
+
+    MediaHandler.mediaStreamManager.emit('userMediaFailed', 7, 8, 9);
+    expect(callbacks.umf).toHaveBeenCalledWith(7, 8, 9);
+  });
+
   it('initializes mute state info', function() {
     expect(MediaHandler.audioMuted).toBe(false);
     expect(MediaHandler.videoMuted).toBe(false);
   });
 
+  describe('.render', function () {
+    it("doesn't throw if renderHint and this.mediaHint are missing", function () {
+      expect(MediaHandler.render).not.toThrow();
+    });
+  });
+
+
   describe('.getLocalStreams', function() {
     it('returns peerConnection.getLocalStreams()', function() {
-      MediaHandler.peerConnection = {getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([])};
+      MediaHandler.peerConnection = {getLocalStreams: jasmine.createSpy('getLocalStreams').and.returnValue([])};
 
       expect(MediaHandler.getLocalStreams()).toEqual([]);
     });
@@ -48,7 +76,7 @@ describe('WebRTC.MediaHandler', function() {
 
   describe('.getRemoteStreams', function() {
     it('returns peerConnection.getRemoteStreams()', function() {
-      MediaHandler.peerConnection = {getRemoteStreams: jasmine.createSpy('getRemoteStreams').andReturn([])};
+      MediaHandler.peerConnection = {getRemoteStreams: jasmine.createSpy('getRemoteStreams').and.returnValue([])};
 
       expect(MediaHandler.getRemoteStreams()).toEqual([]);
     });
@@ -59,14 +87,14 @@ describe('WebRTC.MediaHandler', function() {
       MediaHandler.audioMuted = false;
       MediaHandler.videoMuted = false;
 
-      MediaHandler.peerConnection = {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
+      MediaHandler.peerConnection = {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').and.returnValue([ {
         getAudioTracks: function() {return [7];},
         getVideoTracks: function() {return [7];},
         stop: function() {}
       }])};
 
-      spyOn(MediaHandler, 'toggleMuteAudio').andReturn(true);
-      spyOn(MediaHandler, 'toggleMuteVideo').andReturn(true);
+      spyOn(MediaHandler, 'toggleMuteAudio').and.returnValue(true);
+      spyOn(MediaHandler, 'toggleMuteVideo').and.returnValue(true);
 
       spyOn(Session, 'emit');
     });
@@ -128,14 +156,14 @@ describe('WebRTC.MediaHandler', function() {
       MediaHandler.videoMuted = true;
       Session.local_hold = false;
 
-      MediaHandler.peerConnection = {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').andReturn([ {
+      MediaHandler.peerConnection = {signalingState: 'stable', getLocalStreams: jasmine.createSpy('getLocalStreams').and.returnValue([ {
         getAudioTracks: function() {return [7];},
         getVideoTracks: function() {return [7];},
         stop: function() {}
       }])};
 
-      spyOn(MediaHandler, 'toggleMuteAudio').andReturn(true);
-      spyOn(MediaHandler, 'toggleMuteVideo').andReturn(true);
+      spyOn(MediaHandler, 'toggleMuteAudio').and.returnValue(true);
+      spyOn(MediaHandler, 'toggleMuteVideo').and.returnValue(true);
 
       spyOn(Session, 'emit');
     });
@@ -213,7 +241,7 @@ describe('WebRTC.MediaHandler', function() {
       change = {enabled: true};
 
       MediaHandler.peerConnection = {signalingState: 'stable'};
-      spyOn(MediaHandler, 'getLocalStreams').andReturn([{getAudioTracks: function() { return [change]; }}]);
+      spyOn(MediaHandler, 'getLocalStreams').and.returnValue([{getAudioTracks: function() { return [change]; }}]);
     });
 
     it('sets enabled to false', function() {
@@ -243,7 +271,7 @@ describe('WebRTC.MediaHandler', function() {
     beforeEach(function() {
       change = {enabled: true};
 
-      spyOn(MediaHandler, 'getLocalStreams').andReturn([{getVideoTracks: function() { return [change]; }}]);
+      spyOn(MediaHandler, 'getLocalStreams').and.returnValue([{getVideoTracks: function() { return [change]; }}]);
     });
 
     it('sets enabled to false', function() {
@@ -264,6 +292,25 @@ describe('WebRTC.MediaHandler', function() {
       expect(MediaHandler.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
       MediaHandler.toggleMuteVideo(false);
       expect(MediaHandler.getLocalStreams()[0].getVideoTracks()[0].enabled).toBe(true);
+    });
+  });
+
+  describe('.setDescription', function () {
+    it('emits setDescription before creating RTCSessionDescription', function () {
+      spyOn(SIP.WebRTC, 'RTCSessionDescription');
+
+      var mySDP = 'foo';
+
+      var onSetDescription = jasmine.createSpy().and.callFake(function (raw) {
+        expect(raw.sdp).toEqual(mySDP);
+        expect(SIP.WebRTC.RTCSessionDescription).not.toHaveBeenCalled();
+      });
+      MediaHandler.on('setDescription', onSetDescription);
+
+      MediaHandler.setDescription(mySDP, new Function(), new Function());
+
+      expect(onSetDescription).toHaveBeenCalled();
+      expect(SIP.WebRTC.RTCSessionDescription).toHaveBeenCalled();
     });
   });
 });

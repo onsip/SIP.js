@@ -1,8 +1,13 @@
 {
-  "name": "sip",
+  "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.5.0-devel",
+  "version": "0.6.2",
+  "main": "src/SIP.js",
+  "browser": {
+    "promiscuous": "./src/polyfills/promiscuous.js",
+    "console": "./src/polyfills/console.js"
+  },
   "homepage": "http://sipjs.com",
   "author": "Will Mitchell <will@onsip.com>",
   "contributors": [
@@ -24,16 +29,17 @@
   "devDependencies": {
     "grunt": "~0.4.0",
     "grunt-cli": "~0.1.6",
-    "grunt-contrib-concat": "~0.1.3",
-    "grunt-include-replace": "~0.1.0",
+    "grunt-contrib-jasmine": "~0.8.0",
+    "grunt-contrib-jshint": ">0.5.0",
     "grunt-contrib-uglify": "~0.2.0",
-    "grunt-contrib-jshint": "~0.3.0",
-    "grunt-contrib-jasmine": "~0.5.0",
-    "pegjs": "0.8.0",
+    "grunt-peg": "~1.3.1",
+    "grunt-trimtrailingspaces": "^0.4.0",
     "node-minify": "~0.7.2",
-    "browserify": "~2.36.0",
+    "pegjs": "0.8.0",
     "sdp-transform": "~0.4.0",
-    "grunt-peg": "~1.3.1"
+    "grunt-contrib-copy": "^0.5.0",
+    "browserify": "^4.1.8",
+    "grunt-browserify": "^2.1.0"
   },
   "engines": {
     "node": ">=0.8"
@@ -41,5 +47,8 @@
   "license": "MIT",
   "scripts": {
     "test": "grunt travis --verbose"
+  },
+  "optionalDependencies": {
+    "promiscuous": "^0.6.0"
   }
 }

@@ -2,7 +2,7 @@
  * @fileoverview SIP Message
  */
 
-(function(SIP) {
+module.exports = function (SIP) {
 var
   OutgoingRequest,
   IncomingMessage,
@@ -41,7 +41,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.method = method;
   this.ruri = ruri;
   this.body = body;
-  this.extraHeaders = extraHeaders || [];
+  this.extraHeaders = (extraHeaders || []).slice();
   this.statusCode = params.status_code;
   this.reasonPhrase = params.reason_phrase;
 
@@ -201,12 +201,12 @@ OutgoingRequest.prototype = {
     //Supported
     if (this.method === SIP.C.REGISTER) {
       supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE && 
+    } else if (this.method === SIP.C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
       supported.push('gruu');
     }
 
-    if (this.ua.configuration.rel100 === 'supported') {
+    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
       supported.push('100rel');
     }
 
@@ -412,20 +412,8 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     r = 0,
     v = 0;
 
-  code = code || null;
-  reason = reason || null;
-
-  // Validate code and reason values
-  if (!code || (code < 100 || code > 699)) {
-    throw new TypeError('Invalid status_code: '+ code);
-  } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
-    throw new TypeError('Invalid reason_phrase: '+ reason);
-  }
-
-  reason = reason || SIP.C.REASON_PHRASE[code] || '';
-  extraHeaders = extraHeaders || [];
-
-  response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  response = SIP.Utils.buildStatusLine(code, reason);
+  extraHeaders = (extraHeaders || []).slice();
 
   if(this.method === SIP.C.INVITE && code > 100 && code <= 200) {
     rr = this.getHeaders('record-route');
@@ -460,12 +448,12 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   //Supported
-  if (this.method === SIP.C.INVITE && 
+  if (this.method === SIP.C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
     supported.push('gruu');
   }
 
-  if (this.ua.configuration.rel100 === 'supported') {
+  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
     supported.push('100rel');
   }
 
@@ -482,7 +470,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     response += 'Content-Length: ' + 0 + '\r\n\r\n';
   }
 
-  this.server_transaction.receiveResponse(code, response, onSuccess, onFailure);
+  this.server_transaction.receiveResponse(code, response).then(onSuccess, onFailure);
 
   return response;
 };
@@ -498,19 +486,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
     vias = this.getHeaders('via'),
     length = vias.length;
 
-  code = code || null;
-  reason = reason || null;
-
-  // Validate code and reason values
-  if (!code || (code < 100 || code > 699)) {
-    throw new TypeError('Invalid status_code: '+ code);
-  } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
-    throw new TypeError('Invalid reason_phrase: '+ reason);
-  }
-
-  reason = reason || SIP.C.REASON_PHRASE[code] || '';
-
-  response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  response = SIP.Utils.buildStatusLine(code, reason);
 
   for(v; v < length; v++) {
     response += 'Via: ' + vias[v] + '\r\n';
@@ -549,4 +525,4 @@ IncomingResponse.prototype = new IncomingMessage();
 SIP.OutgoingRequest = OutgoingRequest;
 SIP.IncomingRequest = IncomingRequest;
 SIP.IncomingResponse = IncomingResponse;
-}(SIP));
+};

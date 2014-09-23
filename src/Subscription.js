@@ -7,11 +7,12 @@
  * @augments SIP
  * @class Class creating a SIP Subscription.
  */
+module.exports = function (SIP) {
 SIP.Subscription = function (ua, target, event, options) {
   var events;
 
   options = options || {};
-  options.extraHeaders = options.extraHeaders || [];
+  options.extraHeaders = (options.extraHeaders || []).slice();
 
   events = ['notify'];
   this.id = null;
@@ -25,9 +26,7 @@ SIP.Subscription = function (ua, target, event, options) {
     this.event = event;
   }
 
-  if (!options.expires || options.expires < 3600) {
-    this.expires = 3600; //1 hour (this is minimum by RFC 6665)
-  } else if(typeof options.expires !== 'number'){
+  if(typeof options.expires !== 'number'){
     ua.logger.warn('expires must be a number. Using default of 3600.');
     this.expires = 3600;
   } else {
@@ -61,9 +60,9 @@ SIP.Subscription.prototype = {
   subscribe: function() {
     var sub = this;
 
-    window.clearTimeout(this.timers.sub_duration);
-    window.clearTimeout(this.timers.N);
-    this.timers.N = window.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
 
     this.send();
 
@@ -73,22 +72,24 @@ SIP.Subscription.prototype = {
   },
 
   receiveResponse: function(response) {
-    var expires, sub = this;
+    var expires, sub = this,
+        cause = SIP.Utils.getReasonPhrase(response.status_code);
 
     if (this.errorCodes.indexOf(response.status_code) !== -1) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
-      window.clearTimeout(this.timers.N);
+      SIP.Timers.clearTimeout(this.timers.N);
 
       if (this.createConfirmedDialog(response,'UAC')) {
         this.id = this.dialog.id.toString();
         this.ua.subscriptions[this.id] = this;
+        this.emit('accepted', response, cause);
         // UPDATE ROUTE SET TO BE BACKWARDS COMPATIBLE?
       }
 
       if (expires && expires <= this.expires) {
-        this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, expires * 1000);
+        this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), expires * 1000);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
@@ -117,9 +118,9 @@ SIP.Subscription.prototype = {
     //MAYBE, may want to see state
     this.receiveResponse = function(){};
 
-    window.clearTimeout(this.timers.sub_duration);
-    window.clearTimeout(this.timers.N);
-    this.timers.N = window.setTimeout(function(){sub.timer_fire();}, SIP.Timers.TIMER_N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
 
     this.send();
   },
@@ -147,8 +148,8 @@ SIP.Subscription.prototype = {
     }
 
     this.terminateDialog();
-    window.clearTimeout(this.timers.N);
-    window.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
 
     delete this.ua.subscriptions[this.id];
   },
@@ -159,6 +160,7 @@ SIP.Subscription.prototype = {
   createConfirmedDialog: function(message, type) {
     var dialog;
 
+    this.terminateDialog();
     dialog = new SIP.Dialog(this, message, type);
 
     if(!dialog.error) {
@@ -176,6 +178,7 @@ SIP.Subscription.prototype = {
   */
   terminateDialog: function() {
     if(this.dialog) {
+      delete this.ua.subscriptions[this.id];
       this.dialog.terminate();
       delete this.dialog;
     }
@@ -190,8 +193,8 @@ SIP.Subscription.prototype = {
     function setExpiresTimeout() {
       if (sub_state.expires) {
         sub_state.expires = Math.min(sub.expires,
-                                     Math.max(sub_state.expires, 3600));
-        sub.timers.sub_duration = window.setTimeout(sub.subscribe.bind(sub),
+                                     Math.max(sub_state.expires, 0));
+        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub),
                                                     sub_state.expires * 1000);
       }
     }
@@ -205,8 +208,8 @@ SIP.Subscription.prototype = {
 
     request.reply(200, SIP.C.REASON_200);
 
-    window.clearTimeout(this.timers.N);
-    window.clearTimeout(this.timers.sub_duration);
+    SIP.Timers.clearTimeout(this.timers.N);
+    SIP.Timers.clearTimeout(this.timers.sub_duration);
 
     this.emit('notify', {request: request});
 
@@ -232,7 +235,7 @@ SIP.Subscription.prototype = {
             case 'probation':
             case 'giveup':
               if(sub_state.params && sub_state.params['retry-after']) {
-                this.timers.sub_duration = window.setTimeout(function(){sub.subscribe();}, sub_state.params['retry-after']);
+                this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), sub_state.params['retry-after']);
               } else {
                 this.subscribe();
               }
@@ -281,4 +284,5 @@ SIP.Subscription.prototype = {
       return true;
     }
   }
+};
 };

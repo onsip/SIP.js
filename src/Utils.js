@@ -2,10 +2,43 @@
  * @fileoverview Utils
  */
 
-(function(SIP) {
+var promise = global.Promise || require('promiscuous');
+
+module.exports = function (SIP) {
 var Utils;
 
 Utils= {
+
+  Promise: promise,
+
+  defer: function defer () {
+    var deferred = {};
+    deferred.promise = new Utils.Promise(function (resolve, reject) {
+      deferred.resolve = resolve;
+      deferred.reject = reject;
+    });
+    return deferred;
+  },
+
+  callbacksLast: function callbacksLast (f, thisArg) {
+    return function (arg, onSuccess, onFailure) {
+      return f.call(thisArg, onSuccess, onFailure, arg);
+    };
+  },
+
+  addPromise: function addPromise (f, thisArg, length) {
+    var callbacksIndex = (length || f.length) - 2;
+    return function withPromise () {
+      var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
+      var bound = f.bind.apply(f, [thisArg].concat(nonCallbacks));
+      var promise = new Utils.Promise(bound);
+      var callbacks = [].slice.call(arguments, callbacksIndex);
+      if (callbacks.length) {
+        promise.then.apply(promise, callbacks);
+      }
+      return promise;
+    };
+  },
 
   augment: function (object, constructor, args, override) {
     var idx, proto;
@@ -35,10 +68,13 @@ Utils= {
   },
 
   str_utf8_length: function(string) {
-    return window.unescape(encodeURIComponent(string)).length;
+    return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
   },
 
   getPrefixedProperty: function (object, name) {
+    if (object == null) {
+      return;
+    }
     var capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
     var prefixedNames = [name, 'webkit' + capitalizedName, 'moz' + capitalizedName];
     for (var i in prefixedNames) {
@@ -62,7 +98,7 @@ Utils= {
 
   isFunction: function(fn) {
     if (fn !== undefined) {
-      return (Object.prototype.toString.call(fn) === '[object Function]')? true : false;
+      return Object.prototype.toString.call(fn) === '[object Function]';
     } else {
       return false;
     }
@@ -183,7 +219,7 @@ Utils= {
   */
   escapeUser: function(user) {
     // Don't hex-escape ':' (%3A), '+' (%2B), '?' (%3F"), '/' (%2F).
-    return window.encodeURIComponent(window.decodeURIComponent(user)).replace(/%3A/ig, ':').replace(/%2B/ig, '+').replace(/%3F/ig, '?').replace(/%2F/ig, '/');
+    return encodeURIComponent(decodeURIComponent(user)).replace(/%3A/ig, ':').replace(/%2B/ig, '+').replace(/%3F/ig, '?').replace(/%2F/ig, '/');
   },
 
   headerize: function(string) {
@@ -222,13 +258,46 @@ Utils= {
     return SIP.C.causes.SIP_FAILURE_CODE;
   },
 
+  getReasonPhrase: function getReasonPhrase (code, specific) {
+    return specific || SIP.C.REASON_PHRASE[code] || '';
+  },
+
+  getReasonHeaderValue: function getReasonHeaderValue (code, reason) {
+    reason = SIP.Utils.getReasonPhrase(code, reason);
+    return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
+  },
+
+  getCancelReason: function getCancelReason (code, reason) {
+    if (code && code < 200 || code > 699) {
+      throw new TypeError('Invalid status_code: ' + code);
+    } else if (code) {
+      return SIP.Utils.getReasonHeaderValue(code, reason);
+    }
+  },
+
+  buildStatusLine: function buildStatusLine (code, reason) {
+    code = code || null;
+    reason = reason || null;
+
+    // Validate code and reason values
+    if (!code || (code < 100 || code > 699)) {
+      throw new TypeError('Invalid status_code: '+ code);
+    } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
+      throw new TypeError('Invalid reason_phrase: '+ reason);
+    }
+
+    reason = Utils.getReasonPhrase(code, reason);
+
+    return 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  },
+
   /**
   * Generate a random Test-Net IP (http://tools.ietf.org/html/rfc5735)
   * @private
   */
   getRandomTestNetIP: function() {
     function getOctet(from,to) {
-      return window.Math.floor(window.Math.random()*(to-from+1)+from);
+      return Math.floor(Math.random()*(to-from+1)+from);
     }
     return '192.0.2.' + getOctet(1, 254);
   },
@@ -457,4 +526,4 @@ Utils= {
 };
 
 SIP.Utils = Utils;
-}(SIP));
+};

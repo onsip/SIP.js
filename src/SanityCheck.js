@@ -11,7 +11,7 @@
  * @param {SIP.Transport} transport
  * @returns {Boolean}
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var sanityCheck,
  logger,
  message, ua, transport,
@@ -147,7 +147,7 @@ function minimumHeaders() {
 // Reply
 function reply(status_code) {
   var to,
-    response = "SIP/2.0 " + status_code + " " + SIP.C.REASON_PHRASE[status_code] + "\r\n",
+    response = SIP.Utils.buildStatusLine(status_code),
     vias = message.getHeaders('via'),
     length = vias.length,
     idx = 0;
@@ -224,4 +224,4 @@ sanityCheck = function(m, u, t) {
 };
 
 SIP.sanityCheck = sanityCheck;
-}(SIP));
+};

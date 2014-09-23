@@ -14,7 +14,7 @@
  * @param {Object} [headers]
  *
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var URI;
 
 URI = function(scheme, user, host, port, parameters, headers) {
@@ -137,8 +137,8 @@ URI.prototype = {
       this.user,
       this.host,
       this.port,
-      window.JSON.parse(window.JSON.stringify(this.parameters)),
-      window.JSON.parse(window.JSON.stringify(this.headers)));
+      JSON.parse(JSON.stringify(this.parameters)),
+      JSON.parse(JSON.stringify(this.headers)));
   },
 
   toString: function(){
@@ -146,6 +146,10 @@ URI.prototype = {
       headers = [];
 
     uri  = this.scheme + ':';
+    // add slashes if it's not a sip(s) URI
+    if (!this.scheme.match("^sips?$")) {
+      uri += "//";
+    }
     if (this.user) {
       uri += SIP.Utils.escapeUser(this.user) + '@';
     }
@@ -194,4 +198,4 @@ URI.parse = function(uri) {
 };
 
 SIP.URI = URI;
-}(SIP));
+};

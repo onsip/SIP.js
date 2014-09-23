@@ -178,7 +178,7 @@ describe('EventEmitter', function () {
       for (i = 0; i < n; i++) {
         EventEmitter.emit('aaa');
       }
-      expect(spy.calls.length).toEqual(n);
+      expect(spy.calls.count()).toEqual(n);
     });
 
     it('binds to third argument', function () {
@@ -219,16 +219,6 @@ describe('EventEmitter', function () {
     it('adds a listener', function () {
       EventEmitter.once('aaa', spy);
       expect(EventEmitter.checkListener('aaa')).toBe(true);
-      expect(EventEmitter.oneTimeListeners['aaa']).toEqual([{
-        listener: spy,
-        bindTarget: undefined
-      }]);
-    });
-
-    it('does not leak memory', function () {
-      EventEmitter.once('aaa', 'foobar');
-      expect(EventEmitter.checkListener('aaa')).toBe(false);
-      expect(EventEmitter.oneTimeListeners['aaa']).toEqual([]);
     });
 
     it('calls the callback synchronously on emission', function () {
@@ -245,7 +235,7 @@ describe('EventEmitter', function () {
       for (i = 0; i < n; i++) {
         EventEmitter.emit('aaa');
       }
-      expect(spy.calls.length).toEqual(1);
+      expect(spy.calls.count()).toEqual(1);
     });
 
     it('binds to third argument', function () {
@@ -456,6 +446,9 @@ describe('EventEmitter', function () {
   /* EMIT */
   describe('.emit', function () {
     var foo, bar, that;
+    function removeSelf () {
+      EventEmitter.off('aaa', removeSelf);
+    }
 
     beforeEach(function () {
       foo = jasmine.createSpy('foo');
@@ -463,6 +456,7 @@ describe('EventEmitter', function () {
       that = jasmine.createSpy('that');
 
       EventEmitter.initEvents(setD);
+      EventEmitter.on('aaa', removeSelf);
       EventEmitter.on('aaa', foo);
       EventEmitter.on('aaa', bar, that);
     });
@@ -490,7 +484,7 @@ describe('EventEmitter', function () {
     });
 
     it('binds to the parent object', function () {
-      bar.andCallFake(function () {
+      bar.and.callFake(function () {
         expect(this).toBe(EventEmitter);
       });
       EventEmitter.on('bbb', bar);
@@ -499,7 +493,7 @@ describe('EventEmitter', function () {
     });
 
     it('binds to the third argument', function () {
-      bar.andCallFake(function () {
+      bar.and.callFake(function () {
         expect(this).toBe(that);
       });
       EventEmitter.on('bbb', bar, that);

@@ -14,7 +14,7 @@
  * @fileoverview in-Dialog Request Sender
  */
 
-(function(SIP) {
+module.exports = function (SIP) {
 var RequestSender;
 
 RequestSender = function(dialog, applicant, request) {
@@ -73,7 +73,7 @@ RequestSender.prototype = {
         this.applicant.receiveResponse(response);
       } else {
         this.request.cseq.value = this.dialog.local_seqnum += 1;
-        this.reattemptTimer = window.setTimeout(
+        this.reattemptTimer = SIP.Timers.setTimeout(
           function() {
             if (self.applicant.owner.status !== SIP.Session.C.STATUS_TERMINATED) {
               self.reattempt = true;
@@ -90,4 +90,4 @@ RequestSender.prototype = {
 };
 
 return RequestSender;
-}(SIP));
+};

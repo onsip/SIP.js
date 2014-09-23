@@ -9,7 +9,7 @@
  * @param {Object} applicant
  * @param {SIP.UA} ua
  */
-(function(SIP) {
+module.exports = function (SIP) {
 var RequestSender;
 
 RequestSender = function(applicant, ua) {
@@ -99,7 +99,7 @@ RequestSender.prototype = {
 
       if (!this.challenged || (!this.staled && challenge.stale === true)) {
         if (!this.credentials) {
-          this.credentials = new SIP.DigestAuthentication(this.ua);
+          this.credentials = this.ua.configuration.authenticationFactory(this.ua);
         }
 
         // Verify that the challenge is really valid.
@@ -135,4 +135,4 @@ RequestSender.prototype = {
 };
 
 SIP.RequestSender = RequestSender;
-}(SIP));
+};

@@ -4,6 +4,7 @@
   function FakeWebSocket(server, protocol) {
     this.readyState = 0; // CONNECTING
     var that = this;
+    spyOn(this, 'send');
     setTimeout(function () {
       that.readyState = 1; // OPEN
       if (that.onopen) {
@@ -12,7 +13,7 @@
     }, 0);
   }
   FakeWebSocket.prototype = {
-    send: function (msg) {},
+    send: function() {},
     close: function () {
       this.readyState = 3; // CLOSED
       if (this.onclose) this.onclose({code:3});
@@ -36,11 +37,22 @@
   /** WebRTC **/
   function getUserMedia(constraints, success, failure) {
     if (getUserMedia.fail) {
-      setTimeout(function () { failure(); }, 0);
+      setTimeout(failure, 0);
     } else {
-      setTimeout(function () { success({getAudioTracks: function(){return [];}, getVideoTracks: function(){return [];}, stop: function(){} })}, 0);
+      setTimeout(success.bind(null, getUserMedia.fakeStream()), 0);
     }
   }
+  getUserMedia.fakeStream = function () {
+    return {
+      getAudioTracks: function(id){
+        return [{
+          id: id
+        }];
+      }.bind(null, Math.random().toString()),
+      getVideoTracks: function(){return [];},
+      stop: jasmine.createSpy('stop')
+    };
+  };
   getUserMedia.orig = window.navigator.getUserMedia;
   window.navigator.getUserMedia = getUserMedia;
 
@@ -56,7 +68,7 @@
           success({
             type: 'offer',
             body: '',
-            sdp: 'Hello'
+            sdp: 'HelloOffer'
           });
         }, 0);
       }
@@ -69,7 +81,7 @@
           success({
             type: 'answer',
             body: '',
-            sdp: 'Hello'
+            sdp: 'HelloAnswer'
           });
         }, 0);
       }
@@ -94,7 +106,7 @@
         }, 0);
       }
     },
-    addStream: function () {},
+    addStream: jasmine.createSpy('addStream').and.callFake(function () {}),
     close: function () {},
     signalingState: function () {}
   };

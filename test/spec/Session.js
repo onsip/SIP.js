@@ -5,142 +5,81 @@
  */
 describe('An INVITE sent from a UAC', function () {
   var ua, session,
-      ua_config, session_options,
-      sendSpy;
+      ua_config, session_options;
 
-  beforeEach(function () {
-    sendSpy = spyOn(window.WebSocket.prototype, 'send');
-    ua = undefined;
-    session = undefined;
+  beforeEach(function (done) {
     ua_config = {
       register: false
     };
     session_options = {};
-    console.log('cleared constraints');
 
-    console.log('first', session_options);
-    ua = new SIP.UA(ua_config).on('connected', function () {
-      console.log(session_options);
+    ua = new SIP.UA(ua_config).once('connected', function () {
       session = ua.invite('alice@example.com', session_options);
-    });
-  });
-
-  afterEach(function () {
-    waitsFor(function () {
-      return sendSpy.calls.length > 0;
-    }, 'Send never called', 500);
-
-    //UNBELIEVABLY IMPORTANT DON'T TOUCH IT
-    runs(function() {
-      if(ua.status !== SIP.UA.C.STATUS_USER_CLOSED) {
-        ua.stop();
-      };
+      setTimeout(done, 0);
     });
   });
 
   it('inits ClientContext events', function () {
-    waitsFor(function () {
-      return session;
-    }, "The Session was never created", 100);
-
-    runs(function () {
-      expect(session.checkEvent('progress')).toBe(true);
-      expect(session.checkEvent('accepted')).toBe(true);
-      expect(session.checkEvent('rejected')).toBe(true);
-      expect(session.checkEvent('failed')).toBe(true);
-    });
-
+    expect(session.checkEvent('progress')).toBe(true);
+    expect(session.checkEvent('accepted')).toBe(true);
+    expect(session.checkEvent('rejected')).toBe(true);
+    expect(session.checkEvent('failed')).toBe(true);
   });
 
   it('inits Session events', function () {
-    waitsFor(function () {
-      return session;
-    }, "The Session was never created", 100);
-
-    runs(function () {
-      expect(session.checkEvent('connecting')).toBe(true);
-      expect(session.checkEvent('cancel')).toBe(true);
-      expect(session.checkEvent('referred')).toBe(true);
-      expect(session.checkEvent('dtmf')).toBe(true);
-      expect(session.checkEvent('bye')).toBe(true);
-    });
+    expect(session.checkEvent('connecting')).toBe(true);
+    expect(session.checkEvent('cancel')).toBe(true);
+    expect(session.checkEvent('dtmf')).toBe(true);
+    expect(session.checkEvent('bye')).toBe(true);
   });
 
   it('inits instance attributes', function () {
-    waitsFor(function () {
-      return session;
-    }, "The Session was never created", 100);
+    expect(session.ua).toBe(ua);
+    expect(session.method).toBe(SIP.C.INVITE);
 
-    runs(function () {
-      expect(session.ua).toBe(ua);
-      expect(session.method).toBe(SIP.C.INVITE);
+    expect(session.request).toBeDefined();
+    expect(session.request instanceof SIP.OutgoingRequest).toBe(true);
 
-      expect(session.request).toBeDefined();
-      expect(session.request instanceof SIP.OutgoingRequest).toBe(true);
+    expect(session.localIdentity).toBeDefined();
+    expect(session.localIdentity instanceof SIP.NameAddrHeader).toBe(true);
+    expect(session.localIdentity.hasParam('tag')).toBe(true);
+    expect(session.localIdentity.toString()).toMatch(/<sip:anonymous\.(.){6}@anonymous.invalid>;tag=/);
 
-      expect(session.localIdentity).toBeDefined();
-      expect(session.localIdentity instanceof SIP.NameAddrHeader).toBe(true);
-      expect(session.localIdentity.hasParam('tag')).toBe(true);
-      expect(session.localIdentity.toString()).toMatch(/<sip:anonymous\.(.){6}@anonymous.invalid>;tag=/);
+    expect(session.remoteIdentity).toBeDefined();
+    expect(session.remoteIdentity instanceof SIP.NameAddrHeader).toBe(true);
+    expect(session.remoteIdentity.hasParam('tag')).toBe(false);
+    expect(session.remoteIdentity.toString()).toBe('<sip:alice@example.com>');
 
-      expect(session.remoteIdentity).toBeDefined();
-      expect(session.remoteIdentity instanceof SIP.NameAddrHeader).toBe(true);
-      expect(session.remoteIdentity.hasParam('tag')).toBe(false);
-      expect(session.remoteIdentity.toString()).toBe('<sip:alice@example.com>');
-
-      expect(session.data).toEqual({});
-    });
+    expect(session.data).toEqual({});
   });
 
   it('has a custom .data attribute', function () {
-    waitsFor(function () {
-      return session;
-    }, "The Session was never created", 100);
-
-    runs(function () {
-      expect(session.data).toEqual({});
-    });
+    expect(session.data).toEqual({});
   });
 
-  it('gets user media', function () {
-    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
-
-    waitsFor(function () {
-      return gumSpy.calls.length;
-    }, 'GetUserMedia never called', 100);
-
-    runs(function () {
-      expect(gumSpy.calls.length).toBe(1);
+  it('gets user media', function (done) {
+    var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function () {
+      return SIP.Utils.Promise.resolve().then(done)
     });
+    session = ua.invite('alice@example.com', session_options);
   });
 
-  it('sends an INVITE on the WebSocket', function () {
-    waitsFor(function () {
-      return sendSpy.calls.length > 0;
-    }, 'Send never called', 500);
-
-    runs(function () {
-      expect(sendSpy.calls.length).toBe(1);
-      expect(sendSpy.mostRecentCall.args[0]).toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
+  it('sends an INVITE on the WebSocket', function (done) {
+    //IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
+    setTimeout(function() {
+      expect(ua.transport.ws.send).toHaveBeenCalled();
+      expect(ua.transport.ws.send.calls.mostRecent().args[0]).toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
       expect(session.status).toBe(SIP.Session.C.STATUS_INVITE_SENT);
-    });
+      done();
+    }, 200);
   });
 
   it('has no dialogs at first', function () {
-    waitsFor(function () { return session; }, 'Session was never created', 100);
-
-    runs(function () {
-      expect(session.dialog).toBeNull();
-      expect(session.earlyDialogs).toEqual({});
-    });
+    expect(session.dialog).toBeNull();
+    expect(session.earlyDialogs).toEqual({});
   });
 
   describe('following RFC3261 request generation rules (8.1.1)', function () {
-    beforeEach(function() {
-      waitsFor(function() {
-        return sendSpy.calls.length > 0;
-      }, 'Send never called', 500);
-    });
 
     it('contains minimum header fields', function () {
       expect(session.request.hasHeader('to')).toBe(true);
@@ -148,7 +87,7 @@ describe('An INVITE sent from a UAC', function () {
       expect(session.request.hasHeader('cseq')).toBe(true);
       expect(session.request.hasHeader('call-id')).toBe(true);
       expect(session.request.hasHeader('max-forwards')).toBe(true);
-      expect(session.request.hasHeader('via')).toBe(true);      
+      expect(session.request.hasHeader('via')).toBe(true);
     });
 
     it('sets the Request-URI to the To URI', function () {
@@ -179,9 +118,6 @@ describe('An INVITE sent from a UAC', function () {
       ids[id] = true;
       for (var i = 1; i < 1000; i++) {
         session = ua.invite('alice@example.com', session_options);
-        /*waitsFor(function() {
-          return sendSpy.calls.length > i;
-        }, 'Send never called', 10000); */
 
         id = session.request.getHeader('call-id');
         expect(ids[id]).toBeUndefined();
@@ -213,14 +149,26 @@ describe('An INVITE sent from a UAC', function () {
       expect(parseInt(session.request.getHeader('max-forwards'))).toBe(70);
     });
 
-    it('uses SIP/2.0 in the Via', function () {
-      var via = SIP.Parser.parseMessage(sendSpy.mostRecentCall.args[0], ua).getHeader('via');
-      expect(via).toContain('SIP/2.0');
-    });
+    describe('the Via header', function () {
+      beforeEach(function (done) {
+        if (ua.transport.ws.send.calls.mostRecent()) {
+          done();
+        } else {
+          ua.transport.ws.send.and.callFake(function () {
+            setTimeout(done, 0);
+          });
+        }
+      });
 
-    it('has a branch parameter in the Via', function () {
-      var via = SIP.Parser.parseMessage(sendSpy.mostRecentCall.args[0], ua).getHeader('via');
-      expect(via).toContain(';branch');
+      it('uses SIP/2.0', function () {
+        var via = SIP.Parser.parseMessage(ua.transport.ws.send.calls.mostRecent().args[0], ua).getHeader('via');
+        expect(via).toContain('SIP/2.0');
+      });
+
+      it('has a branch parameter', function () {
+        var via = SIP.Parser.parseMessage(ua.transport.ws.send.calls.mostRecent().args[0], ua).getHeader('via');
+        expect(via).toContain(';branch');
+      });
     });
 
     it('has a Contact with one valid SIP URI', function () {
@@ -266,31 +214,28 @@ describe('An INVITE sent from a UAC', function () {
      rel100/100rel (Currently in UA configuration)
    */
   describe('with options.media', function () {
-    it('not defined, defaults to audio+video', function () {
-      var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
-      waitsFor('session to be created', function () { return session; }, 100);
-      runs(function () {
-        expect(session.mediaHandler.mediaStreamManager.constraints).toEqual({
-          audio: true,
-          video: true
-        });
-      });
+    var gumSpy;
 
-      waitsFor('gum to be called', function () {
-        return gumSpy.calls.length;
-      }, 100);
-      runs(function () {
-        expect(gumSpy.mostRecentCall.args[0]).toEqual({
+    it('not defined, defaults to audio+video', function () {
+      gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
+        expect(gumSpy.calls.mostRecent().args[0]).toEqual({
           audio: true,
           video: true
         });
+        return SIP.Utils.Promise.resolve();
       });
+      session = ua.invite('alice@example.com', session_options);
     });
 
     it('defined as constraints, follows those constraints', function () {
-      console.log('running sync');
-      var gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').andCallThrough();
-      var myConstraints = {
+      var myConstraints;
+
+      gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
+        expect(gumSpy.calls.mostRecent().args[0]).toEqual(myConstraints);
+        return SIP.Utils.Promise.resolve();
+      });
+
+      myConstraints = {
         audio: ['Anything', 'Goes', 'Here'],
         video: {
           resolution: 'da best',
@@ -300,20 +245,16 @@ describe('An INVITE sent from a UAC', function () {
           basic: 100
         }
       };
-      session_options.media = myConstraints;
-      waitsFor('gum to be called', function () {
-        return gumSpy.calls.length;
-      }, 100);
-      runs(function () {
-        expect(gumSpy.mostRecentCall.args[0]).toEqual(myConstraints);
-      });
+      session_options.media = {constraints: myConstraints};session = ua.invite('alice@example.com', session_options);
+
+      session = ua.invite('alice@example.com', session_options);
     });
 
-    it('TODO defined as stream, uses the stream', function () {
+    xit('TODO defined as stream, uses the stream', function () {
       // TODO
     });
 
-    it('TODO defined as manager, uses the manager', function () {
+    xit('TODO defined as manager, uses the manager', function () {
       // TODO
     });
   });
@@ -351,146 +292,129 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   describe('when receiving a 1xx response', function () {
-    beforeEach(function() {
+    var uas;
+
+    beforeEach(function(done) {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config);
+      uas = new SIP.UA(ua_config).once('connected', function () {
+        uas.transport.ws.send.and.callFake(function (){
+          var arg0 = uas.transport.ws.send.calls.mostRecent().args[0];
+          if (arg0.indexOf('180 Ringing') >= 0) {
+            spyOn(session, 'emit').and.callFake(function (){
+              setTimeout(done, 0);
+            });
+            ua.transport.ws.receiveMessage(arg0);
+          }
+        });
 
-      waitsFor(function () {
-        return sendSpy.calls.length > 0 && uas.isConnected();
-      }, 'Send never called', 500);
-
-      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
+        if (ua.transport.ws.send.calls.mostRecent() && ua.transport.ws.send.calls.mostRecent().args[0].indexOf('INVITE') >= 0) {
+          uas.transport.ws.receiveMessage(ua.transport.ws.send.calls.mostRecent().args[0]);
+        } else {
+          ua.transport.ws.send.and.callFake(function () {
+            var arg0 = ua.transport.ws.send.calls.mostRecent().args[0];
+            if (arg0.indexOf('INVITE') >= 0) {
+              uas.transport.ws.receiveMessage(arg0);
+            }
+          });
+        }
+      });
     });
 
     it('fires the `progress` event', function () {
-      waitsFor( function() {
-        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('180 Ringing') >= 0;
-      }, 'accept never called', 500);
-
-      runs(function() {
-        spyOn(session, 'emit');
-        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-
-        expect(session.emit.mostRecentCall.args[0]).toBe('progress');
-      });
+      expect(session.emit.calls.mostRecent().args[0]).toBe('progress');
     });
   });
 
-  describe('when receiving a 2xx response', function () {
+  describe('when receiving a 2xx response', function (done) {
     var uas;
 
-    beforeEach(function() {
+    beforeEach(function(done) {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).on('invite', function (newSession) {
+      uas = new SIP.UA(ua_config).once('invite', function (newSession) {
+        spyOn(session, 'accepted').and.callFake(function() {
+          setTimeout(done, 0);
+        });
+
+        uas.transport.ws.send.and.callFake(function () {
+          if (uas.transport.ws.send.calls.mostRecent().args[0].indexOf('200 OK') >= 0) {
+            ua.transport.ws.receiveMessage(uas.transport.ws.send.calls.mostRecent().args[0]);
+          }
+        });
+
         newSession.accept();
+      }).once('connected', function () {
+        if (ua.transport.ws.send.calls.mostRecent() && ua.transport.ws.send.calls.mostRecent().args[0].indexOf('INVITE') >= 0) {
+          uas.transport.ws.receiveMessage(ua.transport.ws.send.calls.mostRecent().args[0]);
+        } else {
+          ua.transport.ws.send.and.callFake(function () {
+            var arg0 = ua.transport.ws.send.calls.mostRecent().args[0];
+            if (arg0.indexOf('INVITE') >= 0) {
+              uas.transport.ws.receiveMessage(arg0);
+            }
+          });
+        }
       });
-
-      waitsFor(function () {
-        return sendSpy.calls.length > 0 && uas.isConnected();
-      }, 'Send never called', 500);
-
-      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
-    });
-
-    afterEach(function () {
-      var session;
-      for (session in uas.sessions) {
-        uas.sessions[session].close();
-      }
     });
 
     it('fires the `accepted` event', function () {
-      waitsFor( function() {
-        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('200 OK') >= 0;
-      }, 'accept never called', 500);
-
-      runs(function() {
-        spyOn(session, 'accepted');
-        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
-
-     waitsFor( function() {
-       return session.accepted.calls.length > 0;
-     }, 'accepted never called', 500);
+      expect(session.accepted).toHaveBeenCalled();
     });
 
     it('sends an ACK', function () {
-      waitsFor( function() {
-        return sendSpy.mostRecentCall.args[0].indexOf('200 OK') >= 0;
-      }, 'accept never called', 500);
-
-      runs(function() {
-        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
-
-      waitsFor( function() {
-        return sendSpy.mostRecentCall.args[0].indexOf('ACK') >= 0;
-      }, 'ACK never sent', 500);
+      expect(ua.transport.ws.send.calls.mostRecent().args[0]).toContain('ACK');
     });
   });
 
   describe('when receiving a 3xx-6xx response', function () {
-    beforeEach(function() {
+    var uas;
+
+    beforeEach(function(done) {
       ua_config.uri = 'alice@example.com';
 
-      uas = new SIP.UA(ua_config).on('invite', function (newSession) {
+      uas = new SIP.UA(ua_config).once('invite', function (newSession) {
+        spyOn(session, 'rejected').and.callFake(function () {
+          setTimeout(done, 0);
+        });
+
+        uas.transport.ws.send.and.callFake(function () {
+          if (uas.transport.ws.send.calls.mostRecent().args[0].indexOf('480') >= 0) {
+            ua.transport.ws.receiveMessage(uas.transport.ws.send.calls.mostRecent().args[0]);
+          }
+        });
+
         newSession.reject();
+      }).once('connected', function () {
+        if (ua.transport.ws.send.calls.mostRecent() && ua.transport.ws.send.calls.mostRecent().args[0].indexOf('INVITE') >= 0) {
+          uas.transport.ws.receiveMessage(ua.transport.ws.send.calls.mostRecent().args[0]);
+        } else {
+          ua.transport.ws.send.and.callFake(function () {
+            var arg0 = ua.transport.ws.send.calls.mostRecent().args[0];
+            if (arg0.indexOf('INVITE') >= 0) {
+              uas.transport.ws.receiveMessage(arg0);
+            }
+          });
+        }
       });
-
-      waitsFor(function () {
-        return sendSpy.calls.length > 0 && uas.isConnected();
-      }, 'Send never called', 500);
-
-      runs(function(){uas.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);});
     });
 
     it('fires the `rejected` event', function () {
-      waitsFor( function() {
-        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('480') >= 0;
-      }, 'reject never called', 500);
-
-      runs(function() {
-        spyOn(session, 'rejected');
-        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
-
-      waitsFor( function() {
-        return session.rejected.calls.length > 0;
-      }, 'rejected never called', 500);
+      expect(session.rejected).toHaveBeenCalled();
     });
 
     it('sends an ACK', function () {
-      waitsFor( function() {
-        return ua.isConnected() && sendSpy.mostRecentCall.args[0].indexOf('480') >= 0;
-      }, 'reject never called', 500);
-
-      runs(function() {
-        ua.transport.ws.receiveMessage(sendSpy.mostRecentCall.args[0]);
-      });
-
-      waitsFor( function() {
-        return sendSpy.mostRecentCall.args[0].indexOf('ACK') >= 0;
-      }, 'ACK never sent', 500);
+      expect(ua.transport.ws.send.calls.mostRecent().args[0]).toContain('ACK');
     });
   });
 
 });
 
 describe('A UAS receiving an INVITE', function () {
-  var ua, session, ua_config, sendSpy, ws;
-
-  afterEach(function () {
-    if (ua) {
-      ua.stop();
-    }
-    ua = session = ws = null;
-  });
+  var ua, session, ua_config;
 
   describe('without SDP', function () {
     it('creates an invite server context with the UA\'s mediaHandlerFactory, the ISC emits invite', function () {
-      sendSpy = spyOn(window.WebSocket.prototype, 'send');
       ua_config = {
         uri: 'alice@example.com',
         register: false,
@@ -498,216 +422,160 @@ describe('A UAS receiving an INVITE', function () {
       };
 
       spyOn(ua_config, 'mediaHandlerFactory');
-      spyOn(SIP, 'InviteServerContext').andCallThrough();
+      spyOn(SIP, 'InviteServerContext').and.callThrough();
       var callback = jasmine.createSpy('callback');
 
-      jasmine.Clock.useMock();
+      jasmine.clock().install();
 
-      var ua;
-      ua = new SIP.UA(ua_config).on('connected', function () {
+      ua = new SIP.UA(ua_config).once('connected', function () {
         ws = ua.transport.ws;
         ws.receiveMessage(Messages.Invite.nosdp);
-      }).on('invite', callback);
+      }).once('invite', callback);
 
-      jasmine.Clock.tick(100);
+      jasmine.clock().tick(100);
 
       expect(SIP.InviteServerContext).toHaveBeenCalled();
       expect(ua_config.mediaHandlerFactory).toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
+
+      jasmine.clock().uninstall();
     });
   });
 
   describe('with 100rel unsupported', function () {
-    beforeEach(function () {
-      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+    beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
         register: false
       };
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
-        ws = ua.transport.ws;
-        ws.receiveMessage(Messages.Invite.normal);
-      }).on('invite', function (s) {
+      ua = new SIP.UA(ua_config).once('connected', function () {
+        ua.transport.ws.receiveMessage(Messages.Invite.normal);
+      }).once('invite', function (s) {
         session = s;
+        setTimeout(done, 0);
       });
-
-      waitsFor('invite event to be fired', function () {
-        return session;
-      }, 2000);
     });
 
     describe('sending a progress response', function () {
       it('sends 100 unreliably with no body', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 100 });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 100 Trying');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 100 });
       });
 
       it('sends 1xx unreliably with no body', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 180 });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 180 Ringing');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 180 });
       });
     });
   });
 
   describe('with 100rel supported', function () {
-    beforeEach(function () {
-      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+    beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
         register: false
       };
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
-        ws = ua.transport.ws;
-        ws.receiveMessage(Messages.Invite.rel100sup);
-      }).on('invite', function (s) {
+      ua = new SIP.UA(ua_config).once('connected', function () {
+        ua.transport.ws.receiveMessage(Messages.Invite.rel100sup);
+      }).once('invite', function (s) {
         session = s;
+        setTimeout(done, 0);
       });
-
-      waitsFor('invite event to be fired', function () {
-        return session;
-      }, 2000);
     });
 
     describe('sending a progress response', function () {
       it('sends 100 unreliably with no body', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 100 });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 100 Trying');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 100 });
       });
 
       it('sends 1xx unreliably with no body', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 183 });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 183 Session Progress');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 183 });
       });
 
       it('sends 1xx reliably with a body, when rel100 specified', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 183, rel100: true });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 183 Session Progress');
           expect(packet).toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch(/Content-Length: [^0].*\r\n/);
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 183, rel100: true });
       });
     });
   });
 
   describe('with 100rel required', function () {
-    beforeEach(function () {
-      sendSpy = spyOn(window.WebSocket.prototype, 'send');
+    beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
         register: false
       };
 
-      ua = new SIP.UA(ua_config).on('connected', function () {
-        ws = ua.transport.ws;
-        ws.receiveMessage(Messages.Invite.rel100req);
-      }).on('invite', function (s) {
+      ua = new SIP.UA(ua_config).once('connected', function () {
+        ua.transport.ws.receiveMessage(Messages.Invite.rel100req);
+      }).once('invite', function (s) {
         session = s;
+        setTimeout(done, 0);
       });
-
-      waitsFor('invite event to be fired', function () {
-        return session;
-      }, 2000);
     });
 
     describe('sending a progress response', function () {
       it('sends 100 unreliably with no body', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 100 });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 100 Trying');
           expect(packet).not.toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch('Content-Length: 0\r\n');
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 100 });
       });
 
       it('sends 1xx reliably with a body', function () {
-        runs(function () {
-          sendSpy.reset();
-          session.progress({ statusCode: 180 });
-        });
-
-        waitsFor('response to be sent', function () {
-          return sendSpy.calls.length;
-        }, 200);
-
-        runs(function () {
-          var packet = sendSpy.mostRecentCall.args[0];
+        ua.transport.ws.send.and.callFake(function () {
+          var packet = ua.transport.ws.send.calls.mostRecent().args[0];
           expect(packet).toMatch('SIP/2.0 180 Ringing');
           expect(packet).toMatch(/Require *:[^\r]*100rel/);
           expect(packet).toMatch(/Content-Length: [^0].*\r\n/);
         });
+
+        ua.transport.ws.send.calls.reset();
+        session.progress({ statusCode: 180 });
       });
     });
   });

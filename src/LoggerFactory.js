@@ -1,9 +1,8 @@
+var Logger = require('./Logger');
 
-(function(SIP) {
+var console = require('console');
 
-var Logger = @@include('../src/Logger.js')
-
-var LoggerFactory = function() {
+var LoggerFactory = module.exports = function () {
   var logger,
     levels = {
     'error': 0,
@@ -28,7 +27,7 @@ var LoggerFactory = function() {
         if (typeof value === 'boolean') {
           builtinEnabled = value;
         } else {
-          logger.error('invalid "builtinEnabled" parameter value: '+ window.JSON.stringify(value));
+          logger.error('invalid "builtinEnabled" parameter value: '+ JSON.stringify(value));
         }
       }
     },
@@ -43,7 +42,7 @@ var LoggerFactory = function() {
         } else if (levels.hasOwnProperty(value)) {
           level = levels[value];
         } else {
-          logger.error('invalid "level" parameter value: '+ window.JSON.stringify(value));
+          logger.error('invalid "level" parameter value: '+ JSON.stringify(value));
         }
       }
     },
@@ -56,7 +55,7 @@ var LoggerFactory = function() {
         } else if (typeof value === 'function') {
           connector = value;
         } else {
-          logger.error('invalid "connector" parameter value: '+ window.JSON.stringify(value));
+          logger.error('invalid "connector" parameter value: '+ JSON.stringify(value));
         }
       }
     }
@@ -142,6 +141,3 @@ LoggerFactory.prototype.getLogger = function(category, label) {
     return logger;
   }
 };
-
-SIP.LoggerFactory = LoggerFactory;
-}(SIP));

@@ -6,17 +6,14 @@
  * SIP Exceptions.
  * @augments SIP
  */
-(function(SIP) {
-var Exceptions;
-
-Exceptions= {
+module.exports = {
   ConfigurationError: (function(){
     var exception = function(parameter, value) {
       this.code = 1;
       this.name = 'CONFIGURATION_ERROR';
       this.parameter = parameter;
       this.value = value;
-      this.message = (!this.value)? 'Missing parameter: '+ this.parameter : 'Invalid value '+ window.JSON.stringify(this.value) +' for parameter "'+ this.parameter +'"';
+      this.message = (!this.value)? 'Missing parameter: '+ this.parameter : 'Invalid value '+ JSON.stringify(this.value) +' for parameter "'+ this.parameter +'"';
     };
     exception.prototype = new Error();
     return exception;
@@ -43,16 +40,13 @@ Exceptions= {
     return exception;
   }()),
 
-  NotReadyError: (function(){
+  GetDescriptionError: (function(){
     var exception = function(message) {
       this.code = 4;
-      this.name = 'NOT_READY_ERROR';
+      this.name = 'GET_DESCRIPTION_ERROR';
       this.message = message;
     };
     exception.prototype = new Error();
     return exception;
   }())
 };
-
-SIP.Exceptions = Exceptions;
-}(SIP));

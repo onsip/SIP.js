@@ -6,7 +6,22 @@ describe('Dialogs', function() {
   beforeEach(function() {
     var ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send']);
-    message = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', ua);
+    message = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
     spyOn(message, 'reply');
 
     message.transport = ua.transport;
@@ -26,7 +41,21 @@ describe('Dialogs', function() {
   });
 
   it('returns an error if the message has no contact header', function() {
-    var mes = SIP.Parser.parseMessage('INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 11\r\n\r\na=sendrecv\r\n', owner.ua);
+    var mes = SIP.Parser.parseMessage([
+      'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 11',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), owner.ua);
 
     mes.transport = owner.ua.transport;
 
@@ -34,7 +63,20 @@ describe('Dialogs', function() {
   });
 
   it('sets the state correctly', function() {
-    var resp = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', owner.ua);
+    var resp = SIP.Parser.parseMessage([
+      'SIP/2.0 200 OK',
+      'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+      'Call-ID: upfrf7jpeb3rmc0gnnq1',
+      'CSeq: 9059 INVITE',
+      'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+      'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+      'Supported: outbound',
+      'Content-Type: application/sdp',
+      'Content-Length: 11',
+      '',
+      'a= sendrecv',
+      ''].join('\r\n'), owner.ua);
 
     resp.transport = owner.ua.transport;
 
@@ -104,7 +146,7 @@ describe('Dialogs', function() {
   });
 
   it('sets logger, owner, dialogs array, and logs', function() {
-    var logger = owner.ua.getLogger('sip.dialog', this.id.toString());
+    var logger = owner.ua.getLogger('sip.dialog', Dialog.id.toString());
 
     spyOn(logger, 'log');
 
@@ -175,7 +217,7 @@ describe('Dialogs', function() {
 
   describe('.createRequest', function() {
     beforeEach(function() {
-      spyOn(SIP, 'OutgoingRequest').andReturn({made: 'successful'});
+      spyOn(SIP, 'OutgoingRequest').and.returnValue({made: 'successful'});
     });
 
     it('returns a request with proper settings, doesn\'t increment local_seqnum', function() {
@@ -256,19 +298,19 @@ describe('Dialogs', function() {
 
       expect(Dialog.checkInDialogRequest(request)).toBe(false);
 
-      expect(request.reply.calls[0].args[0]).toBe(500);
+      expect(request.reply.calls.mostRecent().args[0]).toBe(500);
     });
 
     it('returns true and calls server_transaction.on once if neither of the *_pending_reply properties are true, the request method is INVITE, and the request does not have a contact header', function() {
       expect(Dialog.uac_pending_reply).toBe(false);
       expect(Dialog.uas_pending_reply).toBe(false);
 
-      spyOn(request, 'hasHeader').andReturn(false);
+      spyOn(request, 'hasHeader').and.returnValue(false);
 
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
       expect(request.server_transaction.on).toHaveBeenCalled();
-      expect(request.server_transaction.on.calls.length).toBe(1);
+      expect(request.server_transaction.on.calls.count()).toBe(1);
     });
 
     it('returns true and calls server_transaction.on twice if neither of the *_pending_reply properties are true, the request method is INVITE, and the request has have a contact header', function() {
@@ -278,7 +320,7 @@ describe('Dialogs', function() {
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
       expect(request.server_transaction.on).toHaveBeenCalled();
-      expect(request.server_transaction.on.calls.length).toBe(2);
+      expect(request.server_transaction.on.calls.count()).toBe(2);
     });
 
     it('returns true and calls server.transaction.on once if the request method is NOTIFY and the request has a contact header', function() {
@@ -287,7 +329,7 @@ describe('Dialogs', function() {
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
       expect(request.server_transaction.on).toHaveBeenCalled();
-      expect(request.server_transaction.on.calls.length).toBe(1);
+      expect(request.server_transaction.on.calls.count()).toBe(1);
     });
   });
 
@@ -308,7 +350,7 @@ describe('Dialogs', function() {
     });
 
     it('does not call owner.receiveRequest if checkInDialogRequest returns false', function() {
-      spyOn(Dialog, 'checkInDialogRequest').andReturn(false);
+      spyOn(Dialog, 'checkInDialogRequest').and.returnValue(false);
 
       Dialog.receiveRequest(request);
 
@@ -316,7 +358,7 @@ describe('Dialogs', function() {
     });
 
     it('calls owner.receiveRequest if checkInDialogRequest returns false', function() {
-      spyOn(Dialog, 'checkInDialogRequest').andReturn(true);
+      spyOn(Dialog, 'checkInDialogRequest').and.returnValue(true);
 
       Dialog.receiveRequest(request);
 
