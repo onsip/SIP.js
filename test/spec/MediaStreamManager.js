@@ -161,16 +161,17 @@ describe('MediaStreamManager', function () {
       });
     });
 
-    it('.acquire called twice in a row does not fail', function () {
-      mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure)
-        .then(mediaStreamManager.acquire(mediaHint)).then(onSuccess, onFailure)
-        .then(function () {
+    it('.acquire called twice in a row does not fail', function (done) {
+      mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure).
+        then(mediaStreamManager.acquire(mediaHint)).then(onSuccess, onFailure).
+        then(function () {
           expect(onSuccess).toHaveBeenCalled();
-        })
-        .catch(function () {
+          done();
+        }).
+        catch(function () {
           expect(onFailure).not.toHaveBeenCalled();
-        })
-      ;
+          done();
+        });
     });
 
     it('.release does not stop the stream', function (done) {
