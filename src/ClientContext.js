@@ -70,6 +70,8 @@ ClientContext.prototype.receiveResponse = function (response) {
   var cause = SIP.Utils.getReasonPhrase(response.status_code);
 
   switch(true) {
+    case /^100$/.test(response.status_code):
+      break;
     case /^1[0-9]{2}$/.test(response.status_code):
       this.emit('progress', response, cause);
       break;
