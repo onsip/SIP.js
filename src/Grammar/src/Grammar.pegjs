@@ -122,7 +122,7 @@ userinfo        = user (":" password)? "@" {
 
 user            = ( unreserved / escaped / user_unreserved )+
 
-user_unreserved = "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
+user_unreserved = "&" / "=" / "+" / "$" / "," / ";" / "?" / "/" / "#"
 
 password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
                     data.password = text(); }
