@@ -111,14 +111,14 @@ var MediaHandler = function(session, options) {
     if (this.iceConnectionState === 'failed') {
       self.emit('iceFailed', this);
     }
-    
-  	if (this.iceConnectionState === 'disconnected') {
-  	  self.emit('iceDisconnected', this);
-  	}
 
-  	if (this.iceConnectionState === 'closed') {
-  	  self.emit('iceClosed', this);
-  	}
+    if (this.iceConnectionState === 'disconnected') {
+       self.emit('iceDisconnected', this);
+    }
+
+    if (this.iceConnectionState === 'closed') {
+        self.emit('iceClosed', this);
+    }
 
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
     //normal calls switch from failed to connected in some cases, so checking for failed and terminated
