@@ -88,6 +88,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
 
       if (parsed === -1) {
         parsed = undefined;
+        break;
       }
 
       length = parsed.length;
@@ -111,6 +112,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
 
       if (parsed === -1) {
         parsed = undefined;
+        break;
       }
 
       length = parsed.length;
