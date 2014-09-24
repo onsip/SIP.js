@@ -12,6 +12,27 @@ var Hacks;
 
 Hacks = {
 
+  AllBrowsers: {
+    maskDtls: function (message) {
+      if (message.body) {
+        message.body = message.body.replace(/ UDP\/TLS\/RTP\/SAVP/gmi, " RTP/SAVP");
+      }
+    },
+    unmaskDtls: function (sdp) {
+      /**
+       * Chrome does not handle DTLS correctly (Canaray does, but not production)
+       * keeping Chrome as SDES until DTLS is fixed (comment out 'is_opera' condition)
+       *
+       * UPDATE: May 21, 2014
+       * Chrome 35 now properly defaults to DTLS.  Only Opera remains using SDES
+       *
+       * UPDATE: 2014-09-24
+       * Opera now supports DTLS by default as well.
+       *
+       **/
+      return sdp.replace(/ RTP\/SAVP/gmi, " UDP/TLS/RTP/SAVP");
+    }
+  },
   Firefox: {
     /* Condition to detect if hacks are applicable */
     isFirefox: function () {
@@ -73,6 +94,7 @@ Hacks = {
   Chrome: {
     needsExplicitlyInactiveSDP: function (sdp) {
       var sub, index;
+
       if (Hacks.Firefox.isFirefox()) { // Fix this in Firefox before sending
         index = sdp.indexOf('m=video 0');
         if (index !== -1) {

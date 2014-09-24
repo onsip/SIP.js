@@ -402,6 +402,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       var sdp = self.peerConnection.localDescription.sdp;
 
       sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
+      sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
 
       var sdpWrapper = {
         type: methodName === 'createOffer' ? 'offer' : 'answer',
