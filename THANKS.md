@@ -3,7 +3,7 @@ THANKS
 
 Thank you to all of the contributors with code and patches to the SIP.js project, as well as to the JsSIP project, without which this would not be possible.
 
-* [Joseph Frazier](joseph@onsip.com)
+* [Sándor Balázs](https://github.com/sanyatuning)
 * The [LiveNinja](https://www.liveninja.com) Team ([GitHub](https://github.com/liveninja))
 
 Much credit goes to the original authors of the JsSIP project.  Thank you to all.
