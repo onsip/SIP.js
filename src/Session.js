@@ -1775,6 +1775,7 @@ InviteClientContext.prototype = {
 
           SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
           SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
+          SIP.Hacks.AllBrowsers.maskDtls(response);
 
           if (!response.body) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1892,6 +1893,7 @@ InviteClientContext.prototype = {
 
         SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
         SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
+        SIP.Hacks.AllBrowsers.maskDtls(response);
 
         // This is an invite without sdp
         if (!this.hasOffer) {
