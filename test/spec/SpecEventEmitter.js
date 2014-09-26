@@ -255,7 +255,7 @@ describe('EventEmitter', function () {
   describe('.emit', function () {
     var foo, bar, that;
     function removeSelf () {
-      EventEmitter.off('aaa', removeSelf);
+      EventEmitter.removeListener('aaa', removeSelf);
     }
 
     beforeEach(function () {
@@ -292,7 +292,7 @@ describe('EventEmitter', function () {
     });
 
     it('ignores off listeners', function () {
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       EventEmitter.emit('aaa');
       expect(foo).not.toHaveBeenCalled();
       expect(bar).toHaveBeenCalled();
