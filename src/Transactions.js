@@ -53,7 +53,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.initEvents(events);
 };
-NonInviteClientTransaction.prototype = new SIP.EventEmitter();
+NonInviteClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 NonInviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -163,7 +163,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.initEvents(events);
 };
-InviteClientTransaction.prototype = new SIP.EventEmitter();
+InviteClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 InviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -338,7 +338,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
 
   this.request.setHeader('via', via);
 };
-AckClientTransaction.prototype = new SIP.EventEmitter();
+AckClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 AckClientTransaction.prototype.send = function() {
   if(!this.transport.send(this.request)) {
@@ -377,7 +377,7 @@ var NonInviteServerTransaction = function(request, ua) {
 
   this.initEvents(events);
 };
-NonInviteServerTransaction.prototype = new SIP.EventEmitter();
+NonInviteServerTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 NonInviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -480,7 +480,7 @@ var InviteServerTransaction = function(request, ua) {
 
   this.initEvents(events);
 };
-InviteServerTransaction.prototype = new SIP.EventEmitter();
+InviteServerTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 InviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;

@@ -20,7 +20,19 @@
 
   require('./Utils')(SIP);
   SIP.LoggerFactory = require('./LoggerFactory');
-  require('./EventEmitter')(SIP);
+  SIP.EventEmitter = require('events').EventEmitter;
+  SIP.EventEmitter.prototype.initEvents =
+  SIP.EventEmitter.prototype.initMoreEvents = function (events) {
+    events.forEach(function addLogListener (name) {
+      this.on(name, function logEmission () {
+        if (this.logger) {
+          this.logger.log('emitting event ' + name);
+        } else if (global.console && typeof jasmine === 'undefined') {
+          global.console.warn('(no logger) emitting event ' + name);
+        }
+      });
+    }, this);
+  };
   SIP.C = require('./Constants')(SIP.name, SIP.version);
   SIP.Exceptions = require('./Exceptions');
   SIP.Timers = require('./Timers');

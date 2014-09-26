@@ -253,7 +253,8 @@ SIP.Subscription.prototype = {
 
   failed: function(response, cause) {
     this.close();
-    return this.emit('failed', response, cause);
+    this.emit('failed', response, cause);
+    return this;
   },
 
   /**

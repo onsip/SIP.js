@@ -319,10 +319,7 @@ Session.prototype = {
       }
     }, this.ua).send();
 
-    // Emit the request event
-    if (this.checkEvent(method.toLowerCase())) {
-      this.emit(method.toLowerCase(), request);
-    }
+    this.emit(method.toLowerCase(), request);
 
     return this;
   },
@@ -687,7 +684,7 @@ Session.prototype = {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
           var
-            hasReferListener = this.checkListener('refer'),
+            hasReferListener = SIP.EventEmitter.listenerCount(this, 'refer') > 1,
             notifyBody = hasReferListener ?
               'SIP/2.0 100 Trying' :
               // RFC 3515.2.4.2: 'the UA MAY decline the request.'
@@ -891,20 +888,23 @@ Session.prototype = {
 
   failed: function(response, cause) {
     this.close();
-    return this.emit('failed', response, cause);
+    this.emit('failed', response, cause);
+    return this;
   },
 
   rejected: function(response, cause) {
     this.close();
-    return this.emit('rejected',
+    this.emit('rejected',
       response || null,
       cause
     );
+    return this;
   },
 
   canceled: function() {
     this.close();
-    return this.emit('cancel');
+    this.emit('cancel');
+    return this;
   },
 
   accepted: function(response, cause) {
@@ -912,21 +912,24 @@ Session.prototype = {
 
     this.startTime = new Date();
 
-    return this.emit('accepted', response, cause);
+    this.emit('accepted', response, cause);
+    return this;
   },
 
   terminated: function(message, cause) {
     this.endTime = new Date();
 
     this.close();
-    return this.emit('terminated', {
+    this.emit('terminated', {
       message: message || null,
       cause: cause || null
     });
+    return this;
   },
 
   connecting: function(request) {
-    return this.emit('connecting', { request: request });
+    this.emit('connecting', { request: request });
+    return this;
   }
 };
 

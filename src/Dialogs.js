@@ -190,7 +190,7 @@ Dialog.prototype = {
                 this.state === SIP.Transactions.C.STATUS_COMPLETED ||
                 this.state === SIP.Transactions.C.STATUS_TERMINATED) {
 
-              this.off('stateChanged', stateChanged);
+              this.removeListener('stateChanged', stateChanged);
               self.uas_pending_reply = false;
 
               if (self.uac_pending_reply === false) {
