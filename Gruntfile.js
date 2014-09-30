@@ -88,6 +88,9 @@ module.exports = function(grunt) {
         }
       },
       options: {
+        beautify : {
+          ascii_only : true
+        },
         banner: '<%= meta.banner %>'
       }
     },
