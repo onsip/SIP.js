@@ -4,10 +4,11 @@
 module.exports = function(grunt) {
 
   var pkg = grunt.file.readJSON('package.json');
+  var year = new Date().getFullYear()
   var banner = '\
 /*\n\
- * SIP version <%= pkg.version %>\n\
- * Copyright (c) 2014-<%= grunt.template.today("yyyy") %> Junction Networks, Inc <http://www.onsip.com>\n\
+ * SIP version ' + pkg.version + '\n\
+ * Copyright (c) 2014-' + year + ' Junction Networks, Inc <http://www.onsip.com>\n\
  * Homepage: http://sipjs.com\n\
  * License: http://sipjs.com/license/\n\
  *\n\
@@ -55,12 +56,8 @@ module.exports = function(grunt) {
           standalone: 'SIP'
         },
         postBundleCB: function (err, src, next) {
-          // prepend the banner and fill in placeholders
-          src = (banner + src).replace(/<%=(.*)%>/g, function (match, expr) {
-            // jshint evil:true
-            return eval(expr);
-          });
-          next(err, src);
+          // prepend the banner
+          next(err, banner + src);
         }
       }
     },
