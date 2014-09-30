@@ -473,12 +473,17 @@ UA.prototype.onTransportError = function(transport) {
   this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ SIP.Transport.C.STATUS_ERROR);
 
   // Close sessions.
-  //Mark this transport as 'down' and try the next one
+  //Mark this transport as 'down'
   transport.server.status = SIP.Transport.C.STATUS_ERROR;
 
   this.emit('disconnected', {
     transport: transport
   });
+
+  // try the next transport if the UA isn't closed
+  if(this.status === C.STATUS_USER_CLOSED) {
+    return;
+  }
 
   server = this.getNextWsServer();
 
