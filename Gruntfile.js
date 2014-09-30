@@ -65,6 +65,10 @@ module.exports = function(grunt) {
       }
     },
     copy: {
+      min: {
+        src: 'dist/<%= name %>-<%= pkg.version %>.min.js',
+        dest: 'dist/<%= name %>.min.js'
+      },
       dist: {
         src: 'dist/<%= name %>-<%= pkg.version %>.js',
         dest: 'dist/<%= name %>.js'
@@ -77,11 +81,6 @@ module.exports = function(grunt) {
       }
     },
     uglify: {
-      dist: {
-        files: {
-          'dist/<%= name %>.min.js': ['dist/<%= name %>.js']
-        }
-      },
       devel: {
         files: {
           'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
@@ -193,7 +192,7 @@ module.exports = function(grunt) {
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-  grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'copy', 'uglify']);
+  grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'uglify', 'copy']);
 
   // Task for building sip-devel.js (uncompressed).
   grunt.registerTask('devel', ['jshint', 'browserify']);
