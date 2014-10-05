@@ -82,51 +82,19 @@ LoggerFactory.prototype.print = function(target, category, label, content) {
   }
 };
 
-LoggerFactory.prototype.debug = function(category, label, content) {
-  if (this.level === 3) {
-    if (this.builtinEnabled) {
-      this.print(console.debug, category, label, content);
+['error', 'warn', 'log', 'debug'].forEach(function (targetName, level) {
+  LoggerFactory.prototype[targetName] = function (category, label, content) {
+    if (this.level >= level) {
+      if (this.builtinEnabled) {
+        this.print(console[targetName], category, label, content);
+      }
+
+      if (this.connector) {
+        this.connector(targetName, category, label, content);
+      }
     }
-
-    if (this.connector) {
-      this.connector('debug', category, label, content);
-    }
-  }
-};
-
-LoggerFactory.prototype.log = function(category, label, content) {
-  if (this.level >= 2) {
-    if (this.builtinEnabled) {
-      this.print(console.log, category, label, content);
-    }
-
-    if (this.connector) {
-      this.connector('log', category, label, content);
-    }
-  }
-};
-
-LoggerFactory.prototype.warn = function(category, label, content) {
-  if (this.level >= 1) {
-    if (this.builtinEnabled) {
-      this.print(console.warn, category, label, content);
-    }
-
-    if (this.connector) {
-      this.connector('warn', category, label, content);
-    }
-  }
-};
-
-LoggerFactory.prototype.error = function(category, label, content) {
-  if (this.builtinEnabled) {
-    this.print(console.error,category, label, content);
-  }
-
-  if (this.connector) {
-    this.connector('error', category, label, content);
-  }
-};
+  };
+});
 
 LoggerFactory.prototype.getLogger = function(category, label) {
   var logger;
