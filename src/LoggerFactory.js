@@ -1,14 +1,14 @@
 var console = require('console');
 
+var levels = {
+  'error': 0,
+  'warn': 1,
+  'log': 2,
+  'debug': 3
+};
+
 var LoggerFactory = module.exports = function () {
   var logger,
-    levels = {
-    'error': 0,
-    'warn': 1,
-    'log': 2,
-    'debug': 3
-    },
-
     level = 2,
     builtinEnabled = true,
     connector = null;
@@ -86,13 +86,13 @@ function Logger (logger, category, label) {
   this.label = label;
 }
 
-['error', 'warn', 'log', 'debug'].forEach(function (targetName, level) {
+Object.keys(levels).forEach(function (targetName) {
   Logger.prototype[targetName] = function (content) {
     this.logger[targetName](this.category, this.label, content);
   };
 
   LoggerFactory.prototype[targetName] = function (category, label, content) {
-    if (this.level >= level) {
+    if (this.level >= levels[targetName]) {
       if (this.builtinEnabled) {
         this.print(console[targetName], category, label, content);
       }
