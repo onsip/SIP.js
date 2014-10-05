@@ -1,5 +1,3 @@
-var Logger = require('./Logger');
-
 var console = require('console');
 
 var LoggerFactory = module.exports = function () {
@@ -82,7 +80,17 @@ LoggerFactory.prototype.print = function(target, category, label, content) {
   }
 };
 
+function Logger (logger, category, label) {
+  this.logger = logger;
+  this.category = category;
+  this.label = label;
+}
+
 ['error', 'warn', 'log', 'debug'].forEach(function (targetName, level) {
+  Logger.prototype[targetName] = function (content) {
+    this.logger[targetName](this.category, this.label, content);
+  };
+
   LoggerFactory.prototype[targetName] = function (category, label, content) {
     if (this.level >= level) {
       if (this.builtinEnabled) {

@@ -10,7 +10,6 @@
     <js-module name="/package.json" src="cordova_package.json.js" />
 
     <js-module name="Utils" src="src/Utils.js" />
-    <js-module name="Logger" src="src/Logger.js" />
     <js-module name="LoggerFactory" src="src/LoggerFactory.js" />
     <js-module name="EventEmitter" src="src/EventEmitter.js" />
     <js-module name="Constants" src="src/Constants.js" />
