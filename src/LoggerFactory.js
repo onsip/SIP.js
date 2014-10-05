@@ -61,23 +61,14 @@ var LoggerFactory = module.exports = function () {
 };
 
 LoggerFactory.prototype.print = function(target, category, label, content) {
-  var prefix = [];
-
-  prefix.push(new Date());
-
-  prefix.push(category);
-
-  if (label) {
-    prefix.push(label);
-  }
-
-  prefix.push('');
-
   if (typeof content === 'string') {
-    target.call(console, prefix.join(' | ') + content);
-  } else {
-    target.call(console, content);
+    var prefix = [new Date(), category];
+    if (label) {
+      prefix.push(label);
+    }
+    content = prefix.concat(content).join(' | ');
   }
+  target.call(console, content);
 };
 
 function Logger (logger, category, label) {
