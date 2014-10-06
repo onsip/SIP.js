@@ -86,7 +86,7 @@ Utils= {
     for (var i in prefixedNames) {
       var property = object[prefixedNames[i]];
       if (property) {
-        return property;
+        return property.bind(object);
       }
     }
   },
