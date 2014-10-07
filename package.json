@@ -6,8 +6,7 @@
   "main": "src/index.js",
   "browser": {
     "./src/Grammar/index.js": "./src/Grammar/dist/Grammar.js",
-    "promiscuous": "./src/polyfills/promiscuous.js",
-    "console": "./src/polyfills/console.js"
+    "./src/environment.js": "./src/environment_browser.js"
   },
   "homepage": "http://sipjs.com",
   "author": "Will Mitchell <will@onsip.com>",
