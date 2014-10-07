@@ -48,7 +48,7 @@ module.exports = function(grunt) {
     },
     browserify: {
       devel: {
-        src: 'src/SIP.js',
+        src: 'src/index.js',
         dest: 'dist/<%= name %>-<%= pkg.version %>.js'
       },
       options: {

@@ -1,4 +1,4 @@
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 
 var DTMF = require('./Session/DTMF')(SIP);
 
@@ -259,10 +259,10 @@ Session.prototype = {
       var target = request.parseHeader('refer-to').uri;
       if (!target.scheme.match("^sips?$")) {
         var targetString = target.toString();
-        if (typeof global.open === "function") {
-          global.open(targetString);
+        if (typeof environment.open === "function") {
+          environment.open(targetString);
         } else {
-          this.logger.warn("referred to non-SIP URI but `open` isn't a global function: " + targetString);
+          this.logger.warn("referred to non-SIP URI but `open` isn't in the environment: " + targetString);
         }
         return;
       }
