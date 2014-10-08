@@ -39,8 +39,10 @@ MediaStreamManager.streamId = function (stream) {
     .join('');
 };
 
-MediaStreamManager.render = function render (stream, elements) {
-  if (!elements) {
+MediaStreamManager.render = function render (streams, elements) {
+  // only render first stream, see pull request #76
+  var stream = streams[0];
+  if (!elements || !stream) {
     return false;
   }
 
@@ -89,10 +91,13 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
   'acquire': {value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
-    var saveSuccess = function (isHintStream, stream) {
-      var streamId = MediaStreamManager.streamId(stream);
-      this.acquisitions[streamId] = !!isHintStream;
-      return SIP.Utils.Promise.resolve(stream);
+    var saveSuccess = function (isHintStream, streams) {
+      streams = [].concat(streams);
+      streams.forEach(function (stream) {
+        var streamId = MediaStreamManager.streamId(stream);
+        this.acquisitions[streamId] = !!isHintStream;
+      }, this);
+      return SIP.Utils.Promise.resolve(streams);
     }.bind(this);
 
     if (mediaHint.stream) {
@@ -135,12 +140,15 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     }
   }},
 
-  'release': {value: function release (stream) {
-    var streamId = MediaStreamManager.streamId(stream);
-    if (this.acquisitions[streamId] === false) {
-      stream.stop();
-    }
-    delete this.acquisitions[streamId];
+  'release': {value: function release (streams) {
+    streams = [].concat(streams);
+    streams.forEach(function (stream) {
+      var streamId = MediaStreamManager.streamId(stream);
+      if (this.acquisitions[streamId] === false) {
+        stream.stop();
+      }
+      delete this.acquisitions[streamId];
+    }, this);
   }},
 });
 

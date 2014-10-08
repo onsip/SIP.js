@@ -193,10 +193,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.mediaHint = mediaHint;
 
     /*
-     * 1. acquire stream (skip if MediaStream passed in)
-     * 2. addStream
+     * 1. acquire streams (skip if MediaStreams passed in)
+     * 2. addStreams
      * 3. createOffer/createAnswer
-     * 4. call onSuccess()
      */
 
     var streamPromise;
@@ -207,18 +206,18 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     else {
       self.logger.log('acquiring local media');
       streamPromise = self.mediaStreamManager.acquire(mediaHint)
-        .then(function acquireSucceeded(stream) {
-          self.logger.log('acquired local media stream');
-          self.localMedia = stream;
+        .then(function acquireSucceeded(streams) {
+          self.logger.log('acquired local media streams');
+          self.localMedia = streams;
           self.session.connecting();
-          return stream;
+          return streams;
         }, function acquireFailed(err) {
-          self.logger.error('unable to acquire stream');
+          self.logger.error('unable to acquire streams');
           self.logger.error(err);
           self.session.connecting();
           throw err;
         })
-        .then(this.addStream.bind(this))
+        .then(this.addStreams.bind(this))
       ;
     }
 
@@ -393,9 +392,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     Object.keys(streamGetters).forEach(function (loc) {
       var streamGetter = streamGetters[loc];
       var streams = this[streamGetter]();
-      if (streams.length) {
-        SIP.WebRTC.MediaStreamManager.render(streams[0], renderHint[loc]);
-      }
+      SIP.WebRTC.MediaStreamManager.render(streams, renderHint[loc]);
     }.bind(this));
   }},
 
@@ -452,9 +449,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     ;
   }},
 
-  addStream: {writable: true, value: function addStream (stream) {
+  addStreams: {writable: true, value: function addStreams (streams) {
     try {
-      this.peerConnection.addStream(stream);
+      streams.forEach(function (stream) {
+        this.peerConnection.addStream(stream);
+      }, this);
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
