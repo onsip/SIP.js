@@ -27,6 +27,12 @@ Utils= {
   },
 
   addPromise: function addPromise (f, thisArg, length) {
+    if (!f) {
+      f = function (succ, fail) {
+        fail('addPromise: argument function was falsy');
+      };
+      length = f.length;
+    }
     var callbacksIndex = (length || f.length) - 2;
     return function withPromise () {
       var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
