@@ -821,6 +821,31 @@ ttl               = ttl: (DIGIT DIGIT ? DIGIT ?) {
 WWW_Authenticate  = www_authenticate: challenge
 
 
+// RFC 4028
+
+Session_Expires   = deltaSeconds:delta_seconds (SEMI se_params)*
+                    {
+                      if (options.startRule === 'Session_Expires') {
+                        options.data.deltaSeconds = deltaSeconds;
+                      }
+                    }
+
+se_params         = refresher_param / generic_param
+
+refresher_param   = "refresher" EQUAL endpoint:("uas" / "uac")
+                    {
+                      if (options.startRule === 'Session_Expires') {
+                        options.data.refresher = endpoint;
+                      }
+                    }
+
+Min_SE            = deltaSeconds:delta_seconds (SEMI generic_param)*
+                    {
+                      if (options.startRule === 'Min_SE') {
+                        options.data = deltaSeconds;
+                      }
+                    }
+
 // EXTENSION-HEADER
 
 extension_header  = extension_header: header_name HCOLON header_value: header_value

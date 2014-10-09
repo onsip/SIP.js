@@ -204,6 +204,7 @@ Utils= {
     var exceptions = {
       'Call-Id': 'Call-ID',
       'Cseq': 'CSeq',
+      'Min-Se': 'Min-SE',
       'Rack': 'RAck',
       'Rseq': 'RSeq',
       'Www-Authenticate': 'WWW-Authenticate'
