@@ -9,9 +9,15 @@ function hasSmallMinSE (message) {
   return supportedOptions.indexOf('timer') >= 0 && sessionExpires.deltaSeconds < localMinSE;
 }
 
-function updateState (dialog, response) {
+// `response` is an IncomingResponse or a String (outgoing response)
+function updateState (dialog, response, parseMessage, ua) {
   dialog.sessionTimerState = dialog.sessionTimerState || {};
   Timers.clearTimeout(dialog.sessionTimerState.timeout);
+
+  var isUAS = typeof response === 'string';
+  if (isUAS) {
+    response = parseMessage(response, ua);
+  }
 
   var sessionExpires = response.parseHeader('Session-Expires');
   // If the most recent 2xx response had no Session-Expires header field, there
@@ -22,7 +28,7 @@ function updateState (dialog, response) {
   }
 
   var interval = sessionExpires.deltaSeconds;
-  var isRefresher = sessionExpires.refresher === dialog.type.toLowerCase();
+  var isRefresher = isUAS === (sessionExpires.refresher === 'uas');
 
   dialog.sessionTimerState = {
     interval: interval,
