@@ -139,7 +139,7 @@ hostname        = ( domainlabel "." )* toplabel  "." ? {
 
 domainlabel     = domainlabel: ( [a-zA-Z0-9_-]+ )
 
-toplabel        = toplabel: ( [a-zA-Z_-]+ )
+toplabel        = toplabel: ( [a-zA-Z][a-zA-Z0-9-]* )
 
 IPv6reference   = "[" IPv6address "]" {
                     data.host_type = 'IPv6';
@@ -537,9 +537,9 @@ Expires     = expires: delta_seconds {data = expires; }
 
 
 Event             = event_type: event_type ( SEMI event_param )* {
-                       data.event = event_type.join('').toLowerCase(); }
+                       data.event = event_type.toLowerCase(); }
 
-event_type        = event_package ( "." event_template )*
+event_type        = $( event_package ( "." event_template )* )
 
 event_package     = token_nodot
 

@@ -26,17 +26,19 @@ describe('Subscription', function() {
       expect(function() {new SIP.Subscription(ua, 'alice@example.com');}).toThrowError('Event necessary to create a subscription.');
     });
 
-    it('sets expires to default if nothing is passed, a number < 3600 is passed, or a non-number is passed', function() {
+    it('sets expires to 3600 if nothing is passed, or a non-number is passed', function() {
       Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog');
-      expect(Subscription.expires).toBe(3600);
-
-      Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog', {expires: 1000});
       expect(Subscription.expires).toBe(3600);
 
       spyOn(ua.logger, 'warn');
       Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog', {expires: 'nope'});
       expect(Subscription.expires).toBe(3600);
       expect(ua.logger.warn).toHaveBeenCalledWith('expires must be a number. Using default of 3600.');
+    });
+
+    it('allows expires less than 3600', function() {
+      Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog', {expires: 1000});
+      expect(Subscription.expires).toBe(1000);
     });
 
     it('sets expires to a valid number passed in', function() {
@@ -141,14 +143,17 @@ describe('Subscription', function() {
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
     });
 
-    it('creates a dialog, sets the id, and puts this subscription in the ua\'s subscriptions array', function() {
+    it('creates a dialog, sets the id, emits accepted, and puts this subscription in the ua\'s subscriptions array', function() {
       spyOn(Subscription, 'createConfirmedDialog').and.callThrough();
+      spyOn(Subscription, 'emit');
+
       expect(Subscription.dialog).toBeNull();
 
       Subscription.receiveResponse(response);
 
       expect(Subscription.createConfirmedDialog).toHaveBeenCalledWith(response, 'UAC');
       expect(Subscription.id).toBe(Subscription.dialog.id.toString());
+      expect(Subscription.emit).toHaveBeenCalledWith('accepted', response, 'OK');
       expect(ua.subscriptions[Subscription.id]).toBe(Subscription);
     });
 
@@ -398,13 +403,13 @@ describe('Subscription', function() {
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
 
-    it('expires is reset correctly if too low', function() {
+    it('expires is not reset if under 3600', function() {
       request.setHeader('Subscription-State', 'active;expires=700');
       spyOn(SIP.Timers, 'setTimeout').and.callThrough();
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(700000);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });

@@ -194,6 +194,10 @@ UA = function(configuration) {
   if(this.configuration.autostart) {
     this.start();
   }
+
+  if (typeof global.addEventListener === 'function') {
+    global.addEventListener('unload', this.stop.bind(this));
+  }
 };
 UA.prototype = new SIP.EventEmitter();
 
@@ -494,12 +498,17 @@ UA.prototype.onTransportError = function(transport) {
   this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ SIP.Transport.C.STATUS_ERROR);
 
   // Close sessions.
-  //Mark this transport as 'down' and try the next one
+  //Mark this transport as 'down'
   transport.server.status = SIP.Transport.C.STATUS_ERROR;
 
   this.emit('disconnected', {
     transport: transport
   });
+
+  // try the next transport if the UA isn't closed
+  if(this.status === C.STATUS_USER_CLOSED) {
+    return;
+  }
 
   server = this.getNextWsServer();
 
@@ -1077,8 +1086,6 @@ UA.configuration_skeleton = (function() {
     parameters = [
       // Internal parameters
       "sipjsId",
-      "wsServerMaxReconnection",
-      "wsServerReconnectionTimeout",
       "hostportParams",
 
       // Optional user configurable parameters
@@ -1103,6 +1110,8 @@ UA.configuration_skeleton = (function() {
       "traceSip",
       "turnServers",
       "usePreloadedRoute",
+      "wsServerMaxReconnection",
+      "wsServerReconnectionTimeout",
       "mediaHandlerFactory",
       "media",
       "mediaConstraints",
@@ -1420,6 +1429,26 @@ UA.configuration_check = {
     usePreloadedRoute: function(usePreloadedRoute) {
       if (typeof usePreloadedRoute === 'boolean') {
         return usePreloadedRoute;
+      }
+    },
+
+    wsServerMaxReconnection: function(wsServerMaxReconnection) {
+      var value;
+      if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
+        value = Number(wsServerMaxReconnection);
+        if (value > 0) {
+          return value;
+        }
+      }
+    },
+
+    wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
+      var value;
+      if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
+        value = Number(wsServerReconnectionTimeout);
+        if (value > 0) {
+          return value;
+        }
       }
     },
 

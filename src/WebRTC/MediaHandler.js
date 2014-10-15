@@ -31,7 +31,7 @@ var MediaHandler = function(session, options) {
   this.session = session;
   this.localMedia = null;
   this.ready = true;
-  this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager();
+  this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager(this.logger);
   this.audioMuted = false;
   this.videoMuted = false;
 
@@ -84,6 +84,8 @@ var MediaHandler = function(session, options) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
     } else if (self.onIceCompleted !== undefined) {
       self.onIceCompleted(this);
+    } else {
+      self.callOnIceCompleted = true;
     }
   };
 
@@ -92,14 +94,22 @@ var MediaHandler = function(session, options) {
     if (this.iceGatheringState === 'gathering') {
       self.emit('iceGathering', this);
     }
-    if (this.iceGatheringState === 'complete' &&
-        self.onIceCompleted !== undefined) {
-      self.onIceCompleted(this);
+    if (this.iceGatheringState === 'complete') {
+      if (self.onIceCompleted !== undefined) {
+        self.onIceCompleted(this);
+      } else {
+        self.callOnIceCompleted = true;
+      }
     }
   };
 
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
+
+    if (this.iceConnectionState === 'failed') {
+      self.emit('iceFailed', this);
+    }
+
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
     //normal calls switch from failed to connected in some cases, so checking for failed and terminated
     /*if (this.iceConnectionState === 'failed') {
@@ -197,6 +207,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.emit('dataChannel', self.dataChannel);
       }
 
+      self.render();
       self.createOfferOrAnswer(onSuccess, onFailure, self.RTCConstraints);
     }
 
@@ -402,6 +413,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       var sdp = self.peerConnection.localDescription.sdp;
 
       sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
+      sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
 
       var sdpWrapper = {
         type: methodName === 'createOffer' ? 'offer' : 'answer',
@@ -415,7 +427,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
 
     function onSetLocalDescriptionSuccess() {
-      if (self.peerConnection.iceGatheringState === 'complete' && self.peerConnection.iceConnectionState === 'connected') {
+      if (self.peerConnection.iceGatheringState === 'complete' && (self.peerConnection.iceConnectionState === 'connected' || self.peerConnection.iceConnectionState === 'completed')) {
         readySuccess();
       } else {
         self.onIceCompleted = function(pc) {
@@ -424,6 +436,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
           self.emit('iceComplete', pc);
           readySuccess();
         };
+        if (self.callOnIceCompleted) {
+          self.onIceCompleted();
+        }
       }
     }
 
