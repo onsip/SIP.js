@@ -84,6 +84,8 @@ var MediaHandler = function(session, options) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
     } else if (self.onIceCompleted !== undefined) {
       self.onIceCompleted(this);
+    } else {
+      self.callOnIceCompleted = true;
     }
   };
 
@@ -92,9 +94,12 @@ var MediaHandler = function(session, options) {
     if (this.iceGatheringState === 'gathering') {
       self.emit('iceGathering', this);
     }
-    if (this.iceGatheringState === 'complete' &&
-        self.onIceCompleted !== undefined) {
-      self.onIceCompleted(this);
+    if (this.iceGatheringState === 'complete') {
+      if (self.onIceCompleted !== undefined) {
+        self.onIceCompleted(this);
+      } else {
+        self.callOnIceCompleted = true;
+      }
     }
   };
 
@@ -425,6 +430,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
           self.emit('iceComplete', pc);
           readySuccess();
         };
+        if (self.callOnIceCompleted) {
+          self.onIceCompleted();
+        }
       }
     }
 
