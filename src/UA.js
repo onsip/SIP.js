@@ -194,6 +194,10 @@ UA = function(configuration) {
   if(this.configuration.autostart) {
     this.start();
   }
+
+  if (typeof global.addEventListener === 'function') {
+    global.addEventListener('unload', this.stop.bind(this));
+  }
 };
 UA.prototype = new SIP.EventEmitter();
 
