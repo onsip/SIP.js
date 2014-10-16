@@ -2,14 +2,12 @@
  * @fileoverview Utils
  */
 
-var promise = global.Promise || require('promiscuous');
-
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 var Utils;
 
 Utils= {
 
-  Promise: promise,
+  Promise: environment.Promise,
 
   defer: function defer () {
     var deferred = {};
@@ -75,20 +73,6 @@ Utils= {
 
   str_utf8_length: function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
-  },
-
-  getPrefixedProperty: function (object, name) {
-    if (object == null) {
-      return;
-    }
-    var capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-    var prefixedNames = [name, 'webkit' + capitalizedName, 'moz' + capitalizedName];
-    for (var i in prefixedNames) {
-      var property = object[prefixedNames[i]];
-      if (property) {
-        return property;
-      }
-    }
   },
 
   generateFakeSDP: function(body) {

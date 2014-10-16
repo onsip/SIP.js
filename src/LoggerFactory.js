@@ -1,5 +1,3 @@
-var console = require('console');
-
 var levels = {
   'error': 0,
   'warn': 1,
@@ -7,7 +5,9 @@ var levels = {
   'debug': 3
 };
 
-var LoggerFactory = module.exports = function () {
+module.exports = function (console) {
+
+var LoggerFactory = function () {
   var logger,
     level = 2,
     builtinEnabled = true,
@@ -107,4 +107,7 @@ LoggerFactory.prototype.getLogger = function(category, label) {
     this.loggers[category] = logger;
     return logger;
   }
+};
+
+return LoggerFactory;
 };

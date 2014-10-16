@@ -6,7 +6,7 @@
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
  */
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) {
@@ -47,14 +47,14 @@ MediaStreamManager.render = function render (streams, elements) {
   }
 
   function attachAndPlay (element, stream) {
-    (global.attachMediaStream || attachMediaStream)(element, stream);
+    (environment.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
 
   function attachMediaStream(element, stream) {
     if (typeof element.src !== 'undefined') {
-      global.URL.revokeObjectURL(element.src);
-      element.src = global.URL.createObjectURL(stream);
+      environment.revokeObjectURL(element.src);
+      element.src = environment.createObjectURL(stream);
     } else if (typeof (element.srcObject || element.mozSrcObject) !== 'undefined') {
       element.srcObject = element.mozSrcObject = stream;
     } else {

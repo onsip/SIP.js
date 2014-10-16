@@ -48,7 +48,7 @@ module.exports = function(grunt) {
     },
     browserify: {
       devel: {
-        src: 'src/SIP.js',
+        src: pkg.main,
         dest: 'dist/<%= name %>-<%= pkg.version %>.js'
       },
       options: {
@@ -98,6 +98,7 @@ module.exports = function(grunt) {
         options: {
           specs: 'test/spec/*.js',
           keepRunner : true,
+          vendor: 'test/polyfills/*.js',
           helpers: 'test/helpers/*.js'
         }
       }

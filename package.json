@@ -3,11 +3,10 @@
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
   "version": "0.6.2",
-  "main": "src/SIP.js",
+  "main": "src/index.js",
   "browser": {
     "./src/Grammar/index.js": "./src/Grammar/dist/Grammar.js",
-    "promiscuous": "./src/polyfills/promiscuous.js",
-    "console": "./src/polyfills/console.js"
+    "./src/environment.js": "./src/environment_browser.js"
   },
   "homepage": "http://sipjs.com",
   "author": "Will Mitchell <will@onsip.com>",
