@@ -81,6 +81,10 @@ describe('UA', function() {
     }]);
   });
 
+  it('can be created with empty stunServers list', function () {
+    expect(new SIP.UA({stunServers: []}).configuration.stunServers).toEqual([]);
+  });
+
   it('sets the instance variables', function() {
     UA = undefined;
 
