@@ -927,14 +927,19 @@ UA.prototype.loadConfig = function(configuration) {
 
   SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
 
+  var emptyArraysAllowed = ['stunServers', 'turnServers'];
+
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
     aliasUnderscored(parameter, this.logger);
     if(configuration.hasOwnProperty(parameter)) {
       value = configuration[parameter];
 
-      // If the parameter value is null, empty string,undefined, or empty array then apply its default value.
-      if(value === null || value === "" || value === undefined || (value instanceof Array && value.length === 0)) { continue; }
+      // If the parameter value is an empty array, but shouldn't be, apply its default value.
+      if (value instanceof Array && value.length === 0 && emptyArraysAllowed.indexOf(parameter) < 0) { continue; }
+
+      // If the parameter value is null, empty string, or undefined then apply its default value.
+      if(value === null || value === "" || value === undefined) { continue; }
       // If it's a number with NaN value then also apply its default value.
       // NOTE: JS does not allow "value === NaN", the following does the work:
       else if(typeof(value) === 'number' && isNaN(value)) { continue; }
