@@ -18,32 +18,6 @@ Utils= {
     return deferred;
   },
 
-  callbacksLast: function callbacksLast (f, thisArg) {
-    return function (arg, onSuccess, onFailure) {
-      return f.call(thisArg, onSuccess, onFailure, arg);
-    };
-  },
-
-  addPromise: function addPromise (f, thisArg, length) {
-    if (!f) {
-      f = function (succ, fail) {
-        fail('addPromise: argument function was falsy');
-      };
-      length = f.length;
-    }
-    var callbacksIndex = (length || f.length) - 2;
-    return function withPromise () {
-      var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
-      var bound = f.bind.apply(f, [thisArg].concat(nonCallbacks));
-      var promise = new Utils.Promise(bound);
-      var callbacks = [].slice.call(arguments, callbacksIndex);
-      if (callbacks.length) {
-        promise.then.apply(promise, callbacks);
-      }
-      return promise;
-    };
-  },
-
   augment: function (object, constructor, args, override) {
     var idx, proto;
 

@@ -407,12 +407,17 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var self = this;
     var methodName, promisifiedMethod;
     var pc = self.peerConnection;
-    var setLocalDescription = SIP.Utils.addPromise(pc.setLocalDescription, pc, 3);
+    var setLocalDescription = function (description) {
+      return new SIP.Utils.Promise(pc.setLocalDescription.bind(pc, description));
+    };
 
     self.ready = false;
-
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
-    promisifiedMethod = SIP.Utils.addPromise(SIP.Utils.callbacksLast(pc[methodName], pc));
+    promisifiedMethod = function (constraints) {
+      return new SIP.Utils.Promise(function (resolve, reject) {
+        pc[methodName](resolve, reject, constraints);
+      });
+    };
 
     return promisifiedMethod(constraints)
       .then(setLocalDescription)
