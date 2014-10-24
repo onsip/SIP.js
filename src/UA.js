@@ -895,6 +895,7 @@ UA.prototype.loadConfig = function(configuration) {
       // Hacks
       hackViaTcp: false,
       hackIpInContact: false,
+      hackWssInTransport: false,
 
       //autostarting
       autostart: true,
@@ -1022,7 +1023,7 @@ UA.prototype.loadConfig = function(configuration) {
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: 'ws'}),
+    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: ((settings.hackWssInTransport)?'wss':'ws')}),
     toString: function(options){
       options = options || {};
 
@@ -1102,6 +1103,7 @@ UA.configuration_skeleton = (function() {
       "displayName",
       "hackViaTcp", // false.
       "hackIpInContact", //false
+      "hackWssInTransport", //false
       "instanceId",
       "noAnswerTimeout", // 30 seconds.
       "password",
@@ -1273,6 +1275,12 @@ UA.configuration_check = {
     hackIpInContact: function(hackIpInContact) {
       if (typeof hackIpInContact === 'boolean') {
         return hackIpInContact;
+      }
+    },
+
+    hackWssInTransport: function(hackWssInTransport) {
+      if (typeof hackWssInTransport === 'boolean') {
+        return hackWssInTransport;
       }
     },
 
