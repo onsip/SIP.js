@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "main": "src/index.js",
   "browser": {
     "./src/Grammar/index.js": "./src/Grammar/dist/Grammar.js",
