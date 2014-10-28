@@ -88,7 +88,7 @@ MediaStreamManager.render = function render (streams, elements) {
 };
 
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
-  'acquire': {value: function acquire (mediaHint) {
+  'acquire': {writable: true, value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
     var saveSuccess = function (isHintStream, streams) {
@@ -140,7 +140,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     }
   }},
 
-  'release': {value: function release (streams) {
+  'release': {writable: true, value: function release (streams) {
     streams = [].concat(streams);
     streams.forEach(function (stream) {
       var streamId = MediaStreamManager.streamId(stream);
