@@ -1038,10 +1038,16 @@ UA.prototype.loadConfig = function(configuration) {
     settings.viaHost = SIP.Utils.getRandomTestNetIP();
   }
 
+  // Contact transport parameter
+  var contactTransport = 'ws';
+  if (settings.hackWssInTransport) {
+    contactTransport = 'wss';
+  }
+
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: ((settings.hackWssInTransport)?'wss':'ws')}),
+    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: contactTransport}),
     toString: function(options){
       options = options || {};
 
@@ -1051,7 +1057,7 @@ UA.prototype.loadConfig = function(configuration) {
         contact = '<';
 
       if (anonymous) {
-        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+(settings.hackWssInTransport)?'wss':'ws')).toString();
+        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+contactTransport)).toString();
       } else {
         contact += (this.pub_gruu || this.uri).toString();
       }
