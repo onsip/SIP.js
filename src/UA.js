@@ -1249,10 +1249,10 @@ UA.configuration_check = {
 
         if(url === -1) {
           return;
-        } else if(url.scheme !== 'wss' && url.scheme !== 'ws') {
+        } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
           return;
         } else {
-          wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=ws;lr>';
+          wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
 
           if (!wsServers[idx].weight) {
             wsServers[idx].weight = 0;
