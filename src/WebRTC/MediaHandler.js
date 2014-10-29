@@ -57,7 +57,9 @@ var MediaHandler = function(session, options) {
   /* Change 'url' to 'urls' whenever this issue is solved:
    * https://code.google.com/p/webrtc/issues/detail?id=2096
    */
-  servers.push({'url': stunServers});
+  [].concat(stunServers).forEach(function (server) {
+    servers.push({'url': server});
+  });
 
   length = turnServers.length;
   for (idx = 0; idx < length; idx++) {
