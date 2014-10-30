@@ -14,6 +14,7 @@ function getPrefixedProperty (object, name) {
 
 module.exports = {
   WebSocket: global.WebSocket,
+  Transport: require('./Transport'),
   open: global.open,
   Promise: global.Promise,
   timers: global,
