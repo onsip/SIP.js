@@ -951,7 +951,6 @@ InviteServerContext = function(ua, request) {
   }
 
   //TODO: move this into media handler
-  SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
   SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
   SIP.Hacks.AllBrowsers.maskDtls(request);
 
@@ -1416,7 +1415,6 @@ InviteServerContext.prototype = {
         if (!this.hasAnswer) {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
             // ACK contains answer to an INVITE w/o SDP negotiation
-            SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
             SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
             SIP.Hacks.AllBrowsers.maskDtls(request);
 
@@ -1775,7 +1773,6 @@ InviteClientContext.prototype = {
             return;
           }
 
-          SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
           SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
           SIP.Hacks.AllBrowsers.maskDtls(response);
 
@@ -1893,7 +1890,6 @@ InviteClientContext.prototype = {
           break;
         }
 
-        SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
         SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
         SIP.Hacks.AllBrowsers.maskDtls(response);
 

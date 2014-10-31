@@ -34,12 +34,6 @@ var Hacks = module.exports = {
       return typeof mozRTCPeerConnection !== 'undefined';
     },
 
-    cannotHandleRelayCandidates: function (message) {
-      if (this.isFirefox() && message.body) {
-        message.body = message.body.replace(/relay/g, 'host generation 0');
-      }
-    },
-
     cannotHandleExtraWhitespace: function (message) {
       if (this.isFirefox() && message.body) {
         message.body = message.body.replace(/ \r\n/g, "\r\n");
