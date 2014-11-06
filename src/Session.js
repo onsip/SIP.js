@@ -1147,7 +1147,6 @@ InviteServerContext.prototype = {
    */
   progress: function (options) {
     options = options || {};
-
     var
       statusCode = options.statusCode || 180,
       reasonPhrase = options.reasonPhrase,
@@ -1256,7 +1255,6 @@ InviteServerContext.prototype = {
     }
 
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
-
     this.mediaHint = options.media;
 
     // commented out now-unused hold-related variables for jshint. See below. JMF 2014-1-21
