@@ -257,6 +257,23 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  */
 UA.prototype.invite = function(target, options) {
   options = options || {};
+
+  if (global.HTMLMediaElement && options instanceof global.HTMLMediaElement) {
+    options = {
+      media: {
+        constraints: {
+          audio: true,
+          video: options.tagName === 'VIDEO'
+        },
+        render: {
+          remote: {
+            video: options
+          }
+        }
+      }
+    };
+  }
+
   SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
 
   var context = new SIP.InviteClientContext(this, target, options);
