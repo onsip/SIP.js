@@ -1237,23 +1237,7 @@ InviteServerContext.prototype = {
    */
   accept: function(options) {
     options = options || {};
-
-    if (global.HTMLMediaElement && options instanceof global.HTMLMediaElement) {
-      options = {
-        media: {
-          constraints: {
-            audio: true,
-            video: options.tagName === 'VIDEO'
-          },
-          render: {
-            remote: {
-              video: options
-            }
-          }
-        }
-      };
-    }
-
+    options = SIP.Utils.desugarSessionOptions(options);
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;
 
