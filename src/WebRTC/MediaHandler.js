@@ -18,6 +18,7 @@ var MediaHandler = function(session, options) {
     'userMedia',
     'userMediaFailed',
     'iceGathering',
+    'iceCandidate',
     'iceComplete',
     'iceFailed',
     'iceDisconnected',
@@ -90,6 +91,7 @@ var MediaHandler = function(session, options) {
   };
 
   this.peerConnection.onicecandidate = function(e) {
+    self.emit('iceCandidate', e);
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
     } else {
