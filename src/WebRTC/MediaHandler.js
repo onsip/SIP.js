@@ -18,6 +18,7 @@ var MediaHandler = function(session, options) {
     'userMedia',
     'userMediaFailed',
     'iceGathering',
+    'iceCandidate',
     'iceComplete',
     'iceFailed',
     'getDescription',
@@ -55,7 +56,9 @@ var MediaHandler = function(session, options) {
   /* Change 'url' to 'urls' whenever this issue is solved:
    * https://code.google.com/p/webrtc/issues/detail?id=2096
    */
-  servers.push({'url': stunServers});
+  [].concat(stunServers).forEach(function (server) {
+    servers.push({'url': server});
+  });
 
   length = turnServers.length;
   for (idx = 0; idx < length; idx++) {
@@ -80,6 +83,7 @@ var MediaHandler = function(session, options) {
   };
 
   this.peerConnection.onicecandidate = function(e) {
+    self.emit('iceCandidate', e);
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
     } else if (self.onIceCompleted !== undefined) {
@@ -414,6 +418,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
       sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
       sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
+      sdp = SIP.Hacks.Firefox.hasIncompatibleCLineWithSomeSIPEndpoints(sdp);
 
       var sdpWrapper = {
         type: methodName === 'createOffer' ? 'offer' : 'answer',
