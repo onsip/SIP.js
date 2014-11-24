@@ -45,7 +45,7 @@ module.exports = (function(window) {
   var WebRTCMediaStreamManager = require('./WebRTC/MediaStreamManager.js')(SIP);
   SIP.WebRTC = require('./WebRTC.js')(SIP.Utils, window, WebRTCMediaHandler, WebRTCMediaStreamManager);
   require('./UA.js')(SIP, window);
-  SIP.Hacks = require('./Hacks.js')(window);
+  SIP.Hacks = require('./Hacks.js')(SIP);
   require('./SanityCheck.js')(SIP);
   SIP.DigestAuthentication = require('./DigestAuthentication.js')(SIP.Utils);
   SIP.Grammar = require('./Grammar/dist/Grammar')(SIP);
