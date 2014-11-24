@@ -6,7 +6,8 @@
  * as to most easily track when particular hacks may not be necessary anymore.
  */
 
-var Hacks = module.exports = {
+module.exports = function (SIP) {
+var Hacks = {
   AllBrowsers: {
     maskDtls: function (message) {
       if (message.body) {
@@ -66,7 +67,7 @@ var Hacks = module.exports = {
           if (mlines[i].toString().search(/i=.*/) >= 0) {
             insertAt = sdp.indexOf(mlines[i].toString())+mlines[i].toString().length;
             if (sdp.substr(insertAt,2)!=='c=') {
-              sdp = sdp.substr(0,insertAt) + '\r\nc=IN IP 4 0.0.0.0' + sdp.substr(insertAt);
+              sdp = sdp.substr(0,insertAt) + '\r\nc=IN IP4 0.0.0.0' + sdp.substr(insertAt);
             }
 
           // else add the C line if it's missing
@@ -77,6 +78,19 @@ var Hacks = module.exports = {
         }
       }
       return sdp;
+    },
+
+    hasIncompatibleCLineWithSomeSIPEndpoints: function(sdp) {
+      /*
+       * Firefox appears to be following https://tools.ietf.org/html/rfc5245#section-9.1.1.1
+       * and using a c line IP address of 0.0.0.0. This is completely valid, however it is
+       * causing some endpoints (such as FreeSWITCH) to interpret the SDP as being on hold
+       * https://freeswitch.org/jira/browse/FS-6955. To get around this issue we pull the
+       * replace the c line with 1.1.1.1 which SIP clients do not interpret as hold.
+       * This makes the other endpoint believe that the call is not on hold and audio flows
+       * because ICE determines the media pathway (not the c line).
+       */
+      return sdp.replace(/(0\.0\.0\.0)/gmi, SIP.Utils.getRandomTestNetIP());
     }
   },
 
@@ -102,4 +116,6 @@ var Hacks = module.exports = {
       }
     }
   }
+};
+return Hacks;
 };
