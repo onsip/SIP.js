@@ -1464,15 +1464,8 @@ UA.configuration_check = {
           function patchMethod (methodName) {
             var method = mediaHandler[methodName];
             if (method.length > 1) {
-              mediaHandler[methodName] = function (arg) {
-                return new SIP.Utils.Promise(function (resolve, reject) {
-                  var oldArgs = [arg, resolve, reject];
-                  if (methodName === 'getDescription') {
-                    oldArgs = [resolve, reject, arg];
-                  }
-                  method.apply(mediaHandler, oldArgs);
-                });
-              };
+              var callbacksFirst = methodName === 'getDescription';
+              mediaHandler[methodName] = SIP.Utils.promisify(mediaHandler, methodName, callbacksFirst);
             }
           }
 

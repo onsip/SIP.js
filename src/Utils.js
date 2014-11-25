@@ -18,6 +18,19 @@ Utils= {
     return deferred;
   },
 
+  promisify: function promisify (object, methodName, callbacksFirst) {
+    var oldMethod = object[methodName];
+    return function promisifiedMethod (arg) {
+      return new Utils.Promise(function (resolve, reject) {
+        var oldArgs = [arg, resolve, reject];
+        if (callbacksFirst) {
+          oldArgs = [resolve, reject, arg];
+        }
+        oldMethod.apply(object, oldArgs);
+      });
+    };
+  },
+
   augment: function (object, constructor, args, override) {
     var idx, proto;
 

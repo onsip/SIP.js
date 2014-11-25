@@ -261,7 +261,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    return new SIP.Utils.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
+    return SIP.Utils.promisify(this.peerConnection, 'setRemoteDescription')(description);
   }},
 
 // Functions the session can use, but only because it's convenient for the application
@@ -409,22 +409,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints) {
     var self = this;
-    var methodName, promisifiedMethod;
+    var methodName;
     var pc = self.peerConnection;
-    var setLocalDescription = function (description) {
-      return new SIP.Utils.Promise(pc.setLocalDescription.bind(pc, description));
-    };
 
     self.ready = false;
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
-    promisifiedMethod = function (constraints) {
-      return new SIP.Utils.Promise(function (resolve, reject) {
-        pc[methodName](resolve, reject, constraints);
-      });
-    };
 
-    return promisifiedMethod(constraints)
-      .then(setLocalDescription)
+    return SIP.Utils.promisify(pc, methodName, true)(constraints)
+      .then(SIP.Utils.promisify(pc, 'setLocalDescription'))
       .then(function onSetLocalDescriptionSuccess() {
         var deferred = SIP.Utils.defer();
         if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
