@@ -76,6 +76,10 @@ var MediaHandler = function(session, options) {
   this.onIceCompleted.promise.then(function(pc) {
     self.logger.log('ICE Gathering Completed');
     self.emit('iceComplete', pc);
+    if (self.iceCheckingTimer) {
+      SIP.Timers.clearTimeout(self.iceCheckingTimer);
+      self.iceCheckingTimer = null;
+    }
   });
 
   this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
@@ -111,6 +115,13 @@ var MediaHandler = function(session, options) {
 
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
+
+    if (this.iceConnectionState === 'checking') {
+      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' micro seconds');
+        self.onIceCompleted.resolve(this);
+      }.bind(this), config.iceCheckingTimeout);
+    }
 
     if (this.iceConnectionState === 'failed') {
       self.emit('iceFailed', this);
