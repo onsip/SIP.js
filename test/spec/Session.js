@@ -418,10 +418,15 @@ describe('A UAS receiving an INVITE', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
-        mediaHandlerFactory: function () {}
+        mediaHandlerFactory: function () {
+          return {
+            getDescription: function () {},
+            setDescription: function () {}
+          };
+        }
       };
 
-      spyOn(ua_config, 'mediaHandlerFactory');
+      spyOn(ua_config, 'mediaHandlerFactory').and.callThrough();
       spyOn(SIP, 'InviteServerContext').and.callThrough();
       var callback = jasmine.createSpy('callback');
 

@@ -92,7 +92,8 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
-    expect(UA.configuration.mediaHandlerFactory).toBe(SIP.WebRTC.MediaHandler.defaultFactory);
+    var defaultFactory = SIP.WebRTC.MediaHandler.defaultFactory;
+    expect(UA.configuration.mediaHandlerFactory).toBe(defaultFactory);
     expect(UA.log).toBeDefined();
     expect(UA.logger).toBeDefined();
     expect(UA.cache).toBeDefined();
@@ -111,7 +112,7 @@ describe('UA', function() {
     var mediaHandlerFactory = function(){};
     configuration.mediaHandlerFactory = mediaHandlerFactory;
     UA = new SIP.UA(configuration);
-    expect(UA.configuration.mediaHandlerFactory).toBe(mediaHandlerFactory);
+    expect(UA.configuration.mediaHandlerFactory).not.toBe(defaultFactory);
   });
 
   it('creates a new register context', function() {

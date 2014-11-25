@@ -1458,7 +1458,29 @@ UA.configuration_check = {
 
     mediaHandlerFactory: function(mediaHandlerFactory) {
       if (mediaHandlerFactory instanceof Function) {
-        return mediaHandlerFactory;
+        return function promisifiedFactory () {
+          var mediaHandler = mediaHandlerFactory.apply(this, arguments);
+
+          function patchMethod (methodName) {
+            var method = mediaHandler[methodName];
+            if (method.length > 1) {
+              mediaHandler[methodName] = function (arg) {
+                return new SIP.Utils.Promise(function (resolve, reject) {
+                  var oldArgs = [arg, resolve, reject];
+                  if (methodName === 'getDescription') {
+                    oldArgs = [resolve, reject, arg];
+                  }
+                  method.apply(mediaHandler, oldArgs);
+                });
+              };
+            }
+          }
+
+          patchMethod('getDescription');
+          patchMethod('setDescription');
+
+          return mediaHandler;
+        };
       }
     },
 
