@@ -967,9 +967,7 @@ Session.desugar = function desugar(options) {
           video: options.tagName === 'VIDEO'
         },
         render: {
-          remote: {
-            video: options
-          }
+          remote: options
         }
       }
     };
