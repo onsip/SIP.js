@@ -67,9 +67,7 @@ Utils= {
             video: options.tagName === 'VIDEO'
           },
           render: {
-            remote: {
-              video: options
-            }
+            remote: options
           }
         }
       };
