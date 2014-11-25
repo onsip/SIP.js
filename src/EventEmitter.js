@@ -1,5 +1,6 @@
 var NodeEventEmitter = require('events').EventEmitter;
-var console = require('console');
+
+module.exports = function (console) {
 
 function EventEmitter () {}
 
@@ -20,4 +21,6 @@ EventEmitter.prototype.off = function off (eventName, listener) {
   }
 };
 
-module.exports = EventEmitter;
+return EventEmitter;
+
+};
