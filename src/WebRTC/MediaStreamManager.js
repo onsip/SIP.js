@@ -41,6 +41,7 @@ MediaStreamManager.streamId = function (stream) {
 
 MediaStreamManager.render = function render (streams, elements) {
   // only render first stream, see pull request #76
+  streams = [].concat(streams);
   var stream = streams[0];
   if (!elements || !stream) {
     return false;
