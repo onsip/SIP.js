@@ -528,7 +528,9 @@ UA.prototype.onTransportConnected = function(transport) {
   this.error = null;
 
   if(this.configuration.register) {
-    this.registerContext.onTransportConnected();
+    this.configuration.authenticationFactory.initialize().then(function () {
+      this.registerContext.onTransportConnected();
+    }.bind(this));
   }
 
   this.emit('connected', {
@@ -821,6 +823,18 @@ UA.prototype.recoverTransport = function(ua) {
     }, nextRetry * 1000);
 };
 
+function checkAuthenticationFactory (authenticationFactory) {
+  if (!(authenticationFactory instanceof Function)) {
+    return;
+  }
+  if (!authenticationFactory.initialize) {
+    authenticationFactory.initialize = function initialize () {
+      return SIP.Utils.Promise.resolve();
+    };
+  }
+  return authenticationFactory;
+}
+
 /**
  * Configuration load.
  * @private
@@ -886,9 +900,9 @@ UA.prototype.loadConfig = function(configuration) {
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
 
-      authenticationFactory: function (ua) {
+      authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);
-      }
+      })
     };
 
   // Pre-Configuration
@@ -1488,11 +1502,7 @@ UA.configuration_check = {
       }
     },
 
-    authenticationFactory: function(authenticationFactory) {
-      if (authenticationFactory instanceof Function) {
-        return authenticationFactory;
-      }
-    }
+    authenticationFactory: checkAuthenticationFactory
   }
 };
 
