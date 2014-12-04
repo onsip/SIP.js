@@ -39,7 +39,7 @@ var MediaHandler = function(session, options) {
   this.videoMuted = false;
 
   // old init() from here on
-  var idx, length, server,
+  var idx, jdx, length, server,
     self = this,
     servers = [],
     stunServers = options.stunServers || null,
@@ -65,11 +65,13 @@ var MediaHandler = function(session, options) {
   length = turnServers.length;
   for (idx = 0; idx < length; idx++) {
     server = turnServers[idx];
-    servers.push({
-      'url': server.urls,
-      'username': server.username,
-      'credential': server.password
-    });
+    for (jdx = 0; jdx < server.urls.length; jdx++) {
+      servers.push({
+        'url': server.urls[jdx],
+        'username': server.username,
+        'credential': server.password
+      });
+    }
   }
 
   this.onIceCompleted = SIP.Utils.defer();
