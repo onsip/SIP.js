@@ -1412,7 +1412,7 @@ UA.configuration_check = {
       }
 
       length = turnServers.length;
-      for (idx = 0; idx < turnServers.length; idx++) {
+      for (idx = 0; idx < length; idx++) {
         turn_server = turnServers[idx];
         //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
         if (turn_server.server) {
