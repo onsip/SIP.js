@@ -1274,6 +1274,7 @@ InviteServerContext.prototype = {
         self.mediaHandler.render();
 
         extraHeaders.push('Contact: ' + self.contact);
+        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(self.ua));
 
         if(!self.hasOffer) {
           self.hasOffer = true;
