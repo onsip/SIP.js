@@ -91,6 +91,7 @@ Dialog = function(owner, message, type, state) {
   this.owner = owner;
   owner.ua.dialogs[this.id.toString()] = this;
   this.logger.log('new ' + type + ' dialog created with status ' + (this.state === C.STATUS_EARLY ? 'EARLY': 'CONFIRMED'));
+  owner.emit('dialog', this);
 };
 
 Dialog.prototype = {
