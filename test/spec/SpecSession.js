@@ -1125,14 +1125,14 @@ describe('InviteServerContext', function() {
 
     jasmine.clock().tick(100);
 
-    expect(ISC.emit.calls.argsFor(1)[0]).toBe('progress');
+    expect(ISC.emit.calls.argsFor(2)[0]).toBe('progress');
 
     expect(ISC.status).toBe(4);
 
     expect(ISC.timers.userNoAnswerTimer).toBeDefined();
     expect(ISC.timers.expiresTimer).toBeDefined();
 
-    expect(ISC.emit.calls.argsFor(2)[0]).toBe('invite');
+    expect(ISC.emit.calls.argsFor(3)[0]).toBe('invite');
 
     jasmine.clock().uninstall();
   });
