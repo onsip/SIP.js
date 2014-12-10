@@ -26,6 +26,7 @@ var Session, InviteServerContext, InviteClientContext,
  */
 Session = function (mediaHandlerFactory) {
   var events = [
+  'dialog',
   'connecting',
   'terminated',
   'dtmf',

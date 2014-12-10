@@ -14,7 +14,7 @@ SIP.Subscription = function (ua, target, event, options) {
   options = options || {};
   options.extraHeaders = (options.extraHeaders || []).slice();
 
-  events = ['notify'];
+  events = ['notify', 'dialog'];
   this.id = null;
   this.state = 'init';
 
