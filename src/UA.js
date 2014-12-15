@@ -590,6 +590,8 @@ UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
     method = request.method,
     transaction,
+    replaces,
+    replacedDialog,
     methodLower = request.method.toLowerCase(),
     self = this;
 
@@ -654,12 +656,33 @@ UA.prototype.receiveRequest = function(request) {
   if(!request.to_tag) {
     switch(method) {
       case SIP.C.INVITE:
+        replaces =
+          this.configuration.replaces !== SIP.C.supported.UNSUPPORTED &&
+          request.parseHeader('replaces');
+
+        if (replaces) {
+          replacedDialog = this.dialogs[replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag];
+
+          if (!replacedDialog) {
+            //Replaced header without a matching dialog, reject
+            request.reply_sl(481, null);
+            return;
+          } else if (replacedDialog.owner.status === SIP.Session.C.STATUS_TERMINATED) {
+            request.reply_sl(603, null);
+            return;
+          } else if (replacedDialog.state === SIP.Dialog.C.STATUS_CONFIRMED && replaces.early_only) {
+            request.reply_sl(486, null);
+            return;
+          }
+        }
+
         var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
         if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request)
-            .on('invite', function() {
-              self.emit('invite', this);
-            });
+          session = new SIP.InviteServerContext(this, request);
+          session.replacee = replacedDialog && replacedDialog.owner;
+          session.on('invite', function() {
+            self.emit('invite', this);
+          });
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);
@@ -898,6 +921,10 @@ UA.prototype.loadConfig = function(configuration) {
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
 
+      // Replaces header (RFC 3891)
+      // http://tools.ietf.org/html/rfc3891
+      replaces: SIP.C.supported.UNSUPPORTED,
+
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
@@ -1111,6 +1138,7 @@ UA.configuration_skeleton = (function() {
       "registrarServer",
       "reliable",
       "rel100",
+      "replaces",
       "userAgentString", //SIP.C.USER_AGENT
       "autostart",
       "stunServers",
@@ -1328,6 +1356,16 @@ UA.configuration_check = {
       if(rel100 === SIP.C.supported.REQUIRED) {
         return SIP.C.supported.REQUIRED;
       } else if (rel100 === SIP.C.supported.SUPPORTED) {
+        return SIP.C.supported.SUPPORTED;
+      } else  {
+        return SIP.C.supported.UNSUPPORTED;
+      }
+    },
+
+    replaces: function(replaces) {
+      if(replaces === SIP.C.supported.REQUIRED) {
+        return SIP.C.supported.REQUIRED;
+      } else if (replaces === SIP.C.supported.SUPPORTED) {
         return SIP.C.supported.SUPPORTED;
       } else  {
         return SIP.C.supported.UNSUPPORTED;

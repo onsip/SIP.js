@@ -741,7 +741,10 @@ describe('UA', function() {
     it('sends a 488 if an invite is received but there is no WebRTC support', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
-                      reply : replySpy };
+                      reply : replySpy,
+                      getHeader : function () {},
+                      parseHeader: function () {}
+                    };
       var webrtc = SIP.WebRTC.isSupported;
       spyOn(SIP.WebRTC, 'isSupported').and.callFake(function () {
         return false;

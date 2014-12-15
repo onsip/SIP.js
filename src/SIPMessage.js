@@ -209,6 +209,9 @@ OutgoingRequest.prototype = {
     if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
       supported.push('100rel');
     }
+    if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
+      supported.push('replaces');
+    }
 
     supported.push('outbound');
 
@@ -455,6 +458,9 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
 
   if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
     supported.push('100rel');
+  }
+  if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
+    supported.push('replaces');
   }
 
   supported.push('outbound');

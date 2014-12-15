@@ -33,6 +33,7 @@ Session = function (mediaHandlerFactory) {
   'invite',
   'cancel',
   'refer',
+  'replaced',
   'bye',
   'hold',
   'unhold',
@@ -937,6 +938,10 @@ Session.prototype = {
 
     this.startTime = new Date();
 
+    if (this.replacee) {
+      this.replacee.emit('replaced', this);
+      this.replacee.terminate();
+    }
     return this.emit('accepted', response, cause);
   },
 
@@ -1582,6 +1587,9 @@ InviteClientContext = function(ua, target, options) {
 
   if (ua.configuration.rel100 === SIP.C.supported.REQUIRED) {
     extraHeaders.push('Require: 100rel');
+  }
+  if (ua.configuration.replaces === SIP.C.supported.REQUIRED) {
+    extraHeaders.push('Require: replaces');
   }
 
   options.extraHeaders = extraHeaders;
