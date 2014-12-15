@@ -460,6 +460,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   supported.push('outbound');
 
   response += 'Supported: ' + supported + '\r\n';
+  response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
   if(body) {
     length = SIP.Utils.str_utf8_length(body);
@@ -504,6 +505,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
   response += 'From: ' + this.getHeader('From') + '\r\n';
   response += 'Call-ID: ' + this.call_id + '\r\n';
   response += 'CSeq: ' + this.cseq + ' ' + this.method + '\r\n';
+  response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
   response += 'Content-Length: ' + 0 + '\r\n\r\n';
 
   this.transport.send(response);
