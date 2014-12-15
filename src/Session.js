@@ -278,12 +278,25 @@ Session.prototype = {
 
       SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
 
+      var extraHeaders = [];
+
+      /* Copy the Replaces query into a Replaces header */
+      /* TODO - make sure we don't copy a poorly formatted header? */
+      var replaces = target.getHeader('Replaces');
+      if (replaces !== undefined) {
+        extraHeaders.push('Replaces: ' + decodeURIComponent(replaces));
+      }
+
+      // don't embed headers into Request-URI of INVITE
+      target.clearHeaders();
+
       /*
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
-      var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-        media: this.mediaHint
+      var referSession = this.ua.invite(target, {
+        media: this.mediaHint,
+        extraHeaders: extraHeaders
       });
 
       callback.call(this, request, referSession);
