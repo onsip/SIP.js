@@ -203,24 +203,31 @@ Session.prototype = {
   refer: function(target, options) {
     options = options || {};
     var extraHeaders = (options.extraHeaders || []).slice(),
+        withReplaces =
+          target instanceof SIP.InviteServerContext ||
+          target instanceof SIP.InviteClientContext,
         originalTarget = target;
 
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
-    } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
+    }
+
+    // Check Session Status
+    if (this.status !== C.STATUS_CONFIRMED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+
+    // transform `target` so that it can be a Refer-To header value
+    if (withReplaces) {
       //Attended Transfer
       // B.transfer(C)
-      extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
+      target = '<' +
+        target.dialog.remote_target.toString() +
+        '?Replaces=' + target.dialog.id.call_id +
+        '%3Bto-tag%3D' + target.dialog.id.remote_tag +
+        '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
     } else {
       //Blind Transfer
-
-      // Check Session Status
-      if (this.status !== C.STATUS_CONFIRMED) {
-        throw new SIP.Exceptions.InvalidStateError(this.status);
-      }
-
       // normalizeTarget allows instances of SIP.URI to pass through unaltered,
       // so try to make one ahead of time
       try {
@@ -235,19 +242,22 @@ Session.prototype = {
       if (!target) {
         throw new TypeError('Invalid target: ' + originalTarget);
       }
-
-      extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: '+ target);
     }
+
+    extraHeaders.push('Contact: '+ this.contact);
+    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Refer-To: '+ target);
 
     // Send the request
     this.sendRequest(SIP.C.REFER, {
       extraHeaders: extraHeaders,
       body: options.body,
       receiveResponse: function (response) {
-        // hang up only if they accepted a REFER to a SIP address
-        if (/^2[0-9]{2}$/.test(response.status_code) && target.scheme.match("^sips?$")) {
+        if ( ! /^2[0-9]{2}$/.test(response.status_code) ) {
+          return;
+        }
+        // hang up only if we transferred to a SIP address
+        if (withReplaces || (target.scheme && target.scheme.match("^sips?$"))) {
           this.terminate();
         }
       }.bind(this)
