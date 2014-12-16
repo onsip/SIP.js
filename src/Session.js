@@ -33,6 +33,7 @@ Session = function (mediaHandlerFactory) {
   'invite',
   'cancel',
   'refer',
+  'replaced',
   'bye',
   'hold',
   'unhold',
@@ -203,24 +204,31 @@ Session.prototype = {
   refer: function(target, options) {
     options = options || {};
     var extraHeaders = (options.extraHeaders || []).slice(),
+        withReplaces =
+          target instanceof SIP.InviteServerContext ||
+          target instanceof SIP.InviteClientContext,
         originalTarget = target;
 
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
-    } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
+    }
+
+    // Check Session Status
+    if (this.status !== C.STATUS_CONFIRMED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+
+    // transform `target` so that it can be a Refer-To header value
+    if (withReplaces) {
       //Attended Transfer
       // B.transfer(C)
-      extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
+      target = '<' +
+        target.dialog.remote_target.toString() +
+        '?Replaces=' + target.dialog.id.call_id +
+        '%3Bto-tag%3D' + target.dialog.id.remote_tag +
+        '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
     } else {
       //Blind Transfer
-
-      // Check Session Status
-      if (this.status !== C.STATUS_CONFIRMED) {
-        throw new SIP.Exceptions.InvalidStateError(this.status);
-      }
-
       // normalizeTarget allows instances of SIP.URI to pass through unaltered,
       // so try to make one ahead of time
       try {
@@ -235,11 +243,11 @@ Session.prototype = {
       if (!target) {
         throw new TypeError('Invalid target: ' + originalTarget);
       }
-
-      extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: '+ target);
     }
+
+    extraHeaders.push('Contact: '+ this.contact);
+    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Refer-To: '+ target);
 
     // Send the request
     this.sendRequest(SIP.C.REFER, {
@@ -248,7 +256,7 @@ Session.prototype = {
       receiveResponse: function() {}
     });
     // hang up only if we transferred to a SIP address
-    if (target.scheme.match("^sips?$")) {
+    if (withReplaces || (target.scheme && target.scheme.match("^sips?$"))) {
       this.terminate();
     }
     return this;
@@ -270,12 +278,25 @@ Session.prototype = {
 
       SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
 
+      var extraHeaders = [];
+
+      /* Copy the Replaces query into a Replaces header */
+      /* TODO - make sure we don't copy a poorly formatted header? */
+      var replaces = target.getHeader('Replaces');
+      if (replaces !== undefined) {
+        extraHeaders.push('Replaces: ' + decodeURIComponent(replaces));
+      }
+
+      // don't embed headers into Request-URI of INVITE
+      target.clearHeaders();
+
       /*
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
-      var referSession = this.ua.invite(request.parseHeader('refer-to').uri, {
-        media: this.mediaHint
+      var referSession = this.ua.invite(target, {
+        media: this.mediaHint,
+        extraHeaders: extraHeaders
       });
 
       callback.call(this, request, referSession);
@@ -1558,6 +1579,9 @@ InviteClientContext = function(ua, target, options) {
 
   if (ua.configuration.rel100 === SIP.C.supported.REQUIRED) {
     extraHeaders.push('Require: 100rel');
+  }
+  if (ua.configuration.replaces === SIP.C.supported.REQUIRED) {
+    extraHeaders.push('Require: replaces');
   }
 
   options.extraHeaders = extraHeaders;
