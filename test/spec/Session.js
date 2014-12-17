@@ -584,4 +584,70 @@ describe('A UAS receiving an INVITE', function () {
       });
     });
   });
+
+  describe('with a Replaces header', function () {
+    describe('matching another dialog', function () {
+      describe('with "replaces" supported', function () {
+        beforeEach(function (done) {
+          ua_config = {
+            replaces: SIP.C.supported.SUPPORTED,
+            uri: 'alice@example.com',
+            register: false
+          };
+
+          ua = new SIP.UA(ua_config).once('connected', done);
+          ua.on('invite', function (session) {
+            session.accept();
+          });
+        });
+
+        it('emits "replaced" on the replaced session, then terminates it', function (done) {
+          ua.dialogs['or1ek18v4gti27r1vt91' + 'dt0sj4e5ek' + 'qviijql90r'] = {
+            owner: {
+              emit: function (type, arg) {
+                // TODO check arg?
+                if (type === 'replaced') {
+                  this.terminate = done;
+                }
+              }
+            }
+          };
+          ua.transport.ws.receiveMessage(Messages.Invite.replaces);
+        });
+      });
+
+      describe('with "replaces" unsupported', function () {
+        beforeEach(function (done) {
+          ua_config = {
+            replaces: SIP.C.supported.UNSUPPORTED,
+            uri: 'alice@example.com',
+            register: false
+          };
+
+          ua = new SIP.UA(ua_config).once('connected', done);
+          ua.on('invite', function (session) {
+            session.accept();
+          });
+        });
+
+        it('neither emits "replaced" on the replaced session, nor terminates it', function () {
+          ua.dialogs['or1ek18v4gti27r1vt91' + 'dt0sj4e5ek' + 'qviijql90r'] = {
+            // https://stackoverflow.com/questions/22049210/how-to-mark-a-jasmine-test-as-failed#comment33440129_22049210
+            owner: {
+              emit: function (type, arg) {
+                // TODO check arg?
+                if (type === 'replaced') {
+                  expect('').toBe('"replaced" was incorrectly emitted');
+                }
+              },
+              terminate: function () {
+                expect('').toBe('"terminate()" was incorrectly called');
+              }
+            }
+          };
+          ua.transport.ws.receiveMessage(Messages.Invite.replaces);
+        });
+      });
+    });
+  });
 });
