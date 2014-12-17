@@ -33,7 +33,7 @@ Session = function (mediaHandlerFactory) {
   'invite',
   'cancel',
   'refer',
-  'replaced',
+  'replace',
   'bye',
   'hold',
   'unhold',
@@ -303,6 +303,49 @@ Session.prototype = {
 
       this.terminate();
     }.bind(this, callback);
+  },
+
+  /* followReplaces is to the 'replace' event as followRefer is to the 'refer' event
+   *
+   * It can be used to automatically obey the Replaces header of an incoming
+   * INVITE, accepting it and then terminating the replaced Session.
+   *
+   * `onReplaced` will then be called with:
+   *   * (this): the replaced Session
+   *   * request: the accepted INVITE
+   *   * session: the accepted Session
+   *
+   * `checkReplaces`, if provided, allows the application to control the
+   * acceptance/rejection of the INVITE. It will be called with:
+   *   * (this): the to-be-replaced Session
+   *   * request: the pending INVITE
+   *   * session: the pending Session
+   *   * accept: a callback that takes a Session#accept options object
+   *   * reject: a callback that takes a Session#reject options object
+   */
+  followReplaces: function followReplaces (onReplaced, checkReplaces) {
+    var replaceeSession = this;
+    checkReplaces = checkReplaces || function (request, session, resolve) {
+      resolve();
+    };
+    return function replacesListener (request, session) {
+      new SIP.Utils.Promise(checkReplaces.bind(replaceeSession, request, session))
+      .then(
+        function acceptReplaces (acceptOptions) {
+          session.accept(acceptOptions).on('accepted', function onReplacesAccepted () {
+            replaceeSession.terminate();
+            onReplaced.call(replaceeSession, request, session);
+          });
+        },
+        session.reject.bind(session)
+      )
+      .catch(function (error) {
+        // ensure response errors don't get caught by the Promise
+        SIP.Timers.setTimeout(function onReplacesResponseError () {
+          throw error;
+        }, 0);
+      });
+    };
   },
 
   sendRequest: function(method,options) {

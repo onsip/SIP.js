@@ -681,11 +681,7 @@ UA.prototype.receiveRequest = function(request) {
           session = new SIP.InviteServerContext(this, request)
             .on('invite', function() {
               if (replaces) {
-                this.replaces = replacedDialog;
-                this.accept().on('accepted', function () {
-                  replacedDialog.owner.emit('replaced', this);
-                  replacedDialog.owner.terminate();
-                });
+                replacedDialog.owner.emit('replace', request, this);
               } else {
                 self.emit('invite', this);
               }
