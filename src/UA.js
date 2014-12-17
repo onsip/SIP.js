@@ -930,7 +930,7 @@ UA.prototype.loadConfig = function(configuration) {
 
       // Replaces header (RFC 3891)
       // http://tools.ietf.org/html/rfc3891
-      replaces: SIP.C.supported.SUPPORTED,
+      replaces: SIP.C.supported.UNSUPPORTED,
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
 
