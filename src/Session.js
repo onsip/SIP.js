@@ -245,12 +245,13 @@ Session.prototype = {
     this.sendRequest(SIP.C.REFER, {
       extraHeaders: extraHeaders,
       body: options.body,
-      receiveResponse: function() {}
+      receiveResponse: function (response) {
+        // hang up only if they accepted a REFER to a SIP address
+        if (/^2[0-9]{2}$/.test(response.status_code) && target.scheme.match("^sips?$")) {
+          this.terminate();
+        }
+      }.bind(this)
     });
-    // hang up only if we transferred to a SIP address
-    if (target.scheme.match("^sips?$")) {
-      this.terminate();
-    }
     return this;
   },
 
