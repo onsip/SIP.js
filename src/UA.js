@@ -678,14 +678,11 @@ UA.prototype.receiveRequest = function(request) {
 
         var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
         if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request)
-            .on('invite', function() {
-              if (replaces) {
-                replacedDialog.owner.emit('replace', request, this);
-              } else {
-                self.emit('invite', this);
-              }
-            });
+          session = new SIP.InviteServerContext(this, request);
+          session.replacee = replacedDialog && replacedDialog.owner;
+          session.on('invite', function() {
+            self.emit('invite', this);
+          });
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);
