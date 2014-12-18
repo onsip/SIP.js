@@ -269,7 +269,8 @@ Session.prototype = {
   followRefer: function followRefer (callback) {
     return function referListener (callback, request) {
       // open non-SIP URIs if possible and keep session open
-      var target = request.parseHeader('refer-to').uri;
+      var referTo = request.parseHeader('refer-to');
+      var target = referTo.uri;
       if (!target.scheme.match("^sips?$")) {
         var targetString = target.toString();
         if (typeof environment.open === "function") {
@@ -300,6 +301,9 @@ Session.prototype = {
       */
       var referSession = this.ua.invite(target, {
         media: this.mediaHint,
+        params: {
+          to_displayName: referTo.friendlyName
+        },
         extraHeaders: extraHeaders
       });
 
