@@ -222,8 +222,8 @@ Session.prototype = {
     if (withReplaces) {
       //Attended Transfer
       // B.transfer(C)
-      target = '<' +
-        target.dialog.remote_target.toString() +
+      target = '"' + target.remoteIdentity.friendlyName + '" ' +
+        '<' + target.dialog.remote_target.toString() +
         '?Replaces=' + target.dialog.id.call_id +
         '%3Bto-tag%3D' + target.dialog.id.remote_tag +
         '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
