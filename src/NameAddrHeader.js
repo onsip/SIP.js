@@ -31,6 +31,10 @@ NameAddrHeader = function(uri, displayName, parameters) {
   }
 
   Object.defineProperties(this, {
+    friendlyName: {
+      get: function() { return this.displayName || uri.aor; }
+    },
+
     displayName: {
       get: function() { return displayName; },
       set: function(value) {

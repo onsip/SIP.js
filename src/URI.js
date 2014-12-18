@@ -60,6 +60,10 @@ URI = function(scheme, user, host, port, parameters, headers) {
       }
     },
 
+    aor: {
+      get: function(){ return user + '@' + host; }
+    },
+
     port: {
       get: function(){ return port; },
       set: function(value){

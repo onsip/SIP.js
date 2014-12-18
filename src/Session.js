@@ -222,8 +222,8 @@ Session.prototype = {
     if (withReplaces) {
       //Attended Transfer
       // B.transfer(C)
-      target = '<' +
-        target.dialog.remote_target.toString() +
+      target = '"' + target.remoteIdentity.friendlyName + '" ' +
+        '<' + target.dialog.remote_target.toString() +
         '?Replaces=' + target.dialog.id.call_id +
         '%3Bto-tag%3D' + target.dialog.id.remote_tag +
         '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
@@ -269,7 +269,8 @@ Session.prototype = {
   followRefer: function followRefer (callback) {
     return function referListener (callback, request) {
       // open non-SIP URIs if possible and keep session open
-      var target = request.parseHeader('refer-to').uri;
+      var referTo = request.parseHeader('refer-to');
+      var target = referTo.uri;
       if (!target.scheme.match("^sips?$")) {
         var targetString = target.toString();
         if (typeof environment.open === "function") {
@@ -300,6 +301,9 @@ Session.prototype = {
       */
       var referSession = this.ua.invite(target, {
         media: this.mediaHint,
+        params: {
+          to_displayName: referTo.friendlyName
+        },
         extraHeaders: extraHeaders
       });
 
@@ -1538,7 +1542,8 @@ SIP.InviteServerContext = InviteServerContext;
 
 InviteClientContext = function(ua, target, options) {
   options = options || {};
-  var requestParams, iceServers,
+  options.params = options.params || {};
+  var iceServers,
     extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
@@ -1559,7 +1564,7 @@ InviteClientContext = function(ua, target, options) {
   this.renderbody = options.renderbody || null;
   this.rendertype = options.rendertype || 'text/plain';
 
-  requestParams = {from_tag: this.from_tag};
+  options.params.from_tag = this.from_tag;
 
   /* Do not add ;ob in initial forming dialog requests if the registration over
    *  the current connection got a GRUU URI.
@@ -1570,8 +1575,8 @@ InviteClientContext = function(ua, target, options) {
   });
 
   if (this.anonymous) {
-    requestParams.from_displayName = 'Anonymous';
-    requestParams.from_uri = 'sip:anonymous@anonymous.invalid';
+    options.params.from_displayName = 'Anonymous';
+    options.params.from_uri = 'sip:anonymous@anonymous.invalid';
 
     extraHeaders.push('P-Preferred-Identity: '+ ua.configuration.uri.toString());
     extraHeaders.push('Privacy: id');
@@ -1593,7 +1598,6 @@ InviteClientContext = function(ua, target, options) {
   }
 
   options.extraHeaders = extraHeaders;
-  options.params = requestParams;
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
