@@ -741,7 +741,10 @@ describe('UA', function() {
     it('sends a 488 if an invite is received but there is no WebRTC support', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
-                      reply : replySpy };
+                      reply : replySpy,
+                      getHeader : function () {},
+                      parseHeader: function () {}
+                    };
       var webrtc = SIP.WebRTC.isSupported;
       spyOn(SIP.WebRTC, 'isSupported').and.callFake(function () {
         return false;
@@ -1117,6 +1120,7 @@ describe('UA', function() {
       expect(UA.configuration.autostart).toBe(true);
 
       expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
+      expect(UA.configuration.replaces).toBe(SIP.C.supported.UNSUPPORTED);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1462,6 +1466,25 @@ describe('UA', function() {
         expect(SIP.UA.configuration_check.optional.rel100(7)).toBe(SIP.C.supported.UNSUPPORTED);
         expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
         expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
+      });
+    });
+
+    describe('.replaces', function() {
+      it('returns SIP.C.supported.REQUIRED if SIP.C.supported.REQUIRED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.replaces(SIP.C.supported.REQUIRED)).toBe(SIP.C.supported.REQUIRED);
+      });
+
+      it('returns SIP.C.supported.SUPPORTED if SIP.C.supported.SUPPORTED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.replaces(SIP.C.supported.SUPPORTED)).toBe(SIP.C.supported.SUPPORTED);
+      });
+
+      it('returns SIP.C.supported.UNSUPPORTED for all other arguments passed in', function() {
+        expect(SIP.UA.configuration_check.optional.replaces()).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces(true)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces('a string')).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces(7)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
       });
     });
 

@@ -174,5 +174,21 @@ Messages.Invite = {
     'a=ssrc:3254389050 msid:iAR3IFaSOkZ5FIEfztgAwWF9xUvbq02PCVKC aa5e18ed-eb5f-4475-8383-6d6b5abae41d\r\n' +
     'a=ssrc:3254389050 mslabel:iAR3IFaSOkZ5FIEfztgAwWF9xUvbq02PCVKC\r\n' +
     'a=ssrc:3254389050 label:aa5e18ed-eb5f-4475-8383-6d6b5abae41d\r\n' +
+    '\r\n',
+
+  replaces: 'INVITE sip:alice@example.com;transport=ws SIP/2.0\r\n' +
+    'Replaces: or1ek18v4gti27r1vt91;to-tag=dt0sj4e5ek;from-tag=qviijql90r\r\n' +
+    'Via: SIP/2.0/WSS u3legsua5tov.invalid;branch=z9hG4bK4798355\r\n' +
+    'Max-Forwards: 65\r\n' +
+    'To: <sip:alice@example.com>\r\n' +
+    'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +
+    'Call-ID: 2e0tofg49n9qvhjlrr63\r\n' +
+    'CSeq: 7773 INVITE\r\n' +
+    'Contact: <sip:h9po1ojc@u3legsua5tov.invalid;transport=ws;ob>\r\n' +
+    'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\n' +
+    'Content-Type: application/sdp\r\n' +
+    'Supported: outbound\r\n' +
+    'User-Agent: SIP.js 0.5.0-devel\r\n' +
+    'Content-Length: 0\r\n' +
     '\r\n'
 };

@@ -681,6 +681,30 @@ Refer_To = ( addr_spec / name_addr / absoluteURI ) ( SEMI r_param )* {
 
 r_param = generic_param
 
+// REPLACES
+
+Replaces          = replaces_call_id ( SEMI replaces_params )* {
+                      if (!(options.data.replaces_from_tag && options.data.replaces_to_tag)) {
+                        options.data = -1;
+                      }
+                    }
+
+replaces_call_id  = Call_ID {
+                      options.data = {
+                        call_id: options.data
+                      };
+                    }
+
+replaces_params   = "from-tag"i EQUAL from_tag: token {
+                      options.data.replaces_from_tag = from_tag;
+                    }
+                  / "to-tag"i EQUAL to_tag: token {
+                      options.data.replaces_to_tag = to_tag;
+                    }
+                  / "early-only"i {
+                      options.data.early_only = true;
+                    }
+                  / generic_param
 
 // REQUIRE
 
