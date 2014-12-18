@@ -1538,7 +1538,8 @@ SIP.InviteServerContext = InviteServerContext;
 
 InviteClientContext = function(ua, target, options) {
   options = options || {};
-  var requestParams, iceServers,
+  options.params = options.params || {};
+  var iceServers,
     extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
@@ -1559,7 +1560,7 @@ InviteClientContext = function(ua, target, options) {
   this.renderbody = options.renderbody || null;
   this.rendertype = options.rendertype || 'text/plain';
 
-  requestParams = {from_tag: this.from_tag};
+  options.params.from_tag = this.from_tag;
 
   /* Do not add ;ob in initial forming dialog requests if the registration over
    *  the current connection got a GRUU URI.
@@ -1570,8 +1571,8 @@ InviteClientContext = function(ua, target, options) {
   });
 
   if (this.anonymous) {
-    requestParams.from_displayName = 'Anonymous';
-    requestParams.from_uri = 'sip:anonymous@anonymous.invalid';
+    options.params.from_displayName = 'Anonymous';
+    options.params.from_uri = 'sip:anonymous@anonymous.invalid';
 
     extraHeaders.push('P-Preferred-Identity: '+ ua.configuration.uri.toString());
     extraHeaders.push('Privacy: id');
@@ -1593,7 +1594,6 @@ InviteClientContext = function(ua, target, options) {
   }
 
   options.extraHeaders = extraHeaders;
-  options.params = requestParams;
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
