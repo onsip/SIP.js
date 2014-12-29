@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "pegjs": "0.8.0",
-    "ws": "^0.4.32"
+    "ws": "^0.6.4"
   },
   "optionalDependencies": {
     "promiscuous": "^0.6.0"
