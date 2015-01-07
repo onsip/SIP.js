@@ -1582,6 +1582,12 @@ describe('UA', function() {
       it('works whether an array is passed or not', function() {
         expect(SIP.UA.configuration_check.optional.turnServers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
         expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
+        submitted_turn_servers = {
+          urls: ['example.com', 'example.org', 'example.net'],
+          username: 'alice',
+          password: 'pass'
+        };
+        expect(SIP.UA.configuration_check.optional.turnServers(submitted_turn_servers)).toEqual([submitted_turn_servers]);
       });
 
       it('works if you pass in server instead of urls (backwards compatible', function() {
@@ -1596,6 +1602,19 @@ describe('UA', function() {
 
       it('fails if the url passed is not a valid turn_uri', function() {
         expect(SIP.UA.configuration_check.optional.turnServers([{urls: '', username: 'alice', password: 'pass'}])).toBeUndefined();
+        submitted_turn_servers = [
+          {
+            urls: ['example.com', 'example.org'],
+            username: 'alice',
+            password: 'pass'
+          },
+          {
+            urls: [''],
+            username: 'alice',
+            password: 'pass'
+          }
+        ];
+        expect(SIP.UA.configuration_check.optional.turnServers(submitted_turn_servers)).toBeUndefined();
       });
     });
 

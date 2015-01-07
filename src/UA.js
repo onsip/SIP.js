@@ -1441,7 +1441,7 @@ UA.configuration_check = {
     },
 
     turnServers: function(turnServers) {
-      var idx, length, turn_server, url;
+      var idx, jdx, length, turn_server, num_turn_server_urls, url;
 
       if (turnServers instanceof Array) {
         // Do nothing
@@ -1461,13 +1461,15 @@ UA.configuration_check = {
           return;
         }
 
-        if (!(turn_server.urls instanceof Array)) {
+        if (turn_server.urls instanceof Array) {
+          num_turn_server_urls = turn_server.urls.length;
+        } else {
           turn_server.urls = [turn_server.urls];
+          num_turn_server_urls = 1;
         }
 
-        length = turn_server.urls.length;
-        for (idx = 0; idx < length; idx++) {
-          url = turn_server.urls[idx];
+        for (jdx = 0; jdx < num_turn_server_urls; jdx++) {
+          url = turn_server.urls[jdx];
 
           if (!(/^turns?:/.test(url))) {
             url = 'turn:' + url;
