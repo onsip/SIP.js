@@ -13,21 +13,6 @@
 module.exports = function (SIP) {
 
 var MediaHandler = function(session, options) {
-  var events = [
-    'userMediaRequest',
-    'userMedia',
-    'userMediaFailed',
-    'iceGathering',
-    'iceCandidate',
-    'iceComplete',
-    'iceFailed',
-    'iceDisconnected',
-    'iceClosed',
-    'getDescription',
-    'setDescription',
-    'dataChannel',
-    'addStream'
-  ];
   options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);
@@ -154,12 +139,8 @@ var MediaHandler = function(session, options) {
     self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
   };
 
-  this.initEvents(events);
-
   function selfEmit(mh, event) {
-    if (mh.mediaStreamManager.on &&
-        mh.mediaStreamManager.checkEvent &&
-        mh.mediaStreamManager.checkEvent(event)) {
+    if (mh.mediaStreamManager.on) {
       mh.mediaStreamManager.on(event, function () {
         mh.emit.apply(mh, [event].concat(Array.prototype.slice.call(arguments)));
       });

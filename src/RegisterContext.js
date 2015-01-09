@@ -4,11 +4,7 @@ var RegisterContext;
 
 RegisterContext = function (ua) {
   var params = {},
-      regId = 1,
-      events = [
-        'registered',
-        'unregistered'
-      ];
+      regId = 1;
 
   this.registrar = ua.configuration.registrarServer;
   this.expires = ua.configuration.registerExpires;
@@ -42,7 +38,6 @@ RegisterContext = function (ua) {
   this.registered = false;
 
   this.logger = ua.getLogger('sip.registercontext');
-  this.initMoreEvents(events);
 };
 
 RegisterContext.prototype = {

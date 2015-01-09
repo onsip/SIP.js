@@ -18,7 +18,7 @@ describe('RegisterContext', function() {
         return { log : log };
       },
       normalizeTarget: function (target) { return target; },
-      checkListener: function () { return true; }
+      listeners: function () { return [1]; }
     };
     RegisterContext = new SIP.RegisterContext(ua);
     

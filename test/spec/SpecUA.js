@@ -237,7 +237,7 @@ describe('UA', function() {
     });
 
     it('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
-      spyOn(UA, 'off');
+      spyOn(UA, 'removeListener');
 
       //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
 
@@ -255,7 +255,7 @@ describe('UA', function() {
       UA.transactions['nict'] = [];
       UA.emit('transactionDestroyed');
       expect(UA.transport.disconnect).toHaveBeenCalled();
-      expect(UA.off).toHaveBeenCalled();
+      expect(UA.removeListener).toHaveBeenCalled();
     });
   });
 
@@ -701,11 +701,11 @@ describe('UA', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return false;
+      UA.listeners = jasmine.createSpy('listeners').and.callFake(function() {
+        return [];
       });
       expect(UA.receiveRequest(request)).toBeUndefined();
-      expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
+      expect(UA.listeners).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
       expect(replySpy).toHaveBeenCalledWith(405, null, jasmine.any(Array));
     });
@@ -718,8 +718,8 @@ describe('UA', function() {
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
                       getHeader: jasmine.createSpy('getHeader')};
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return true;
+      UA.listeners = jasmine.createSpy('listeners').and.callFake(function() {
+        return [1];
       });
       UA.on('message',callback);
 
