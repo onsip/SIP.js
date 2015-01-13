@@ -216,23 +216,27 @@ describe('An INVITE sent from a UAC', function () {
   describe('with options.media', function () {
     var gumSpy;
 
-    it('not defined, defaults to audio+video', function () {
+    it('not defined, defaults to audio+video', function (done) {
       gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
         expect(gumSpy.calls.mostRecent().args[0]).toEqual({
           audio: true,
           video: true
         });
-        return SIP.Utils.Promise.resolve();
+        return SIP.Utils.Promise.resolve().then(function () {
+          setTimeout(done, 0);
+        });
       });
       session = ua.invite('alice@example.com', session_options);
     });
 
-    it('defined as constraints, follows those constraints', function () {
+    it('defined as constraints, follows those constraints', function (done) {
       var myConstraints;
 
       gumSpy = spyOn(SIP.WebRTC, 'getUserMedia').and.callFake(function() {
         expect(gumSpy.calls.mostRecent().args[0]).toEqual(myConstraints);
-        return SIP.Utils.Promise.resolve();
+        return SIP.Utils.Promise.resolve().then(function () {
+          setTimeout(done, 0);
+        });
       });
 
       myConstraints = {
@@ -245,7 +249,7 @@ describe('An INVITE sent from a UAC', function () {
           basic: 100
         }
       };
-      session_options.media = {constraints: myConstraints};session = ua.invite('alice@example.com', session_options);
+      session_options.media = {constraints: myConstraints};
 
       session = ua.invite('alice@example.com', session_options);
     });
@@ -301,7 +305,7 @@ describe('An INVITE sent from a UAC', function () {
         uas.transport.ws.send.and.callFake(function (){
           var arg0 = uas.transport.ws.send.calls.mostRecent().args[0];
           if (arg0.indexOf('180 Ringing') >= 0) {
-            spyOn(session, 'emit').and.callFake(function (){
+            spyOn(session, 'emit').and.callFake(function () {
               setTimeout(done, 0);
             });
             ua.transport.ws.receiveMessage(arg0);
@@ -326,7 +330,7 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
-  describe('when receiving a 2xx response', function (done) {
+  describe('when receiving a 2xx response', function () {
     var uas;
 
     beforeEach(function(done) {
@@ -601,6 +605,18 @@ describe('A UAS receiving an INVITE', function () {
           });
         });
 
+        afterEach(function (done) {
+          function closeOut() {
+            ua.off();
+            done();
+          }
+          if (ua.isConnected()) {
+            ua.on('disconnected', closeOut).stop();
+          } else {
+            closeOut();
+          }
+        });
+
         it('emits "replaced" on the replaced session, then terminates it', function (done) {
           ua.dialogs['or1ek18v4gti27r1vt91' + 'dt0sj4e5ek' + 'qviijql90r'] = {
             owner: {
@@ -628,6 +644,18 @@ describe('A UAS receiving an INVITE', function () {
           ua.on('invite', function (session) {
             session.accept();
           });
+        });
+
+        afterEach(function (done) {
+          function closeOut() {
+            ua.off();
+            done();
+          }
+          if (ua.isConnected()) {
+            ua.on('disconnected', closeOut).stop();
+          } else {
+            closeOut();
+          }
         });
 
         it('neither emits "replaced" on the replaced session, nor terminates it', function () {
