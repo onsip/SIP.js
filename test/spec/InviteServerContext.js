@@ -5,6 +5,11 @@
 describe('A UAS receiving an INVITE', function () {
   var ua, session, ua_config;
 
+  /**
+   *
+   * Invite w/o SDP
+   *
+   */
   describe('without SDP', function () {
     it('creates an invite server context with the UA\'s mediaHandlerFactory, the ISC emits invite', function () {
       ua_config = {
@@ -39,6 +44,11 @@ describe('A UAS receiving an INVITE', function () {
     });
   });
 
+  /**
+   *
+   * 100rel
+   *
+   */
   describe('with 100rel unsupported', function () {
     beforeEach(function (done) {
       ua_config = {
@@ -177,6 +187,12 @@ describe('A UAS receiving an INVITE', function () {
     });
   });
 
+
+  /**
+   *
+   * Invite w/ Replaces
+   *
+   */
   describe('with a Replaces header', function () {
     describe('matching another dialog', function () {
       describe('with "replaces" supported', function () {
@@ -264,6 +280,114 @@ describe('A UAS receiving an INVITE', function () {
           ua.transport.ws.receiveMessage(Messages.Invite.replaces);
         });
       });
+    });
+  });
+
+
+  /**
+   *
+   * Termination events
+   *
+   */
+  describe('that is then terminated', function () {
+    it('cannot cancel the request', function () {
+
+    });
+      
+    describe('before it has been accepted', function () {
+
+      /* All rejection responses should fire these events. */
+      function rejectResponseTests() {
+        it('fires a `rejected` event', function () {
+
+        });
+
+        it('fires a `failed` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+      }
+
+      describe('by a [3-6]xx response', function () {
+        rejectResponseTests();
+      });
+
+      describe('by a system error', function () {
+        it('fires a `failed` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` event', function () {
+
+        });
+      });
+
+      describe('by a CANCEL from the UAC', function () {
+        it('fires a `cancel` event', function () {
+
+        });
+
+        describe('when it sends a 487 response', function () {
+          rejectResponseTests();
+        });
+      });
+    });
+
+    describe('after it has been accepted', function () {
+
+      describe('by a BYE request', function () {
+        it('fires a `bye` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+
+        });
+      });
+
+      describe('using the `bye` method', function () {
+        it('fires a `bye` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+
+        });
+      });
+
+      describe('by a system failure', function () {
+        it('fires a `bye` event', function () {
+
+        });
+
+        it('sends a BYE with a reason', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+
+        });
+      });
+
     });
   });
 });

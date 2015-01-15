@@ -18,6 +18,11 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
+  /**
+   *
+   * Initial behavior tests
+   *
+   */
   it('inits ClientContext events', function () {
     expect(session.checkEvent('progress')).toBe(true);
     expect(session.checkEvent('accepted')).toBe(true);
@@ -64,7 +69,7 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   it('sends an INVITE on the WebSocket', function (done) {
-    //IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
+    // HACK: IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
     setTimeout(function() {
       expect(ua.transport.ws.send).toHaveBeenCalled();
       expect(ua.transport.ws.send.calls.mostRecent().args[0]).toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
@@ -78,6 +83,12 @@ describe('An INVITE sent from a UAC', function () {
     expect(session.earlyDialogs).toEqual({});
   });
 
+
+  /**
+   *
+   * RFC 3261 rules for valid requests.
+   *
+   */
   describe('following RFC3261 request generation rules (8.1.1)', function () {
 
     it('contains minimum header fields', function () {
@@ -294,6 +305,12 @@ describe('An INVITE sent from a UAC', function () {
 
   });
 
+
+  /**
+   *
+   * 1xx Response texts (Progress)
+   *
+   */
   describe('when receiving a 1xx response', function () {
     var uas;
 
@@ -329,7 +346,12 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
-  describe('when receiving a 2xx response', function () {
+  /**
+   *
+   * 2xx Response texts (Accepted)
+   *
+   */
+  describe('when receiving a 2xx response', function (done) {
     var uas;
 
     beforeEach(function(done) {
@@ -370,6 +392,11 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
+  /**
+   *
+   * [3-6]xx Response texts (Rejected/Redirected/Failure)
+   *
+   */
   describe('when receiving a 3xx-6xx response', function () {
     var uas;
 
@@ -411,4 +438,149 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
+  /**
+   *
+   * Termination events
+   *
+   */
+  describe('when terminated', function () {
+
+    /* Before acceptance. */
+    describe('before it has been accepted', function () {
+
+      /* All rejection responses should fire these events. */
+      function rejectResponseTests() {
+        it('fires a `rejected` event', function () {
+
+        });
+
+        it('fires a `failed` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+      }
+      
+      describe('by a [3-6]xx response', function () {
+        rejectResponseTests();
+      });
+
+      describe('by a system error', function () {
+        it('fires a `failed` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` event', function () {
+
+        });
+      });
+
+      describe('using the `cancel` method', function () {
+        it('fires a `cancel` event', function () {
+
+        });
+
+        it('does not immediately fire `rejected`', function () {
+          
+        });
+
+        it('does not immediately fire `failed`', function () {
+          
+        });
+
+        it('does not immediately fire `terminated`', function () {
+
+        });
+
+        describe('after receiving a 487', function () {
+          rejectResponseTests();
+        });
+      });
+
+      describe('using the `terminate` method', function () {
+        it('uses `cancel`', function () {
+
+        });
+        
+        it('does not fire `terminated` on its own', function () {
+
+        });
+      });
+    });
+
+    /* After acceptance. */
+    describe('after it has been accepted', function () {
+      it('does not fire a `failed` event', function () {
+
+      });
+
+      describe('by a BYE request', function () {
+        it('fires a `bye` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+
+        });
+      });
+
+      describe('using the `bye` method', function () {
+        it('fires a `bye` event', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+
+        });
+
+      });
+
+      describe('by a system failure', function () {
+        it('fires a `bye` event', function () {
+
+        });
+
+        it('sends a BYE with a reason', function () {
+
+        });
+
+        it('fires a `terminated` event', function () {
+
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+
+        });
+      });
+
+      it('cannot be canceled', function () {
+        
+      });
+
+      describe('using the `terminated` method', function () {
+        it('uses `bye`', function () {
+
+        });
+
+        it('does not fire `terminated` on its own', function () {
+
+        });
+      });
+    });
+
+  });
 });
