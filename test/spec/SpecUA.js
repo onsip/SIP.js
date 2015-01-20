@@ -443,7 +443,7 @@ describe('UA', function() {
 
     beforeEach(function() {
       target = 'target';
-      event = 'event'
+      event = 'event';
       subscribeSpy = jasmine.createSpy('subscribe');
 
       spyOn(SIP, 'Subscription').and.returnValue({
