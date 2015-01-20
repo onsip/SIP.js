@@ -58,7 +58,7 @@ Utils= {
     options[winner] = options[winner] || options[loser] || defaultValue;
   },
 
-  desugarSessionOptions: function desugarSessionOptions (options) {
+  desugarSessionOptions: function (options) {
     if (global.HTMLMediaElement && options instanceof global.HTMLMediaElement) {
       options = {
         media: {
