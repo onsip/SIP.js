@@ -92,6 +92,17 @@ Utils= {
     return 'v=0\r\n' + body.slice(start, end) + '\r\ns=-\r\nt=0 0\r\nc=IN IP4 0.0.0.0';
   },
 
+  copy: function(source) {
+    var copy = {}, prop;
+
+    for (prop in source) {
+      if (hasOwnProperty.call(source, prop)) {
+        copy[prop] = source[prop];
+      }
+    }
+    return copy;
+  },
+
   isFunction: function(fn) {
     if (fn !== undefined) {
       return Object.prototype.toString.call(fn) === '[object Function]';
