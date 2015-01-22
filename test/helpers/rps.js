@@ -106,19 +106,18 @@ RPSMediaHandler.prototype = {
   checkGestures: function () {
     if (!this.myGesture || !this.theirGesture) { return; }
 
-    console.log('\n\n------------\n\n');
-    console.log('Negotiation complete!');
+    //console.log('\n\n------------\n\n');
+    //console.log('Negotiation complete!');
     if (this.myGesture == this.theirGesture) {
-      console.log('TIE!');
+      //console.log('TIE!');
     } else if ((this.myGesture == 'rock' && this.theirGesture == 'paper') ||
                (this.myGesture == 'paper' && this.theirGesture == 'scissors') ||
                (this.myGesture == 'scissors' && this.theirGesture == 'rock')) {
-      //debugger;
-      console.log('You lose!');
+      //console.log('You lose!');
     } else {
-      console.log('You win!');
+      //console.log('You win!');
     }
-    console.log('\n\n------------\n\n');
+    //console.log('\n\n------------\n\n');
   }
 };
 

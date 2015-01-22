@@ -190,5 +190,62 @@ Messages.Invite = {
     'Supported: outbound\r\n' +
     'User-Agent: SIP.js 0.5.0-devel\r\n' +
     'Content-Length: 0\r\n' +
-    '\r\n'
+    '\r\n',
+
+  rps: {
+    rock: 'INVITE sip:alice@example.com SIP/2.0\r\n' +
+      'Via: SIP/2.0/WSS u3legsua5tov.invalid;branch=z9hG4bK4798355\r\n' +
+      'Max-Forwards: 65\r\n' +
+      'To: <sip:alice@example.com>\r\n' +
+      'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +
+      'Call-ID: 2e0tofg49n9qvhjlrr63\r\n' +
+      'CSeq: 7773 INVITE\r\n' +
+      'Contact: <sip:h9po1ojc@u3legsua5tov.invalid;transport=ws;ob>\r\n' +
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\n' +
+      'Content-Type: application/sdp\r\n' +
+      'Supported: outbound\r\n' +
+      'User-Agent: SIP.js 0.5.0-devel\r\n' +
+      'Content-Length: 4\r\n' +
+      '\r\n' +
+      'rock\r\n' +
+      '\r\n',
+
+    cancel: 'CANCEL sip:alice@example.com SIP/2.0\r\n' +
+      'Via: SIP/2.0/WSS nn6bh156cpod.invalid;branch=z9hG4bK4798355\r\n' +
+      'To: <sip:alice@example.com>\r\n' +
+      'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +
+      'Call-ID: 2e0tofg49n9qvhjlrr63\r\n' +
+      'CSeq: 7773 CANCEL\r\n' +
+      'Content-Length: 0\r\n' +
+      '\r\n',
+
+    ack: function (tag) {
+      return 'ACK sip:alice@example.com SIP/2.0\r\n' +
+        'Via: SIP/2.0/WSS nn6bh156cpod.invalid;branch=z9hG4bK4798355\r\n' +
+        'Max-Forwards: 66\r\n' +
+        'To: <sip:alice@example.com>;tag=' + tag + '\r\n' +
+        'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +
+        'Call-ID: 2e0tofg49n9qvhjlrr63\r\n' +
+        'CSeq: 7773 ACK\r\n' +
+        'Contact: <sip:h9po1ojc@u3legsua5tov.invalid;transport=ws;ob>\r\n' +
+        'Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, PRACK, NOTIFY\r\n' +
+        'Content-Length: 0\r\n' +
+        '\r\n';
+    },
+
+
+    bye: function (tag) {
+      return 'BYE sip:alice@example.com SIP/2.0\r\n' +
+        'Via: SIP/2.0/WSS nn6bh156cpod.invalid;branch=z9hG4bK4798355\r\n' +
+        'Max-Forwards: 66\r\n' +
+        'To: <sip:alice@example.com>;tag=' + tag + '\r\n' +
+        'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +
+        'Call-ID: 2e0tofg49n9qvhjlrr63\r\n' +
+        'CSeq: 7774 BYE\r\n' +
+        'Contact: <sip:h9po1ojc@u3legsua5tov.invalid;transport=ws;ob>\r\n' +
+        'Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, PRACK, NOTIFY\r\n' +
+        'Content-Length: 0\r\n' +
+        '\r\n';
+    },
+  }
 };

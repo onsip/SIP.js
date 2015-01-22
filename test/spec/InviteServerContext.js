@@ -290,100 +290,245 @@ describe('A UAS receiving an INVITE', function () {
    *
    */
   describe('that is then terminated', function () {
-    it('cannot cancel the request', function () {
+
+    beforeEach(function (done) {
+      var ua_config = {
+        register: false,
+        uri: 'alice@example.com',
+        mediaHandlerFactory: rpsMediaHandlerFactory,
+        traceSip: true
+      };
+
+      var session_options = {
+        media: {
+          gesture: 'rock'
+        }
+      };
+
+      this.ua = new SIP.UA(ua_config).
+        on('invite', function (session) {
+          this.session = session;
+
+          this.cancelSpy = jasmine.createSpy('cancel');
+          this.session.on('cancel', this.cancelSpy);
+
+          this.failedSpy = jasmine.createSpy('failed');
+          this.session.on('failed', this.failedSpy);
+
+          this.rejectedSpy = jasmine.createSpy('rejected');
+          this.session.on('rejected', this.rejectedSpy);
+
+          this.terminatedSpy = jasmine.createSpy('terminated');
+          this.session.on('terminated', this.terminatedSpy);
+
+          this.byeSpy = jasmine.createSpy('bye');
+          this.session.on('bye', this.byeSpy);
+
+          spyOn(this.ua.transport, 'send');
+
+          done();
+        }.bind(this)).
+        once('connected', function () {
+          this.transport.onMessage({ data: Messages.Invite.rps.rock });
+        });
 
     });
-      
+
+    afterEach(function (done) {
+      try {
+        this.session.terminate();
+      } catch (e) {}
+
+      if (this.ua.isConnected()) {
+        this.ua.once('disconnected', function () {
+          done();
+        }).stop();
+      } else {
+        done();
+      }
+    });
+
+    it('cannot cancel the request', function () {
+      expect(this.session.cancel).not.toBeDefined();
+    });
+
     describe('before it has been accepted', function () {
 
       /* All rejection responses should fire these events. */
       function rejectResponseTests() {
         it('fires a `rejected` event', function () {
-
+          expect(this.rejectedSpy).toHaveBeenCalled();
         });
 
         it('fires a `failed` event', function () {
-
+          expect(this.failedSpy).toHaveBeenCalled();
         });
 
         it('fires a `terminated` event', function () {
-
+          expect(this.terminatedSpy).toHaveBeenCalled();
         });
       }
 
       describe('by a [3-6]xx response', function () {
-        rejectResponseTests();
+        function testWith(status_code) {
+          describe('(' + status_code + ')', function () {
+            beforeEach(function () {
+              this.session.reject({
+                statusCode: status_code
+              });
+            });
+            rejectResponseTests();
+          });
+        }
+
+        testWith(300);
+        testWith(302);
+        testWith(400);
+        testWith(404);
+        testWith(500);
+        testWith(503);
+        testWith(600);
+        testWith(603);
       });
 
       describe('by a system error', function () {
-        it('fires a `failed` event', function () {
 
-        });
+        function testWith(method, args) {
+          describe('(' + method + ')', function () {
+            beforeEach(function () {
+              this.session[method].apply(this.session, args);
+            });
 
-        it('fires a `terminated` event', function () {
+            it('fires a `failed` event', function () {
+              expect(this.failedSpy).toHaveBeenCalled();
+            });
 
-        });
+            it('fires a `terminated` event', function () {
+              expect(this.terminatedSpy).toHaveBeenCalled();
+            });
 
-        it('does not fire a `rejected` event', function () {
+            it('does not fire a `rejected` event', function () {
+              expect(this.rejectedSpy).not.toHaveBeenCalled();
+            });
+          });
+        }
 
-        });
+        testWith('onTransportError');
+        testWith('onDialogError');
       });
 
       describe('by a CANCEL from the UAC', function () {
+        beforeEach(function () {
+          this.ua.transport.send.and.callFake(function (msg) {
+            console.log('"Sending" message:', msg);
+            return true;
+          });
+          this.ua.transport.onMessage({ data: Messages.Invite.rps.cancel });
+        });
+
+        afterEach(function () {
+          for (var transaction in this.ua.transactions.nist) {
+            this.ua.transactions.nist[transaction].onTransportError();
+          }
+        });
+
         it('fires a `cancel` event', function () {
-
+          expect(this.cancelSpy).toHaveBeenCalled();
         });
 
-        describe('when it sends a 487 response', function () {
-          rejectResponseTests();
+        rejectResponseTests();
+      });
+    });
+
+    describe('between being accepted and getting media', function () {
+      beforeEach(function () {
+        this.session.accept({
+          media: { gesture: 'paper' }
         });
+
+        this.session.terminate();
+      });
+
+      it('fires a post-acceptance events', function () {
+        expect(this.byeSpy).toHaveBeenCalled();
+        expect(this.terminatedSpy).toHaveBeenCalled();
+        expect(this.failedSpy).not.toHaveBeenCalled();
+        expect(this.rejectedSpy).not.toHaveBeenCalled();
       });
     });
 
     describe('after it has been accepted', function () {
 
-      describe('by a BYE request', function () {
-        it('fires a `bye` event', function () {
+      beforeEach(function (done) {
+        var once = true;
+        this.ua.transport.send.and.callFake(function () {
+          this.ua.transport.send.and.stub();
+          setTimeout(function () {
+            this.ua.transport.onMessage({ data: Messages.Invite.rps.ack(this.session.request.to_tag) });
+            done();
+          }.bind(this), 100);
 
+          return true;
+        }.bind(this));
+
+        this.session.accept({
+          media: { gesture: 'paper' }
+        });
+      });
+
+      describe('by a BYE request', function () {
+        beforeEach(function () {
+          this.ua.transport.onMessage({ data: Messages.Invite.rps.bye(this.session.request.to_tag) });
+        });
+
+        it('fires a `bye` event', function () {
+          expect(this.byeSpy).toHaveBeenCalled();
         });
 
         it('fires a `terminated` event', function () {
-
+          expect(this.terminatedSpy).toHaveBeenCalled();
         });
 
         it('does not fire a `rejected` or `failed` event', function () {
-
+          expect(this.failedSpy).not.toHaveBeenCalled();
+          expect(this.rejectedSpy).not.toHaveBeenCalled();
         });
       });
 
       describe('using the `bye` method', function () {
-        it('fires a `bye` event', function () {
+        beforeEach(function () {
+          this.session.bye();
+        });
 
+        it('fires a `bye` event', function () {
+          expect(this.byeSpy).toHaveBeenCalled();
         });
 
         it('fires a `terminated` event', function () {
-
+          expect(this.terminatedSpy).toHaveBeenCalled();
         });
 
         it('does not fire a `rejected` or `failed` event', function () {
-
+          expect(this.failedSpy).not.toHaveBeenCalled();
+          expect(this.rejectedSpy).not.toHaveBeenCalled();
         });
       });
 
+      // FIXME - WAM - I'm not sure when this would happen.
       describe('by a system failure', function () {
-        it('fires a `bye` event', function () {
+        xit('fires a `bye` event', function () {
 
         });
 
-        it('sends a BYE with a reason', function () {
+        xit('sends a BYE with a reason', function () {
 
         });
 
-        it('fires a `terminated` event', function () {
+        xit('fires a `terminated` event', function () {
 
         });
 
-        it('does not fire a `rejected` or `failed` event', function () {
+        xit('does not fire a `rejected` or `failed` event', function () {
 
         });
       });

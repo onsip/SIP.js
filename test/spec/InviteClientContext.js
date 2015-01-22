@@ -27,11 +27,9 @@ describe('An INVITE sent from a UAC', function () {
 
     if (this.ua.isConnected()) {
       this.ua.once('disconnected', function () {
-        console.log('--- after');
         done();
       }).stop();
     } else {
-      console.log('--- after');
       done();
     }
   });
@@ -415,6 +413,7 @@ describe('An INVITE sent from a UAC', function () {
     });
   });
 
+
   /**
    *
    * Termination events
@@ -422,142 +421,240 @@ describe('An INVITE sent from a UAC', function () {
    */
   describe('when terminated', function () {
 
+    var cancelSpy, failedSpy, rejectedSpy, terminatedSpy, byeSpy;
+
+    beforeEach(function (done) {
+      cancelSpy = jasmine.createSpy('cancel');
+      this.session.on('cancel', cancelSpy);
+
+      failedSpy = jasmine.createSpy('failed');
+      this.session.on('failed', failedSpy);
+
+      rejectedSpy = jasmine.createSpy('rejected');
+      this.session.on('rejected', rejectedSpy);
+
+      terminatedSpy = jasmine.createSpy('terminated');
+      this.session.on('terminated', terminatedSpy);
+
+      byeSpy = jasmine.createSpy('bye');
+      this.session.on('bye', byeSpy);
+
+      spyOn(this.ua.transport, 'send').and.callFake(function () {
+        done();
+      }, 0);
+    });
+
     /* Before acceptance. */
     describe('before it has been accepted', function () {
 
       /* All rejection responses should fire these events. */
       function rejectResponseTests() {
         it('fires a `rejected` event', function () {
-
+          expect(failedSpy).toHaveBeenCalled();
         });
 
         it('fires a `failed` event', function () {
-
+          expect(rejectedSpy).toHaveBeenCalled();
         });
 
         it('fires a `terminated` event', function () {
-
+          expect(terminatedSpy).toHaveBeenCalled();
         });
       }
-      
+
       describe('by a [3-6]xx response', function () {
-        rejectResponseTests();
+
+        function testWith(status_code) {
+          describe('(' + status_code + ')', function () {
+            beforeEach(function () {
+              var response = SIPHelper.createResponse(this.session.request, status_code);
+              this.session.receiveResponse(response);
+            });
+            rejectResponseTests();
+          });
+        }
+
+        testWith(300);
+        testWith(302);
+        testWith(400);
+        testWith(404);
+        testWith(500);
+        testWith(503);
+        testWith(600);
+        testWith(603);
       });
 
+
       describe('by a system error', function () {
-        it('fires a `failed` event', function () {
 
-        });
+        function testWith(method, args) {
+          describe('(' + method + ')', function () {
+            beforeEach(function () {
+              this.session[method].apply(this.session, args);
+            });
 
-        it('fires a `terminated` event', function () {
+            it('fires a `failed` event', function () {
+              expect(failedSpy).toHaveBeenCalled();
+            });
 
-        });
+            it('fires a `terminated` event', function () {
+              expect(terminatedSpy).toHaveBeenCalled();
+            });
 
-        it('does not fire a `rejected` event', function () {
+            it('does not fire a `rejected` event', function () {
+              expect(rejectedSpy).not.toHaveBeenCalled();
+            });
+          });
+        }
 
-        });
+        testWith('onTransportError');
+        testWith('onRequestTimeout');
+        testWith('onDialogError');
       });
 
       describe('using the `cancel` method', function () {
-        it('fires a `cancel` event', function () {
 
+        beforeEach(function () {
+          this.session.cancel();
+        });
+
+        it('fires a `cancel` event', function () {
+          expect(cancelSpy).toHaveBeenCalled();
         });
 
         it('does not immediately fire `rejected`', function () {
-          
+          expect(rejectedSpy).not.toHaveBeenCalled();
         });
 
         it('does not immediately fire `failed`', function () {
-          
+          expect(failedSpy).not.toHaveBeenCalled();
         });
 
         it('does not immediately fire `terminated`', function () {
-
+          expect(terminatedSpy).not.toHaveBeenCalled();
         });
 
         describe('after receiving a 487', function () {
+          beforeEach(function () {
+            var response = SIPHelper.createResponse(this.session.request, 487);
+            this.session.receiveResponse(response);
+          });
           rejectResponseTests();
         });
       });
 
       describe('using the `terminate` method', function () {
-        it('uses `cancel`', function () {
-
+        beforeEach(function () {
+          this.session.terminate();
         });
-        
-        it('does not fire `terminated` on its own', function () {
 
+        it('uses `cancel`', function () {
+          expect(cancelSpy).toHaveBeenCalled();
+          expect(byeSpy).not.toHaveBeenCalled();
+        });
+
+        it('does not fire `terminated` on its own', function () {
+          expect(terminatedSpy).not.toHaveBeenCalled();
         });
       });
     });
 
     /* After acceptance. */
     describe('after it has been accepted', function () {
-      it('does not fire a `failed` event', function () {
 
-      });
-
-      describe('by a BYE request', function () {
-        it('fires a `bye` event', function () {
-
-        });
-
-        it('fires a `terminated` event', function () {
-
-        });
-
-        it('does not fire a `rejected` or `failed` event', function () {
-
-        });
-      });
-
-      describe('using the `bye` method', function () {
-        it('fires a `bye` event', function () {
-
-        });
-
-        it('fires a `terminated` event', function () {
-
-        });
-
-        it('does not fire a `rejected` or `failed` event', function () {
-
-        });
-
-      });
-
-      describe('by a system failure', function () {
-        it('fires a `bye` event', function () {
-
-        });
-
-        it('sends a BYE with a reason', function () {
-
-        });
-
-        it('fires a `terminated` event', function () {
-
-        });
-
-        it('does not fire a `rejected` or `failed` event', function () {
-
+      beforeEach(function (done) {
+        var response = SIPHelper.createResponse(this.session.request, 200, 'OK', 'paper');
+        this.session.receiveResponse(response);
+        this.session.on('accepted', function () {
+          setTimeout(done, 0);
         });
       });
 
       it('cannot be canceled', function () {
-        
+        this.session.cancel();
+        expect(cancelSpy).not.toHaveBeenCalled();
       });
 
-      describe('using the `terminated` method', function () {
-        it('uses `bye`', function () {
+      describe('by a BYE request', function () {
+        beforeEach(function () {
+          var byeRequest = new SIP.IncomingRequest(this.session.ua);
+          byeRequest.method = 'BYE';
+          this.session.receiveRequest(byeRequest);
+        });
+
+        it('fires a `bye` event', function () {
+          expect(byeSpy).toHaveBeenCalled();
+        });
+
+        it('fires a `terminated` event', function () {
+          expect(terminatedSpy).toHaveBeenCalled();
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+          expect(rejectedSpy).not.toHaveBeenCalled();
+          expect(failedSpy).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('using the `bye` method', function () {
+        beforeEach(function () {
+          this.session.bye();
+        });
+
+        it('fires a `bye` event', function () {
+          expect(byeSpy).toHaveBeenCalled();
+        });
+
+        it('fires a `terminated` event', function () {
+          expect(terminatedSpy).toHaveBeenCalled();
+        });
+
+        it('does not fire a `rejected` or `failed` event', function () {
+          expect(rejectedSpy).not.toHaveBeenCalled();
+          expect(failedSpy).not.toHaveBeenCalled();
+        });
+
+      });
+
+      // FIXME - WAM - I'm not sure when this would happen.
+      describe('by a system failure', function () {
+        xit('fires a `bye` event', function () {
 
         });
 
-        it('does not fire `terminated` on its own', function () {
+        xit('sends a BYE with a reason', function () {
 
+        });
+
+        xit('fires a `terminated` event', function () {
+
+        });
+
+        xit('does not fire a `rejected` or `failed` event', function () {
+
+        });
+      });
+
+      describe('using the `terminated` method', function () {
+        beforeEach(function () {
+          this.session.terminate();
+        });
+
+        it('uses `bye`', function () {
+          expect(byeSpy).toHaveBeenCalled();
+          expect(cancelSpy).not.toHaveBeenCalled();
+        });
+
+        it('fires `terminated` synchronously with the bye', function () {
+          expect(terminatedSpy).toHaveBeenCalled();
+        });
+
+        it('does not fire the `failed` event', function () {
+          expect(failedSpy).not.toHaveBeenCalled();
         });
       });
     });
 
   });
+
 });
