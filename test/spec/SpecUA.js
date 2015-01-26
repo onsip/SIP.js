@@ -430,7 +430,6 @@ describe('UA', function() {
 
       var options = {};
       UA.configuration.mediaHandlerFactory = function(){};
-      SIP.Utils.copy = function(){ return options; };
       UA.invite(target,options);
       // invite() puts the mediaHandlerFactory into the options object
       expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA, target, options);

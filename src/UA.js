@@ -256,7 +256,7 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  */
 UA.prototype.invite = function(target, options) {
-  options = SIP.Utils.copy(options) || {};
+  options = options || {};
   options = SIP.Utils.desugarSessionOptions(options);
   SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
 
