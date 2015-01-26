@@ -49,6 +49,7 @@ ServerContext.prototype.reject = function (options) {
 };
 
 function replyHelper (options, defaultCode, minCode, maxCode, events) {
+  /* jshint validthis:true */
   options = options || {};
   var
     statusCode = options.statusCode || defaultCode,

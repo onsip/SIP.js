@@ -1198,6 +1198,7 @@ InviteServerContext.prototype = {
     }
 
     function do100rel() {
+      /* jshint validthis: true */
       statusCode = options.statusCode || 183;
 
       // Set status and add extra headers
@@ -1252,6 +1253,7 @@ InviteServerContext.prototype = {
     } // end do100rel
 
     function normalReply() {
+      /* jshint validthis:true */
       response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
       this.emit('progress', response, reasonPhrase);
     }
@@ -1405,6 +1407,7 @@ InviteServerContext.prototype = {
     // ISC RECEIVE REQUEST
 
     function confirmSession() {
+      /* jshint validthis:true */
       var contentType;
 
       SIP.Timers.clearTimeout(this.timers.ackTimer);

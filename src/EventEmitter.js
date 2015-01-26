@@ -106,6 +106,7 @@ EventEmitter.prototype = {
   once: function(event, listener, bindTarget) {
     var self = this;
     function listenOnce () {
+      /* jshint validthis:true */
       listener.apply(this, arguments);
       self.off(event, listenOnce, bindTarget);
     }
