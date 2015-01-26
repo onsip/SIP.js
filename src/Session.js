@@ -1,3 +1,4 @@
+"use strict";
 module.exports = function (SIP, environment) {
 
 var DTMF = require('./Session/DTMF')(SIP);

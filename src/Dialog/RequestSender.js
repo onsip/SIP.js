@@ -1,3 +1,4 @@
+"use strict";
 
 /**
  * @fileoverview In-Dialog Request Sender

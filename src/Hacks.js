@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview Hacks - This file contains all of the things we
  * wish we didn't have to do, just for interop.  It is similar to

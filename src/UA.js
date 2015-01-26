@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.

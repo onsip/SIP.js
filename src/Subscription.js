@@ -1,3 +1,4 @@
+"use strict";
 
 /**
  * @fileoverview SIP Subscriber (SIP-Specific Event Notifications RFC6665)

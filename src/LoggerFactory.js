@@ -1,3 +1,4 @@
+"use strict";
 var levels = {
   'error': 0,
   'warn': 1,

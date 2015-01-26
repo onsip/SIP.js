@@ -1,3 +1,4 @@
+"use strict";
 function getPrefixedProperty (object, name) {
   if (object == null) {
     return;

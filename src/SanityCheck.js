@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview Incoming SIP Message Sanity Check
  */
