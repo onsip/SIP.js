@@ -53,7 +53,7 @@ RPSMediaHandler.prototype = {
       this.timeout = setTimeout(function () {
         delete this.timeout;
         onFailure(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
-      }, 0);
+      }.bind(this), 0);
       return;
     }
 
@@ -64,7 +64,7 @@ RPSMediaHandler.prototype = {
     this.timeout = setTimeout(function () {
       delete this.timeout;
       onSuccess(this.myGesture);
-    }.bind(this));
+    }.bind(this), 0);
   },
 
   setDescription: function (description, onSuccess, onFailure) {
@@ -82,7 +82,7 @@ RPSMediaHandler.prototype = {
       this.timeout = setTimeout(function () {
         delete this.timeout;
         onFailure(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
-      }, 0);
+      }.bind(this), 0);
     }
 
     this.theirGesture = description;
@@ -91,7 +91,7 @@ RPSMediaHandler.prototype = {
     this.timeout = setTimeout(function () {
       delete this.timeout;
       onSuccess();
-    }, 0);
+    }.bind(this), 0);
 
   },
 

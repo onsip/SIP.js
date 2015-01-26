@@ -23,7 +23,7 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   afterEach(function (done) {
-    this.session.terminate();
+    this.session.close();
 
     if (this.ua.isConnected()) {
       this.ua.once('disconnected', function () {
@@ -144,7 +144,7 @@ describe('An INVITE sent from a UAC', function () {
         ids[id] = true;
 
         // Clean up
-        this.session.terminate();
+        this.session.close();
       }
     });
 
@@ -347,6 +347,8 @@ describe('An INVITE sent from a UAC', function () {
           session.receiveResponse(response);
           done();
         }, 0);
+        
+        return true;
       });
     });
 
@@ -370,6 +372,8 @@ describe('An INVITE sent from a UAC', function () {
           session.receiveResponse(response);
           done();
         }, 0);
+        
+        return true;
       });
     });
 
@@ -399,6 +403,8 @@ describe('An INVITE sent from a UAC', function () {
           session.receiveResponse(response);
           done();
         }, 0);
+        
+        return true;
       });
     });
 
@@ -440,8 +446,9 @@ describe('An INVITE sent from a UAC', function () {
       this.session.on('bye', byeSpy);
 
       spyOn(this.ua.transport, 'send').and.callFake(function () {
-        done();
-      }, 0);
+        setTimeout(done, 0);
+        return true;
+      });
     });
 
     /* Before acceptance. */
@@ -564,14 +571,15 @@ describe('An INVITE sent from a UAC', function () {
 
       beforeEach(function (done) {
         var response = SIPHelper.createResponse(this.session.request, 200, 'OK', 'paper');
-        this.session.receiveResponse(response);
         this.session.on('accepted', function () {
           setTimeout(done, 0);
-        });
+        }).receiveResponse(response);
       });
 
       it('cannot be canceled', function () {
-        this.session.cancel();
+        expect(function () {
+          this.session.cancel();
+        }.bind(this)).toThrow();
         expect(cancelSpy).not.toHaveBeenCalled();
       });
 

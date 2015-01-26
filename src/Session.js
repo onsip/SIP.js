@@ -864,6 +864,7 @@ Session.prototype = {
       this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
     } else if (this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
+      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
     }
   },
 
@@ -872,6 +873,7 @@ Session.prototype = {
       this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
     } else if (this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
     }
   },
 
@@ -880,6 +882,7 @@ Session.prototype = {
       this.terminated(response, SIP.C.causes.DIALOG_ERROR);
     } else if (this.status !== C.STATUS_TERMINATED) {
       this.failed(response, SIP.C.causes.DIALOG_ERROR);
+      this.terminated(response, SIP.C.causes.DIALOG_ERROR);
     }
   },
 
@@ -921,14 +924,14 @@ Session.prototype = {
 
   failed: function(response, cause) {
     this.close();
-    return this.emit('failed', response, cause);
+    return this.emit('failed', response || null, cause || null);
   },
 
   rejected: function(response, cause) {
     this.close();
     return this.emit('rejected',
       response || null,
-      cause
+      cause || null
     );
   },
 
@@ -1051,6 +1054,7 @@ InviteServerContext = function(ua, request) {
     self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
       request.reply(408);
       self.failed(request, SIP.C.causes.NO_ANSWER);
+      self.terminated(request, SIP.C.causes.NO_ANSWER);
     }, self.ua.configuration.noAnswerTimeout);
 
     /* Set expiresTimer
@@ -1061,6 +1065,7 @@ InviteServerContext = function(ua, request) {
         if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
           request.reply(487);
           self.failed(request, SIP.C.causes.EXPIRES);
+          self.terminated(request, SIP.C.causes.EXPIRES);
         }
       }, expires);
     }
@@ -1246,6 +1251,7 @@ InviteServerContext.prototype = {
 
         function onFailure () {
           this.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          this.terminated(null, SIP.C.causes.WEBRTC_ERROR);
         }.bind(this)
       );
     } // end do100rel
@@ -1296,6 +1302,7 @@ InviteServerContext.prototype = {
           // run for reply failure callback
           replyFailed = function() {
             self.failed(null, SIP.C.causes.CONNECTION_ERROR);
+            self.terminated(null, SIP.C.causes.CONNECTION_ERROR);
           };
 
         // Chrome might call onaddstream before accept() is called, which means
@@ -1332,6 +1339,7 @@ InviteServerContext.prototype = {
         //response = request.reply(480);
         //self.failed(response, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
         self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+        self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
       };
 
     // Check Session Status
@@ -1443,6 +1451,7 @@ InviteServerContext.prototype = {
         this.canceled(request);
         this.rejected(request, SIP.C.causes.CANCELED);
         this.failed(request, SIP.C.causes.CANCELED);
+        this.terminated(request, SIP.C.causes.CANCELED);
       }
       break;
     case SIP.C.ACK:
@@ -1464,6 +1473,7 @@ InviteServerContext.prototype = {
                   reasonPhrase: 'Bad Media Description'
                 });
                 this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }.bind(this)
             );
           } else if (this.early_sdp) {
@@ -1471,6 +1481,7 @@ InviteServerContext.prototype = {
           } else {
             //TODO: Pass to mediahandler
             this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
           confirmSession.apply(this);
@@ -1505,6 +1516,7 @@ InviteServerContext.prototype = {
                   reasonPhrase: 'Bad Media Description'
                 });
                 this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }.bind(this)
             );
           } else {
@@ -1513,6 +1525,7 @@ InviteServerContext.prototype = {
               reasonPhrase: 'Bad Media Description'
             });
             this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
           SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
@@ -1698,6 +1711,7 @@ InviteClientContext.prototype = {
           //self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
           //self.failed(null, SIP.C.causes.WEBRTC_ERROR);
           self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
         }
       );
     }
@@ -1733,6 +1747,7 @@ InviteClientContext.prototype = {
          */
         if(this.status !== C.STATUS_CONFIRMED) {
           this.failed(response, SIP.C.causes.WEBRTC_ERROR);
+          this.terminated(response, SIP.C.causes.WEBRTC_ERROR);
         }
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
@@ -1884,6 +1899,7 @@ InviteClientContext.prototype = {
                 // TODO - fail out on error
                 // session.failed(gum error);
                 session.failed(null, SIP.C.causes.WEBRTC_ERROR);
+                session.terminated(null, SIP.C.causes.WEBRTC_ERROR);
               } else {
                 earlyDialog.pracked.splice(earlyDialog.pracked.indexOf(response.getHeader('rseq')), 1);
                 // Could not set remote description
@@ -2052,8 +2068,9 @@ InviteClientContext.prototype = {
         break;
       default:
         cause = SIP.Utils.sipErrorCause(response.status_code);
-        this.failed(response, cause);
         this.rejected(response, cause);
+        this.failed(response, cause);
+        this.terminated(response, cause);
     }
   },
 

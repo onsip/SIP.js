@@ -335,9 +335,7 @@ describe('A UAS receiving an INVITE', function () {
     });
 
     afterEach(function (done) {
-      try {
-        this.session.terminate();
-      } catch (e) {}
+      this.session.close();
 
       if (this.ua.isConnected()) {
         this.ua.once('disconnected', function () {

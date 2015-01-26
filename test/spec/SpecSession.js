@@ -695,7 +695,6 @@ describe('Session', function() {
       Session.onTransportError();
 
       expect(Session.failed).toHaveBeenCalled();
-      expect(Session.terminated).not.toHaveBeenCalled();
     });
   });
 
@@ -711,7 +710,6 @@ describe('Session', function() {
       Session.onRequestTimeout();
 
       expect(Session.failed).not.toHaveBeenCalled();
-      expect(Session.terminated).not.toHaveBeenCalled();
     });
 
     it('calls terminated if the status is confirmed', function() {
@@ -729,7 +727,6 @@ describe('Session', function() {
       Session.onRequestTimeout();
 
       expect(Session.failed).toHaveBeenCalled();
-      expect(Session.terminated).not.toHaveBeenCalled();
     });
   });
 
@@ -763,7 +760,6 @@ describe('Session', function() {
       Session.onDialogError();
 
       expect(Session.failed).toHaveBeenCalled();
-      expect(Session.terminated).not.toHaveBeenCalled();
     });
   });
 
@@ -851,7 +847,7 @@ describe('Session', function() {
       expect(Session.failed()).toBe(Session);
 
       expect(Session.close).toHaveBeenCalled();
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('failed');
+      expect(Session.emit).toHaveBeenCalledWith('failed', null, null);
     });
   });
 
@@ -865,7 +861,7 @@ describe('Session', function() {
       expect(Session.rejected()).toBe(Session);
 
       expect(Session.close).toHaveBeenCalled();
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('rejected');
+      expect(Session.emit).toHaveBeenCalledWith('rejected', null, null);
     });
   });
 
@@ -1348,7 +1344,6 @@ describe('InviteServerContext', function() {
 
       it('status is WAITING_FOR_ANSWER, timers cleared', function() {
         InviteServerContext.status = 4;
-
         InviteServerContext.receiveRequest(req);
 
         expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
