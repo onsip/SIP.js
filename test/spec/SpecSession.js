@@ -2421,15 +2421,7 @@ describe('InviteClientContext', function() {
   });
 
   describe('.terminate', function() {
-    beforeEach(function() {
-      spyOn(InviteClientContext, 'terminated').and.callThrough();
-    });
-
-    afterEach(function() {
-      expect(InviteClientContext.terminated).toHaveBeenCalled();
-    });
-
-    it('calls bye, terminated, and returns this if the status is WAITING_FOR_ACK', function() {
+    it('calls bye and returns this if the status is WAITING_FOR_ACK', function() {
       InviteClientContext.status = 7;
       spyOn(InviteClientContext, 'bye');
 
@@ -2438,7 +2430,7 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.bye).toHaveBeenCalled();
     });
 
-    it('calls bye, terminated, and returns this if the status is CONFIRMED', function() {
+    it('calls bye and returns this if the status is CONFIRMED', function() {
       InviteClientContext.status = 12;
       spyOn(InviteClientContext, 'bye');
 
@@ -2447,7 +2439,7 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.bye).toHaveBeenCalled();
     });
 
-    it('calls cancel, terminated, and returns this if the status is anything else', function() {
+    it('calls cancel and returns this if the status is anything else', function() {
       InviteClientContext.status = 0;
       spyOn(InviteClientContext, 'cancel');
 
