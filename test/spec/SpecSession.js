@@ -838,29 +838,17 @@ describe('Session', function() {
   });
 
   describe('.failed', function() {
-    beforeEach(function() {
-      spyOn(Session, 'close');
+    it('emits and returns Session', function() {
       spyOn(Session, 'emit').and.callThrough();
-    });
-
-    it('calls close, emits, and returns Session', function() {
       expect(Session.failed()).toBe(Session);
-
-      expect(Session.close).toHaveBeenCalled();
       expect(Session.emit).toHaveBeenCalledWith('failed', null, null);
     });
   });
 
   describe('.rejected', function() {
-    beforeEach(function() {
-      spyOn(Session, 'close');
+    it('emits and returns Session', function() {
       spyOn(Session, 'emit').and.callThrough();
-    });
-
-    it('calls close, emits, and returns Session', function() {
       expect(Session.rejected()).toBe(Session);
-
-      expect(Session.close).toHaveBeenCalled();
       expect(Session.emit).toHaveBeenCalledWith('rejected', null, null);
     });
   });
@@ -880,14 +868,10 @@ describe('Session', function() {
   });
 
   describe('.canceled', function() {
-    beforeEach(function() {
-      spyOn(Session, 'close');
-      spyOn(Session, 'emit').and.callThrough();
-    });
-
     it('emits, and returns Session', function() {
+      spyOn(Session, 'emit').and.callThrough();
+      spyOn(Session, 'close').and.callThrough();
       expect(Session.canceled()).toBe(Session);
-
       expect(Session.close).not.toHaveBeenCalled();
       expect(Session.emit.calls.mostRecent().args[0]).toBe('cancel');
     });
@@ -1335,7 +1319,7 @@ describe('InviteServerContext', function() {
 
         spyOn(InviteServerContext, 'canceled');
         spyOn(InviteServerContext, 'failed');
-        spyOn(InviteServerContext, 'terminated');
+        spyOn(InviteServerContext, 'terminated').and.callThrough();
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
 
         InviteServerContext.timers.prackTimer = SIP.Timers.setTimeout(function(){}, 100);
