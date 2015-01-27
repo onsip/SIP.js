@@ -885,10 +885,10 @@ describe('Session', function() {
       spyOn(Session, 'emit').and.callThrough();
     });
 
-    it('calls close, emits, and returns Session', function() {
+    it('emits, and returns Session', function() {
       expect(Session.canceled()).toBe(Session);
 
-      expect(Session.close).toHaveBeenCalled();
+      expect(Session.close).not.toHaveBeenCalled();
       expect(Session.emit.calls.mostRecent().args[0]).toBe('cancel');
     });
   });
