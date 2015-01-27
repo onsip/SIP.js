@@ -607,6 +607,7 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('using the `bye` method', function () {
         beforeEach(function () {
+          spyOn(SIP.RequestSender.prototype, 'send');
           this.session.bye();
         });
 
@@ -646,6 +647,7 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('using the `terminated` method', function () {
         beforeEach(function () {
+          spyOn(SIP.RequestSender.prototype, 'send');
           this.session.terminate();
         });
 
