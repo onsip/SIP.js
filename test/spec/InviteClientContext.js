@@ -587,6 +587,7 @@ describe('An INVITE sent from a UAC', function () {
         beforeEach(function () {
           var byeRequest = new SIP.IncomingRequest(this.session.ua);
           byeRequest.method = 'BYE';
+          spyOn(byeRequest, 'reply');
           this.session.receiveRequest(byeRequest);
         });
 
