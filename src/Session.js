@@ -1548,7 +1548,26 @@ InviteServerContext.prototype = {
       Session.prototype.receiveRequest.apply(this, [request]);
       break;
     }
+  },
+
+  onTransportError: function() {
+    if (this.status === C.STATUS_CONFIRMED) {
+      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
+    } else if (this.status !== C.STATUS_TERMINATED) {
+      this.failed(null, SIP.C.causes.CONNECTION_ERROR);
+      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
+    }
+  },
+
+  onRequestTimeout: function() {
+    if (this.status === C.STATUS_CONFIRMED) {
+      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+    } else if (this.status !== C.STATUS_TERMINATED) {
+      this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+    }
   }
+
 };
 
 SIP.InviteServerContext = InviteServerContext;
@@ -2132,7 +2151,26 @@ InviteClientContext.prototype = {
     }
 
     return Session.prototype.receiveRequest.apply(this, [request]);
+  },
+
+  onTransportError: function() {
+    if (this.status === C.STATUS_CONFIRMED) {
+      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
+    } else if (this.status !== C.STATUS_TERMINATED) {
+      this.failed(null, SIP.C.causes.CONNECTION_ERROR);
+      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
+    }
+  },
+
+  onRequestTimeout: function() {
+    if (this.status === C.STATUS_CONFIRMED) {
+      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+    } else if (this.status !== C.STATUS_TERMINATED) {
+      this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+    }
   }
+
 };
 
 SIP.InviteClientContext = InviteClientContext;
