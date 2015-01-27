@@ -924,7 +924,7 @@ Session.prototype = {
   },
 
   failed: function(response, cause) {
-    if (this.status == C.STATUS_TERMINATED) {
+    if (this.status === C.STATUS_TERMINATED) {
       return this;
     }
     return this.emit('failed', response || null, cause || null);
@@ -954,7 +954,7 @@ Session.prototype = {
   },
 
   terminated: function(message, cause) {
-    if (this.status == C.STATUS_TERMINATED) {
+    if (this.status === C.STATUS_TERMINATED) {
       return this;
     }
 
