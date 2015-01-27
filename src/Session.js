@@ -936,7 +936,6 @@ Session.prototype = {
   },
 
   canceled: function() {
-    this.close();
     return this.emit('cancel');
   },
 
@@ -1806,6 +1805,11 @@ InviteClientContext.prototype = {
       } else if(response.status_code >= 200 && response.status_code < 299) {
         this.acceptAndTerminate(response);
         this.emit('bye', this.request);
+      } else if (response.status_code >= 300) {
+        cause = SIP.C.REASON_PHRASE[response.status_code] || SIP.C.causes.CANCELED;
+        this.rejected(response, cause);
+        this.failed(response, cause);
+        this.terminated(response, cause);
       }
       return;
     }
