@@ -347,7 +347,7 @@ describe('An INVITE sent from a UAC', function () {
           session.receiveResponse(response);
           done();
         }, 0);
-        
+
         return true;
       });
     });
@@ -372,7 +372,7 @@ describe('An INVITE sent from a UAC', function () {
           session.receiveResponse(response);
           done();
         }, 0);
-        
+
         return true;
       });
     });
@@ -403,7 +403,7 @@ describe('An INVITE sent from a UAC', function () {
           session.receiveResponse(response);
           done();
         }, 0);
-        
+
         return true;
       });
     });

@@ -440,6 +440,9 @@ describe('A UAS receiving an INVITE', function () {
 
     describe('between being accepted and getting media', function () {
       beforeEach(function () {
+        this.acceptedSpy = jasmine.createSpy('accepted');
+        this.session.on('accepted', this.acceptedSpy);
+
         this.session.accept({
           media: { gesture: 'paper' }
         });
@@ -447,11 +450,16 @@ describe('A UAS receiving an INVITE', function () {
         this.session.terminate();
       });
 
-      it('fires a post-acceptance events', function () {
-        expect(this.byeSpy).toHaveBeenCalled();
+      it('does not fire an accepted event', function () {
+        expect(this.acceptedSpy).not.toHaveBeenCalled();
+      });
+
+      it('fires pre-acceptance events', function () {
         expect(this.terminatedSpy).toHaveBeenCalled();
-        expect(this.failedSpy).not.toHaveBeenCalled();
-        expect(this.rejectedSpy).not.toHaveBeenCalled();
+        expect(this.failedSpy).toHaveBeenCalled();
+        expect(this.rejectedSpy).toHaveBeenCalled();
+
+        expect(this.byeSpy).not.toHaveBeenCalled();
       });
     });
 
