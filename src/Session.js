@@ -2101,7 +2101,7 @@ InviteClientContext.prototype = {
     options = options || {};
 
     // Check Session Status
-    if (this.status === C.STATUS_TERMINATED) {
+    if (this.status === C.STATUS_TERMINATED || this.status === C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
@@ -2134,7 +2134,7 @@ InviteClientContext.prototype = {
       this.cancel(options);
     }
 
-    return this.terminated();
+    return this;
   },
 
   receiveRequest: function(request) {
