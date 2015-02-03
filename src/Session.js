@@ -300,8 +300,10 @@ Session.prototype = {
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
+      var getReferMedia = this.mediaHandler.getReferMedia;
+      var mediaHint = getReferMedia ? getReferMedia.call(this.mediaHandler) : this.mediaHint;
       var referSession = this.ua.invite(target, {
-        media: this.mediaHint,
+        media: mediaHint,
         params: {
           to_displayName: referTo.friendlyName
         },
