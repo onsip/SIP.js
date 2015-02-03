@@ -313,4 +313,27 @@ describe('WebRTC.MediaHandler', function() {
       expect(SIP.WebRTC.RTCSessionDescription).toHaveBeenCalled();
     });
   });
+
+  describe('.getReferMedia', function () {
+    function fakeStreamArray (hasAudioTracks, hasVideoTracks) {
+      function fakeTracks (hasTracks) {
+        return hasTracks ? [ 1 ] : [];
+      }
+
+      return [{
+        getAudioTracks: fakeTracks.bind(null, hasAudioTracks),
+        getVideoTracks: fakeTracks.bind(null, hasVideoTracks)
+      }];
+    }
+
+    it('returns audio-only constraints if local audio/video and remote audio', function () {
+      spyOn(MediaHandler, 'getLocalStreams').and.returnValue(fakeStreamArray(true, true));
+      spyOn(MediaHandler, 'getRemoteStreams').and.returnValue(fakeStreamArray(true, false));
+
+      var referMedia = MediaHandler.getReferMedia();
+
+      expect(referMedia.constraints.audio).toBe(true);
+      expect(referMedia.constraints.video).toBe(false);
+    });
+  });
 });
