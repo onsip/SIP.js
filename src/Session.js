@@ -282,8 +282,6 @@ Session.prototype = {
         return;
       }
 
-      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
-
       var extraHeaders = [];
 
       /* Copy the Replaces query into a Replaces header */
@@ -302,6 +300,9 @@ Session.prototype = {
       */
       var getReferMedia = this.mediaHandler.getReferMedia;
       var mediaHint = getReferMedia ? getReferMedia.call(this.mediaHandler) : this.mediaHint;
+
+      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+
       var referSession = this.ua.invite(target, {
         media: mediaHint,
         params: {
