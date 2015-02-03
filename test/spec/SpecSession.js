@@ -2519,6 +2519,10 @@ describe('InviteClientContext', function() {
       spyOn(InviteClientContext, 'terminate');
       spyOn(InviteClientContext.ua, 'invite');
 
+      var oldGetReferMedia = InviteClientContext.mediaHandler.getReferMedia;
+      var referMedia = {key: 'value'};
+      InviteClientContext.mediaHandler.getReferMedia = jasmine.createSpy('getReferMedia').and.returnValue(referMedia);
+
       InviteClientContext.on('refer', InviteClientContext.followRefer(referFollowed));
 
       InviteClientContext.receiveRequest(request);
@@ -2528,8 +2532,11 @@ describe('InviteClientContext', function() {
       expect(request.reply).toHaveBeenCalledWith(202, 'Accepted');
 /*       expect(InviteClientContext.dialog.sendRequest).toHaveBeenCalled(); */
       expect(InviteClientContext.ua.invite).toHaveBeenCalled();
+      expect(InviteClientContext.ua.invite.calls.mostRecent().args[1].media).toBe(referMedia);
       expect(referFollowed).toHaveBeenCalled();
       expect(InviteClientContext.terminate).toHaveBeenCalled();
+
+      InviteClientContext.mediaHandler.getReferMedia = oldGetReferMedia;
     });
   });
 });

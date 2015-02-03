@@ -282,8 +282,6 @@ Session.prototype = {
         return;
       }
 
-      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
-
       var extraHeaders = [];
 
       /* Copy the Replaces query into a Replaces header */
@@ -300,8 +298,13 @@ Session.prototype = {
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
+      var getReferMedia = this.mediaHandler.getReferMedia;
+      var mediaHint = getReferMedia ? getReferMedia.call(this.mediaHandler) : this.mediaHint;
+
+      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+
       var referSession = this.ua.invite(target, {
-        media: this.mediaHint,
+        media: mediaHint,
         params: {
           to_displayName: referTo.friendlyName
         },

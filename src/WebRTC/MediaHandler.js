@@ -278,6 +278,29 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     return SIP.Utils.promisify(this.peerConnection, 'setRemoteDescription')(description);
   }},
 
+  /**
+   * If the Session associated with this MediaHandler were to be referred,
+   * what mediaHint should be provided to the UA's invite method?
+   */
+  getReferMedia: {writable: true, value: function getReferMedia () {
+    function hasTracks (trackGetter, stream) {
+      return stream[trackGetter]().length > 0;
+    }
+
+    function bothHaveTracks (trackGetter) {
+      /* jshint validthis:true */
+      return this.getLocalStreams().some(hasTracks.bind(null, trackGetter)) &&
+             this.getRemoteStreams().some(hasTracks.bind(null, trackGetter));
+    }
+
+    return {
+      constraints: {
+        audio: bothHaveTracks.call(this, 'getAudioTracks'),
+        video: bothHaveTracks.call(this, 'getVideoTracks')
+      }
+    };
+  }},
+
 // Functions the session can use, but only because it's convenient for the application
   isMuted: {writable: true, value: function isMuted () {
     return {
