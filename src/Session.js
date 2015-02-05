@@ -1259,6 +1259,7 @@ InviteServerContext.prototype = {
         }.bind(this),
 
         function onFailure () {
+          this.request.reply(480);
           this.failed(null, SIP.C.causes.WEBRTC_ERROR);
           this.terminated(null, SIP.C.causes.WEBRTC_ERROR);
         }.bind(this)
@@ -1346,7 +1347,7 @@ InviteServerContext.prototype = {
           return;
         }
         // TODO - fail out on error
-        //response = request.reply(480);
+        self.request.reply(480);
         //self.failed(response, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
         self.failed(null, SIP.C.causes.WEBRTC_ERROR);
         self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
