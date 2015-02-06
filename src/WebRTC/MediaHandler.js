@@ -87,8 +87,14 @@ var MediaHandler = function(session, options) {
 
   this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
 
+  // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
+  // even if peerConnection.onaddstream was just called. In order to make
+  // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
+  this._remoteStreams = [];
+
   this.peerConnection.onaddstream = function(e) {
     self.logger.log('stream added: '+ e.stream.id);
+    self._remoteStreams.push(e.stream);
     self.render();
     self.emit('addStream', e);
   };
@@ -187,6 +193,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
   close: {writable: true, value: function close () {
     this.logger.log('closing PeerConnection');
+    this._remoteStreams = [];
     // have to check signalingState since this.close() gets called multiple times
     // TODO figure out why that happens
     if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
@@ -414,8 +421,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   getRemoteStreams: {writable: true, value: function getRemoteStreams () {
     var pc = this.peerConnection;
     if (pc && pc.signalingState === 'closed') {
-      this.logger.warn('peerConnection is closed, getRemoteStreams returning []');
-      return [];
+      this.logger.warn('peerConnection is closed, getRemoteStreams returning this._remoteStreams');
+      return this._remoteStreams;
     }
     return(pc.getRemoteStreams && pc.getRemoteStreams()) ||
       pc.remoteStreams || [];
