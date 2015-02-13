@@ -47,6 +47,7 @@
     "test": "grunt travis --verbose"
   },
   "dependencies": {
+    "extend": "^2.0.0",
     "pegjs": "0.8.0",
     "ws": "^0.6.4"
   },
