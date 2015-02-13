@@ -8,6 +8,9 @@
  * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
 module.exports = function (SIP) {
+
+var extend = require('extend');
+
 var UA,
   C = {
     // UA status codes
@@ -78,6 +81,8 @@ UA = function(configuration) {
 
   this.log = new SIP.LoggerFactory();
   this.logger = this.getLogger('sip.ua');
+
+  this.extend = extend;
 
   this.cache = {
     credentials: {}
@@ -256,7 +261,7 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  */
 UA.prototype.invite = function(target, options) {
-  options = options || {};
+  options = this.extend(true, {}, options) || {};
   options = SIP.Utils.desugarSessionOptions(options);
   SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
 

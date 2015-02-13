@@ -1,6 +1,7 @@
 module.exports = function (SIP, environment) {
 
 var DTMF = require('./Session/DTMF')(SIP);
+var extend = require('extend');
 
 var Session, InviteServerContext, InviteClientContext,
  C = {
@@ -1001,6 +1002,8 @@ InviteServerContext = function(ua, request) {
 
   this.logger = ua.getLogger('sip.inviteservercontext', this.id);
 
+  this.extend = extend;
+
   //Save the session into the ua sessions collection.
   this.ua.sessions[this.id] = this;
 
@@ -1270,7 +1273,7 @@ InviteServerContext.prototype = {
    * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
    */
   accept: function(options) {
-    options = options || {};
+    options = this.extend(true, {}, options) || {};
     options = SIP.Utils.desugarSessionOptions(options);
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;

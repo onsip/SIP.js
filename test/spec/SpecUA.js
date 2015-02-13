@@ -426,13 +426,19 @@ describe('UA', function() {
     });
 
     it('creates an Invite Client Context with itself, target, and options as parameters', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      var options = {},
+          extendedOptions = {};
 
-      var options = {};
+      spyOn(UA, 'isConnected').and.returnValue(true);
+      spyOn(UA, 'extend').and.returnValue(extendedOptions);
+
       UA.configuration.mediaHandlerFactory = function(){};
-      UA.invite(target,options);
-      // invite() puts the mediaHandlerFactory into the options object
-      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA, target, options);
+      UA.invite(target, options);
+      // invite() puts the mediaHandlerFactory into the extendedOptions object
+      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA, target, extendedOptions);
+    });
+
+    it('', function() {
     });
   });
 
