@@ -235,6 +235,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
    */
   getDescription: {writable: true, value: function getDescription (mediaHint) {
     var self = this;
+    var acquire = self.mediaStreamManager.acquire;
+    if (acquire.length > 1) {
+      acquire = SIP.Utils.promisify(this.mediaStreamManager, 'acquire', true);
+    }
     mediaHint = mediaHint || {};
     if (mediaHint.dataChannel === true) {
       mediaHint.dataChannel = {};
@@ -254,7 +258,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
     else {
       self.logger.log('acquiring local media');
-      streamPromise = self.mediaStreamManager.acquire(mediaHint)
+      streamPromise = acquire.call(self.mediaStreamManager, mediaHint)
         .then(function acquireSucceeded(streams) {
           self.logger.log('acquired local media streams');
           self.localMedia = streams;
