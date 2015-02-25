@@ -110,9 +110,11 @@ describe('UA', function() {
     expect(UA.transportRecoverAttempts).toBeDefined();
 
     var mediaHandlerFactory = function(){};
+    mediaHandlerFactory.isSupported = function(){};
     configuration.mediaHandlerFactory = mediaHandlerFactory;
     UA = new SIP.UA(configuration);
     expect(UA.configuration.mediaHandlerFactory).not.toBe(defaultFactory);
+    expect(UA.configuration.mediaHandlerFactory.isSupported).toBe(mediaHandlerFactory.isSupported);
   });
 
   it('creates a new register context', function() {
