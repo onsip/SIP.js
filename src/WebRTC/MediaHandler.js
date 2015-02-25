@@ -18,16 +18,22 @@ var MediaHandler = function(session, options) {
     'userMediaRequest',
     'userMedia',
     'userMediaFailed',
+
     'iceGathering',
     'iceCandidate',
-    'iceComplete',
     'iceGatheringComplete',
-    'iceFailed',
-    'iceDisconnected',
-    'iceClosed',
-    'iceCompleted',
+
+    'iceConnection',
+    'iceConnectionChecking',
+    'iceConnectionConnected',
+    'iceConnectionCompleted',
+    'iceConnectionFailed',
+    'iceConnectionDisconnected',
+    'iceConnectionClosed',
+
     'getDescription',
     'setDescription',
+
     'dataChannel',
     'addStream'
   ];
@@ -79,8 +85,6 @@ var MediaHandler = function(session, options) {
 
   this.onIceCompleted = SIP.Utils.defer();
   this.onIceCompleted.promise.then(function(pc) {
-    self.logger.log('ICE Gathering Completed');
-    self.emit('iceComplete', pc);
     self.emit('iceGatheringComplete', pc);
     if (self.iceCheckingTimer) {
       SIP.Timers.clearTimeout(self.iceCheckingTimer);
@@ -126,7 +130,7 @@ var MediaHandler = function(session, options) {
   };
 
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
-    self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
+    var stateEvent;
 
     if (this.iceConnectionState === 'checking') {
       self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
@@ -135,21 +139,34 @@ var MediaHandler = function(session, options) {
       }.bind(this), config.iceCheckingTimeout);
     }
 
-    if (this.iceConnectionState === 'failed') {
-      self.emit('iceFailed', this);
-    }
 
-    if (this.iceConnectionState === 'disconnected') {
-       self.emit('iceDisconnected', this);
+    switch (this.iceConnectionState) {
+    case 'new':
+      stateEvent = 'iceConnection';
+      break;
+    case 'checking':
+      stateEvent = 'iceConnectionChecking';
+      break;
+    case 'connected':
+      stateEvent = 'iceConnectionConnected';
+      break;
+    case 'completed':
+      stateEvent = 'iceConnectionCompleted';
+      break;
+    case 'failed':
+      stateEvent = 'iceConnectionFailed';
+      break;
+    case 'disconnected':
+      stateEvent = 'iceConnectionDisconnected';
+      break;
+    case 'closed':
+      stateEvent = 'iceConnectionClosed';
+      break;
+    default:
+      self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
+      return;
     }
-
-    if (this.iceConnectionState === 'closed') {
-        self.emit('iceClosed', this);
-    }
-
-    if (this.iceConnectionState === 'completed') {
-        self.emit('iceCompleted', this);
-    }
+    self.emit(stateEvent, this);
 
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
     //normal calls switch from failed to connected in some cases, so checking for failed and terminated
