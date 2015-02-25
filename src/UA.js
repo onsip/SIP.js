@@ -1524,7 +1524,7 @@ UA.configuration_check = {
 
     mediaHandlerFactory: function(mediaHandlerFactory) {
       if (mediaHandlerFactory instanceof Function) {
-        return function promisifiedFactory () {
+        var promisifiedFactory = function promisifiedFactory () {
           var mediaHandler = mediaHandlerFactory.apply(this, arguments);
 
           function patchMethod (methodName) {
@@ -1540,6 +1540,9 @@ UA.configuration_check = {
 
           return mediaHandler;
         };
+
+        promisifiedFactory.isSupported = mediaHandlerFactory.isSupported;
+        return promisifiedFactory;
       }
     },
 
