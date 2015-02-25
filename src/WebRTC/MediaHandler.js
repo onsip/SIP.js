@@ -525,6 +525,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
   addStreams: {writable: true, value: function addStreams (streams) {
     try {
+      streams = [].concat(streams);
       streams.forEach(function (stream) {
         this.peerConnection.addStream(stream);
       }, this);
