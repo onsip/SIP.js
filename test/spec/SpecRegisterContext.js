@@ -137,12 +137,15 @@ describe('RegisterContext', function() {
   
   describe('.onTransportConnected', function(){
     it('calls register', function() {
+      var options = { traceSip: true, extraHeaders: [ 'X-Foo: foo', 'X-Bar: bar' ] };
+      RegisterContext.options = options;
+
       spyOn(RegisterContext, 'register').and.returnValue('register');
       expect(RegisterContext.register).not.toHaveBeenCalled();
-      
+
       RegisterContext.onTransportConnected();
-      
-      expect(RegisterContext.register).toHaveBeenCalledWith();
+
+      expect(RegisterContext.register).toHaveBeenCalledWith(options);
     });
   });
   

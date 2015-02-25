@@ -48,13 +48,13 @@ RegisterContext = function (ua) {
 
 RegisterContext.prototype = {
   register: function (options) {
-    var self = this, extraHeaders;
+    var self = this;
 
     // Handle Options
-    options = options || {};
-    extraHeaders = (options.extraHeaders || []).slice();
-    extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
-    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
+    this.options = options || {};
+    this.extraHeaders = (this.options.extraHeaders || []).slice();
+    this.extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    this.extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
     this.receiveResponse = function(response) {
       var contact, expires,
@@ -117,7 +117,7 @@ RegisterContext.prototype = {
           // For that, decrease the expires value. ie: 3 seconds
           this.registrationTimer = SIP.Timers.setTimeout(function() {
             self.registrationTimer = null;
-            self.register(options);
+            self.register(this.options);
           }, (expires * 1000) - 3000);
           this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
             self.logger.warn('registration expired');
@@ -143,7 +143,7 @@ RegisterContext.prototype = {
             // Increase our registration interval to the suggested minimum
             this.expires = response.getHeader('min-expires');
             // Attempt the registration again immediately
-            this.register(options);
+            this.register(this.options);
           } else { //This response MUST contain a Min-Expires header field
             this.logger.warn('423 response received for REGISTER without Min-Expires');
             this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
@@ -166,7 +166,7 @@ RegisterContext.prototype = {
     this.cseq++;
     this.request.cseq = this.cseq;
     this.request.setHeader('cseq', this.cseq + ' REGISTER');
-    this.request.extraHeaders = extraHeaders;
+    this.request.extraHeaders = this.extraHeaders;
     this.send();
   },
 
@@ -192,7 +192,7 @@ RegisterContext.prototype = {
   },
 
   onTransportConnected: function() {
-    this.register();
+    this.register(this.options);
   },
 
   close: function() {
