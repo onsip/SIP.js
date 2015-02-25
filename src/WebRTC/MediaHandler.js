@@ -21,9 +21,11 @@ var MediaHandler = function(session, options) {
     'iceGathering',
     'iceCandidate',
     'iceComplete',
+    'iceGatheringComplete',
     'iceFailed',
     'iceDisconnected',
     'iceClosed',
+    'iceCompleted',
     'getDescription',
     'setDescription',
     'dataChannel',
@@ -79,6 +81,7 @@ var MediaHandler = function(session, options) {
   this.onIceCompleted.promise.then(function(pc) {
     self.logger.log('ICE Gathering Completed');
     self.emit('iceComplete', pc);
+    self.emit('iceGatheringComplete', pc);
     if (self.iceCheckingTimer) {
       SIP.Timers.clearTimeout(self.iceCheckingTimer);
       self.iceCheckingTimer = null;
@@ -142,6 +145,10 @@ var MediaHandler = function(session, options) {
 
     if (this.iceConnectionState === 'closed') {
         self.emit('iceClosed', this);
+    }
+
+    if (this.iceConnectionState === 'completed') {
+        self.emit('iceCompleted', this);
     }
 
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
