@@ -39,7 +39,7 @@ require('./ServerContext')(SIP);
 require('./Session')(SIP, environment);
 require('./Subscription')(SIP);
 SIP.WebRTC = require('./WebRTC')(SIP, environment);
-require('./UA')(SIP);
+require('./UA')(SIP, environment);
 SIP.Hacks = require('./Hacks')(SIP);
 require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);

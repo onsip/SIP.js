@@ -60,7 +60,7 @@ Utils= {
   },
 
   desugarSessionOptions: function desugarSessionOptions (options) {
-    if (global.HTMLMediaElement && options instanceof global.HTMLMediaElement) {
+    if (environment.HTMLMediaElement && options instanceof environment.HTMLMediaElement) {
       options = {
         media: {
           constraints: {

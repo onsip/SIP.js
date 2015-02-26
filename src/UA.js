@@ -8,7 +8,7 @@
  *
  * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 var UA,
   C = {
     // UA status codes
@@ -196,8 +196,8 @@ UA = function(configuration) {
     this.start();
   }
 
-  if (typeof global.addEventListener === 'function') {
-    global.addEventListener('unload', this.stop.bind(this));
+  if (typeof environment.addEventListener === 'function') {
+    environment.addEventListener('unload', this.stop.bind(this));
   }
 };
 UA.prototype = new SIP.EventEmitter();

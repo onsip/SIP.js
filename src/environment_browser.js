@@ -1,4 +1,7 @@
 "use strict";
+
+var toplevel = global.window || global;
+
 function getPrefixedProperty (object, name) {
   if (object == null) {
     return;
@@ -14,26 +17,29 @@ function getPrefixedProperty (object, name) {
 }
 
 module.exports = {
-  WebSocket: global.WebSocket,
+  WebSocket: toplevel.WebSocket,
   Transport: require('./Transport'),
-  open: global.open,
-  Promise: global.Promise,
-  timers: global,
+  open: toplevel.open,
+  Promise: toplevel.Promise,
+  timers: toplevel,
 
   // Console is not defined in ECMAScript, so just in case...
-  console: global.console || {
+  console: toplevel.console || {
     debug: function () {},
     log: function () {},
     warn: function () {},
     error: function () {}
   },
 
-  MediaStream: getPrefixedProperty(global, 'MediaStream'),
-  getUserMedia: getPrefixedProperty(global.navigator, 'getUserMedia'),
-  RTCPeerConnection: getPrefixedProperty(global, 'RTCPeerConnection'),
-  RTCSessionDescription: getPrefixedProperty(global, 'RTCSessionDescription'),
+  MediaStream: getPrefixedProperty(toplevel, 'MediaStream'),
+  getUserMedia: getPrefixedProperty(toplevel.navigator, 'getUserMedia'),
+  RTCPeerConnection: getPrefixedProperty(toplevel, 'RTCPeerConnection'),
+  RTCSessionDescription: getPrefixedProperty(toplevel, 'RTCSessionDescription'),
 
-  attachMediaStream: global.attachMediaStream,
-  createObjectURL: global.URL && global.URL.createObjectURL,
-  revokeObjectURL: global.URL && global.URL.revokeObjectURL
+  addEventListener: getPrefixedProperty(toplevel, 'addEventListener'),
+  HTMLMediaElement: toplevel.HTMLMediaElement,
+
+  attachMediaStream: toplevel.attachMediaStream,
+  createObjectURL: toplevel.URL && toplevel.URL.createObjectURL,
+  revokeObjectURL: toplevel.URL && toplevel.URL.revokeObjectURL
 };
