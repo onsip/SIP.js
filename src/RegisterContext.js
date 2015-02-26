@@ -8,7 +8,9 @@ RegisterContext = function (ua) {
       regId = 1,
       events = [
         'registered',
-        'unregistered'
+        'unregistered',
+        'no-contact',
+        'contacts'
       ];
 
   this.registrar = ua.configuration.registrarServer;
@@ -53,7 +55,9 @@ RegisterContext.prototype = {
     // Handle Options
     this.options = options || {};
     extraHeaders = (this.options.extraHeaders || []).slice();
-    extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    if (!this.options.hasOwnProperty('noContact')) {
+      extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    }
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
     this.receiveResponse = function(response) {
@@ -90,6 +94,7 @@ RegisterContext.prototype = {
 
           // Search the Contact pointing to us and update the expires value accordingly.
           if (!contacts) {
+            his.emit('no-contact');
             this.logger.warn('no Contact header in response to REGISTER, response ignored');
             break;
           }
@@ -105,6 +110,7 @@ RegisterContext.prototype = {
           }
 
           if (!contact) {
+            this.emit('contacts', response.getHeaders('contact'));
             this.logger.warn('no Contact header pointing to us, response ignored');
             break;
           }
