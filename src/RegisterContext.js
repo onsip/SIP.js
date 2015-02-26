@@ -48,13 +48,13 @@ RegisterContext = function (ua) {
 
 RegisterContext.prototype = {
   register: function (options) {
-    var self = this;
+    var self = this, extraHeaders;
 
     // Handle Options
     this.options = options || {};
-    this.extraHeaders = (this.options.extraHeaders || []).slice();
-    this.extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
-    this.extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders = (this.options.extraHeaders || []).slice();
+    extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
     this.receiveResponse = function(response) {
       var contact, expires,
@@ -166,7 +166,7 @@ RegisterContext.prototype = {
     this.cseq++;
     this.request.cseq = this.cseq;
     this.request.setHeader('cseq', this.cseq + ' REGISTER');
-    this.request.extraHeaders = this.extraHeaders;
+    this.request.extraHeaders = extraHeaders;
     this.send();
   },
 
