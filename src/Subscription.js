@@ -13,7 +13,7 @@ SIP.Subscription = function (ua, target, event, options) {
   var events;
 
   options = options || {};
-  options.extraHeaders = (options.extraHeaders || []).slice();
+  this.extraHeaders = options.extraHeaders = (options.extraHeaders || []).slice();
 
   events = ['notify', 'dialog'];
   this.id = null;
@@ -72,6 +72,17 @@ SIP.Subscription.prototype = {
     return this;
   },
 
+  refresh: function () {
+    if (this.state === 'terminated' || this.state === 'pending' || this.state === 'notify_wait') {
+      return;
+    }
+
+    this.dialog.sendRequest(this, SIP.C.SUBSCRIBE, {
+      extraHeaders: this.extraHeaders,
+      body: this.body
+    });
+  },
+
   receiveResponse: function(response) {
     var expires, sub = this,
         cause = SIP.Utils.getReasonPhrase(response.status_code);
@@ -90,7 +101,7 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
-        this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), expires * 1000);
+        this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
@@ -136,7 +147,7 @@ SIP.Subscription.prototype = {
       this.state = 'terminated';
       this.close();
     } else {
-      this.subscribe();
+      this.refresh();
     }
   },
 
@@ -195,8 +206,8 @@ SIP.Subscription.prototype = {
       if (sub_state.expires) {
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
-        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub),
-                                                    sub_state.expires * 1000);
+        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub),
+                                                    sub_state.expires * 900);
       }
     }
 

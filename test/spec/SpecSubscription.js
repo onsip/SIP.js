@@ -304,20 +304,20 @@ describe('Subscription', function() {
       expect(Subscription.state).toBe('terminated');
     });
 
-    it('calls subscribe for all other states (active, init)', function() {
-      spyOn(Subscription, 'subscribe');
+    it('calls refresh for all other states (active, init)', function() {
+      spyOn(Subscription, 'refresh');
       Subscription.state = 'active';
 
       Subscription.timer_fire();
 
-      expect(Subscription.subscribe).toHaveBeenCalled();
+      expect(Subscription.refresh).toHaveBeenCalled();
 
-      Subscription.subscribe.calls.reset();
+      Subscription.refresh.calls.reset();
       Subscription.state = 'init'; //Note: there's no way this can be called with a state of init
 
       Subscription.timer_fire();
 
-      expect(Subscription.subscribe).toHaveBeenCalled();
+      expect(Subscription.refresh).toHaveBeenCalled();
     });
   });
 
@@ -505,7 +505,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
@@ -516,7 +516,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(700000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(700000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
@@ -527,7 +527,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
@@ -539,7 +539,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
       expect(Subscription.state).toBe('pending');
