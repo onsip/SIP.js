@@ -5,7 +5,6 @@
   "version": "0.6.4",
   "main": "src/index.js",
   "browser": {
-    "./src/Grammar/index.js": "./src/Grammar/dist/Grammar.js",
     "./src/environment.js": "./src/environment_browser.js"
   },
   "homepage": "http://sipjs.com",
@@ -36,18 +35,18 @@
     "grunt-contrib-jshint": ">0.5.0",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-peg": "~1.3.1",
-    "grunt-trimtrailingspaces": "^0.4.0"
+    "grunt-trimtrailingspaces": "^0.4.0",
+    "pegjs": "^0.8.0"
   },
   "engines": {
     "node": ">=0.8"
   },
   "license": "MIT",
   "scripts": {
-    "postinstall": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
+    "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
     "test": "grunt travis --verbose"
   },
   "dependencies": {
-    "pegjs": "0.8.0",
     "ws": "^0.6.4"
   },
   "optionalDependencies": {
