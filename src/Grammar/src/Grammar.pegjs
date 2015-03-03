@@ -675,7 +675,7 @@ rr_param      = generic_param
 
 // REFER-TO
 
-Refer_To = ( addr_spec / name_addr / absoluteURI ) ( SEMI r_param )* {
+Refer_To = ( addr_spec / name_addr / LAQUOT? absoluteURI LAQUOT? ) ( SEMI r_param )* {
               options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
             }
 
