@@ -3,8 +3,7 @@ module.exports = function (SIP) {
 var ClientContext;
 
 ClientContext = function (ua, method, target, options) {
-  var params, extraHeaders,
-      originalTarget = target,
+  var originalTarget = target,
       events = [
         'progress',
         'accepted',
@@ -13,43 +12,50 @@ ClientContext = function (ua, method, target, options) {
         'cancel'
       ];
 
+  // Validate arguments
   if (target === undefined) {
     throw new TypeError('Not enough arguments');
-  }
-
-  // Check target validity
-  target = ua.normalizeTarget(target);
-  if (!target) {
-    throw new TypeError('Invalid target: ' + originalTarget);
   }
 
   this.ua = ua;
   this.logger = ua.getLogger('sip.clientcontext');
   this.method = method;
-
-  params = options && options.params;
-  extraHeaders = (options && options.extraHeaders || []).slice();
-
-  if (options && options.body) {
-    this.body = options.body;
-  }
-  if (options && options.contentType) {
-    this.contentType = options.contentType;
-    extraHeaders.push('Content-Type: ' + this.contentType);
+  target = ua.normalizeTarget(target);
+  if (!target) {
+    throw new TypeError('Invalid target: ' + originalTarget);
   }
 
-  this.request = new SIP.OutgoingRequest(this.method, target, this.ua, params, extraHeaders);
+  /* Options
+   * - extraHeaders
+   * - params
+   * - contentType
+   * - body
+   */
+  var composedOptions = Object.create(options || Object.prototype);
+  composedOptions.extraHeaders = (composedOptions.extraHeaders || []).slice();
 
-  this.localIdentity = this.request.from;
-  this.remoteIdentity = this.request.to;
+  if (composedOptions.contentType) {
+    this.contentType = composedOptions.contentType;
+    composedOptions.extraHeaders.push('Content-Type: ' + this.contentType);
+  }
 
-  if (this.body) {
+  // Build the request
+  this.request = new SIP.OutgoingRequest(this.method,
+                                         target,
+                                         this.ua,
+                                         composedOptions.params,
+                                         composedOptions.extraHeaders);
+  if (composedOptions.body) {
+    this.body = composedOptions.body;
     this.request.body = this.body;
   }
 
-  this.data = {};
+  /* Set other properties from the request */
+  this.localIdentity = this.request.from;
+  this.remoteIdentity = this.request.to;
 
   this.initEvents(events);
+  this.data = {};
 };
 ClientContext.prototype = new SIP.EventEmitter();
 

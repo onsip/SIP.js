@@ -37,25 +37,43 @@ ServerContext = function (ua, request) {
 ServerContext.prototype = new SIP.EventEmitter();
 
 ServerContext.prototype.progress = function (options) {
-  return replyHelper.call(this, options, 180, 100, 199, ['progress']);
+  var composedOptions = Object.create(options || Object.prototype);
+  composedOptions.statusCode || (composedOptions.statusCode = 180);
+  composedOptions.minCode = 100;
+  composedOptions.maxCode = 199;
+  composedOptions.events = ['progress'];
+  return this.reply(composedOptions);
 };
 
 ServerContext.prototype.accept = function (options) {
-  return replyHelper.call(this, options, 200, 200, 299, ['accepted']);
+  var composedOptions = Object.create(options || Object.prototype);
+  composedOptions.statusCode || (composedOptions.statusCode = 200);
+  composedOptions.minCode = 200;
+  composedOptions.maxCode = 299;
+  composedOptions.events = ['accepted'];
+  return this.reply(composedOptions);
 };
 
 ServerContext.prototype.reject = function (options) {
-  return replyHelper.call(this, options, 480, 300, 699, ['rejected', 'failed']);
+  var composedOptions = Object.create(options || Object.prototype);
+  composedOptions.statusCode || (composedOptions.statusCode = 480);
+  composedOptions.minCode = 300;
+  composedOptions.maxCode = 699;
+  composedOptions.events = ['rejected', 'failed'];
+  return this.reply(composedOptions);
 };
 
-function replyHelper (options, defaultCode, minCode, maxCode, events) {
+ServerContext.prototype.reply = function (options) {
   /* jshint validthis:true */
   options = options || {};
   var
-    statusCode = options.statusCode || defaultCode,
+    statusCode = options.statusCode || 100,
+    minCode = options.minCode || 100,
+    maxCode = options.maxCode || 699,
     reasonPhrase = SIP.Utils.getReasonPhrase(statusCode, options.reasonPhrase),
-    extraHeaders = (options.extraHeaders || []).slice(),
+    extraHeaders = options.extraHeaders || [],
     body = options.body,
+    events = options.events || [],
     response;
 
   if (statusCode < minCode || statusCode > maxCode) {
@@ -67,10 +85,6 @@ function replyHelper (options, defaultCode, minCode, maxCode, events) {
   }, this);
 
   return this;
-}
-
-ServerContext.prototype.reply = function (options) {
-  return replyHelper.call(this, options, 100, 0, 699, []);
 };
 
 ServerContext.prototype.onRequestTimeout = function () {

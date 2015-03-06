@@ -285,6 +285,7 @@ UA.prototype.message = function(target, body, options) {
     throw new TypeError('Not enough arguments');
   }
 
+  // There is no Message module, so it is okay that the UA handles defaults here.
   var composedOptions = Object.create(options || Object.prototype);
   composedOptions.contentType || (composedOptions.contentType = 'text/plain');
   composedOptions.body = body;
