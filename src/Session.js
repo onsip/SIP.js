@@ -975,6 +975,26 @@ Session.prototype = {
   }
 };
 
+Session.desugar = function desugar(options) {
+  if (environment.HTMLMediaElement && options instanceof environment.HTMLMediaElement) {
+    options = {
+      media: {
+        constraints: {
+          audio: true,
+          video: options.tagName === 'VIDEO'
+        },
+        render: {
+          remote: {
+            video: options
+          }
+        }
+      }
+    };
+  }
+  return options || {};
+};
+
+
 Session.C = C;
 SIP.Session = Session;
 
@@ -1288,7 +1308,7 @@ InviteServerContext.prototype = {
    */
   accept: function(options) {
     options = options || {};
-    options = SIP.Utils.desugarSessionOptions(options);
+    options = Session.desugar(options);
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;
 
@@ -1585,8 +1605,9 @@ InviteServerContext.prototype = {
 SIP.InviteServerContext = InviteServerContext;
 
 InviteClientContext = function(ua, target, options) {
-  options = options || {};
+  options = Session.desugar(options);
   options.params = options.params || {};
+
   var iceServers,
     extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,

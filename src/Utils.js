@@ -59,25 +59,6 @@ Utils= {
     options[winner] = options[winner] || options[loser] || defaultValue;
   },
 
-  desugarSessionOptions: function desugarSessionOptions (options) {
-    if (environment.HTMLMediaElement && options instanceof environment.HTMLMediaElement) {
-      options = {
-        media: {
-          constraints: {
-            audio: true,
-            video: options.tagName === 'VIDEO'
-          },
-          render: {
-            remote: {
-              video: options
-            }
-          }
-        }
-      };
-    }
-    return options;
-  },
-
   str_utf8_length: function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
   },

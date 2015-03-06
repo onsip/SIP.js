@@ -257,9 +257,6 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  */
 UA.prototype.invite = function(target, options) {
-  options = options || {};
-  options = SIP.Utils.desugarSessionOptions(options);
-
   var context = new SIP.InviteClientContext(this, target, options);
 
   this.afterConnected(context.invite.bind(context));
