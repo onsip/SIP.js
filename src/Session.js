@@ -1698,18 +1698,17 @@ InviteClientContext = function(ua, target, options) {
     this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
     this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
   }
+
+  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
+  this.mediaHint = options.media;
 };
 
 InviteClientContext.prototype = {
   /*
    * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
    */
-  invite: function (options) {
+  invite: function () {
     var self = this;
-    options = options || {};
-
-    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
-    this.mediaHint = options.media;
 
     //Save the session into the ua sessions collection.
     //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway

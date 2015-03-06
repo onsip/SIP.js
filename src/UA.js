@@ -259,11 +259,10 @@ UA.prototype.afterConnected = function afterConnected (callback) {
 UA.prototype.invite = function(target, options) {
   options = options || {};
   options = SIP.Utils.desugarSessionOptions(options);
-  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
 
   var context = new SIP.InviteClientContext(this, target, options);
 
-  this.afterConnected(context.invite.bind(context, {media: options.media}));
+  this.afterConnected(context.invite.bind(context));
   return context;
 };
 
