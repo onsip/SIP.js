@@ -12,5 +12,6 @@
   "eqnull": true,
   "onecase": true,
   "unused": true,
-  "supernew": true
+  "supernew": true,
+  "expr": true
 }

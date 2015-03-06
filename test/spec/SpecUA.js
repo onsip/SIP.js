@@ -393,7 +393,7 @@ describe('UA', function() {
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
-      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, {contentType: 'mixedContent', body: body});
+      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, withPrototype({contentType: 'mixedContent', body: body}));
     });
 
     it('calls ClientContext.send method with no options provided to it', function() {

@@ -285,11 +285,11 @@ UA.prototype.message = function(target, body, options) {
     throw new TypeError('Not enough arguments');
   }
 
-  options = options || {};
-  options.contentType = options.contentType || 'text/plain';
-  options.body = body;
+  var composedOptions = Object.create(options || Object.prototype);
+  composedOptions.contentType || (composedOptions.contentType = 'text/plain');
+  composedOptions.body = body;
 
-  return this.request(SIP.C.MESSAGE, target, options);
+  return this.request(SIP.C.MESSAGE, target, composedOptions);
 };
 
 UA.prototype.request = function (method, target, options) {
