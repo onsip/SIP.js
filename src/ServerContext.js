@@ -37,30 +37,30 @@ ServerContext = function (ua, request) {
 ServerContext.prototype = new SIP.EventEmitter();
 
 ServerContext.prototype.progress = function (options) {
-  var composedOptions = Object.create(options || Object.prototype);
-  composedOptions.statusCode || (composedOptions.statusCode = 180);
-  composedOptions.minCode = 100;
-  composedOptions.maxCode = 199;
-  composedOptions.events = ['progress'];
-  return this.reply(composedOptions);
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 180);
+  options.minCode = 100;
+  options.maxCode = 199;
+  options.events = ['progress'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.accept = function (options) {
-  var composedOptions = Object.create(options || Object.prototype);
-  composedOptions.statusCode || (composedOptions.statusCode = 200);
-  composedOptions.minCode = 200;
-  composedOptions.maxCode = 299;
-  composedOptions.events = ['accepted'];
-  return this.reply(composedOptions);
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 200);
+  options.minCode = 200;
+  options.maxCode = 299;
+  options.events = ['accepted'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.reject = function (options) {
-  var composedOptions = Object.create(options || Object.prototype);
-  composedOptions.statusCode || (composedOptions.statusCode = 480);
-  composedOptions.minCode = 300;
-  composedOptions.maxCode = 699;
-  composedOptions.events = ['rejected', 'failed'];
-  return this.reply(composedOptions);
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 480);
+  options.minCode = 300;
+  options.maxCode = 699;
+  options.events = ['rejected', 'failed'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.reply = function (options) {

@@ -31,22 +31,22 @@ ClientContext = function (ua, method, target, options) {
    * - contentType
    * - body
    */
-  var composedOptions = Object.create(options || Object.prototype);
-  composedOptions.extraHeaders = (composedOptions.extraHeaders || []).slice();
+  options = Object.create(options || Object.prototype);
+  options.extraHeaders = (options.extraHeaders || []).slice();
 
-  if (composedOptions.contentType) {
-    this.contentType = composedOptions.contentType;
-    composedOptions.extraHeaders.push('Content-Type: ' + this.contentType);
+  if (options.contentType) {
+    this.contentType = options.contentType;
+    options.extraHeaders.push('Content-Type: ' + this.contentType);
   }
 
   // Build the request
   this.request = new SIP.OutgoingRequest(this.method,
                                          target,
                                          this.ua,
-                                         composedOptions.params,
-                                         composedOptions.extraHeaders);
-  if (composedOptions.body) {
-    this.body = composedOptions.body;
+                                         options.params,
+                                         options.extraHeaders);
+  if (options.body) {
+    this.body = options.body;
     this.request.body = this.body;
   }
 

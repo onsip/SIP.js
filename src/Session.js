@@ -180,8 +180,8 @@ Session.prototype = {
   },
 
   bye: function(options) {
-    var composedOptions = Object.create(options || Object.prototype);
-    var statusCode = composedOptions.statusCode;
+    options = Object.create(options || Object.prototype);
+    var statusCode = options.statusCode;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
@@ -195,10 +195,10 @@ Session.prototype = {
       throw new TypeError('Invalid statusCode: '+ statusCode);
     }
 
-    composedOptions.receiveResponse = function () {};
+    options.receiveResponse = function () {};
 
     return this.
-      sendRequest(SIP.C.BYE, composedOptions).
+      sendRequest(SIP.C.BYE, options).
       terminated();
   },
 

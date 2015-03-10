@@ -286,11 +286,11 @@ UA.prototype.message = function(target, body, options) {
   }
 
   // There is no Message module, so it is okay that the UA handles defaults here.
-  var composedOptions = Object.create(options || Object.prototype);
-  composedOptions.contentType || (composedOptions.contentType = 'text/plain');
-  composedOptions.body = body;
+  options = Object.create(options || Object.prototype);
+  options.contentType || (options.contentType = 'text/plain');
+  options.body = body;
 
-  return this.request(SIP.C.MESSAGE, target, composedOptions);
+  return this.request(SIP.C.MESSAGE, target, options);
 };
 
 UA.prototype.request = function (method, target, options) {
