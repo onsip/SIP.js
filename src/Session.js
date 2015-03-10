@@ -180,8 +180,8 @@ Session.prototype = {
   },
 
   bye: function(options) {
-    options = options || {};
-    var statusCode = options.statusCode;
+    var composedOptions = Object.create(options || Object.prototype);
+    var statusCode = composedOptions.statusCode;
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
@@ -195,10 +195,10 @@ Session.prototype = {
       throw new TypeError('Invalid statusCode: '+ statusCode);
     }
 
-    options.receiveResponse = function () {};
+    composedOptions.receiveResponse = function () {};
 
     return this.
-      sendRequest(SIP.C.BYE, options).
+      sendRequest(SIP.C.BYE, composedOptions).
       terminated();
   },
 
@@ -1126,7 +1126,7 @@ InviteServerContext.prototype = {
 
     this.logger.log('rejecting RTCSession');
 
-    SIP.ServerContext.prototype.reject.apply(this, [options]);
+    SIP.ServerContext.prototype.reject.call(this, options);
     return this.terminated();
   },
 
@@ -1307,8 +1307,7 @@ InviteServerContext.prototype = {
    * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
    */
   accept: function(options) {
-    options = options || {};
-    options = Session.desugar(options);
+    options = Object.create(Session.desugar(options));
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;
 
@@ -1605,8 +1604,8 @@ InviteServerContext.prototype = {
 SIP.InviteServerContext = InviteServerContext;
 
 InviteClientContext = function(ua, target, options) {
-  options = Session.desugar(options);
-  options.params = options.params || {};
+  options = Object.create(Session.desugar(options));
+  options.params = Object.create(options.params || Object.prototype);
 
   var iceServers,
     extraHeaders = (options.extraHeaders || []).slice(),
@@ -1725,9 +1724,6 @@ InviteClientContext = function(ua, target, options) {
 };
 
 InviteClientContext.prototype = {
-  /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
-   */
   invite: function () {
     var self = this;
 

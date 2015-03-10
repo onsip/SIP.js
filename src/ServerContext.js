@@ -64,8 +64,7 @@ ServerContext.prototype.reject = function (options) {
 };
 
 ServerContext.prototype.reply = function (options) {
-  /* jshint validthis:true */
-  options = options || {};
+  options = options || {}; // This is okay, so long as we treat options as read-only in this method
   var
     statusCode = options.statusCode || 100,
     minCode = options.minCode || 100,
