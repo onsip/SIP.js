@@ -61,7 +61,7 @@ describe('WebRTC.MediaHandler', function() {
 
   describe('.render', function () {
     it("doesn't throw if renderHint and this.mediaHint are missing", function () {
-      expect(MediaHandler.render).not.toThrow();
+      expect(MediaHandler.render.bind(MediaHandler)).not.toThrow();
     });
   });
 

@@ -37,25 +37,42 @@ ServerContext = function (ua, request) {
 ServerContext.prototype = new SIP.EventEmitter();
 
 ServerContext.prototype.progress = function (options) {
-  return replyHelper.call(this, options, 180, 100, 199, ['progress']);
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 180);
+  options.minCode = 100;
+  options.maxCode = 199;
+  options.events = ['progress'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.accept = function (options) {
-  return replyHelper.call(this, options, 200, 200, 299, ['accepted']);
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 200);
+  options.minCode = 200;
+  options.maxCode = 299;
+  options.events = ['accepted'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.reject = function (options) {
-  return replyHelper.call(this, options, 480, 300, 699, ['rejected', 'failed']);
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 480);
+  options.minCode = 300;
+  options.maxCode = 699;
+  options.events = ['rejected', 'failed'];
+  return this.reply(options);
 };
 
-function replyHelper (options, defaultCode, minCode, maxCode, events) {
-  /* jshint validthis:true */
-  options = options || {};
+ServerContext.prototype.reply = function (options) {
+  options = options || {}; // This is okay, so long as we treat options as read-only in this method
   var
-    statusCode = options.statusCode || defaultCode,
+    statusCode = options.statusCode || 100,
+    minCode = options.minCode || 100,
+    maxCode = options.maxCode || 699,
     reasonPhrase = SIP.Utils.getReasonPhrase(statusCode, options.reasonPhrase),
-    extraHeaders = (options.extraHeaders || []).slice(),
+    extraHeaders = options.extraHeaders || [],
     body = options.body,
+    events = options.events || [],
     response;
 
   if (statusCode < minCode || statusCode > maxCode) {
@@ -67,10 +84,6 @@ function replyHelper (options, defaultCode, minCode, maxCode, events) {
   }, this);
 
   return this;
-}
-
-ServerContext.prototype.reply = function (options) {
-  return replyHelper.call(this, options, 100, 0, 699, []);
 };
 
 ServerContext.prototype.onRequestTimeout = function () {

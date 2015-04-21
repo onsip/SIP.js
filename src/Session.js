@@ -180,7 +180,7 @@ Session.prototype = {
   },
 
   bye: function(options) {
-    options = options || {};
+    options = Object.create(options || Object.prototype);
     var statusCode = options.statusCode;
 
     // Check Session Status
@@ -975,6 +975,26 @@ Session.prototype = {
   }
 };
 
+Session.desugar = function desugar(options) {
+  if (environment.HTMLMediaElement && options instanceof environment.HTMLMediaElement) {
+    options = {
+      media: {
+        constraints: {
+          audio: true,
+          video: options.tagName === 'VIDEO'
+        },
+        render: {
+          remote: {
+            video: options
+          }
+        }
+      }
+    };
+  }
+  return options || {};
+};
+
+
 Session.C = C;
 SIP.Session = Session;
 
@@ -1106,7 +1126,7 @@ InviteServerContext.prototype = {
 
     this.logger.log('rejecting RTCSession');
 
-    SIP.ServerContext.prototype.reject.apply(this, [options]);
+    SIP.ServerContext.prototype.reject.call(this, options);
     return this.terminated();
   },
 
@@ -1287,8 +1307,7 @@ InviteServerContext.prototype = {
    * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
    */
   accept: function(options) {
-    options = options || {};
-    options = SIP.Utils.desugarSessionOptions(options);
+    options = Object.create(Session.desugar(options));
     SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;
 
@@ -1585,8 +1604,9 @@ InviteServerContext.prototype = {
 SIP.InviteServerContext = InviteServerContext;
 
 InviteClientContext = function(ua, target, options) {
-  options = options || {};
-  options.params = options.params || {};
+  options = Object.create(Session.desugar(options));
+  options.params = Object.create(options.params || Object.prototype);
+
   var iceServers,
     extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,
@@ -1698,18 +1718,14 @@ InviteClientContext = function(ua, target, options) {
     this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
     this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
   }
+
+  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
+  this.mediaHint = options.media;
 };
 
 InviteClientContext.prototype = {
-  /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
-   */
-  invite: function (options) {
+  invite: function () {
     var self = this;
-    options = options || {};
-
-    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
-    this.mediaHint = options.media;
 
     //Save the session into the ua sessions collection.
     //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway

@@ -257,13 +257,9 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  */
 UA.prototype.invite = function(target, options) {
-  options = options || {};
-  options = SIP.Utils.desugarSessionOptions(options);
-  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
-
   var context = new SIP.InviteClientContext(this, target, options);
 
-  this.afterConnected(context.invite.bind(context, {media: options.media}));
+  this.afterConnected(context.invite.bind(context));
   return context;
 };
 
@@ -289,8 +285,9 @@ UA.prototype.message = function(target, body, options) {
     throw new TypeError('Not enough arguments');
   }
 
-  options = options || {};
-  options.contentType = options.contentType || 'text/plain';
+  // There is no Message module, so it is okay that the UA handles defaults here.
+  options = Object.create(options || Object.prototype);
+  options.contentType || (options.contentType = 'text/plain');
   options.body = body;
 
   return this.request(SIP.C.MESSAGE, target, options);
