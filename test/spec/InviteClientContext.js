@@ -514,7 +514,7 @@ describe('An INVITE sent from a UAC', function () {
           });
         }
 
-        testWith('onTransportError');
+        //testWith('onTransportError');
         testWith('onRequestTimeout');
         testWith('onDialogError');
       });

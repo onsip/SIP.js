@@ -864,11 +864,8 @@ Session.prototype = {
   },
 
   onTransportError: function() {
-    if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
-    } else if (this.status !== C.STATUS_TERMINATED) {
+    if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
     }
   },
 
@@ -1582,11 +1579,8 @@ InviteServerContext.prototype = {
   },
 
   onTransportError: function() {
-    if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
-    } else if (this.status !== C.STATUS_TERMINATED) {
+    if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
     }
   },
 
@@ -2187,11 +2181,8 @@ InviteClientContext.prototype = {
   },
 
   onTransportError: function() {
-    if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
-    } else if (this.status !== C.STATUS_TERMINATED) {
+    if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
     }
   },
 

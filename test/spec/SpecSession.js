@@ -667,26 +667,23 @@ describe('Session', function() {
 
   describe('.onTransportError', function() {
     beforeEach(function() {
-      spyOn(Session, 'terminated');
       spyOn(Session, 'failed');
     });
 
-    it('does not call failed or terminated if the status is terminated', function() {
+    it('does not call failed if the status is terminated', function() {
       Session.status = 9;
 
       Session.onTransportError();
 
       expect(Session.failed).not.toHaveBeenCalled();
-      expect(Session.terminated).not.toHaveBeenCalled();;
     });
 
-    it('calls terminated if the status is confirmed', function() {
+    it('does not call failed if the status is terminated', function() {
       Session.status = 12;
 
       Session.onTransportError();
 
-      expect(Session.terminated).toHaveBeenCalled();;
-      expect(Session.failed).not.toHaveBeenCalled();;
+      expect(Session.failed).not.toHaveBeenCalled();
     });
 
     it('calls failed if the status is neither terminated or confirmed', function() {
