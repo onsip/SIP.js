@@ -155,31 +155,38 @@ Transport.prototype = {
   onClose: function(e) {
     var connected_before = this.connected;
 
-    this.connected = false;
     this.lastTransportError.code = e.code;
     this.lastTransportError.reason = e.reason;
-    this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
 
-    if(e.wasClean === false) {
-      this.logger.warn('WebSocket abrupt disconnection');
-    }
-    // Transport was connected
-    if(connected_before === true) {
-      this.ua.onTransportClosed(this);
-      // Check whether the user requested to close.
-      if(!this.closed) {
-        this.reConnect();
-      } else {
-        this.ua.emit('disconnected', {
-          transport: this,
-          code: this.lastTransportError.code,
-          reason: this.lastTransportError.reason
-        });
-      }
+    if (this.reconnection_attempts > 0) {
+      this.logger.log('Reconnection attempt ' + this.reconnection_attempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+      this.reconnect();
     } else {
-      // This is the first connection attempt
-      //Network error
-      this.ua.onTransportError(this);
+      this.connected = false;
+      this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+
+      if(e.wasClean === false) {
+        this.logger.warn('WebSocket abrupt disconnection');
+      }
+      // Transport was connected
+      if(connected_before === true) {
+        this.ua.onTransportClosed(this);
+        // Check whether the user requested to close.
+        if(!this.closed) {
+          this.reconnect();
+        } else {
+          this.ua.emit('disconnected', {
+            transport: this,
+            code: this.lastTransportError.code,
+            reason: this.lastTransportError.reason
+          });
+
+        }
+      } else {
+        // This is the first connection attempt
+        //Network error
+        this.ua.onTransportError(this);
+      }
     }
   },
 
@@ -273,7 +280,7 @@ Transport.prototype = {
   * Reconnection attempt logic.
   * @private
   */
-  reConnect: function() {
+  reconnect: function() {
     var transport = this;
 
     this.reconnection_attempts += 1;
@@ -281,6 +288,9 @@ Transport.prototype = {
     if(this.reconnection_attempts > this.ua.configuration.wsServerMaxReconnection) {
       this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
       this.ua.onTransportError(this);
+    } else if (this.reconnection_attempts === 1) {
+      this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
+      transport.connect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
