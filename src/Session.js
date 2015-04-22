@@ -1806,7 +1806,17 @@ InviteClientContext.prototype = {
         Early media has been set up with at least one other different branch,
         but a final 2xx response hasn't been received
       */
+      if (this.dialog.pracked.indexOf(response.getHeader('rseq')) !== -1 ||
+          (this.dialog.pracked[this.dialog.pracked.length-1] >= response.getHeader('rseq') && this.dialog.pracked.length > 0)) {
+        return;
+      }
+
       if (!this.earlyDialogs[id] && !this.createDialog(response, 'UAC', true)) {
+        return;
+      }
+
+      if (this.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')) !== -1 ||
+          (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] >= response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
         return;
       }
 
@@ -1888,11 +1898,12 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasAnswer = true;
+            this.dialog.pracked.push(response.getHeader('rseq'));
+
             this.mediaHandler.setDescription(response.body)
             .then(
               function onSuccess () {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-                session.dialog.pracked.push(response.getHeader('rseq'));
 
                 session.sendRequest(SIP.C.PRACK, {
                   extraHeaders: extraHeaders,

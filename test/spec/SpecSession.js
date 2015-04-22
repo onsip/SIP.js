@@ -1960,8 +1960,8 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
     });
 
-    it('PRACKS any non 200 response when it already chose a dialog', function() {
-      InviteClientContext.dialog = { terminate: function() {} };
+    it('PRACKS any non 200 response that are not retransmissions when it already chose a dialog', function() {
+            InviteClientContext.dialog = { terminate: function() {}, pracked: [] };
       resp = SIP.Parser.parseMessage([
         'SIP/2.0 183 Session In Progress',
         'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
