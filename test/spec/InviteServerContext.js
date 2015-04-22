@@ -411,7 +411,7 @@ describe('A UAS receiving an INVITE', function () {
           });
         }
 
-        testWith('onTransportError');
+        //testWith('onTransportError');
         testWith('onDialogError');
       });
 

@@ -223,8 +223,8 @@ describe('ServerContext', function() {
       spyOn(ServerContext.request, 'reply');
     });
 
-    it('passs along the status code, reason phrase, header, and body as is to request reply', function() {
-      for( var i = 1; i < 700; i++) {
+    it('passes along the status code, reason phrase, header, and body as is to request reply', function() {
+      for( var i = 100; i < 700; i++) {
         var options={statusCode : i ,
                       reasonPhrase : 'reason' ,
                       extraHeaders : 'headers' ,

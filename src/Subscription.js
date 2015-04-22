@@ -12,7 +12,7 @@ module.exports = function (SIP) {
 SIP.Subscription = function (ua, target, event, options) {
   var events;
 
-  options = options || {};
+  options = Object.create(options || Object.prototype);
   this.extraHeaders = options.extraHeaders = (options.extraHeaders || []).slice();
 
   events = ['notify', 'dialog'];
