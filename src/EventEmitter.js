@@ -3,9 +3,7 @@ var NodeEventEmitter = require('events').EventEmitter;
 
 module.exports = function (console) {
 
-function EventEmitter () {
-  NodeEventEmitter.call(this);
-}
+function EventEmitter () {}
 
 EventEmitter.prototype = Object.create(NodeEventEmitter.prototype, {
   constructor: {
