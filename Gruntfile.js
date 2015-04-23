@@ -24,10 +24,10 @@ module.exports = function(grunt) {
  * distribute, sublicense, and/or sell copies of the Software, and to\n\
  * permit persons to whom the Software is furnished to do so, subject to\n\
  * the following conditions:\n\
- * \n\
+ *\n\
  * The above copyright notice and this permission notice shall be\n\
  * included in all copies or substantial portions of the Software.\n\
- * \n\
+ *\n\
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,\n\
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n\
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n\
