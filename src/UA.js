@@ -182,7 +182,7 @@ UA = function(configuration) {
     environment.addEventListener('unload', this.stop.bind(this));
   }
 };
-UA.prototype = new SIP.EventEmitter();
+UA.prototype = Object.create(SIP.EventEmitter.prototype);
 
 //=================
 //  High Level API
