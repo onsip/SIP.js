@@ -26,7 +26,7 @@ ServerContext = function (ua, request) {
   this.remoteIdentity = request.from;
 };
 
-ServerContext.prototype = new SIP.EventEmitter();
+ServerContext.prototype = Object.create(SIP.EventEmitter.prototype);
 
 ServerContext.prototype.progress = function (options) {
   options = Object.create(options || Object.prototype);

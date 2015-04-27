@@ -49,7 +49,7 @@ ClientContext = function (ua, method, target, options) {
 
   this.data = {};
 };
-ClientContext.prototype = new SIP.EventEmitter();
+ClientContext.prototype = Object.create(SIP.EventEmitter.prototype);
 
 ClientContext.prototype.send = function () {
   (new SIP.RequestSender(this, this.ua)).send();

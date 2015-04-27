@@ -78,7 +78,7 @@ DTMF = function(session, tone, options) {
   }
   this.interToneGap = interToneGap;
 };
-DTMF.prototype = new SIP.EventEmitter();
+DTMF.prototype = Object.create(SIP.EventEmitter.prototype);
 
 
 DTMF.prototype.send = function(options) {
