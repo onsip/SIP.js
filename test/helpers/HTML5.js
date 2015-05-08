@@ -15,8 +15,11 @@
   FakeWebSocket.prototype = {
     send: function() {},
     close: function () {
-      this.readyState = 3; // CLOSED
-      if (this.onclose) this.onclose({code:3});
+      var that = this;
+      setTimeout(function () {
+        that.readyState = 3; // CLOSED
+        if (that.onclose) that.onclose({code:3});
+      }, 0);
     },
 
     // Useful testing functions
