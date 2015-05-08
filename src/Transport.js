@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview Transport
  */
@@ -8,7 +9,7 @@
  * @param {SIP.UA} ua
  * @param {Object} server ws_server Object
  */
-module.exports = function (SIP, window) {
+module.exports = function (SIP, WebSocket) {
 var Transport,
   C = {
     // Transport status codes
@@ -44,7 +45,7 @@ Transport.prototype = {
   send: function(msg) {
     var message = msg.toString();
 
-    if(this.ws && this.ws.readyState === window.WebSocket.OPEN) {
+    if(this.ws && this.ws.readyState === WebSocket.OPEN) {
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('sending WebSocket message:\n\n' + message + '\n');
       }
@@ -100,7 +101,7 @@ Transport.prototype = {
       (this.reconnection_attempts === 0)?1:this.reconnection_attempts);
 
     try {
-      this.ws = new window.WebSocket(this.server.ws_uri, 'sip');
+      this.ws = new WebSocket(this.server.ws_uri, 'sip');
     } catch(e) {
       this.logger.warn('error connecting to WebSocket ' + this.server.ws_uri + ': ' + e);
     }
@@ -154,31 +155,38 @@ Transport.prototype = {
   onClose: function(e) {
     var connected_before = this.connected;
 
-    this.connected = false;
     this.lastTransportError.code = e.code;
     this.lastTransportError.reason = e.reason;
-    this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
 
-    if(e.wasClean === false) {
-      this.logger.warn('WebSocket abrupt disconnection');
-    }
-    // Transport was connected
-    if(connected_before === true) {
-      this.ua.onTransportClosed(this);
-      // Check whether the user requested to close.
-      if(!this.closed) {
-        this.reConnect();
-      } else {
-        this.ua.emit('disconnected', {
-          transport: this,
-          code: this.lastTransportError.code,
-          reason: this.lastTransportError.reason
-        });
-      }
+    if (this.reconnection_attempts > 0) {
+      this.logger.log('Reconnection attempt ' + this.reconnection_attempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+      this.reconnect();
     } else {
-      // This is the first connection attempt
-      //Network error
-      this.ua.onTransportError(this);
+      this.connected = false;
+      this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+
+      if(e.wasClean === false) {
+        this.logger.warn('WebSocket abrupt disconnection');
+      }
+      // Transport was connected
+      if(connected_before === true) {
+        this.ua.onTransportClosed(this);
+        // Check whether the user requested to close.
+        if(!this.closed) {
+          this.reconnect();
+        } else {
+          this.ua.emit('disconnected', {
+            transport: this,
+            code: this.lastTransportError.code,
+            reason: this.lastTransportError.reason
+          });
+
+        }
+      } else {
+        // This is the first connection attempt
+        //Network error
+        this.ua.onTransportError(this);
+      }
     }
   },
 
@@ -265,14 +273,14 @@ Transport.prototype = {
   * @param {event} e
   */
   onError: function(e) {
-    this.logger.warn('WebSocket connection error: ' + e);
+    this.logger.warn('WebSocket connection error: ' + JSON.stringify(e));
   },
 
   /**
   * Reconnection attempt logic.
   * @private
   */
-  reConnect: function() {
+  reconnect: function() {
     var transport = this;
 
     this.reconnection_attempts += 1;
@@ -280,6 +288,9 @@ Transport.prototype = {
     if(this.reconnection_attempts > this.ua.configuration.wsServerMaxReconnection) {
       this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
       this.ua.onTransportError(this);
+    } else if (this.reconnection_attempts === 1) {
+      this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
+      transport.connect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
@@ -292,5 +303,5 @@ Transport.prototype = {
 };
 
 Transport.C = C;
-SIP.Transport = Transport;
+return Transport;
 };

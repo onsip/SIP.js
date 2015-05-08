@@ -5,6 +5,13 @@ Thank you to all of the contributors with code and patches to the SIP.js project
 
 * [Sándor Balázs](https://github.com/sanyatuning)
 * The [LiveNinja](https://www.liveninja.com) Team ([GitHub](https://github.com/liveninja))
+* [Philipp Weissensteiner](https://github.com/wpp)
+* [Rob Wu](https://github.com/Rob--W)
+* [Sam Metson](https://github.com/Bat-o-matic)
+* [Mike Chacon](https://github.com/sicdigital)
+* [Sean Bright](https://github.com/seanbright)
+* [Carlos Ruiz Diaz](https://github.com/caruizdiaz)
+* [Destreyf](https://github.com/Destreyf)
 
 Much credit goes to the original authors of the JsSIP project.  Thank you to all.
 

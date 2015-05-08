@@ -8,7 +8,6 @@ describe('WebRTC.MediaHandler', function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
 
     Session = new SIP.EventEmitter();
-    Session.initEvents(['progress','accepted','rejected','failed']);
     SIP.Utils.augment(Session, SIP.Session, []);
 
     Session.ua = ua;
@@ -61,7 +60,7 @@ describe('WebRTC.MediaHandler', function() {
 
   describe('.render', function () {
     it("doesn't throw if renderHint and this.mediaHint are missing", function () {
-      expect(MediaHandler.render).not.toThrow();
+      expect(MediaHandler.render.bind(MediaHandler)).not.toThrow();
     });
   });
 
@@ -311,6 +310,29 @@ describe('WebRTC.MediaHandler', function() {
 
       expect(onSetDescription).toHaveBeenCalled();
       expect(SIP.WebRTC.RTCSessionDescription).toHaveBeenCalled();
+    });
+  });
+
+  describe('.getReferMedia', function () {
+    function fakeStreamArray (hasAudioTracks, hasVideoTracks) {
+      function fakeTracks (hasTracks) {
+        return hasTracks ? [ 1 ] : [];
+      }
+
+      return [{
+        getAudioTracks: fakeTracks.bind(null, hasAudioTracks),
+        getVideoTracks: fakeTracks.bind(null, hasVideoTracks)
+      }];
+    }
+
+    it('returns audio-only constraints if local audio/video and remote audio', function () {
+      spyOn(MediaHandler, 'getLocalStreams').and.returnValue(fakeStreamArray(true, true));
+      spyOn(MediaHandler, 'getRemoteStreams').and.returnValue(fakeStreamArray(true, false));
+
+      var referMedia = MediaHandler.getReferMedia();
+
+      expect(referMedia.constraints.audio).toBe(true);
+      expect(referMedia.constraints.video).toBe(false);
     });
   });
 });

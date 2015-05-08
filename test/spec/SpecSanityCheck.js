@@ -20,10 +20,12 @@ describe('SanityCheck', function () {
     v: 'v: SIP/2.0/WSS MYHOST;branch=z9hG4bK7532297\r\n'
   };
 
-  ua = new SIP.UA();
-  ua.transport = transport;
-  h.via = h.via.replace('MYHOST', ua.configuration.viaHost);
-  h.v = h.v.replace('MYHOST', ua.configuration.viaHost);
+  beforeAll(function () {
+    ua = new SIP.UA();
+    ua.transport = transport;
+    h.via = h.via.replace('MYHOST', ua.configuration.viaHost);
+    h.v = h.v.replace('MYHOST', ua.configuration.viaHost);
+  });
 
   function p(data) {
     return SIP.Parser.parseMessage(data, ua);

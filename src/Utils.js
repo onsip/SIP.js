@@ -1,11 +1,36 @@
+"use strict";
 /**
  * @fileoverview Utils
  */
 
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 var Utils;
 
 Utils= {
+
+  Promise: environment.Promise,
+
+  defer: function defer () {
+    var deferred = {};
+    deferred.promise = new Utils.Promise(function (resolve, reject) {
+      deferred.resolve = resolve;
+      deferred.reject = reject;
+    });
+    return deferred;
+  },
+
+  promisify: function promisify (object, methodName, callbacksFirst) {
+    var oldMethod = object[methodName];
+    return function promisifiedMethod (arg, onSuccess, onFailure) {
+      return new Utils.Promise(function (resolve, reject) {
+        var oldArgs = [arg, resolve, reject];
+        if (callbacksFirst) {
+          oldArgs = [resolve, reject, arg];
+        }
+        oldMethod.apply(object, oldArgs);
+      }).then(onSuccess, onFailure);
+    };
+  },
 
   augment: function (object, constructor, args, override) {
     var idx, proto;
@@ -34,41 +59,8 @@ Utils= {
     options[winner] = options[winner] || options[loser] || defaultValue;
   },
 
-  desugarSessionOptions: function desugarSessionOptions (options) {
-    if (global.HTMLMediaElement && options instanceof global.HTMLMediaElement) {
-      options = {
-        media: {
-          constraints: {
-            audio: true,
-            video: options.tagName === 'VIDEO'
-          },
-          render: {
-            remote: {
-              video: options
-            }
-          }
-        }
-      };
-    }
-    return options;
-  },
-
   str_utf8_length: function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
-  },
-
-  getPrefixedProperty: function (object, name) {
-    if (object == null) {
-      return;
-    }
-    var capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
-    var prefixedNames = [name, 'webkit' + capitalizedName, 'moz' + capitalizedName];
-    for (var i in prefixedNames) {
-      var property = object[prefixedNames[i]];
-      if (property) {
-        return property;
-      }
-    }
   },
 
   generateFakeSDP: function(body) {
@@ -244,6 +236,39 @@ Utils= {
     return SIP.C.causes.SIP_FAILURE_CODE;
   },
 
+  getReasonPhrase: function getReasonPhrase (code, specific) {
+    return specific || SIP.C.REASON_PHRASE[code] || '';
+  },
+
+  getReasonHeaderValue: function getReasonHeaderValue (code, reason) {
+    reason = SIP.Utils.getReasonPhrase(code, reason);
+    return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
+  },
+
+  getCancelReason: function getCancelReason (code, reason) {
+    if (code && code < 200 || code > 699) {
+      throw new TypeError('Invalid status_code: ' + code);
+    } else if (code) {
+      return SIP.Utils.getReasonHeaderValue(code, reason);
+    }
+  },
+
+  buildStatusLine: function buildStatusLine (code, reason) {
+    code = code || null;
+    reason = reason || null;
+
+    // Validate code and reason values
+    if (!code || (code < 100 || code > 699)) {
+      throw new TypeError('Invalid status_code: '+ code);
+    } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
+      throw new TypeError('Invalid reason_phrase: '+ reason);
+    }
+
+    reason = Utils.getReasonPhrase(code, reason);
+
+    return 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  },
+
   /**
   * Generate a random Test-Net IP (http://tools.ietf.org/html/rfc5735)
   * @private
@@ -260,7 +285,7 @@ Utils= {
       allowed = SIP.UA.C.ALLOWED_METHODS.toString();
 
     for (event in SIP.UA.C.EVENT_METHODS) {
-      if (ua.checkListener(event)) {
+      if (ua.listeners(event).length) {
         allowed += ','+ SIP.UA.C.EVENT_METHODS[event];
       }
     }

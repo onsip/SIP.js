@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
@@ -7,7 +8,7 @@
  *
  * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
  */
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 var UA,
   C = {
     // UA status codes
@@ -48,29 +49,12 @@ var UA,
   };
 
 UA = function(configuration) {
-  var self = this,
-  events = [
-    'connecting',
-    'connected',
-    'disconnected',
-    'newTransaction',
-    'transactionDestroyed',
-    'registered',
-    'unregistered',
-    'registrationFailed',
-    'invite',
-    'newSession',
-    'message'
-  ], i, len;
+  var self = this;
 
   // Helper function for forwarding events
   function selfEmit(type) {
     //registrationFailed handler is invoked with two arguments. Allow event handlers to be invoked with a variable no. of arguments
     return self.emit.bind(self, type);
-  }
-
-  for (i = 0, len = C.ALLOWED_METHODS.length; i < len; i++) {
-    events.push(C.ALLOWED_METHODS[i].toLowerCase());
   }
 
   // Set Accepted Body Types
@@ -178,7 +162,6 @@ UA = function(configuration) {
 
   try {
     this.loadConfig(configuration);
-    this.initEvents(events);
   } catch(e) {
     this.status = C.STATUS_NOT_READY;
     this.error = C.CONFIGURATION_ERROR;
@@ -195,11 +178,11 @@ UA = function(configuration) {
     this.start();
   }
 
-  if (typeof global.addEventListener === 'function') {
-    global.addEventListener('unload', this.stop.bind(this));
+  if (typeof environment.addEventListener === 'function') {
+    environment.addEventListener('unload', this.stop.bind(this));
   }
 };
-UA.prototype = new SIP.EventEmitter();
+UA.prototype = Object.create(SIP.EventEmitter.prototype);
 
 //=================
 //  High Level API
@@ -237,6 +220,14 @@ UA.prototype.isConnected = function() {
   return this.transport ? this.transport.connected : false;
 };
 
+UA.prototype.afterConnected = function afterConnected (callback) {
+  if (this.isConnected()) {
+    callback();
+  } else {
+    this.once('connected', callback);
+  }
+};
+
 /**
  * Make an outgoing call.
  *
@@ -248,32 +239,16 @@ UA.prototype.isConnected = function() {
  *
  */
 UA.prototype.invite = function(target, options) {
-  options = options || {};
-  options = SIP.Utils.desugarSessionOptions(options);
-  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
-
   var context = new SIP.InviteClientContext(this, target, options);
 
-  if (this.isConnected()) {
-    context.invite({media: options.media});
-  } else {
-    this.once('connected', function() {
-      context.invite({media: options.media});
-    });
-  }
+  this.afterConnected(context.invite.bind(context));
   return context;
 };
 
 UA.prototype.subscribe = function(target, event, options) {
   var sub = new SIP.Subscription(this, target, event, options);
 
-  if (this.isConnected()) {
-    sub.subscribe();
-  } else {
-    this.once('connected', function() {
-      sub.subscribe();
-    });
-  }
+  this.afterConnected(sub.subscribe.bind(sub));
   return sub;
 };
 
@@ -292,34 +267,18 @@ UA.prototype.message = function(target, body, options) {
     throw new TypeError('Not enough arguments');
   }
 
-  options = options || {};
-  options.contentType = options.contentType || 'text/plain';
+  // There is no Message module, so it is okay that the UA handles defaults here.
+  options = Object.create(options || Object.prototype);
+  options.contentType || (options.contentType = 'text/plain');
   options.body = body;
 
-  var mes = new SIP.ClientContext(this, SIP.C.MESSAGE, target, options);
-
-  if (this.isConnected()) {
-    mes.send();
-  } else {
-    this.once('connected', function() {
-      mes.send();
-    });
-  }
-
-  return mes;
+  return this.request(SIP.C.MESSAGE, target, options);
 };
 
 UA.prototype.request = function (method, target, options) {
   var req = new SIP.ClientContext(this, method, target, options);
 
-  if (this.isConnected()) {
-    req.send();
-  } else {
-    this.once('connected', function() {
-      req.send();
-    });
-  }
-
+  this.afterConnected(req.send.bind(req));
   return req;
 };
 
@@ -333,7 +292,7 @@ UA.prototype.stop = function() {
 
   function transactionsListener() {
     if (ua.nistTransactionsCount === 0 && ua.nictTransactionsCount === 0) {
-        ua.off('transactionDestroyed', transactionsListener);
+        ua.removeListener('transactionDestroyed', transactionsListener);
         ua.transport.disconnect();
     }
   }
@@ -549,7 +508,9 @@ UA.prototype.onTransportConnected = function(transport) {
   this.error = null;
 
   if(this.configuration.register) {
-    this.registerContext.onTransportConnected();
+    this.configuration.authenticationFactory.initialize().then(function () {
+      this.registerContext.onTransportConnected();
+    }.bind(this));
   }
 
   this.emit('connected', {
@@ -609,6 +570,8 @@ UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
     method = request.method,
     transaction,
+    replaces,
+    replacedDialog,
     methodLower = request.method.toLowerCase(),
     self = this;
 
@@ -651,7 +614,7 @@ UA.prototype.receiveRequest = function(request) {
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!this.checkListener(methodLower)) {
+    if (!this.listeners(methodLower).length) {
       // UA is not listening for this.  Reject immediately.
       new SIP.Transactions.NonInviteServerTransaction(request, this);
       request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
@@ -673,12 +636,33 @@ UA.prototype.receiveRequest = function(request) {
   if(!request.to_tag) {
     switch(method) {
       case SIP.C.INVITE:
+        replaces =
+          this.configuration.replaces !== SIP.C.supported.UNSUPPORTED &&
+          request.parseHeader('replaces');
+
+        if (replaces) {
+          replacedDialog = this.dialogs[replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag];
+
+          if (!replacedDialog) {
+            //Replaced header without a matching dialog, reject
+            request.reply_sl(481, null);
+            return;
+          } else if (replacedDialog.owner.status === SIP.Session.C.STATUS_TERMINATED) {
+            request.reply_sl(603, null);
+            return;
+          } else if (replacedDialog.state === SIP.Dialog.C.STATUS_CONFIRMED && replaces.early_only) {
+            request.reply_sl(486, null);
+            return;
+          }
+        }
+
         var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
         if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request)
-            .on('invite', function() {
-              self.emit('invite', this);
-            });
+          session = new SIP.InviteServerContext(this, request);
+          session.replacee = replacedDialog && replacedDialog.owner;
+          session.on('invite', function() {
+            self.emit('invite', this);
+          });
         } else {
           this.logger.warn('INVITE received but WebRTC is not supported');
           request.reply(488);
@@ -842,6 +826,18 @@ UA.prototype.recoverTransport = function(ua) {
     }, nextRetry * 1000);
 };
 
+function checkAuthenticationFactory (authenticationFactory) {
+  if (!(authenticationFactory instanceof Function)) {
+    return;
+  }
+  if (!authenticationFactory.initialize) {
+    authenticationFactory.initialize = function initialize () {
+      return SIP.Utils.Promise.resolve();
+    };
+  }
+  return authenticationFactory;
+}
+
 /**
  * Configuration load.
  * @private
@@ -886,6 +882,7 @@ UA.prototype.loadConfig = function(configuration) {
       userAgentString: SIP.C.USER_AGENT,
 
       // Session parameters
+      iceCheckingTimeout: 5000,
       noAnswerTimeout: 60,
       stunServers: ['stun:stun.l.google.com:19302'],
       turnServers: [],
@@ -904,7 +901,15 @@ UA.prototype.loadConfig = function(configuration) {
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
 
-      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory
+      // Replaces header (RFC 3891)
+      // http://tools.ietf.org/html/rfc3891
+      replaces: SIP.C.supported.UNSUPPORTED,
+
+      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+
+      authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
+        return new SIP.DigestAuthentication(ua);
+      })
     };
 
   // Pre-Configuration
@@ -1105,6 +1110,7 @@ UA.configuration_skeleton = (function() {
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "iceCheckingTimeout",
       "instanceId",
       "noAnswerTimeout", // 30 seconds.
       "password",
@@ -1112,6 +1118,7 @@ UA.configuration_skeleton = (function() {
       "registrarServer",
       "reliable",
       "rel100",
+      "replaces",
       "userAgentString", //SIP.C.USER_AGENT
       "autostart",
       "stunServers",
@@ -1123,6 +1130,7 @@ UA.configuration_skeleton = (function() {
       "mediaHandlerFactory",
       "media",
       "mediaConstraints",
+      "authenticationFactory",
 
       // Post-configuration generated parameters
       "via_core_value",
@@ -1279,6 +1287,15 @@ UA.configuration_check = {
       }
     },
 
+    iceCheckingTimeout: function(iceCheckingTimeout) {
+      if(SIP.Utils.isDecimal(iceCheckingTimeout)) {
+        if (iceCheckingTimeout < 500) {
+          return 5000;
+        }
+        return iceCheckingTimeout;
+      }
+    },
+
     hackWssInTransport: function(hackWssInTransport) {
       if (typeof hackWssInTransport === 'boolean') {
         return hackWssInTransport;
@@ -1319,6 +1336,16 @@ UA.configuration_check = {
       if(rel100 === SIP.C.supported.REQUIRED) {
         return SIP.C.supported.REQUIRED;
       } else if (rel100 === SIP.C.supported.SUPPORTED) {
+        return SIP.C.supported.SUPPORTED;
+      } else  {
+        return SIP.C.supported.UNSUPPORTED;
+      }
+    },
+
+    replaces: function(replaces) {
+      if(replaces === SIP.C.supported.REQUIRED) {
+        return SIP.C.supported.REQUIRED;
+      } else if (replaces === SIP.C.supported.SUPPORTED) {
         return SIP.C.supported.SUPPORTED;
       } else  {
         return SIP.C.supported.UNSUPPORTED;
@@ -1394,7 +1421,7 @@ UA.configuration_check = {
     },
 
     turnServers: function(turnServers) {
-      var idx, length, turn_server, url;
+      var idx, jdx, length, turn_server, num_turn_server_urls, url;
 
       if (turnServers instanceof Array) {
         // Do nothing
@@ -1414,13 +1441,15 @@ UA.configuration_check = {
           return;
         }
 
-        if (!(turn_server.urls instanceof Array)) {
+        if (turn_server.urls instanceof Array) {
+          num_turn_server_urls = turn_server.urls.length;
+        } else {
           turn_server.urls = [turn_server.urls];
+          num_turn_server_urls = 1;
         }
 
-        length = turn_server.urls.length;
-        for (idx = 0; idx < length; idx++) {
-          url = turn_server.urls[idx];
+        for (jdx = 0; jdx < num_turn_server_urls; jdx++) {
+          url = turn_server.urls[jdx];
 
           if (!(/^turns?:/.test(url))) {
             url = 'turn:' + url;
@@ -1474,9 +1503,29 @@ UA.configuration_check = {
 
     mediaHandlerFactory: function(mediaHandlerFactory) {
       if (mediaHandlerFactory instanceof Function) {
-        return mediaHandlerFactory;
+        var promisifiedFactory = function promisifiedFactory () {
+          var mediaHandler = mediaHandlerFactory.apply(this, arguments);
+
+          function patchMethod (methodName) {
+            var method = mediaHandler[methodName];
+            if (method.length > 1) {
+              var callbacksFirst = methodName === 'getDescription';
+              mediaHandler[methodName] = SIP.Utils.promisify(mediaHandler, methodName, callbacksFirst);
+            }
+          }
+
+          patchMethod('getDescription');
+          patchMethod('setDescription');
+
+          return mediaHandler;
+        };
+
+        promisifiedFactory.isSupported = mediaHandlerFactory.isSupported;
+        return promisifiedFactory;
       }
-    }
+    },
+
+    authenticationFactory: checkAuthenticationFactory
   }
 };
 

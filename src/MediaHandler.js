@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview MediaHandler
  */
@@ -20,14 +21,10 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   close: {value: function close () {}},
 
   /**
-   * @param {Function} onSuccess called with the obtained local media description
-   * @param {Function} onFailure
    * @param {Object} [mediaHint] A custom object describing the media to be used during this session.
    */
-  getDescription: {value: function getDescription (onSuccess, onFailure, mediaHint) {
+  getDescription: {value: function getDescription (mediaHint) {
     // keep jshint happy
-    onSuccess = onSuccess;
-    onFailure = onFailure;
     mediaHint = mediaHint;
   }},
 
@@ -35,14 +32,10 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   * Message reception.
   * @param {String} type
   * @param {String} description
-  * @param {Function} onSuccess
-  * @param {Function} onFailure
   */
-  setDescription: {value: function setDescription (description, onSuccess, onFailure) {
+  setDescription: {value: function setDescription (description) {
     // keep jshint happy
     description = description;
-    onSuccess = onSuccess;
-    onFailure = onFailure;
   }}
 });
 

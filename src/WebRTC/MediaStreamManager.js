@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview MediaStreamManager
  */
@@ -6,7 +7,7 @@
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
  */
-module.exports = function (SIP) {
+module.exports = function (SIP, environment) {
 
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) {
@@ -14,17 +15,9 @@ var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) 
     throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
 
-  var events = [
-    'userMediaRequest',
-    'userMedia',
-    'userMediaFailed'
-  ];
   this.mediaHint = defaultMediaHint || {
     constraints: {audio: true, video: true}
   };
-
-  this.logger = logger;
-  this.initEvents(events);
 
   // map of streams to acquisition manner:
   // true -> passed in as mediaHint.stream
@@ -39,20 +32,36 @@ MediaStreamManager.streamId = function (stream) {
     .join('');
 };
 
-MediaStreamManager.render = function render (stream, elements) {
+/**
+ * @param {(Array of) MediaStream} streams - The streams to render
+ *
+ * @param {(Array of) HTMLMediaElement} elements
+ *        - The <audio>/<video> element(s) that should render the streams
+ *
+ * Each stream in streams renders to the corresponding element in elements,
+ * wrapping around elements if needed.
+ */
+MediaStreamManager.render = function render (streams, elements) {
   if (!elements) {
     return false;
   }
+  if (Array.isArray(elements) && !elements.length) {
+    throw new TypeError('elements must not be empty');
+  }
 
-  function attachAndPlay (element, stream) {
-    (window.attachMediaStream || attachMediaStream)(element, stream);
+  function attachAndPlay (elements, stream, index) {
+    if (typeof elements === 'function') {
+      elements = elements();
+    }
+    var element = elements[index % elements.length];
+    (environment.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
 
   function attachMediaStream(element, stream) {
     if (typeof element.src !== 'undefined') {
-      URL.revokeObjectURL(element.src);
-      element.src = URL.createObjectURL(stream);
+      environment.revokeObjectURL(element.src);
+      element.src = environment.createObjectURL(stream);
     } else if (typeof (element.srcObject || element.mozSrcObject) !== 'undefined') {
       element.srcObject = element.mozSrcObject = stream;
     } else {
@@ -74,34 +83,34 @@ MediaStreamManager.render = function render (stream, elements) {
     }, interval);
   }
 
-  if (elements.video) {
-    if (elements.audio) {
-      elements.video.volume = 0;
-    }
-    attachAndPlay(elements.video, stream);
-  }
-  if (elements.audio) {
-    attachAndPlay(elements.audio, stream);
-  }
+  // [].concat "casts" `elements` into an array
+  // so forEach works even if `elements` was a single element
+  elements = [].concat(elements);
+  [].concat(streams).forEach(attachAndPlay.bind(null, elements));
 };
 
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
-  'acquire': {value: function acquire (onSuccess, onFailure, mediaHint) {
+  'acquire': {writable: true, value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
-    var saveSuccess = function (onSuccess, stream, isHintStream) {
-      var streamId = MediaStreamManager.streamId(stream);
-      this.acquisitions[streamId] = !!isHintStream;
-      onSuccess(stream);
-    }.bind(this, onSuccess);
+    var saveSuccess = function (isHintStream, streams) {
+      streams = [].concat(streams);
+      streams.forEach(function (stream) {
+        var streamId = MediaStreamManager.streamId(stream);
+        this.acquisitions[streamId] = !!isHintStream;
+      }, this);
+      return SIP.Utils.Promise.resolve(streams);
+    }.bind(this);
 
     if (mediaHint.stream) {
-      saveSuccess(mediaHint.stream, true);
+      return saveSuccess(true, mediaHint.stream);
     } else {
       // Fallback to audio/video enabled if no mediaHint can be found.
       var constraints = mediaHint.constraints ||
         (this.mediaHint && this.mediaHint.constraints) ||
         {audio: true, video: true};
+
+      var deferred = SIP.Utils.defer();
 
       /*
        * Make the call asynchronous, so that ICCs have a chance
@@ -117,24 +126,31 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 
           this.emit.apply(this, newArgs);
 
-          callback.apply(null, callbackArgs);
+          return callback.apply(null, callbackArgs);
         }.bind(this);
 
-        SIP.WebRTC.getUserMedia(
-          constraints,
-          emitThenCall.bind(this, 'userMedia', saveSuccess),
-          emitThenCall.bind(this, 'userMediaFailed', onFailure)
+        deferred.resolve(
+          SIP.WebRTC.getUserMedia(constraints)
+          .then(
+            emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
+            emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
+          )
         );
       }.bind(this), 0);
+
+      return deferred.promise;
     }
   }},
 
-  'release': {value: function release (stream) {
-    var streamId = MediaStreamManager.streamId(stream);
-    if (this.acquisitions[streamId] === false) {
-      stream.stop();
-    }
-    delete this.acquisitions[streamId];
+  'release': {writable: true, value: function release (streams) {
+    streams = [].concat(streams);
+    streams.forEach(function (stream) {
+      var streamId = MediaStreamManager.streamId(stream);
+      if (this.acquisitions[streamId] === false) {
+        stream.stop();
+      }
+      delete this.acquisitions[streamId];
+    }, this);
   }},
 });
 

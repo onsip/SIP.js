@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview SIP URI
  */
@@ -58,6 +59,10 @@ URI = function(scheme, user, host, port, parameters, headers) {
       set: function(value){
         host = value.toLowerCase();
       }
+    },
+
+    aor: {
+      get: function(){ return user + '@' + host; }
     },
 
     port: {

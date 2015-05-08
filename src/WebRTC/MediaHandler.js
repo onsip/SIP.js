@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview MediaHandler
  */
@@ -13,19 +14,6 @@
 module.exports = function (SIP) {
 
 var MediaHandler = function(session, options) {
-  var events = [
-    'userMediaRequest',
-    'userMedia',
-    'userMediaFailed',
-    'iceGathering',
-    'iceCandidate',
-    'iceComplete',
-    'iceFailed',
-    'getDescription',
-    'setDescription',
-    'dataChannel',
-    'addStream'
-  ];
   options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);
@@ -37,7 +25,7 @@ var MediaHandler = function(session, options) {
   this.videoMuted = false;
 
   // old init() from here on
-  var idx, length, server,
+  var idx, jdx, length, server,
     self = this,
     servers = [],
     stunServers = options.stunServers || null,
@@ -63,17 +51,34 @@ var MediaHandler = function(session, options) {
   length = turnServers.length;
   for (idx = 0; idx < length; idx++) {
     server = turnServers[idx];
-    servers.push({
-      'url': server.urls,
-      'username': server.username,
-      'credential': server.password
-    });
+    for (jdx = 0; jdx < server.urls.length; jdx++) {
+      servers.push({
+        'url': server.urls[jdx],
+        'username': server.username,
+        'credential': server.password
+      });
+    }
   }
+
+  this.onIceCompleted = SIP.Utils.defer();
+  this.onIceCompleted.promise.then(function(pc) {
+    self.emit('iceGatheringComplete', pc);
+    if (self.iceCheckingTimer) {
+      SIP.Timers.clearTimeout(self.iceCheckingTimer);
+      self.iceCheckingTimer = null;
+    }
+  });
 
   this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
 
+  // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
+  // even if peerConnection.onaddstream was just called. In order to make
+  // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
+  this._remoteStreams = [];
+
   this.peerConnection.onaddstream = function(e) {
     self.logger.log('stream added: '+ e.stream.id);
+    self._remoteStreams.push(e.stream);
     self.render();
     self.emit('addStream', e);
   };
@@ -86,10 +91,8 @@ var MediaHandler = function(session, options) {
     self.emit('iceCandidate', e);
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
-    } else if (self.onIceCompleted !== undefined) {
-      self.onIceCompleted(this);
     } else {
-      self.callOnIceCompleted = true;
+      self.onIceCompleted.resolve(this);
     }
   };
 
@@ -99,20 +102,48 @@ var MediaHandler = function(session, options) {
       self.emit('iceGathering', this);
     }
     if (this.iceGatheringState === 'complete') {
-      if (self.onIceCompleted !== undefined) {
-        self.onIceCompleted(this);
-      } else {
-        self.callOnIceCompleted = true;
-      }
+      self.onIceCompleted.resolve(this);
     }
   };
 
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
-    self.logger.log('ICE connection state changed to "'+ this.iceConnectionState +'"');
+    var stateEvent;
 
-    if (this.iceConnectionState === 'failed') {
-      self.emit('iceFailed', this);
+    if (this.iceConnectionState === 'checking') {
+      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' micro seconds');
+        self.onIceCompleted.resolve(this);
+      }.bind(this), config.iceCheckingTimeout);
     }
+
+
+    switch (this.iceConnectionState) {
+    case 'new':
+      stateEvent = 'iceConnection';
+      break;
+    case 'checking':
+      stateEvent = 'iceConnectionChecking';
+      break;
+    case 'connected':
+      stateEvent = 'iceConnectionConnected';
+      break;
+    case 'completed':
+      stateEvent = 'iceConnectionCompleted';
+      break;
+    case 'failed':
+      stateEvent = 'iceConnectionFailed';
+      break;
+    case 'disconnected':
+      stateEvent = 'iceConnectionDisconnected';
+      break;
+    case 'closed':
+      stateEvent = 'iceConnectionClosed';
+      break;
+    default:
+      self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
+      return;
+    }
+    self.emit(stateEvent, this);
 
     //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
     //normal calls switch from failed to connected in some cases, so checking for failed and terminated
@@ -131,12 +162,8 @@ var MediaHandler = function(session, options) {
     self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
   };
 
-  this.initEvents(events);
-
   function selfEmit(mh, event) {
-    if (mh.mediaStreamManager.on &&
-        mh.mediaStreamManager.checkEvent &&
-        mh.mediaStreamManager.checkEvent(event)) {
+    if (mh.mediaStreamManager.on) {
       mh.mediaStreamManager.on(event, function () {
         mh.emit.apply(mh, [event].concat(Array.prototype.slice.call(arguments)));
       });
@@ -163,6 +190,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
   close: {writable: true, value: function close () {
     this.logger.log('closing PeerConnection');
+    this._remoteStreams = [];
     // have to check signalingState since this.close() gets called multiple times
     // TODO figure out why that happens
     if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
@@ -175,13 +203,15 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   /**
-   * @param {Function} onSuccess
-   * @param {Function} onFailure
    * @param {SIP.WebRTC.MediaStream | (getUserMedia constraints)} [mediaHint]
    *        the MediaStream (or the constraints describing it) to be used for the session
    */
-  getDescription: {writable: true, value: function getDescription (onSuccess, onFailure, mediaHint) {
+  getDescription: {writable: true, value: function getDescription (mediaHint) {
     var self = this;
+    var acquire = self.mediaStreamManager.acquire;
+    if (acquire.length > 1) {
+      acquire = SIP.Utils.promisify(this.mediaStreamManager, 'acquire', true);
+    }
     mediaHint = mediaHint || {};
     if (mediaHint.dataChannel === true) {
       mediaHint.dataChannel = {};
@@ -189,70 +219,62 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.mediaHint = mediaHint;
 
     /*
-     * 1. acquire stream (skip if MediaStream passed in)
-     * 2. addStream
+     * 1. acquire streams (skip if MediaStreams passed in)
+     * 2. addStreams
      * 3. createOffer/createAnswer
-     * 4. call onSuccess()
      */
 
-    /* Last functions first, to quiet JSLint */
-    function streamAdditionSucceeded() {
-      if (self.hasOffer('remote')) {
-        self.peerConnection.ondatachannel = function (evt) {
-          self.dataChannel = evt.channel;
-          self.emit('dataChannel', self.dataChannel);
-        };
-      } else if (mediaHint.dataChannel &&
-                 self.peerConnection.createDataChannel) {
-        self.dataChannel = self.peerConnection.createDataChannel(
-          'sipjs',
-          mediaHint.dataChannel
-        );
-        self.emit('dataChannel', self.dataChannel);
-      }
-
-      self.render();
-      self.createOfferOrAnswer(onSuccess, onFailure, self.RTCConstraints);
-    }
-
-    function acquireSucceeded(stream) {
-      self.logger.log('acquired local media stream');
-      self.localMedia = stream;
-      self.session.connecting();
-      self.addStream(
-        stream,
-        streamAdditionSucceeded,
-        onFailure
-      );
-    }
-
+    var streamPromise;
     if (self.localMedia) {
       self.logger.log('already have local media');
-      streamAdditionSucceeded();
-      return;
+      streamPromise = SIP.Utils.Promise.resolve(self.localMedia);
+    }
+    else {
+      self.logger.log('acquiring local media');
+      streamPromise = acquire.call(self.mediaStreamManager, mediaHint)
+        .then(function acquireSucceeded(streams) {
+          self.logger.log('acquired local media streams');
+          self.localMedia = streams;
+          self.session.connecting();
+          return streams;
+        }, function acquireFailed(err) {
+          self.logger.error('unable to acquire streams');
+          self.logger.error(err);
+          self.session.connecting();
+          throw err;
+        })
+        .then(this.addStreams.bind(this))
+      ;
     }
 
-    self.logger.log('acquiring local media');
-    self.mediaStreamManager.acquire(
-      acquireSucceeded,
-      function acquireFailed(err) {
-        self.logger.error('unable to acquire stream');
-        self.logger.error(err);
-        self.session.connecting();
-        onFailure(err);
-      },
-      mediaHint
-    );
+    return streamPromise
+      .then(function streamAdditionSucceeded() {
+        if (self.hasOffer('remote')) {
+          self.peerConnection.ondatachannel = function (evt) {
+            self.dataChannel = evt.channel;
+            self.emit('dataChannel', self.dataChannel);
+          };
+        } else if (mediaHint.dataChannel &&
+                   self.peerConnection.createDataChannel) {
+          self.dataChannel = self.peerConnection.createDataChannel(
+            'sipjs',
+            mediaHint.dataChannel
+          );
+          self.emit('dataChannel', self.dataChannel);
+        }
+
+        self.render();
+        return self.createOfferOrAnswer(self.RTCConstraints);
+      })
+    ;
   }},
 
   /**
   * Message reception.
   * @param {String} type
   * @param {String} sdp
-  * @param {Function} onSuccess
-  * @param {Function} onFailure
   */
-  setDescription: {writable: true, value: function setDescription (sdp, onSuccess, onFailure) {
+  setDescription: {writable: true, value: function setDescription (sdp) {
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
       sdp: sdp
@@ -261,7 +283,30 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    this.peerConnection.setRemoteDescription(description, onSuccess, onFailure);
+    return SIP.Utils.promisify(this.peerConnection, 'setRemoteDescription')(description);
+  }},
+
+  /**
+   * If the Session associated with this MediaHandler were to be referred,
+   * what mediaHint should be provided to the UA's invite method?
+   */
+  getReferMedia: {writable: true, value: function getReferMedia () {
+    function hasTracks (trackGetter, stream) {
+      return stream[trackGetter]().length > 0;
+    }
+
+    function bothHaveTracks (trackGetter) {
+      /* jshint validthis:true */
+      return this.getLocalStreams().some(hasTracks.bind(null, trackGetter)) &&
+             this.getRemoteStreams().some(hasTracks.bind(null, trackGetter));
+    }
+
+    return {
+      constraints: {
+        audio: bothHaveTracks.call(this, 'getAudioTracks'),
+        video: bothHaveTracks.call(this, 'getVideoTracks')
+      }
+    };
   }},
 
 // Functions the session can use, but only because it's convenient for the application
@@ -377,8 +422,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   getRemoteStreams: {writable: true, value: function getRemoteStreams () {
     var pc = this.peerConnection;
     if (pc && pc.signalingState === 'closed') {
-      this.logger.warn('peerConnection is closed, getRemoteStreams returning []');
-      return [];
+      this.logger.warn('peerConnection is closed, getRemoteStreams returning this._remoteStreams');
+      return this._remoteStreams;
     }
     return(pc.getRemoteStreams && pc.getRemoteStreams()) ||
       pc.remoteStreams || [];
@@ -396,9 +441,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     Object.keys(streamGetters).forEach(function (loc) {
       var streamGetter = streamGetters[loc];
       var streams = this[streamGetter]();
-      if (streams.length) {
-        SIP.WebRTC.MediaStreamManager.render(streams[0], renderHint[loc]);
-      }
+      SIP.WebRTC.MediaStreamManager.render(streams, renderHint[loc]);
     }.bind(this));
   }},
 
@@ -409,79 +452,63 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     // TODO consider signalingStates with 'pranswer'?
   }},
 
-  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (onSuccess, onFailure, constraints) {
+  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints) {
     var self = this;
     var methodName;
-
-    function readySuccess () {
-      var sdp = self.peerConnection.localDescription.sdp;
-
-      sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
-      sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-      sdp = SIP.Hacks.Firefox.hasIncompatibleCLineWithSomeSIPEndpoints(sdp);
-
-      var sdpWrapper = {
-        type: methodName === 'createOffer' ? 'offer' : 'answer',
-        sdp: sdp
-      };
-
-      self.emit('getDescription', sdpWrapper);
-
-      self.ready = true;
-      onSuccess(sdpWrapper.sdp);
-    }
-
-    function onSetLocalDescriptionSuccess() {
-      if (self.peerConnection.iceGatheringState === 'complete' && (self.peerConnection.iceConnectionState === 'connected' || self.peerConnection.iceConnectionState === 'completed')) {
-        readySuccess();
-      } else {
-        self.onIceCompleted = function(pc) {
-          self.logger.log('ICE Gathering Completed');
-          self.onIceCompleted = undefined;
-          self.emit('iceComplete', pc);
-          readySuccess();
-        };
-        if (self.callOnIceCompleted) {
-          self.onIceCompleted();
-        }
-      }
-    }
-
-    function methodFailed (methodName, e) {
-      self.logger.error('peerConnection.' + methodName + ' failed');
-      self.logger.error(e);
-      self.ready = true;
-      onFailure(e);
-    }
+    var pc = self.peerConnection;
 
     self.ready = false;
-
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
-    self.peerConnection[methodName](
-      function(sessionDescription){
-        self.peerConnection.setLocalDescription(
-          sessionDescription,
-          onSetLocalDescriptionSuccess,
-          methodFailed.bind(null, 'setLocalDescription')
-        );
-      },
-      methodFailed.bind(null, methodName),
-      constraints
-    );
+    return SIP.Utils.promisify(pc, methodName, true)(constraints)
+      .then(SIP.Utils.promisify(pc, 'setLocalDescription'))
+      .then(function onSetLocalDescriptionSuccess() {
+        var deferred = SIP.Utils.defer();
+        if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
+          deferred.resolve();
+        } else {
+          self.onIceCompleted.promise.then(deferred.resolve);
+        }
+        return deferred.promise;
+      })
+      .then(function readySuccess () {
+        var sdp = pc.localDescription.sdp;
+
+        sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
+        sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
+        sdp = SIP.Hacks.Firefox.hasIncompatibleCLineWithSomeSIPEndpoints(sdp);
+
+        var sdpWrapper = {
+          type: methodName === 'createOffer' ? 'offer' : 'answer',
+          sdp: sdp
+        };
+
+        self.emit('getDescription', sdpWrapper);
+
+        self.ready = true;
+        return sdpWrapper.sdp;
+      })
+      .catch(function methodFailed (e) {
+        self.logger.error(e);
+        self.ready = true;
+        throw new SIP.Exceptions.GetDescriptionError(e);
+      })
+    ;
   }},
 
-  addStream: {writable: true, value: function addStream (stream, onSuccess, onFailure) {
+  addStreams: {writable: true, value: function addStreams (streams) {
     try {
-      this.peerConnection.addStream(stream);
+      streams = [].concat(streams);
+      streams.forEach(function (stream) {
+        this.peerConnection.addStream(stream);
+      }, this);
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
-      onFailure(e);
-      return;
+      return SIP.Utils.Promise.reject(e);
     }
 
-    onSuccess();
+    return SIP.Utils.Promise.resolve();
   }},
 
   toggleMuteHelper: {writable: true, value: function toggleMuteHelper (trackGetter, mute) {

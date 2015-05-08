@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview Incoming SIP Message Sanity Check
  */
@@ -147,7 +148,7 @@ function minimumHeaders() {
 // Reply
 function reply(status_code) {
   var to,
-    response = "SIP/2.0 " + status_code + " " + SIP.C.REASON_PHRASE[status_code] + "\r\n",
+    response = SIP.Utils.buildStatusLine(status_code),
     vias = message.getHeaders('via'),
     length = vias.length,
     idx = 0;

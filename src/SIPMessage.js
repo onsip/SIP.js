@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview SIP Message
  */
@@ -209,6 +210,9 @@ OutgoingRequest.prototype = {
     if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
       supported.push('100rel');
     }
+    if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
+      supported.push('replaces');
+    }
 
     supported.push('outbound');
 
@@ -412,20 +416,8 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     r = 0,
     v = 0;
 
-  code = code || null;
-  reason = reason || null;
-
-  // Validate code and reason values
-  if (!code || (code < 100 || code > 699)) {
-    throw new TypeError('Invalid status_code: '+ code);
-  } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
-    throw new TypeError('Invalid reason_phrase: '+ reason);
-  }
-
-  reason = reason || SIP.C.REASON_PHRASE[code] || '';
+  response = SIP.Utils.buildStatusLine(code, reason);
   extraHeaders = (extraHeaders || []).slice();
-
-  response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
 
   if(this.method === SIP.C.INVITE && code > 100 && code <= 200) {
     rr = this.getHeaders('record-route');
@@ -468,10 +460,14 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
     supported.push('100rel');
   }
+  if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
+    supported.push('replaces');
+  }
 
   supported.push('outbound');
 
   response += 'Supported: ' + supported + '\r\n';
+  response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
   if(body) {
     length = SIP.Utils.str_utf8_length(body);
@@ -482,7 +478,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     response += 'Content-Length: ' + 0 + '\r\n\r\n';
   }
 
-  this.server_transaction.receiveResponse(code, response, onSuccess, onFailure);
+  this.server_transaction.receiveResponse(code, response).then(onSuccess, onFailure);
 
   return response;
 };
@@ -498,19 +494,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
     vias = this.getHeaders('via'),
     length = vias.length;
 
-  code = code || null;
-  reason = reason || null;
-
-  // Validate code and reason values
-  if (!code || (code < 100 || code > 699)) {
-    throw new TypeError('Invalid status_code: '+ code);
-  } else if (reason && typeof reason !== 'string' && !(reason instanceof String)) {
-    throw new TypeError('Invalid reason_phrase: '+ reason);
-  }
-
-  reason = reason || SIP.C.REASON_PHRASE[code] || '';
-
-  response = 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
+  response = SIP.Utils.buildStatusLine(code, reason);
 
   for(v; v < length; v++) {
     response += 'Via: ' + vias[v] + '\r\n';
@@ -528,6 +512,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
   response += 'From: ' + this.getHeader('From') + '\r\n';
   response += 'Call-ID: ' + this.call_id + '\r\n';
   response += 'CSeq: ' + this.cseq + ' ' + this.method + '\r\n';
+  response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
   response += 'Content-Length: ' + 0 + '\r\n\r\n';
 
   this.transport.send(response);

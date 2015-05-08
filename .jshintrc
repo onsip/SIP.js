@@ -1,5 +1,5 @@
 {
-  "browser": true,
+  "node": true,
   "curly": true,
   "eqeqeq": true,
   "immed": true,
@@ -13,9 +13,5 @@
   "onecase": true,
   "unused": true,
   "supernew": true,
-  "globals": {
-    "module": true,
-    "require": true,
-    "global": true
-  }
+  "expr": true
 }

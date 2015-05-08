@@ -1,3 +1,4 @@
+"use strict";
 
 /**
  * @fileoverview Request Sender
@@ -79,7 +80,7 @@ RequestSender.prototype = {
     * Authentication
     * Authenticate once. _challenged_ flag used to avoid infinite authentications.
     */
-    if ((status_code === 401 || status_code === 407) && this.ua.configuration.password !== null) {
+    if (status_code === 401 || status_code === 407) {
 
       // Get and parse the appropriate WWW-Authenticate or Proxy-Authenticate header.
       if (response.status_code === 401) {
@@ -99,7 +100,7 @@ RequestSender.prototype = {
 
       if (!this.challenged || (!this.staled && challenge.stale === true)) {
         if (!this.credentials) {
-          this.credentials = new SIP.DigestAuthentication(this.ua);
+          this.credentials = this.ua.configuration.authenticationFactory(this.ua);
         }
 
         // Verify that the challenge is really valid.

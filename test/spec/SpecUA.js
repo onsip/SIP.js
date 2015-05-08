@@ -92,7 +92,8 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
-    expect(UA.configuration.mediaHandlerFactory).toBe(SIP.WebRTC.MediaHandler.defaultFactory);
+    var defaultFactory = SIP.WebRTC.MediaHandler.defaultFactory;
+    expect(UA.configuration.mediaHandlerFactory).toBe(defaultFactory);
     expect(UA.log).toBeDefined();
     expect(UA.logger).toBeDefined();
     expect(UA.cache).toBeDefined();
@@ -109,9 +110,11 @@ describe('UA', function() {
     expect(UA.transportRecoverAttempts).toBeDefined();
 
     var mediaHandlerFactory = function(){};
+    mediaHandlerFactory.isSupported = function(){};
     configuration.mediaHandlerFactory = mediaHandlerFactory;
     UA = new SIP.UA(configuration);
-    expect(UA.configuration.mediaHandlerFactory).toBe(mediaHandlerFactory);
+    expect(UA.configuration.mediaHandlerFactory).not.toBe(defaultFactory);
+    expect(UA.configuration.mediaHandlerFactory.isSupported).toBe(mediaHandlerFactory.isSupported);
   });
 
   it('creates a new register context', function() {
@@ -236,7 +239,7 @@ describe('UA', function() {
     });
 
     it('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
-      spyOn(UA, 'off');
+      spyOn(UA, 'removeListener');
 
       //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
 
@@ -254,7 +257,7 @@ describe('UA', function() {
       UA.transactions['nict'] = [];
       UA.emit('transactionDestroyed');
       expect(UA.transport.disconnect).toHaveBeenCalled();
-      expect(UA.off).toHaveBeenCalled();
+      expect(UA.removeListener).toHaveBeenCalled();
     });
   });
 
@@ -390,7 +393,7 @@ describe('UA', function() {
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
-      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, {contentType: 'mixedContent', body: body});
+      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, withPrototype({contentType: 'mixedContent', body: body}));
     });
 
     it('calls ClientContext.send method with no options provided to it', function() {
@@ -582,17 +585,11 @@ describe('UA', function() {
     });
   });
 
-  xdescribe('.onTransportClosed', function() {
+  xdescribe('.onTransportClosed', function () {});
 
-  });
+  xdescribe('.onTransportError', function() {});
 
-  xdescribe('.onTransportError', function() {
-
-  });
-
-  xdescribe('.onTransportConnected', function() {
-
-  });
+  xdescribe('.onTransportConnected', function() {});
 
   describe('.onTransportConnecting', function() {
     it('emits a connecting event', function() {
@@ -706,11 +703,11 @@ describe('UA', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return false;
+      UA.listeners = jasmine.createSpy('listeners').and.callFake(function() {
+        return [];
       });
       expect(UA.receiveRequest(request)).toBeUndefined();
-      expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
+      expect(UA.listeners).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
       expect(replySpy).toHaveBeenCalledWith(405, null, jasmine.any(Array));
     });
@@ -723,8 +720,8 @@ describe('UA', function() {
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
                       getHeader: jasmine.createSpy('getHeader')};
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return true;
+      UA.listeners = jasmine.createSpy('listeners').and.callFake(function() {
+        return [1];
       });
       UA.on('message',callback);
 
@@ -746,7 +743,10 @@ describe('UA', function() {
     it('sends a 488 if an invite is received but there is no WebRTC support', function() {
       var request = { method : SIP.C.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
-                      reply : replySpy };
+                      reply : replySpy,
+                      getHeader : function () {},
+                      parseHeader: function () {}
+                    };
       var webrtc = SIP.WebRTC.isSupported;
       spyOn(SIP.WebRTC, 'isSupported').and.callFake(function () {
         return false;
@@ -1122,6 +1122,7 @@ describe('UA', function() {
       expect(UA.configuration.autostart).toBe(true);
 
       expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
+      expect(UA.configuration.replaces).toBe(SIP.C.supported.UNSUPPORTED);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1470,6 +1471,25 @@ describe('UA', function() {
       });
     });
 
+    describe('.replaces', function() {
+      it('returns SIP.C.supported.REQUIRED if SIP.C.supported.REQUIRED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.replaces(SIP.C.supported.REQUIRED)).toBe(SIP.C.supported.REQUIRED);
+      });
+
+      it('returns SIP.C.supported.SUPPORTED if SIP.C.supported.SUPPORTED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.replaces(SIP.C.supported.SUPPORTED)).toBe(SIP.C.supported.SUPPORTED);
+      });
+
+      it('returns SIP.C.supported.UNSUPPORTED for all other arguments passed in', function() {
+        expect(SIP.UA.configuration_check.optional.replaces()).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces(true)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces('a string')).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces(7)).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.replaces(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
+      });
+    });
+
     describe('.register', function() {
       it('fails for all types except boolean', function() {
         expect(SIP.UA.configuration_check.optional.register()).toBeUndefined();
@@ -1564,6 +1584,12 @@ describe('UA', function() {
       it('works whether an array is passed or not', function() {
         expect(SIP.UA.configuration_check.optional.turnServers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
         expect(SIP.UA.configuration_check.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
+        submitted_turn_servers = {
+          urls: ['example.com', 'example.org', 'example.net'],
+          username: 'alice',
+          password: 'pass'
+        };
+        expect(SIP.UA.configuration_check.optional.turnServers(submitted_turn_servers)).toEqual([submitted_turn_servers]);
       });
 
       it('works if you pass in server instead of urls (backwards compatible', function() {
@@ -1578,6 +1604,19 @@ describe('UA', function() {
 
       it('fails if the url passed is not a valid turn_uri', function() {
         expect(SIP.UA.configuration_check.optional.turnServers([{urls: '', username: 'alice', password: 'pass'}])).toBeUndefined();
+        submitted_turn_servers = [
+          {
+            urls: ['example.com', 'example.org'],
+            username: 'alice',
+            password: 'pass'
+          },
+          {
+            urls: [''],
+            username: 'alice',
+            password: 'pass'
+          }
+        ];
+        expect(SIP.UA.configuration_check.optional.turnServers(submitted_turn_servers)).toBeUndefined();
       });
     });
 

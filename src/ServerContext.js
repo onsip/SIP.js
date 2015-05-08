@@ -1,13 +1,8 @@
+"use strict";
 module.exports = function (SIP) {
 var ServerContext;
 
 ServerContext = function (ua, request) {
-  var events = [
-      'progress',
-      'accepted',
-      'rejected',
-      'failed'
-    ];
   this.ua = ua;
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
@@ -29,76 +24,56 @@ ServerContext = function (ua, request) {
 
   this.localIdentity = request.to;
   this.remoteIdentity = request.from;
-
-  this.initEvents(events);
 };
 
-ServerContext.prototype = new SIP.EventEmitter();
+ServerContext.prototype = Object.create(SIP.EventEmitter.prototype);
 
 ServerContext.prototype.progress = function (options) {
-  options = options || {};
-  var
-    statusCode = options.statusCode || 180,
-    reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body,
-    response;
-
-  if (statusCode < 100 || statusCode > 199) {
-    throw new TypeError('Invalid statusCode: ' + statusCode);
-  }
-  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('progress', response, reasonPhrase);
-
-  return this;
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 180);
+  options.minCode = 100;
+  options.maxCode = 199;
+  options.events = ['progress'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.accept = function (options) {
-  options = options || {};
-  var
-    statusCode = options.statusCode || 200,
-    reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body,
-    response;
-
-  if (statusCode < 200 || statusCode > 299) {
-    throw new TypeError('Invalid statusCode: ' + statusCode);
-  }
-  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('accepted', response, reasonPhrase);
-
-  return this;
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 200);
+  options.minCode = 200;
+  options.maxCode = 299;
+  options.events = ['accepted'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.reject = function (options) {
-  options = options || {};
-  var
-    statusCode = options.statusCode || 480,
-    reasonPhrase = options.reasonPhrase || SIP.C.REASON_PHRASE[statusCode],
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body,
-    response;
-
-  if (statusCode < 300 || statusCode > 699) {
-    throw new TypeError('Invalid statusCode: ' + statusCode);
-  }
-  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
-  this.emit('rejected', response, reasonPhrase);
-  this.emit('failed', response, reasonPhrase);
-
-  return this;
+  options = Object.create(options || Object.prototype);
+  options.statusCode || (options.statusCode = 480);
+  options.minCode = 300;
+  options.maxCode = 699;
+  options.events = ['rejected', 'failed'];
+  return this.reply(options);
 };
 
 ServerContext.prototype.reply = function (options) {
-  options = options || {};
+  options = options || {}; // This is okay, so long as we treat options as read-only in this method
   var
-    statusCode = options.statusCode,
-    reasonPhrase = options.reasonPhrase,
-    extraHeaders = (options.extraHeaders || []).slice(),
-    body = options.body;
+    statusCode = options.statusCode || 100,
+    minCode = options.minCode || 100,
+    maxCode = options.maxCode || 699,
+    reasonPhrase = SIP.Utils.getReasonPhrase(statusCode, options.reasonPhrase),
+    extraHeaders = options.extraHeaders || [],
+    body = options.body,
+    events = options.events || [],
+    response;
 
-  this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+  if (statusCode < minCode || statusCode > maxCode) {
+    throw new TypeError('Invalid statusCode: ' + statusCode);
+  }
+  response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+  events.forEach(function (event) {
+    this.emit(event, response, reasonPhrase);
+  }, this);
 
   return this;
 };

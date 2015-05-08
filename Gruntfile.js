@@ -4,10 +4,11 @@
 module.exports = function(grunt) {
 
   var pkg = grunt.file.readJSON('package.json');
+  var year = new Date().getFullYear()
   var banner = '\
 /*\n\
- * SIP version <%= pkg.version %>\n\
- * Copyright (c) 2014-<%= grunt.template.today("yyyy") %> Junction Networks, Inc <http://www.onsip.com>\n\
+ * SIP version ' + pkg.version + '\n\
+ * Copyright (c) 2014-' + year + ' Junction Networks, Inc <http://www.onsip.com>\n\
  * Homepage: http://sipjs.com\n\
  * License: http://sipjs.com/license/\n\
  *\n\
@@ -23,10 +24,10 @@ module.exports = function(grunt) {
  * distribute, sublicense, and/or sell copies of the Software, and to\n\
  * permit persons to whom the Software is furnished to do so, subject to\n\
  * the following conditions:\n\
- * \n\
+ *\n\
  * The above copyright notice and this permission notice shall be\n\
  * included in all copies or substantial portions of the Software.\n\
- * \n\
+ *\n\
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,\n\
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n\
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n\
@@ -47,7 +48,7 @@ module.exports = function(grunt) {
     },
     browserify: {
       devel: {
-        src: 'src/SIP.js',
+        src: pkg.main,
         dest: 'dist/<%= name %>-<%= pkg.version %>.js'
       },
       options: {
@@ -55,33 +56,28 @@ module.exports = function(grunt) {
           standalone: 'SIP'
         },
         postBundleCB: function (err, src, next) {
-          // prepend the banner and fill in placeholders
-          src = (banner + src).replace(/<%=(.*)%>/g, function (match, expr) {
-            // jshint evil:true
-            return eval(expr);
-          });
-          next(err, src);
+          // prepend the banner
+          next(err, banner + src);
         }
       }
     },
     copy: {
+      min: {
+        src: 'dist/<%= name %>-<%= pkg.version %>.min.js',
+        dest: 'dist/<%= name %>.min.js'
+      },
       dist: {
         src: 'dist/<%= name %>-<%= pkg.version %>.js',
         dest: 'dist/<%= name %>.js'
       }
     },
     jshint: {
-      src: 'src/**/*.js',
+      src: ['src/**/*.js', "!src/polyfills/**/*.js", "!src/Grammar/dist/Grammar.js"],
       options: {
         jshintrc: true
       }
     },
     uglify: {
-      dist: {
-        files: {
-          'dist/<%= name %>.min.js': ['dist/<%= name %>.js']
-        }
-      },
       devel: {
         files: {
           'dist/<%= name %>-<%= pkg.version %>.min.js': ['dist/<%= name %>-<%= pkg.version %>.js']
@@ -102,6 +98,7 @@ module.exports = function(grunt) {
         options: {
           specs: 'test/spec/*.js',
           keepRunner : true,
+          vendor: 'test/polyfills/*.js',
           helpers: 'test/helpers/*.js'
         }
       }
@@ -110,38 +107,7 @@ module.exports = function(grunt) {
       grammar: {
         src: 'src/Grammar/src/Grammar.pegjs',
         dest: 'src/Grammar/dist/Grammar.js',
-        options: {
-          optimize: 'size',
-          allowedStartRules: [
-             'Contact',
-             'Name_Addr_Header',
-             'Record_Route',
-             'Request_Response',
-             'SIP_URI',
-             'Subscription_State',
-             'Via',
-             'absoluteURI',
-             'Call_ID',
-             'Content_Disposition',
-             'Content_Length',
-             'Content_Type',
-             'CSeq',
-             'displayName',
-             'Event',
-             'From',
-             'host',
-             'Max_Forwards',
-             'Proxy_Authenticate',
-             'quoted_string',
-             'Refer_To',
-             'stun_URI',
-             'To',
-             'turn_URI',
-             'uuid',
-             'WWW_Authenticate',
-             'challenge'
-          ]
-        }
+        options: require('./src/Grammar/peg.json')
       }
     },
     trimtrailingspaces: {
@@ -166,46 +132,24 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-peg');
   grunt.loadNpmTasks('grunt-trimtrailingspaces');
 
-
-  // Task for building SIP.js Grammar.js and Grammar.min.js files.
-  grunt.registerTask('post_peg', function(){
-    // Modify the generated Grammar.js file with custom changes.
-    console.log('"grammar" task: applying custom changes to Grammar.js ...');
-    var fs = require('fs');
-    var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-    var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
-    modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
-    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
-    modified_grammar = modified_grammar.replace(/\(function\(\)/, 'function(SIP)').replace(/\}\)\(\)/, '}');
-
-    // Don't jshint this big chunk of minified code
-    modified_grammar =
-      "/* jshint ignore:start */\n" +
-      modified_grammar +
-      "\n/* jshint ignore:end */\n";
-
-    fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
-    console.log('OK');
-  });
-
-  grunt.registerTask('grammar', ['peg', 'post_peg']);
+  grunt.registerTask('grammar', ['peg']);
 
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
   // Both sip-devel.js and sip-X.Y.Z.js are the same file with different name.
-  grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'copy', 'uglify']);
+  grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'uglify', 'copy']);
 
   // Task for building sip-devel.js (uncompressed).
-  grunt.registerTask('devel', ['jshint', 'browserify']);
+  grunt.registerTask('devel', ['jshint', 'quick']);
 
-  grunt.registerTask('quick', ['browserify']);
+  grunt.registerTask('quick', ['grammar', 'browserify']);
 
   // Test tasks.
   grunt.registerTask('test',['jasmine']);
 
   // Travis CI task.
   // Doc: http://manuel.manuelles.nl/blog/2012/06/22/integrate-travis-ci-into-grunt/
-  grunt.registerTask('travis', ['grammar', 'devel', 'test']);
+  grunt.registerTask('travis', ['devel', 'test']);
 
   // Default task is an alias for 'build'.
   // I know this is annoying... but you could always do grunt build. This encourages better code testing! --Eric Green

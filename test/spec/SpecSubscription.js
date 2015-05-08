@@ -118,7 +118,22 @@ describe('Subscription', function() {
     var response;
 
     beforeEach(function() {
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nEvent: dialog\r\nExpires: 3600\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Event: dialog',
+        'Expires: 3600',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
     });
 
     it('calls fail if the status code is one of the error codes', function() {
@@ -170,7 +185,21 @@ describe('Subscription', function() {
       spyOn(Subscription, 'failed');
       spyOn(Subscription.logger, 'warn');
 
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nEvent: dialog\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Event: dialog',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       Subscription.receiveResponse(response);
 
@@ -182,7 +211,22 @@ describe('Subscription', function() {
       spyOn(Subscription, 'failed');
       spyOn(Subscription.logger, 'warn');
 
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nEvent: dialog\r\nExpires: 777777\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Event: dialog',
+        'Expires: 777777',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       Subscription.receiveResponse(response);
 
@@ -260,20 +304,20 @@ describe('Subscription', function() {
       expect(Subscription.state).toBe('terminated');
     });
 
-    it('calls subscribe for all other states (active, init)', function() {
-      spyOn(Subscription, 'subscribe');
+    it('calls refresh for all other states (active, init)', function() {
+      spyOn(Subscription, 'refresh');
       Subscription.state = 'active';
 
       Subscription.timer_fire();
 
-      expect(Subscription.subscribe).toHaveBeenCalled();
+      expect(Subscription.refresh).toHaveBeenCalled();
 
-      Subscription.subscribe.calls.reset();
+      Subscription.refresh.calls.reset();
       Subscription.state = 'init'; //Note: there's no way this can be called with a state of init
 
       Subscription.timer_fire();
 
-      expect(Subscription.subscribe).toHaveBeenCalled();
+      expect(Subscription.refresh).toHaveBeenCalled();
     });
   });
 
@@ -320,7 +364,22 @@ describe('Subscription', function() {
 
   describe('.createConfirmedDialog', function() {
     it('creates a dialog, sets it to the subscription, and returns true on success', function() {
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nEvent: dialog\r\nExpires: 3600\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Event: dialog',
+        'Expires: 3600',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
 
       expect(Subscription.createConfirmedDialog(response, 'UAC')).toBe(true);
 
@@ -329,7 +388,20 @@ describe('Subscription', function() {
     });
 
     it('returns false, doesn\'t set the dialog on dialog creation failure', function() {
-      response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nEvent: dialog\r\nExpires: 3600\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Event: dialog',
+        'Expires: 3600',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        ''].join('\r\n'), ua);
       //no contact header, will be false
 
       expect(Subscription.createConfirmedDialog(response, 'UAC')).toBe(false);
@@ -340,7 +412,22 @@ describe('Subscription', function() {
 
   describe('.terminateDialog', function() {
     it('terminates and deletes the subscription\'s dialog if it exists', function() {
-      var response = SIP.Parser.parseMessage('SIP/2.0 200 OK\r\nTo: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2\r\nCall-ID: upfrf7jpeb3rmc0gnnq1\r\nCSeq: 9059 INVITE\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nEvent: dialog\r\nExpires: 3600\r\nContact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>\r\nSupported: outbound\r\nContent-Type: application/sdp\r\nContent-Length: 11\r\n\r\na= sendrecv\r\n', ua);
+      var response = SIP.Parser.parseMessage([
+        'SIP/2.0 200 OK',
+        'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
+        'From: "test1" <sip:test1@onsnip.onsip.com>;tag=58312p20s2',
+        'Call-ID: upfrf7jpeb3rmc0gnnq1',
+        'CSeq: 9059 INVITE',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Event: dialog',
+        'Expires: 3600',
+        'Contact: <sip:gusgt9j8@vk3dj582vbu9.invalid;transport=ws>',
+        'Supported: outbound',
+        'Content-Type: application/sdp',
+        'Content-Length: 11',
+        '',
+        'a= sendrecv',
+        '',].join('\r\n'), ua);
 
       Subscription.createConfirmedDialog(response, 'UAC')
       expect(Subscription.dialog).toBeDefined();
@@ -357,7 +444,27 @@ describe('Subscription', function() {
     var request;
 
     beforeEach(function() {
-      request = SIP.Parser.parseMessage('NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0\r\nRecord-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>\r\nRecord-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>\r\nVia: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport\r\nVia: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0\r\nTo: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo\r\nFrom: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992\r\nCSeq: 1 NOTIFY\r\nCall-ID: 8fe1v8j577pj9bakcpbs\r\nMax-Forwards: 69\r\nContent-Length: 160\r\nUser-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))\r\nEvent: dialog\r\nContact: <sip:199.7.175.102:5060>\r\nSubscription-State: active;expires=3600\r\nContent-Type: application/dialog-info+xml\r\n\r\n<?xml version="1.0"?>\r\n<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"\r\nstate="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>', ua);
+      request = SIP.Parser.parseMessage([
+        'NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0',
+        'Record-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>',
+        'Record-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>',
+        'Via: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport',
+        'Via: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0',
+        'To: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo',
+        'From: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992',
+        'CSeq: 1 NOTIFY',
+        'Call-ID: 8fe1v8j577pj9bakcpbs',
+        'Max-Forwards: 69',
+        'Content-Length: 160',
+        'User-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))',
+        'Event: dialog',
+        'Contact: <sip:199.7.175.102:5060>',
+        'Subscription-State: active;expires=3600',
+        'Content-Type: application/dialog-info+xml',
+        '',
+        '<?xml version="1.0"?>',
+        '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
+        'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
       spyOn(request, 'reply'); //takes care of an error
     });
@@ -398,7 +505,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
@@ -409,7 +516,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(700000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(700000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
@@ -420,7 +527,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
     });
@@ -432,7 +539,7 @@ describe('Subscription', function() {
 
       Subscription.receiveRequest(request);
 
-      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000);
+      expect(SIP.Timers.setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.sub_duration).not.toBeNull();
       expect(Subscription.timers.sub_duration).toBeDefined();
       expect(Subscription.state).toBe('pending');
@@ -515,7 +622,26 @@ describe('Subscription', function() {
     var request;
 
     it('logs a warning and returns false if Event header is missing', function() {
-      request = SIP.Parser.parseMessage('NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0\r\nRecord-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>\r\nRecord-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>\r\nVia: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport\r\nVia: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0\r\nTo: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo\r\nFrom: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992\r\nCSeq: 1 NOTIFY\r\nCall-ID: 8fe1v8j577pj9bakcpbs\r\nMax-Forwards: 69\r\nContent-Length: 160\r\nUser-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))\r\nContact: <sip:199.7.175.102:5060>\r\nSubscription-State: active;expires=3600\r\nContent-Type: application/dialog-info+xml\r\n\r\n<?xml version="1.0"?>\r\n<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"\r\nstate="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>', ua);
+      request = SIP.Parser.parseMessage([
+        'NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0',
+        'Record-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>',
+        'Record-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>',
+        'Via: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport',
+        'Via: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0',
+        'To: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo',
+        'From: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992',
+        'CSeq: 1 NOTIFY',
+        'Call-ID: 8fe1v8j577pj9bakcpbs',
+        'Max-Forwards: 69',
+        'Content-Length: 160',
+        'User-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))',
+        'Contact: <sip:199.7.175.102:5060>',
+        'Subscription-State: active;expires=3600',
+        'Content-Type: application/dialog-info+xml',
+        '',
+        '<?xml version="1.0"?>',
+        '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
+        'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
       spyOn(Subscription.logger, 'warn');
 
@@ -524,7 +650,26 @@ describe('Subscription', function() {
     });
 
     it('logs a warning and returns false if Subscription-State header is missing', function() {
-      request = SIP.Parser.parseMessage('NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0\r\nRecord-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>\r\nRecord-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>\r\nVia: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport\r\nVia: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0\r\nTo: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo\r\nFrom: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992\r\nCSeq: 1 NOTIFY\r\nCall-ID: 8fe1v8j577pj9bakcpbs\r\nMax-Forwards: 69\r\nContent-Length: 160\r\nUser-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))\r\nEvent: dialog\r\nContact: <sip:199.7.175.102:5060>\r\nContent-Type: application/dialog-info+xml\r\n\r\n<?xml version="1.0"?>\r\n<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"\r\nstate="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>', ua);
+      request = SIP.Parser.parseMessage([
+        'NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0',
+        'Record-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>',
+        'Record-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>',
+        'Via: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport',
+        'Via: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0',
+        'To: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo',
+        'From: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992',
+        'CSeq: 1 NOTIFY',
+        'Call-ID: 8fe1v8j577pj9bakcpbs',
+        'Max-Forwards: 69',
+        'Content-Length: 160',
+        'User-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))',
+        'Event: dialog',
+        'Contact: <sip:199.7.175.102:5060>',
+        'Content-Type: application/dialog-info+xml',
+        '',
+        '<?xml version="1.0"?>',
+        '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
+        'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
       spyOn(Subscription.logger, 'warn');
 
@@ -533,7 +678,27 @@ describe('Subscription', function() {
     });
 
     it('logs a warning, replies 481, and returns false if the events don\'t match', function() {
-      request = SIP.Parser.parseMessage('NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0\r\nRecord-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>\r\nRecord-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>\r\nVia: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport\r\nVia: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0\r\nTo: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo\r\nFrom: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992\r\nCSeq: 1 NOTIFY\r\nCall-ID: 8fe1v8j577pj9bakcpbs\r\nMax-Forwards: 69\r\nContent-Length: 160\r\nUser-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))\r\nEvent: WRONG\r\nContact: <sip:199.7.175.102:5060>\r\nSubscription-State: active;expires=3600\r\nContent-Type: application/dialog-info+xml\r\n\r\n<?xml version="1.0"?>\r\n<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"\r\nstate="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>', ua);
+      request = SIP.Parser.parseMessage([
+        'NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0',
+        'Record-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>',
+        'Record-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>',
+        'Via: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport',
+        'Via: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0',
+        'To: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo',
+        'From: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992',
+        'CSeq: 1 NOTIFY',
+        'Call-ID: 8fe1v8j577pj9bakcpbs',
+        'Max-Forwards: 69',
+        'Content-Length: 160',
+        'User-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))',
+        'Event: WRONG',
+        'Contact: <sip:199.7.175.102:5060>',
+        'Subscription-State: active;expires=3600',
+        'Content-Type: application/dialog-info+xml',
+        '',
+        '<?xml version="1.0"?>',
+        '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
+        'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
       spyOn(Subscription.logger, 'warn');
       spyOn(request, 'reply');
@@ -544,7 +709,27 @@ describe('Subscription', function() {
     });
 
     it('returns true if none of the above happens', function() {
-      request = SIP.Parser.parseMessage('NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0\r\nRecord-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>\r\nRecord-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>\r\nVia: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport\r\nVia: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0\r\nTo: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo\r\nFrom: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992\r\nCSeq: 1 NOTIFY\r\nCall-ID: 8fe1v8j577pj9bakcpbs\r\nMax-Forwards: 69\r\nContent-Length: 160\r\nUser-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))\r\nEvent: dialog\r\nContact: <sip:199.7.175.102:5060>\r\nSubscription-State: active;expires=3600\r\nContent-Type: application/dialog-info+xml\r\n\r\n<?xml version="1.0"?>\r\n<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"\r\nstate="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>', ua);
+      request = SIP.Parser.parseMessage([
+        'NOTIFY sip:5sik1gqu@ue55h9a6i4s5.invalid;transport=ws SIP/2.0',
+        'Record-Route: <sip:1c2a4a345a@199.7.175.182:443;transport=wss;lr;ovid=7cb85a5c>',
+        'Record-Route: <sip:199.7.175.182:5060;transport=udp;lr;ovid=7cb85a5c>',
+        'Via: SIP/2.0/WSS 199.7.175.182:443;branch=z9hG4bK1b3f97d3d51a36142c17f2e35d31c93d0376cecc;rport',
+        'Via: SIP/2.0/UDP 199.7.175.102:5060;branch=z9hG4bK5aef.40dfee72.0',
+        'To: <sip:james@onsnip.onsip.com>;tag=c4pa0cc2uo',
+        'From: <sip:sip:test1@onsnip.onsip.com>;tag=2b2fcef4d83711ffd986a7db00d29d1d.7992',
+        'CSeq: 1 NOTIFY',
+        'Call-ID: 8fe1v8j577pj9bakcpbs',
+        'Max-Forwards: 69',
+        'Content-Length: 160',
+        'User-Agent: OpenSIPS (1.10.0-notls (x86_64/linux))',
+        'Event: dialog',
+        'Contact: <sip:199.7.175.102:5060>',
+        'Subscription-State: active;expires=3600',
+        'Content-Type: application/dialog-info+xml',
+        '',
+        '<?xml version="1.0"?>',
+        '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
+        'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
       expect(Subscription.matchEvent(request)).toBe(true);
     });

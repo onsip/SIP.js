@@ -1,14 +1,11 @@
+"use strict";
 module.exports = function (SIP) {
 
 var RegisterContext;
 
 RegisterContext = function (ua) {
   var params = {},
-      regId = 1,
-      events = [
-        'registered',
-        'unregistered'
-      ];
+      regId = 1;
 
   this.registrar = ua.configuration.registrarServer;
   this.expires = ua.configuration.registerExpires;
@@ -42,7 +39,6 @@ RegisterContext = function (ua) {
   this.registered = false;
 
   this.logger = ua.getLogger('sip.registercontext');
-  this.initMoreEvents(events);
 };
 
 RegisterContext.prototype = {
@@ -50,8 +46,8 @@ RegisterContext.prototype = {
     var self = this, extraHeaders;
 
     // Handle Options
-    options = options || {};
-    extraHeaders = (options.extraHeaders || []).slice();
+    this.options = options || {};
+    extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
@@ -116,7 +112,7 @@ RegisterContext.prototype = {
           // For that, decrease the expires value. ie: 3 seconds
           this.registrationTimer = SIP.Timers.setTimeout(function() {
             self.registrationTimer = null;
-            self.register(options);
+            self.register(this.options);
           }, (expires * 1000) - 3000);
           this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
             self.logger.warn('registration expired');
@@ -142,7 +138,7 @@ RegisterContext.prototype = {
             // Increase our registration interval to the suggested minimum
             this.expires = response.getHeader('min-expires');
             // Attempt the registration again immediately
-            this.register(options);
+            this.register(this.options);
           } else { //This response MUST contain a Min-Expires header field
             this.logger.warn('423 response received for REGISTER without Min-Expires');
             this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
@@ -191,7 +187,7 @@ RegisterContext.prototype = {
   },
 
   onTransportConnected: function() {
-    this.register();
+    this.register(this.options);
   },
 
   close: function() {

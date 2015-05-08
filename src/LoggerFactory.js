@@ -1,23 +1,15 @@
-
-module.exports = function (window, Logger) {
-
-// Console is not defined in ECMAScript, so just in case...
-var console = window.console || {
-  debug: function () {},
-  log: function () {},
-  warn: function () {},
-  error: function () {}
+"use strict";
+var levels = {
+  'error': 0,
+  'warn': 1,
+  'log': 2,
+  'debug': 3
 };
 
-var LoggerFactory = function() {
-  var logger,
-    levels = {
-    'error': 0,
-    'warn': 1,
-    'log': 2,
-    'debug': 3
-    },
+module.exports = function (console) {
 
+var LoggerFactory = function () {
+  var logger,
     level = 2,
     builtinEnabled = true,
     connector = null;
@@ -70,70 +62,39 @@ var LoggerFactory = function() {
 };
 
 LoggerFactory.prototype.print = function(target, category, label, content) {
-  var prefix = [];
-
-  prefix.push(new Date());
-
-  prefix.push(category);
-
-  if (label) {
-    prefix.push(label);
-  }
-
-  prefix.push('');
-
   if (typeof content === 'string') {
-    target.call(console, prefix.join(' | ') + content);
-  } else {
-    target.call(console, content);
+    var prefix = [new Date(), category];
+    if (label) {
+      prefix.push(label);
+    }
+    content = prefix.concat(content).join(' | ');
   }
+  target.call(console, content);
 };
 
-LoggerFactory.prototype.debug = function(category, label, content) {
-  if (this.level === 3) {
-    if (this.builtinEnabled) {
-      this.print(console.debug, category, label, content);
+function Logger (logger, category, label) {
+  this.logger = logger;
+  this.category = category;
+  this.label = label;
+}
+
+Object.keys(levels).forEach(function (targetName) {
+  Logger.prototype[targetName] = function (content) {
+    this.logger[targetName](this.category, this.label, content);
+  };
+
+  LoggerFactory.prototype[targetName] = function (category, label, content) {
+    if (this.level >= levels[targetName]) {
+      if (this.builtinEnabled) {
+        this.print(console[targetName], category, label, content);
+      }
+
+      if (this.connector) {
+        this.connector(targetName, category, label, content);
+      }
     }
-
-    if (this.connector) {
-      this.connector('debug', category, label, content);
-    }
-  }
-};
-
-LoggerFactory.prototype.log = function(category, label, content) {
-  if (this.level >= 2) {
-    if (this.builtinEnabled) {
-      this.print(console.log, category, label, content);
-    }
-
-    if (this.connector) {
-      this.connector('log', category, label, content);
-    }
-  }
-};
-
-LoggerFactory.prototype.warn = function(category, label, content) {
-  if (this.level >= 1) {
-    if (this.builtinEnabled) {
-      this.print(console.warn, category, label, content);
-    }
-
-    if (this.connector) {
-      this.connector('warn', category, label, content);
-    }
-  }
-};
-
-LoggerFactory.prototype.error = function(category, label, content) {
-  if (this.builtinEnabled) {
-    this.print(console.error,category, label, content);
-  }
-
-  if (this.connector) {
-    this.connector('error', category, label, content);
-  }
-};
+  };
+});
 
 LoggerFactory.prototype.getLogger = function(category, label) {
   var logger;

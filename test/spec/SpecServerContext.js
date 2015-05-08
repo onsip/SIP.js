@@ -8,7 +8,22 @@ describe('ServerContext', function() {
     ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
 
-    request = SIP.Parser.parseMessage('REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0\r\nMax-Forwards: 65\r\nTo: <sip:james@onsnip.onsip.com>\r\nFrom: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052\r\nCall-ID: grj0liun879lfj35evfq\r\nCSeq: 1798 INVITE\r\nContact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>\r\nAllow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE\r\nContent-Type: application/sdp\r\nSupported: outbound\r\nUser-Agent: SIP.js 0.5.0-devel\r\nContent-Length: 10\r\n\r\na=sendrecv\r\n', ua);
+    request = SIP.Parser.parseMessage([
+      'REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+      'Max-Forwards: 65',
+      'To: <sip:james@onsnip.onsip.com>',
+      'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+      'Call-ID: grj0liun879lfj35evfq',
+      'CSeq: 1798 INVITE',
+      'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+      'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+      'Content-Type: application/sdp',
+      'Supported: outbound',
+      'User-Agent: SIP.js 0.5.0-devel',
+      'Content-Length: 10',
+      '',
+      'a=sendrecv',
+      ''].join('\r\n'), ua);
 
     spyOn(SIP.Transactions, 'InviteServerTransaction');
     spyOn(SIP.Transactions, 'NonInviteServerTransaction');
@@ -55,13 +70,6 @@ describe('ServerContext', function() {
 
   it('initializes data', function() {
     expect(ServerContext.data).toBeDefined();
-  });
-
-  it('initializes events', function() {
-    expect(ServerContext.checkEvent('progress')).toBeTruthy();
-    expect(ServerContext.checkEvent('accepted')).toBeTruthy();
-    expect(ServerContext.checkEvent('rejected')).toBeTruthy();
-    expect(ServerContext.checkEvent('failed')).toBeTruthy();
   });
 
   describe('.progress', function() {
@@ -208,8 +216,8 @@ describe('ServerContext', function() {
       spyOn(ServerContext.request, 'reply');
     });
 
-    it('passs along the status code, reason phrase, header, and body as is to request reply', function() {
-      for( var i = 1; i < 700; i++) {
+    it('passes along the status code, reason phrase, header, and body as is to request reply', function() {
+      for( var i = 100; i < 700; i++) {
         var options={statusCode : i ,
                       reasonPhrase : 'reason' ,
                       extraHeaders : 'headers' ,

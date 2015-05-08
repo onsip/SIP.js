@@ -1,3 +1,4 @@
+"use strict";
 
 /**
  * @fileoverview SIP Subscriber (SIP-Specific Event Notifications RFC6665)
@@ -9,12 +10,9 @@
  */
 module.exports = function (SIP) {
 SIP.Subscription = function (ua, target, event, options) {
-  var events;
+  options = Object.create(options || Object.prototype);
+  this.extraHeaders = options.extraHeaders = (options.extraHeaders || []).slice();
 
-  options = options || {};
-  options.extraHeaders = (options.extraHeaders || []).slice();
-
-  events = ['notify'];
   this.id = null;
   this.state = 'init';
 
@@ -52,8 +50,6 @@ SIP.Subscription = function (ua, target, event, options) {
   this.dialog = null;
   this.timers = {N: null, sub_duration: null};
   this.errorCodes  = [404,405,410,416,480,481,482,483,484,485,489,501,604];
-
-  this.initMoreEvents(events);
 };
 
 SIP.Subscription.prototype = {
@@ -71,9 +67,20 @@ SIP.Subscription.prototype = {
     return this;
   },
 
+  refresh: function () {
+    if (this.state === 'terminated' || this.state === 'pending' || this.state === 'notify_wait') {
+      return;
+    }
+
+    this.dialog.sendRequest(this, SIP.C.SUBSCRIBE, {
+      extraHeaders: this.extraHeaders,
+      body: this.body
+    });
+  },
+
   receiveResponse: function(response) {
     var expires, sub = this,
-        cause = SIP.C.REASON_PHRASE[response.status_code] || '';
+        cause = SIP.Utils.getReasonPhrase(response.status_code);
 
     if (this.errorCodes.indexOf(response.status_code) !== -1) {
       this.failed(response, null);
@@ -89,7 +96,7 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
-        this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), expires * 1000);
+        this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
@@ -135,7 +142,7 @@ SIP.Subscription.prototype = {
       this.state = 'terminated';
       this.close();
     } else {
-      this.subscribe();
+      this.refresh();
     }
   },
 
@@ -194,8 +201,8 @@ SIP.Subscription.prototype = {
       if (sub_state.expires) {
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
-        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub),
-                                                    sub_state.expires * 1000);
+        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub),
+                                                    sub_state.expires * 900);
       }
     }
 
@@ -253,7 +260,8 @@ SIP.Subscription.prototype = {
 
   failed: function(response, cause) {
     this.close();
-    return this.emit('failed', response, cause);
+    this.emit('failed', response, cause);
+    return this;
   },
 
   /**

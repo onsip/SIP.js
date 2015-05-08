@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview Hacks - This file contains all of the things we
  * wish we didn't have to do, just for interop.  It is similar to
@@ -32,7 +33,7 @@ var Hacks = {
   Firefox: {
     /* Condition to detect if hacks are applicable */
     isFirefox: function () {
-      return window.mozRTCPeerConnection !== undefined;
+      return typeof mozRTCPeerConnection !== 'undefined';
     },
 
     cannotHandleExtraWhitespace: function (message) {
@@ -117,7 +118,5 @@ var Hacks = {
     }
   }
 };
-
 return Hacks;
 };
-

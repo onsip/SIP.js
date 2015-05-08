@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @fileoverview Exceptions
  */
@@ -40,10 +41,10 @@ module.exports = {
     return exception;
   }()),
 
-  NotReadyError: (function(){
+  GetDescriptionError: (function(){
     var exception = function(message) {
       this.code = 4;
-      this.name = 'NOT_READY_ERROR';
+      this.name = 'GET_DESCRIPTION_ERROR';
       this.message = message;
     };
     exception.prototype = new Error();

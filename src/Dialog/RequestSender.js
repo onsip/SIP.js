@@ -1,3 +1,4 @@
+"use strict";
 
 /**
  * @fileoverview In-Dialog Request Sender
@@ -43,7 +44,7 @@ RequestSender.prototype = {
             this.state === SIP.Transactions.C.STATUS_COMPLETED ||
             this.state === SIP.Transactions.C.STATUS_TERMINATED) {
 
-          this.off('stateChanged', stateChanged);
+          this.removeListener('stateChanged', stateChanged);
           self.dialog.uac_pending_reply = false;
 
           if (self.dialog.uas_pending_reply === false) {

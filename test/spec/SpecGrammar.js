@@ -240,4 +240,64 @@ describe('Grammar', function () {
       expect(SIP.Grammar.parse("XXX bad UUID XXX", 'uuid')).toEqual(-1);
     });
   });
+
+  describe('Replaces', function () {
+    var goods = [
+      '98732@sip.example.com\r\n' +
+'          ;from-tag=r33th4x0r\r\n' +
+'          ;to-tag=ff87ff',
+      '12adf2f34456gs5;to-tag=12345;from-tag=54321;early-only', // early
+      '12adf2f34456gs5;baz;to-tag=12345;early-only;from-tag=54321', //early
+      '87134@171.161.34.23;to-tag=24796;from-tag=0',
+      '87134@171.161.34.23;to-tag=24796;from-tag=0;foo=bar'
+    ];
+
+    var goodIds = [
+      '98732@sip.example.com',
+      '12adf2f34456gs5',
+      '12adf2f34456gs5',
+      '87134@171.161.34.23',
+      '87134@171.161.34.23',
+    ];
+
+    var goodFroms = [
+      'r33th4x0r',
+      '54321',
+      '54321',
+      '0',
+      '0'
+    ];
+
+    var goodTos = [
+      'ff87ff',
+      '12345',
+      '12345',
+      '24796',
+      '24796'
+    ];
+
+    var bads = [
+      '12adf2f34456gs5;to-tag1=12345;from-tag=54321;early-only',
+      '12adf2f34456gs5;baz;to-tag=12345;from-tag=54321;',
+      '87134@171.161.34.23;to-tag=24796;from-tag',
+      '87134@171.161.34.23;to-tag;from-tag=0;foo=bar'
+    ];
+
+    it('parses the good examples', function () {
+      for (var i = 0; i < goods.length; i++) {
+        var parsed = SIP.Grammar.parse(goods[i], 'Replaces');
+        expect(parsed).not.toEqual(-1);
+        expect(parsed.call_id).toEqual(goodIds[i]);
+        expect(parsed.replaces_from_tag).toEqual(goodFroms[i]);
+        expect(parsed.replaces_to_tag).toEqual(goodTos[i]);
+        expect(parsed.early_only || false).toEqual(i == 1 || i == 2);
+      }
+    });
+
+    it('rejects the bad examples', function () {
+      for (var i = 0; i < bads.length; i++) {
+        expect(SIP.Grammar.parse(bads[i], 'Replaces')).toEqual(-1);
+      }
+    });
+  });
 });

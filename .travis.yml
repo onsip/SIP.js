@@ -1,9 +1,15 @@
 # Doc: http://manuel.manuelles.nl/blog/2012/06/22/integrate-travis-ci-into-grunt/
 
+sudo: false
+
 language: node_js
 
 node_js:
   - "0.10"
+
+cache:
+  directories:
+    - node_modules
 
 notifications:
   email:
