@@ -3,6 +3,8 @@ var NodeEventEmitter = require('events').EventEmitter;
 
 module.exports = function (console) {
 
+// Don't use `new SIP.EventEmitter()` for inheriting.
+// Use Object.create(SIP.EventEmitter.prototoype);
 function EventEmitter () {
   NodeEventEmitter.call(this);
 }
