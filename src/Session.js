@@ -663,9 +663,7 @@ Session.prototype = {
       case SIP.C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
-          // Switch these two lines to try re-INVITEs:
-          //this.receiveReinvite(request);
-          request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
+          this.receiveReinvite(request);
         }
         break;
       case SIP.C.INFO:
