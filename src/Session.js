@@ -945,10 +945,10 @@ Session.prototype = {
     this.endTime = new Date();
 
     this.close();
-    this.emit('terminated', {
-      message: message || null,
-      cause: cause || null
-    });
+    this.emit('terminated',
+      message || null,
+      cause || null
+    );
     return this;
   },
 
