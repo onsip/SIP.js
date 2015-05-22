@@ -302,7 +302,7 @@ describe("URI", function() {
     expect(parsedURI).toBeUndefined();
   });
 
-  var toParse = 'SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2';
+  var toParse = 'SIP:%61liCE@versaTICA.com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2';
 
   describe('URI.parse with "' + toParse + '"', function () {
     var uri;
@@ -323,7 +323,7 @@ describe("URI", function() {
 
     itParses('scheme', 'sip');
     itParses('user', 'aliCE');
-    itParses('host', 'versatica.com');
+    itParses('host', 'versaTICA.com');
     itParses('port', 6060);
 
     it('parses non-null parameter "transport"', function () {
@@ -347,7 +347,7 @@ describe("URI", function() {
     itsMethod('parses header list x-header-1', 'getHeader', 'x-header-1', ['AaA1', 'AAA2']);
     itsMethod('parses header X-HEADER-2', 'getHeader', 'X-HEADER-2', ['BbB']);
     itsMethod('doesn\'t parse missing header "nooo"', 'getHeader', 'nooo', undefined);
-    itsMethod('correctly toString()s itself', 'toString', undefined, 'sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
+    itsMethod('correctly toString()s itself', 'toString', undefined, 'sip:aliCE@versaTICA.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
 
     var newUser = 'Iñaki:PASSWD';
     describe('when setting the user to "' + newUser + '"', function () {
@@ -362,14 +362,14 @@ describe("URI", function() {
       it('can delete parameter "foo" and delete header "x-header-1"', function () {
         expect(uri.deleteParam('foo')).toEqual('abc');
         expect(uri.deleteHeader('x-header-1')).toEqual(['AaA1', 'AAA2']);
-        expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versatica.com:6060;transport=tcp;baz?X-Header-2=BbB');
+        expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versaTICA.com:6060;transport=tcp;baz?X-Header-2=BbB');
       });
 
       it('can clear parameters and headers, and nullify the port', function () {
         uri.clearParams();
         uri.clearHeaders();
         uri.port = null;
-        expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versatica.com');
+        expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versaTICA.com');
       });
     });
   });

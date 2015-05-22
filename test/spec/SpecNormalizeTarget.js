@@ -23,7 +23,7 @@ describe('Utils.normalizeTarget', function() {
 
     test_ok('%61lice', 'sip:alice@sip.js.net');
     test_ok('ALICE', 'sip:ALICE@sip.js.net');
-    test_ok('alice@DOMAIN.com', 'sip:alice@domain.com');
+    test_ok('alice@DOMAIN.com', 'sip:alice@DOMAIN.com');
     test_ok('iñaki', 'sip:i%C3%B1aki@sip.js.net');
     test_ok('€€€', 'sip:%E2%82%AC%E2%82%AC%E2%82%AC@sip.js.net');
     test_ok('iñaki@aliax.net', 'sip:i%C3%B1aki@aliax.net');
@@ -33,8 +33,8 @@ describe('Utils.normalizeTarget', function() {
     test_ok('alice-1:passwd', 'sip:alice-1:passwd@sip.js.net');
     test_ok('SIP:alice-2:passwd', 'sip:alice-2:passwd@sip.js.net');
     test_ok('sips:alice-2:passwd', 'sip:alice-2:passwd@sip.js.net');
-    test_ok('alice-3:passwd@domain.COM', 'sip:alice-3:passwd@domain.com');
-    test_ok('SIP:alice-4:passwd@domain.COM', 'sip:alice-4:passwd@domain.com');
+    test_ok('alice-3:passwd@domain.COM', 'sip:alice-3:passwd@domain.COM');
+    test_ok('SIP:alice-4:passwd@domain.COM', 'sip:alice-4:passwd@domain.COM');
     test_ok('sip:+1234@aliax.net', 'sip:+1234@aliax.net');
     test_ok('+999', 'sip:+999@sip.js.net');
     test_ok('*999', 'sip:*999@sip.js.net');

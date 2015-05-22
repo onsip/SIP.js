@@ -60,7 +60,7 @@ describe('Grammar', function () {
 
         uriHas('scheme', 'sip');
         uriHas('user', '+1234');
-        uriHas('host', 'aliax.net');
+        uriHas('host', 'ALIAX.net');
         uriHas('port', undefined);
 
         uriReturns('getParam', 'transport', 'ws');
@@ -78,7 +78,7 @@ describe('Grammar', function () {
         c1.setParam('New-Param', null);
         expect(c1.hasParam('NEW-param')).toEqual(true);
         c1.uri.setParam('New-Param', null);
-        expect(c1.toString()).toEqual('"€€€" <sip:+999@aliax.net;transport=ws;new-param>;+sip.instance="zxCV";new-param');
+        expect(c1.toString()).toEqual('"€€€" <sip:+999@ALIAX.net;transport=ws;new-param>;+sip.instance="zxCV";new-param');
       });
     });
 
@@ -96,7 +96,7 @@ describe('Grammar', function () {
       c2Has('displayName', undefined);
 
       c2Returns('hasParam', 'HEADERPARAM', true);
-      c2Returns('toString', null, '<sip:bob@biloxi.com>;headerparam');
+      c2Returns('toString', null, '<sip:bob@biloxi.COM>;headerparam');
 
       describe('its URI', function () {
         var uriThunk = function () { return c2.uri; };
@@ -108,14 +108,14 @@ describe('Grammar', function () {
 
         uriHas('scheme', 'sip');
         uriHas('user', 'bob');
-        uriHas('host', 'biloxi.com');
+        uriHas('host', 'biloxi.COM');
         uriHas('port', undefined);
 
         itsMethodReturns(uriThunk, 'hasParam', 'headerParam', false);
 
         it('can alter display name', function () {
           c2.displayName = '@ł€ĸłæß';
-          expect(c2.toString()).toEqual('"@ł€ĸłæß" <sip:bob@biloxi.com>;headerparam');
+          expect(c2.toString()).toEqual('"@ł€ĸłæß" <sip:bob@biloxi.COM>;headerparam');
         });
       });
     });
@@ -129,7 +129,7 @@ describe('Grammar', function () {
 
       var c3Thunk = function () { return c3; };
       itHas(c3Thunk, 'displayName', undefined);
-      itsMethodReturns(c3Thunk, 'toString', null, '<sips:domain.com:5>');
+      itsMethodReturns(c3Thunk, 'toString', null, '<sips:DOMAIN.com:5>');
 
       describe('its URI', function () {
         var uriThunk = function () { return c3.uri; };
@@ -141,7 +141,7 @@ describe('Grammar', function () {
 
         uriHas('scheme', 'sips');
         uriHas('user', undefined);
-        uriHas('host', 'domain.com');
+        uriHas('host', 'DOMAIN.com');
         uriHas('port', 5);
 
         itsMethodReturns(uriThunk, 'hasParam', 'nooo', false);
@@ -149,7 +149,7 @@ describe('Grammar', function () {
         it('can set header params and uri params', function () {
           c3.uri.setParam('newUriParam', 'zxCV');
           c3.setParam('newHeaderParam', 'zxCV');
-          expect(c3.toString()).toEqual('<sips:domain.com:5;newuriparam=zxcv>;newheaderparam=zxCV');
+          expect(c3.toString()).toEqual('<sips:DOMAIN.com:5;newuriparam=zxcv>;newheaderparam=zxCV');
         });
       });
     });

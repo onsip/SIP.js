@@ -135,7 +135,7 @@ describe('NameAddrHeader', function() {
     it('can set the display name to ' + newDispName, function () {
       header.displayName = newDispName;
       expect(header.displayName).toEqual(newDispName);
-      expect(header.toString()).toEqual('<sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd');
+      expect(header.toString()).toEqual('<sip:aliCE@versaTICA.Com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd');
     });
 
     describe('its URI:', function () {
@@ -147,7 +147,7 @@ describe('NameAddrHeader', function() {
 
       itsUriParses('scheme', 'sip');
       itsUriParses('user', 'aliCE');
-      itsUriParses('host', 'versatica.com');
+      itsUriParses('host', 'versaTICA.Com');
       itsUriParses('port', 6060);
 
       function itsUriMethod (methodName, methodArg, expected) {
