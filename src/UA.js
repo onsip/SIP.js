@@ -179,7 +179,11 @@ UA = function(configuration) {
   }
 
   if (typeof environment.addEventListener === 'function') {
-    environment.addEventListener('unload', this.stop.bind(this));
+    // Google Chrome Packaged Apps don't allow 'unload' listeners:
+    // unload is not available in packaged apps
+    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
+      environment.addEventListener('unload', this.stop.bind(this));
+    }
   }
 };
 UA.prototype = Object.create(SIP.EventEmitter.prototype);
