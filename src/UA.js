@@ -12,10 +12,11 @@ module.exports = function (SIP, environment) {
 var UA,
   C = {
     // UA status codes
-    STATUS_INIT :                0,
-    STATUS_READY:                1,
-    STATUS_USER_CLOSED:          2,
-    STATUS_NOT_READY:            3,
+    STATUS_INIT:                0,
+    STATUS_STARTING:            1,
+    STATUS_READY:               2,
+    STATUS_USER_CLOSED:         3,
+    STATUS_NOT_READY:           4,
 
     // UA error codes
     CONFIGURATION_ERROR:  1,
@@ -362,11 +363,14 @@ UA.prototype.start = function() {
   this.logger.log('user requested startup...');
   if (this.status === C.STATUS_INIT) {
     server = this.getNextWsServer();
+    this.status = C.STATUS_STARTING;
     new SIP.Transport(this, server);
   } else if(this.status === C.STATUS_USER_CLOSED) {
     this.logger.log('resuming');
     this.status = C.STATUS_READY;
     this.transport.connect();
+  } else if (this.status === C.STATUS_STARTING) {
+    this.logger.log('UA is in STARTING status, not opening new connection');
   } else if (this.status === C.STATUS_READY) {
     this.logger.log('UA is in READY status, not resuming');
   } else {
