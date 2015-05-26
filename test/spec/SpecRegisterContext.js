@@ -159,10 +159,11 @@ describe('RegisterContext', function() {
       expect(RegisterContext.registered).toBe(RegisterContext.registered_before);
     });
     
-    it('calls unregister', function() {
+    it('calls unregister with RegisterContext\'s stored options', function() {
       expect(RegisterContext.unregister).not.toHaveBeenCalled();
+      RegisterContext.options = { foo: 'bar' };
       RegisterContext.close();
-      expect(RegisterContext.unregister).toHaveBeenCalledWith();
+      expect(RegisterContext.unregister).toHaveBeenCalledWith(RegisterContext.options);
     });
   });
   
