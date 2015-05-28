@@ -111,7 +111,7 @@ var MediaHandler = function(session, options) {
 
     if (this.iceConnectionState === 'checking') {
       self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' micro seconds');
+        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
         self.onIceCompleted.resolve(this);
       }.bind(this), config.iceCheckingTimeout);
     }
