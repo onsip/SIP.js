@@ -73,6 +73,14 @@ describe('RegisterContext', function() {
       RegisterContext.register(options);
       expect(RegisterContext.send).toHaveBeenCalled();
     });
+
+    it('sets its closeHeaders property if options.closeWithHeaders flag is true', function() {
+      RegisterContext.register({
+        closeWithHeaders: true,
+        extraHeaders: [ 'X-Foo: foo', 'X-Bar: bar' ]
+      });
+      expect(RegisterContext.closeHeaders.length).toBe(2);
+    });
   });
   
   describe('.registrationFailure', function() {
@@ -153,16 +161,25 @@ describe('RegisterContext', function() {
     beforeEach(function(){
       spyOn(RegisterContext, 'unregister').and.returnValue('unregister');
     });
-    it('takes registered and move it to registerd_before', function() {
+
+    it('takes registered and move it to registered_before', function() {
       expect(RegisterContext.registered).not.toBe(RegisterContext.registered_before); 
       RegisterContext.close();
       expect(RegisterContext.registered).toBe(RegisterContext.registered_before);
     });
     
-    it('calls unregister', function() {
+    it('calls unregister with closeHeaders', function() {
+      jasmine.addCustomEqualityTester(function objectEquality(a, b) {
+        return a === b || JSON.stringify(a) === JSON.stringify(b);
+      });
+
       expect(RegisterContext.unregister).not.toHaveBeenCalled();
+
+      RegisterContext.closeHeaders = [ 'X-Foo: foo' ,'X-Bar: bar' ];
+      var mockArgs = { all: false, extraHeaders: RegisterContext.closeHeaders };
+
       RegisterContext.close();
-      expect(RegisterContext.unregister).toHaveBeenCalledWith();
+      expect(RegisterContext.unregister).toHaveBeenCalledWith(mockArgs);
     });
   });
   
