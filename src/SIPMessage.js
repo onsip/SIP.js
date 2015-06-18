@@ -27,7 +27,9 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
     to,
     from,
     call_id,
-    cseq;
+    cseq,
+    to_uri,
+    from_uri;
 
   params = params || {};
 
@@ -63,13 +65,15 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('max-forwards', SIP.UA.C.MAX_FORWARDS);
 
   // To
+  to_uri = params.to_uri || ruri;
   to = (params.to_displayName || params.to_displayName === 0) ? '"' + params.to_displayName + '" ' : '';
-  to += '<' + (params.to_uri || ruri) + '>';
+  to += '<' + (to_uri && to_uri.toRaw ? to_uri.toRaw() : to_uri) + '>';
   to += params.to_tag ? ';tag=' + params.to_tag : '';
   this.to = new SIP.NameAddrHeader.parse(to);
   this.setHeader('to', to);
 
   // From
+  from_uri = params.from_uri || ua.configuration.uri;
   if (params.from_displayName || params.from_displayName === 0) {
     from = '"' + params.from_displayName + '" ';
   } else if (ua.configuration.displayName) {
@@ -77,7 +81,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   } else {
     from = '';
   }
-  from += '<' + (params.from_uri || ua.configuration.uri) + '>;tag=';
+  from += '<' + (from_uri && from_uri.toRaw ? from_uri.toRaw() : from_uri) + '>;tag=';
   from += params.from_tag || SIP.Utils.newTag();
   this.from = new SIP.NameAddrHeader.parse(from);
   this.setHeader('from', from);
@@ -185,7 +189,7 @@ OutgoingRequest.prototype = {
   toString: function() {
     var msg = '', header, length, idx, supported = [];
 
-    msg += this.method + ' ' + this.ruri + ' SIP/2.0\r\n';
+    msg += this.method + ' ' + (this.ruri.toRaw ? this.ruri.toRaw() : this.ruri) + ' SIP/2.0\r\n';
 
     for (header in this.headers) {
       length = this.headers[header].length;

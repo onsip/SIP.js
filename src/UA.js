@@ -1010,7 +1010,7 @@ UA.prototype.loadConfig = function(configuration) {
   // String containing settings.uri without scheme and user.
   hostportParams = settings.uri.clone();
   hostportParams.user = null;
-  settings.hostportParams = hostportParams.toString().replace(/^sip:/i, '');
+  settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, '');
 
   /* Check whether authorizationUser is explicitly defined.
    * Take 'settings.uri.user' value if not.
