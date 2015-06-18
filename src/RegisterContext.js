@@ -52,7 +52,7 @@ RegisterContext.prototype = {
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
     // Save original extraHeaders to be used in .close
-    this.closeHeaders = options.closeWithHeaders ?
+    this.closeHeaders = this.options.closeWithHeaders ?
       (this.options.extraHeaders || []).slice() : [];
 
     this.receiveResponse = function(response) {
