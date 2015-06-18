@@ -236,7 +236,7 @@ Session.prototype = {
     this.sendRequest(SIP.C.REFER, {
       extraHeaders: extraHeaders,
       body: options.body,
-      receiveResponse: function (response) {
+      receiveResponse: options.receiveResponse || function (response) {
         if ( ! /^2[0-9]{2}$/.test(response.status_code) ) {
           return;
         }
@@ -720,6 +720,9 @@ Session.prototype = {
             this.emit('refer', request);
           }
         }
+        break;
+      case SIP.C.NOTIFY:
+        request.reply(200, 'OK');
         break;
     }
   },
