@@ -884,6 +884,8 @@ UA.prototype.loadConfig = function(configuration) {
       connectionRecoveryMinInterval: 2,
       connectionRecoveryMaxInterval: 30,
 
+      keepAliveInterval: 0,
+
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
@@ -1114,6 +1116,7 @@ UA.configuration_skeleton = (function() {
       "authorizationUser",
       "connectionRecoveryMaxInterval",
       "connectionRecoveryMinInterval",
+      "keepAliveInterval",
       "displayName",
       "hackViaTcp", // false.
       "hackIpInContact", //false
@@ -1323,6 +1326,16 @@ UA.configuration_check = {
         return;
       } else {
         return instanceId;
+      }
+    },
+
+    keepAliveInterval: function(keepAliveInterval) {
+      var value;
+      if (SIP.Utils.isDecimal(keepAliveInterval)) {
+        value = Number(keepAliveInterval);
+        if (value > 0) {
+          return value;
+        }
       }
     },
 
