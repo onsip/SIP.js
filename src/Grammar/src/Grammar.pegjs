@@ -19,7 +19,7 @@ alphanum    = [a-zA-Z0-9]
 reserved    = ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+" / "$" / ","
 unreserved  = alphanum / mark
 mark        = "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")"
-escaped     = escaped: ("%" HEXDIG HEXDIG) {return escaped.join(''); }
+escaped     = $ ("%" HEXDIG HEXDIG)
 
 /* RFC3261 25: A recipient MAY replace any linear white space with a single SP
  * before interpreting the field value or forwarding the message downstream
@@ -30,8 +30,7 @@ SWS = LWS?
 
 HCOLON  = ( SP / HTAB )* ":" SWS {return ':'; }
 
-TEXT_UTF8_TRIM  = TEXT_UTF8char+ ( LWS* TEXT_UTF8char)* {
-                    return text(); }
+TEXT_UTF8_TRIM  = $( TEXT_UTF8char+ ( LWS* TEXT_UTF8char)* )
 
 TEXT_UTF8char   = [\x21-\x7E] / UTF8_NONASCII
 
@@ -41,25 +40,22 @@ UTF8_CONT       = [\x80-\xBF]
 
 LHEX            = DIGIT / [\x61-\x66]
 
-token           = (alphanum / "-" / "." / "!" / "%" / "*"
-                  / "_" / "+" / "`" / "'" / "~" )+ {
-                  return text(); }
+token           = $ (alphanum / "-" / "." / "!" / "%" / "*"
+                  / "_" / "+" / "`" / "'" / "~" )+
 
-token_nodot     = ( alphanum / "-"  / "!" / "%" / "*"
-                  / "_" / "+" / "`" / "'" / "~" )+ {
-                  return text(); }
+token_nodot     = $ ( alphanum / "-"  / "!" / "%" / "*"
+                  / "_" / "+" / "`" / "'" / "~" )+
 
 separators      = "(" / ")" / "<" / ">" / "@" / "," / ";" / ":" / "\\"
                   / DQUOTE / "/" / "[" / "]" / "?" / "=" / "{" / "}"
                   / SP / HTAB
 
-word            = (alphanum / "-" / "." / "!" / "%" / "*" /
+word            = $ (alphanum / "-" / "." / "!" / "%" / "*" /
                   "_" / "+" / "`" / "'" / "~" /
                   "(" / ")" / "<" / ">" /
                   ":" / "\\" / DQUOTE /
                   "/" / "[" / "]" / "?" /
-                  "{" / "}" )+ {
-                  return text(); }
+                  "{" / "}" )+
 
 STAR        = SWS "*" SWS   {return "*"; }
 SLASH       = SWS "/" SWS   {return "/"; }
@@ -78,8 +74,7 @@ comment     = LPAREN (ctext / quoted_pair / comment)* RPAREN
 
 ctext       = [\x21-\x27] / [\x2A-\x5B] / [\x5D-\x7E] / UTF8_NONASCII / LWS
 
-quoted_string = SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE {
-                  return text(); }
+quoted_string = $( SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE )
 
 quoted_string_clean = SWS DQUOTE contents: $( qdtext / quoted_pair )* DQUOTE {
                         return contents; }
@@ -231,9 +226,9 @@ other_param       = param: pname value: ( "=" pvalue )? {
                       }
                       options.data.uri_params[param.toLowerCase()] = value && value.toLowerCase();}
 
-pname             = pname: paramchar + {return pname.join(''); }
+pname             = $ paramchar +
 
-pvalue            = pvalue: paramchar + {return pvalue.join(''); }
+pvalue            = $ paramchar +
 
 paramchar         = param_unreserved / unreserved / escaped
 
@@ -849,8 +844,7 @@ stun_host_port    = stun_host ( ":" port )?
 stun_host         = host: (IPv4address / IPv6reference / reg_name) {
                       options.data.host = host; }
 
-reg_name          = ( stun_unreserved / escaped / sub_delims )* {
-                      return text(); }
+reg_name          = $ ( stun_unreserved / escaped / sub_delims )*
 
 stun_unreserved   = ALPHA / DIGIT / "-" / "." / "_" / "~"
 
