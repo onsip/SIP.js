@@ -30,6 +30,9 @@ Transport = function(ua, server) {
   this.reconnectTimer = null;
   this.lastTransportError = {};
 
+  this.keepAliveInterval = ua.configuration.keepAliveInterval;
+  this.keepAliveTimer = null;
+
   this.ua.transport = this;
 
   // Connect
@@ -58,12 +61,46 @@ Transport.prototype = {
   },
 
   /**
+   * Send a keep-alive (a double-CRLF sequence).
+   * @private
+   * @returns {Boolean}
+   */
+  sendKeepAlive: function() {
+    return this.send('\r\n\r\n');
+  },
+
+  /**
+   * Start sending keep-alives.
+   * @private
+   */
+  startSendingKeepAlives: function() {
+    if (this.keepAliveInterval && !this.keepAliveTimer) {
+      this.keepAliveTimer = SIP.Timers.setTimeout(function() {
+        this.sendKeepAlive();
+        this.keepAliveTimer = null;
+        this.startSendingKeepAlives();
+      }.bind(this), computeKeepAliveTimeout(this.keepAliveInterval));
+    }
+  },
+
+  /**
+   * Stop sending keep-alives.
+   * @private
+   */
+  stopSendingKeepAlives: function() {
+    SIP.Timers.clearTimeout(this.keepAliveTimer);
+    this.keepAliveTimer = null;
+  },
+
+  /**
   * Disconnect socket.
   */
   disconnect: function() {
     if(this.ws) {
       // Clear reconnectTimer
       SIP.Timers.clearTimeout(this.reconnectTimer);
+
+      this.stopSendingKeepAlives();
 
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
@@ -146,6 +183,8 @@ Transport.prototype = {
     this.closed = false;
     // Trigger onTransportConnected callback
     this.ua.onTransportConnected(this);
+    // Start sending keep-alives
+    this.startSendingKeepAlives();
   },
 
   /**
@@ -157,6 +196,8 @@ Transport.prototype = {
 
     this.lastTransportError.code = e.code;
     this.lastTransportError.reason = e.reason;
+
+    this.stopSendingKeepAlives();
 
     if (this.reconnection_attempts > 0) {
       this.logger.log('Reconnection attempt ' + this.reconnection_attempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
@@ -301,6 +342,16 @@ Transport.prototype = {
     }
   }
 };
+
+/**
+ * Compute an amount of time in seconds to wait before sending another
+ * keep-alive.
+ * @returns {Number}
+ */
+function computeKeepAliveTimeout(upperBound) {
+  var lowerBound = upperBound * 0.8;
+  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
+}
 
 Transport.C = C;
 return Transport;
