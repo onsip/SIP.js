@@ -663,14 +663,18 @@ Session.prototype = {
       case SIP.C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
-          // PATCH_actpass: freeSwitch is sending every 1' a re-INVITE to clients on 1:1 conversations
-          // In that re-INVITE, the caller is receving a 'dtlssetup=active' instead of 'dtlssetup=actpass'
-          // That generatas a 500 error that drops the connection
-          request.body = request.body.replace(new RegExp('a=setup:active', 'g'), 'a=setup:actpass');
-          // Switch these two lines to try re-INVITEs:
-          //this.receiveReinvite(request);
-          this.receiveReinvite(request);
-          //request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
+          this.logger.log('re-INVITE received');
+          // PATCH_actpass: freeSwitch is sending every 1' a re-INVITE on 1:1 conversations and phone calls (pstn)
+          // - If it's a phone call (From pstn), replying 488 stops the re-invites from the server
+          //   However, trying to send an OK ends up in a client 500
+          // - If it's a 1:1 call, we must reply OK instead , otherwise at 1'48" there's a server timeout
+          if(/[F|f]rom:(\s)*<sip:[0-9]*@pstn(.)*>/.test(request.data)){
+            request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
+          }
+          else{
+            request.body = request.body.replace(new RegExp('a=setup:active', 'g'), 'a=setup:actpass');
+            this.receiveReinvite(request);
+          }
         }
         break;
       case SIP.C.INFO:
