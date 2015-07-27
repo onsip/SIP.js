@@ -30,6 +30,9 @@ function buildViaHeader (request_sender, transport, id) {
   var via;
   via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
   via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + id;
+  if (request_sender.ua.configuration.forceRport) {
+    via += ';rport';
+  }
   return via;
 }
 

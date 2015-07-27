@@ -905,6 +905,8 @@ UA.prototype.loadConfig = function(configuration) {
       hackIpInContact: false,
       hackWssInTransport: false,
 
+      forceRport: false,
+
       //autostarting
       autostart: true,
 
@@ -1121,6 +1123,7 @@ UA.configuration_skeleton = (function() {
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "forceRport", // false
       "iceCheckingTimeout",
       "instanceId",
       "noAnswerTimeout", // 30 seconds.
@@ -1310,6 +1313,12 @@ UA.configuration_check = {
     hackWssInTransport: function(hackWssInTransport) {
       if (typeof hackWssInTransport === 'boolean') {
         return hackWssInTransport;
+      }
+    },
+
+    forceRport: function(forceRport) {
+      if (typeof forceRport === 'boolean') {
+        return forceRport;
       }
     },
 
