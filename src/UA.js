@@ -905,6 +905,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackIpInContact: false,
       hackWssInTransport: false,
 
+      contactTransport: 'ws',
       forceRport: false,
 
       //autostarting
@@ -1043,10 +1044,15 @@ UA.prototype.loadConfig = function(configuration) {
     }
   }
 
+  // Contact transport parameter
+  if (settings.hackWssInTransport) {
+    settings.contactTransport = 'wss';
+  }
+
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: ((settings.hackWssInTransport)?'wss':'ws')}),
+    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: settings.contactTransport}),
     toString: function(options){
       options = options || {};
 
@@ -1056,7 +1062,7 @@ UA.prototype.loadConfig = function(configuration) {
         contact = '<';
 
       if (anonymous) {
-        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+(settings.hackWssInTransport)?'wss':'ws')).toString();
+        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+settings.contactTransport)).toString();
       } else {
         contact += (this.pub_gruu || this.uri).toString();
       }
@@ -1128,6 +1134,7 @@ UA.configuration_skeleton = (function() {
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
       "instanceId",
@@ -1321,6 +1328,12 @@ UA.configuration_check = {
     hackWssInTransport: function(hackWssInTransport) {
       if (typeof hackWssInTransport === 'boolean') {
         return hackWssInTransport;
+      }
+    },
+
+    contactTransport: function(contactTransport) {
+      if (typeof contactTransport === 'string') {
+        return contactTransport;
       }
     },
 
