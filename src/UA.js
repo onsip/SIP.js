@@ -1035,7 +1035,12 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Via Host
   if (settings.hackIpInContact) {
-    settings.viaHost = SIP.Utils.getRandomTestNetIP();
+    if (typeof settings.hackIpInContact === 'boolean') {
+      settings.viaHost = SIP.Utils.getRandomTestNetIP();
+    }
+    else if (typeof settings.hackIpInContact === 'string') {
+      settings.viaHost = settings.hackIpInContact;
+    }
   }
 
   this.contact = {
@@ -1297,6 +1302,9 @@ UA.configuration_check = {
 
     hackIpInContact: function(hackIpInContact) {
       if (typeof hackIpInContact === 'boolean') {
+        return hackIpInContact;
+      }
+      else if (typeof hackIpInContact === 'string' && SIP.Grammar.parse(hackIpInContact, 'host') !== -1) {
         return hackIpInContact;
       }
     },
