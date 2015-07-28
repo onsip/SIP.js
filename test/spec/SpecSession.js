@@ -1595,7 +1595,7 @@ describe('InviteServerContext', function() {
     });
 
     describe('method is INVITE', function() {
-      xit('calls receiveReinvite', function() {
+      it('calls receiveReinvite', function() {
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -2459,7 +2459,7 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.C.causes.BYE);
     });
 
-    xit('logs and calls receiveReinvite if request method is INVITE', function() {
+    it('logs and calls receiveReinvite if request method is INVITE', function() {
       InviteClientContext.status = 12;
       request.method = SIP.C.INVITE;
 

@@ -155,13 +155,19 @@ describe('UA', function() {
       expect(UA.status).toBe(SIP.UA.C.STATUS_READY);
     });
 
+    it('logs if the status is set to starting', function() {
+      UA.status = SIP.UA.C.STATUS_STARTING;
+      UA.start();
+      expect(UA.logger.log).toHaveBeenCalled();
+    });
+
     it('logs if the status is set to ready', function() {
       UA.status = SIP.UA.C.STATUS_READY;
       UA.start();
       expect(UA.logger.log).toHaveBeenCalled();
     });
 
-    it('logs an error if the status is not C.STATUS_INIT, C.STATUS_USER_CLOSED, C.STATUS_READY', function() {
+    it('logs an error if the status is not C.STATUS_INIT, C.STATUS_STARTING, C.STATUS_USER_CLOSED, C.STATUS_READY', function() {
       UA.status = SIP.UA.C.STATUS_NOT_READY;
       UA.start();
       expect(UA.logger.error).toHaveBeenCalled();
@@ -183,7 +189,7 @@ describe('UA', function() {
     });
 
     it('logs a warning and returns this if the ua has already been closed', function () {
-      UA.status = 2;
+      UA.status = 3;
 
       expect(UA.stop()).toBe(UA);
       expect(UA.logger.warn).toHaveBeenCalledWith('UA already closed');
@@ -1382,10 +1388,9 @@ describe('UA', function() {
     });
 
     describe('.hackIpInContact', function() {
-      it('fails for all types except boolean', function() {
+      it('fails for all types except boolean and string', function() {
         expect(SIP.UA.configuration_check.optional.hackIpInContact()).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.hackIpInContact(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hackIpInContact('string')).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.hackIpInContact({even: 'objects'})).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.hackIpInContact(['arrays'])).toBeUndefined();
       });
@@ -1393,6 +1398,12 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(SIP.UA.configuration_check.optional.hackIpInContact(true)).toBe(true);
         expect(SIP.UA.configuration_check.optional.hackIpInContact(false)).toBe(false);
+      });
+
+      it('passes for string parameters that can be parsed as a host', function() {
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('1string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('string')).toBe('string');
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('127.0.0.1')).toBe('127.0.0.1');
       });
     });
 

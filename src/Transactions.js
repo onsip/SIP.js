@@ -26,6 +26,16 @@ var
     INVITE_SERVER: 'ist'
   };
 
+function buildViaHeader (request_sender, transport, id) {
+  var via;
+  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
+  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + id;
+  if (request_sender.ua.configuration.forceRport) {
+    via += ';rport';
+  }
+  return via;
+}
+
 /**
 * @augments SIP.Transactions
 * @class Non Invite Client Transaction
@@ -44,9 +54,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
-
+  via = buildViaHeader(request_sender, transport, this.id);
   this.request.setHeader('via', via);
 
   this.request_sender.ua.newTransaction(this);
@@ -145,9 +153,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.ict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
-
+  via = buildViaHeader(request_sender, transport, this.id);
   this.request.setHeader('via', via);
 
   this.request_sender.ua.newTransaction(this);
@@ -328,9 +334,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
-
+  via = buildViaHeader(request_sender, transport, this.id);
   this.request.setHeader('via', via);
 };
 AckClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);

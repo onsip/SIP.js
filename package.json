@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
@@ -26,6 +26,7 @@
     "javascript"
   ],
   "devDependencies": {
+    "beefy": "^2.1.5",
     "browserify": "^4.1.8",
     "grunt": "~0.4.0",
     "grunt-browserify": "^2.1.0",
@@ -43,6 +44,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "repl": "beefy test/repl.js --open",
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
     "test": "grunt travis --verbose"
   },

@@ -51,6 +51,10 @@ RegisterContext.prototype = {
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
 
+    // Save original extraHeaders to be used in .close
+    this.closeHeaders = this.options.closeWithHeaders ?
+      (this.options.extraHeaders || []).slice() : [];
+
     this.receiveResponse = function(response) {
       var contact, expires,
         contacts = response.getHeaders('contact').length,
@@ -112,7 +116,7 @@ RegisterContext.prototype = {
           // For that, decrease the expires value. ie: 3 seconds
           this.registrationTimer = SIP.Timers.setTimeout(function() {
             self.registrationTimer = null;
-            self.register(this.options);
+            self.register(self.options);
           }, (expires * 1000) - 3000);
           this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
             self.logger.warn('registration expired');
@@ -191,8 +195,13 @@ RegisterContext.prototype = {
   },
 
   close: function() {
+    var options = {
+      all: false,
+      extraHeaders: this.closeHeaders
+    };
+
     this.registered_before = this.registered;
-    this.unregister();
+    this.unregister(options);
   },
 
   unregister: function(options) {

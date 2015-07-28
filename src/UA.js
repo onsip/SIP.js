@@ -12,10 +12,11 @@ module.exports = function (SIP, environment) {
 var UA,
   C = {
     // UA status codes
-    STATUS_INIT :                0,
-    STATUS_READY:                1,
-    STATUS_USER_CLOSED:          2,
-    STATUS_NOT_READY:            3,
+    STATUS_INIT:                0,
+    STATUS_STARTING:            1,
+    STATUS_READY:               2,
+    STATUS_USER_CLOSED:         3,
+    STATUS_NOT_READY:           4,
 
     // UA error codes
     CONFIGURATION_ERROR:  1,
@@ -179,7 +180,11 @@ UA = function(configuration) {
   }
 
   if (typeof environment.addEventListener === 'function') {
-    environment.addEventListener('unload', this.stop.bind(this));
+    // Google Chrome Packaged Apps don't allow 'unload' listeners:
+    // unload is not available in packaged apps
+    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
+      environment.addEventListener('unload', this.stop.bind(this));
+    }
   }
 };
 UA.prototype = Object.create(SIP.EventEmitter.prototype);
@@ -358,11 +363,14 @@ UA.prototype.start = function() {
   this.logger.log('user requested startup...');
   if (this.status === C.STATUS_INIT) {
     server = this.getNextWsServer();
+    this.status = C.STATUS_STARTING;
     new SIP.Transport(this, server);
   } else if(this.status === C.STATUS_USER_CLOSED) {
     this.logger.log('resuming');
     this.status = C.STATUS_READY;
     this.transport.connect();
+  } else if (this.status === C.STATUS_STARTING) {
+    this.logger.log('UA is in STARTING status, not opening new connection');
   } else if (this.status === C.STATUS_READY) {
     this.logger.log('UA is in READY status, not resuming');
   } else {
@@ -876,6 +884,8 @@ UA.prototype.loadConfig = function(configuration) {
       connectionRecoveryMinInterval: 2,
       connectionRecoveryMaxInterval: 30,
 
+      keepAliveInterval: 0,
+
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
@@ -894,6 +904,9 @@ UA.prototype.loadConfig = function(configuration) {
       hackViaTcp: false,
       hackIpInContact: false,
       hackWssInTransport: false,
+
+      contactTransport: 'ws',
+      forceRport: false,
 
       //autostarting
       autostart: true,
@@ -1023,13 +1036,23 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Via Host
   if (settings.hackIpInContact) {
-    settings.viaHost = SIP.Utils.getRandomTestNetIP();
+    if (typeof settings.hackIpInContact === 'boolean') {
+      settings.viaHost = SIP.Utils.getRandomTestNetIP();
+    }
+    else if (typeof settings.hackIpInContact === 'string') {
+      settings.viaHost = settings.hackIpInContact;
+    }
+  }
+
+  // Contact transport parameter
+  if (settings.hackWssInTransport) {
+    settings.contactTransport = 'wss';
   }
 
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: ((settings.hackWssInTransport)?'wss':'ws')}),
+    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: settings.contactTransport}),
     toString: function(options){
       options = options || {};
 
@@ -1039,7 +1062,7 @@ UA.prototype.loadConfig = function(configuration) {
         contact = '<';
 
       if (anonymous) {
-        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+(settings.hackWssInTransport)?'wss':'ws')).toString();
+        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+settings.contactTransport)).toString();
       } else {
         contact += (this.pub_gruu || this.uri).toString();
       }
@@ -1106,10 +1129,13 @@ UA.configuration_skeleton = (function() {
       "authorizationUser",
       "connectionRecoveryMaxInterval",
       "connectionRecoveryMinInterval",
+      "keepAliveInterval",
       "displayName",
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "contactTransport", // 'ws'
+      "forceRport", // false
       "iceCheckingTimeout",
       "instanceId",
       "noAnswerTimeout", // 30 seconds.
@@ -1223,10 +1249,10 @@ UA.configuration_check = {
 
         if(url === -1) {
           return;
-        } else if(url.scheme !== 'wss' && url.scheme !== 'ws') {
+        } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
           return;
         } else {
-          wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=ws;lr>';
+          wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
 
           if (!wsServers[idx].weight) {
             wsServers[idx].weight = 0;
@@ -1285,6 +1311,9 @@ UA.configuration_check = {
       if (typeof hackIpInContact === 'boolean') {
         return hackIpInContact;
       }
+      else if (typeof hackIpInContact === 'string' && SIP.Grammar.parse(hackIpInContact, 'host') !== -1) {
+        return hackIpInContact;
+      }
     },
 
     iceCheckingTimeout: function(iceCheckingTimeout) {
@@ -1302,6 +1331,18 @@ UA.configuration_check = {
       }
     },
 
+    contactTransport: function(contactTransport) {
+      if (typeof contactTransport === 'string') {
+        return contactTransport;
+      }
+    },
+
+    forceRport: function(forceRport) {
+      if (typeof forceRport === 'boolean') {
+        return forceRport;
+      }
+    },
+
     instanceId: function(instanceId) {
       if(typeof instanceId !== 'string') {
         return;
@@ -1315,6 +1356,16 @@ UA.configuration_check = {
         return;
       } else {
         return instanceId;
+      }
+    },
+
+    keepAliveInterval: function(keepAliveInterval) {
+      var value;
+      if (SIP.Utils.isDecimal(keepAliveInterval)) {
+        value = Number(keepAliveInterval);
+        if (value > 0) {
+          return value;
+        }
       }
     },
 

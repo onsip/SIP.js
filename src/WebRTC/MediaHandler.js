@@ -91,6 +91,12 @@ var MediaHandler = function(session, options) {
     self.emit('iceCandidate', e);
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+      if (!self.iceCheckingTimer) {
+        self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+          self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
+          self.onIceCompleted.resolve(this);
+        }.bind(this), config.iceCheckingTimeout);
+      }
     } else {
       self.onIceCompleted.resolve(this);
     }
@@ -109,9 +115,9 @@ var MediaHandler = function(session, options) {
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     var stateEvent;
 
-    if (this.iceConnectionState === 'checking') {
+    if (this.iceConnectionState === 'checking' && !self.iceCheckingTimer) {
       self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' micro seconds');
+        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
         self.onIceCompleted.resolve(this);
       }.bind(this), config.iceCheckingTimeout);
     }
