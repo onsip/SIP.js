@@ -172,13 +172,18 @@ InviteClientTransaction.prototype.stateChanged = function(state) {
 };
 
 InviteClientTransaction.prototype.send = function() {
-  var tr = this;
   this.stateChanged(C.STATUS_CALLING);
-  this.B = SIP.Timers.setTimeout(tr.timer_B.bind(tr), SIP.Timers.TIMER_B);
+  this.resetTimerB();
 
   if(!this.transport.send(this.request)) {
     this.onTransportError();
   }
+};
+
+InviteClientTransaction.prototype.resetTimerB = function() {
+  var tr = this;
+  SIP.Timers.clearTimeout(this.B);
+  this.B = SIP.Timers.setTimeout(tr.timer_B.bind(tr), SIP.Timers.TIMER_B);
 };
 
 InviteClientTransaction.prototype.onTransportError = function() {
@@ -280,12 +285,14 @@ InviteClientTransaction.prototype.receiveResponse = function(response) {
     switch(this.state) {
       case C.STATUS_CALLING:
         this.stateChanged(C.STATUS_PROCEEDING);
+        this.resetTimerB();
         this.request_sender.receiveResponse(response);
         if(this.cancel) {
           this.transport.send(this.cancel);
         }
         break;
       case C.STATUS_PROCEEDING:
+        this.resetTimerB();
         this.request_sender.receiveResponse(response);
         break;
     }
