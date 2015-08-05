@@ -208,7 +208,9 @@ UA.prototype.register = function(options) {
  */
 UA.prototype.unregister = function(options) {
   this.configuration.register = false;
-  this.registerContext.unregister(options);
+
+  var context = this.registerContext;
+  this.afterConnected(context.unregister.bind(context, options));
 
   return this;
 };
