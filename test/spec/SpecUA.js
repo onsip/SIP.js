@@ -302,6 +302,8 @@ describe('UA', function() {
 
     beforeEach(function() {
       options = 'options';
+      UA.transport = {};
+      UA.transport.connected = true;
     });
 
     it('does not require any arguments', function () {
