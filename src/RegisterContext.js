@@ -209,7 +209,7 @@ RegisterContext.prototype = {
 
     options = options || {};
 
-    if(!this.registered) {
+    if(!this.registered && !options.all) {
       this.logger.warn('already unregistered');
       return;
     }
