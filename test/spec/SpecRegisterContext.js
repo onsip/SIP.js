@@ -214,7 +214,15 @@ describe('RegisterContext', function() {
       RegisterContext.unregister(options);
       expect(RegisterContext.send).toHaveBeenCalledWith();
       expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: *', 'Expires: 0' ]);
-      
+    });
+
+    it('even when unregistered, pushes extra headers Contact: *, Expires: 0 if options.all is truthy', function() {
+      var options = { all : true };
+      RegisterContext.registered = false;
+      expect(RegisterContext.send).not.toHaveBeenCalled();
+      RegisterContext.unregister(options);
+      expect(RegisterContext.send).toHaveBeenCalledWith();
+      expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: *', 'Expires: 0' ]);
     });
     
     it('pushes extra headers Contact: <contact>, Expires: 0 if options.all is falsy', function() {
