@@ -12,6 +12,7 @@ var
 
 function getSupportedHeader (request) {
   var optionTags = [];
+  var optionTagSet = {};
 
   if (request.method === SIP.C.REGISTER) {
     optionTags.push('path', 'gruu');
@@ -28,6 +29,14 @@ function getSupportedHeader (request) {
   }
 
   optionTags.push('outbound');
+
+  optionTags = optionTags.concat(request.ua.configuration.extraSupported);
+
+  optionTags = optionTags.filter(function(optionTag) {
+    var unique = !optionTagSet[optionTag];
+    optionTagSet[optionTag] = true;
+    return unique;
+  });
 
   return 'Supported: ' + optionTags.join(', ') + '\r\n';
 }
