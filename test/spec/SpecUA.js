@@ -1206,6 +1206,12 @@ describe('UA', function() {
       expect(UA.configuration.authorizationUser).toBe(UA.configuration.uri.user);
     });
 
+    it('sets iceCheckingTimeout as low as 0.5 seconds', function() {
+      UA.loadConfig({iceCheckingTimeout: 0});
+
+      expect(UA.configuration.iceCheckingTimeout).toBe(500);
+    });
+
     it('sets the registrarServer to the uri (without user) if it is not passed in', function() {
       UA.loadConfig({uri: 'james@onsnip.onsip.com'});
 
