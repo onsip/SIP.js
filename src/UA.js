@@ -1320,10 +1320,7 @@ UA.configuration_check = {
 
     iceCheckingTimeout: function(iceCheckingTimeout) {
       if(SIP.Utils.isDecimal(iceCheckingTimeout)) {
-        if (iceCheckingTimeout < 500) {
-          return 5000;
-        }
-        return iceCheckingTimeout;
+        return Math.max(500, iceCheckingTimeout);
       }
     },
 
