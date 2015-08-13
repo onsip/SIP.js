@@ -721,6 +721,9 @@ Session.prototype = {
           }
         }
         break;
+      case SIP.C.NOTIFY:
+        request.reply(200, 'OK');
+        break;
     }
   },
 
