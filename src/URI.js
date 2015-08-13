@@ -38,7 +38,7 @@ URI = function(scheme, user, host, port, parameters, headers) {
   for (header in headers) {
     this.setHeader(header, headers[header]);
   }
-  
+
   // Raw URI
   raw = {
     scheme: scheme,
