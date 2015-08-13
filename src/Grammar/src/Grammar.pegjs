@@ -116,7 +116,7 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                       }
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
-                    options.data.scheme = uri_scheme.toLowerCase(); }
+                    options.data.scheme = uri_scheme; }
 
 userinfo        = user (":" password)? "@" {
                     options.data.user = decodeURIComponent(text().slice(0, -1));}
@@ -131,7 +131,7 @@ password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
 hostport        = host ( ":" port )?
 
 host            = ( hostname / IPv4address / IPv6reference ) {
-                    options.data.host = text().toLowerCase();
+                    options.data.host = text();
                     return options.data.host; }
 
 hostname        = ( domainlabel "." )* toplabel  "." ? {
