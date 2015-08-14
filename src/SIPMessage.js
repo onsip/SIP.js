@@ -11,6 +11,7 @@ var
   IncomingResponse;
 
 function getSupportedHeader (request) {
+  var allowUnregistered = request.ua.configuration.hackAllowUnregisteredOptionTags;
   var optionTags = [];
   var optionTagSet = {};
 
@@ -36,7 +37,7 @@ function getSupportedHeader (request) {
     var registered = SIP.C.OPTION_TAGS[optionTag];
     var unique = !optionTagSet[optionTag];
     optionTagSet[optionTag] = true;
-    return registered && unique;
+    return (registered || allowUnregistered) && unique;
   });
 
   return 'Supported: ' + optionTags.join(', ') + '\r\n';
