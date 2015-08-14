@@ -156,6 +156,45 @@ return {
     603: 'Decline',
     604: 'Does Not Exist Anywhere',
     606: 'Not Acceptable'
+  },
+
+  /* SIP Option Tags
+   * DOC: http://www.iana.org/assignments/sip-parameters/sip-parameters.xhtml#sip-parameters-4
+   */
+  OPTION_TAGS: {
+    '100rel':                   true,  // RFC 3262
+    199:                        true,  // RFC 6228
+    answermode:                 true,  // RFC 5373
+    'early-session':            true,  // RFC 3959
+    eventlist:                  true,  // RFC 4662
+    explicitsub:                true,  // RFC-ietf-sipcore-refer-explicit-subscription-03
+    'from-change':              true,  // RFC 4916
+    'geolocation-http':         true,  // RFC 6442
+    'geolocation-sip':          true,  // RFC 6442
+    gin:                        true,  // RFC 6140
+    gruu:                       true,  // RFC 5627
+    histinfo:                   true,  // RFC 7044
+    ice:                        true,  // RFC 5768
+    join:                       true,  // RFC 3911
+    'multiple-refer':           true,  // RFC 5368
+    norefersub:                 true,  // RFC 4488
+    nosub:                      true,  // RFC-ietf-sipcore-refer-explicit-subscription-03
+    outbound:                   true,  // RFC 5626
+    path:                       true,  // RFC 3327
+    policy:                     true,  // RFC 6794
+    precondition:               true,  // RFC 3312
+    pref:                       true,  // RFC 3840
+    privacy:                    true,  // RFC 3323
+    'recipient-list-invite':    true,  // RFC 5366
+    'recipient-list-message':   true,  // RFC 5365
+    'recipient-list-subscribe': true,  // RFC 5367
+    replaces:                   true,  // RFC 3891
+    'resource-priority':        true,  // RFC 4412
+    'sdp-anat':                 true,  // RFC 4092
+    'sec-agree':                true,  // RFC 3329
+    tdialog:                    true,  // RFC 4538
+    timer:                      true,  // RFC 4028
+    uui:                        true   // RFC 7433
   }
 };
 };

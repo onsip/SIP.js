@@ -33,9 +33,10 @@ function getSupportedHeader (request) {
   optionTags = optionTags.concat(request.ua.configuration.extraSupported);
 
   optionTags = optionTags.filter(function(optionTag) {
+    var registered = SIP.C.OPTION_TAGS[optionTag];
     var unique = !optionTagSet[optionTag];
     optionTagSet[optionTag] = true;
-    return unique;
+    return registered && unique;
   });
 
   return 'Supported: ' + optionTags.join(', ') + '\r\n';
