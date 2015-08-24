@@ -938,7 +938,8 @@ Session.prototype = {
     if (response) {
       RFC4028.updateState(this.dialog, response, SIP.Parser.parseMessage, this.ua);
     }
-    return this.emit('accepted', response, cause);
+    this.emit('accepted', response, cause);
+    return this;
   },
 
   terminated: function(message, cause) {
