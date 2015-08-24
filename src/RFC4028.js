@@ -36,9 +36,15 @@ function updateState (dialog, response, parseMessage, ua) {
   };
 
   var intervalMilliseconds = interval * 1000;
+  var self = this;
   if (isRefresher) {
-    dialog.sessionTimerState.timeout = Timers.setTimeout(function sendRefresh () {
-      // TODO
+    dialog.sessionTimerState.timeout = Timers.setInterval(function sendRefresh () {
+      var exists = dialog.owner.ua.dialogs[dialog.id.toString()] || false;
+      if (exists) {
+        dialog.sendRequest(self, "UPDATE", { extraHeaders: ["Session-Expires: " + interval]});
+      } else {
+        Timers.clearInterval(dialog.sessionTimerState.timeout);
+      }
     }, intervalMilliseconds / 2);
   } else {
     var before = Math.min(32 * 1000, intervalMilliseconds / 3);
@@ -48,10 +54,20 @@ function updateState (dialog, response, parseMessage, ua) {
   }
 }
 
+function receiveResponse(response) {
+  /* jshint unused: false */
+}
+
+function onDialogError(response) {
+  /* jshint unused: false */
+}
+
 return {
   localMinSE: localMinSE,
   hasSmallMinSE: hasSmallMinSE,
-  updateState: updateState
+  updateState: updateState,
+  receiveResponse: receiveResponse,
+  onDialogError: onDialogError
 };
 
 };
