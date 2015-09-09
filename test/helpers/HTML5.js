@@ -46,14 +46,21 @@
     }
   }
   getUserMedia.fakeStream = function () {
+    var audioTracks = [{
+      id: Math.random().toString(),
+      stop: jasmine.createSpy('stop'),
+    }];
+    var videoTracks = [];
     return {
-      getAudioTracks: function(id){
-        return [{
-          id: id
-        }];
-      }.bind(null, Math.random().toString()),
-      getVideoTracks: function(){return [];},
-      stop: jasmine.createSpy('stop')
+      getAudioTracks: function () {
+        return audioTracks;
+      },
+      getTracks: function () {
+        return audioTracks.concat(videoTracks);
+      },
+      getVideoTracks: function () {
+        return videoTracks;
+      },
     };
   };
   getUserMedia.orig = window.navigator.getUserMedia;

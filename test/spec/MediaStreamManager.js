@@ -129,9 +129,11 @@ describe('MediaStreamManager', function () {
       );
     });
 
-    it('calls stop() on the MediaStream it was passed', function () {
+    it('calls stop() on the tracks of the MediaStream it was passed', function () {
         expect(acquiredStream).not.toBeNull();
-        expect(acquiredStream.stop).toHaveBeenCalled();
+        acquiredStream.getTracks().forEach(function (track) {
+          expect(track.stop).toHaveBeenCalled();
+        });
     });
   });
 
@@ -169,11 +171,13 @@ describe('MediaStreamManager', function () {
         });
     });
 
-    it('.release does not stop the stream', function (done) {
+    it('.release does not stop the stream\'s tracks', function (done) {
       mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure)
       .then(function () {
         mediaStreamManager.release(stream);
-        expect(stream.stop).not.toHaveBeenCalled();
+        stream.getTracks().forEach(function (track) {
+          expect(track.stop).not.toHaveBeenCalled();
+        });
         done();
       });
     });
