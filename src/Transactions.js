@@ -235,6 +235,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
   this.ack += 'To: ' + response.getHeader('to') + '\r\n';
   this.ack += 'From: ' + this.request.headers['From'].toString() + '\r\n';
   this.ack += 'Call-ID: ' + this.request.headers['Call-ID'].toString() + '\r\n';
+  this.ack += 'Content-Length: 0\r\n';
   this.ack += 'CSeq: ' + this.request.headers['CSeq'].toString().split(' ')[0];
   this.ack += ' ACK\r\n\r\n';
 
