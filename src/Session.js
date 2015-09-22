@@ -548,11 +548,7 @@ Session.prototype = {
   receiveReinvite: function(request) {
     var self = this;
 
-    if (!request.body) {
-      return;
-    }
-
-    if (request.getHeader('Content-Type') !== 'application/sdp') {
+    if (!this.mediaHandler.hasDescription(request)) {
       this.logger.warn('invalid Content-Type');
       request.reply(415);
       return;
@@ -714,8 +710,7 @@ Session.prototype = {
    * @private
    */
   receiveReinviteResponse: function(response) {
-    var self = this,
-        contentType = response.getHeader('Content-Type');
+    var self = this;
 
     if (this.status === C.STATUS_TERMINATED) {
       return;
@@ -729,10 +724,7 @@ Session.prototype = {
 
         this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
 
-        if(!response.body) {
-          this.reinviteFailed();
-          break;
-        } else if (contentType !== 'application/sdp') {
+        if (!this.mediaHandler.hasDescription(response)) {
           this.reinviteFailed();
           break;
         }
@@ -969,18 +961,23 @@ InviteServerContext = function(ua, request) {
     contentType = request.getHeader('Content-Type'),
     contentDisp = request.parseHeader('Content-Disposition');
 
+  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
+  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
+
+  //Initialize Media Session
+  this.mediaHandler = this.mediaHandlerFactory(this, {
+    RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
+  });
+
   // Check body and content type
-  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.type === 'render')) {
+  if ((!contentDisp && !this.mediaHandler.hasDescription(request)) || (contentDisp && contentDisp.type === 'render')) {
     this.renderbody = request.body;
     this.rendertype = contentType;
-  } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp.type === 'session')) {
+  } else if (!this.mediaHandler.hasDescription(request) && (contentDisp && contentDisp.type === 'session')) {
     request.reply(415);
     //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
     return;
   }
-
-  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
 
   this.status = C.STATUS_INVITE_RECEIVED;
   this.from_tag = request.from_tag;
@@ -1020,11 +1017,6 @@ InviteServerContext = function(ua, request) {
     return;
   }
 
-  //Initialize Media Session
-  this.mediaHandler = this.mediaHandlerFactory(this, {
-    RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
-  });
-
   if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
     this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
     this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
@@ -1061,7 +1053,7 @@ InviteServerContext = function(ua, request) {
     self.emit('invite',request);
   }
 
-  if (!request.body || this.renderbody) {
+  if (!this.mediaHandler.hasDescription(request) || this.renderbody) {
     SIP.Timers.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
@@ -1469,7 +1461,7 @@ InviteServerContext.prototype = {
 
       // TODO - this logic assumes Content-Disposition defaults
       contentType = request.getHeader('Content-Type');
-      if (contentType !== 'application/sdp') {
+      if (!this.mediaHandler.hasDescription(request)) {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
@@ -1505,7 +1497,7 @@ InviteServerContext.prototype = {
     case SIP.C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
         if (!this.hasAnswer) {
-          if(request.body && request.getHeader('content-type') === 'application/sdp') {
+          if(this.mediaHandler.hasDescription(request)) {
             // ACK contains answer to an INVITE w/o SDP negotiation
             this.hasAnswer = true;
             this.mediaHandler.setDescription(request.body)
@@ -1537,7 +1529,7 @@ InviteServerContext.prototype = {
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         //localMedia = session.mediaHandler.localMedia;
         if(!this.hasAnswer) {
-          if(request.body && request.getHeader('content-type') === 'application/sdp') {
+          if(this.mediaHandler.hasDescription(request)) {
             this.hasAnswer = true;
             this.mediaHandler.setDescription(request.body)
             .then(
@@ -1899,7 +1891,7 @@ InviteClientContext.prototype = {
             return;
           }
 
-          if (!response.body) {
+          if (!this.mediaHandler.hasDescription(response)) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
             this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
@@ -2039,7 +2031,7 @@ InviteClientContext.prototype = {
             }*/
             this.accepted(response);
           } else {
-            if(!response.body) {
+            if(!this.mediaHandler.hasDescription(response)) {
               this.acceptAndTerminate(response, 400, 'Missing session description');
               this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               break;
@@ -2093,7 +2085,7 @@ InviteClientContext.prototype = {
           }
           this.sendRequest(SIP.C.ACK, options);
         } else {
-          if(!response.body) {
+          if(!this.mediaHandler.hasDescription(response)) {
             this.acceptAndTerminate(response, 400, 'Missing session description');
             this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             break;

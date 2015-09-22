@@ -156,6 +156,15 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   /**
+   * Check if a SIP message contains a session description.
+   * @param {SIP.SIPMessage} message
+   * @returns {boolean}
+   */
+  hasDescription: {writeable: true, value: function hasDescription (message) {
+    return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
+  }},
+
+  /**
   * Message reception.
   * @param {String} type
   * @param {String} sdp

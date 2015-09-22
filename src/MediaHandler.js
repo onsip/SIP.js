@@ -29,6 +29,16 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   }},
 
   /**
+   * Check if a SIP message contains a session description.
+   * @param {SIP.SIPMessage} message
+   * @returns {boolean}
+   */
+  hasDescription: {value: function hasDescription (message) {
+    // keep jshint happy
+    message = message;
+  }},
+
+  /**
   * Message reception.
   * @param {String} type
   * @param {String} description

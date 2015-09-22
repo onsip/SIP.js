@@ -67,6 +67,10 @@ RPSMediaHandler.prototype = {
     }.bind(this), 0);
   },
 
+  hasDescription: function (message) {
+    return true;
+  },
+
   setDescription: function (description, onSuccess, onFailure) {
         /*
      * Here, we receive the description of the remote end's offer/answer.
