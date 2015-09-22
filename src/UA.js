@@ -888,6 +888,8 @@ UA.prototype.loadConfig = function(configuration) {
 
       keepAliveInterval: 0,
 
+      extraSupported: [],
+
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
@@ -906,6 +908,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackViaTcp: false,
       hackIpInContact: false,
       hackWssInTransport: false,
+      hackAllowUnregisteredOptionTags: false,
 
       contactTransport: 'ws',
       forceRport: false,
@@ -1132,10 +1135,12 @@ UA.configuration_skeleton = (function() {
       "connectionRecoveryMaxInterval",
       "connectionRecoveryMinInterval",
       "keepAliveInterval",
+      "extraSupported",
       "displayName",
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "hackAllowUnregisteredOptionTags", //false
       "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
@@ -1330,6 +1335,12 @@ UA.configuration_check = {
       }
     },
 
+    hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
+      if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
+        return hackAllowUnregisteredOptionTags;
+      }
+    },
+
     contactTransport: function(contactTransport) {
       if (typeof contactTransport === 'string') {
         return contactTransport;
@@ -1366,6 +1377,23 @@ UA.configuration_check = {
           return value;
         }
       }
+    },
+
+    extraSupported: function(optionTags) {
+      var idx, length;
+
+      if (!(optionTags instanceof Array)) {
+        return;
+      }
+
+      length = optionTags.length;
+      for (idx = 0; idx < length; idx++) {
+        if (typeof optionTags[idx] !== 'string') {
+          return;
+        }
+      }
+
+      return optionTags;
     },
 
     noAnswerTimeout: function(noAnswerTimeout) {
