@@ -150,7 +150,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
           }
         }
 
-        return sdp;
+        return {
+          body: sdp,
+          contentType: 'application/sdp'
+        };
       })
     ;
   }},

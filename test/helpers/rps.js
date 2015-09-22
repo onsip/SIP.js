@@ -63,7 +63,7 @@ RPSMediaHandler.prototype = {
     // Provide a description to the session using the callbacks.
     this.timeout = setTimeout(function () {
       delete this.timeout;
-      onSuccess(this.myGesture);
+      onSuccess({ body: this.myGesture, contentType: 'text/plain' });
     }.bind(this), 0);
   },
 
