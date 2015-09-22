@@ -134,6 +134,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.render();
         return self.createOfferOrAnswer(self.RTCConstraints);
       })
+      .then(function(sdp) {
+        sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
+        return sdp;
+      })
     ;
   }},
 
@@ -143,6 +147,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   * @param {String} sdp
   */
   setDescription: {writable: true, value: function setDescription (sdp) {
+    sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
+    sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
+
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
       sdp: sdp
