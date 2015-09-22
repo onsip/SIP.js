@@ -39,13 +39,13 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
   }},
 
   /**
-  * Message reception.
-  * @param {String} type
-  * @param {String} description
-  */
-  setDescription: {value: function setDescription (description) {
+   * Set the session description contained in a SIP message.
+   * @param {SIP.SIPMessage} message
+   * @returns {Promise}
+   */
+  setDescription: {value: function setDescription (message) {
     // keep jshint happy
-    description = description;
+    message = message;
   }}
 });
 

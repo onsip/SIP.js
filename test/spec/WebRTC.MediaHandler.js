@@ -298,10 +298,10 @@ describe('WebRTC.MediaHandler', function() {
     it('emits setDescription before creating RTCSessionDescription', function () {
       spyOn(SIP.WebRTC, 'RTCSessionDescription');
 
-      var mySDP = 'foo';
+      var mySDP = { body: 'foo' };
 
       var onSetDescription = jasmine.createSpy().and.callFake(function (raw) {
-        expect(raw.sdp).toEqual(mySDP);
+        expect(raw.sdp).toEqual(mySDP.body);
         expect(SIP.WebRTC.RTCSessionDescription).not.toHaveBeenCalled();
       });
       MediaHandler.on('setDescription', onSetDescription);

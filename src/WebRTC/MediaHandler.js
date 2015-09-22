@@ -165,11 +165,13 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   /**
-  * Message reception.
-  * @param {String} type
-  * @param {String} sdp
-  */
-  setDescription: {writable: true, value: function setDescription (sdp) {
+   * Set the session description contained in a SIP message.
+   * @param {SIP.SIPMessage} message
+   * @returns {Promise}
+   */
+  setDescription: {writable: true, value: function setDescription (message) {
+    var sdp = message.body;
+
     this.remote_hold = /a=(sendonly|inactive)/.test(sdp);
 
     sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
