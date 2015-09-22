@@ -23,6 +23,8 @@ var MediaHandler = function(session, options) {
   this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager(this.logger);
   this.audioMuted = false;
   this.videoMuted = false;
+  this.local_hold = false;
+  this.remote_hold = false;
 
   // old init() from here on
   var servers = this.prepareIceServers(options.stunServers, options.turnServers);
@@ -136,6 +138,18 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       })
       .then(function(sdp) {
         sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
+
+        if (self.local_hold) {
+          // Don't receive media
+          // TODO - This will break for media streams with different directions.
+          if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(sdp)) {
+            sdp = sdp.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
+          } else {
+            sdp = sdp.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
+            sdp = sdp.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
+          }
+        }
+
         return sdp;
       })
     ;
@@ -147,6 +161,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   * @param {String} sdp
   */
   setDescription: {writable: true, value: function setDescription (sdp) {
+    this.remote_hold = /a=(sendonly|inactive)/.test(sdp);
+
     sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
     sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
 
@@ -285,11 +301,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   hold: {writable: true, value: function hold () {
+    this.local_hold = true;
     this.toggleMuteAudio(true);
     this.toggleMuteVideo(true);
   }},
 
   unhold: {writable: true, value: function unhold () {
+    this.local_hold = false;
+
     if (!this.audioMuted) {
       this.toggleMuteAudio(false);
     }
