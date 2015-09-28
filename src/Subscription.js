@@ -96,6 +96,7 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
+        this.expires = expires;
         this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
@@ -198,12 +199,14 @@ SIP.Subscription.prototype = {
     var sub_state, sub = this;
 
     function setExpiresTimeout() {
+      var expires;
       if (sub_state.expires) {
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
-        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub),
-                                                    sub_state.expires * 900);
+      } else {
+        expires = sub.expires;
       }
+      sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
     }
 
     if (!this.matchEvent(request)) { //checks event and subscription_state headers
