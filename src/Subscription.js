@@ -232,6 +232,7 @@ SIP.Subscription.prototype = {
         this.state = 'pending';
         break;
       case 'terminated':
+        SIP.Timers.clearTimeout(this.timers.sub_duration);
         if (sub_state.reason) {
           this.logger.log('terminating subscription with reason '+ sub_state.reason);
           switch (sub_state.reason) {
