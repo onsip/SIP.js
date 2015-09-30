@@ -96,6 +96,8 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
+        // Preserve new expires value for subsequent requests
+        this.expires = expires;
         this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
