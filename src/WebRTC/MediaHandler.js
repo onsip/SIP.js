@@ -51,6 +51,9 @@ var MediaHandler = function(session, options) {
   length = turnServers.length;
   for (idx = 0; idx < length; idx++) {
     server = turnServers[idx];
+    if (Object.prototype.toString.call(server.urls) !== '[object Array]') {
+      server.urls = [].concat(server.urls);
+    } 
     for (jdx = 0; jdx < server.urls.length; jdx++) {
       servers.push({
         'url': server.urls[jdx],
