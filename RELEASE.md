@@ -19,6 +19,7 @@
 * build and test.
 * test again
 * add new dist files (git add -f if it complains)
+* commit
 * test npm:
 
     ```shell
