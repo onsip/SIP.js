@@ -31,6 +31,7 @@ Transport = function(ua, server) {
   this.lastTransportError = {};
 
   this.keepAliveInterval = ua.configuration.keepAliveInterval;
+  this.keepAliveTimeout = null;
   this.keepAliveTimer = null;
 
   this.ua.transport = this;
@@ -66,6 +67,12 @@ Transport.prototype = {
    * @returns {Boolean}
    */
   sendKeepAlive: function() {
+    if(this.keepAliveTimeout) { return; }
+
+    this.keepAliveTimeout = SIP.Timers.setTimeout(function() {
+      this.ua.emit('keepAliveTimeout');
+    }.bind(this), 10000);
+
     return this.send('\r\n\r\n');
   },
 
@@ -89,7 +96,9 @@ Transport.prototype = {
    */
   stopSendingKeepAlives: function() {
     SIP.Timers.clearTimeout(this.keepAliveTimer);
+    SIP.Timers.clearTimeout(this.keepAliveTimeout);
     this.keepAliveTimer = null;
+    this.keepAliveTimeout = null;
   },
 
   /**
@@ -241,9 +250,13 @@ Transport.prototype = {
 
     // CRLF Keep Alive response from server. Ignore it.
     if(data === '\r\n') {
+      SIP.Timers.clearTimeout(this.keepAliveTimeout);
+      this.keepAliveTimeout = null;
+
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('received WebSocket message with CRLF Keep Alive response');
       }
+
       return;
     }
 

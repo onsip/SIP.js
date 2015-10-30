@@ -74,6 +74,34 @@ describe('RegisterContext', function() {
       expect(RegisterContext.send).toHaveBeenCalled();
     });
 
+    it('retries with the min-expires header on 423', function() {
+      RegisterContext.register(options);
+
+      var response = new SIP.IncomingResponse(ua);
+      response.status_code = 423;
+      response.cseq = RegisterContext.cseq;
+      response.setHeader('min-expires', 555555);
+
+      RegisterContext.receiveResponse(response);
+
+      expect(RegisterContext.expires >= 555555).toBeTruthy();
+    });
+
+    it('fails registration on 423 with no min-expires header', function() {
+      RegisterContext.register(options);
+
+      spyOn(RegisterContext, 'registrationFailure').and.returnValue('registrationFailure');
+
+      var response = new SIP.IncomingResponse(ua);
+      response.status_code = 423;
+      response.cseq = RegisterContext.cseq;
+      response.headers['min-expires'] = undefined;
+
+      RegisterContext.receiveResponse(response);
+
+      expect(RegisterContext.registrationFailure).toHaveBeenCalled();
+    });
+
     it('sets its closeHeaders property if options.closeWithHeaders flag is true', function() {
       RegisterContext.register({
         closeWithHeaders: true,
@@ -214,7 +242,15 @@ describe('RegisterContext', function() {
       RegisterContext.unregister(options);
       expect(RegisterContext.send).toHaveBeenCalledWith();
       expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: *', 'Expires: 0' ]);
-      
+    });
+
+    it('even when unregistered, pushes extra headers Contact: *, Expires: 0 if options.all is truthy', function() {
+      var options = { all : true };
+      RegisterContext.registered = false;
+      expect(RegisterContext.send).not.toHaveBeenCalled();
+      RegisterContext.unregister(options);
+      expect(RegisterContext.send).toHaveBeenCalledWith();
+      expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: *', 'Expires: 0' ]);
     });
     
     it('pushes extra headers Contact: <contact>, Expires: 0 if options.all is falsy', function() {

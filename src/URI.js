@@ -19,7 +19,7 @@ module.exports = function (SIP) {
 var URI;
 
 URI = function(scheme, user, host, port, parameters, headers) {
-  var param, header;
+  var param, header, raw, normal;
 
   // Checks
   if(!host) {
@@ -39,40 +39,67 @@ URI = function(scheme, user, host, port, parameters, headers) {
     this.setHeader(header, headers[header]);
   }
 
+  // Raw URI
+  raw = {
+    scheme: scheme,
+    user: user,
+    host: host,
+    port: port
+  };
+
+  // Normalized URI
+  normal = {
+    scheme: scheme.toLowerCase(),
+    user: user,
+    host: host.toLowerCase(),
+    port: port
+  };
+
   Object.defineProperties(this, {
+    _normal: {
+      get: function() { return normal; }
+    },
+
+    _raw: {
+      get: function() { return raw; }
+    },
+
     scheme: {
-      get: function(){ return scheme; },
-      set: function(value){
-        scheme = value.toLowerCase();
+      get: function() { return normal.scheme; },
+      set: function(value) {
+        raw.scheme = value;
+        normal.scheme = value.toLowerCase();
       }
     },
 
     user: {
-      get: function(){ return user; },
-      set: function(value){
-        user = value;
+      get: function() { return normal.user; },
+      set: function(value) {
+        normal.user = raw.user = value;
       }
     },
 
     host: {
-      get: function(){ return host; },
-      set: function(value){
-        host = value.toLowerCase();
+      get: function() { return normal.host; },
+      set: function(value) {
+        raw.host = value;
+        normal.host = value.toLowerCase();
       }
     },
 
     aor: {
-      get: function(){ return user + '@' + host; }
+      get: function() { return normal.user + '@' + normal.host; }
     },
 
     port: {
-      get: function(){ return port; },
-      set: function(value){
-        port = value === 0 ? value : (parseInt(value,10) || null);
+      get: function() { return normal.port; },
+      set: function(value) {
+        normal.port = raw.port = value === 0 ? value : (parseInt(value,10) || null);
       }
     }
   });
 };
+
 URI.prototype = {
   setParam: function(key, value) {
     if(key) {
@@ -138,36 +165,43 @@ URI.prototype = {
 
   clone: function() {
     return new URI(
-      this.scheme,
-      this.user,
-      this.host,
-      this.port,
+      this._raw.scheme,
+      this._raw.user,
+      this._raw.host,
+      this._raw.port,
       JSON.parse(JSON.stringify(this.parameters)),
       JSON.parse(JSON.stringify(this.headers)));
   },
 
-  toString: function(){
-    var header, parameter, idx, uri,
-      headers = [];
+  toRaw: function() {
+    return this._toString(this._raw);
+  },
 
-    uri  = this.scheme + ':';
+  toString: function() {
+    return this._toString(this._normal);
+  },
+
+  _toString: function(uri) {
+    var header, parameter, idx, uriString, headers = [];
+
+    uriString  = uri.scheme + ':';
     // add slashes if it's not a sip(s) URI
-    if (!this.scheme.match("^sips?$")) {
-      uri += "//";
+    if (!uri.scheme.toLowerCase().match("^sips?$")) {
+      uriString += "//";
     }
-    if (this.user) {
-      uri += SIP.Utils.escapeUser(this.user) + '@';
+    if (uri.user) {
+      uriString += SIP.Utils.escapeUser(uri.user) + '@';
     }
-    uri += this.host;
-    if (this.port || this.port === 0) {
-      uri += ':' + this.port;
+    uriString += uri.host;
+    if (uri.port || uri.port === 0) {
+      uriString += ':' + uri.port;
     }
 
     for (parameter in this.parameters) {
-      uri += ';' + parameter;
+      uriString += ';' + parameter;
 
       if (this.parameters[parameter] !== null) {
-        uri += '='+ this.parameters[parameter];
+        uriString += '='+ this.parameters[parameter];
       }
     }
 
@@ -178,10 +212,10 @@ URI.prototype = {
     }
 
     if (headers.length > 0) {
-      uri += '?' + headers.join('&');
+      uriString += '?' + headers.join('&');
     }
 
-    return uri;
+    return uriString;
   }
 };
 
