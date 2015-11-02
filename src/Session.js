@@ -673,7 +673,8 @@ Session.prototype = {
           }
           else{
             request.body = request.body.replace(new RegExp('a=setup:active', 'g'), 'a=setup:actpass');
-            this.receiveReinvite(request);
+            //this.receiveReinvite(request);
+            request.reply(200, null, ['Contact: ' + this.contact], this.mediaHandler.peerConnection.localDescription.sdp);
           }
         }
         break;
