@@ -618,6 +618,16 @@ describe('Subscription', function() {
     });
   });
 
+  describe('.onDialogError', function() {
+    it('does not throw an exception', function() {
+      function errant () {
+        Subscription.onDialogError();
+      }
+
+      expect(errant).not.toThrow();
+    });
+  });
+
   describe('.matchEvent', function() {
     var request;
 
