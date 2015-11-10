@@ -45,6 +45,28 @@ var Hacks = {
         message.body = message.body.replace(/ \r\n/g, "\r\n");
       }
     },
+    
+    // Firefox doesn't handle IPv6 very well, so discard them from the SDP lines
+    discardIPv6: function (sdp) {
+      var sdpLines = sdp.split("\n");
+      for (var i in sdpLines) {
+          match = sdpLines[i].match(/(a=candidate:\d+ \d+ UDP \d+ ([^\s]+) \d+ \w+ \w+)/gi);
+          if (match) {
+              split = match[0].split(' ');
+              if (split[4] && split[4].indexOf(':') > -1) {
+                  sdpLines[i] = '';
+              }
+          }
+      }
+
+      var newSdp = '';
+      for (var i = 0; i < sdpLines.length; i++) {
+          if (sdpLines[i] !== '') {
+                  newSdp += sdpLines[i] + '\n';
+          }        
+      }
+      return newSdp;
+    },
 
     hasMissingCLineInSDP: function (sdp) {
       /*
