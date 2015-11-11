@@ -155,13 +155,19 @@ describe('UA', function() {
       expect(UA.status).toBe(SIP.UA.C.STATUS_READY);
     });
 
+    it('logs if the status is set to starting', function() {
+      UA.status = SIP.UA.C.STATUS_STARTING;
+      UA.start();
+      expect(UA.logger.log).toHaveBeenCalled();
+    });
+
     it('logs if the status is set to ready', function() {
       UA.status = SIP.UA.C.STATUS_READY;
       UA.start();
       expect(UA.logger.log).toHaveBeenCalled();
     });
 
-    it('logs an error if the status is not C.STATUS_INIT, C.STATUS_USER_CLOSED, C.STATUS_READY', function() {
+    it('logs an error if the status is not C.STATUS_INIT, C.STATUS_STARTING, C.STATUS_USER_CLOSED, C.STATUS_READY', function() {
       UA.status = SIP.UA.C.STATUS_NOT_READY;
       UA.start();
       expect(UA.logger.error).toHaveBeenCalled();
@@ -183,7 +189,7 @@ describe('UA', function() {
     });
 
     it('logs a warning and returns this if the ua has already been closed', function () {
-      UA.status = 2;
+      UA.status = 3;
 
       expect(UA.stop()).toBe(UA);
       expect(UA.logger.warn).toHaveBeenCalledWith('UA already closed');
@@ -239,7 +245,7 @@ describe('UA', function() {
     });
 
     it('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
-      spyOn(UA, 'off');
+      spyOn(UA, 'removeListener');
 
       //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
 
@@ -257,7 +263,7 @@ describe('UA', function() {
       UA.transactions['nict'] = [];
       UA.emit('transactionDestroyed');
       expect(UA.transport.disconnect).toHaveBeenCalled();
-      expect(UA.off).toHaveBeenCalled();
+      expect(UA.removeListener).toHaveBeenCalled();
     });
   });
 
@@ -296,6 +302,8 @@ describe('UA', function() {
 
     beforeEach(function() {
       options = 'options';
+      UA.transport = {};
+      UA.transport.connected = true;
     });
 
     it('does not require any arguments', function () {
@@ -703,11 +711,11 @@ describe('UA', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return false;
+      UA.listeners = jasmine.createSpy('listeners').and.callFake(function() {
+        return [];
       });
       expect(UA.receiveRequest(request)).toBeUndefined();
-      expect(UA.checkListener).toHaveBeenCalledWith(request.method.toLowerCase());
+      expect(UA.listeners).toHaveBeenCalledWith(request.method.toLowerCase());
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,UA);
       expect(replySpy).toHaveBeenCalledWith(405, null, jasmine.any(Array));
     });
@@ -720,8 +728,8 @@ describe('UA', function() {
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
                       getHeader: jasmine.createSpy('getHeader')};
-      UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
-        return true;
+      UA.listeners = jasmine.createSpy('listeners').and.callFake(function() {
+        return [1];
       });
       UA.on('message',callback);
 
@@ -1198,6 +1206,12 @@ describe('UA', function() {
       expect(UA.configuration.authorizationUser).toBe(UA.configuration.uri.user);
     });
 
+    it('sets iceCheckingTimeout as low as 0.5 seconds', function() {
+      UA.loadConfig({iceCheckingTimeout: 0});
+
+      expect(UA.configuration.iceCheckingTimeout).toBe(500);
+    });
+
     it('sets the registrarServer to the uri (without user) if it is not passed in', function() {
       UA.loadConfig({uri: 'james@onsnip.onsip.com'});
 
@@ -1382,10 +1396,9 @@ describe('UA', function() {
     });
 
     describe('.hackIpInContact', function() {
-      it('fails for all types except boolean', function() {
+      it('fails for all types except boolean and string', function() {
         expect(SIP.UA.configuration_check.optional.hackIpInContact()).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.hackIpInContact(7)).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.hackIpInContact('string')).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.hackIpInContact({even: 'objects'})).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.hackIpInContact(['arrays'])).toBeUndefined();
       });
@@ -1393,6 +1406,12 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(SIP.UA.configuration_check.optional.hackIpInContact(true)).toBe(true);
         expect(SIP.UA.configuration_check.optional.hackIpInContact(false)).toBe(false);
+      });
+
+      it('passes for string parameters that can be parsed as a host', function() {
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('1string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('string')).toBe('string');
+        expect(SIP.UA.configuration_check.optional.hackIpInContact('127.0.0.1')).toBe('127.0.0.1');
       });
     });
 

@@ -5,11 +5,7 @@ var RegisterContext;
 
 RegisterContext = function (ua) {
   var params = {},
-      regId = 1,
-      events = [
-        'registered',
-        'unregistered'
-      ];
+      regId = 1;
 
   this.registrar = ua.configuration.registrarServer;
   this.expires = ua.configuration.registerExpires;
@@ -43,7 +39,6 @@ RegisterContext = function (ua) {
   this.registered = false;
 
   this.logger = ua.getLogger('sip.registercontext');
-  this.initMoreEvents(events);
 };
 
 RegisterContext.prototype = {
@@ -55,6 +50,10 @@ RegisterContext.prototype = {
     extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
+
+    // Save original extraHeaders to be used in .close
+    this.closeHeaders = this.options.closeWithHeaders ?
+      (this.options.extraHeaders || []).slice() : [];
 
     this.receiveResponse = function(response) {
       var contact, expires,
@@ -117,7 +116,7 @@ RegisterContext.prototype = {
           // For that, decrease the expires value. ie: 3 seconds
           this.registrationTimer = SIP.Timers.setTimeout(function() {
             self.registrationTimer = null;
-            self.register(this.options);
+            self.register(self.options);
           }, (expires * 1000) - 3000);
           this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
             self.logger.warn('registration expired');
@@ -196,19 +195,25 @@ RegisterContext.prototype = {
   },
 
   close: function() {
+    var options = {
+      all: false,
+      extraHeaders: this.closeHeaders
+    };
+
     this.registered_before = this.registered;
-    this.unregister();
+    this.unregister(options);
   },
 
   unregister: function(options) {
     var extraHeaders;
 
-    if(!this.registered) {
+    options = options || {};
+
+    if(!this.registered && !options.all) {
       this.logger.warn('already unregistered');
       return;
     }
 
-    options = options || {};
     extraHeaders = (options.extraHeaders || []).slice();
 
     this.registered = false;

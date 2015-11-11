@@ -26,6 +26,16 @@ var
     INVITE_SERVER: 'ist'
   };
 
+function buildViaHeader (request_sender, transport, id) {
+  var via;
+  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
+  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + id;
+  if (request_sender.ua.configuration.forceRport) {
+    via += ';rport';
+  }
+  return via;
+}
+
 /**
 * @augments SIP.Transactions
 * @class Non Invite Client Transaction
@@ -34,8 +44,7 @@ var
 * @param {SIP.Transport} transport
 */
 var NonInviteClientTransaction = function(request_sender, request, transport) {
-  var via,
-    events = ['stateChanged'];
+  var via;
 
   this.type = C.NON_INVITE_CLIENT;
   this.transport = transport;
@@ -45,16 +54,12 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
-
+  via = buildViaHeader(request_sender, transport, this.id);
   this.request.setHeader('via', via);
 
   this.request_sender.ua.newTransaction(this);
-
-  this.initEvents(events);
 };
-NonInviteClientTransaction.prototype = new SIP.EventEmitter();
+NonInviteClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 NonInviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -138,8 +143,7 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
 */
 var InviteClientTransaction = function(request_sender, request, transport) {
   var via,
-    tr = this,
-    events = ['stateChanged'];
+    tr = this;
 
   this.type = C.INVITE_CLIENT;
   this.transport = transport;
@@ -149,9 +153,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.ict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
-
+  via = buildViaHeader(request_sender, transport, this.id);
   this.request.setHeader('via', via);
 
   this.request_sender.ua.newTransaction(this);
@@ -161,10 +163,8 @@ var InviteClientTransaction = function(request_sender, request, transport) {
   this.request.cancel = function(reason) {
     tr.cancel_request(tr, reason);
   };
-
-  this.initEvents(events);
 };
-InviteClientTransaction.prototype = new SIP.EventEmitter();
+InviteClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 InviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -235,6 +235,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
   this.ack += 'To: ' + response.getHeader('to') + '\r\n';
   this.ack += 'From: ' + this.request.headers['From'].toString() + '\r\n';
   this.ack += 'Call-ID: ' + this.request.headers['Call-ID'].toString() + '\r\n';
+  this.ack += 'Content-Length: 0\r\n';
   this.ack += 'CSeq: ' + this.request.headers['CSeq'].toString().split(' ')[0];
   this.ack += ' ACK\r\n\r\n';
 
@@ -334,12 +335,10 @@ var AckClientTransaction = function(request_sender, request, transport) {
 
   this.logger = request_sender.ua.getLogger('sip.transaction.nict', this.id);
 
-  via = 'SIP/2.0/' + (request_sender.ua.configuration.hackViaTcp ? 'TCP' : transport.server.scheme);
-  via += ' ' + request_sender.ua.configuration.viaHost + ';branch=' + this.id;
-
+  via = buildViaHeader(request_sender, transport, this.id);
   this.request.setHeader('via', via);
 };
-AckClientTransaction.prototype = new SIP.EventEmitter();
+AckClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 AckClientTransaction.prototype.send = function() {
   if(!this.transport.send(this.request)) {
@@ -360,8 +359,6 @@ AckClientTransaction.prototype.onTransportError = function() {
 * @param {SIP.UA} ua
 */
 var NonInviteServerTransaction = function(request, ua) {
-  var events = ['stateChanged'];
-
   this.type = C.NON_INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
@@ -375,10 +372,8 @@ var NonInviteServerTransaction = function(request, ua) {
   this.state = C.STATUS_TRYING;
 
   ua.newTransaction(this);
-
-  this.initEvents(events);
 };
-NonInviteServerTransaction.prototype = new SIP.EventEmitter();
+NonInviteServerTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 NonInviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -459,8 +454,6 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
 * @param {SIP.UA} ua
 */
 var InviteServerTransaction = function(request, ua) {
-  var events = ['stateChanged'];
-
   this.type = C.INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
@@ -478,10 +471,8 @@ var InviteServerTransaction = function(request, ua) {
   this.resendProvisionalTimer = null;
 
   request.reply(100);
-
-  this.initEvents(events);
 };
-InviteServerTransaction.prototype = new SIP.EventEmitter();
+InviteServerTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 InviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;

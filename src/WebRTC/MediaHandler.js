@@ -14,29 +14,6 @@
 module.exports = function (SIP) {
 
 var MediaHandler = function(session, options) {
-  var events = [
-    'userMediaRequest',
-    'userMedia',
-    'userMediaFailed',
-
-    'iceGathering',
-    'iceCandidate',
-    'iceGatheringComplete',
-
-    'iceConnection',
-    'iceConnectionChecking',
-    'iceConnectionConnected',
-    'iceConnectionCompleted',
-    'iceConnectionFailed',
-    'iceConnectionDisconnected',
-    'iceConnectionClosed',
-
-    'getDescription',
-    'setDescription',
-
-    'dataChannel',
-    'addStream'
-  ];
   options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);
@@ -110,10 +87,20 @@ var MediaHandler = function(session, options) {
     self.logger.log('stream removed: '+ e.stream.id);
   };
 
+  this.startIceCheckingTimer = function () {
+    if (!self.iceCheckingTimer) {
+      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
+        self.onIceCompleted.resolve(this);
+      }.bind(this.peerConnection), config.iceCheckingTimeout);
+    }
+  };
+
   this.peerConnection.onicecandidate = function(e) {
     self.emit('iceCandidate', e);
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+      self.startIceCheckingTimer();
     } else {
       self.onIceCompleted.resolve(this);
     }
@@ -133,10 +120,7 @@ var MediaHandler = function(session, options) {
     var stateEvent;
 
     if (this.iceConnectionState === 'checking') {
-      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' micro seconds');
-        self.onIceCompleted.resolve(this);
-      }.bind(this), config.iceCheckingTimeout);
+      self.startIceCheckingTimer();
     }
 
 
@@ -185,12 +169,8 @@ var MediaHandler = function(session, options) {
     self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
   };
 
-  this.initEvents(events);
-
   function selfEmit(mh, event) {
-    if (mh.mediaStreamManager.on &&
-        mh.mediaStreamManager.checkEvent &&
-        mh.mediaStreamManager.checkEvent(event)) {
+    if (mh.mediaStreamManager.on) {
       mh.mediaStreamManager.on(event, function () {
         mh.emit.apply(mh, [event].concat(Array.prototype.slice.call(arguments)));
       });

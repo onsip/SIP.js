@@ -26,22 +26,6 @@ var Session, InviteServerContext, InviteClientContext,
  *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
  */
 Session = function (mediaHandlerFactory) {
-  var events = [
-  'dialog',
-  'connecting',
-  'terminated',
-  'dtmf',
-  'invite',
-  'cancel',
-  'refer',
-  'replaced',
-  'bye',
-  'hold',
-  'unhold',
-  'muted',
-  'unmuted'
-  ];
-
   this.status = C.STATUS_NULL;
   this.dialog = null;
   this.earlyDialogs = {};
@@ -116,8 +100,6 @@ Session = function (mediaHandlerFactory) {
 
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
-
-  this.initMoreEvents(events);
 };
 
 Session.prototype = {
@@ -354,9 +336,7 @@ Session.prototype = {
     }, this.ua).send();
 
     // Emit the request event
-    if (this.checkEvent(method.toLowerCase())) {
-      this.emit(method.toLowerCase(), request);
-    }
+    this.emit(method.toLowerCase(), request);
 
     return this;
   },
@@ -683,9 +663,7 @@ Session.prototype = {
       case SIP.C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
-          // Switch these two lines to try re-INVITEs:
-          //this.receiveReinvite(request);
-          request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
+          this.receiveReinvite(request);
         }
         break;
       case SIP.C.INFO:
@@ -721,7 +699,7 @@ Session.prototype = {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
           var
-            hasReferListener = this.checkListener('refer'),
+            hasReferListener = this.listeners('refer').length,
             notifyBody = hasReferListener ?
               'SIP/2.0 100 Trying' :
               // RFC 3515.2.4.2: 'the UA MAY decline the request.'
@@ -742,6 +720,10 @@ Session.prototype = {
             this.emit('refer', request);
           }
         }
+        break;
+      case SIP.C.NOTIFY:
+        request.reply(200, 'OK');
+        this.emit('notify', request);
         break;
     }
   },
@@ -927,18 +909,21 @@ Session.prototype = {
     if (this.status === C.STATUS_TERMINATED) {
       return this;
     }
-    return this.emit('failed', response || null, cause || null);
+    this.emit('failed', response || null, cause || null);
+    return this;
   },
 
   rejected: function(response, cause) {
-    return this.emit('rejected',
+    this.emit('rejected',
       response || null,
       cause || null
     );
+    return this;
   },
 
   canceled: function() {
-    return this.emit('cancel');
+    this.emit('cancel');
+    return this;
   },
 
   accepted: function(response, cause) {
@@ -950,7 +935,8 @@ Session.prototype = {
       this.replacee.emit('replaced', this);
       this.replacee.terminate();
     }
-    return this.emit('accepted', response, cause);
+    this.emit('accepted', response, cause);
+    return this;
   },
 
   terminated: function(message, cause) {
@@ -961,14 +947,16 @@ Session.prototype = {
     this.endTime = new Date();
 
     this.close();
-    return this.emit('terminated', {
-      message: message || null,
-      cause: cause || null
-    });
+    this.emit('terminated',
+      message || null,
+      cause || null
+    );
+    return this;
   },
 
   connecting: function(request) {
-    return this.emit('connecting', { request: request });
+    this.emit('connecting', { request: request });
+    return this;
   }
 };
 
@@ -981,9 +969,7 @@ Session.desugar = function desugar(options) {
           video: options.tagName === 'VIDEO'
         },
         render: {
-          remote: {
-            video: options
-          }
+          remote: options
         }
       }
     };
@@ -1806,7 +1792,17 @@ InviteClientContext.prototype = {
         Early media has been set up with at least one other different branch,
         but a final 2xx response hasn't been received
       */
+      if (this.dialog.pracked.indexOf(response.getHeader('rseq')) !== -1 ||
+          (this.dialog.pracked[this.dialog.pracked.length-1] >= response.getHeader('rseq') && this.dialog.pracked.length > 0)) {
+        return;
+      }
+
       if (!this.earlyDialogs[id] && !this.createDialog(response, 'UAC', true)) {
+        return;
+      }
+
+      if (this.earlyDialogs[id].pracked.indexOf(response.getHeader('rseq')) !== -1 ||
+          (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] >= response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
         return;
       }
 
@@ -1888,11 +1884,12 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasAnswer = true;
+            this.dialog.pracked.push(response.getHeader('rseq'));
+
             this.mediaHandler.setDescription(response.body)
             .then(
               function onSuccess () {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-                session.dialog.pracked.push(response.getHeader('rseq'));
 
                 session.sendRequest(SIP.C.PRACK, {
                   extraHeaders: extraHeaders,

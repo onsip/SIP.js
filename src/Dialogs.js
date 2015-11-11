@@ -92,7 +92,6 @@ Dialog = function(owner, message, type, state) {
   this.owner = owner;
   owner.ua.dialogs[this.id.toString()] = this;
   this.logger.log('new ' + type + ' dialog created with status ' + (this.state === C.STATUS_EARLY ? 'EARLY': 'CONFIRMED'));
-  owner.initMoreEvents(['dialog']);
   owner.emit('dialog', this);
 };
 
@@ -193,7 +192,7 @@ Dialog.prototype = {
                 this.state === SIP.Transactions.C.STATUS_COMPLETED ||
                 this.state === SIP.Transactions.C.STATUS_TERMINATED) {
 
-              this.off('stateChanged', stateChanged);
+              this.removeListener('stateChanged', stateChanged);
               self.uas_pending_reply = false;
 
               if (self.uac_pending_reply === false) {

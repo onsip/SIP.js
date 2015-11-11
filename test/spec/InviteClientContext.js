@@ -39,20 +39,6 @@ describe('An INVITE sent from a UAC', function () {
    * Initial behavior tests
    *
    */
-  it('inits ClientContext events', function () {
-    expect(this.session.checkEvent('progress')).toBe(true);
-    expect(this.session.checkEvent('accepted')).toBe(true);
-    expect(this.session.checkEvent('rejected')).toBe(true);
-    expect(this.session.checkEvent('failed')).toBe(true);
-  });
-
-  it('inits Session events', function () {
-    expect(this.session.checkEvent('connecting')).toBe(true);
-    expect(this.session.checkEvent('cancel')).toBe(true);
-    expect(this.session.checkEvent('dtmf')).toBe(true);
-    expect(this.session.checkEvent('bye')).toBe(true);
-  });
-
   it('inits instance attributes', function () {
     expect(this.session.ua).toBe(this.ua);
     expect(this.session.method).toBe(SIP.C.INVITE);

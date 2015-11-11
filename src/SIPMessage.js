@@ -10,6 +10,39 @@ var
   IncomingRequest,
   IncomingResponse;
 
+function getSupportedHeader (request) {
+  var allowUnregistered = request.ua.configuration.hackAllowUnregisteredOptionTags;
+  var optionTags = [];
+  var optionTagSet = {};
+
+  if (request.method === SIP.C.REGISTER) {
+    optionTags.push('path', 'gruu');
+  } else if (request.method === SIP.C.INVITE &&
+             (request.ua.contact.pub_gruu || request.ua.contact.temp_gruu)) {
+    optionTags.push('gruu');
+  }
+
+  if (request.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+    optionTags.push('100rel');
+  }
+  if (request.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
+    optionTags.push('replaces');
+  }
+
+  optionTags.push('outbound');
+
+  optionTags = optionTags.concat(request.ua.configuration.extraSupported);
+
+  optionTags = optionTags.filter(function(optionTag) {
+    var registered = SIP.C.OPTION_TAGS[optionTag];
+    var unique = !optionTagSet[optionTag];
+    optionTagSet[optionTag] = true;
+    return (registered || allowUnregistered) && unique;
+  });
+
+  return 'Supported: ' + optionTags.join(', ') + '\r\n';
+}
+
 /**
  * @augments SIP
  * @class Class for outgoing SIP request.
@@ -27,7 +60,9 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
     to,
     from,
     call_id,
-    cseq;
+    cseq,
+    to_uri,
+    from_uri;
 
   params = params || {};
 
@@ -63,13 +98,15 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('max-forwards', SIP.UA.C.MAX_FORWARDS);
 
   // To
+  to_uri = params.to_uri || ruri;
   to = (params.to_displayName || params.to_displayName === 0) ? '"' + params.to_displayName + '" ' : '';
-  to += '<' + (params.to_uri || ruri) + '>';
+  to += '<' + (to_uri && to_uri.toRaw ? to_uri.toRaw() : to_uri) + '>';
   to += params.to_tag ? ';tag=' + params.to_tag : '';
   this.to = new SIP.NameAddrHeader.parse(to);
   this.setHeader('to', to);
 
   // From
+  from_uri = params.from_uri || ua.configuration.uri;
   if (params.from_displayName || params.from_displayName === 0) {
     from = '"' + params.from_displayName + '" ';
   } else if (ua.configuration.displayName) {
@@ -77,7 +114,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   } else {
     from = '';
   }
-  from += '<' + (params.from_uri || ua.configuration.uri) + '>;tag=';
+  from += '<' + (from_uri && from_uri.toRaw ? from_uri.toRaw() : from_uri) + '>;tag=';
   from += params.from_tag || SIP.Utils.newTag();
   this.from = new SIP.NameAddrHeader.parse(from);
   this.setHeader('from', from);
@@ -183,9 +220,9 @@ OutgoingRequest.prototype = {
   },
 
   toString: function() {
-    var msg = '', header, length, idx, supported = [];
+    var msg = '', header, length, idx;
 
-    msg += this.method + ' ' + this.ruri + ' SIP/2.0\r\n';
+    msg += this.method + ' ' + (this.ruri.toRaw ? this.ruri.toRaw() : this.ruri) + ' SIP/2.0\r\n';
 
     for (header in this.headers) {
       length = this.headers[header].length;
@@ -199,24 +236,7 @@ OutgoingRequest.prototype = {
       msg += this.extraHeaders[idx].trim() +'\r\n';
     }
 
-    //Supported
-    if (this.method === SIP.C.REGISTER) {
-      supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE &&
-               (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
-      supported.push('gruu');
-    }
-
-    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
-      supported.push('100rel');
-    }
-    if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
-      supported.push('replaces');
-    }
-
-    supported.push('outbound');
-
-    msg += 'Supported: ' +  supported +'\r\n';
+    msg += getSupportedHeader(this);
     msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
     if(this.body) {
@@ -411,7 +431,6 @@ IncomingRequest.prototype = new IncomingMessage();
 */
 IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onSuccess, onFailure) {
   var rr, vias, length, idx, response,
-  supported = [],
     to = this.getHeader('To'),
     r = 0,
     v = 0;
@@ -451,22 +470,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     response += extraHeaders[idx].trim() +'\r\n';
   }
 
-  //Supported
-  if (this.method === SIP.C.INVITE &&
-               (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
-    supported.push('gruu');
-  }
-
-  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
-    supported.push('100rel');
-  }
-  if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
-    supported.push('replaces');
-  }
-
-  supported.push('outbound');
-
-  response += 'Supported: ' + supported + '\r\n';
+  response += getSupportedHeader(this);
   response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
   if(body) {

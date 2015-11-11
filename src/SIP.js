@@ -4,12 +4,11 @@
  */
 "use strict";
 
-var SIP = {};
 module.exports = function (environment) {
 
 var pkg = require('../package.json');
 
-Object.defineProperties(SIP, {
+var SIP = Object.defineProperties({}, {
   version: {
     get: function(){ return pkg.version; }
   },
@@ -20,7 +19,7 @@ Object.defineProperties(SIP, {
 
 require('./Utils')(SIP, environment);
 SIP.LoggerFactory = require('./LoggerFactory')(environment.console);
-require('./EventEmitter')(SIP);
+SIP.EventEmitter = require('./EventEmitter')(environment.console);
 SIP.C = require('./Constants')(SIP.name, SIP.version);
 SIP.Exceptions = require('./Exceptions');
 SIP.Timers = require('./Timers')(environment.timers);

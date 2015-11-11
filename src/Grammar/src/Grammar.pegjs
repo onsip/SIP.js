@@ -1,4 +1,10 @@
-{options.data = {};} // Object to which header attributes will be assigned during parsing
+{
+  options.data = {}; // Object to which header attributes will be assigned during parsing
+
+  function list (first, rest) {
+    return [first].concat(rest);
+  }
+}
 
 // ABNF BASIC
 
@@ -19,7 +25,7 @@ alphanum    = [a-zA-Z0-9]
 reserved    = ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+" / "$" / ","
 unreserved  = alphanum / mark
 mark        = "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")"
-escaped     = escaped: ("%" HEXDIG HEXDIG) {return escaped.join(''); }
+escaped     = $ ("%" HEXDIG HEXDIG)
 
 /* RFC3261 25: A recipient MAY replace any linear white space with a single SP
  * before interpreting the field value or forwarding the message downstream
@@ -30,8 +36,7 @@ SWS = LWS?
 
 HCOLON  = ( SP / HTAB )* ":" SWS {return ':'; }
 
-TEXT_UTF8_TRIM  = TEXT_UTF8char+ ( LWS* TEXT_UTF8char)* {
-                    return text(); }
+TEXT_UTF8_TRIM  = $( TEXT_UTF8char+ ( LWS* TEXT_UTF8char)* )
 
 TEXT_UTF8char   = [\x21-\x7E] / UTF8_NONASCII
 
@@ -41,25 +46,22 @@ UTF8_CONT       = [\x80-\xBF]
 
 LHEX            = DIGIT / [\x61-\x66]
 
-token           = (alphanum / "-" / "." / "!" / "%" / "*"
-                  / "_" / "+" / "`" / "'" / "~" )+ {
-                  return text(); }
+token           = $ (alphanum / "-" / "." / "!" / "%" / "*"
+                  / "_" / "+" / "`" / "'" / "~" )+
 
-token_nodot     = ( alphanum / "-"  / "!" / "%" / "*"
-                  / "_" / "+" / "`" / "'" / "~" )+ {
-                  return text(); }
+token_nodot     = $ ( alphanum / "-"  / "!" / "%" / "*"
+                  / "_" / "+" / "`" / "'" / "~" )+
 
 separators      = "(" / ")" / "<" / ">" / "@" / "," / ";" / ":" / "\\"
                   / DQUOTE / "/" / "[" / "]" / "?" / "=" / "{" / "}"
                   / SP / HTAB
 
-word            = (alphanum / "-" / "." / "!" / "%" / "*" /
+word            = $ (alphanum / "-" / "." / "!" / "%" / "*" /
                   "_" / "+" / "`" / "'" / "~" /
                   "(" / ")" / "<" / ">" /
                   ":" / "\\" / DQUOTE /
                   "/" / "[" / "]" / "?" /
-                  "{" / "}" )+ {
-                  return text(); }
+                  "{" / "}" )+
 
 STAR        = SWS "*" SWS   {return "*"; }
 SLASH       = SWS "/" SWS   {return "/"; }
@@ -78,8 +80,7 @@ comment     = LPAREN (ctext / quoted_pair / comment)* RPAREN
 
 ctext       = [\x21-\x27] / [\x2A-\x5B] / [\x5D-\x7E] / UTF8_NONASCII / LWS
 
-quoted_string = SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE {
-                  return text(); }
+quoted_string = $( SWS DQUOTE ( qdtext / quoted_pair )* DQUOTE )
 
 quoted_string_clean = SWS DQUOTE contents: $( qdtext / quoted_pair )* DQUOTE {
                         return contents; }
@@ -115,7 +116,7 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                       }
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
-                    options.data.scheme = uri_scheme.toLowerCase(); }
+                    options.data.scheme = uri_scheme; }
 
 userinfo        = user (":" password)? "@" {
                     options.data.user = decodeURIComponent(text().slice(0, -1));}
@@ -130,7 +131,7 @@ password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
 hostport        = host ( ":" port )?
 
 host            = ( hostname / IPv4address / IPv6reference ) {
-                    options.data.host = text().toLowerCase();
+                    options.data.host = text();
                     return options.data.host; }
 
 hostname        = ( domainlabel "." )* toplabel  "." ? {
@@ -231,9 +232,9 @@ other_param       = param: pname value: ( "=" pvalue )? {
                       }
                       options.data.uri_params[param.toLowerCase()] = value && value.toLowerCase();}
 
-pname             = pname: paramchar + {return pname.join(''); }
+pname             = $ paramchar +
 
-pvalue            = pvalue: paramchar + {return pvalue.join(''); }
+pvalue            = $ paramchar +
 
 paramchar         = param_unreserved / unreserved / escaped
 
@@ -708,7 +709,16 @@ replaces_params   = "from-tag"i EQUAL from_tag: token {
 
 // REQUIRE
 
-Require       = option_tag (COMMA option_tag)*
+Require   =  value:(
+                first:option_tag
+                rest:(COMMA r:option_tag {return r;})*
+                { return list(first, rest); }
+              )?
+              {
+                if (options.startRule === 'Require') {
+                  options.data = value || [];
+                }
+              }
 
 
 // ROUTE
@@ -760,7 +770,16 @@ Subject  = ( TEXT_UTF8_TRIM )?
 
 // SUPPORTED
 
-Supported  = ( option_tag (COMMA option_tag)* )?
+Supported  =  value:(
+                first:option_tag
+                rest:(COMMA r:option_tag {return r;})*
+                { return list(first, rest); }
+              )?
+              {
+                if (options.startRule === 'Supported') {
+                  options.data = value || [];
+                }
+              }
 
 
 // TO
@@ -826,6 +845,31 @@ ttl               = ttl: (DIGIT DIGIT ? DIGIT ?) {
 WWW_Authenticate  = www_authenticate: challenge
 
 
+// RFC 4028
+
+Session_Expires   = deltaSeconds:delta_seconds (SEMI se_params)*
+                    {
+                      if (options.startRule === 'Session_Expires') {
+                        options.data.deltaSeconds = deltaSeconds;
+                      }
+                    }
+
+se_params         = refresher_param / generic_param
+
+refresher_param   = "refresher" EQUAL endpoint:("uas" / "uac")
+                    {
+                      if (options.startRule === 'Session_Expires') {
+                        options.data.refresher = endpoint;
+                      }
+                    }
+
+Min_SE            = deltaSeconds:delta_seconds (SEMI generic_param)*
+                    {
+                      if (options.startRule === 'Min_SE') {
+                        options.data = deltaSeconds;
+                      }
+                    }
+
 // EXTENSION-HEADER
 
 extension_header  = extension_header: header_name HCOLON header_value: header_value
@@ -849,8 +893,7 @@ stun_host_port    = stun_host ( ":" port )?
 stun_host         = host: (IPv4address / IPv6reference / reg_name) {
                       options.data.host = host; }
 
-reg_name          = ( stun_unreserved / escaped / sub_delims )* {
-                      return text(); }
+reg_name          = $ ( stun_unreserved / escaped / sub_delims )*
 
 stun_unreserved   = ALPHA / DIGIT / "-" / "." / "_" / "~"
 

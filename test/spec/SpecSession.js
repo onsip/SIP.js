@@ -7,8 +7,9 @@ describe('Session', function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
 
     Session = new SIP.EventEmitter();
-    Session.initEvents(['progress','accepted','rejected','failed']);
     SIP.Utils.augment(Session, SIP.Session, []);
+
+    Session.logger = new SIP.LoggerFactory().getLogger('sip.session');
 
     Session.ua = ua;
 
@@ -34,19 +35,6 @@ describe('Session', function() {
     if(ua.status !== 2) {
       ua.stop();
     };
-  });
-
-  it('initializes events', function() {
-    expect(Session.checkEvent('connecting')).toBeTruthy();
-    expect(Session.checkEvent('terminated')).toBeTruthy();
-    expect(Session.checkEvent('dtmf')).toBeTruthy();
-    expect(Session.checkEvent('invite')).toBeTruthy();
-    expect(Session.checkEvent('cancel')).toBeTruthy();
-    expect(Session.checkEvent('bye')).toBeTruthy();
-    expect(Session.checkEvent('hold')).toBeTruthy();
-    expect(Session.checkEvent('unhold')).toBeTruthy();
-    expect(Session.checkEvent('muted')).toBeTruthy();
-    expect(Session.checkEvent('unmuted')).toBeTruthy();
   });
 
   it('initializes session objects', function() {
@@ -1607,7 +1595,7 @@ describe('InviteServerContext', function() {
     });
 
     describe('method is INVITE', function() {
-      xit('calls receiveReinvite', function() {
+      it('calls receiveReinvite', function() {
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1960,8 +1948,8 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
     });
 
-    it('PRACKS any non 200 response when it already chose a dialog', function() {
-      InviteClientContext.dialog = { terminate: function() {} };
+    it('PRACKS any non 200 response that are not retransmissions when it already chose a dialog', function() {
+            InviteClientContext.dialog = { terminate: function() {}, pracked: [] };
       resp = SIP.Parser.parseMessage([
         'SIP/2.0 183 Session In Progress',
         'To: <sip:james@onsnip.onsip.com>;tag=1ma2ki9411',
@@ -2471,7 +2459,7 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.C.causes.BYE);
     });
 
-    xit('logs and calls receiveReinvite if request method is INVITE', function() {
+    it('logs and calls receiveReinvite if request method is INVITE', function() {
       InviteClientContext.status = 12;
       request.method = SIP.C.INVITE;
 

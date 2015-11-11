@@ -15,17 +15,9 @@ var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) 
     throw new SIP.Exceptions.NotSupportedError('Media not supported');
   }
 
-  var events = [
-    'userMediaRequest',
-    'userMedia',
-    'userMediaFailed'
-  ];
   this.mediaHint = defaultMediaHint || {
     constraints: {audio: true, video: true}
   };
-
-  this.logger = logger;
-  this.initEvents(events);
 
   // map of streams to acquisition manner:
   // true -> passed in as mediaHint.stream
@@ -40,18 +32,28 @@ MediaStreamManager.streamId = function (stream) {
     .join('');
 };
 
+/**
+ * @param {(Array of) MediaStream} streams - The streams to render
+ *
+ * @param {(Array of) HTMLMediaElement} elements
+ *        - The <audio>/<video> element(s) that should render the streams
+ *
+ * Each stream in streams renders to the corresponding element in elements,
+ * wrapping around elements if needed.
+ */
 MediaStreamManager.render = function render (streams, elements) {
-  // only render first stream, see pull request #76
-  streams = [].concat(streams);
-  var stream = streams[0];
-  if (!elements || !stream) {
+  if (!elements) {
     return false;
   }
+  if (Array.isArray(elements) && !elements.length) {
+    throw new TypeError('elements must not be empty');
+  }
 
-  function attachAndPlay (element, stream) {
-    if (typeof element === 'function') {
-      element = element();
+  function attachAndPlay (elements, stream, index) {
+    if (typeof elements === 'function') {
+      elements = elements();
     }
+    var element = elements[index % elements.length];
     (environment.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
@@ -81,15 +83,10 @@ MediaStreamManager.render = function render (streams, elements) {
     }, interval);
   }
 
-  if (elements.video) {
-    if (elements.audio) {
-      elements.video.volume = 0;
-    }
-    attachAndPlay(elements.video, stream);
-  }
-  if (elements.audio) {
-    attachAndPlay(elements.audio, stream);
-  }
+  // [].concat "casts" `elements` into an array
+  // so forEach works even if `elements` was a single element
+  elements = [].concat(elements);
+  [].concat(streams).forEach(attachAndPlay.bind(null, elements));
 };
 
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
@@ -150,7 +147,9 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     streams.forEach(function (stream) {
       var streamId = MediaStreamManager.streamId(stream);
       if (this.acquisitions[streamId] === false) {
-        stream.stop();
+        stream.getTracks().forEach(function (track) {
+          track.stop();
+        });
       }
       delete this.acquisitions[streamId];
     }, this);

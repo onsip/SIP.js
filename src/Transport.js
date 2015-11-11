@@ -30,6 +30,10 @@ Transport = function(ua, server) {
   this.reconnectTimer = null;
   this.lastTransportError = {};
 
+  this.keepAliveInterval = ua.configuration.keepAliveInterval;
+  this.keepAliveTimeout = null;
+  this.keepAliveTimer = null;
+
   this.ua.transport = this;
 
   // Connect
@@ -58,12 +62,54 @@ Transport.prototype = {
   },
 
   /**
+   * Send a keep-alive (a double-CRLF sequence).
+   * @private
+   * @returns {Boolean}
+   */
+  sendKeepAlive: function() {
+    if(this.keepAliveTimeout) { return; }
+
+    this.keepAliveTimeout = SIP.Timers.setTimeout(function() {
+      this.ua.emit('keepAliveTimeout');
+    }.bind(this), 10000);
+
+    return this.send('\r\n\r\n');
+  },
+
+  /**
+   * Start sending keep-alives.
+   * @private
+   */
+  startSendingKeepAlives: function() {
+    if (this.keepAliveInterval && !this.keepAliveTimer) {
+      this.keepAliveTimer = SIP.Timers.setTimeout(function() {
+        this.sendKeepAlive();
+        this.keepAliveTimer = null;
+        this.startSendingKeepAlives();
+      }.bind(this), computeKeepAliveTimeout(this.keepAliveInterval));
+    }
+  },
+
+  /**
+   * Stop sending keep-alives.
+   * @private
+   */
+  stopSendingKeepAlives: function() {
+    SIP.Timers.clearTimeout(this.keepAliveTimer);
+    SIP.Timers.clearTimeout(this.keepAliveTimeout);
+    this.keepAliveTimer = null;
+    this.keepAliveTimeout = null;
+  },
+
+  /**
   * Disconnect socket.
   */
   disconnect: function() {
     if(this.ws) {
       // Clear reconnectTimer
       SIP.Timers.clearTimeout(this.reconnectTimer);
+
+      this.stopSendingKeepAlives();
 
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
@@ -146,6 +192,8 @@ Transport.prototype = {
     this.closed = false;
     // Trigger onTransportConnected callback
     this.ua.onTransportConnected(this);
+    // Start sending keep-alives
+    this.startSendingKeepAlives();
   },
 
   /**
@@ -155,31 +203,40 @@ Transport.prototype = {
   onClose: function(e) {
     var connected_before = this.connected;
 
-    this.connected = false;
     this.lastTransportError.code = e.code;
     this.lastTransportError.reason = e.reason;
-    this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
 
-    if(e.wasClean === false) {
-      this.logger.warn('WebSocket abrupt disconnection');
-    }
-    // Transport was connected
-    if(connected_before === true) {
-      this.ua.onTransportClosed(this);
-      // Check whether the user requested to close.
-      if(!this.closed) {
-        this.reConnect();
-      } else {
-        this.ua.emit('disconnected', {
-          transport: this,
-          code: this.lastTransportError.code,
-          reason: this.lastTransportError.reason
-        });
-      }
+    this.stopSendingKeepAlives();
+
+    if (this.reconnection_attempts > 0) {
+      this.logger.log('Reconnection attempt ' + this.reconnection_attempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+      this.reconnect();
     } else {
-      // This is the first connection attempt
-      //Network error
-      this.ua.onTransportError(this);
+      this.connected = false;
+      this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+
+      if(e.wasClean === false) {
+        this.logger.warn('WebSocket abrupt disconnection');
+      }
+      // Transport was connected
+      if(connected_before === true) {
+        this.ua.onTransportClosed(this);
+        // Check whether the user requested to close.
+        if(!this.closed) {
+          this.reconnect();
+        } else {
+          this.ua.emit('disconnected', {
+            transport: this,
+            code: this.lastTransportError.code,
+            reason: this.lastTransportError.reason
+          });
+
+        }
+      } else {
+        // This is the first connection attempt
+        //Network error
+        this.ua.onTransportError(this);
+      }
     }
   },
 
@@ -193,9 +250,13 @@ Transport.prototype = {
 
     // CRLF Keep Alive response from server. Ignore it.
     if(data === '\r\n') {
+      SIP.Timers.clearTimeout(this.keepAliveTimeout);
+      this.keepAliveTimeout = null;
+
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('received WebSocket message with CRLF Keep Alive response');
       }
+
       return;
     }
 
@@ -273,7 +334,7 @@ Transport.prototype = {
   * Reconnection attempt logic.
   * @private
   */
-  reConnect: function() {
+  reconnect: function() {
     var transport = this;
 
     this.reconnection_attempts += 1;
@@ -281,6 +342,9 @@ Transport.prototype = {
     if(this.reconnection_attempts > this.ua.configuration.wsServerMaxReconnection) {
       this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
       this.ua.onTransportError(this);
+    } else if (this.reconnection_attempts === 1) {
+      this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
+      transport.connect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
@@ -291,6 +355,16 @@ Transport.prototype = {
     }
   }
 };
+
+/**
+ * Compute an amount of time in seconds to wait before sending another
+ * keep-alive.
+ * @returns {Number}
+ */
+function computeKeepAliveTimeout(upperBound) {
+  var lowerBound = upperBound * 0.8;
+  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
+}
 
 Transport.C = C;
 return Transport;
