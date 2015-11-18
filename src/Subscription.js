@@ -267,6 +267,10 @@ SIP.Subscription.prototype = {
     return this;
   },
 
+  onDialogError: function(response) {
+    this.failed(response, SIP.C.causes.DIALOG_ERROR);
+  },
+
   /**
   * @private
   */
