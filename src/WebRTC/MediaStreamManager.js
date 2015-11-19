@@ -146,7 +146,6 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
       return deferred.promise;
     }
   }},
-
   'release': {writable: true, value: function release (streams) {
     streams = [].concat(streams);
     streams.forEach(function (stream) {
