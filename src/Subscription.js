@@ -96,6 +96,8 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
+        // Preserve new expires value for subsequent requests
+        this.expires = expires;
         this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
@@ -199,6 +201,7 @@ SIP.Subscription.prototype = {
 
     function setExpiresTimeout() {
       if (sub_state.expires) {
+        SIP.Timers.clearTimeout(sub.timers.sub_duration);
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
         sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub),
@@ -216,7 +219,6 @@ SIP.Subscription.prototype = {
     request.reply(200, SIP.C.REASON_200);
 
     SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
 
     this.emit('notify', {request: request});
 
@@ -232,6 +234,7 @@ SIP.Subscription.prototype = {
         this.state = 'pending';
         break;
       case 'terminated':
+        SIP.Timers.clearTimeout(this.timers.sub_duration);
         if (sub_state.reason) {
           this.logger.log('terminating subscription with reason '+ sub_state.reason);
           switch (sub_state.reason) {

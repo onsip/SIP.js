@@ -4,12 +4,11 @@
  */
 "use strict";
 
-var SIP = {};
 module.exports = function (environment) {
 
 var pkg = require('../package.json');
 
-Object.defineProperties(SIP, {
+var SIP = Object.defineProperties({}, {
   version: {
     get: function(){ return pkg.version; }
   },

@@ -1,5 +1,5 @@
 /*
- * SIP version 0.7.1
+ * SIP version 0.7.2
  * Copyright (c) 2014-2015 Junction Networks, Inc <http://www.onsip.com>
  * Homepage: http://sipjs.com
  * License: http://sipjs.com/license/
@@ -340,7 +340,7 @@ module.exports={
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
@@ -658,6 +658,45 @@ return {
     603: 'Decline',
     604: 'Does Not Exist Anywhere',
     606: 'Not Acceptable'
+  },
+
+  /* SIP Option Tags
+   * DOC: http://www.iana.org/assignments/sip-parameters/sip-parameters.xhtml#sip-parameters-4
+   */
+  OPTION_TAGS: {
+    '100rel':                   true,  // RFC 3262
+    199:                        true,  // RFC 6228
+    answermode:                 true,  // RFC 5373
+    'early-session':            true,  // RFC 3959
+    eventlist:                  true,  // RFC 4662
+    explicitsub:                true,  // RFC-ietf-sipcore-refer-explicit-subscription-03
+    'from-change':              true,  // RFC 4916
+    'geolocation-http':         true,  // RFC 6442
+    'geolocation-sip':          true,  // RFC 6442
+    gin:                        true,  // RFC 6140
+    gruu:                       true,  // RFC 5627
+    histinfo:                   true,  // RFC 7044
+    ice:                        true,  // RFC 5768
+    join:                       true,  // RFC 3911
+    'multiple-refer':           true,  // RFC 5368
+    norefersub:                 true,  // RFC 4488
+    nosub:                      true,  // RFC-ietf-sipcore-refer-explicit-subscription-03
+    outbound:                   true,  // RFC 5626
+    path:                       true,  // RFC 3327
+    policy:                     true,  // RFC 6794
+    precondition:               true,  // RFC 3312
+    pref:                       true,  // RFC 3840
+    privacy:                    true,  // RFC 3323
+    'recipient-list-invite':    true,  // RFC 5366
+    'recipient-list-message':   true,  // RFC 5365
+    'recipient-list-subscribe': true,  // RFC 5367
+    replaces:                   true,  // RFC 3891
+    'resource-priority':        true,  // RFC 4412
+    'sdp-anat':                 true,  // RFC 4092
+    'sec-agree':                true,  // RFC 3329
+    tdialog:                    true,  // RFC 4538
+    timer:                      true,  // RFC 4028
+    uui:                        true   // RFC 7433
   }
 };
 };
@@ -1336,7 +1375,7 @@ module.exports = (function() {
 
         peg$FAILED = {},
 
-        peg$startRuleIndices = { Contact: 118, Name_Addr_Header: 155, Record_Route: 175, Request_Response: 81, SIP_URI: 45, Subscription_State: 185, Via: 193, absoluteURI: 84, Call_ID: 117, Content_Disposition: 129, Content_Length: 134, Content_Type: 135, CSeq: 145, displayName: 121, Event: 148, From: 150, host: 52, Max_Forwards: 153, Proxy_Authenticate: 156, quoted_string: 40, Refer_To: 177, Replaces: 178, stun_URI: 212, To: 191, turn_URI: 219, uuid: 222, WWW_Authenticate: 208, challenge: 157 },
+        peg$startRuleIndices = { Contact: 118, Name_Addr_Header: 155, Record_Route: 175, Request_Response: 81, SIP_URI: 45, Subscription_State: 185, Supported: 190, Require: 181, Via: 193, absoluteURI: 84, Call_ID: 117, Content_Disposition: 129, Content_Length: 134, Content_Type: 135, CSeq: 145, displayName: 121, Event: 148, From: 150, host: 52, Max_Forwards: 153, Min_SE: 212, Proxy_Authenticate: 156, quoted_string: 40, Refer_To: 177, Replaces: 178, Session_Expires: 209, stun_URI: 216, To: 191, turn_URI: 223, uuid: 226, WWW_Authenticate: 208, challenge: 157 },
         peg$startRuleIndex   = 118,
 
         peg$consts = [
@@ -1478,13 +1517,13 @@ module.exports = (function() {
           "sip",
           { type: "literal", value: "sip", description: "\"sip\"" },
           function(uri_scheme) {
-                              options.data.scheme = uri_scheme.toLowerCase(); },
+                              options.data.scheme = uri_scheme; },
           function() {
                               options.data.user = decodeURIComponent(text().slice(0, -1));},
           function() {
                               options.data.password = text(); },
           function() {
-                              options.data.host = text().toLowerCase();
+                              options.data.host = text();
                               return options.data.host; },
           function() {
                             options.data.host_type = 'domain';
@@ -1844,6 +1883,13 @@ module.exports = (function() {
           function() {
                                 options.data.early_only = true;
                               },
+          function(r) {return r;},
+          function(first, rest) { return list(first, rest); },
+          function(value) {
+                          if (options.startRule === 'Require') {
+                            options.data = value || [];
+                          }
+                        },
           function(rseq_value) {
                             options.data.value=parseInt(rseq_value.join('')); },
           "active",
@@ -1878,6 +1924,11 @@ module.exports = (function() {
           { type: "literal", value: "noresource", description: "\"noresource\"" },
           "invariant",
           { type: "literal", value: "invariant", description: "\"invariant\"" },
+          function(value) {
+                          if (options.startRule === 'Supported') {
+                            options.data = value || [];
+                          }
+                        },
           function() {
                         var tag = options.data.tag;
                           options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
@@ -1918,6 +1969,27 @@ module.exports = (function() {
                                 options.data.port = parseInt(via_sent_by_port.join('')); },
           function(ttl) {
                                 return parseInt(ttl.join('')); },
+          function(deltaSeconds) {
+                                if (options.startRule === 'Session_Expires') {
+                                  options.data.deltaSeconds = deltaSeconds;
+                                }
+                              },
+          "refresher",
+          { type: "literal", value: "refresher", description: "\"refresher\"" },
+          "uas",
+          { type: "literal", value: "uas", description: "\"uas\"" },
+          "uac",
+          { type: "literal", value: "uac", description: "\"uac\"" },
+          function(endpoint) {
+                                if (options.startRule === 'Session_Expires') {
+                                  options.data.refresher = endpoint;
+                                }
+                              },
+          function(deltaSeconds) {
+                                if (options.startRule === 'Min_SE') {
+                                  options.data = deltaSeconds;
+                                }
+                              },
           "stuns",
           { type: "literal", value: "stuns", description: "\"stuns\"" },
           "stun",
@@ -2120,51 +2192,55 @@ module.exports = (function() {
           peg$decode("!7\xD3+c$ \\!7B+-$7\xD4+#%'\"%$\"# X\"# X,8&!7B+-$7\xD4+#%'\"%$\"# X\"# X\"+'%4\"6\u0150\" %$\"# X\"# X"),
           peg$decode("!7\x95+& 4!6\u0151! %"),
           peg$decode("!/\u0152\"\"1(3\u0153+<$7<+2%76+(%4#6\u0154#! %$## X$\"# X\"# X*j \"!/\u0155\"\"1&3\u0156+<$7<+2%76+(%4#6\u0157#! %$## X$\"# X\"# X*: \"!/\u0158\"\"1*3\u0159+& 4!6\u015A! %*# \"7\x9F"),
-          peg$decode("!76+_$ \\!7A+-$76+#%'\"%$\"# X\"# X,8&!7A+-$76+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X"),
+          peg$decode("!!76+o$ \\!7A+2$76+(%4\"6\u015B\"! %$\"# X\"# X,=&!7A+2$76+(%4\"6\u015B\"! %$\"# X\"# X\"+)%4\"6\u015C\"\"! %$\"# X\"# X*# \" [+' 4!6\u015D!! %"),
           peg$decode("!7\xD7+_$ \\!7A+-$7\xD7+#%'\"%$\"# X\"# X,8&!7A+-$7\xD7+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X"),
           peg$decode("!7\x98+_$ \\!7B+-$7\x9F+#%'\"%$\"# X\"# X,8&!7B+-$7\x9F+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X"),
-          peg$decode("! \\7!+&$,#&7!\"\"\" X+' 4!6\u015B!! %"),
+          peg$decode("! \\7!+&$,#&7!\"\"\" X+' 4!6\u015E!! %"),
           peg$decode("!7\xDA+_$ \\!7B+-$7\xDB+#%'\"%$\"# X\"# X,8&!7B+-$7\xDB+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X"),
-          peg$decode("!/\u015C\"\"1&3\u015D*; \"/\u015E\"\"1'3\u015F*/ \"/\u0160\"\"1*3\u0161*# \"76+& 4!6\u0162! %"),
-          peg$decode("!/\u0163\"\"1&3\u0164+<$7<+2%7\xDC+(%4#6\u0165#! %$## X$\"# X\"# X*\x83 \"!/\xF6\"\"1'3\xF7+<$7<+2%7\x9D+(%4#6\u0166#! %$## X$\"# X\"# X*S \"!/\u0167\"\"1+3\u0168+<$7<+2%7\x9D+(%4#6\u0169#! %$## X$\"# X\"# X*# \"7\x9F"),
-          peg$decode("/\u016A\"\"1+3\u016B*k \"/\u016C\"\"1)3\u016D*_ \"/\u016E\"\"1(3\u016F*S \"/\u0170\"\"1'3\u0171*G \"/\u0172\"\"1&3\u0173*; \"/\u0174\"\"1*3\u0175*/ \"/\u0176\"\"1)3\u0177*# \"76"),
+          peg$decode("!/\u015F\"\"1&3\u0160*; \"/\u0161\"\"1'3\u0162*/ \"/\u0163\"\"1*3\u0164*# \"76+& 4!6\u0165! %"),
+          peg$decode("!/\u0166\"\"1&3\u0167+<$7<+2%7\xDC+(%4#6\u0168#! %$## X$\"# X\"# X*\x83 \"!/\xF6\"\"1'3\xF7+<$7<+2%7\x9D+(%4#6\u0169#! %$## X$\"# X\"# X*S \"!/\u016A\"\"1+3\u016B+<$7<+2%7\x9D+(%4#6\u016C#! %$## X$\"# X\"# X*# \"7\x9F"),
+          peg$decode("/\u016D\"\"1+3\u016E*k \"/\u016F\"\"1)3\u0170*_ \"/\u0171\"\"1(3\u0172*S \"/\u0173\"\"1'3\u0174*G \"/\u0175\"\"1&3\u0176*; \"/\u0177\"\"1*3\u0178*/ \"/\u0179\"\"1)3\u017A*# \"76"),
           peg$decode("71*# \" ["),
-          peg$decode("!76+_$ \\!7A+-$76+#%'\"%$\"# X\"# X,8&!7A+-$76+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X*# \" ["),
-          peg$decode("!7L*# \"7\x98+c$ \\!7B+-$7\xE0+#%'\"%$\"# X\"# X,8&!7B+-$7\xE0+#%'\"%$\"# X\"# X\"+'%4\"6\u0178\" %$\"# X\"# X"),
+          peg$decode("!!76+o$ \\!7A+2$76+(%4\"6\u015B\"! %$\"# X\"# X,=&!7A+2$76+(%4\"6\u015B\"! %$\"# X\"# X\"+)%4\"6\u015C\"\"! %$\"# X\"# X*# \" [+' 4!6\u017B!! %"),
+          peg$decode("!7L*# \"7\x98+c$ \\!7B+-$7\xE0+#%'\"%$\"# X\"# X,8&!7B+-$7\xE0+#%'\"%$\"# X\"# X\"+'%4\"6\u017C\" %$\"# X\"# X"),
           peg$decode("7\xB8*# \"7\x9F"),
           peg$decode("!7\xE2+_$ \\!7A+-$7\xE2+#%'\"%$\"# X\"# X,8&!7A+-$7\xE2+#%'\"%$\"# X\"# X\"+#%'\"%$\"# X\"# X"),
           peg$decode("!7\xE9+s$7.+i%7\xEC+_% \\!7B+-$7\xE3+#%'\"%$\"# X\"# X,8&!7B+-$7\xE3+#%'\"%$\"# X\"# X\"+#%'$%$$# X$## X$\"# X\"# X"),
           peg$decode("7\xE4*; \"7\xE5*5 \"7\xE6*/ \"7\xE7*) \"7\xE8*# \"7\x9F"),
-          peg$decode("!/\u0179\"\"1#3\u017A+<$7<+2%7\xEF+(%4#6\u017B#! %$## X$\"# X\"# X"),
-          peg$decode("!/\u017C\"\"1%3\u017D+<$7<+2%7T+(%4#6\u017E#! %$## X$\"# X\"# X"),
-          peg$decode("!/\u017F\"\"1(3\u0180+B$7<+8%7\\*# \"7Y+(%4#6\u0181#! %$## X$\"# X\"# X"),
-          peg$decode("!/\u0182\"\"1&3\u0183+<$7<+2%76+(%4#6\u0184#! %$## X$\"# X\"# X"),
-          peg$decode("!/\u0185\"\"1%3\u0186+T$!7<+5$ \\7!,#&7!\"+#%'\"%$\"# X\"# X*# \" [+'%4\"6\u0187\" %$\"# X\"# X"),
+          peg$decode("!/\u017D\"\"1#3\u017E+<$7<+2%7\xEF+(%4#6\u017F#! %$## X$\"# X\"# X"),
+          peg$decode("!/\u0180\"\"1%3\u0181+<$7<+2%7T+(%4#6\u0182#! %$## X$\"# X\"# X"),
+          peg$decode("!/\u0183\"\"1(3\u0184+B$7<+8%7\\*# \"7Y+(%4#6\u0185#! %$## X$\"# X\"# X"),
+          peg$decode("!/\u0186\"\"1&3\u0187+<$7<+2%76+(%4#6\u0188#! %$## X$\"# X\"# X"),
+          peg$decode("!/\u0189\"\"1%3\u018A+T$!7<+5$ \\7!,#&7!\"+#%'\"%$\"# X\"# X*# \" [+'%4\"6\u018B\" %$\"# X\"# X"),
           peg$decode("!7\xEA+K$7;+A%76+7%7;+-%7\xEB+#%'%%$%# X$$# X$## X$\"# X\"# X"),
-          peg$decode("!/\x95\"\"1#3\xD6*# \"76+' 4!6\u0188!! %"),
-          peg$decode("!/\xB4\"\"1#3\u0189*G \"/\xB6\"\"1#3\u018A*; \"/\xBA\"\"1#3\u018B*/ \"/\xB8\"\"1$3\u018C*# \"76+' 4!6\u018D!! %"),
+          peg$decode("!/\x95\"\"1#3\xD6*# \"76+' 4!6\u018C!! %"),
+          peg$decode("!/\xB4\"\"1#3\u018D*G \"/\xB6\"\"1#3\u018E*; \"/\xBA\"\"1#3\u018F*/ \"/\xB8\"\"1$3\u0190*# \"76+' 4!6\u0191!! %"),
           peg$decode("!7\xED+H$!7C+-$7\xEE+#%'\"%$\"# X\"# X*# \" [+#%'\"%$\"# X\"# X"),
-          peg$decode("!7U*) \"7\\*# \"7X+& 4!6\u018E! %"),
-          peg$decode("!!7!*# \" [+c$7!*# \" [+S%7!*# \" [+C%7!*# \" [+3%7!*# \" [+#%'%%$%# X$$# X$## X$\"# X\"# X+' 4!6\u018F!! %"),
-          peg$decode("!!7!+C$7!*# \" [+3%7!*# \" [+#%'#%$## X$\"# X\"# X+' 4!6\u0190!! %"),
+          peg$decode("!7U*) \"7\\*# \"7X+& 4!6\u0192! %"),
+          peg$decode("!!7!*# \" [+c$7!*# \" [+S%7!*# \" [+C%7!*# \" [+3%7!*# \" [+#%'%%$%# X$$# X$## X$\"# X\"# X+' 4!6\u0193!! %"),
+          peg$decode("!!7!+C$7!*# \" [+3%7!*# \" [+#%'#%$## X$\"# X\"# X+' 4!6\u0194!! %"),
           peg$decode("7\xBD"),
-          peg$decode("!76+7$70+-%7\xF2+#%'#%$## X$\"# X\"# X"),
+          peg$decode("!7\x9D+d$ \\!7B+-$7\xF2+#%'\"%$\"# X\"# X,8&!7B+-$7\xF2+#%'\"%$\"# X\"# X\"+(%4\"6\u0195\"!!%$\"# X\"# X"),
+          peg$decode("7\xF3*# \"7\x9F"),
+          peg$decode("!.\u0196\"\"2\u01963\u0197+N$7<+D%.\u0198\"\"2\u01983\u0199*) \".\u019A\"\"2\u019A3\u019B+(%4#6\u019C#! %$## X$\"# X\"# X"),
+          peg$decode("!7\x9D+d$ \\!7B+-$7\x9F+#%'\"%$\"# X\"# X,8&!7B+-$7\x9F+#%'\"%$\"# X\"# X\"+(%4\"6\u019D\"!!%$\"# X\"# X"),
+          peg$decode("!76+7$70+-%7\xF6+#%'#%$## X$\"# X\"# X"),
           peg$decode(" \\72*) \"74*# \"7.,/&72*) \"74*# \"7.\""),
           peg$decode(" \\7%,#&7%\""),
-          peg$decode("!7\xF5+=$.8\"\"2839+-%7\xF6+#%'#%$## X$\"# X\"# X"),
-          peg$decode("!/\u0191\"\"1%3\u0192*) \"/\u0193\"\"1$3\u0194+' 4!6\u0195!! %"),
-          peg$decode("!7\xF7+N$!.8\"\"2839+-$7^+#%'\"%$\"# X\"# X*# \" [+#%'\"%$\"# X\"# X"),
-          peg$decode("!7\\*) \"7X*# \"7\x82+' 4!6\u0196!! %"),
-          peg$decode("! \\7\xF9*) \"7-*# \"7\xFA,/&7\xF9*) \"7-*# \"7\xFA\"+! (%"),
+          peg$decode("!7\xF9+=$.8\"\"2839+-%7\xFA+#%'#%$## X$\"# X\"# X"),
+          peg$decode("!/\u019E\"\"1%3\u019F*) \"/\u01A0\"\"1$3\u01A1+' 4!6\u01A2!! %"),
+          peg$decode("!7\xFB+N$!.8\"\"2839+-$7^+#%'\"%$\"# X\"# X*# \" [+#%'\"%$\"# X\"# X"),
+          peg$decode("!7\\*) \"7X*# \"7\x82+' 4!6\u01A3!! %"),
+          peg$decode("! \\7\xFD*) \"7-*# \"7\xFE,/&7\xFD*) \"7-*# \"7\xFE\"+! (%"),
           peg$decode("7\"*S \"7!*M \".F\"\"2F3G*A \".J\"\"2J3K*5 \".H\"\"2H3I*) \".N\"\"2N3O"),
           peg$decode(".L\"\"2L3M*\x95 \".B\"\"2B3C*\x89 \".<\"\"2<3=*} \".R\"\"2R3S*q \".T\"\"2T3U*e \".V\"\"2V3W*Y \".P\"\"2P3Q*M \".@\"\"2@3A*A \".D\"\"2D3E*5 \".2\"\"2233*) \".>\"\"2>3?"),
-          peg$decode("!7\xFC+h$.8\"\"2839+X%7\xF6+N%!.\u0197\"\"2\u01973\u0198+-$7\xEB+#%'\"%$\"# X\"# X*# \" [+#%'$%$$# X$## X$\"# X\"# X"),
-          peg$decode("!/\u0199\"\"1%3\u019A*) \"/\u019B\"\"1$3\u019C+' 4!6\u0195!! %"),
-          peg$decode("!7\xEB+Q$/\xB4\"\"1#3\xB5*7 \"/\xB6\"\"1#3\xB7*+ \" \\7+,#&7+\"+'%4\"6\u019D\" %$\"# X\"# X"),
-          peg$decode("!7\u0100+\x8F$.F\"\"2F3G+%7\xFF+u%.F\"\"2F3G+e%7\xFF+[%.F\"\"2F3G+K%7\xFF+A%.F\"\"2F3G+1%7\u0101+'%4)6\u019E) %$)# X$(# X$'# X$&# X$%# X$$# X$## X$\"# X\"# X"),
+          peg$decode("!7\u0100+h$.8\"\"2839+X%7\xFA+N%!.\u01A4\"\"2\u01A43\u01A5+-$7\xEB+#%'\"%$\"# X\"# X*# \" [+#%'$%$$# X$## X$\"# X\"# X"),
+          peg$decode("!/\u01A6\"\"1%3\u01A7*) \"/\u01A8\"\"1$3\u01A9+' 4!6\u01A2!! %"),
+          peg$decode("!7\xEB+Q$/\xB4\"\"1#3\xB5*7 \"/\xB6\"\"1#3\xB7*+ \" \\7+,#&7+\"+'%4\"6\u01AA\" %$\"# X\"# X"),
+          peg$decode("!7\u0104+\x8F$.F\"\"2F3G+%7\u0103+u%.F\"\"2F3G+e%7\u0103+[%.F\"\"2F3G+K%7\u0103+A%.F\"\"2F3G+1%7\u0105+'%4)6\u01AB) %$)# X$(# X$'# X$&# X$%# X$$# X$## X$\"# X\"# X"),
           peg$decode("!7#+A$7#+7%7#+-%7#+#%'$%$$# X$## X$\"# X\"# X"),
-          peg$decode("!7\xFF+-$7\xFF+#%'\"%$\"# X\"# X"),
-          peg$decode("!7\xFF+7$7\xFF+-%7\xFF+#%'#%$## X$\"# X\"# X")
+          peg$decode("!7\u0103+-$7\u0103+#%'\"%$\"# X\"# X"),
+          peg$decode("!7\u0103+7$7\u0103+-%7\u0103+#%'#%$## X$\"# X\"# X")
         ],
 
         peg$currPos          = 0,
@@ -2592,7 +2668,13 @@ module.exports = (function() {
       return stack[0];
     }
 
-    options.data = {};
+
+      options.data = {}; // Object to which header attributes will be assigned during parsing
+
+      function list (first, rest) {
+        return [first].concat(rest);
+      }
+
 
     peg$result = peg$parseRule(peg$startRuleIndex);
 
@@ -3472,12 +3554,13 @@ RegisterContext.prototype = {
   unregister: function(options) {
     var extraHeaders;
 
-    if(!this.registered) {
+    options = options || {};
+
+    if(!this.registered && !options.all) {
       this.logger.warn('already unregistered');
       return;
     }
 
-    options = options || {};
     extraHeaders = (options.extraHeaders || []).slice();
 
     this.registered = false;
@@ -3694,12 +3777,11 @@ SIP.RequestSender = RequestSender;
  */
 "use strict";
 
-var SIP = {};
 module.exports = function (environment) {
 
 var pkg = _dereq_('../package.json');
 
-Object.defineProperties(SIP, {
+var SIP = Object.defineProperties({}, {
   version: {
     get: function(){ return pkg.version; }
   },
@@ -3751,6 +3833,39 @@ var
   IncomingRequest,
   IncomingResponse;
 
+function getSupportedHeader (request) {
+  var allowUnregistered = request.ua.configuration.hackAllowUnregisteredOptionTags;
+  var optionTags = [];
+  var optionTagSet = {};
+
+  if (request.method === SIP.C.REGISTER) {
+    optionTags.push('path', 'gruu');
+  } else if (request.method === SIP.C.INVITE &&
+             (request.ua.contact.pub_gruu || request.ua.contact.temp_gruu)) {
+    optionTags.push('gruu');
+  }
+
+  if (request.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+    optionTags.push('100rel');
+  }
+  if (request.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
+    optionTags.push('replaces');
+  }
+
+  optionTags.push('outbound');
+
+  optionTags = optionTags.concat(request.ua.configuration.extraSupported);
+
+  optionTags = optionTags.filter(function(optionTag) {
+    var registered = SIP.C.OPTION_TAGS[optionTag];
+    var unique = !optionTagSet[optionTag];
+    optionTagSet[optionTag] = true;
+    return (registered || allowUnregistered) && unique;
+  });
+
+  return 'Supported: ' + optionTags.join(', ') + '\r\n';
+}
+
 /**
  * @augments SIP
  * @class Class for outgoing SIP request.
@@ -3768,7 +3883,9 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
     to,
     from,
     call_id,
-    cseq;
+    cseq,
+    to_uri,
+    from_uri;
 
   params = params || {};
 
@@ -3804,13 +3921,15 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('max-forwards', SIP.UA.C.MAX_FORWARDS);
 
   // To
+  to_uri = params.to_uri || ruri;
   to = (params.to_displayName || params.to_displayName === 0) ? '"' + params.to_displayName + '" ' : '';
-  to += '<' + (params.to_uri || ruri) + '>';
+  to += '<' + (to_uri && to_uri.toRaw ? to_uri.toRaw() : to_uri) + '>';
   to += params.to_tag ? ';tag=' + params.to_tag : '';
   this.to = new SIP.NameAddrHeader.parse(to);
   this.setHeader('to', to);
 
   // From
+  from_uri = params.from_uri || ua.configuration.uri;
   if (params.from_displayName || params.from_displayName === 0) {
     from = '"' + params.from_displayName + '" ';
   } else if (ua.configuration.displayName) {
@@ -3818,7 +3937,7 @@ OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   } else {
     from = '';
   }
-  from += '<' + (params.from_uri || ua.configuration.uri) + '>;tag=';
+  from += '<' + (from_uri && from_uri.toRaw ? from_uri.toRaw() : from_uri) + '>;tag=';
   from += params.from_tag || SIP.Utils.newTag();
   this.from = new SIP.NameAddrHeader.parse(from);
   this.setHeader('from', from);
@@ -3924,9 +4043,9 @@ OutgoingRequest.prototype = {
   },
 
   toString: function() {
-    var msg = '', header, length, idx, supported = [];
+    var msg = '', header, length, idx;
 
-    msg += this.method + ' ' + this.ruri + ' SIP/2.0\r\n';
+    msg += this.method + ' ' + (this.ruri.toRaw ? this.ruri.toRaw() : this.ruri) + ' SIP/2.0\r\n';
 
     for (header in this.headers) {
       length = this.headers[header].length;
@@ -3940,24 +4059,7 @@ OutgoingRequest.prototype = {
       msg += this.extraHeaders[idx].trim() +'\r\n';
     }
 
-    //Supported
-    if (this.method === SIP.C.REGISTER) {
-      supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE &&
-               (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
-      supported.push('gruu');
-    }
-
-    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
-      supported.push('100rel');
-    }
-    if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
-      supported.push('replaces');
-    }
-
-    supported.push('outbound');
-
-    msg += 'Supported: ' +  supported +'\r\n';
+    msg += getSupportedHeader(this);
     msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
     if(this.body) {
@@ -4152,7 +4254,6 @@ IncomingRequest.prototype = new IncomingMessage();
 */
 IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onSuccess, onFailure) {
   var rr, vias, length, idx, response,
-  supported = [],
     to = this.getHeader('To'),
     r = 0,
     v = 0;
@@ -4192,22 +4293,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     response += extraHeaders[idx].trim() +'\r\n';
   }
 
-  //Supported
-  if (this.method === SIP.C.INVITE &&
-               (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
-    supported.push('gruu');
-  }
-
-  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
-    supported.push('100rel');
-  }
-  if (this.ua.configuration.replaces === SIP.C.supported.SUPPORTED) {
-    supported.push('replaces');
-  }
-
-  supported.push('outbound');
-
-  response += 'Supported: ' + supported + '\r\n';
+  response += getSupportedHeader(this);
   response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
   if(body) {
@@ -5323,8 +5409,9 @@ Session.prototype = {
           }
         }
         break;
-      case SIP.C.UPDATE:
+      case SIP.C.NOTIFY:
         request.reply(200, 'OK');
+        this.emit('notify', request);
         break;
     }
   },
@@ -7079,6 +7166,8 @@ SIP.Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
+        // Preserve new expires value for subsequent requests
+        this.expires = expires;
         this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
@@ -7182,6 +7271,7 @@ SIP.Subscription.prototype = {
 
     function setExpiresTimeout() {
       if (sub_state.expires) {
+        SIP.Timers.clearTimeout(sub.timers.sub_duration);
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
         sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub),
@@ -7199,7 +7289,6 @@ SIP.Subscription.prototype = {
     request.reply(200, SIP.C.REASON_200);
 
     SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
 
     this.emit('notify', {request: request});
 
@@ -7215,6 +7304,7 @@ SIP.Subscription.prototype = {
         this.state = 'pending';
         break;
       case 'terminated':
+        SIP.Timers.clearTimeout(this.timers.sub_duration);
         if (sub_state.reason) {
           this.logger.log('terminating subscription with reason '+ sub_state.reason);
           switch (sub_state.reason) {
@@ -7559,6 +7649,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
   this.ack += 'To: ' + response.getHeader('to') + '\r\n';
   this.ack += 'From: ' + this.request.headers['From'].toString() + '\r\n';
   this.ack += 'Call-ID: ' + this.request.headers['Call-ID'].toString() + '\r\n';
+  this.ack += 'Content-Length: 0\r\n';
   this.ack += 'CSeq: ' + this.request.headers['CSeq'].toString().split(' ')[0];
   this.ack += ' ACK\r\n\r\n';
 
@@ -8062,6 +8153,7 @@ Transport = function(ua, server) {
   this.lastTransportError = {};
 
   this.keepAliveInterval = ua.configuration.keepAliveInterval;
+  this.keepAliveTimeout = null;
   this.keepAliveTimer = null;
 
   this.ua.transport = this;
@@ -8097,6 +8189,12 @@ Transport.prototype = {
    * @returns {Boolean}
    */
   sendKeepAlive: function() {
+    if(this.keepAliveTimeout) { return; }
+
+    this.keepAliveTimeout = SIP.Timers.setTimeout(function() {
+      this.ua.emit('keepAliveTimeout');
+    }.bind(this), 10000);
+
     return this.send('\r\n\r\n');
   },
 
@@ -8120,7 +8218,9 @@ Transport.prototype = {
    */
   stopSendingKeepAlives: function() {
     SIP.Timers.clearTimeout(this.keepAliveTimer);
+    SIP.Timers.clearTimeout(this.keepAliveTimeout);
     this.keepAliveTimer = null;
+    this.keepAliveTimeout = null;
   },
 
   /**
@@ -8272,9 +8372,13 @@ Transport.prototype = {
 
     // CRLF Keep Alive response from server. Ignore it.
     if(data === '\r\n') {
+      SIP.Timers.clearTimeout(this.keepAliveTimeout);
+      this.keepAliveTimeout = null;
+
       if (this.ua.configuration.traceSip === true) {
         this.logger.log('received WebSocket message with CRLF Keep Alive response');
       }
+
       return;
     }
 
@@ -8600,7 +8704,9 @@ UA.prototype.register = function(options) {
  */
 UA.prototype.unregister = function(options) {
   this.configuration.register = false;
-  this.registerContext.unregister(options);
+
+  var context = this.registerContext;
+  this.afterConnected(context.unregister.bind(context, options));
 
   return this;
 };
@@ -9278,6 +9384,8 @@ UA.prototype.loadConfig = function(configuration) {
 
       keepAliveInterval: 0,
 
+      extraSupported: [],
+
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
@@ -9296,6 +9404,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackViaTcp: false,
       hackIpInContact: false,
       hackWssInTransport: false,
+      hackAllowUnregisteredOptionTags: false,
 
       contactTransport: 'ws',
       forceRport: false,
@@ -9407,7 +9516,7 @@ UA.prototype.loadConfig = function(configuration) {
   // String containing settings.uri without scheme and user.
   hostportParams = settings.uri.clone();
   hostportParams.user = null;
-  settings.hostportParams = hostportParams.toString().replace(/^sip:/i, '');
+  settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, '');
 
   /* Check whether authorizationUser is explicitly defined.
    * Take 'settings.uri.user' value if not.
@@ -9522,10 +9631,12 @@ UA.configuration_skeleton = (function() {
       "connectionRecoveryMaxInterval",
       "connectionRecoveryMinInterval",
       "keepAliveInterval",
+      "extraSupported",
       "displayName",
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "hackAllowUnregisteredOptionTags", //false
       "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
@@ -9710,16 +9821,19 @@ UA.configuration_check = {
 
     iceCheckingTimeout: function(iceCheckingTimeout) {
       if(SIP.Utils.isDecimal(iceCheckingTimeout)) {
-        if (iceCheckingTimeout < 500) {
-          return 5000;
-        }
-        return iceCheckingTimeout;
+        return Math.max(500, iceCheckingTimeout);
       }
     },
 
     hackWssInTransport: function(hackWssInTransport) {
       if (typeof hackWssInTransport === 'boolean') {
         return hackWssInTransport;
+      }
+    },
+
+    hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
+      if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
+        return hackAllowUnregisteredOptionTags;
       }
     },
 
@@ -9759,6 +9873,23 @@ UA.configuration_check = {
           return value;
         }
       }
+    },
+
+    extraSupported: function(optionTags) {
+      var idx, length;
+
+      if (!(optionTags instanceof Array)) {
+        return;
+      }
+
+      length = optionTags.length;
+      for (idx = 0; idx < length; idx++) {
+        if (typeof optionTags[idx] !== 'string') {
+          return;
+        }
+      }
+
+      return optionTags;
     },
 
     noAnswerTimeout: function(noAnswerTimeout) {
@@ -9999,7 +10130,7 @@ module.exports = function (SIP) {
 var URI;
 
 URI = function(scheme, user, host, port, parameters, headers) {
-  var param, header;
+  var param, header, raw, normal;
 
   // Checks
   if(!host) {
@@ -10019,40 +10150,67 @@ URI = function(scheme, user, host, port, parameters, headers) {
     this.setHeader(header, headers[header]);
   }
 
+  // Raw URI
+  raw = {
+    scheme: scheme,
+    user: user,
+    host: host,
+    port: port
+  };
+
+  // Normalized URI
+  normal = {
+    scheme: scheme.toLowerCase(),
+    user: user,
+    host: host.toLowerCase(),
+    port: port
+  };
+
   Object.defineProperties(this, {
+    _normal: {
+      get: function() { return normal; }
+    },
+
+    _raw: {
+      get: function() { return raw; }
+    },
+
     scheme: {
-      get: function(){ return scheme; },
-      set: function(value){
-        scheme = value.toLowerCase();
+      get: function() { return normal.scheme; },
+      set: function(value) {
+        raw.scheme = value;
+        normal.scheme = value.toLowerCase();
       }
     },
 
     user: {
-      get: function(){ return user; },
-      set: function(value){
-        user = value;
+      get: function() { return normal.user; },
+      set: function(value) {
+        normal.user = raw.user = value;
       }
     },
 
     host: {
-      get: function(){ return host; },
-      set: function(value){
-        host = value.toLowerCase();
+      get: function() { return normal.host; },
+      set: function(value) {
+        raw.host = value;
+        normal.host = value.toLowerCase();
       }
     },
 
     aor: {
-      get: function(){ return user + '@' + host; }
+      get: function() { return normal.user + '@' + normal.host; }
     },
 
     port: {
-      get: function(){ return port; },
-      set: function(value){
-        port = value === 0 ? value : (parseInt(value,10) || null);
+      get: function() { return normal.port; },
+      set: function(value) {
+        normal.port = raw.port = value === 0 ? value : (parseInt(value,10) || null);
       }
     }
   });
 };
+
 URI.prototype = {
   setParam: function(key, value) {
     if(key) {
@@ -10118,36 +10276,43 @@ URI.prototype = {
 
   clone: function() {
     return new URI(
-      this.scheme,
-      this.user,
-      this.host,
-      this.port,
+      this._raw.scheme,
+      this._raw.user,
+      this._raw.host,
+      this._raw.port,
       JSON.parse(JSON.stringify(this.parameters)),
       JSON.parse(JSON.stringify(this.headers)));
   },
 
-  toString: function(){
-    var header, parameter, idx, uri,
-      headers = [];
+  toRaw: function() {
+    return this._toString(this._raw);
+  },
 
-    uri  = this.scheme + ':';
+  toString: function() {
+    return this._toString(this._normal);
+  },
+
+  _toString: function(uri) {
+    var header, parameter, idx, uriString, headers = [];
+
+    uriString  = uri.scheme + ':';
     // add slashes if it's not a sip(s) URI
-    if (!this.scheme.match("^sips?$")) {
-      uri += "//";
+    if (!uri.scheme.toLowerCase().match("^sips?$")) {
+      uriString += "//";
     }
-    if (this.user) {
-      uri += SIP.Utils.escapeUser(this.user) + '@';
+    if (uri.user) {
+      uriString += SIP.Utils.escapeUser(uri.user) + '@';
     }
-    uri += this.host;
-    if (this.port || this.port === 0) {
-      uri += ':' + this.port;
+    uriString += uri.host;
+    if (uri.port || uri.port === 0) {
+      uriString += ':' + uri.port;
     }
 
     for (parameter in this.parameters) {
-      uri += ';' + parameter;
+      uriString += ';' + parameter;
 
       if (this.parameters[parameter] !== null) {
-        uri += '='+ this.parameters[parameter];
+        uriString += '='+ this.parameters[parameter];
       }
     }
 
@@ -10158,10 +10323,10 @@ URI.prototype = {
     }
 
     if (headers.length > 0) {
-      uri += '?' + headers.join('&');
+      uriString += '?' + headers.join('&');
     }
 
-    return uri;
+    return uriString;
   }
 };
 
@@ -10392,6 +10557,7 @@ Utils= {
     var exceptions = {
       'Call-Id': 'Call-ID',
       'Cseq': 'CSeq',
+      'Min-Se': 'Min-SE',
       'Rack': 'RAck',
       'Rseq': 'RSeq',
       'Www-Authenticate': 'WWW-Authenticate'
@@ -10825,16 +10991,20 @@ var MediaHandler = function(session, options) {
     self.logger.log('stream removed: '+ e.stream.id);
   };
 
+  this.startIceCheckingTimer = function () {
+    if (!self.iceCheckingTimer) {
+      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
+        self.onIceCompleted.resolve(this);
+      }.bind(this.peerConnection), config.iceCheckingTimeout);
+    }
+  };
+
   this.peerConnection.onicecandidate = function(e) {
     self.emit('iceCandidate', e);
     if (e.candidate) {
       self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
-      if (!self.iceCheckingTimer) {
-        self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-          self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
-          self.onIceCompleted.resolve(this);
-        }.bind(this), config.iceCheckingTimeout);
-      }
+      self.startIceCheckingTimer();
     } else {
       self.onIceCompleted.resolve(this);
     }
@@ -10853,11 +11023,8 @@ var MediaHandler = function(session, options) {
   this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
     var stateEvent;
 
-    if (this.iceConnectionState === 'checking' && !self.iceCheckingTimer) {
-      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
-        self.onIceCompleted.resolve(this);
-      }.bind(this), config.iceCheckingTimeout);
+    if (this.iceConnectionState === 'checking') {
+      self.startIceCheckingTimer();
     }
 
 
@@ -11426,7 +11593,9 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     streams.forEach(function (stream) {
       var streamId = MediaStreamManager.streamId(stream);
       if (this.acquisitions[streamId] === false) {
-        stream.stop();
+        stream.getTracks().forEach(function (track) {
+          track.stop();
+        });
       }
       delete this.acquisitions[streamId];
     }, this);

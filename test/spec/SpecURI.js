@@ -276,6 +276,11 @@ describe("URI", function() {
     expect(clonedURI.port).toEqual(URI.port);
     expect(clonedURI.parameters).toEqual(URI.parameters);
     expect(clonedURI.headers).toEqual(URI.headers);
+
+    expect(clonedURI._raw.scheme).toEqual(URI._raw.scheme);
+    expect(clonedURI._raw.user).toEqual(URI._raw.user);
+    expect(clonedURI._raw.host).toEqual(URI._raw.host);
+    expect(clonedURI._raw.port).toEqual(URI._raw.port);
   });
   
   it(".toString: be able to create a string of itself", function() {
@@ -348,6 +353,7 @@ describe("URI", function() {
     itsMethod('parses header X-HEADER-2', 'getHeader', 'X-HEADER-2', ['BbB']);
     itsMethod('doesn\'t parse missing header "nooo"', 'getHeader', 'nooo', undefined);
     itsMethod('correctly toString()s itself', 'toString', undefined, 'sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
+    itsMethod('correctly toRaw()s itself', 'toRaw', undefined, 'SIP:aliCE@versaTICA.Com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
 
     var newUser = 'Iñaki:PASSWD';
     describe('when setting the user to "' + newUser + '"', function () {

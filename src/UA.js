@@ -208,7 +208,9 @@ UA.prototype.register = function(options) {
  */
 UA.prototype.unregister = function(options) {
   this.configuration.register = false;
-  this.registerContext.unregister(options);
+
+  var context = this.registerContext;
+  this.afterConnected(context.unregister.bind(context, options));
 
   return this;
 };
@@ -886,6 +888,8 @@ UA.prototype.loadConfig = function(configuration) {
 
       keepAliveInterval: 0,
 
+      extraSupported: [],
+
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
@@ -904,6 +908,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackViaTcp: false,
       hackIpInContact: false,
       hackWssInTransport: false,
+      hackAllowUnregisteredOptionTags: false,
 
       contactTransport: 'ws',
       forceRport: false,
@@ -1015,7 +1020,7 @@ UA.prototype.loadConfig = function(configuration) {
   // String containing settings.uri without scheme and user.
   hostportParams = settings.uri.clone();
   hostportParams.user = null;
-  settings.hostportParams = hostportParams.toString().replace(/^sip:/i, '');
+  settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, '');
 
   /* Check whether authorizationUser is explicitly defined.
    * Take 'settings.uri.user' value if not.
@@ -1130,10 +1135,12 @@ UA.configuration_skeleton = (function() {
       "connectionRecoveryMaxInterval",
       "connectionRecoveryMinInterval",
       "keepAliveInterval",
+      "extraSupported",
       "displayName",
       "hackViaTcp", // false.
       "hackIpInContact", //false
       "hackWssInTransport", //false
+      "hackAllowUnregisteredOptionTags", //false
       "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
@@ -1318,16 +1325,19 @@ UA.configuration_check = {
 
     iceCheckingTimeout: function(iceCheckingTimeout) {
       if(SIP.Utils.isDecimal(iceCheckingTimeout)) {
-        if (iceCheckingTimeout < 500) {
-          return 5000;
-        }
-        return iceCheckingTimeout;
+        return Math.max(500, iceCheckingTimeout);
       }
     },
 
     hackWssInTransport: function(hackWssInTransport) {
       if (typeof hackWssInTransport === 'boolean') {
         return hackWssInTransport;
+      }
+    },
+
+    hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
+      if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
+        return hackAllowUnregisteredOptionTags;
       }
     },
 
@@ -1367,6 +1377,23 @@ UA.configuration_check = {
           return value;
         }
       }
+    },
+
+    extraSupported: function(optionTags) {
+      var idx, length;
+
+      if (!(optionTags instanceof Array)) {
+        return;
+      }
+
+      length = optionTags.length;
+      for (idx = 0; idx < length; idx++) {
+        if (typeof optionTags[idx] !== 'string') {
+          return;
+        }
+      }
+
+      return optionTags;
     },
 
     noAnswerTimeout: function(noAnswerTimeout) {
