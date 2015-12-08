@@ -12,6 +12,10 @@ Thank you to all of the contributors with code and patches to the SIP.js project
 * [Sean Bright](https://github.com/seanbright)
 * [Carlos Ruiz Diaz](https://github.com/caruizdiaz)
 * [Destreyf](https://github.com/Destreyf)
+* [Mark Roberts](https://github.com/markandrus)
+* [Ryan Rowland](https://github.com/ryan-rowland)
+* [Ben Langfeld](https://github.com/benlangfeld)
+* [Gerik Bonaert](https://github.com/adaxi)
 
 Much credit goes to the original authors of the JsSIP project.  Thank you to all.
 

@@ -1,4 +1,10 @@
-{options.data = {};} // Object to which header attributes will be assigned during parsing
+{
+  options.data = {}; // Object to which header attributes will be assigned during parsing
+
+  function list (first, rest) {
+    return [first].concat(rest);
+  }
+}
 
 // ABNF BASIC
 
@@ -110,7 +116,7 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                       }
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
-                    options.data.scheme = uri_scheme.toLowerCase(); }
+                    options.data.scheme = uri_scheme; }
 
 userinfo        = user (":" password)? "@" {
                     options.data.user = decodeURIComponent(text().slice(0, -1));}
@@ -125,7 +131,7 @@ password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
 hostport        = host ( ":" port )?
 
 host            = ( hostname / IPv4address / IPv6reference ) {
-                    options.data.host = text().toLowerCase();
+                    options.data.host = text();
                     return options.data.host; }
 
 hostname        = ( domainlabel "." )* toplabel  "." ? {
@@ -703,7 +709,16 @@ replaces_params   = "from-tag"i EQUAL from_tag: token {
 
 // REQUIRE
 
-Require       = option_tag (COMMA option_tag)*
+Require   =  value:(
+                first:option_tag
+                rest:(COMMA r:option_tag {return r;})*
+                { return list(first, rest); }
+              )?
+              {
+                if (options.startRule === 'Require') {
+                  options.data = value || [];
+                }
+              }
 
 
 // ROUTE
@@ -755,7 +770,16 @@ Subject  = ( TEXT_UTF8_TRIM )?
 
 // SUPPORTED
 
-Supported  = ( option_tag (COMMA option_tag)* )?
+Supported  =  value:(
+                first:option_tag
+                rest:(COMMA r:option_tag {return r;})*
+                { return list(first, rest); }
+              )?
+              {
+                if (options.startRule === 'Supported') {
+                  options.data = value || [];
+                }
+              }
 
 
 // TO
@@ -820,6 +844,31 @@ ttl               = ttl: (DIGIT DIGIT ? DIGIT ?) {
 
 WWW_Authenticate  = www_authenticate: challenge
 
+
+// RFC 4028
+
+Session_Expires   = deltaSeconds:delta_seconds (SEMI se_params)*
+                    {
+                      if (options.startRule === 'Session_Expires') {
+                        options.data.deltaSeconds = deltaSeconds;
+                      }
+                    }
+
+se_params         = refresher_param / generic_param
+
+refresher_param   = "refresher" EQUAL endpoint:("uas" / "uac")
+                    {
+                      if (options.startRule === 'Session_Expires') {
+                        options.data.refresher = endpoint;
+                      }
+                    }
+
+Min_SE            = deltaSeconds:delta_seconds (SEMI generic_param)*
+                    {
+                      if (options.startRule === 'Min_SE') {
+                        options.data = deltaSeconds;
+                      }
+                    }
 
 // EXTENSION-HEADER
 

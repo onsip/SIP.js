@@ -207,12 +207,13 @@ RegisterContext.prototype = {
   unregister: function(options) {
     var extraHeaders;
 
-    if(!this.registered) {
+    options = options || {};
+
+    if(!this.registered && !options.all) {
       this.logger.warn('already unregistered');
       return;
     }
 
-    options = options || {};
     extraHeaders = (options.extraHeaders || []).slice();
 
     this.registered = false;
