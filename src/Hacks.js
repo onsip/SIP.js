@@ -66,7 +66,7 @@ var Hacks = {
       for (var i = 0; i < sdpLines.length; i++) {
           if (sdpLines[i] !== '') {
                   newSdp += sdpLines[i] + '\n';
-          }        
+          }
       }
       return newSdp;
     },
