@@ -593,7 +593,11 @@ Session.prototype = {
     })
     .catch(function onFailure (e) {
       var statusCode;
-      if (e instanceof SIP.Exceptions.GetDescriptionError) {
+      if (self.ua.configuration.hackReinviteErrorCode) {
+        self.logger.error(e);
+        self.logger.error('overriding error code');
+        statusCode = self.ua.configuration.hackReinviteErrorCode;
+      } else if (e instanceof SIP.Exceptions.GetDescriptionError) {
         statusCode = 500;
       } else {
         self.logger.error(e);
