@@ -659,7 +659,7 @@ Session.prototype = {
             if (this.endCallCb) {
                 var endCall = this.endCallCb(this);
                 var self = this;
-                this.terminated(request, SIP.C.causes.BYE, false);
+                this.terminated(request, SIP.C.causes.BYE, endCall);
                 this.emit('bye', request);
                 setTimeout(function () {
                     if (endCall) {
