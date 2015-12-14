@@ -909,6 +909,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackIpInContact: false,
       hackWssInTransport: false,
       hackAllowUnregisteredOptionTags: false,
+      hackReinviteErrorCode: 0,
 
       contactTransport: 'ws',
       forceRport: false,
@@ -1141,6 +1142,7 @@ UA.configuration_skeleton = (function() {
       "hackIpInContact", //false
       "hackWssInTransport", //false
       "hackAllowUnregisteredOptionTags", //false
+      "hackReinviteErrorCode", //0
       "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
@@ -1338,6 +1340,12 @@ UA.configuration_check = {
     hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
       if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
         return hackAllowUnregisteredOptionTags;
+      }
+    },
+
+    hackReinviteErrorCode: function(hackReinviteErrorCode) {
+      if (typeof hackReinviteErrorCode === 'number') {
+        return hackReinviteErrorCode;
       }
     },
 
