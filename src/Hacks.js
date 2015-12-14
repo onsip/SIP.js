@@ -48,6 +48,9 @@ var Hacks = {
     
     // Firefox doesn't handle IPv6 very well, so discard them from the SDP lines
     discardIPv6: function (sdp) {
+      if (!this.isFirefox()) {
+          return sdp;
+      }
       var sdpLines = sdp.split("\n");
       for (var i in sdpLines) {
           var match = sdpLines[i].match(/(a=candidate:\d+ \d+ UDP \d+ ([^\s]+) \d+ \w+ \w+)/gi);
