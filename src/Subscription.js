@@ -122,16 +122,17 @@ SIP.Subscription.prototype = {
     extraHeaders.push('Contact: '+ this.contact);
     extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
 
-    this.request = new SIP.OutgoingRequest(this.method, this.request.to.uri.toString(), this.ua, null, extraHeaders);
-
-    //MAYBE, may want to see state
+    //makes sure expires isn't set, and other typical resubscribe behavior
     this.receiveResponse = function(){};
+
+    this.dialog.sendRequest(this, this.method, {
+      extraHeaders: extraHeaders,
+      body: this.body
+    });
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
     this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
-
-    this.send();
   },
 
   /**
@@ -139,9 +140,12 @@ SIP.Subscription.prototype = {
   */
   timer_fire: function(){
     if (this.state === 'terminated') {
-      this.close();
+      this.terminateDialog();
+      SIP.Timers.clearTimeout(this.timers.N);
+      SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+      delete this.ua.subscriptions[this.id];
     } else if (this.state === 'pending' || this.state === 'notify_wait') {
-      this.state = 'terminated';
       this.close();
     } else {
       this.refresh();
@@ -155,12 +159,6 @@ SIP.Subscription.prototype = {
     if(this.state !== 'terminated') {
       this.unsubscribe();
     }
-
-    this.terminateDialog();
-    SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-
-    delete this.ua.subscriptions[this.id];
   },
 
   /**
@@ -240,7 +238,15 @@ SIP.Subscription.prototype = {
           switch (sub_state.reason) {
             case 'deactivated':
             case 'timeout':
-              this.subscribe();
+              if (this.state !== 'terminated') {
+                this.subscribe();
+              } else {
+                this.terminateDialog();
+                SIP.Timers.clearTimeout(this.timers.N);
+                SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+                delete this.ua.subscriptions[this.id];
+              }
               return;
             case 'probation':
             case 'giveup':
