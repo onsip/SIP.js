@@ -41,7 +41,7 @@ SIP.Subscription = function (ua, target, event, options) {
   this.contact = ua.contact.toString();
 
   options.extraHeaders.push('Contact: '+ this.contact);
-  options.extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  options.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.SUBSCRIBE, target, options]);
 
@@ -121,7 +121,7 @@ SIP.Subscription.prototype = {
     extraHeaders.push('Expires: 0');
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
     //makes sure expires isn't set, and other typical resubscribe behavior
     this.receiveResponse = function(){};

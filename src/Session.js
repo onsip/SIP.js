@@ -229,7 +229,7 @@ Session.prototype = {
     }
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
     extraHeaders.push('Refer-To: '+ target);
 
     // Send the request
@@ -628,7 +628,7 @@ Session.prototype = {
     }
 
     extraHeaders.push('Contact: ' + this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
     extraHeaders.push('Content-Type: application/sdp');
 
     this.receiveResponse = this.receiveReinviteResponse;
@@ -1327,7 +1327,7 @@ InviteServerContext.prototype = {
         self.mediaHandler.render();
 
         extraHeaders.push('Contact: ' + self.contact);
-        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(self.ua));
+        extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
         if(!self.hasOffer) {
           self.hasOffer = true;
@@ -1626,7 +1626,7 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Privacy: id');
   }
   extraHeaders.push('Contact: '+ this.contact);
-  extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   if (!this.inviteWithoutSdp) {
     extraHeaders.push('Content-Type: application/sdp');
   } else if (this.renderbody) {
