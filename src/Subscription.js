@@ -82,7 +82,8 @@ SIP.Subscription.prototype = {
     var expires, sub = this,
         cause = SIP.Utils.getReasonPhrase(response.status_code);
 
-    if (this.errorCodes.indexOf(response.status_code) !== -1) {
+    if ((this.state === 'notify_wait' && response.status_code >= 300) ||
+        (this.state !== 'notify_wait' && this.errorCodes.indexOf(response.status_code) !== -1)) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
@@ -156,7 +157,7 @@ SIP.Subscription.prototype = {
   * @private
   */
   close: function() {
-    if(this.state !== 'terminated') {
+    if(this.state !== 'notify_wait' && this.state !== 'terminated') {
       this.unsubscribe();
     }
   },

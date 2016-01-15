@@ -339,14 +339,16 @@ describe('Subscription', function() {
   });
 
   describe('.close', function() {
-    it('calls unsubscribe if the state is not terminated', function() {
-      Subscription.state = 'terminated';
+    it('calls unsubscribe if the state is not terminated or notify_wait', function() {
       spyOn(Subscription, 'unsubscribe');
 
+      Subscription.state = 'terminated';
+      Subscription.close();
+
+      Subscription.state = 'notify_wait';
       Subscription.close();
 
       Subscription.state = 'pending';
-
       Subscription.close();
 
       expect(Subscription.unsubscribe.calls.count()).toBe(1);
