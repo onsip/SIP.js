@@ -26,6 +26,7 @@ RegisterContext = function (ua) {
   this.to_uri = ua.configuration.uri;
 
   params.to_uri = this.to_uri;
+  params.to_displayName = ua.configuration.displayName;
   params.call_id = this.call_id;
   params.cseq = this.cseq;
 
