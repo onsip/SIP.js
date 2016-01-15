@@ -575,7 +575,6 @@ UA.prototype.receiveRequest = function(request) {
     transaction,
     replaces,
     replacedDialog,
-    methodLower = request.method.toLowerCase(),
     self = this;
 
   function ruriMatches (uri) {
@@ -617,12 +616,6 @@ UA.prototype.receiveRequest = function(request) {
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!this.listeners(methodLower).length) {
-      // UA is not listening for this.  Reject immediately.
-      new SIP.Transactions.NonInviteServerTransaction(request, this);
-      request.reply(405, null, ['Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString()]);
-      return;
-    }
     message = new SIP.ServerContext(this, request);
     message.body = request.body;
     message.content_type = request.getHeader('Content-Type') || 'text/plain';
