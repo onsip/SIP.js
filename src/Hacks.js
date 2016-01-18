@@ -8,6 +8,10 @@
  */
 
 module.exports = function (SIP) {
+
+//keep to quiet jshint, and remain consistent with other files
+SIP = SIP;
+
 var Hacks = {
   AllBrowsers: {
     maskDtls: function (message) {
@@ -80,19 +84,6 @@ var Hacks = {
       }
       return sdp;
     },
-
-    hasIncompatibleCLineWithSomeSIPEndpoints: function(sdp) {
-      /*
-       * Firefox appears to be following https://tools.ietf.org/html/rfc5245#section-9.1.1.1
-       * and using a c line IP address of 0.0.0.0. This is completely valid, however it is
-       * causing some endpoints (such as FreeSWITCH) to interpret the SDP as being on hold
-       * https://freeswitch.org/jira/browse/FS-6955. To get around this issue we pull the
-       * replace the c line with 1.1.1.1 which SIP clients do not interpret as hold.
-       * This makes the other endpoint believe that the call is not on hold and audio flows
-       * because ICE determines the media pathway (not the c line).
-       */
-      return sdp.replace(/(0\.0\.0\.0)/gmi, SIP.Utils.getRandomTestNetIP());
-    }
   },
 
   Chrome: {
