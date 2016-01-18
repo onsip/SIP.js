@@ -1201,6 +1201,9 @@ InviteServerContext.prototype = {
       statusCode = options.statusCode || 180,
       reasonPhrase = options.reasonPhrase,
       extraHeaders = (options.extraHeaders || []).slice(),
+      iceServers,
+      stunServers = options.stunServers || null,
+      turnServers = options.turnServers || null,
       body = options.body,
       response;
 
@@ -1210,6 +1213,31 @@ InviteServerContext.prototype = {
 
     if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
       return this;
+    }
+
+    if (stunServers || turnServers) {
+      if (stunServers) {
+        iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid stunServers: '+ stunServers);
+        } else {
+          this.stunServers = iceServers;
+        }
+      }
+
+      if (turnServers) {
+        iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid turnServers: '+ turnServers);
+        } else {
+          this.turnServers = iceServers;
+        }
+      }
+
+      this.mediaHandler.updateIceServers({
+        stunServers: this.stunServers,
+        turnServers: this.turnServers
+      });
     }
 
     function do100rel() {
@@ -1301,6 +1329,9 @@ InviteServerContext.prototype = {
       request = this.request,
       extraHeaders = (options.extraHeaders || []).slice(),
     //mediaStream = options.mediaStream || null,
+      iceServers,
+      stunServers = options.stunServers || null,
+      turnServers = options.turnServers || null,
       sdpCreationSucceeded = function(body) {
         var
           response,
@@ -1363,6 +1394,32 @@ InviteServerContext.prototype = {
       this.status = C.STATUS_ANSWERED;
     } else if (this.status !== C.STATUS_EARLY_MEDIA) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+
+    if ((stunServers || turnServers) &&
+        (this.status !== C.STATUS_EARLY_MEDIA && this.status !== C.STATUS_ANSWERED_WAITING_FOR_PRACK)) {
+      if (stunServers) {
+        iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid stunServers: '+ stunServers);
+        } else {
+          this.stunServers = iceServers;
+        }
+      }
+
+      if (turnServers) {
+        iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid turnServers: '+ turnServers);
+        } else {
+          this.turnServers = iceServers;
+        }
+      }
+
+      this.mediaHandler.updateIceServers({
+        stunServers: this.stunServers,
+        turnServers: this.turnServers
+      });
     }
 
     // An error on dialog creation will fire 'failed' event
