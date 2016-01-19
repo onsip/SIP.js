@@ -52,7 +52,7 @@ module.exports = function(grunt) {
         dest: 'dist/<%= name %>-<%= pkg.version %>.js'
       },
       options: {
-        bundleOptions: {
+        browserifyOptions: {
           standalone: 'SIP'
         },
         postBundleCB: function (err, src, next) {
