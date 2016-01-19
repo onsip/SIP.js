@@ -20,6 +20,33 @@ var sanityCheck,
  responses = [],
  all = [];
 
+// Reply
+function reply(status_code) {
+  var to,
+    response = SIP.Utils.buildStatusLine(status_code),
+    vias = message.getHeaders('via'),
+    length = vias.length,
+    idx = 0;
+
+  for(idx; idx < length; idx++) {
+    response += "Via: " + vias[idx] + "\r\n";
+  }
+
+  to = message.getHeader('To');
+
+  if(!message.to_tag) {
+    to += ';tag=' + SIP.Utils.newTag();
+  }
+
+  response += "To: " + to + "\r\n";
+  response += "From: " + message.getHeader('From') + "\r\n";
+  response += "Call-ID: " + message.call_id + "\r\n";
+  response += "CSeq: " + message.cseq + " " + message.method + "\r\n";
+  response += "\r\n";
+
+  transport.send(response);
+}
+
 /*
  * Sanity Check for incoming Messages
  *
@@ -143,33 +170,6 @@ function minimumHeaders() {
       return false;
     }
   }
-}
-
-// Reply
-function reply(status_code) {
-  var to,
-    response = SIP.Utils.buildStatusLine(status_code),
-    vias = message.getHeaders('via'),
-    length = vias.length,
-    idx = 0;
-
-  for(idx; idx < length; idx++) {
-    response += "Via: " + vias[idx] + "\r\n";
-  }
-
-  to = message.getHeader('To');
-
-  if(!message.to_tag) {
-    to += ';tag=' + SIP.Utils.newTag();
-  }
-
-  response += "To: " + to + "\r\n";
-  response += "From: " + message.getHeader('From') + "\r\n";
-  response += "Call-ID: " + message.call_id + "\r\n";
-  response += "CSeq: " + message.cseq + " " + message.method + "\r\n";
-  response += "\r\n";
-
-  transport.send(response);
 }
 
 requests.push(rfc3261_8_2_2_1);

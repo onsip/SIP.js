@@ -49,15 +49,6 @@ MediaStreamManager.render = function render (streams, elements) {
     throw new TypeError('elements must not be empty');
   }
 
-  function attachAndPlay (elements, stream, index) {
-    if (typeof elements === 'function') {
-      elements = elements();
-    }
-    var element = elements[index % elements.length];
-    (environment.attachMediaStream || attachMediaStream)(element, stream);
-    ensureMediaPlaying(element);
-  }
-
   function attachMediaStream(element, stream) {
     if (typeof element.src !== 'undefined') {
       environment.revokeObjectURL(element.src);
@@ -81,6 +72,15 @@ MediaStreamManager.render = function render (streams, elements) {
         SIP.Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
       }
     }, interval);
+  }
+
+  function attachAndPlay (elements, stream, index) {
+    if (typeof elements === 'function') {
+      elements = elements();
+    }
+    var element = elements[index % elements.length];
+    (environment.attachMediaStream || attachMediaStream)(element, stream);
+    ensureMediaPlaying(element);
   }
 
   // [].concat "casts" `elements` into an array
