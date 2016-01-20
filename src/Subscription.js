@@ -56,6 +56,14 @@ SIP.Subscription.prototype = {
   subscribe: function() {
     var sub = this;
 
+     //these states point to an existing subscription, no subscribe is necessary
+    if (this.state === 'active') {
+      this.refresh();
+      return this;
+    } else if (this.state === 'notify_wait') {
+      return this;
+    }
+
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
     this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
@@ -221,6 +229,19 @@ SIP.Subscription.prototype = {
 
     this.emit('notify', {request: request});
 
+    // if we've set state to terminated, no further processing should take place
+    // and we are only interested in cleaning up after the appropriate NOTIFY
+    if (this.state === 'terminated') {
+      if (sub_state.state === 'terminated') {
+        this.terminateDialog();
+        SIP.Timers.clearTimeout(this.timers.N);
+        SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+        delete this.ua.subscriptions[this.id];
+      }
+      return;
+    }
+
     switch (sub_state.state) {
       case 'active':
         this.state = 'active';
@@ -239,15 +260,7 @@ SIP.Subscription.prototype = {
           switch (sub_state.reason) {
             case 'deactivated':
             case 'timeout':
-              if (this.state !== 'terminated') {
-                this.subscribe();
-              } else {
-                this.terminateDialog();
-                SIP.Timers.clearTimeout(this.timers.N);
-                SIP.Timers.clearTimeout(this.timers.sub_duration);
-
-                delete this.ua.subscriptions[this.id];
-              }
+              this.subscribe();
               return;
             case 'probation':
             case 'giveup':
