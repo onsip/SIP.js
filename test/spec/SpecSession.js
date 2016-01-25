@@ -491,7 +491,6 @@ describe('Session', function() {
   describe('.sendReinvite', function() {
     beforeEach(function() {
       Session.mediaHandler = {getDescription: jasmine.createSpy('getDescription').and.returnValue(SIP.Utils.Promise.resolve(true))};
-      spyOn(SIP.Utils, 'getAllowedMethods').and.returnValue(true);
     });
 
     it('on success, sets receiveResponse, reinviteSucceeded, and reinviteFailed, and calls getDescription', function(){
@@ -2422,7 +2421,7 @@ describe('InviteClientContext', function() {
     var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', InviteClientContext.ua, {from: 'abcdefg'}, ['Contact: ' + InviteClientContext.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(InviteClientContext.ua)]);
+      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', InviteClientContext.ua, {from: 'abcdefg'}, ['Contact: ' + InviteClientContext.contact, 'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString()]);
 
       request.body = 'a=sendrecv',
       '';

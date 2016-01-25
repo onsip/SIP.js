@@ -41,7 +41,7 @@ SIP.Subscription = function (ua, target, event, options) {
   this.contact = ua.contact.toString();
 
   options.extraHeaders.push('Contact: '+ this.contact);
-  options.extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  options.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.SUBSCRIBE, target, options]);
 
@@ -55,6 +55,14 @@ SIP.Subscription = function (ua, target, event, options) {
 SIP.Subscription.prototype = {
   subscribe: function() {
     var sub = this;
+
+     //these states point to an existing subscription, no subscribe is necessary
+    if (this.state === 'active') {
+      this.refresh();
+      return this;
+    } else if (this.state === 'notify_wait') {
+      return this;
+    }
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
@@ -82,7 +90,8 @@ SIP.Subscription.prototype = {
     var expires, sub = this,
         cause = SIP.Utils.getReasonPhrase(response.status_code);
 
-    if (this.errorCodes.indexOf(response.status_code) !== -1) {
+    if ((this.state === 'notify_wait' && response.status_code >= 300) ||
+        (this.state !== 'notify_wait' && this.errorCodes.indexOf(response.status_code) !== -1)) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
@@ -120,18 +129,19 @@ SIP.Subscription.prototype = {
     extraHeaders.push('Expires: 0');
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
-    this.request = new SIP.OutgoingRequest(this.method, this.request.to.uri.toString(), this.ua, null, extraHeaders);
-
-    //MAYBE, may want to see state
+    //makes sure expires isn't set, and other typical resubscribe behavior
     this.receiveResponse = function(){};
+
+    this.dialog.sendRequest(this, this.method, {
+      extraHeaders: extraHeaders,
+      body: this.body
+    });
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
     this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
-
-    this.send();
   },
 
   /**
@@ -139,9 +149,12 @@ SIP.Subscription.prototype = {
   */
   timer_fire: function(){
     if (this.state === 'terminated') {
-      this.close();
+      this.terminateDialog();
+      SIP.Timers.clearTimeout(this.timers.N);
+      SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+      delete this.ua.subscriptions[this.id];
     } else if (this.state === 'pending' || this.state === 'notify_wait') {
-      this.state = 'terminated';
       this.close();
     } else {
       this.refresh();
@@ -152,15 +165,9 @@ SIP.Subscription.prototype = {
   * @private
   */
   close: function() {
-    if(this.state !== 'terminated') {
+    if(this.state !== 'notify_wait' && this.state !== 'terminated') {
       this.unsubscribe();
     }
-
-    this.terminateDialog();
-    SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-
-    delete this.ua.subscriptions[this.id];
   },
 
   /**
@@ -222,6 +229,19 @@ SIP.Subscription.prototype = {
 
     this.emit('notify', {request: request});
 
+    // if we've set state to terminated, no further processing should take place
+    // and we are only interested in cleaning up after the appropriate NOTIFY
+    if (this.state === 'terminated') {
+      if (sub_state.state === 'terminated') {
+        this.terminateDialog();
+        SIP.Timers.clearTimeout(this.timers.N);
+        SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+        delete this.ua.subscriptions[this.id];
+      }
+      return;
+    }
+
     switch (sub_state.state) {
       case 'active':
         this.state = 'active';
@@ -265,6 +285,10 @@ SIP.Subscription.prototype = {
     this.close();
     this.emit('failed', response, cause);
     return this;
+  },
+
+  onDialogError: function(response) {
+    this.failed(response, SIP.C.causes.DIALOG_ERROR);
   },
 
   /**

@@ -236,16 +236,23 @@ describe('Subscription', function() {
   });
 
   describe('.unsubscribe', function() {
+    beforeEach(function() {
+      Subscription.dialog = {
+        sendRequest: function() {}
+      };
+    });
+
     it('sets the state to terminated', function() {
       Subscription.unsubscribe();
 
       expect(Subscription.state).toBe('terminated');
     });
 
-    it('creates a new request with an Expires header of 0', function() {
+    it('sends a request using the same dialog as the subscription', function() {
+      spyOn(Subscription.dialog, 'sendRequest');
       Subscription.unsubscribe();
 
-      expect(Subscription.request.getHeader('Expires')).toBe('0');
+      expect(Subscription.dialog.sendRequest).toHaveBeenCalled();
     });
 
     it('calls clearTimeout on each of the timers', function() {
@@ -266,34 +273,45 @@ describe('Subscription', function() {
       expect(Subscription.timers.N).toBeDefined();
       expect(SIP.Timers.setTimeout.calls.count()).toBe(1);
     });
-
-    it('calls send', function() {
-      spyOn(Subscription, 'send');
-
-      Subscription.unsubscribe();
-
-      expect(Subscription.send).toHaveBeenCalled();
-    });
   });
 
   describe('.timer_fire', function() {
-    it('calls close if state is terminated', function() {
-      spyOn(Subscription, 'close');
+    it('calls terminateDialog if state is terminated', function() {
+      spyOn(Subscription, 'terminateDialog');
       Subscription.state = 'terminated';
 
       Subscription.timer_fire();
 
-      expect(Subscription.close).toHaveBeenCalled();
+      expect(Subscription.terminateDialog).toHaveBeenCalled();
     });
 
-    it('switches the state to terminated and calls close if the state is pending or notify_wait', function() {
+    it('calls clearTimeout on both timers if state is terminated', function() {
+      spyOn(SIP.Timers, 'clearTimeout');
+      Subscription.state = 'terminated';
+
+      Subscription.timer_fire();
+
+      expect(SIP.Timers.clearTimeout.calls.count()).toBe(2);
+    });
+
+    it('deletes the subscription from the UA if state is terminated', function() {
+      Subscription.id = 'fake';
+      ua.subscriptions[Subscription.id] = Subscription;
+      Subscription.state = 'terminated';
+
+      Subscription.timer_fire();
+
+      expect(ua.subscriptions[Subscription.id]).toBeUndefined();
+
+    });
+
+    it('calls close if the state is pending or notify_wait', function() {
       spyOn(Subscription, 'close');
       Subscription.state = 'pending';
 
       Subscription.timer_fire();
 
       expect(Subscription.close).toHaveBeenCalled();
-      expect(Subscription.state).toBe('terminated');
 
       Subscription.close.calls.reset();
       Subscription.state = 'notify_wait';
@@ -301,7 +319,6 @@ describe('Subscription', function() {
       Subscription.timer_fire();
 
       expect(Subscription.close).toHaveBeenCalled();
-      expect(Subscription.state).toBe('terminated');
     });
 
     it('calls refresh for all other states (active, init)', function() {
@@ -322,43 +339,19 @@ describe('Subscription', function() {
   });
 
   describe('.close', function() {
-    it('calls unsubscribe if the state is not terminated', function() {
-      Subscription.state = 'terminated';
+    it('calls unsubscribe if the state is not terminated or notify_wait', function() {
       spyOn(Subscription, 'unsubscribe');
 
+      Subscription.state = 'terminated';
+      Subscription.close();
+
+      Subscription.state = 'notify_wait';
       Subscription.close();
 
       Subscription.state = 'pending';
-
       Subscription.close();
 
       expect(Subscription.unsubscribe.calls.count()).toBe(1);
-    });
-
-    it('calls terminateDialog', function() {
-      spyOn(Subscription, 'terminateDialog');
-
-      Subscription.close();
-
-      expect(Subscription.terminateDialog).toHaveBeenCalled();
-    });
-
-    it('calls clearTimeout on both timers', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
-      Subscription.state = 'terminated'; //to ensure number of calls to clearTimeout
-
-      Subscription.close();
-
-      expect(SIP.Timers.clearTimeout.calls.count()).toBe(2);
-    });
-
-    it('deletes the subscription from ua.subscriptions', function() {
-      Subscription.id = 'fake';
-      ua.subscriptions[Subscription.id] = Subscription;
-
-      Subscription.close();
-
-      expect(ua.subscriptions[Subscription.id]).toBeUndefined();
     });
   });
 
@@ -552,11 +545,13 @@ describe('Subscription', function() {
       expect(Subscription.state).toBe('pending');
     });
 
-    it('if sub_state.state is terminated with reason deactivated or timeout, subscribe will be called without close (always a log)', function() {
+    it('if sub_state.state is terminated with reason deactivated or timeout and state is not terminated, subscribe will be called without close (always a log)', function() {
       request.setHeader('Subscription-State', 'terminated;expires=3600;reason=deactivated');
       spyOn(Subscription, 'subscribe');
       spyOn(Subscription, 'close');
       spyOn(Subscription.logger, 'log');
+
+      Subscription.state = 'pending';
 
       Subscription.receiveRequest(request);
 
@@ -570,6 +565,21 @@ describe('Subscription', function() {
 
       expect(Subscription.subscribe).toHaveBeenCalled();
       expect(Subscription.close).not.toHaveBeenCalled();
+    });
+
+    it('if sub_state.state is terminated with reason deactivated or timeout and state is not terminated, the Subscription will be gracefully shut down', function() {
+      spyOn(Subscription, 'terminateDialog');
+      spyOn(SIP.Timers, 'clearTimeout');
+      Subscription.id = 'fake';
+      ua.subscriptions[Subscription.id] = Subscription;
+
+      Subscription.state = 'terminated';
+
+      Subscription.timer_fire();
+
+      expect(SIP.Timers.clearTimeout.calls.count()).toBe(2);
+      expect(Subscription.terminateDialog).toHaveBeenCalled();
+      expect(ua.subscriptions[Subscription.id]).toBeUndefined();
     });
 
     it('if sub_state.state is terminated with reason probation or giveup, subscribe will be called or the sub_duration timer will be set if retry-after is present, both without close', function() {
@@ -615,6 +625,20 @@ describe('Subscription', function() {
 
       expect(Subscription.close).toHaveBeenCalled();
       expect(Subscription.emit.calls.mostRecent().args[0]).toBe('failed');
+    });
+  });
+
+  describe('.onDialogError', function() {
+    it('does not throw an exception', function() {
+      Subscription.dialog = {
+        sendRequest: function() {}
+      };
+
+      function errant () {
+        Subscription.onDialogError();
+      }
+
+      expect(errant).not.toThrow();
     });
   });
 

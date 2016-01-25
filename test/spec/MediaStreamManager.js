@@ -109,6 +109,32 @@ describe('MediaStreamManager', function () {
         done();
       });
     });
+
+    it('does not require local streams', function(done) {
+      var success, failure, onUM, onUMF;
+
+      success = jasmine.createSpy('success');
+      failure = jasmine.createSpy('failure');
+      onUM = jasmine.createSpy('userMediaFailed');
+      onUMF = jasmine.createSpy('userMediaFailed');
+
+      mediaStreamManager.on('userMedia', onUM);
+      mediaStreamManager.on('userMediaFailed', onUMF);
+
+      mediaStreamManager.acquire({
+        constraints: {
+          audio: false,
+          video: false
+        }
+      }).then(success, failure)
+      .then(function () {
+        expect(onUM).not.toHaveBeenCalled();
+        expect(onUMF).not.toHaveBeenCalled();
+        expect(success).toHaveBeenCalledWith([]);
+        expect(failure).not.toHaveBeenCalled();
+        done();
+      });
+    });
   });
 
   describe('.release', function () {

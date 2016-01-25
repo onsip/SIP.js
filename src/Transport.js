@@ -18,6 +18,16 @@ var Transport,
     STATUS_ERROR:        2
   };
 
+/**
+ * Compute an amount of time in seconds to wait before sending another
+ * keep-alive.
+ * @returns {Number}
+ */
+function computeKeepAliveTimeout(upperBound) {
+  var lowerBound = upperBound * 0.8;
+  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
+}
+
 Transport = function(ua, server) {
 
   this.logger = ua.getLogger('sip.transport');
@@ -355,16 +365,6 @@ Transport.prototype = {
     }
   }
 };
-
-/**
- * Compute an amount of time in seconds to wait before sending another
- * keep-alive.
- * @returns {Number}
- */
-function computeKeepAliveTimeout(upperBound) {
-  var lowerBound = upperBound * 0.8;
-  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
-}
 
 Transport.C = C;
 return Transport;
