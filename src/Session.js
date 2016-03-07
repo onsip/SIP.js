@@ -1648,7 +1648,8 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
-    isMediaSupported = ua.configuration.mediaHandlerFactory.isSupported;
+    mediaHandlerFactory = options.mediaHandlerFactory || ua.configuration.mediaHandlerFactory,
+    isMediaSupported = mediaHandlerFactory.isSupported;
 
   // Check WebRTC support
   if (isMediaSupported && !isMediaSupported()) {
@@ -1701,7 +1702,7 @@ InviteClientContext = function(ua, target, options) {
   options.extraHeaders = extraHeaders;
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
+  SIP.Utils.augment(this, SIP.Session, [mediaHandlerFactory]);
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
