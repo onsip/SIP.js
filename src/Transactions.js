@@ -649,7 +649,7 @@ var checkTransaction = function(ua, request) {
         if(tr.state === C.STATUS_ACCEPTED) {
           return false;
         } else if(tr.state === C.STATUS_COMPLETED) {
-          tr.state = C.STATUS_CONFIRMED;
+          tr.stateChanged(C.STATUS_CONFIRMED);
           tr.I = SIP.Timers.setTimeout(tr.timer_I.bind(tr), SIP.Timers.TIMER_I);
           return true;
         }

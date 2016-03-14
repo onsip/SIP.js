@@ -26,7 +26,7 @@ var Session, InviteServerContext, InviteClientContext,
  *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
  */
 Session = function (mediaHandlerFactory) {
-  this.status = C.STATUS_NULL;
+  this.statusChanged(C.STATUS_NULL);
   this.dialog = null;
   this.earlyDialogs = {};
   this.mediaHandlerFactory = mediaHandlerFactory || SIP.WebRTC.MediaHandler.defaultFactory;
@@ -376,7 +376,7 @@ Session.prototype = {
       delete this.earlyDialogs[idx];
     }
 
-    this.status = C.STATUS_TERMINATED;
+    this.statusChanged(C.STATUS_TERMINATED);
 
     delete this.ua.sessions[this.id];
     return this;
@@ -577,7 +577,7 @@ Session.prototype = {
     .then(function(body) {
       request.reply(200, null, ['Contact: ' + self.contact], body,
         function() {
-          self.status = C.STATUS_WAITING_FOR_ACK;
+          self.statusChanged(C.STATUS_WAITING_FOR_ACK);
           self.setInvite2xxTimer(request, body);
           self.setACKTimer();
 
@@ -618,7 +618,7 @@ Session.prototype = {
       this.reinviteSucceeded = function(){
         SIP.Timers.clearTimeout(self.timers.ackTimer);
         SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
-        self.status = C.STATUS_CONFIRMED;
+        self.statusChanged(C.STATUS_CONFIRMED);
       };
     }
     if (eventHandlers.failed) {
@@ -744,7 +744,7 @@ Session.prototype = {
       case /^1[0-9]{2}$/.test(response.status_code):
         break;
       case /^2[0-9]{2}$/.test(response.status_code):
-        this.status = C.STATUS_CONFIRMED;
+        this.statusChanged(C.STATUS_CONFIRMED);
 
         this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
 
@@ -957,6 +957,11 @@ Session.prototype = {
   connecting: function(request) {
     this.emit('connecting', { request: request });
     return this;
+  },
+
+  statusChanged: function(status) {
+    this.status = status;
+    this.emit('statusChanged');
   }
 };
 
@@ -1005,7 +1010,7 @@ InviteServerContext = function(ua, request) {
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
 
-  this.status = C.STATUS_INVITE_RECEIVED;
+  this.statusChanged(C.STATUS_INVITE_RECEIVED);
   this.from_tag = request.from_tag;
   this.id = request.call_id + this.from_tag;
   this.request = request;
@@ -1059,7 +1064,7 @@ InviteServerContext = function(ua, request) {
     if (self.rel100 !== SIP.C.supported.REQUIRED) {
       self.progress(options);
     }
-    self.status = C.STATUS_WAITING_FOR_ANSWER;
+    self.statusChanged(C.STATUS_WAITING_FOR_ANSWER);
 
     // Set userNoAnswerTimer
     self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
@@ -1245,7 +1250,7 @@ InviteServerContext.prototype = {
       statusCode = options.statusCode || 183;
 
       // Set status and add extra headers
-      this.status = C.STATUS_WAITING_FOR_PRACK;
+      this.statusChanged(C.STATUS_WAITING_FOR_PRACK);
       extraHeaders.push('Contact: '+ this.contact);
       extraHeaders.push('Require: 100rel');
       extraHeaders.push('RSeq: ' + Math.floor(Math.random() * 10000));
@@ -1337,7 +1342,7 @@ InviteServerContext.prototype = {
           response,
           // run for reply success callback
           replySucceeded = function() {
-            self.status = C.STATUS_WAITING_FOR_ACK;
+            self.statusChanged(C.STATUS_WAITING_FOR_ACK);
 
             self.setInvite2xxTimer(request, body);
             self.setACKTimer();
@@ -1388,10 +1393,10 @@ InviteServerContext.prototype = {
 
     // Check Session Status
     if (this.status === C.STATUS_WAITING_FOR_PRACK) {
-      this.status = C.STATUS_ANSWERED_WAITING_FOR_PRACK;
+      this.statusChanged(C.STATUS_ANSWERED_WAITING_FOR_PRACK);
       return this;
     } else if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
-      this.status = C.STATUS_ANSWERED;
+      this.statusChanged(C.STATUS_ANSWERED);
     } else if (this.status !== C.STATUS_EARLY_MEDIA) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
@@ -1487,7 +1492,7 @@ InviteServerContext.prototype = {
 
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
-      this.status = C.STATUS_CONFIRMED;
+      this.statusChanged(C.STATUS_CONFIRMED);
       this.unmute();
 
       // TODO - this logic assumes Content-Disposition defaults
@@ -1517,7 +1522,7 @@ InviteServerContext.prototype = {
          this.status === C.STATUS_EARLY_MEDIA ||
          this.status === C.STATUS_ANSWERED) {
 
-        this.status = C.STATUS_CANCELED;
+        this.statusChanged(C.STATUS_CANCELED);
         this.request.reply(487);
         this.canceled(request);
         this.rejected(request, SIP.C.causes.CANCELED);
@@ -1572,10 +1577,10 @@ InviteServerContext.prototype = {
                 SIP.Timers.clearTimeout(this.timers.prackTimer);
                 request.reply(200);
                 if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-                  this.status = C.STATUS_EARLY_MEDIA;
+                  this.statusChanged(C.STATUS_EARLY_MEDIA);
                   this.accept();
                 }
-                this.status = C.STATUS_EARLY_MEDIA;
+                this.statusChanged(C.STATUS_EARLY_MEDIA);
                 //REVISIT
                 this.mute();
               }.bind(this),
@@ -1604,10 +1609,10 @@ InviteServerContext.prototype = {
           request.reply(200);
 
           if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-            this.status = C.STATUS_EARLY_MEDIA;
+            this.statusChanged(C.STATUS_EARLY_MEDIA);
             this.accept();
           }
-          this.status = C.STATUS_EARLY_MEDIA;
+          this.statusChanged(C.STATUS_EARLY_MEDIA);
           //REVISIT
           this.mute();
         }
@@ -1773,7 +1778,7 @@ InviteClientContext.prototype = {
     if (this.inviteWithoutSdp) {
       //just send an invite with no sdp...
       this.request.body = self.renderbody;
-      this.status = C.STATUS_INVITE_SENT;
+      this.statusChanged(C.STATUS_INVITE_SENT);
       this.send();
     } else {
       this.mediaHandler.getDescription(self.mediaHint)
@@ -1784,7 +1789,7 @@ InviteClientContext.prototype = {
           }
           self.hasOffer = true;
           self.request.body = offer;
-          self.status = C.STATUS_INVITE_SENT;
+          self.statusChanged(C.STATUS_INVITE_SENT);
           self.send();
         },
         function onFailure() {
@@ -1910,7 +1915,7 @@ InviteClientContext.prototype = {
           }
         }
 
-        this.status = C.STATUS_1XX_RECEIVED;
+        this.statusChanged(C.STATUS_1XX_RECEIVED);
 
         if(response.hasHeader('require') &&
            response.getHeader('require').indexOf('100rel') !== -1) {
@@ -1952,7 +1957,7 @@ InviteClientContext.prototype = {
                   extraHeaders: extraHeaders,
                   receiveResponse: function() {}
                 });
-                session.status = C.STATUS_EARLY_MEDIA;
+                session.statusChanged(C.STATUS_EARLY_MEDIA);
                 session.mute();
                 session.emit('progress', response);
                 /*
@@ -1987,7 +1992,7 @@ InviteClientContext.prototype = {
                 extraHeaders: extraHeaders,
                 body: sdp
               });
-              session.status = C.STATUS_EARLY_MEDIA;
+              session.statusChanged(C.STATUS_EARLY_MEDIA);
               session.emit('progress', response);
             })
             .catch(function onFailure(e) {
@@ -2019,7 +2024,7 @@ InviteClientContext.prototype = {
         }
 
         if (this.status === C.STATUS_EARLY_MEDIA && this.dialog) {
-          this.status = C.STATUS_CONFIRMED;
+          this.statusChanged(C.STATUS_CONFIRMED);
           this.unmute();
           /*localMedia = this.mediaHandler.localMedia;
           if (localMedia.getAudioTracks().length > 0) {
@@ -2057,7 +2062,7 @@ InviteClientContext.prototype = {
             if (!this.createDialog(response, 'UAC')) {
               break;
             }
-            this.status = C.STATUS_CONFIRMED;
+            this.statusChanged(C.STATUS_CONFIRMED);
             this.sendRequest(SIP.C.ACK, {cseq:response.cseq});
 
             this.unmute();
@@ -2090,7 +2095,7 @@ InviteClientContext.prototype = {
 
               sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
 
-              session.status = C.STATUS_CONFIRMED;
+              session.statusChanged(C.STATUS_CONFIRMED);
               session.hasAnswer = true;
 
               session.unmute();
@@ -2140,7 +2145,7 @@ InviteClientContext.prototype = {
           .then(
             function onSuccess () {
               var options = {};//,localMedia;
-              session.status = C.STATUS_CONFIRMED;
+              session.statusChanged(C.STATUS_CONFIRMED);
               session.unmute();
               /*localMedia = session.mediaHandler.localMedia;
               if (localMedia.getAudioTracks().length > 0) {
@@ -2225,7 +2230,7 @@ InviteClientContext.prototype = {
     if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
-      this.status = C.STATUS_CONFIRMED;
+      this.statusChanged(C.STATUS_CONFIRMED);
       this.unmute();
 
       this.accepted();
