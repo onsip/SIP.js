@@ -8,10 +8,10 @@
     "./src/environment.js": "./src/environment_browser.js"
   },
   "homepage": "http://sipjs.com",
-  "author": "Will Mitchell <will@onsip.com>",
+  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
   "contributors": [
     {
-      "url": "http://sipjs.com/authors/"
+      "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
     }
   ],
   "repository": {
