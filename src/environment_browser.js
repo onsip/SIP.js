@@ -17,7 +17,6 @@ function getPrefixedProperty (object, name) {
 }
 
 module.exports = {
-  WebSocket: toplevel.WebSocket,
   Transport: require('./Transport'),
   open: toplevel.open,
   Promise: toplevel.Promise,
@@ -43,3 +42,9 @@ module.exports = {
   createObjectURL: toplevel.URL && toplevel.URL.createObjectURL,
   revokeObjectURL: toplevel.URL && toplevel.URL.revokeObjectURL
 };
+
+Object.defineProperty(module.exports, 'WebSocket', {
+  get: function () {
+    return toplevel.WebSocket;
+  }
+});
