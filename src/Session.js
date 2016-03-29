@@ -699,27 +699,27 @@ Session.prototype = {
       case SIP.C.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
-          request.reply(202, 'Accepted');
-          var
-            hasReferListener = this.listeners('refer').length,
-            notifyBody = hasReferListener ?
-              'SIP/2.0 100 Trying' :
-              // RFC 3515.2.4.2: 'the UA MAY decline the request.'
-              'SIP/2.0 603 Declined'
-          ;
-
-          this.sendRequest(SIP.C.NOTIFY, {
-            extraHeaders:[
-              'Event: refer',
-              'Subscription-State: terminated',
-              'Content-Type: message/sipfrag'
-            ],
-            body: notifyBody,
-            receiveResponse: function() {}
-          });
+          var hasReferListener = this.listeners('refer').length,
+              notifyBody;
 
           if (hasReferListener) {
+            request.reply(202, 'Accepted');
+            notifyBody = 'SIP/2.0 100 Trying';
+
+            this.sendRequest(SIP.C.NOTIFY, {
+              extraHeaders:[
+                'Event: refer',
+                'Subscription-State: terminated',
+                'Content-Type: message/sipfrag'
+              ],
+              body: notifyBody,
+              receiveResponse: function() {}
+            });
+
             this.emit('refer', request);
+          } else {
+            // RFC 3515.2.4.2: 'the UA MAY decline the request.'
+            request.reply(603, 'Declined');
           }
         }
         break;
