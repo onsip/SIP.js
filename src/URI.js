@@ -21,9 +21,11 @@ var URI;
 URI = function(scheme, user, host, port, parameters, headers) {
   var param, header, raw, normal;
 
-  // Checks
   if(!host) {
-    throw new TypeError('missing or invalid "host" parameter');
+    // [maaii] Make the host optional for offnet call
+    // [maaii] We are making it less robost
+    // throw new TypeError('missing or invalid "host" parameter');
+    host = '';
   }
 
   // Initialize parameters
@@ -183,16 +185,23 @@ URI.prototype = {
 
   _toString: function(uri) {
     var header, parameter, idx, uriString, headers = [];
+    var scheme = uri.scheme.toLowerCase();
 
     uriString  = uri.scheme + ':';
     // add slashes if it's not a sip(s) URI
-    if (!uri.scheme.toLowerCase().match("^sips?$")) {
+    if (!scheme.match("^(sips?)|(tel)$")) {
       uriString += "//";
     }
-    if (uri.user) {
-      uriString += SIP.Utils.escapeUser(uri.user) + '@';
+
+    // [maaii] Custom hanling for offnet call
+    if (scheme === 'tel' && uri.user) {
+      uriString += uri.user;
+    } else {
+      if (uri.user) {
+        uriString += SIP.Utils.escapeUser(uri.user) + '@';
+      }
+      uriString += uri.host;
     }
-    uriString += uri.host;
     if (uri.port || uri.port === 0) {
       uriString += ':' + uri.port;
     }
