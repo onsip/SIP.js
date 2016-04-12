@@ -335,4 +335,39 @@ describe('WebRTC.MediaHandler', function() {
       expect(referMedia.constraints.video).toBe(false);
     });
   });
+
+  describe('.prepareIceServers', function() {
+    it('returns the expected structure for a single url', function() {
+      var stunServers = ['stun:stun.l.google.com:19302'];
+      var turnServers = [{ urls: ['turn:numb.viagenie.ca'], username: 'bob', password: 'dog' }];
+
+      var servers = MediaHandler.prepareIceServers(stunServers, turnServers);
+
+      var expectedServers = [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: ['turn:numb.viagenie.ca'], username: 'bob', credential: 'dog' }
+      ];
+
+      expect(servers).toEqual(expectedServers);
+    });
+
+    it('returns the expected structure for multiple urls', function() {
+      var stunServers = ['stun:stun.l.google.com:19302', 'stun:stun.l.google.com:555'];
+      var turnServers = [
+        { urls: ['turn:numb.viagenie.ca', 'turn:numb.viagenie.com'], username: 'bob', password: 'dog' },
+        { urls: ['turn:lump.viagenie.ca'], username: 'rob', password: 'cat' }
+      ];
+
+      var servers = MediaHandler.prepareIceServers(stunServers, turnServers);
+
+      var expectedServers = [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun.l.google.com:555'   },
+        { urls: ['turn:numb.viagenie.ca', 'turn:numb.viagenie.com'], username: 'bob', credential: 'dog' },
+        { urls: ['turn:lump.viagenie.ca'], username: 'rob', credential: 'cat' }
+      ];
+
+      expect(servers).toEqual(expectedServers);
+    });
+  });
 });
