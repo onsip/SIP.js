@@ -1,6 +1,6 @@
 /*
- * SIP version 0.7.2
- * Copyright (c) 2014-2015 Junction Networks, Inc <http://www.onsip.com>
+ * SIP version 0.7.3
+ * Copyright (c) 2014-2016 Junction Networks, Inc <http://www.onsip.com>
  * Homepage: http://sipjs.com
  * License: http://sipjs.com/license/
  *
@@ -32,7 +32,7 @@
  */
 
 
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.SIP=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.SIP = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -335,12 +335,12 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],2:[function(_dereq_,module,exports){
+},{}],2:[function(require,module,exports){
 module.exports={
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
@@ -367,7 +367,7 @@ module.exports={
     "beefy": "^2.1.5",
     "browserify": "^4.1.8",
     "grunt": "~0.4.0",
-    "grunt-browserify": "^2.1.0",
+    "grunt-browserify": "^4.0.1",
     "grunt-cli": "~0.1.6",
     "grunt-contrib-copy": "^0.5.0",
     "grunt-contrib-jasmine": "~0.8.0",
@@ -383,6 +383,7 @@ module.exports={
   "license": "MIT",
   "scripts": {
     "repl": "beefy test/repl.js --open",
+    "build": "grunt build",
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
     "test": "grunt travis --verbose"
   },
@@ -394,7 +395,7 @@ module.exports={
   }
 }
 
-},{}],3:[function(_dereq_,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP) {
 var ClientContext;
@@ -499,7 +500,7 @@ ClientContext.prototype.onTransportError = function () {
 SIP.ClientContext = ClientContext;
 };
 
-},{}],4:[function(_dereq_,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Constants
@@ -701,7 +702,7 @@ return {
 };
 };
 
-},{}],5:[function(_dereq_,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 /**
@@ -797,7 +798,7 @@ RequestSender.prototype = {
 return RequestSender;
 };
 
-},{}],6:[function(_dereq_,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Dialog
@@ -813,7 +814,7 @@ return RequestSender;
  */
 module.exports = function (SIP) {
 
-var RequestSender = _dereq_('./Dialog/RequestSender')(SIP);
+var RequestSender = require('./Dialog/RequestSender')(SIP);
 
 var Dialog,
   C = {
@@ -1057,7 +1058,7 @@ Dialog.C = C;
 SIP.Dialog = Dialog;
 };
 
-},{"./Dialog/RequestSender":5}],7:[function(_dereq_,module,exports){
+},{"./Dialog/RequestSender":5}],7:[function(require,module,exports){
 "use strict";
 
 /**
@@ -1228,9 +1229,9 @@ DigestAuthentication.prototype.updateNcHex = function() {
 return DigestAuthentication;
 };
 
-},{}],8:[function(_dereq_,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
-var NodeEventEmitter = _dereq_('events').EventEmitter;
+var NodeEventEmitter = require('events').EventEmitter;
 
 module.exports = function (console) {
 
@@ -1268,7 +1269,7 @@ return EventEmitter;
 
 };
 
-},{"events":1}],9:[function(_dereq_,module,exports){
+},{"events":1}],9:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Exceptions
@@ -1323,9 +1324,9 @@ module.exports = {
   }())
 };
 
-},{}],10:[function(_dereq_,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
-var Grammar = _dereq_('./Grammar/dist/Grammar');
+var Grammar = require('./Grammar/dist/Grammar');
 
 module.exports = function (SIP) {
 
@@ -1343,7 +1344,7 @@ return {
 
 };
 
-},{"./Grammar/dist/Grammar":11}],11:[function(_dereq_,module,exports){
+},{"./Grammar/dist/Grammar":11}],11:[function(require,module,exports){
 module.exports = (function() {
   /*
    * Generated by PEG.js 0.8.0.
@@ -2694,7 +2695,7 @@ module.exports = (function() {
     parse:       parse
   };
 })();
-},{}],12:[function(_dereq_,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Hacks - This file contains all of the things we
@@ -2705,6 +2706,10 @@ module.exports = (function() {
  */
 
 module.exports = function (SIP) {
+
+//keep to quiet jshint, and remain consistent with other files
+SIP = SIP;
+
 var Hacks = {
   AllBrowsers: {
     maskDtls: function (message) {
@@ -2777,19 +2782,6 @@ var Hacks = {
       }
       return sdp;
     },
-
-    hasIncompatibleCLineWithSomeSIPEndpoints: function(sdp) {
-      /*
-       * Firefox appears to be following https://tools.ietf.org/html/rfc5245#section-9.1.1.1
-       * and using a c line IP address of 0.0.0.0. This is completely valid, however it is
-       * causing some endpoints (such as FreeSWITCH) to interpret the SDP as being on hold
-       * https://freeswitch.org/jira/browse/FS-6955. To get around this issue we pull the
-       * replace the c line with 1.1.1.1 which SIP clients do not interpret as hold.
-       * This makes the other endpoint believe that the call is not on hold and audio flows
-       * because ICE determines the media pathway (not the c line).
-       */
-      return sdp.replace(/(0\.0\.0\.0)/gmi, SIP.Utils.getRandomTestNetIP());
-    }
   },
 
   Chrome: {
@@ -2817,7 +2809,7 @@ var Hacks = {
 };
 return Hacks;
 };
-},{}],13:[function(_dereq_,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 var levels = {
   'error': 0,
@@ -2933,7 +2925,7 @@ LoggerFactory.prototype.getLogger = function(category, label) {
 return LoggerFactory;
 };
 
-},{}],14:[function(_dereq_,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview MediaHandler
@@ -2978,7 +2970,7 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
 return MediaHandler;
 };
 
-},{}],15:[function(_dereq_,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP NameAddrHeader
@@ -3081,7 +3073,7 @@ NameAddrHeader.parse = function(name_addr_header) {
 SIP.NameAddrHeader = NameAddrHeader;
 };
 
-},{}],16:[function(_dereq_,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Message Parser
@@ -3344,7 +3336,7 @@ Parser.parseMessage = function(data, ua) {
 SIP.Parser = Parser;
 };
 
-},{}],17:[function(_dereq_,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP) {
 
@@ -3373,6 +3365,7 @@ RegisterContext = function (ua) {
   this.to_uri = ua.configuration.uri;
 
   params.to_uri = this.to_uri;
+  params.to_displayName = ua.configuration.displayName;
   params.call_id = this.call_id;
   params.cseq = this.cseq;
 
@@ -3396,7 +3389,7 @@ RegisterContext.prototype = {
     this.options = options || {};
     extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
-    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
     // Save original extraHeaders to be used in .close
     this.closeHeaders = this.options.closeWithHeaders ?
@@ -3629,7 +3622,7 @@ RegisterContext.prototype = {
 SIP.RegisterContext = RegisterContext;
 };
 
-},{}],18:[function(_dereq_,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 
 /**
@@ -3770,7 +3763,7 @@ RequestSender.prototype = {
 SIP.RequestSender = RequestSender;
 };
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],19:[function(require,module,exports){
 /**
  * @name SIP
  * @namespace
@@ -3779,7 +3772,7 @@ SIP.RequestSender = RequestSender;
 
 module.exports = function (environment) {
 
-var pkg = _dereq_('../package.json');
+var pkg = require('../package.json');
 
 var SIP = Object.defineProperties({}, {
   version: {
@@ -3790,37 +3783,37 @@ var SIP = Object.defineProperties({}, {
   }
 });
 
-_dereq_('./Utils')(SIP, environment);
-SIP.LoggerFactory = _dereq_('./LoggerFactory')(environment.console);
-SIP.EventEmitter = _dereq_('./EventEmitter')(environment.console);
-SIP.C = _dereq_('./Constants')(SIP.name, SIP.version);
-SIP.Exceptions = _dereq_('./Exceptions');
-SIP.Timers = _dereq_('./Timers')(environment.timers);
+require('./Utils')(SIP, environment);
+SIP.LoggerFactory = require('./LoggerFactory')(environment.console);
+SIP.EventEmitter = require('./EventEmitter')(environment.console);
+SIP.C = require('./Constants')(SIP.name, SIP.version);
+SIP.Exceptions = require('./Exceptions');
+SIP.Timers = require('./Timers')(environment.timers);
 SIP.Transport = environment.Transport(SIP, environment.WebSocket);
-_dereq_('./Parser')(SIP);
-_dereq_('./SIPMessage')(SIP);
-_dereq_('./URI')(SIP);
-_dereq_('./NameAddrHeader')(SIP);
-_dereq_('./Transactions')(SIP);
-_dereq_('./Dialogs')(SIP);
-_dereq_('./RequestSender')(SIP);
-_dereq_('./RegisterContext')(SIP);
-SIP.MediaHandler = _dereq_('./MediaHandler')(SIP.EventEmitter);
-_dereq_('./ClientContext')(SIP);
-_dereq_('./ServerContext')(SIP);
-_dereq_('./Session')(SIP, environment);
-_dereq_('./Subscription')(SIP);
-SIP.WebRTC = _dereq_('./WebRTC')(SIP, environment);
-_dereq_('./UA')(SIP, environment);
-SIP.Hacks = _dereq_('./Hacks')(SIP);
-_dereq_('./SanityCheck')(SIP);
-SIP.DigestAuthentication = _dereq_('./DigestAuthentication')(SIP.Utils);
-SIP.Grammar = _dereq_('./Grammar')(SIP);
+require('./Parser')(SIP);
+require('./SIPMessage')(SIP);
+require('./URI')(SIP);
+require('./NameAddrHeader')(SIP);
+require('./Transactions')(SIP);
+require('./Dialogs')(SIP);
+require('./RequestSender')(SIP);
+require('./RegisterContext')(SIP);
+SIP.MediaHandler = require('./MediaHandler')(SIP.EventEmitter);
+require('./ClientContext')(SIP);
+require('./ServerContext')(SIP);
+require('./Session')(SIP, environment);
+require('./Subscription')(SIP);
+SIP.WebRTC = require('./WebRTC')(SIP, environment);
+require('./UA')(SIP, environment);
+SIP.Hacks = require('./Hacks')(SIP);
+require('./SanityCheck')(SIP);
+SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
+SIP.Grammar = require('./Grammar')(SIP);
 
 return SIP;
 };
 
-},{"../package.json":2,"./ClientContext":3,"./Constants":4,"./Dialogs":6,"./DigestAuthentication":7,"./EventEmitter":8,"./Exceptions":9,"./Grammar":10,"./Hacks":12,"./LoggerFactory":13,"./MediaHandler":14,"./NameAddrHeader":15,"./Parser":16,"./RegisterContext":17,"./RequestSender":18,"./SIPMessage":20,"./SanityCheck":21,"./ServerContext":22,"./Session":23,"./Subscription":25,"./Timers":26,"./Transactions":27,"./UA":29,"./URI":30,"./Utils":31,"./WebRTC":32}],20:[function(_dereq_,module,exports){
+},{"../package.json":2,"./ClientContext":3,"./Constants":4,"./Dialogs":6,"./DigestAuthentication":7,"./EventEmitter":8,"./Exceptions":9,"./Grammar":10,"./Hacks":12,"./LoggerFactory":13,"./MediaHandler":14,"./NameAddrHeader":15,"./Parser":16,"./RegisterContext":17,"./RequestSender":18,"./SIPMessage":20,"./SanityCheck":21,"./ServerContext":22,"./Session":23,"./Subscription":25,"./Timers":26,"./Transactions":27,"./UA":29,"./URI":30,"./Utils":31,"./WebRTC":32}],20:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Message
@@ -4363,7 +4356,7 @@ SIP.IncomingRequest = IncomingRequest;
 SIP.IncomingResponse = IncomingResponse;
 };
 
-},{}],21:[function(_dereq_,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Incoming SIP Message Sanity Check
@@ -4385,6 +4378,33 @@ var sanityCheck,
  requests = [],
  responses = [],
  all = [];
+
+// Reply
+function reply(status_code) {
+  var to,
+    response = SIP.Utils.buildStatusLine(status_code),
+    vias = message.getHeaders('via'),
+    length = vias.length,
+    idx = 0;
+
+  for(idx; idx < length; idx++) {
+    response += "Via: " + vias[idx] + "\r\n";
+  }
+
+  to = message.getHeader('To');
+
+  if(!message.to_tag) {
+    to += ';tag=' + SIP.Utils.newTag();
+  }
+
+  response += "To: " + to + "\r\n";
+  response += "From: " + message.getHeader('From') + "\r\n";
+  response += "Call-ID: " + message.call_id + "\r\n";
+  response += "CSeq: " + message.cseq + " " + message.method + "\r\n";
+  response += "\r\n";
+
+  transport.send(response);
+}
 
 /*
  * Sanity Check for incoming Messages
@@ -4511,33 +4531,6 @@ function minimumHeaders() {
   }
 }
 
-// Reply
-function reply(status_code) {
-  var to,
-    response = SIP.Utils.buildStatusLine(status_code),
-    vias = message.getHeaders('via'),
-    length = vias.length,
-    idx = 0;
-
-  for(idx; idx < length; idx++) {
-    response += "Via: " + vias[idx] + "\r\n";
-  }
-
-  to = message.getHeader('To');
-
-  if(!message.to_tag) {
-    to += ';tag=' + SIP.Utils.newTag();
-  }
-
-  response += "To: " + to + "\r\n";
-  response += "From: " + message.getHeader('From') + "\r\n";
-  response += "Call-ID: " + message.call_id + "\r\n";
-  response += "CSeq: " + message.cseq + " " + message.method + "\r\n";
-  response += "\r\n";
-
-  transport.send(response);
-}
-
 requests.push(rfc3261_8_2_2_1);
 requests.push(rfc3261_16_3_4);
 requests.push(rfc3261_18_3_request);
@@ -4593,7 +4586,7 @@ sanityCheck = function(m, u, t) {
 SIP.sanityCheck = sanityCheck;
 };
 
-},{}],22:[function(_dereq_,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP) {
 var ServerContext;
@@ -4685,11 +4678,11 @@ ServerContext.prototype.onTransportError = function () {
 SIP.ServerContext = ServerContext;
 };
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP, environment) {
 
-var DTMF = _dereq_('./Session/DTMF')(SIP);
+var DTMF = require('./Session/DTMF')(SIP);
 
 var Session, InviteServerContext, InviteClientContext,
  C = {
@@ -4917,7 +4910,7 @@ Session.prototype = {
     }
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
     extraHeaders.push('Refer-To: '+ target);
 
     // Send the request
@@ -5316,7 +5309,7 @@ Session.prototype = {
     }
 
     extraHeaders.push('Contact: ' + this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
     extraHeaders.push('Content-Type: application/sdp');
 
     this.receiveResponse = this.receiveReinviteResponse;
@@ -5889,6 +5882,9 @@ InviteServerContext.prototype = {
       statusCode = options.statusCode || 180,
       reasonPhrase = options.reasonPhrase,
       extraHeaders = (options.extraHeaders || []).slice(),
+      iceServers,
+      stunServers = options.stunServers || null,
+      turnServers = options.turnServers || null,
       body = options.body,
       response;
 
@@ -5898,6 +5894,31 @@ InviteServerContext.prototype = {
 
     if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
       return this;
+    }
+
+    if (stunServers || turnServers) {
+      if (stunServers) {
+        iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid stunServers: '+ stunServers);
+        } else {
+          this.stunServers = iceServers;
+        }
+      }
+
+      if (turnServers) {
+        iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid turnServers: '+ turnServers);
+        } else {
+          this.turnServers = iceServers;
+        }
+      }
+
+      this.mediaHandler.updateIceServers({
+        stunServers: this.stunServers,
+        turnServers: this.turnServers
+      });
     }
 
     function do100rel() {
@@ -5989,6 +6010,9 @@ InviteServerContext.prototype = {
       request = this.request,
       extraHeaders = (options.extraHeaders || []).slice(),
     //mediaStream = options.mediaStream || null,
+      iceServers,
+      stunServers = options.stunServers || null,
+      turnServers = options.turnServers || null,
       sdpCreationSucceeded = function(body) {
         var
           response,
@@ -6015,7 +6039,7 @@ InviteServerContext.prototype = {
         self.mediaHandler.render();
 
         extraHeaders.push('Contact: ' + self.contact);
-        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(self.ua));
+        extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
         if(!self.hasOffer) {
           self.hasOffer = true;
@@ -6051,6 +6075,32 @@ InviteServerContext.prototype = {
       this.status = C.STATUS_ANSWERED;
     } else if (this.status !== C.STATUS_EARLY_MEDIA) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+
+    if ((stunServers || turnServers) &&
+        (this.status !== C.STATUS_EARLY_MEDIA && this.status !== C.STATUS_ANSWERED_WAITING_FOR_PRACK)) {
+      if (stunServers) {
+        iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid stunServers: '+ stunServers);
+        } else {
+          this.stunServers = iceServers;
+        }
+      }
+
+      if (turnServers) {
+        iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+        if (!iceServers) {
+          throw new TypeError('Invalid turnServers: '+ turnServers);
+        } else {
+          this.turnServers = iceServers;
+        }
+      }
+
+      this.mediaHandler.updateIceServers({
+        stunServers: this.stunServers,
+        turnServers: this.turnServers
+      });
     }
 
     // An error on dialog creation will fire 'failed' event
@@ -6314,7 +6364,7 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Privacy: id');
   }
   extraHeaders.push('Contact: '+ this.contact);
-  extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   if (!this.inviteWithoutSdp) {
     extraHeaders.push('Content-Type: application/sdp');
   } else if (this.renderbody) {
@@ -6886,7 +6936,7 @@ SIP.InviteClientContext = InviteClientContext;
 
 };
 
-},{"./Session/DTMF":24}],24:[function(_dereq_,module,exports){
+},{"./Session/DTMF":24}],24:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview DTMF
@@ -7067,7 +7117,7 @@ DTMF.C = C;
 return DTMF;
 };
 
-},{}],25:[function(_dereq_,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 
 /**
@@ -7111,7 +7161,7 @@ SIP.Subscription = function (ua, target, event, options) {
   this.contact = ua.contact.toString();
 
   options.extraHeaders.push('Contact: '+ this.contact);
-  options.extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  options.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.SUBSCRIBE, target, options]);
 
@@ -7125,6 +7175,14 @@ SIP.Subscription = function (ua, target, event, options) {
 SIP.Subscription.prototype = {
   subscribe: function() {
     var sub = this;
+
+     //these states point to an existing subscription, no subscribe is necessary
+    if (this.state === 'active') {
+      this.refresh();
+      return this;
+    } else if (this.state === 'notify_wait') {
+      return this;
+    }
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
@@ -7152,7 +7210,8 @@ SIP.Subscription.prototype = {
     var expires, sub = this,
         cause = SIP.Utils.getReasonPhrase(response.status_code);
 
-    if (this.errorCodes.indexOf(response.status_code) !== -1) {
+    if ((this.state === 'notify_wait' && response.status_code >= 300) ||
+        (this.state !== 'notify_wait' && this.errorCodes.indexOf(response.status_code) !== -1)) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
@@ -7190,18 +7249,19 @@ SIP.Subscription.prototype = {
     extraHeaders.push('Expires: 0');
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
-    this.request = new SIP.OutgoingRequest(this.method, this.request.to.uri.toString(), this.ua, null, extraHeaders);
-
-    //MAYBE, may want to see state
+    //makes sure expires isn't set, and other typical resubscribe behavior
     this.receiveResponse = function(){};
+
+    this.dialog.sendRequest(this, this.method, {
+      extraHeaders: extraHeaders,
+      body: this.body
+    });
 
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
     this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
-
-    this.send();
   },
 
   /**
@@ -7209,9 +7269,12 @@ SIP.Subscription.prototype = {
   */
   timer_fire: function(){
     if (this.state === 'terminated') {
-      this.close();
+      this.terminateDialog();
+      SIP.Timers.clearTimeout(this.timers.N);
+      SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+      delete this.ua.subscriptions[this.id];
     } else if (this.state === 'pending' || this.state === 'notify_wait') {
-      this.state = 'terminated';
       this.close();
     } else {
       this.refresh();
@@ -7222,15 +7285,9 @@ SIP.Subscription.prototype = {
   * @private
   */
   close: function() {
-    if(this.state !== 'terminated') {
+    if(this.state !== 'notify_wait' && this.state !== 'terminated') {
       this.unsubscribe();
     }
-
-    this.terminateDialog();
-    SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-
-    delete this.ua.subscriptions[this.id];
   },
 
   /**
@@ -7292,6 +7349,19 @@ SIP.Subscription.prototype = {
 
     this.emit('notify', {request: request});
 
+    // if we've set state to terminated, no further processing should take place
+    // and we are only interested in cleaning up after the appropriate NOTIFY
+    if (this.state === 'terminated') {
+      if (sub_state.state === 'terminated') {
+        this.terminateDialog();
+        SIP.Timers.clearTimeout(this.timers.N);
+        SIP.Timers.clearTimeout(this.timers.sub_duration);
+
+        delete this.ua.subscriptions[this.id];
+      }
+      return;
+    }
+
     switch (sub_state.state) {
       case 'active':
         this.state = 'active';
@@ -7337,6 +7407,10 @@ SIP.Subscription.prototype = {
     return this;
   },
 
+  onDialogError: function(response) {
+    this.failed(response, SIP.C.causes.DIALOG_ERROR);
+  },
+
   /**
   * @private
   */
@@ -7368,7 +7442,7 @@ SIP.Subscription.prototype = {
 };
 };
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP TIMERS
@@ -7411,7 +7485,7 @@ module.exports = function (timers) {
   return Timers;
 };
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Transactions
@@ -8119,7 +8193,7 @@ SIP.Transactions = {
 
 };
 
-},{}],28:[function(_dereq_,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Transport
@@ -8139,6 +8213,16 @@ var Transport,
     STATUS_DISCONNECTED: 1,
     STATUS_ERROR:        2
   };
+
+/**
+ * Compute an amount of time in seconds to wait before sending another
+ * keep-alive.
+ * @returns {Number}
+ */
+function computeKeepAliveTimeout(upperBound) {
+  var lowerBound = upperBound * 0.8;
+  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
+}
 
 Transport = function(ua, server) {
 
@@ -8478,21 +8562,11 @@ Transport.prototype = {
   }
 };
 
-/**
- * Compute an amount of time in seconds to wait before sending another
- * keep-alive.
- * @returns {Number}
- */
-function computeKeepAliveTimeout(upperBound) {
-  var lowerBound = upperBound * 0.8;
-  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
-}
-
 Transport.C = C;
 return Transport;
 };
 
-},{}],29:[function(_dereq_,module,exports){
+},{}],29:[function(require,module,exports){
 (function (global){
 "use strict";
 /**
@@ -8518,18 +8592,11 @@ var UA,
     CONFIGURATION_ERROR:  1,
     NETWORK_ERROR:        2,
 
-    /* UA events and corresponding SIP Methods.
-     * Dynamically added to 'Allow' header field if the
-     * corresponding event handler is set.
-     */
-    EVENT_METHODS: {
-      'invite': 'INVITE',
-      'message': 'MESSAGE'
-    },
-
     ALLOWED_METHODS: [
       'ACK',
       'CANCEL',
+      'INVITE',
+      'MESSAGE',
       'BYE',
       'OPTIONS',
       'INFO',
@@ -9078,7 +9145,6 @@ UA.prototype.receiveRequest = function(request) {
     transaction,
     replaces,
     replacedDialog,
-    methodLower = request.method.toLowerCase(),
     self = this;
 
   function ruriMatches (uri) {
@@ -9116,16 +9182,10 @@ UA.prototype.receiveRequest = function(request) {
   if(method === SIP.C.OPTIONS) {
     new SIP.Transactions.NonInviteServerTransaction(request, this);
     request.reply(200, null, [
-      'Allow: '+ SIP.Utils.getAllowedMethods(this),
+      'Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString(),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!this.listeners(methodLower).length) {
-      // UA is not listening for this.  Reject immediately.
-      new SIP.Transactions.NonInviteServerTransaction(request, this);
-      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
-      return;
-    }
     message = new SIP.ServerContext(this, request);
     message.body = request.body;
     message.content_type = request.getHeader('Content-Type') || 'text/plain';
@@ -10107,8 +10167,8 @@ UA.C = C;
 SIP.UA = UA;
 };
 
-}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],30:[function(_dereq_,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],30:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP URI
@@ -10350,7 +10410,7 @@ URI.parse = function(uri) {
 SIP.URI = URI;
 };
 
-},{}],31:[function(_dereq_,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Utils
@@ -10634,19 +10694,6 @@ Utils= {
     return '192.0.2.' + getOctet(1, 254);
   },
 
-  getAllowedMethods: function(ua) {
-    var event,
-      allowed = SIP.UA.C.ALLOWED_METHODS.toString();
-
-    for (event in SIP.UA.C.EVENT_METHODS) {
-      if (ua.listeners(event).length) {
-        allowed += ','+ SIP.UA.C.EVENT_METHODS[event];
-      }
-    }
-
-    return allowed;
-  },
-
   // MD5 (Message-Digest Algorithm) http://www.webtoolkit.info
   calculateMD5: function(string) {
     function RotateLeft(lValue, iShiftBits) {
@@ -10860,7 +10907,7 @@ Utils= {
 SIP.Utils = Utils;
 };
 
-},{}],32:[function(_dereq_,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview WebRTC
@@ -10871,8 +10918,8 @@ var WebRTC;
 
 WebRTC = {};
 
-WebRTC.MediaHandler = _dereq_('./WebRTC/MediaHandler')(SIP);
-WebRTC.MediaStreamManager = _dereq_('./WebRTC/MediaStreamManager')(SIP, environment);
+WebRTC.MediaHandler = require('./WebRTC/MediaHandler')(SIP);
+WebRTC.MediaStreamManager = require('./WebRTC/MediaStreamManager')(SIP, environment);
 
 var _isSupported;
 
@@ -10901,7 +10948,7 @@ WebRTC.isSupported = function () {
 return WebRTC;
 };
 
-},{"./WebRTC/MediaHandler":33,"./WebRTC/MediaStreamManager":34}],33:[function(_dereq_,module,exports){
+},{"./WebRTC/MediaHandler":33,"./WebRTC/MediaStreamManager":34}],33:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview MediaHandler
@@ -10929,149 +10976,10 @@ var MediaHandler = function(session, options) {
   this.videoMuted = false;
 
   // old init() from here on
-  var idx, jdx, length, server,
-    self = this,
-    servers = [],
-    stunServers = options.stunServers || null,
-    turnServers = options.turnServers || null,
-    config = this.session.ua.configuration;
+  var servers = this.prepareIceServers(options.stunServers, options.turnServers);
   this.RTCConstraints = options.RTCConstraints || {};
 
-  if (!stunServers) {
-    stunServers = config.stunServers;
-  }
-
-  if(!turnServers) {
-    turnServers = config.turnServers;
-  }
-
-  /* Change 'url' to 'urls' whenever this issue is solved:
-   * https://code.google.com/p/webrtc/issues/detail?id=2096
-   */
-  [].concat(stunServers).forEach(function (server) {
-    servers.push({'url': server});
-  });
-
-  length = turnServers.length;
-  for (idx = 0; idx < length; idx++) {
-    server = turnServers[idx];
-    for (jdx = 0; jdx < server.urls.length; jdx++) {
-      servers.push({
-        'url': server.urls[jdx],
-        'username': server.username,
-        'credential': server.password
-      });
-    }
-  }
-
-  this.onIceCompleted = SIP.Utils.defer();
-  this.onIceCompleted.promise.then(function(pc) {
-    self.emit('iceGatheringComplete', pc);
-    if (self.iceCheckingTimer) {
-      SIP.Timers.clearTimeout(self.iceCheckingTimer);
-      self.iceCheckingTimer = null;
-    }
-  });
-
-  this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
-
-  // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
-  // even if peerConnection.onaddstream was just called. In order to make
-  // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
-  this._remoteStreams = [];
-
-  this.peerConnection.onaddstream = function(e) {
-    self.logger.log('stream added: '+ e.stream.id);
-    self._remoteStreams.push(e.stream);
-    self.render();
-    self.emit('addStream', e);
-  };
-
-  this.peerConnection.onremovestream = function(e) {
-    self.logger.log('stream removed: '+ e.stream.id);
-  };
-
-  this.startIceCheckingTimer = function () {
-    if (!self.iceCheckingTimer) {
-      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
-        self.onIceCompleted.resolve(this);
-      }.bind(this.peerConnection), config.iceCheckingTimeout);
-    }
-  };
-
-  this.peerConnection.onicecandidate = function(e) {
-    self.emit('iceCandidate', e);
-    if (e.candidate) {
-      self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
-      self.startIceCheckingTimer();
-    } else {
-      self.onIceCompleted.resolve(this);
-    }
-  };
-
-  this.peerConnection.onicegatheringstatechange = function () {
-    self.logger.log('RTCIceGatheringState changed: ' + this.iceGatheringState);
-    if (this.iceGatheringState === 'gathering') {
-      self.emit('iceGathering', this);
-    }
-    if (this.iceGatheringState === 'complete') {
-      self.onIceCompleted.resolve(this);
-    }
-  };
-
-  this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
-    var stateEvent;
-
-    if (this.iceConnectionState === 'checking') {
-      self.startIceCheckingTimer();
-    }
-
-
-    switch (this.iceConnectionState) {
-    case 'new':
-      stateEvent = 'iceConnection';
-      break;
-    case 'checking':
-      stateEvent = 'iceConnectionChecking';
-      break;
-    case 'connected':
-      stateEvent = 'iceConnectionConnected';
-      break;
-    case 'completed':
-      stateEvent = 'iceConnectionCompleted';
-      break;
-    case 'failed':
-      stateEvent = 'iceConnectionFailed';
-      break;
-    case 'disconnected':
-      stateEvent = 'iceConnectionDisconnected';
-      break;
-    case 'closed':
-      stateEvent = 'iceConnectionClosed';
-      break;
-    default:
-      self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
-      return;
-    }
-    self.emit(stateEvent, this);
-
-    //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
-    //normal calls switch from failed to connected in some cases, so checking for failed and terminated
-    /*if (this.iceConnectionState === 'failed') {
-      self.session.terminate({
-        cause: SIP.C.causes.RTP_TIMEOUT,
-        status_code: 200,
-        reason_phrase: SIP.C.causes.RTP_TIMEOUT
-      });
-    } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
-      self.onIceCompleted(this);
-    }*/
-  };
-
-  this.peerConnection.onstatechange = function() {
-    self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
-  };
+  this.initPeerConnection(servers, this.RTCConstraints);
 
   function selfEmit(mh, event) {
     if (mh.mediaStreamManager.on) {
@@ -11220,6 +11128,22 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     };
   }},
 
+  updateIceServers: {writeable:true, value: function (options) {
+    var servers = this.prepareIceServers(options.stunServers, options.turnServers);
+    this.RTCConstraints = options.RTCConstraints || this.RTCConstraints;
+
+    this.initPeerConnection(servers, this.RTCConstraints);
+
+    /* once updateIce is implemented correctly, this is better than above
+    //no op if browser does not support this
+    if (!this.peerConnection.updateIce) {
+      return;
+    }
+
+    this.peerConnection.updateIce({'iceServers': servers}, this.RTCConstraints);
+    */
+  }},
+
 // Functions the session can use, but only because it's convenient for the application
   isMuted: {writable: true, value: function isMuted () {
     return {
@@ -11363,6 +11287,161 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     // TODO consider signalingStates with 'pranswer'?
   }},
 
+  prepareIceServers: {writable: true, value: function prepareIceServers (stunServers, turnServers) {
+    var idx, jdx, length, server,
+      servers = [],
+      config = this.session.ua.configuration;
+
+    stunServers = stunServers || null;
+    turnServers = turnServers || null;
+
+    if (!stunServers) {
+      stunServers = config.stunServers;
+    }
+
+    if(!turnServers) {
+      turnServers = config.turnServers;
+    }
+
+    /* Change 'url' to 'urls' whenever this issue is solved:
+     * https://code.google.com/p/webrtc/issues/detail?id=2096
+     */
+    [].concat(stunServers).forEach(function (server) {
+      servers.push({'url': server});
+    });
+
+    length = turnServers.length;
+    for (idx = 0; idx < length; idx++) {
+      server = turnServers[idx];
+      for (jdx = 0; jdx < server.urls.length; jdx++) {
+        servers.push({
+          'url': server.urls[jdx],
+          'username': server.username,
+          'credential': server.password
+        });
+      }
+    }
+
+    return servers;
+  }},
+
+  initPeerConnection: {writable: true, value: function initPeerConnection(servers, RTCConstraints) {
+    var self = this,
+      config = this.session.ua.configuration;
+
+    this.onIceCompleted = SIP.Utils.defer();
+    this.onIceCompleted.promise.then(function(pc) {
+      self.emit('iceGatheringComplete', pc);
+      if (self.iceCheckingTimer) {
+        SIP.Timers.clearTimeout(self.iceCheckingTimer);
+        self.iceCheckingTimer = null;
+      }
+    });
+
+    if (this.peerConnection) {
+      this.peerConnection.close();
+    }
+
+    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, RTCConstraints);
+
+    // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
+    // even if peerConnection.onaddstream was just called. In order to make
+    // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
+    this._remoteStreams = [];
+
+    this.peerConnection.onaddstream = function(e) {
+      self.logger.log('stream added: '+ e.stream.id);
+      self._remoteStreams.push(e.stream);
+      self.render();
+      self.emit('addStream', e);
+    };
+
+    this.peerConnection.onremovestream = function(e) {
+      self.logger.log('stream removed: '+ e.stream.id);
+    };
+
+    this.startIceCheckingTimer = function () {
+      if (!self.iceCheckingTimer) {
+        self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+          self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
+          self.onIceCompleted.resolve(this);
+        }.bind(this.peerConnection), config.iceCheckingTimeout);
+      }
+    };
+
+    this.peerConnection.onicecandidate = function(e) {
+      self.emit('iceCandidate', e);
+      if (e.candidate) {
+        self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+        self.startIceCheckingTimer();
+      } else {
+        self.onIceCompleted.resolve(this);
+      }
+    };
+
+    this.peerConnection.onicegatheringstatechange = function () {
+      self.logger.log('RTCIceGatheringState changed: ' + this.iceGatheringState);
+      if (this.iceGatheringState === 'gathering') {
+        self.emit('iceGathering', this);
+      }
+      if (this.iceGatheringState === 'complete') {
+        self.onIceCompleted.resolve(this);
+      }
+    };
+
+    this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
+      var stateEvent;
+
+      if (this.iceConnectionState === 'checking') {
+        self.startIceCheckingTimer();
+      }
+
+      switch (this.iceConnectionState) {
+      case 'new':
+        stateEvent = 'iceConnection';
+        break;
+      case 'checking':
+        stateEvent = 'iceConnectionChecking';
+        break;
+      case 'connected':
+        stateEvent = 'iceConnectionConnected';
+        break;
+      case 'completed':
+        stateEvent = 'iceConnectionCompleted';
+        break;
+      case 'failed':
+        stateEvent = 'iceConnectionFailed';
+        break;
+      case 'disconnected':
+        stateEvent = 'iceConnectionDisconnected';
+        break;
+      case 'closed':
+        stateEvent = 'iceConnectionClosed';
+        break;
+      default:
+        self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
+        return;
+      }
+      self.emit(stateEvent, this);
+
+      //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
+      //normal calls switch from failed to connected in some cases, so checking for failed and terminated
+      /*if (this.iceConnectionState === 'failed') {
+        self.session.terminate({
+        cause: SIP.C.causes.RTP_TIMEOUT,
+        status_code: 200,
+        reason_phrase: SIP.C.causes.RTP_TIMEOUT
+      });
+      } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      self.onIceCompleted(this);
+      }*/
+    };
+
+    this.peerConnection.onstatechange = function() {
+      self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
+    };
+  }},
+
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints) {
     var self = this;
     var methodName;
@@ -11387,7 +11466,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        sdp = SIP.Hacks.Firefox.hasIncompatibleCLineWithSomeSIPEndpoints(sdp);
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',
@@ -11443,7 +11521,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 return MediaHandler;
 };
 
-},{}],34:[function(_dereq_,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview MediaStreamManager
@@ -11495,15 +11573,6 @@ MediaStreamManager.render = function render (streams, elements) {
     throw new TypeError('elements must not be empty');
   }
 
-  function attachAndPlay (elements, stream, index) {
-    if (typeof elements === 'function') {
-      elements = elements();
-    }
-    var element = elements[index % elements.length];
-    (environment.attachMediaStream || attachMediaStream)(element, stream);
-    ensureMediaPlaying(element);
-  }
-
   function attachMediaStream(element, stream) {
     if (typeof element.src !== 'undefined') {
       environment.revokeObjectURL(element.src);
@@ -11527,6 +11596,15 @@ MediaStreamManager.render = function render (streams, elements) {
         SIP.Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
       }
     }, interval);
+  }
+
+  function attachAndPlay (elements, stream, index) {
+    if (typeof elements === 'function') {
+      elements = elements();
+    }
+    var element = elements[index % elements.length];
+    (environment.attachMediaStream || attachMediaStream)(element, stream);
+    ensureMediaPlaying(element);
   }
 
   // [].concat "casts" `elements` into an array
@@ -11575,13 +11653,18 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
           return callback.apply(null, callbackArgs);
         }.bind(this);
 
-        deferred.resolve(
-          SIP.WebRTC.getUserMedia(constraints)
-          .then(
-            emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
-            emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
-          )
-        );
+        if (constraints.audio || constraints.video) {
+          deferred.resolve(
+            SIP.WebRTC.getUserMedia(constraints)
+            .then(
+              emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
+              emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
+            )
+          );
+        } else {
+          // Local streams were explicitly excluded.
+          deferred.resolve([]);
+        }
       }.bind(this), 0);
 
       return deferred.promise;
@@ -11606,7 +11689,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 return MediaStreamManager;
 };
 
-},{}],35:[function(_dereq_,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -11628,7 +11711,7 @@ function getPrefixedProperty (object, name) {
 
 module.exports = {
   WebSocket: toplevel.WebSocket,
-  Transport: _dereq_('./Transport'),
+  Transport: require('./Transport'),
   open: toplevel.open,
   Promise: toplevel.Promise,
   timers: toplevel,
@@ -11654,11 +11737,10 @@ module.exports = {
   revokeObjectURL: toplevel.URL && toplevel.URL.revokeObjectURL
 };
 
-}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Transport":28}],36:[function(_dereq_,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./Transport":28}],36:[function(require,module,exports){
 "use strict";
-module.exports = _dereq_('./SIP')(_dereq_('./environment'));
+module.exports = require('./SIP')(require('./environment'));
 
-},{"./SIP":19,"./environment":35}]},{},[36])
-(36)
+},{"./SIP":19,"./environment":35}]},{},[36])(36)
 });

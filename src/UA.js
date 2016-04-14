@@ -22,18 +22,11 @@ var UA,
     CONFIGURATION_ERROR:  1,
     NETWORK_ERROR:        2,
 
-    /* UA events and corresponding SIP Methods.
-     * Dynamically added to 'Allow' header field if the
-     * corresponding event handler is set.
-     */
-    EVENT_METHODS: {
-      'invite': 'INVITE',
-      'message': 'MESSAGE'
-    },
-
     ALLOWED_METHODS: [
       'ACK',
       'CANCEL',
+      'INVITE',
+      'MESSAGE',
       'BYE',
       'OPTIONS',
       'INFO',
@@ -582,7 +575,6 @@ UA.prototype.receiveRequest = function(request) {
     transaction,
     replaces,
     replacedDialog,
-    methodLower = request.method.toLowerCase(),
     self = this;
 
   function ruriMatches (uri) {
@@ -620,16 +612,10 @@ UA.prototype.receiveRequest = function(request) {
   if(method === SIP.C.OPTIONS) {
     new SIP.Transactions.NonInviteServerTransaction(request, this);
     request.reply(200, null, [
-      'Allow: '+ SIP.Utils.getAllowedMethods(this),
+      'Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString(),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!this.listeners(methodLower).length) {
-      // UA is not listening for this.  Reject immediately.
-      new SIP.Transactions.NonInviteServerTransaction(request, this);
-      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
-      return;
-    }
     message = new SIP.ServerContext(this, request);
     message.body = request.body;
     message.content_type = request.getHeader('Content-Type') || 'text/plain';

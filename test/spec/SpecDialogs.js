@@ -239,7 +239,7 @@ describe('Dialogs', function() {
     var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(owner.ua)]);
+      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString()]);
 
       request.server_transaction = {on: jasmine.createSpy('on')};
       request.reply = jasmine.createSpy('reply');
@@ -344,7 +344,7 @@ describe('Dialogs', function() {
     var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(owner.ua)]);
+      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString()]);
 
       spyOn(owner, 'receiveRequest');
     });

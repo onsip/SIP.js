@@ -25,149 +25,10 @@ var MediaHandler = function(session, options) {
   this.videoMuted = false;
 
   // old init() from here on
-  var idx, jdx, length, server,
-    self = this,
-    servers = [],
-    stunServers = options.stunServers || null,
-    turnServers = options.turnServers || null,
-    config = this.session.ua.configuration;
+  var servers = this.prepareIceServers(options.stunServers, options.turnServers);
   this.RTCConstraints = options.RTCConstraints || {};
 
-  if (!stunServers) {
-    stunServers = config.stunServers;
-  }
-
-  if(!turnServers) {
-    turnServers = config.turnServers;
-  }
-
-  /* Change 'url' to 'urls' whenever this issue is solved:
-   * https://code.google.com/p/webrtc/issues/detail?id=2096
-   */
-  [].concat(stunServers).forEach(function (server) {
-    servers.push({'url': server});
-  });
-
-  length = turnServers.length;
-  for (idx = 0; idx < length; idx++) {
-    server = turnServers[idx];
-    for (jdx = 0; jdx < server.urls.length; jdx++) {
-      servers.push({
-        'url': server.urls[jdx],
-        'username': server.username,
-        'credential': server.password
-      });
-    }
-  }
-
-  this.onIceCompleted = SIP.Utils.defer();
-  this.onIceCompleted.promise.then(function(pc) {
-    self.emit('iceGatheringComplete', pc);
-    if (self.iceCheckingTimer) {
-      SIP.Timers.clearTimeout(self.iceCheckingTimer);
-      self.iceCheckingTimer = null;
-    }
-  });
-
-  this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
-
-  // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
-  // even if peerConnection.onaddstream was just called. In order to make
-  // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
-  this._remoteStreams = [];
-
-  this.peerConnection.onaddstream = function(e) {
-    self.logger.log('stream added: '+ e.stream.id);
-    self._remoteStreams.push(e.stream);
-    self.render();
-    self.emit('addStream', e);
-  };
-
-  this.peerConnection.onremovestream = function(e) {
-    self.logger.log('stream removed: '+ e.stream.id);
-  };
-
-  this.startIceCheckingTimer = function () {
-    if (!self.iceCheckingTimer) {
-      self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-        self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
-        self.onIceCompleted.resolve(this);
-      }.bind(this.peerConnection), config.iceCheckingTimeout);
-    }
-  };
-
-  this.peerConnection.onicecandidate = function(e) {
-    self.emit('iceCandidate', e);
-    if (e.candidate) {
-      self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
-      self.startIceCheckingTimer();
-    } else {
-      self.onIceCompleted.resolve(this);
-    }
-  };
-
-  this.peerConnection.onicegatheringstatechange = function () {
-    self.logger.log('RTCIceGatheringState changed: ' + this.iceGatheringState);
-    if (this.iceGatheringState === 'gathering') {
-      self.emit('iceGathering', this);
-    }
-    if (this.iceGatheringState === 'complete') {
-      self.onIceCompleted.resolve(this);
-    }
-  };
-
-  this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
-    var stateEvent;
-
-    if (this.iceConnectionState === 'checking') {
-      self.startIceCheckingTimer();
-    }
-
-
-    switch (this.iceConnectionState) {
-    case 'new':
-      stateEvent = 'iceConnection';
-      break;
-    case 'checking':
-      stateEvent = 'iceConnectionChecking';
-      break;
-    case 'connected':
-      stateEvent = 'iceConnectionConnected';
-      break;
-    case 'completed':
-      stateEvent = 'iceConnectionCompleted';
-      break;
-    case 'failed':
-      stateEvent = 'iceConnectionFailed';
-      break;
-    case 'disconnected':
-      stateEvent = 'iceConnectionDisconnected';
-      break;
-    case 'closed':
-      stateEvent = 'iceConnectionClosed';
-      break;
-    default:
-      self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
-      return;
-    }
-    self.emit(stateEvent, this);
-
-    //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
-    //normal calls switch from failed to connected in some cases, so checking for failed and terminated
-    /*if (this.iceConnectionState === 'failed') {
-      self.session.terminate({
-        cause: SIP.C.causes.RTP_TIMEOUT,
-        status_code: 200,
-        reason_phrase: SIP.C.causes.RTP_TIMEOUT
-      });
-    } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
-      self.onIceCompleted(this);
-    }*/
-  };
-
-  this.peerConnection.onstatechange = function() {
-    self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
-  };
+  this.initPeerConnection(servers, this.RTCConstraints);
 
   function selfEmit(mh, event) {
     if (mh.mediaStreamManager.on) {
@@ -316,6 +177,22 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     };
   }},
 
+  updateIceServers: {writeable:true, value: function (options) {
+    var servers = this.prepareIceServers(options.stunServers, options.turnServers);
+    this.RTCConstraints = options.RTCConstraints || this.RTCConstraints;
+
+    this.initPeerConnection(servers, this.RTCConstraints);
+
+    /* once updateIce is implemented correctly, this is better than above
+    //no op if browser does not support this
+    if (!this.peerConnection.updateIce) {
+      return;
+    }
+
+    this.peerConnection.updateIce({'iceServers': servers}, this.RTCConstraints);
+    */
+  }},
+
 // Functions the session can use, but only because it's convenient for the application
   isMuted: {writable: true, value: function isMuted () {
     return {
@@ -459,6 +336,161 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     // TODO consider signalingStates with 'pranswer'?
   }},
 
+  prepareIceServers: {writable: true, value: function prepareIceServers (stunServers, turnServers) {
+    var idx, jdx, length, server,
+      servers = [],
+      config = this.session.ua.configuration;
+
+    stunServers = stunServers || null;
+    turnServers = turnServers || null;
+
+    if (!stunServers) {
+      stunServers = config.stunServers;
+    }
+
+    if(!turnServers) {
+      turnServers = config.turnServers;
+    }
+
+    /* Change 'url' to 'urls' whenever this issue is solved:
+     * https://code.google.com/p/webrtc/issues/detail?id=2096
+     */
+    [].concat(stunServers).forEach(function (server) {
+      servers.push({'url': server});
+    });
+
+    length = turnServers.length;
+    for (idx = 0; idx < length; idx++) {
+      server = turnServers[idx];
+      for (jdx = 0; jdx < server.urls.length; jdx++) {
+        servers.push({
+          'url': server.urls[jdx],
+          'username': server.username,
+          'credential': server.password
+        });
+      }
+    }
+
+    return servers;
+  }},
+
+  initPeerConnection: {writable: true, value: function initPeerConnection(servers, RTCConstraints) {
+    var self = this,
+      config = this.session.ua.configuration;
+
+    this.onIceCompleted = SIP.Utils.defer();
+    this.onIceCompleted.promise.then(function(pc) {
+      self.emit('iceGatheringComplete', pc);
+      if (self.iceCheckingTimer) {
+        SIP.Timers.clearTimeout(self.iceCheckingTimer);
+        self.iceCheckingTimer = null;
+      }
+    });
+
+    if (this.peerConnection) {
+      this.peerConnection.close();
+    }
+
+    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, RTCConstraints);
+
+    // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
+    // even if peerConnection.onaddstream was just called. In order to make
+    // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
+    this._remoteStreams = [];
+
+    this.peerConnection.onaddstream = function(e) {
+      self.logger.log('stream added: '+ e.stream.id);
+      self._remoteStreams.push(e.stream);
+      self.render();
+      self.emit('addStream', e);
+    };
+
+    this.peerConnection.onremovestream = function(e) {
+      self.logger.log('stream removed: '+ e.stream.id);
+    };
+
+    this.startIceCheckingTimer = function () {
+      if (!self.iceCheckingTimer) {
+        self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
+          self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
+          self.onIceCompleted.resolve(this);
+        }.bind(this.peerConnection), config.iceCheckingTimeout);
+      }
+    };
+
+    this.peerConnection.onicecandidate = function(e) {
+      self.emit('iceCandidate', e);
+      if (e.candidate) {
+        self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+        self.startIceCheckingTimer();
+      } else {
+        self.onIceCompleted.resolve(this);
+      }
+    };
+
+    this.peerConnection.onicegatheringstatechange = function () {
+      self.logger.log('RTCIceGatheringState changed: ' + this.iceGatheringState);
+      if (this.iceGatheringState === 'gathering') {
+        self.emit('iceGathering', this);
+      }
+      if (this.iceGatheringState === 'complete') {
+        self.onIceCompleted.resolve(this);
+      }
+    };
+
+    this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
+      var stateEvent;
+
+      if (this.iceConnectionState === 'checking') {
+        self.startIceCheckingTimer();
+      }
+
+      switch (this.iceConnectionState) {
+      case 'new':
+        stateEvent = 'iceConnection';
+        break;
+      case 'checking':
+        stateEvent = 'iceConnectionChecking';
+        break;
+      case 'connected':
+        stateEvent = 'iceConnectionConnected';
+        break;
+      case 'completed':
+        stateEvent = 'iceConnectionCompleted';
+        break;
+      case 'failed':
+        stateEvent = 'iceConnectionFailed';
+        break;
+      case 'disconnected':
+        stateEvent = 'iceConnectionDisconnected';
+        break;
+      case 'closed':
+        stateEvent = 'iceConnectionClosed';
+        break;
+      default:
+        self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
+        return;
+      }
+      self.emit(stateEvent, this);
+
+      //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
+      //normal calls switch from failed to connected in some cases, so checking for failed and terminated
+      /*if (this.iceConnectionState === 'failed') {
+        self.session.terminate({
+        cause: SIP.C.causes.RTP_TIMEOUT,
+        status_code: 200,
+        reason_phrase: SIP.C.causes.RTP_TIMEOUT
+      });
+      } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
+      self.onIceCompleted(this);
+      }*/
+    };
+
+    this.peerConnection.onstatechange = function() {
+      self.logger.log('PeerConnection state changed to "'+ this.readyState +'"');
+    };
+  }},
+
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (constraints) {
     var self = this;
     var methodName;
@@ -483,7 +515,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        sdp = SIP.Hacks.Firefox.hasIncompatibleCLineWithSomeSIPEndpoints(sdp);
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',
