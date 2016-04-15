@@ -7,6 +7,9 @@
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
   },
+  "react-native": {
+    "./src/environment.js": "./src/environment_react_native.js"
+  },
   "homepage": "http://sipjs.com",
   "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
   "contributors": [
