@@ -337,39 +337,23 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   prepareIceServers: {writable: true, value: function prepareIceServers (stunServers, turnServers) {
-    var idx, jdx, length, server,
-      servers = [],
+    var servers = [],
       config = this.session.ua.configuration;
 
-    stunServers = stunServers || null;
-    turnServers = turnServers || null;
+    stunServers = stunServers || config.stunServers;
+    turnServers = turnServers || config.turnServers;
 
-    if (!stunServers) {
-      stunServers = config.stunServers;
-    }
-
-    if(!turnServers) {
-      turnServers = config.turnServers;
-    }
-
-    /* Change 'url' to 'urls' whenever this issue is solved:
-     * https://code.google.com/p/webrtc/issues/detail?id=2096
-     */
     [].concat(stunServers).forEach(function (server) {
-      servers.push({'url': server});
+      servers.push({'urls': server});
     });
 
-    length = turnServers.length;
-    for (idx = 0; idx < length; idx++) {
-      server = turnServers[idx];
-      for (jdx = 0; jdx < server.urls.length; jdx++) {
-        servers.push({
-          'url': server.urls[jdx],
-          'username': server.username,
-          'credential': server.password
-        });
-      }
-    }
+    [].concat(turnServers).forEach(function (server) {
+      servers.push({
+        'urls': server.urls,
+        'username': server.username,
+        'credential': server.password
+      });
+    });
 
     return servers;
   }},

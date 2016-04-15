@@ -3,3 +3,4 @@ dist/sip*
 .grunt
 _SpecRunner.html
 src/Grammar/dist/Grammar.js
+npm-debug.log
