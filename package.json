@@ -46,7 +46,11 @@
   "scripts": {
     "repl": "beefy test/repl.js --open",
     "build": "grunt build",
+    "version:build": "git clean -fxd && npm install && grunt && git add -f dist",
+    "version:bower": "node ./scripts/version_bower.js && git add bower.json",
+    "version": "npm run version:build && npm run version:bower",
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
+    "postpublish": "git rm -rf dist && git commit -am 'Remove dist/ files'",
     "postinstall": "[ -f src/Grammar/dist/Grammar.js ] || npm run-script prepublish",
     "test": "grunt travis --verbose"
   },
