@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
@@ -47,7 +47,6 @@
     "repl": "beefy test/repl.js --open",
     "build": "grunt build",
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
-    "postinstall": "[ -f src/Grammar/dist/Grammar.js ] || npm run-script prepublish",
     "test": "grunt travis --verbose"
   },
   "dependencies": {
