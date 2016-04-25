@@ -47,7 +47,6 @@
     "repl": "beefy test/repl.js --open",
     "build": "grunt build",
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
-    "postinstall": "[ -f src/Grammar/dist/Grammar.js ] || npm run-script prepublish",
     "test": "grunt travis --verbose"
   },
   "dependencies": {
