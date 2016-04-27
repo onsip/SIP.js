@@ -1498,6 +1498,8 @@ InviteServerContext.prototype = {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
+
+      this.emit('confirmed', request);
     }
 
     switch(request.method) {
