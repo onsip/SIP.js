@@ -1446,6 +1446,7 @@ describe('InviteServerContext', function() {
         InviteServerContext.hasAnswer = true;
 
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+        spyOn(InviteServerContext, 'emit');
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         InviteServerContext.receiveRequest(req);
@@ -1454,6 +1455,8 @@ describe('InviteServerContext', function() {
         expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
 
         expect(InviteServerContext.status).toBe(12);
+        expect(InviteServerContext.emit.calls.mostRecent().args[0]).toBe('confirmed');
+        expect(InviteServerContext.emit.calls.mostRecent().args[1]).toBe(req);
       });
     });
 
