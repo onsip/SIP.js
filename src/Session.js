@@ -606,6 +606,12 @@ Session.prototype = {
 
   sendReinvite: function(options) {
     options = options || {};
+    options = Object.create(Session.desugar(options));
+    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
+    
+    if (options.media) {
+      this.mediaHint = options.media;
+    }
 
     var
       self = this,
