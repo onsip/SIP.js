@@ -683,6 +683,14 @@ UA.prototype.receiveRequest = function(request) {
          * and without To tag.
          */
         break;
+      case SIP.C.NOTIFY:
+        if (this.configuration.allowLegacyNotifications && this.listeners('notify').length > 0) {
+          request.reply(200, null);
+          self.emit('notify', {request: request});
+        } else {
+          request.reply(481, 'Subscription does not exist');
+        }
+        break;
       default:
         request.reply(405);
         break;
@@ -914,7 +922,9 @@ UA.prototype.loadConfig = function(configuration) {
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);
-      })
+      }),
+
+      allowLegacyNotifications: false
     };
 
   // Pre-Configuration
@@ -1151,6 +1161,7 @@ UA.configuration_skeleton = (function() {
       "media",
       "mediaConstraints",
       "authenticationFactory",
+      "allowLegacyNotifications",
 
       // Post-configuration generated parameters
       "via_core_value",
@@ -1590,7 +1601,13 @@ UA.configuration_check = {
       }
     },
 
-    authenticationFactory: checkAuthenticationFactory
+    authenticationFactory: checkAuthenticationFactory,
+
+    allowLegacyNotifications: function(allowLegacyNotifications) {
+      if (typeof allowLegacyNotifications === 'boolean') {
+        return allowLegacyNotifications;
+      }
+    }
   }
 };
 

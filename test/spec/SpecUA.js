@@ -780,6 +780,41 @@ describe('UA', function() {
       expect(replySpy).not.toHaveBeenCalled();
     });
 
+
+    it('replies with a 481 if allowLegacyNotifications is false when a NOTIFY is received', function() {
+      var request = { method : SIP.C.NOTIFY ,
+                    ruri : { user : UA.configuration.uri.user } ,
+                    reply : replySpy };
+      UA.receiveRequest(request);
+      expect(replySpy).toHaveBeenCalledWith(481, 'Subscription does not exist');
+    });
+
+    it('replies with a 481 if allowLegacyNotifications is true, but no listener is set, when a NOTIFY is received', function() {
+      configuration.allowLegacyNotifications = true;
+      UA = new SIP.UA(configuration);
+
+      var request = { method : SIP.C.NOTIFY ,
+                    ruri : { user : UA.configuration.uri.user } ,
+                    reply : replySpy };
+      UA.receiveRequest(request);
+      expect(replySpy).toHaveBeenCalledWith(481, 'Subscription does not exist');
+    });
+
+    it('emits notified and replies 200 OK if allowLegacyNotifications is true, but no listener is set, when a NOTIFY is received', function() {
+      configuration.allowLegacyNotifications = true;
+      UA = new SIP.UA(configuration);
+      var callback = jasmine.createSpy('callback');
+
+      UA.on('notify', callback);
+
+      var request = { method : SIP.C.NOTIFY ,
+                    ruri : { user : UA.configuration.uri.user } ,
+                    reply : replySpy };
+      UA.receiveRequest(request);
+      expect(replySpy).toHaveBeenCalledWith(200, null);
+      expect(callback).toHaveBeenCalled();
+    });
+
     it('replies with a 405 if it cannot interpret the message', function() {
       var request = { method : 'unknown method' ,
                     ruri : { user : UA.configuration.uri.user } ,
@@ -1110,6 +1145,7 @@ describe('UA', function() {
 
       expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
       expect(UA.configuration.replaces).toBe(SIP.C.supported.UNSUPPORTED);
+      expect(UA.configuration.allowLegacyNotifications).toBe(false);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1684,7 +1720,7 @@ describe('UA', function() {
       });
     });
 
-    describe('.autoload', function() {
+    describe('.autostart', function() {
       it('fails for all types except boolean', function() {
         expect(SIP.UA.configuration_check.optional.autostart()).toBeUndefined();
         expect(SIP.UA.configuration_check.optional.autostart(7)).toBeUndefined();
@@ -1696,6 +1732,20 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(SIP.UA.configuration_check.optional.autostart(true)).toBe(true);
         expect(SIP.UA.configuration_check.optional.autostart(false)).toBe(false);
+      });
+    });
+    describe('.allowLegacyNotifications', function() {
+      it('fails for all types except boolean', function() {
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications()).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications(7)).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications('string')).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications({even: 'objects'})).toBeUndefined();
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications(['arrays'])).toBeUndefined();
+      });
+
+      it('passes for boolean parameters', function() {
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications(true)).toBe(true);
+        expect(SIP.UA.configuration_check.optional.allowLegacyNotifications(false)).toBe(false);
       });
     });
   });
