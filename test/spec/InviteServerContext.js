@@ -195,7 +195,7 @@ describe('A UAS receiving an INVITE', function () {
    */
   describe('with a Replaces header', function () {
     describe('matching another dialog', function () {
-      describe('with "replaces" supported', function () {
+      xdescribe('with "replaces" supported', function () {
         beforeEach(function (done) {
           ua_config = {
             replaces: SIP.C.supported.SUPPORTED,
