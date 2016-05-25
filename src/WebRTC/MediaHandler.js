@@ -391,6 +391,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       self._remoteStreams.push(e.stream);
       self.render();
       self.emit('addStream', e);
+
+      e.stream.onaddtrack = function (te) {
+        self.logger.log('track added: '+ te.track.id);
+        self.render();
+        self.emit('addTrack', te);
+      };
     };
 
     this.peerConnection.onremovestream = function(e) {
