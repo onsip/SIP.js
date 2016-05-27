@@ -75,10 +75,10 @@ MediaStreamManager.render = function render (streams, elements) {
   }
 
   function attachAndPlay (elements, stream, index) {
-    if (typeof elements === 'function') {
-      elements = elements();
-    }
     var element = elements[index % elements.length];
+    if (typeof element === 'function') {
+      element = element();
+    }
     (environment.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
