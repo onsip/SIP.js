@@ -93,7 +93,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
      */
 
     var streamPromise;
-    if (self.localMedia) {
+    if (self.localMedia && !mediaHint) {
       self.logger.log('already have local media');
       streamPromise = SIP.Utils.Promise.resolve(self.localMedia);
     }
@@ -358,9 +358,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     return servers;
   }},
 
-  initPeerConnection: {writable: true, value: function initPeerConnection(servers, RTCConstraints) {
-    var self = this,
-      config = this.session.ua.configuration;
+  initIceCompleted: {writable: true, value: function initIceCompleted() {
+    var self = this;
 
     this.onIceCompleted = SIP.Utils.defer();
     this.onIceCompleted.promise.then(function(pc) {
@@ -370,6 +369,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.iceCheckingTimer = null;
       }
     });
+  }},
+
+  initPeerConnection: {writable: true, value: function initPeerConnection(servers, RTCConstraints) {
+    var self = this,
+      config = this.session.ua.configuration;
 
     if (this.peerConnection) {
       this.peerConnection.close();
@@ -387,6 +391,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       self._remoteStreams.push(e.stream);
       self.render();
       self.emit('addStream', e);
+
+      e.stream.onaddtrack = function (te) {
+        self.logger.log('track added: '+ te.track.id);
+        self.render();
+        self.emit('addTrack', te);
+      };
     };
 
     this.peerConnection.onremovestream = function(e) {
@@ -483,16 +493,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     self.ready = false;
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
+    self.initIceCompleted();
+
     return SIP.Utils.promisify(pc, methodName, true)(constraints)
       .then(SIP.Utils.promisify(pc, 'setLocalDescription'))
       .then(function onSetLocalDescriptionSuccess() {
-        var deferred = SIP.Utils.defer();
-        if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
-          deferred.resolve();
-        } else {
-          self.onIceCompleted.promise.then(deferred.resolve);
-        }
-        return deferred.promise;
+        return self.onIceCompleted.promise;
       })
       .then(function readySuccess () {
         var sdp = pc.localDescription.sdp;
