@@ -2522,5 +2522,25 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.mediaHandler.getReferMedia = oldGetReferMedia;
     });
+    it('logs then 603 Declines if no session.followRefer listener present', function() {
+      InviteClientContext.status = 12;
+      request.method = SIP.C.REFER;
+      request.parseHeader = jasmine.createSpy('parseHeader').and.returnValue({uri: SIP.URI.parse('sip:carol@example.com')});
+      InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
+
+      spyOn(InviteClientContext.logger, 'log');
+
+      var oldGetReferMedia = InviteClientContext.mediaHandler.getReferMedia;
+      var referMedia = {key: 'value'};
+      InviteClientContext.mediaHandler.getReferMedia = jasmine.createSpy('getReferMedia').and.returnValue(referMedia);
+
+      InviteClientContext.receiveRequest(request);
+      //no way to avoid request.send
+
+      expect(InviteClientContext.logger.log).toHaveBeenCalledWith('REFER received');
+      expect(request.reply).toHaveBeenCalledWith(603, 'Declined');
+
+      InviteClientContext.mediaHandler.getReferMedia = oldGetReferMedia;
+    });
   });
 });

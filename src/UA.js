@@ -30,7 +30,8 @@ var UA,
       'BYE',
       'OPTIONS',
       'INFO',
-      'NOTIFY'
+      'NOTIFY',
+      'REFER'
     ],
 
     ACCEPTED_BODY_TYPES: [

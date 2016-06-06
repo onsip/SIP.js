@@ -6,6 +6,8 @@ language: node_js
 
 node_js:
   - "0.10"
+  - "4.2"
+  - "stable"
 
 cache:
   directories:
@@ -14,6 +16,6 @@ cache:
 notifications:
   email:
     recipients:
-      - developer@onsip.com
+      secure: fe88XKh8U+bt2eSkZFKPG//d1i/pYEcG9WqXGRwRd1YzrhM9DVOUPXN5xhNADgfBK0PNZUEga+UMlAcrtt6PgBDZQhQsGWDb720wGLA4UoyerFInYeqb8Pue9V1FJnniys5APwxHAreYONDBRwerKx3OZ0Jz64vHyG1XNaBzlqU=
     on_success: change
     on_failure: always
