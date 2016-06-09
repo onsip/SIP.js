@@ -28,7 +28,7 @@ var MediaHandler = function(session, options) {
   var servers = this.prepareIceServers(options.stunServers, options.turnServers);
   this.RTCConstraints = options.RTCConstraints || {};
 
-  this.initPeerConnection(servers, this.RTCConstraints);
+  this.initPeerConnection(servers);
 
   function selfEmit(mh, event) {
     if (mh.mediaStreamManager.on) {
@@ -181,7 +181,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var servers = this.prepareIceServers(options.stunServers, options.turnServers);
     this.RTCConstraints = options.RTCConstraints || this.RTCConstraints;
 
-    this.initPeerConnection(servers, this.RTCConstraints);
+    this.initPeerConnection(servers);
 
     /* once updateIce is implemented correctly, this is better than above
     //no op if browser does not support this
@@ -358,7 +358,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     return servers;
   }},
 
-  initPeerConnection: {writable: true, value: function initPeerConnection(servers, RTCConstraints) {
+  initPeerConnection: {writable: true, value: function initPeerConnection(servers) {
     var self = this,
       config = this.session.ua.configuration;
 
@@ -375,7 +375,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       this.peerConnection.close();
     }
 
-    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, RTCConstraints);
+    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers});
 
     // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
     // even if peerConnection.onaddstream was just called. In order to make
