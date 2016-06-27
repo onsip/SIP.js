@@ -143,6 +143,17 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   * @param {String} sdp
   */
   setDescription: {writable: true, value: function setDescription (sdp) {
+    if (this.session.ua.configuration.hackCleanJitsiSdpImageattr) {
+      // Jitsi likes to send invalid `a=imageattr` lines that look like:
+      // `a=imageattr:99 send [x=[0-1920],y=[0-1080]] recv [x=[0-1920],y=[0-1080]]`
+      //
+      // This should fix them up. Here's the relevant RFC grammar:
+      // https://tools.ietf.org/html/rfc6236#section-3.1.1
+      for (var i = 0; i < 4; i++) { // 4 times because each `replace` fixes only one x/y
+        sdp = sdp.replace(/^(a=imageattr:.*?)(x|y)=\[0-/gm, "$1$2=[1:");
+      }
+    }
+
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
       sdp: sdp
