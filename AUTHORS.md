@@ -6,7 +6,9 @@
 
 ## Joseph Frazier
 
-* <joseph@onsip.com>
+* <1212jtraceur@gmail.com>
+* GitHub [@josephfrazier](https://github.com/josephfrazier)
+* Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
 
 ## Eric Green
 
