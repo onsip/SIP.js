@@ -1685,6 +1685,40 @@ describe('InviteServerContext', function() {
 
         expect(req.reply).toHaveBeenCalledWith(415, null, ["Accept: application/dtmf-relay"]);
       });
+
+      it('invokes onInfo if onInfo is set', function(done) {
+        InviteServerContext.status = 12;
+        req = SIP.Parser.parseMessage([
+          'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
+          'Max-Forwards: 65',
+          'To: <sip:james@onsnip.onsip.com>',
+          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
+          'Call-ID: grj0liun879lfj35evfq',
+          'CSeq: 1798 INVITE',
+          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
+          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
+          'Content-Type: application/dtmf-relay',
+          'Supported: outbound',
+          'User-Agent: SIP.js 0.5.0-devel',
+          'Content-Length: 26',
+          '',
+          'Signal= 6',
+          'Duration= 100',
+          ''].join('\r\n'), InviteServerContext.ua);
+
+        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
+
+        InviteServerContext.onInfo = function onInfo(request) {
+          try {
+            assert.equal(req, request);
+          } catch (error) {
+            return done(error);
+          }
+          done();
+        };
+
+        InviteServerContext.receiveRequest(req);
+      });
     });
 
     describe('method is REFER', function() {
