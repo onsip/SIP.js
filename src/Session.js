@@ -1134,7 +1134,7 @@ InviteServerContext.prototype = {
 
       this.receiveRequest = function(request) {
         if (request.method === SIP.C.ACK) {
-          this.request(SIP.C.BYE, {
+          this.sendRequest(SIP.C.BYE, {
             extraHeaders: extraHeaders,
             body: body
           });
