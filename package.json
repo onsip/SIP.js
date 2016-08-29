@@ -40,7 +40,7 @@
     "pegjs": "^0.8.0"
   },
   "engines": {
-    "node": ">=0.8"
+    "node": ">=0.12"
   },
   "license": "MIT",
   "scripts": {
@@ -50,7 +50,7 @@
     "test": "grunt travis --verbose"
   },
   "dependencies": {
-    "ws": "^0.6.4"
+    "ws": "^1.0.1"
   },
   "optionalDependencies": {
     "promiscuous": "^0.6.0"
