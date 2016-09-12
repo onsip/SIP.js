@@ -674,7 +674,8 @@ Session.prototype = {
             this.status === C.STATUS_WAITING_FOR_ACK ||
             this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK ||
             this.status === C.STATUS_EARLY_MEDIA ||
-            this.status === C.STATUS_CONFIRMED) {
+            this.status === C.STATUS_CONFIRMED ||
+            this.dialog) {
           if (this.onInfo) {
             return this.onInfo(request);
           }
