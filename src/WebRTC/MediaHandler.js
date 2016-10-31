@@ -518,6 +518,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         self.emit('getDescription', sdpWrapper);
 
+        if (self.session.ua.configuration.hackStripTcp) {
+          sdpWrapper.sdp = sdpWrapper.sdp.replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
+        }
+
         self.ready = true;
         return sdpWrapper.sdp;
       })
