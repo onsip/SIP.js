@@ -905,6 +905,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackWssInTransport: false,
       hackAllowUnregisteredOptionTags: false,
       hackCleanJitsiSdpImageattr: false,
+      hackStripTcp: false,
 
       contactTransport: 'ws',
       forceRport: false,
@@ -1140,6 +1141,7 @@ UA.configuration_skeleton = (function() {
       "hackWssInTransport", //false
       "hackAllowUnregisteredOptionTags", //false
       "hackCleanJitsiSdpImageattr", //false
+      "hackStripTcp", //false
       "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
@@ -1344,6 +1346,12 @@ UA.configuration_check = {
     hackCleanJitsiSdpImageattr: function(hackCleanJitsiSdpImageattr) {
       if (typeof hackCleanJitsiSdpImageattr === 'boolean') {
         return hackCleanJitsiSdpImageattr;
+      }
+    },
+
+    hackStripTcp: function(hackStripTcp) {
+      if (typeof hackStripTcp === 'boolean') {
+        return hackStripTcp;
       }
     },
 
