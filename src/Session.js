@@ -471,7 +471,7 @@ Session.prototype = {
   /**
    * Hold
    */
-  hold: function(options) {
+  hold: function() {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -590,7 +590,8 @@ Session.prototype = {
     var
       self = this,
        extraHeaders = (options.extraHeaders || []).slice(),
-       eventHandlers = options.eventHandlers || {};
+       eventHandlers = options.eventHandlers || {},
+       succeeded;
 
     if (eventHandlers.succeeded) {
       succeeded = eventHandlers.succeeded;
