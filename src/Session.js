@@ -2,6 +2,7 @@
 module.exports = function (SIP, environment) {
 
 var DTMF = require('./Session/DTMF')(SIP);
+var RFC4028 = require('./RFC4028')(SIP.Timers);
 
 var Session, InviteServerContext, InviteClientContext,
  C = {
@@ -941,6 +942,9 @@ Session.prototype = {
       this.replacee.emit('replaced', this);
       this.replacee.terminate();
     }
+    if (response) {
+      RFC4028.updateState(this.dialog, response, SIP.Parser.parseMessage, this.ua);
+    }
     this.emit('accepted', response, cause);
     return this;
   },
@@ -1001,6 +1005,13 @@ InviteServerContext = function(ua, request) {
   } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp.type === 'session')) {
     request.reply(415);
     //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
+    return;
+  }
+
+  // TODO test
+  // http://tools.ietf.org/html/rfc4028#section-9
+  if (RFC4028.hasSmallMinSE(request)) {
+    request.reply(422, null, ['Min-SE: ' + RFC4028.localMinSE]);
     return;
   }
 
@@ -1367,6 +1378,19 @@ InviteServerContext.prototype = {
 
         extraHeaders.push('Contact: ' + self.contact);
         extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
+
+        // TODO test
+        // http://tools.ietf.org/html/rfc4028#section-9
+        var supportedOptions = request.parseHeader('Supported') || [];
+        var sessionExpires = request.parseHeader('Session-Expires') || {};
+        var interval = sessionExpires.deltaSeconds;
+        if (interval) {
+          var refresher = sessionExpires.refresher || 'uas';
+          extraHeaders.push('Session-Expires: ' + interval + ';' + refresher);
+          if (refresher === 'uac' || supportedOptions.indexOf('timer') >= 0) {
+            extraHeaders.push('Require: timer');
+          }
+        }
 
         if(!self.hasOffer) {
           self.hasOffer = true;
