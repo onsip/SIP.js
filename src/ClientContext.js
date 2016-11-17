@@ -1,4 +1,5 @@
 "use strict";
+console.log('test');
 module.exports = function (SIP) {
 var ClientContext;
 
