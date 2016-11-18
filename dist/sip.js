@@ -5343,6 +5343,12 @@ Session.prototype = {
           this.terminated(request, SIP.C.causes.BYE);
         }
         break;
+      case SIP.C.UPDATE:
+        if(this.status === C.STATUS_CONFIRMED) {
+          this.logger.log('re-INVITE via UPDATE received');
+          request.reply(200);
+        }
+        break;
       case SIP.C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
