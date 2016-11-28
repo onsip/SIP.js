@@ -488,14 +488,6 @@ Utils= {
     var temp = WordToHex(a)+WordToHex(b)+WordToHex(c)+WordToHex(d);
 
     return temp.toLowerCase();
-  },
-
-  getDescriptionHeaders: function(description) {
-    var headers = ['Content-Type: ' + description.contentType];
-    if (description.extraHeaders) {
-      headers = headers.concat(description.extraHeaders);
-    }
-    return headers;
   }
 };
 

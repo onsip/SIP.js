@@ -615,10 +615,9 @@ Session.prototype = {
     this.mediaHandler.getDescription(self.mediaHint)
     .then(
       function(description){
-        extraHeaders = extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
         self.dialog.sendRequest(self, SIP.C.INVITE, {
           extraHeaders: extraHeaders,
-          body: description.body
+          body: description
         });
       },
       function() {
@@ -1762,9 +1761,8 @@ InviteClientContext.prototype = {
             return;
           }
           self.hasOffer = true;
-          self.request.body = description.body;
+          self.request.body = description;
           self.status = C.STATUS_INVITE_SENT;
-          self.request.extraHeaders = self.request.extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
           self.send();
         },
         function onFailure() {
@@ -1958,12 +1956,10 @@ InviteClientContext.prototype = {
             earlyMedia.setDescription(response)
             .then(earlyMedia.getDescription.bind(earlyMedia, session.mediaHint))
             .then(function onSuccess(description) {
-              extraHeaders = extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
-
               extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
               earlyDialog.sendRequest(session, SIP.C.PRACK, {
                 extraHeaders: extraHeaders,
-                body: description.body
+                body: description
               });
               session.status = C.STATUS_EARLY_MEDIA;
               session.emit('progress', response);
@@ -2075,8 +2071,7 @@ InviteClientContext.prototype = {
                 localMedia.getVideoTracks()[0].enabled = true;
               }*/
               session.sendRequest(SIP.C.ACK,{
-                body: description.body,
-                extraHeaders: SIP.Utils.getDescriptionHeaders(description),
+                body: description,
                 cseq:response.cseq
               });
               session.accepted(response);
