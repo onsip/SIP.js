@@ -239,12 +239,24 @@ OutgoingRequest.prototype = {
     msg += getSupportedHeader(this);
     msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
-    if(this.body) {
-      length = SIP.Utils.str_utf8_length(this.body);
-      msg += 'Content-Length: ' + length + '\r\n\r\n';
-      msg += this.body;
+    if (this.body) {
+      if (typeof this.body === 'string') {
+        length = SIP.Utils.str_utf8_length(this.body);
+        msg += 'Content-Type: application/sdp\r\n';
+        msg += 'Content-Length: ' + length + '\r\n\r\n';
+        msg += this.body;
+      } else {
+        if (this.body.body && this.body.contentType) {
+          length = SIP.Utils.str_utf8_length(this.body.body);
+          msg += 'Content-Type: ' + this.body.contentType + '\r\n';
+          msg += 'Content-Length: ' + length + '\r\n\r\n';
+          msg += this.body.body;
+        } else {
+          msg += 'Content-Length: ' + 0 + '\r\n\r\n';
+        }
+      }
     } else {
-      msg += 'Content-Length: 0\r\n\r\n';
+      msg += 'Content-Length: ' + 0 + '\r\n\r\n';
     }
 
     return msg;
