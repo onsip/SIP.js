@@ -558,8 +558,7 @@ Session.prototype = {
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
     .then(function(description) {
       var extraHeaders = ['Contact: ' + self.contact];
-      extraHeaders = extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
-      request.reply(200, null, extraHeaders, description.body,
+      request.reply(200, null, extraHeaders, description,
         function() {
           self.status = C.STATUS_WAITING_FOR_ACK;
           self.setInvite2xxTimer(request, description);
@@ -787,9 +786,8 @@ Session.prototype = {
       self.logger.log('no ACK received, attempting to retransmit OK');
 
       var extraHeaders = ['Contact: ' + self.contact];
-      extraHeaders = extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
 
-      request.reply(200, null, extraHeaders, description.body);
+      request.reply(200, null, extraHeaders, description);
 
       timeout = Math.min(timeout * 2, SIP.Timers.T2);
 
@@ -1243,12 +1241,10 @@ InviteServerContext.prototype = {
           this.early_sdp = description.body;
           this[this.hasOffer ? 'hasAnswer' : 'hasOffer'] = true;
 
-          extraHeaders = extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
-
           // Retransmit until we get a response or we time out (see prackTimer below)
           var timeout = SIP.Timers.T1;
           this.timers.rel1xxTimer = SIP.Timers.setTimeout(function rel1xxRetransmission() {
-            this.request.reply(statusCode, null, extraHeaders, description.body);
+            this.request.reply(statusCode, null, extraHeaders, description);
             timeout *= 2;
             this.timers.rel1xxTimer = SIP.Timers.setTimeout(rel1xxRetransmission.bind(this), timeout);
           }.bind(this), timeout);
@@ -1266,7 +1262,7 @@ InviteServerContext.prototype = {
           }.bind(this), SIP.Timers.T1 * 64);
 
           // Send the initial response
-          response = this.request.reply(statusCode, reasonPhrase, extraHeaders, description.body);
+          response = this.request.reply(statusCode, reasonPhrase, extraHeaders, description);
           this.emit('progress', response, reasonPhrase);
         }.bind(this),
 
@@ -1342,7 +1338,6 @@ InviteServerContext.prototype = {
 
         extraHeaders.push('Contact: ' + self.contact);
         extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
-        extraHeaders = extraHeaders.concat(SIP.Utils.getDescriptionHeaders(description));
 
         if(!self.hasOffer) {
           self.hasOffer = true;
@@ -1350,7 +1345,7 @@ InviteServerContext.prototype = {
           self.hasAnswer = true;
         }
         response = request.reply(200, null, extraHeaders,
-                      description.body,
+                      description,
                       replySucceeded,
                       replyFailed
                      );

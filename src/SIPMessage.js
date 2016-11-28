@@ -473,11 +473,22 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   response += getSupportedHeader(this);
   response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
-  if(body) {
-    length = SIP.Utils.str_utf8_length(body);
-    response += 'Content-Type: application/sdp\r\n';
-    response += 'Content-Length: ' + length + '\r\n\r\n';
-    response += body;
+  if (body) {
+    if (typeof body === 'string') {
+      length = SIP.Utils.str_utf8_length(body);
+      response += 'Content-Type: application/sdp\r\n';
+      response += 'Content-Length: ' + length + '\r\n\r\n';
+      response += body;
+    } else {
+      if (body.body && body.contentType) {
+        length = SIP.Utils.str_utf8_length(body.body);
+        response += 'Content-Type: ' + body.contentType + '\r\n';
+        response += 'Content-Length: ' + length + '\r\n\r\n';
+        response += body.body;
+      } else {
+        response += 'Content-Length: ' + 0 + '\r\n\r\n';
+      }
+    }
   } else {
     response += 'Content-Length: ' + 0 + '\r\n\r\n';
   }
