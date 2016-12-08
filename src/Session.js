@@ -1113,7 +1113,7 @@ InviteServerContext.prototype = {
       };
 
       this.request.server_transaction.on('stateChanged', function(){
-        if (this.state === SIP.Transactions.C.STATUS_TERMINATED) {
+        if (this.state === SIP.Transactions.C.STATUS_TERMINATED && this.dialog) {
           this.request = new SIP.OutgoingRequest(
             SIP.C.BYE,
             this.dialog.remote_target,
