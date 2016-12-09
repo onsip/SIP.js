@@ -48,7 +48,7 @@ describe('Subscription', function() {
 
     it('sets body if body is passed in', function() {
       Subscription = new SIP.Subscription(ua, 'alice@example.com', 'dialog', {body: 'not really a body'});
-      expect(Subscription.body).toBe('not really a body');
+      expect(Subscription.body.body).toBe('not really a body');
     });
 
     it('sets the contact', function() {
