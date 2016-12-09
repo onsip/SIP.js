@@ -233,10 +233,14 @@ Dialog.prototype = {
 
     var body = null;
     if (options.body) {
-      body = {};
-      body.body = options.body;
-      if (options.contentType) {
-        body.contentType = options.contentType;
+      if (options.body.body) {
+        body = options.body;
+      } else {
+        body = {};
+        body.body = options.body;
+        if (options.contentType) {
+          body.contentType = options.contentType;
+        }
       }
     }
 
