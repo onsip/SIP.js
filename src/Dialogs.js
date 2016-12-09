@@ -231,12 +231,16 @@ Dialog.prototype = {
 
     var extraHeaders = (options.extraHeaders || []).slice();
 
-    if (options.contentType) {
-      extraHeaders = extraHeaders.concat(['Content-Type: ' + options.contentType]);
+    var body = null;
+    if (options.body) {
+      body = {};
+      body.body = options.body;
+      if (options.contentType) {
+        body.contentType = options.contentType;
+      }
     }
 
-    var body = options.body || null,
-      request = this.createRequest(method, extraHeaders, body),
+    var request = this.createRequest(method, extraHeaders, body),
       request_sender = new RequestSender(this, applicant, request);
 
     request_sender.send();
