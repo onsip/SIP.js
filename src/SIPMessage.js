@@ -242,7 +242,6 @@ OutgoingRequest.prototype = {
     if (this.body) {
       if (typeof this.body === 'string') {
         length = SIP.Utils.str_utf8_length(this.body);
-        msg += 'Content-Type: application/sdp\r\n';
         msg += 'Content-Length: ' + length + '\r\n\r\n';
         msg += this.body;
       } else {
