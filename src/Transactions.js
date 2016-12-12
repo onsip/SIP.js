@@ -162,7 +162,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
   //Will be called from the request instance, not the transaction itself.
   this.request.cancel = function(reason, extraHeaders) {
     extraHeaders = (extraHeaders || []).slice();
-    var length = extraHeaders.length();
+    var length = extraHeaders.length;
     var extraHeadersString = null;
     for (var idx = 0; idx < length; idx++) {
       extraHeadersString = (extraHeadersString || '') + extraHeaders[idx].trim() + '\r\n';
