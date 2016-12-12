@@ -1854,7 +1854,7 @@ InviteClientContext.prototype = {
     // Proceed to cancellation if the user requested.
     if(this.isCanceled) {
       if(response.status_code >= 100 && response.status_code < 200) {
-        this.request.cancel(this.cancelReason);
+        this.request.cancel(this.cancelReason, extraHeaders);
         this.canceled(null);
       } else if(response.status_code >= 200 && response.status_code < 299) {
         this.acceptAndTerminate(response);
@@ -2145,6 +2145,8 @@ InviteClientContext.prototype = {
   cancel: function(options) {
     options = options || {};
 
+    options.extraHeaders = (options.extraHeaders || []).slice();
+
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED || this.status === C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -2162,7 +2164,7 @@ InviteClientContext.prototype = {
     } else if (this.status === C.STATUS_INVITE_SENT ||
                this.status === C.STATUS_1XX_RECEIVED ||
                this.status === C.STATUS_EARLY_MEDIA) {
-      this.request.cancel(cancel_reason);
+      this.request.cancel(cancel_reason, options.extraHeaders);
     }
 
     return this.canceled();

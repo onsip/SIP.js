@@ -58,8 +58,10 @@ ClientContext.prototype.send = function () {
 ClientContext.prototype.cancel = function (options) {
   options = options || {};
 
+  options.extraHeaders = (options.extraHeaders || []).slice();
+
   var cancel_reason = SIP.Utils.getCancelReason(options.status_code, options.reason_phrase);
-  this.request.cancel(cancel_reason);
+  this.request.cancel(cancel_reason, options.extraHeaders);
 
   this.emit('cancel');
 };

@@ -2041,7 +2041,7 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveInviteResponse(resp);
 
-      expect(InviteClientContext.request.cancel).toHaveBeenCalledWith('TESTING');
+      expect(InviteClientContext.request.cancel).toHaveBeenCalledWith('TESTING', []);
       expect(InviteClientContext.canceled).toHaveBeenCalledWith(null);
     });
     it('accepts and terminates the response if the call was canceled and the response is 2xx', function() {
