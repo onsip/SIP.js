@@ -91,9 +91,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
      * 2. addStreams
      * 3. createOffer/createAnswer
      */
-
+     console.log("getDescription self");
+     console.log(self);
     var streamPromise;
     if (self.localMedia) {
+
       self.logger.log('already have local media');
       streamPromise = SIP.Utils.Promise.resolve(self.localMedia);
     }
