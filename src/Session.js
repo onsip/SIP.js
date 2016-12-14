@@ -572,13 +572,9 @@ Session.prototype = {
       request.reply(415);
       return;
     }
-    console.log("receiveReinvite request");
-    console.log(request);
     this.mediaHandler.setDescription(request.body)
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
     .then(function(body) {
-      console.log("receiveReinvite body");
-      console.log(body);
       request.reply(200, null, ['Contact: ' + self.contact], body,
         function() {
           self.status = C.STATUS_WAITING_FOR_ACK;
@@ -597,14 +593,14 @@ Session.prototype = {
     })
     .catch(function onFailure (e) {
       var statusCode;
-      console.log("receiveReinvite onFailure e");
-      console.log(e);
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
+        request.reply(200, null, ['Contact: ' + self.contact],null,
+          function() {
+            self.status = C.STATUS_WAITING_FOR_ACK;
+            self.setInvite2xxTimer(request, null);
+            self.setACKTimer();
 
-        console.log("receiveReinvite onFailure GetDescriptionError");
-        console.log(e);
-
-        statusCode = 200;
+          });
       } else {
         self.logger.error(e);
         statusCode = 488;
