@@ -1,13 +1,13 @@
 {
-  "name": "SIP-Simple",
+  "name": "sip-simple",
   "title": "SIP Simple",
   "description": "A fork of onsip/SIP.js to eliminate WebRTC. For server-side use only.",
   "version": "0.0.1",
   "main": "src/index.js",
-  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
+  "author": "Red Tulip Systems <developer@redtulipsystems.com> (https://redtulipsystems.com/authors/)",
   "contributors": [
     {
-      "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
+      "url": "https://github.com/RedTulipSystems/SIP-Simple/blob/master/THANKS.md"
     }
   ],
   "repository": {
