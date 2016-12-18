@@ -1,3 +1,5 @@
+Many thanks to all of the contributors to both SIP.js and JsSIP. At the time of forking (18 December 2016), the SIP.js THANKS.md included the following (verbatim):
+
 THANKS
 ======
 

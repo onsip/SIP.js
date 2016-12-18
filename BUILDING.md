@@ -1,3 +1,6 @@
+#NOT YET UPDATED
+This all needs to be updated post-fork. At the time of forking (18 December 2016), the SIP.js BUILDING.md included the following (verbatim):
+
 ## What you need to build SIP.js
 
 You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com/). Optionally you also need [PhantomJS](http://phantomjs.org/) if you want to run test units.

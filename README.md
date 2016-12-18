@@ -1,3 +1,6 @@
+#NOT YET UPDATED
+This all needs to be updated post-fork. At the time of forking (18 December 2016), the SIP.js README.md included the following (verbatim):
+
 # SIP.js
 
 [![Build Status](https://travis-ci.org/onsip/SIP.js.png?branch=master)](https://travis-ci.org/onsip/SIP.js)
