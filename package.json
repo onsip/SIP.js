@@ -2,7 +2,7 @@
   "name": "sip-simple",
   "title": "SIP Simple",
   "description": "A fork of onsip/SIP.js to eliminate WebRTC. For server-side use only.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "src/index.js",
   "author": "Red Tulip Systems <developer@redtulipsystems.com> (https://redtulipsystems.com/authors/)",
   "contributors": [
@@ -43,8 +43,7 @@
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
     "test": "grunt travis --verbose"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "optionalDependencies": {
     "promiscuous": "^0.6.0"
   }
