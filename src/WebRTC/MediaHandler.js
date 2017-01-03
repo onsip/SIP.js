@@ -388,11 +388,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     });
 
     [].concat(turnServers).forEach(function (server) {
-      servers.push({
-        'urls': server.urls,
-        'username': server.username,
-        'credential': server.password
-      });
+      var turnServer = {'urls': server.urls};
+      if (server.username) {
+        turnServer.username = server.username;
+      }
+      if (server.password) {
+        turnServer.credential = server.password;
+      }
+      servers.push(turnServer);
     });
 
     return servers;

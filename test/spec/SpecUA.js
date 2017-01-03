@@ -1675,10 +1675,13 @@ describe('UA', function() {
         expect(SIP.UA.configuration_check.optional.turnServers([{server: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{server:'example.com', urls: ['example.com'], username: 'alice', password: 'pass'}]);
       });
 
-      it('fails if urls, username, or server is missing', function() {
-        expect(SIP.UA.configuration_check.optional.turnServers({urls: 'example.com', username: 'alice'})).toBeUndefined();
-        expect(SIP.UA.configuration_check.optional.turnServers({urls: 'example.com', password: 'pass'})).toBeUndefined();
+      it('fails if url is missing', function() {
         expect(SIP.UA.configuration_check.optional.turnServers({username: 'alice', password: 'pass'})).toBeUndefined();
+      });
+
+      it('allows username or password to be missing', function() {
+        expect(SIP.UA.configuration_check.optional.turnServers({urls: 'example.com', username: 'alice'})).toBeDefined();
+        expect(SIP.UA.configuration_check.optional.turnServers({urls: 'example.com', password: 'pass'})).toBeDefined();
       });
 
       it('fails if the url passed is not a valid turn_uri', function() {

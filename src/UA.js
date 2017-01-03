@@ -1549,7 +1549,7 @@ UA.configuration_check = {
           turn_server.urls = [turn_server.server];
         }
 
-        if (!turn_server.urls || !turn_server.username || !turn_server.password) {
+        if (!turn_server.urls) {
           return;
         }
 
