@@ -1,24 +1,23 @@
-# SIP.js
+# SIP Simple
 
-[![Build Status](https://travis-ci.org/onsip/SIP.js.png?branch=master)](https://travis-ci.org/onsip/SIP.js)
+A JavaScript SIP stack for the server! No need (or support) for web sockets or WebRTC. For that, we recommend [SIPjs.com](http://sipjs.com).
 
-A JavaScript SIP stack for WebRTC, instant messaging, and more!
+## Download and Install
 
-
-## Website and Documentation
-
-* [SIPjs.com](http://sipjs.com)
-* [Mailing List](https://groups.google.com/forum/#!forum/sip_js)
-* [Issue Tracking](https://github.com/onsip/sip.js/issues)
-
-
-## Download
-
-* [sipjs.com/download](http://sipjs.com/download/)
-* Bower: `bower install sip.js`
-* npm: `npm install sip.js`
+* Bower: `bower install sip-simple`
+* npm: `npm install sip-simple`
 
 ## Authors
+
+### Rob Sutter
+
+* <rob@redtulipsystems.com>
+* GitHub [@rts-rob](https://github.com/rts-rob)
+* Twitter [@rts-rob](https://twitter.com/rts-rob)
+
+### SIP.js Authors
+
+SIP Simple is a hard fork of SIP.js, and as such contains a substantial portion of work performed by the SIP.js authors. At the time of forking (18 December 2016), the SIP.js README.md included the following:
 
 ### James Criscuolo
 
@@ -50,7 +49,9 @@ SIP.js contains substantial portions of the JsSIP software. JsSIP's authors at t
 
 ## License
 
-SIP.js is released under the [MIT license](http://sipjs.com/license).
+SIP Simple is released under the [MIT license](https://mit-license.org/).
+
+SIP Simple contains substantial portions of the SIP.js software, under the [MIT license](http://sipjs.com/license).
 
 SIP.js contains substantial portions of the JsSIP software, under the following license:
 

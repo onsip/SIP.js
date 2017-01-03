@@ -1,27 +1,21 @@
 {
-  "name": "sip.js",
-  "title": "SIP.js",
-  "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.7.5",
+  "name": "sip-simple",
+  "title": "SIP Simple",
+  "description": "A fork of onsip/SIP.js to eliminate WebRTC. For server-side use only.",
+  "version": "0.0.2",
   "main": "src/index.js",
-  "browser": {
-    "./src/environment.js": "./src/environment_browser.js"
-  },
-  "homepage": "http://sipjs.com",
-  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
+  "author": "Red Tulip Systems <developer@redtulipsystems.com> (https://redtulipsystems.com/authors/)",
   "contributors": [
     {
-      "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
+      "url": "https://github.com/RedTulipSystems/SIP-Simple/blob/master/THANKS.md"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/onsip/SIP.js.git"
+    "url": "https://github.com/RedTulipSystems/SIP-Simple.git"
   },
   "keywords": [
     "sip",
-    "websocket",
-    "webrtc",
     "library",
     "javascript"
   ],
@@ -49,9 +43,7 @@
     "prepublish": "cd src/Grammar && mkdir -p dist && pegjs --extra-options-file peg.json src/Grammar.pegjs dist/Grammar.js",
     "test": "grunt travis --verbose"
   },
-  "dependencies": {
-    "ws": "^1.0.1"
-  },
+  "dependencies": {},
   "optionalDependencies": {
     "promiscuous": "^0.6.0"
   }

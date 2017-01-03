@@ -1,3 +1,6 @@
+#NOT YET UPDATED
+This all needs to be updated post-fork. At the time of forking (18 December 2016), the SIP.js RELEASE.md included the following (verbatim):
+
 # How To version release SIP.js
 
 (These are developer notes.)

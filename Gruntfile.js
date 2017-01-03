@@ -1,3 +1,6 @@
+// #NOT YET UPDATED
+// This all needs to be updated post-fork. At the time of forking (18 December 2016), the SIP.js Gruntfile.js included the following (verbatim):
+
 /*jshint multistr:true, devel:true*/
 /*global module:false*/
 
