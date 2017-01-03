@@ -150,26 +150,12 @@ describe('Subscription', function() {
       }
     });
 
-    it('calls clearTimeout on Timer N', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
-
-      Subscription.receiveResponse(response);
-
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
-    });
-
-    it('creates a dialog, sets the id, emits accepted, and puts this subscription in the ua\'s subscriptions array', function() {
-      spyOn(Subscription, 'createConfirmedDialog').and.callThrough();
+    it ('emits accepted', function() {
       spyOn(Subscription, 'emit');
 
-      expect(Subscription.dialog).toBeNull();
-
       Subscription.receiveResponse(response);
 
-      expect(Subscription.createConfirmedDialog).toHaveBeenCalledWith(response, 'UAC');
-      expect(Subscription.id).toBe(Subscription.dialog.id.toString());
       expect(Subscription.emit).toHaveBeenCalledWith('accepted', response, 'OK');
-      expect(ua.subscriptions[Subscription.id]).toBe(Subscription);
     });
 
     it('sets the sub_duration timer if there was a valid expires header', function() {
@@ -374,7 +360,7 @@ describe('Subscription', function() {
         'a= sendrecv',
         ''].join('\r\n'), ua);
 
-      expect(Subscription.createConfirmedDialog(response, 'UAC')).toBe(true);
+      expect(Subscription.createConfirmedDialog(response, 'UAS')).toBe(true);
 
       expect(Subscription.dialog).not.toBeNull();
       expect(Subscription.dialog).toBeDefined();
@@ -397,7 +383,7 @@ describe('Subscription', function() {
         ''].join('\r\n'), ua);
       //no contact header, will be false
 
-      expect(Subscription.createConfirmedDialog(response, 'UAC')).toBe(false);
+      expect(Subscription.createConfirmedDialog(response, 'UAS')).toBe(false);
 
       expect(Subscription.dialog).toBeNull();
     });
@@ -422,7 +408,7 @@ describe('Subscription', function() {
         'a= sendrecv',
         '',].join('\r\n'), ua);
 
-      Subscription.createConfirmedDialog(response, 'UAC')
+      Subscription.createConfirmedDialog(response, 'UAS')
       expect(Subscription.dialog).toBeDefined();
 
       Subscription.terminateDialog();
@@ -474,6 +460,18 @@ describe('Subscription', function() {
       Subscription.receiveRequest(request);
 
       expect(request.reply).toHaveBeenCalledWith(200, SIP.C.REASON_200);
+    });
+
+    it('creates a dialog, sets the id and puts this subscription in the ua\'s subscriptions array', function() {
+      spyOn(Subscription, 'createConfirmedDialog').and.callThrough();
+
+      expect(Subscription.dialog).toBeNull();
+
+      Subscription.receiveRequest(request);
+
+      expect(Subscription.createConfirmedDialog).toHaveBeenCalledWith(request, 'UAS');
+      expect(Subscription.id).toBe(Subscription.dialog.id.toString());
+      expect(ua.subscriptions[Subscription.id]).toBe(Subscription);
     });
 
     it('clear both timers', function() {
@@ -617,14 +615,15 @@ describe('Subscription', function() {
   });
 
   describe('.failed', function() {
-    it('calls close and emits failed', function() {
+    it('calls close and emits failed and rejected', function() {
       spyOn(Subscription, 'close');
       spyOn(Subscription, 'emit');
 
       Subscription.failed();
 
       expect(Subscription.close).toHaveBeenCalled();
-      expect(Subscription.emit.calls.mostRecent().args[0]).toBe('failed');
+      expect(Subscription.emit.calls.argsFor(0)[0]).toBe('failed');
+      expect(Subscription.emit.calls.argsFor(1)[0]).toBe('rejected');
     });
   });
 
