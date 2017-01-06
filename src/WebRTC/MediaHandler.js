@@ -23,12 +23,14 @@ var MediaHandler = function(session, options) {
   this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager(this.logger);
   this.audioMuted = false;
   this.videoMuted = false;
+  this.local_hold = false;
+  this.remote_hold = false;
 
   // old init() from here on
   var servers = this.prepareIceServers(options.stunServers, options.turnServers);
   this.RTCConstraints = options.RTCConstraints || {};
 
-  this.initPeerConnection(servers, this.RTCConstraints);
+  this.initPeerConnection(servers);
 
   function selfEmit(mh, event) {
     if (mh.mediaStreamManager.on) {
@@ -134,15 +136,50 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.render();
         return self.createOfferOrAnswer(self.RTCConstraints);
       })
+      .then(function(sdp) {
+        sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
+
+        if (self.local_hold) {
+          // Don't receive media
+          // TODO - This will break for media streams with different directions.
+          if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(sdp)) {
+            sdp = sdp.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
+          } else {
+            sdp = sdp.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
+            sdp = sdp.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
+          }
+        }
+
+        return {
+          body: sdp,
+          contentType: 'application/sdp'
+        };
+      })
     ;
   }},
 
   /**
-  * Message reception.
-  * @param {String} type
-  * @param {String} sdp
-  */
-  setDescription: {writable: true, value: function setDescription (sdp) {
+   * Check if a SIP message contains a session description.
+   * @param {SIP.SIPMessage} message
+   * @returns {boolean}
+   */
+  hasDescription: {writeable: true, value: function hasDescription (message) {
+    return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
+  }},
+
+  /**
+   * Set the session description contained in a SIP message.
+   * @param {SIP.SIPMessage} message
+   * @returns {Promise}
+   */
+  setDescription: {writable: true, value: function setDescription (message) {
+    var sdp = message.body;
+
+    this.remote_hold = /a=(sendonly|inactive)/.test(sdp);
+
+    sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
+    sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
+
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
       sdp: sdp
@@ -181,7 +218,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var servers = this.prepareIceServers(options.stunServers, options.turnServers);
     this.RTCConstraints = options.RTCConstraints || this.RTCConstraints;
 
-    this.initPeerConnection(servers, this.RTCConstraints);
+    this.initPeerConnection(servers);
 
     /* once updateIce is implemented correctly, this is better than above
     //no op if browser does not support this
@@ -278,11 +315,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
   }},
 
   hold: {writable: true, value: function hold () {
+    this.local_hold = true;
     this.toggleMuteAudio(true);
     this.toggleMuteVideo(true);
   }},
 
   unhold: {writable: true, value: function unhold () {
+    this.local_hold = false;
+
     if (!this.audioMuted) {
       this.toggleMuteAudio(false);
     }
@@ -348,17 +388,20 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     });
 
     [].concat(turnServers).forEach(function (server) {
-      servers.push({
-        'urls': server.urls,
-        'username': server.username,
-        'credential': server.password
-      });
+      var turnServer = {'urls': server.urls};
+      if (server.username) {
+        turnServer.username = server.username;
+      }
+      if (server.password) {
+        turnServer.credential = server.password;
+      }
+      servers.push(turnServer);
     });
 
     return servers;
   }},
 
-  initPeerConnection: {writable: true, value: function initPeerConnection(servers, RTCConstraints) {
+  initPeerConnection: {writable: true, value: function initPeerConnection(servers) {
     var self = this,
       config = this.session.ua.configuration;
 
@@ -375,7 +418,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       this.peerConnection.close();
     }
 
-    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, RTCConstraints);
+    this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers});
 
     // Firefox (35.0.1) sometimes throws on calls to peerConnection.getRemoteStreams
     // even if peerConnection.onaddstream was just called. In order to make
@@ -506,6 +549,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         };
 
         self.emit('getDescription', sdpWrapper);
+
+        if (self.session.ua.configuration.hackStripTcp) {
+          sdpWrapper.sdp = sdpWrapper.sdp.replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
+        }
 
         self.ready = true;
         return sdpWrapper.sdp;

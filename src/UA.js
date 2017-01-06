@@ -71,6 +71,7 @@ UA = function(configuration) {
   this.data = {};
   this.sessions = {};
   this.subscriptions = {};
+  this.earlySubscriptions = {};
   this.transport = null;
   this.contact = null;
   this.status = C.STATUS_INIT;
@@ -318,10 +319,16 @@ UA.prototype.stop = function() {
     this.sessions[session].terminate();
   }
 
-  //Run _close_ on every Subscription
+  //Run _close_ on every confirmed Subscription
   for(subscription in this.subscriptions) {
     this.logger.log('unsubscribing from subscription ' + subscription);
     this.subscriptions[subscription].close();
+  }
+
+  //Run _close_ on every early Subscription
+  for(subscription in this.earlySubscriptions) {
+    this.logger.log('unsubscribing from early subscription ' + subscription);
+    this.earlySubscriptions[subscription].close();
   }
 
   // Run  _close_ on every applicant
@@ -571,7 +578,7 @@ UA.prototype.destroyTransaction = function(transaction) {
  * @param {SIP.IncomingRequest} request.
  */
 UA.prototype.receiveRequest = function(request) {
-  var dialog, session, message,
+  var dialog, session, message, earlySubscription,
     method = request.method,
     transaction,
     replaces,
@@ -683,6 +690,14 @@ UA.prototype.receiveRequest = function(request) {
          * and without To tag.
          */
         break;
+      case SIP.C.NOTIFY:
+        if (this.configuration.allowLegacyNotifications && this.listeners('notify').length > 0) {
+          request.reply(200, null);
+          self.emit('notify', {request: request});
+        } else {
+          request.reply(481, 'Subscription does not exist');
+        }
+        break;
       default:
         request.reply(405);
         break;
@@ -699,10 +714,13 @@ UA.prototype.receiveRequest = function(request) {
       dialog.receiveRequest(request);
     } else if (method === SIP.C.NOTIFY) {
       session = this.findSession(request);
+      earlySubscription = this.findEarlySubscription(request);
       if(session) {
         session.receiveRequest(request);
+      } else if(earlySubscription) {
+        earlySubscription.receiveRequest(request);
       } else {
-        this.logger.warn('received NOTIFY request for a non existent session');
+        this.logger.warn('received NOTIFY request for a non existent session or subscription');
         request.reply(481, 'Subscription does not exist');
       }
     }
@@ -745,6 +763,16 @@ UA.prototype.findDialog = function(request) {
   return this.dialogs[request.call_id + request.from_tag + request.to_tag] ||
           this.dialogs[request.call_id + request.to_tag + request.from_tag] ||
           null;
+};
+
+/**
+ * Get the subscription which has not been confirmed to which the request belongs to, if any
+ * @private
+ * @param {SIP.IncomingRequest}
+ * @returns {SIP.Subscription|null}
+ */
+UA.prototype.findEarlySubscription = function(request) {
+  return this.earlySubscriptions[request.call_id + request.to_tag + request.getHeader('event')] || null;
 };
 
 /**
@@ -896,6 +924,8 @@ UA.prototype.loadConfig = function(configuration) {
       hackIpInContact: false,
       hackWssInTransport: false,
       hackAllowUnregisteredOptionTags: false,
+      hackCleanJitsiSdpImageattr: false,
+      hackStripTcp: false,
 
       contactTransport: 'ws',
       forceRport: false,
@@ -914,7 +944,9 @@ UA.prototype.loadConfig = function(configuration) {
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);
-      })
+      }),
+
+      allowLegacyNotifications: false
     };
 
   // Pre-Configuration
@@ -1128,6 +1160,8 @@ UA.configuration_skeleton = (function() {
       "hackIpInContact", //false
       "hackWssInTransport", //false
       "hackAllowUnregisteredOptionTags", //false
+      "hackCleanJitsiSdpImageattr", //false
+      "hackStripTcp", //false
       "contactTransport", // 'ws'
       "forceRport", // false
       "iceCheckingTimeout",
@@ -1151,6 +1185,7 @@ UA.configuration_skeleton = (function() {
       "media",
       "mediaConstraints",
       "authenticationFactory",
+      "allowLegacyNotifications",
 
       // Post-configuration generated parameters
       "via_core_value",
@@ -1328,6 +1363,18 @@ UA.configuration_check = {
       }
     },
 
+    hackCleanJitsiSdpImageattr: function(hackCleanJitsiSdpImageattr) {
+      if (typeof hackCleanJitsiSdpImageattr === 'boolean') {
+        return hackCleanJitsiSdpImageattr;
+      }
+    },
+
+    hackStripTcp: function(hackStripTcp) {
+      if (typeof hackStripTcp === 'boolean') {
+        return hackStripTcp;
+      }
+    },
+
     contactTransport: function(contactTransport) {
       if (typeof contactTransport === 'string') {
         return contactTransport;
@@ -1502,7 +1549,7 @@ UA.configuration_check = {
           turn_server.urls = [turn_server.server];
         }
 
-        if (!turn_server.urls || !turn_server.username || !turn_server.password) {
+        if (!turn_server.urls) {
           return;
         }
 
@@ -1590,7 +1637,13 @@ UA.configuration_check = {
       }
     },
 
-    authenticationFactory: checkAuthenticationFactory
+    authenticationFactory: checkAuthenticationFactory,
+
+    allowLegacyNotifications: function(allowLegacyNotifications) {
+      if (typeof allowLegacyNotifications === 'boolean') {
+        return allowLegacyNotifications;
+      }
+    }
   }
 };
 

@@ -15,7 +15,7 @@ module.exports = function(grunt) {
  *\n\
  * ~~~SIP.js contains substantial portions of JsSIP under the following license~~~\n\
  * Homepage: http://jssip.net\n\
- * Copyright (c) 2012-2013 José Luis Millán - Versatica <http://www.versatica.com> \n\
+ * Copyright (c) 2012-2013 José Luis Millán - Versatica <http://www.versatica.com>\n\
  *\n\
  * Permission is hereby granted, free of charge, to any person obtaining\n\
  * a copy of this software and associated documentation files (the\n\

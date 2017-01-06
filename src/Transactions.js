@@ -160,8 +160,15 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   // Add the cancel property to the request.
   //Will be called from the request instance, not the transaction itself.
-  this.request.cancel = function(reason) {
-    tr.cancel_request(tr, reason);
+  this.request.cancel = function(reason, extraHeaders) {
+    extraHeaders = (extraHeaders || []).slice();
+    var length = extraHeaders.length;
+    var extraHeadersString = null;
+    for (var idx = 0; idx < length; idx++) {
+      extraHeadersString = (extraHeadersString || '') + extraHeaders[idx].trim() + '\r\n';
+    }
+
+    tr.cancel_request(tr, reason, extraHeadersString);
   };
 };
 InviteClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
@@ -244,7 +251,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
   this.transport.send(this.ack);
 };
 
-InviteClientTransaction.prototype.cancel_request = function(tr, reason) {
+InviteClientTransaction.prototype.cancel_request = function(tr, reason, extraHeaders) {
   var request = tr.request;
 
   this.cancel = SIP.C.CANCEL + ' ' + request.ruri + ' SIP/2.0\r\n';
@@ -262,6 +269,10 @@ InviteClientTransaction.prototype.cancel_request = function(tr, reason) {
 
   if(reason) {
     this.cancel += 'Reason: ' + reason + '\r\n';
+  }
+
+  if (extraHeaders) {
+    this.cancel += extraHeaders;
   }
 
   this.cancel += 'Content-Length: 0\r\n\r\n';
@@ -649,7 +660,7 @@ var checkTransaction = function(ua, request) {
         if(tr.state === C.STATUS_ACCEPTED) {
           return false;
         } else if(tr.state === C.STATUS_COMPLETED) {
-          tr.state = C.STATUS_CONFIRMED;
+          tr.stateChanged(C.STATUS_CONFIRMED);
           tr.I = SIP.Timers.setTimeout(tr.timer_I.bind(tr), SIP.Timers.TIMER_I);
           return true;
         }

@@ -229,10 +229,22 @@ Dialog.prototype = {
   sendRequest: function(applicant, method, options) {
     options = options || {};
 
-    var
-      extraHeaders = (options.extraHeaders || []).slice(),
-      body = options.body || null,
-      request = this.createRequest(method, extraHeaders, body),
+    var extraHeaders = (options.extraHeaders || []).slice();
+
+    var body = null;
+    if (options.body) {
+      if (options.body.body) {
+        body = options.body;
+      } else {
+        body = {};
+        body.body = options.body;
+        if (options.contentType) {
+          body.contentType = options.contentType;
+        }
+      }
+    }
+
+    var request = this.createRequest(method, extraHeaders, body),
       request_sender = new RequestSender(this, applicant, request);
 
     request_sender.send();
