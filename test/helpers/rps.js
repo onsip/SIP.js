@@ -63,15 +63,11 @@ RPSMediaHandler.prototype = {
     // Provide a description to the session using the callbacks.
     this.timeout = setTimeout(function () {
       delete this.timeout;
-      onSuccess({ body: this.myGesture, contentType: 'text/plain' });
+      onSuccess(this.myGesture);
     }.bind(this), 0);
   },
 
-  hasDescription: function (message) {
-    return true;
-  },
-
-  setDescription: function (message, onSuccess, onFailure) {
+  setDescription: function (description, onSuccess, onFailure) {
         /*
      * Here, we receive the description of the remote end's offer/answer.
      * In normal WebRTC calls, this would be an RTCSessionDescription with
@@ -82,7 +78,6 @@ RPSMediaHandler.prototype = {
      * String gesture indication the other end chose.
      */
     // Set their gesture based on the remote description
-    var description = message.body;
     if (['rock', 'paper', 'scissors'].indexOf(description) < 0) {
       this.timeout = setTimeout(function () {
         delete this.timeout;

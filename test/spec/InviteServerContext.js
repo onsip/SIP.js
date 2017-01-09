@@ -17,11 +17,8 @@ describe('A UAS receiving an INVITE', function () {
         register: false,
         mediaHandlerFactory: function () {
           return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
-            },
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+            getDescription: function () {},
+            setDescription: function () {}
           };
         }
       };
@@ -56,16 +53,7 @@ describe('A UAS receiving an INVITE', function () {
     beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
-        register: false,
-        mediaHandlerFactory: function () {
-          return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
-            } ,
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
-          };
-        }
+        register: false
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
@@ -107,16 +95,7 @@ describe('A UAS receiving an INVITE', function () {
     beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
-        register: false,
-        mediaHandlerFactory: function () {
-          return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
-            },
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
-          };
-        }
+        register: false
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
@@ -170,16 +149,7 @@ describe('A UAS receiving an INVITE', function () {
     beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
-        register: false,
-        mediaHandlerFactory: function () {
-          return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
-            },
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
-          };
-        }
+        register: false
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {

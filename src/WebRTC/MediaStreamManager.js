@@ -50,13 +50,22 @@ MediaStreamManager.render = function render (streams, elements) {
   }
 
   function attachMediaStream(element, stream) {
-    element.srcObject = stream;
+    if (typeof element.src !== 'undefined') {
+      environment.revokeObjectURL(element.src);
+      element.src = environment.createObjectURL(stream);
+    } else if (typeof (element.srcObject || element.mozSrcObject) !== 'undefined') {
+      element.srcObject = element.mozSrcObject = stream;
+    } else {
+      return false;
+    }
+
+    return true;
   }
 
   function ensureMediaPlaying (mediaElement) {
     var interval = 100;
     mediaElement.ensurePlayingIntervalId = SIP.Timers.setInterval(function () {
-      if (mediaElement.paused && mediaElement.srcObject) {
+      if (mediaElement.paused) {
         mediaElement.play();
       }
       else {

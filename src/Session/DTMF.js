@@ -82,8 +82,7 @@ DTMF.prototype = Object.create(SIP.EventEmitter.prototype);
 
 
 DTMF.prototype.send = function(options) {
-  var extraHeaders,
-    body = {};
+  var extraHeaders, body;
 
   this.direction = 'outgoing';
 
@@ -97,10 +96,10 @@ DTMF.prototype.send = function(options) {
   options = options || {};
   extraHeaders = options.extraHeaders ? options.extraHeaders.slice() : [];
 
-  body.contentType = 'application/dtmf-relay';
+  extraHeaders.push('Content-Type: application/dtmf-relay');
 
-  body.body = "Signal= " + this.tone + "\r\n";
-  body.body += "Duration= " + this.duration;
+  body = "Signal= " + this.tone + "\r\n";
+  body += "Duration= " + this.duration;
 
   this.request = this.owner.dialog.sendRequest(this, SIP.C.INFO, {
     extraHeaders: extraHeaders,

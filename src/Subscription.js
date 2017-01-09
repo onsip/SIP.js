@@ -68,8 +68,6 @@ SIP.Subscription.prototype = {
     SIP.Timers.clearTimeout(this.timers.N);
     this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
 
-    this.ua.earlySubscriptions[this.request.call_id + this.request.from.parameters.tag + this.event] = this;
-
     this.send();
 
     this.state = 'notify_wait';
@@ -96,11 +94,15 @@ SIP.Subscription.prototype = {
         (this.state !== 'notify_wait' && this.errorCodes.indexOf(response.status_code) !== -1)) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
-      this.emit('accepted', response, cause);
-      //As we don't support RFC 5839 or other extensions where the NOTIFY is optional, timer N will not be cleared
-      //SIP.Timers.clearTimeout(this.timers.N);
-
       expires = response.getHeader('Expires');
+      SIP.Timers.clearTimeout(this.timers.N);
+
+      if (this.createConfirmedDialog(response,'UAC')) {
+        this.id = this.dialog.id.toString();
+        this.ua.subscriptions[this.id] = this;
+        this.emit('accepted', response, cause);
+        // UPDATE ROUTE SET TO BE BACKWARDS COMPATIBLE?
+      }
 
       if (expires && expires <= this.expires) {
         // Preserve new expires value for subsequent requests
@@ -115,10 +117,7 @@ SIP.Subscription.prototype = {
           this.failed(response, SIP.C.INVALID_EXPIRES_HEADER);
         }
       }
-    } else if (response.statusCode > 300) {
-      this.emit('failed', response, cause);
-      this.emit('rejected', response, cause);
-    }
+    } //Used to just ignore provisional responses; now ignores everything except errorCodes and 2xx
   },
 
   unsubscribe: function() {
@@ -155,7 +154,7 @@ SIP.Subscription.prototype = {
       SIP.Timers.clearTimeout(this.timers.sub_duration);
 
       delete this.ua.subscriptions[this.id];
-    } else if (this.state === 'notify_wait' || this.state === 'pending') {
+    } else if (this.state === 'pending' || this.state === 'notify_wait') {
       this.close();
     } else {
       this.refresh();
@@ -166,14 +165,7 @@ SIP.Subscription.prototype = {
   * @private
   */
   close: function() {
-    if (this.state === 'notify_wait') {
-      this.state = 'terminated';
-      SIP.Timers.clearTimeout(this.timers.N);
-      SIP.Timers.clearTimeout(this.timers.sub_duration);
-      this.receiveResponse = function(){};
-
-      delete this.ua.earlySubscriptions[this.request.call_id + this.request.from.parameters.tag + this.event];
-    } else if (this.state !== 'terminated') {
+    if(this.state !== 'notify_wait' && this.state !== 'terminated') {
       this.unsubscribe();
     }
   },
@@ -186,8 +178,6 @@ SIP.Subscription.prototype = {
 
     this.terminateDialog();
     dialog = new SIP.Dialog(this, message, type);
-    dialog.invite_seqnum = this.request.cseq;
-    dialog.local_seqnum = this.request.cseq;
 
     if(!dialog.error) {
       this.dialog = dialog;
@@ -229,15 +219,6 @@ SIP.Subscription.prototype = {
     if (!this.matchEvent(request)) { //checks event and subscription_state headers
       request.reply(489);
       return;
-    }
-
-    if (!this.dialog) {
-      if (this.createConfirmedDialog(request,'UAS')) {
-        this.id = this.dialog.id.toString();
-        delete this.ua.earlySubscriptions[this.request.call_id + this.request.from.parameters.tag + this.event];
-        this.ua.subscriptions[this.id] = this;
-        // UPDATE ROUTE SET TO BE BACKWARDS COMPATIBLE?
-      }
     }
 
     sub_state = request.parseHeader('Subscription-State');
@@ -303,7 +284,6 @@ SIP.Subscription.prototype = {
   failed: function(response, cause) {
     this.close();
     this.emit('failed', response, cause);
-    this.emit('rejected', response, cause);
     return this;
   },
 

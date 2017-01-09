@@ -71,7 +71,6 @@ UA = function(configuration) {
   this.data = {};
   this.sessions = {};
   this.subscriptions = {};
-  this.earlySubscriptions = {};
   this.transport = null;
   this.contact = null;
   this.status = C.STATUS_INIT;
@@ -319,16 +318,10 @@ UA.prototype.stop = function() {
     this.sessions[session].terminate();
   }
 
-  //Run _close_ on every confirmed Subscription
+  //Run _close_ on every Subscription
   for(subscription in this.subscriptions) {
     this.logger.log('unsubscribing from subscription ' + subscription);
     this.subscriptions[subscription].close();
-  }
-
-  //Run _close_ on every early Subscription
-  for(subscription in this.earlySubscriptions) {
-    this.logger.log('unsubscribing from early subscription ' + subscription);
-    this.earlySubscriptions[subscription].close();
   }
 
   // Run  _close_ on every applicant
@@ -578,7 +571,7 @@ UA.prototype.destroyTransaction = function(transaction) {
  * @param {SIP.IncomingRequest} request.
  */
 UA.prototype.receiveRequest = function(request) {
-  var dialog, session, message, earlySubscription,
+  var dialog, session, message,
     method = request.method,
     transaction,
     replaces,
@@ -714,13 +707,10 @@ UA.prototype.receiveRequest = function(request) {
       dialog.receiveRequest(request);
     } else if (method === SIP.C.NOTIFY) {
       session = this.findSession(request);
-      earlySubscription = this.findEarlySubscription(request);
       if(session) {
         session.receiveRequest(request);
-      } else if(earlySubscription) {
-        earlySubscription.receiveRequest(request);
       } else {
-        this.logger.warn('received NOTIFY request for a non existent session or subscription');
+        this.logger.warn('received NOTIFY request for a non existent session');
         request.reply(481, 'Subscription does not exist');
       }
     }
@@ -763,16 +753,6 @@ UA.prototype.findDialog = function(request) {
   return this.dialogs[request.call_id + request.from_tag + request.to_tag] ||
           this.dialogs[request.call_id + request.to_tag + request.from_tag] ||
           null;
-};
-
-/**
- * Get the subscription which has not been confirmed to which the request belongs to, if any
- * @private
- * @param {SIP.IncomingRequest}
- * @returns {SIP.Subscription|null}
- */
-UA.prototype.findEarlySubscription = function(request) {
-  return this.earlySubscriptions[request.call_id + request.to_tag + request.getHeader('event')] || null;
 };
 
 /**
@@ -1549,7 +1529,7 @@ UA.configuration_check = {
           turn_server.urls = [turn_server.server];
         }
 
-        if (!turn_server.urls) {
+        if (!turn_server.urls || !turn_server.username || !turn_server.password) {
           return;
         }
 
