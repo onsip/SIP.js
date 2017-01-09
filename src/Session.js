@@ -553,7 +553,7 @@ Session.prototype = {
       request.reply(200);
       return;
     }
-
+    
     this.mediaHandler.setDescription(request.body)
 
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
