@@ -18,10 +18,11 @@ SIP = SIP;
 
 var Hacks = {
   AllBrowsers: {
-    maskDtls: function (message) {
-      if (message.body) {
-        message.body = message.body.replace(/ UDP\/TLS\/RTP\/SAVP/gmi, " RTP/SAVP");
+    maskDtls: function (sdp) {
+      if (sdp) {
+        sdp = sdp.replace(/ UDP\/TLS\/RTP\/SAVP/gmi, " RTP/SAVP");
       }
+      return sdp;
     },
     unmaskDtls: function (sdp) {
       /**
@@ -58,10 +59,11 @@ var Hacks = {
       return typeof mozRTCPeerConnection !== 'undefined';
     },
 
-    cannotHandleExtraWhitespace: function (message) {
-      if (this.isFirefox() && message.body) {
-        message.body = message.body.replace(/ \r\n/g, "\r\n");
+    cannotHandleExtraWhitespace: function (sdp) {
+      if (this.isFirefox() && sdp) {
+        sdp = sdp.replace(/ \r\n/g, "\r\n");
       }
+      return sdp;
     },
 
     hasMissingCLineInSDP: function (sdp) {
