@@ -6,11 +6,15 @@
  * a SIP library. Methods in this file are grouped by vendor, so
  * as to most easily track when particular hacks may not be necessary anymore.
  */
+var SdpParser = require("SdpParser");
 
 module.exports = function (SIP) {
 
 //keep to quiet jshint, and remain consistent with other files
 SIP = SIP;
+
+
+
 
 var Hacks = {
   AllBrowsers: {
@@ -32,6 +36,20 @@ var Hacks = {
        *
        **/
       return sdp.replace(/ RTP\/SAVP/gmi, " UDP/TLS/RTP/SAVP");
+    },
+    filterCodecs: function(sdpText) {
+    	var sdp = SdpParser.parse(sdpText);
+
+      console.log(sdp);
+
+      console.log(sdp.media);
+
+      console.log(sdp.media[0]);
+
+      console.log(sdp.media[0].payload);
+
+    	sdpText = SdpParser.format(sdp);
+    	return sdpText;
     }
   },
   Firefox: {

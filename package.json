@@ -50,6 +50,7 @@
     "test": "grunt travis --verbose"
   },
   "dependencies": {
+    "sdpparser": "0.0.2",
     "ws": "^1.0.1"
   },
   "optionalDependencies": {
