@@ -539,10 +539,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       })
       .then(function readySuccess () {
         var sdp = pc.localDescription.sdp;
-        var codeclist = "";
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,codeclist);
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',
