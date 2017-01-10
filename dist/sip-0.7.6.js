@@ -3272,7 +3272,7 @@ var Hacks = {
             for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(payloadlist[j]) === -1)
               {
-                  console.log("removing m line ".payloadlist[j]);
+                  console.log("removing m line " + payloadlist[j]);
                 payloadlist.splice(j, 1);
               }
             }
@@ -3281,7 +3281,7 @@ var Hacks = {
             for (j = res.media[i].rtp.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
               {
-                console.log("removing a line ".res.media[i].rtp[j].id);
+                console.log("removing a line " + res.media[i].rtp[j].id);
                 res.media[i].rtp.splice(j, 1);
               }
             }
@@ -5832,7 +5832,8 @@ Session.prototype = {
       return;
     }
 
-    this.mediaHandler.setDescription(request.body)
+
+    this.mediaHandler.setDescription(request)
 
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
     .then(function(description) {
