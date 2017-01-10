@@ -3264,10 +3264,9 @@ var Hacks = {
           console.log(codecs);
 
           for (var i = 0; i < res.media.length; i++) {
+            console.log(res.media[i]);
+            var payloadlist = res.media[i].payloads.split(" ");
 
-            var payloadlist = res.media[i].payload.split(" ");
-
-            console.log(codecs);
             console.log(payloadlist);
 
             for (var j = 0; j < payloadlist.length; j++) {
@@ -3276,7 +3275,7 @@ var Hacks = {
                 payloadlist.splice(j, 1);
               }
             }
-            res.media[i].payload = payloadlist.join(" ");
+            res.media[i].payloads = payloadlist.join(" ");
 
             for (j = 0; j < res.media[i].rtp.length; j++) {
               if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
@@ -12158,7 +12157,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"0 8");
+        self.session.ua.configuration.filterCodecs = "0 8 126";
+        if (self.session.ua.configuration.filterCodecs) {
+          sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,self.session.ua.configuration.filterCodecs);
+        }
+
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',

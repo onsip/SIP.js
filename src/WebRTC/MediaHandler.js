@@ -542,7 +542,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"0 8");
+        self.session.ua.configuration.filterCodecs = "0 8 126";
+        if (self.session.ua.configuration.filterCodecs) {
+          sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,self.session.ua.configuration.filterCodecs);
+        }
+
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',
