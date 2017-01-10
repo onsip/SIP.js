@@ -554,7 +554,8 @@ Session.prototype = {
       return;
     }
 
-    this.mediaHandler.setDescription(request.body)
+
+    this.mediaHandler.setDescription(request)
 
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
     .then(function(description) {
