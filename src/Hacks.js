@@ -41,42 +41,57 @@ var Hacks = {
       return sdp.replace(/ RTP\/SAVP/gmi, " UDP/TLS/RTP/SAVP");
     },
 
-    filterCodecs: function (sdp,codecs) {
-
+    filterCodecs: function (sdp,type,codecs) {
+        /**
+        filterCodecs will allow you to limit the codec options in the SDP and prioritize
+        **/
         var res = transform.parse(sdp);
-        console.log(res);
         if (typeof codecs !== 'undefined' && codecs !== "")
         {
           codecs = codecs.split(" ");
-          console.log(codecs);
 
           for (var i = 0; i < res.media.length; i++) {
-            console.log(res.media[i]);
+            if (res.media[i].mid !== type)
+            {
+              continue;
+            }
             var payloadlist = res.media[i].payloads.split(" ");
-
-            console.log(payloadlist);
-
             for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(payloadlist[j]) === -1)
               {
-                  console.log("removing m line " + payloadlist[j]);
                 payloadlist.splice(j, 1);
               }
             }
-            res.media[i].payloads = payloadlist.join(" ");
-
+            var neworder = [];
+            for (j=0 ; j< codecs.length; j++) {
+              if (payloadlist.indexOf(codecs[j]) === -1)
+              {
+                neworder.push(codecs[j]);
+              }
+            }
+            res.media[i].payloads = neworder.join(" ");
             for (j = res.media[i].rtp.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
               {
-                console.log("removing a line " + res.media[i].rtp[j].id);
                 res.media[i].rtp.splice(j, 1);
               }
             }
+            for (j = res.media[i].rtcpFb.length -1 ; j >= 0 ; j--) {
+              if (codecs.indexOf(res.media[i].rtcpFb[j].id) === -1)
+              {
+                res.media[i].rtcpFb.splice(j, 1);
+              }
+            }
+            for (j = res.media[i].fmtp.length -1 ; j >= 0 ; j--) {
+              if (codecs.indexOf(res.media[i].ftmp[j].id) === -1)
+              {
+                res.media[i].fmtp.splice(j, 1);
+              }
+            }
+
           }
         }
-        console.log(res);
         sdp = transform.write(res);
-        console.log(sdp);
 
         return sdp;
 
