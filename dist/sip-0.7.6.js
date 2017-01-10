@@ -3256,10 +3256,7 @@ var Hacks = {
     },
 
     filterCodecs: function (sdp,codecs) {
-      if (1 )
-      {
-        return sdp;
-      }
+
         var res = transform.parse(sdp);
         console.log(res);
         if (typeof codecs !== 'undefined' && codecs !== "")
