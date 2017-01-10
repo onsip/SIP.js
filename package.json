@@ -50,6 +50,7 @@
     "test": "grunt travis --verbose"
   },
   "dependencies": {
+    "sdp-transform": "^1.7.0",
     "ws": "^1.0.1"
   },
   "optionalDependencies": {

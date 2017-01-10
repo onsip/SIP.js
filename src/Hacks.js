@@ -7,6 +7,9 @@
  * as to most easily track when particular hacks may not be necessary anymore.
  */
 
+var transform = require('sdp-transform');
+
+
 module.exports = function (SIP) {
 
 //keep to quiet jshint, and remain consistent with other files
@@ -36,6 +39,18 @@ var Hacks = {
        *
        **/
       return sdp.replace(/ RTP\/SAVP/gmi, " UDP/TLS/RTP/SAVP");
+    },
+
+    filterCodecs: function (sdp,codecs) {
+        var res = transform.parse(sdp);
+        console.log(res);
+        if (codecs)
+        {
+          console.log(codecs);
+        }
+        sdp = transform.write(res).split('\r\n');
+        console.log(sdp);
+
     }
   },
   Firefox: {

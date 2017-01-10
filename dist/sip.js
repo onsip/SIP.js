@@ -336,6 +336,508 @@ function isUndefined(arg) {
 }
 
 },{}],2:[function(require,module,exports){
+var grammar = module.exports = {
+  v: [{
+      name: 'version',
+      reg: /^(\d*)$/
+  }],
+  o: [{ //o=- 20518 0 IN IP4 203.0.113.1
+    // NB: sessionId will be a String in most cases because it is huge
+    name: 'origin',
+    reg: /^(\S*) (\d*) (\d*) (\S*) IP(\d) (\S*)/,
+    names: ['username', 'sessionId', 'sessionVersion', 'netType', 'ipVer', 'address'],
+    format: "%s %s %d %s IP%d %s"
+  }],
+  // default parsing of these only (though some of these feel outdated)
+  s: [{ name: 'name' }],
+  i: [{ name: 'description' }],
+  u: [{ name: 'uri' }],
+  e: [{ name: 'email' }],
+  p: [{ name: 'phone' }],
+  z: [{ name: 'timezones' }], // TODO: this one can actually be parsed properly..
+  r: [{ name: 'repeats' }],   // TODO: this one can also be parsed properly
+  //k: [{}], // outdated thing ignored
+  t: [{ //t=0 0
+    name: 'timing',
+    reg: /^(\d*) (\d*)/,
+    names: ['start', 'stop'],
+    format: "%d %d"
+  }],
+  c: [{ //c=IN IP4 10.47.197.26
+      name: 'connection',
+      reg: /^IN IP(\d) (\S*)/,
+      names: ['version', 'ip'],
+      format: "IN IP%d %s"
+  }],
+  b: [{ //b=AS:4000
+      push: 'bandwidth',
+      reg: /^(TIAS|AS|CT|RR|RS):(\d*)/,
+      names: ['type', 'limit'],
+      format: "%s:%s"
+  }],
+  m: [{ //m=video 51744 RTP/AVP 126 97 98 34 31
+      // NB: special - pushes to session
+      // TODO: rtp/fmtp should be filtered by the payloads found here?
+      reg: /^(\w*) (\d*) ([\w\/]*)(?: (.*))?/,
+      names: ['type', 'port', 'protocol', 'payloads'],
+      format: "%s %d %s %s"
+  }],
+  a: [
+    { //a=rtpmap:110 opus/48000/2
+      push: 'rtp',
+      reg: /^rtpmap:(\d*) ([\w\-\.]*)(?:\s*\/(\d*)(?:\s*\/(\S*))?)?/,
+      names: ['payload', 'codec', 'rate', 'encoding'],
+      format: function (o) {
+        return (o.encoding) ?
+          "rtpmap:%d %s/%s/%s":
+          o.rate ?
+          "rtpmap:%d %s/%s":
+          "rtpmap:%d %s";
+      }
+    },
+    {
+      //a=fmtp:108 profile-level-id=24;object=23;bitrate=64000
+      //a=fmtp:111 minptime=10; useinbandfec=1
+      push: 'fmtp',
+      reg: /^fmtp:(\d*) ([\S| ]*)/,
+      names: ['payload', 'config'],
+      format: "fmtp:%d %s"
+    },
+    { //a=control:streamid=0
+        name: 'control',
+        reg: /^control:(.*)/,
+        format: "control:%s"
+    },
+    { //a=rtcp:65179 IN IP4 193.84.77.194
+      name: 'rtcp',
+      reg: /^rtcp:(\d*)(?: (\S*) IP(\d) (\S*))?/,
+      names: ['port', 'netType', 'ipVer', 'address'],
+      format: function (o) {
+        return (o.address != null) ?
+          "rtcp:%d %s IP%d %s":
+          "rtcp:%d";
+      }
+    },
+    { //a=rtcp-fb:98 trr-int 100
+      push: 'rtcpFbTrrInt',
+      reg: /^rtcp-fb:(\*|\d*) trr-int (\d*)/,
+      names: ['payload', 'value'],
+      format: "rtcp-fb:%d trr-int %d"
+    },
+    { //a=rtcp-fb:98 nack rpsi
+      push: 'rtcpFb',
+      reg: /^rtcp-fb:(\*|\d*) ([\w-_]*)(?: ([\w-_]*))?/,
+      names: ['payload', 'type', 'subtype'],
+      format: function (o) {
+        return (o.subtype != null) ?
+          "rtcp-fb:%s %s %s":
+          "rtcp-fb:%s %s";
+      }
+    },
+    { //a=extmap:2 urn:ietf:params:rtp-hdrext:toffset
+      //a=extmap:1/recvonly URI-gps-string
+      push: 'ext',
+      reg: /^extmap:([\w_\/]*) (\S*)(?: (\S*))?/,
+      names: ['value', 'uri', 'config'], // value may include "/direction" suffix
+      format: function (o) {
+        return (o.config != null) ?
+          "extmap:%s %s %s":
+          "extmap:%s %s";
+      }
+    },
+    {
+      //a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR|2^20|1:32
+      push: 'crypto',
+      reg: /^crypto:(\d*) ([\w_]*) (\S*)(?: (\S*))?/,
+      names: ['id', 'suite', 'config', 'sessionConfig'],
+      format: function (o) {
+        return (o.sessionConfig != null) ?
+          "crypto:%d %s %s %s":
+          "crypto:%d %s %s";
+      }
+    },
+    { //a=setup:actpass
+      name: 'setup',
+      reg: /^setup:(\w*)/,
+      format: "setup:%s"
+    },
+    { //a=mid:1
+      name: 'mid',
+      reg: /^mid:([^\s]*)/,
+      format: "mid:%s"
+    },
+    { //a=msid:0c8b064d-d807-43b4-b434-f92a889d8587 98178685-d409-46e0-8e16-7ef0db0db64a
+      name: 'msid',
+      reg: /^msid:(.*)/,
+      format: "msid:%s"
+    },
+    { //a=ptime:20
+      name: 'ptime',
+      reg: /^ptime:(\d*)/,
+      format: "ptime:%d"
+    },
+    { //a=maxptime:60
+      name: 'maxptime',
+      reg: /^maxptime:(\d*)/,
+      format: "maxptime:%d"
+    },
+    { //a=sendrecv
+      name: 'direction',
+      reg: /^(sendrecv|recvonly|sendonly|inactive)/
+    },
+    { //a=ice-lite
+      name: 'icelite',
+      reg: /^(ice-lite)/
+    },
+    { //a=ice-ufrag:F7gI
+      name: 'iceUfrag',
+      reg: /^ice-ufrag:(\S*)/,
+      format: "ice-ufrag:%s"
+    },
+    { //a=ice-pwd:x9cml/YzichV2+XlhiMu8g
+      name: 'icePwd',
+      reg: /^ice-pwd:(\S*)/,
+      format: "ice-pwd:%s"
+    },
+    { //a=fingerprint:SHA-1 00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33
+      name: 'fingerprint',
+      reg: /^fingerprint:(\S*) (\S*)/,
+      names: ['type', 'hash'],
+      format: "fingerprint:%s %s"
+    },
+    {
+      //a=candidate:0 1 UDP 2113667327 203.0.113.1 54400 typ host
+      //a=candidate:1162875081 1 udp 2113937151 192.168.34.75 60017 typ host generation 0 network-id 3 network-cost 10
+      //a=candidate:3289912957 2 udp 1845501695 193.84.77.194 60017 typ srflx raddr 192.168.34.75 rport 60017 generation 0 network-id 3 network-cost 10
+      //a=candidate:229815620 1 tcp 1518280447 192.168.150.19 60017 typ host tcptype active generation 0 network-id 3 network-cost 10
+      //a=candidate:3289912957 2 tcp 1845501695 193.84.77.194 60017 typ srflx raddr 192.168.34.75 rport 60017 tcptype passive generation 0 network-id 3 network-cost 10
+      push:'candidates',
+      reg: /^candidate:(\S*) (\d*) (\S*) (\d*) (\S*) (\d*) typ (\S*)(?: raddr (\S*) rport (\d*))?(?: tcptype (\S*))?(?: generation (\d*))?(?: network-id (\d*))?(?: network-cost (\d*))?/,
+      names: ['foundation', 'component', 'transport', 'priority', 'ip', 'port', 'type', 'raddr', 'rport', 'tcptype', 'generation', 'network-id', 'network-cost'],
+      format: function (o) {
+        var str = "candidate:%s %d %s %d %s %d typ %s";
+
+        str += (o.raddr != null) ? " raddr %s rport %d" : "%v%v";
+
+        // NB: candidate has three optional chunks, so %void middles one if it's missing
+        str += (o.tcptype != null) ? " tcptype %s" : "%v";
+
+        if (o.generation != null) {
+          str += " generation %d";
+        }
+
+        str += (o['network-id'] != null) ? " network-id %d" : "%v";
+        str += (o['network-cost'] != null) ? " network-cost %d" : "%v";
+        return str;
+      }
+    },
+    { //a=end-of-candidates (keep after the candidates line for readability)
+      name: 'endOfCandidates',
+      reg: /^(end-of-candidates)/
+    },
+    { //a=remote-candidates:1 203.0.113.1 54400 2 203.0.113.1 54401 ...
+      name: 'remoteCandidates',
+      reg: /^remote-candidates:(.*)/,
+      format: "remote-candidates:%s"
+    },
+    { //a=ice-options:google-ice
+      name: 'iceOptions',
+      reg: /^ice-options:(\S*)/,
+      format: "ice-options:%s"
+    },
+    { //a=ssrc:2566107569 cname:t9YU8M1UxTF8Y1A1
+      push: "ssrcs",
+      reg: /^ssrc:(\d*) ([\w_]*)(?::(.*))?/,
+      names: ['id', 'attribute', 'value'],
+      format: function (o) {
+        var str = "ssrc:%d";
+        if (o.attribute != null) {
+          str += " %s";
+          if (o.value != null) {
+            str += ":%s";
+          }
+        }
+        return str;
+      }
+    },
+    { //a=ssrc-group:FEC 1 2
+      push: "ssrcGroups",
+      reg: /^ssrc-group:(\w*) (.*)/,
+      names: ['semantics', 'ssrcs'],
+      format: "ssrc-group:%s %s"
+    },
+    { //a=msid-semantic: WMS Jvlam5X3SX1OP6pn20zWogvaKJz5Hjf9OnlV
+      name: "msidSemantic",
+      reg: /^msid-semantic:\s?(\w*) (\S*)/,
+      names: ['semantic', 'token'],
+      format: "msid-semantic: %s %s" // space after ":" is not accidental
+    },
+    { //a=group:BUNDLE audio video
+      push: 'groups',
+      reg: /^group:(\w*) (.*)/,
+      names: ['type', 'mids'],
+      format: "group:%s %s"
+    },
+    { //a=rtcp-mux
+      name: 'rtcpMux',
+      reg: /^(rtcp-mux)/
+    },
+    { //a=rtcp-rsize
+      name: 'rtcpRsize',
+      reg: /^(rtcp-rsize)/
+    },
+    { //a=sctpmap:5000 webrtc-datachannel 1024
+      name: 'sctpmap',
+      reg: /^sctpmap:([\w_\/]*) (\S*)(?: (\S*))?/,
+      names: ['sctpmapNumber', 'app', 'maxMessageSize'],
+      format: function (o) {
+        return (o.maxMessageSize != null) ?
+          "sctpmap:%s %s %s" :
+          "sctpmap:%s %s";
+      }
+    },
+    { // any a= that we don't understand is kepts verbatim on media.invalid
+      push: 'invalid',
+      names: ["value"]
+    }
+  ]
+};
+
+// set sensible defaults to avoid polluting the grammar with boring details
+Object.keys(grammar).forEach(function (key) {
+  var objs = grammar[key];
+  objs.forEach(function (obj) {
+    if (!obj.reg) {
+      obj.reg = /(.*)/;
+    }
+    if (!obj.format) {
+      obj.format = "%s";
+    }
+  });
+});
+
+},{}],3:[function(require,module,exports){
+var parser = require('./parser');
+var writer = require('./writer');
+
+exports.write = writer;
+exports.parse = parser.parse;
+exports.parseFmtpConfig = parser.parseFmtpConfig;
+exports.parsePayloads = parser.parsePayloads;
+exports.parseRemoteCandidates = parser.parseRemoteCandidates;
+
+},{"./parser":4,"./writer":5}],4:[function(require,module,exports){
+var toIntIfInt = function (v) {
+  return String(Number(v)) === v ? Number(v) : v;
+};
+
+var attachProperties = function (match, location, names, rawName) {
+  if (rawName && !names) {
+    location[rawName] = toIntIfInt(match[1]);
+  }
+  else {
+    for (var i = 0; i < names.length; i += 1) {
+      if (match[i+1] != null) {
+        location[names[i]] = toIntIfInt(match[i+1]);
+      }
+    }
+  }
+};
+
+var parseReg = function (obj, location, content) {
+  var needsBlank = obj.name && obj.names;
+  if (obj.push && !location[obj.push]) {
+    location[obj.push] = [];
+  }
+  else if (needsBlank && !location[obj.name]) {
+    location[obj.name] = {};
+  }
+  var keyLocation = obj.push ?
+    {} :  // blank object that will be pushed
+    needsBlank ? location[obj.name] : location; // otherwise, named location or root
+
+  attachProperties(content.match(obj.reg), keyLocation, obj.names, obj.name);
+
+  if (obj.push) {
+    location[obj.push].push(keyLocation);
+  }
+};
+
+var grammar = require('./grammar');
+var validLine = RegExp.prototype.test.bind(/^([a-z])=(.*)/);
+
+exports.parse = function (sdp) {
+  var session = {}
+    , media = []
+    , location = session; // points at where properties go under (one of the above)
+
+  // parse lines we understand
+  sdp.split(/(\r\n|\r|\n)/).filter(validLine).forEach(function (l) {
+    var type = l[0];
+    var content = l.slice(2);
+    if (type === 'm') {
+      media.push({rtp: [], fmtp: []});
+      location = media[media.length-1]; // point at latest media line
+    }
+
+    for (var j = 0; j < (grammar[type] || []).length; j += 1) {
+      var obj = grammar[type][j];
+      if (obj.reg.test(content)) {
+        return parseReg(obj, location, content);
+      }
+    }
+  });
+
+  session.media = media; // link it up
+  return session;
+};
+
+var fmtpReducer = function (acc, expr) {
+  var s = expr.split(/=(.+)/, 2);
+  if (s.length === 2) {
+    acc[s[0]] = toIntIfInt(s[1]);
+  }
+  return acc;
+};
+
+exports.parseFmtpConfig = function (str) {
+  return str.split(/\;\s?/).reduce(fmtpReducer, {});
+};
+
+exports.parsePayloads = function (str) {
+  return str.split(' ').map(Number);
+};
+
+exports.parseRemoteCandidates = function (str) {
+  var candidates = [];
+  var parts = str.split(' ').map(toIntIfInt);
+  for (var i = 0; i < parts.length; i += 3) {
+    candidates.push({
+      component: parts[i],
+      ip: parts[i + 1],
+      port: parts[i + 2]
+    });
+  }
+  return candidates;
+};
+
+},{"./grammar":2}],5:[function(require,module,exports){
+var grammar = require('./grammar');
+
+// customized util.format - discards excess arguments and can void middle ones
+var formatRegExp = /%[sdv%]/g;
+var format = function (formatStr) {
+  var i = 1;
+  var args = arguments;
+  var len = args.length;
+  return formatStr.replace(formatRegExp, function (x) {
+    if (i >= len) {
+      return x; // missing argument
+    }
+    var arg = args[i];
+    i += 1;
+    switch (x) {
+      case '%%':
+        return '%';
+      case '%s':
+        return String(arg);
+      case '%d':
+        return Number(arg);
+      case '%v':
+        return '';
+    }
+  });
+  // NB: we discard excess arguments - they are typically undefined from makeLine
+};
+
+var makeLine = function (type, obj, location) {
+  var str = obj.format instanceof Function ?
+    (obj.format(obj.push ? location : location[obj.name])) :
+    obj.format;
+
+  var args = [type + '=' + str];
+  if (obj.names) {
+    for (var i = 0; i < obj.names.length; i += 1) {
+      var n = obj.names[i];
+      if (obj.name) {
+        args.push(location[obj.name][n]);
+      }
+      else { // for mLine and push attributes
+        args.push(location[obj.names[i]]);
+      }
+    }
+  }
+  else {
+    args.push(location[obj.name]);
+  }
+  return format.apply(null, args);
+};
+
+// RFC specified order
+// TODO: extend this with all the rest
+var defaultOuterOrder = [
+  'v', 'o', 's', 'i',
+  'u', 'e', 'p', 'c',
+  'b', 't', 'r', 'z', 'a'
+];
+var defaultInnerOrder = ['i', 'c', 'b', 'a'];
+
+
+module.exports = function (session, opts) {
+  opts = opts || {};
+  // ensure certain properties exist
+  if (session.version == null) {
+    session.version = 0; // "v=0" must be there (only defined version atm)
+  }
+  if (session.name == null) {
+    session.name = " "; // "s= " must be there if no meaningful name set
+  }
+  session.media.forEach(function (mLine) {
+    if (mLine.payloads == null) {
+      mLine.payloads = "";
+    }
+  });
+
+  var outerOrder = opts.outerOrder || defaultOuterOrder;
+  var innerOrder = opts.innerOrder || defaultInnerOrder;
+  var sdp = [];
+
+  // loop through outerOrder for matching properties on session
+  outerOrder.forEach(function (type) {
+    grammar[type].forEach(function (obj) {
+      if (obj.name in session && session[obj.name] != null) {
+        sdp.push(makeLine(type, obj, session));
+      }
+      else if (obj.push in session && session[obj.push] != null) {
+        session[obj.push].forEach(function (el) {
+          sdp.push(makeLine(type, obj, el));
+        });
+      }
+    });
+  });
+
+  // then for each media line, follow the innerOrder
+  session.media.forEach(function (mLine) {
+    sdp.push(makeLine('m', grammar.m[0], mLine));
+
+    innerOrder.forEach(function (type) {
+      grammar[type].forEach(function (obj) {
+        if (obj.name in mLine && mLine[obj.name] != null) {
+          sdp.push(makeLine(type, obj, mLine));
+        }
+        else if (obj.push in mLine && mLine[obj.push] != null) {
+          mLine[obj.push].forEach(function (el) {
+            sdp.push(makeLine(type, obj, el));
+          });
+        }
+      });
+    });
+  });
+
+  return sdp.join('\r\n') + '\r\n';
+};
+
+},{"./grammar":2}],6:[function(require,module,exports){
 module.exports={
   "name": "sip.js",
   "title": "SIP.js",
@@ -388,7 +890,7 @@ module.exports={
     "test": "grunt travis --verbose"
   },
   "dependencies": {
-    "sdpparser": "git+https://github.com/netsapiens/sdpparser.git",
+    "sdp-transform": "^1.7.0",
     "ws": "^1.0.1"
   },
   "optionalDependencies": {
@@ -396,7 +898,7 @@ module.exports={
   }
 }
 
-},{}],3:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP) {
 var ClientContext;
@@ -502,7 +1004,7 @@ ClientContext.prototype.onTransportError = function () {
 SIP.ClientContext = ClientContext;
 };
 
-},{}],4:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Constants
@@ -704,7 +1206,7 @@ return {
 };
 };
 
-},{}],5:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 
 /**
@@ -800,7 +1302,7 @@ RequestSender.prototype = {
 return RequestSender;
 };
 
-},{}],6:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Dialog
@@ -1072,7 +1574,7 @@ Dialog.C = C;
 SIP.Dialog = Dialog;
 };
 
-},{"./Dialog/RequestSender":5}],7:[function(require,module,exports){
+},{"./Dialog/RequestSender":9}],11:[function(require,module,exports){
 "use strict";
 
 /**
@@ -1243,7 +1745,7 @@ DigestAuthentication.prototype.updateNcHex = function() {
 return DigestAuthentication;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 var NodeEventEmitter = require('events').EventEmitter;
 
@@ -1283,7 +1785,7 @@ return EventEmitter;
 
 };
 
-},{"events":1}],9:[function(require,module,exports){
+},{"events":1}],13:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Exceptions
@@ -1338,7 +1840,7 @@ module.exports = {
   }())
 };
 
-},{}],10:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 var Grammar = require('./Grammar/dist/Grammar');
 
@@ -1358,7 +1860,7 @@ return {
 
 };
 
-},{"./Grammar/dist/Grammar":11}],11:[function(require,module,exports){
+},{"./Grammar/dist/Grammar":15}],15:[function(require,module,exports){
 module.exports = (function() {
   /*
    * Generated by PEG.js 0.8.0.
@@ -2709,7 +3211,7 @@ module.exports = (function() {
     parse:       parse
   };
 })();
-},{}],12:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Hacks - This file contains all of the things we
@@ -2718,6 +3220,9 @@ module.exports = (function() {
  * a SIP library. Methods in this file are grouped by vendor, so
  * as to most easily track when particular hacks may not be necessary anymore.
  */
+
+var transform = require('sdp-transform');
+
 
 module.exports = function (SIP) {
 
@@ -2748,6 +3253,18 @@ var Hacks = {
        *
        **/
       return sdp.replace(/ RTP\/SAVP/gmi, " UDP/TLS/RTP/SAVP");
+    },
+
+    filterCodecs: function (sdp,codecs) {
+        var res = transform.parse(sdp);
+        console.log(res);
+        if (codecs)
+        {
+          console.log(codecs);
+        }
+        sdp = transform.write(res).split('\r\n');
+        console.log(sdp);
+
     }
   },
   Firefox: {
@@ -2829,7 +3346,7 @@ var Hacks = {
 return Hacks;
 };
 
-},{}],13:[function(require,module,exports){
+},{"sdp-transform":3}],17:[function(require,module,exports){
 "use strict";
 var levels = {
   'error': 0,
@@ -2945,7 +3462,7 @@ LoggerFactory.prototype.getLogger = function(category, label) {
 return LoggerFactory;
 };
 
-},{}],14:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview MediaHandler
@@ -3000,7 +3517,7 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
 return MediaHandler;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP NameAddrHeader
@@ -3103,7 +3620,7 @@ NameAddrHeader.parse = function(name_addr_header) {
 SIP.NameAddrHeader = NameAddrHeader;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Message Parser
@@ -3366,7 +3883,7 @@ Parser.parseMessage = function(data, ua) {
 SIP.Parser = Parser;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP) {
 
@@ -3652,7 +4169,7 @@ RegisterContext.prototype = {
 SIP.RegisterContext = RegisterContext;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 
 /**
@@ -3793,7 +4310,7 @@ RequestSender.prototype = {
 SIP.RequestSender = RequestSender;
 };
 
-},{}],19:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /**
  * @name SIP
  * @namespace
@@ -3843,7 +4360,7 @@ SIP.Grammar = require('./Grammar')(SIP);
 return SIP;
 };
 
-},{"../package.json":2,"./ClientContext":3,"./Constants":4,"./Dialogs":6,"./DigestAuthentication":7,"./EventEmitter":8,"./Exceptions":9,"./Grammar":10,"./Hacks":12,"./LoggerFactory":13,"./MediaHandler":14,"./NameAddrHeader":15,"./Parser":16,"./RegisterContext":17,"./RequestSender":18,"./SIPMessage":20,"./SanityCheck":21,"./ServerContext":22,"./Session":23,"./Subscription":25,"./Timers":26,"./Transactions":27,"./UA":29,"./URI":30,"./Utils":31,"./WebRTC":32}],20:[function(require,module,exports){
+},{"../package.json":6,"./ClientContext":7,"./Constants":8,"./Dialogs":10,"./DigestAuthentication":11,"./EventEmitter":12,"./Exceptions":13,"./Grammar":14,"./Hacks":16,"./LoggerFactory":17,"./MediaHandler":18,"./NameAddrHeader":19,"./Parser":20,"./RegisterContext":21,"./RequestSender":22,"./SIPMessage":24,"./SanityCheck":25,"./ServerContext":26,"./Session":27,"./Subscription":29,"./Timers":30,"./Transactions":31,"./UA":33,"./URI":34,"./Utils":35,"./WebRTC":36}],24:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Message
@@ -4408,7 +4925,7 @@ SIP.IncomingRequest = IncomingRequest;
 SIP.IncomingResponse = IncomingResponse;
 };
 
-},{}],21:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Incoming SIP Message Sanity Check
@@ -4638,7 +5155,7 @@ sanityCheck = function(m, u, t) {
 SIP.sanityCheck = sanityCheck;
 };
 
-},{}],22:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP) {
 var ServerContext;
@@ -4730,7 +5247,7 @@ ServerContext.prototype.onTransportError = function () {
 SIP.ServerContext = ServerContext;
 };
 
-},{}],23:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 module.exports = function (SIP, environment) {
 
@@ -6971,7 +7488,7 @@ SIP.InviteClientContext = InviteClientContext;
 
 };
 
-},{"./Session/DTMF":24}],24:[function(require,module,exports){
+},{"./Session/DTMF":28}],28:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview DTMF
@@ -7153,7 +7670,7 @@ DTMF.C = C;
 return DTMF;
 };
 
-},{}],25:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 
 /**
@@ -7498,7 +8015,7 @@ SIP.Subscription.prototype = {
 };
 };
 
-},{}],26:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP TIMERS
@@ -7541,7 +8058,7 @@ module.exports = function (timers) {
   return Timers;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP Transactions
@@ -8260,7 +8777,7 @@ SIP.Transactions = {
 
 };
 
-},{}],28:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Transport
@@ -8633,7 +9150,7 @@ Transport.C = C;
 return Transport;
 };
 
-},{}],29:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 (function (global){
 "use strict";
 /**
@@ -10289,7 +10806,7 @@ SIP.UA = UA;
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],30:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview SIP URI
@@ -10531,7 +11048,7 @@ URI.parse = function(uri) {
 SIP.URI = URI;
 };
 
-},{}],31:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview Utils
@@ -11028,7 +11545,7 @@ Utils= {
 SIP.Utils = Utils;
 };
 
-},{}],32:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview WebRTC
@@ -11069,7 +11586,7 @@ WebRTC.isSupported = function () {
 return WebRTC;
 };
 
-},{"./WebRTC/MediaHandler":33,"./WebRTC/MediaStreamManager":34}],33:[function(require,module,exports){
+},{"./WebRTC/MediaHandler":37,"./WebRTC/MediaStreamManager":38}],37:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview MediaHandler
@@ -11611,8 +12128,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       })
       .then(function readySuccess () {
         var sdp = pc.localDescription.sdp;
+
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
+        sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"0 8");
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',
@@ -11672,7 +12191,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 return MediaHandler;
 };
 
-},{}],34:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 /**
  * @fileoverview MediaStreamManager
@@ -11831,7 +12350,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
 return MediaStreamManager;
 };
 
-},{}],35:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -11880,9 +12399,9 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Transport":28}],36:[function(require,module,exports){
+},{"./Transport":32}],40:[function(require,module,exports){
 "use strict";
 module.exports = require('./SIP')(require('./environment'));
 
-},{"./SIP":19,"./environment":35}]},{},[36])(36)
+},{"./SIP":23,"./environment":39}]},{},[40])(40)
 });
