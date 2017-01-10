@@ -44,12 +44,39 @@ var Hacks = {
     filterCodecs: function (sdp,codecs) {
         var res = transform.parse(sdp);
         console.log(res);
-        if (codecs)
+        if (typeof codecs !== 'undefined' && codecs !== "")
         {
+          codecs = codecs.split(" ");
           console.log(codecs);
+
+          for (var i = 0; i < res.media.length; i++) {
+
+            var payloadlist = res.media[i].payload.split(" ");
+
+            console.log(codecs);
+            console.log(payloadlist);
+
+            for (var j = 0; j < payloadlist.length; j++) {
+              if (codecs.indexOf(payloadlist[j]) === -1)
+              {
+                payloadlist.splice(j, 1);
+              }
+            }
+            res.media[i].payload = payloadlist.join(" ");
+
+            for (j = 0; j < res.media[i].rtp.length; j++) {
+              if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
+              {
+                res.media[i].rtp.splice(j, 1);
+              }
+            }
+          }
         }
-        sdp = transform.write(res).split('\r\n');
+        console.log(res);
+        sdp = transform.write(res);
         console.log(sdp);
+
+        return sdp;
 
     }
   },
