@@ -3269,17 +3269,19 @@ var Hacks = {
 
             console.log(payloadlist);
 
-            for (var j = 0; j < payloadlist.length; j++) {
+            for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(payloadlist[j]) === -1)
               {
+                  console.log("removing m line ".payloadlist[j]);
                 payloadlist.splice(j, 1);
               }
             }
             res.media[i].payloads = payloadlist.join(" ");
 
-            for (j = 0; j < res.media[i].rtp.length; j++) {
+            for (j = res.media[i].rtp.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
               {
+                console.log("removing a line ".res.media[i].rtp[j].id);
                 res.media[i].rtp.splice(j, 1);
               }
             }
