@@ -388,6 +388,7 @@ module.exports={
     "test": "grunt travis --verbose"
   },
   "dependencies": {
+    "sdpparser": "git+https://github.com/netsapiens/sdpparser.git",
     "ws": "^1.0.1"
   },
   "optionalDependencies": {
