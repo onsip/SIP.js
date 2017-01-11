@@ -3278,7 +3278,7 @@ var Hacks = {
             }
             var neworder = [];
             for (j=0 ; j< codecs.length; j++) {
-              if (payloadlist.indexOf(codecs[j]) === -1)
+              if (payloadlist.indexOf(codecs[j]) > -1)
               {
                 neworder.push(codecs[j]);
               }
