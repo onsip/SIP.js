@@ -3305,7 +3305,36 @@ var Hacks = {
 
           }
         }
-        sdp = transform.write(res);
+        sdp = transform.write(res).split('\r\n');
+
+        /* Hack to force a=group:BUNDLE audio before a=msid-semantic: WMS srKdjU81RbAWmXRR6L1n57RZT7Thl96tMYmL */
+        var bundle=0;
+        var semantic=0;
+        for (var x=0 ; x< sdp.length; x++) {
+            if (sdp[x].startsWith("a=msid-semantic"))
+            {
+              semantic= x;
+            }
+
+            if (sdp[x].startsWith("a=group:BUNDLE"))
+            {
+              bundle= x;
+            }
+
+        }
+        if (bundle+1===semantic)
+        {
+            var b = sdp[bundle];
+            sdp[bundle] = sdp[semantic];
+            sdp[semantic] = b;
+        }
+        /* end hack */
+
+        sdp = sdp.join('\r\n');
+
+
+
+
 
         return sdp;
 
