@@ -3299,7 +3299,7 @@ var Hacks = {
             for (j = res.media[i].fmtp.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(res.media[i].ftmp[j].id) === -1)
               {
-                res.media[i].fmtp.splice(j, 1);
+                res.media[i].ftmp.splice(j, 1);
               }
             }
 
