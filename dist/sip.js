@@ -10125,6 +10125,9 @@ UA.prototype.loadConfig = function(configuration) {
       hackAllowUnregisteredOptionTags: false,
       hackCleanJitsiSdpImageattr: false,
       hackStripTcp: false,
+      codecsVideo: null,
+      codecsAudio: null,
+
 
       contactTransport: 'ws',
       forceRport: false,
@@ -10350,6 +10353,8 @@ UA.configuration_skeleton = (function() {
       "uri",
       "wsServers",
       "authorizationUser",
+      "codecsAudio",
+      "codecsVideo",
       "connectionRecoveryMaxInterval",
       "connectionRecoveryMinInterval",
       "keepAliveInterval",
