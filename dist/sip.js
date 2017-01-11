@@ -1,5 +1,5 @@
 /*
- * SIP version 0.7.6.1
+ * SIP version 0.7.6
  * Copyright (c) 2014-2017 Junction Networks, Inc <http://www.onsip.com>
  * Homepage: http://sipjs.com
  * License: http://sipjs.com/license/
@@ -842,7 +842,7 @@ module.exports={
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.7.6.1",
+  "version": "0.7.6",
   "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
