@@ -1302,6 +1302,18 @@ UA.configuration_check = {
       }
     },
 
+    codecsAudio: function(codecsAudio) {
+      if (typeof codecsAudio === 'string') {
+        return codecsAudio;
+      }
+    },
+
+    codecsVideo: function(codecsVideo) {
+      if (typeof codecsVideo === 'string') {
+        return codecsVideo;
+      }
+    },
+
     connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {

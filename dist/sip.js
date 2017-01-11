@@ -10501,6 +10501,18 @@ UA.configuration_check = {
       }
     },
 
+    codecsAudio: function(codecsAudio) {
+      if (typeof codecsAudio === 'string') {
+        return codecsAudio;
+      }
+    },
+
+    codecsVideo: function(codecsVideo) {
+      if (typeof codecsVideo === 'string') {
+        return codecsVideo;
+      }
+    },
+
     connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
       if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
@@ -12176,7 +12188,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        self.session.ua.configuration.filterCodecs = "0 8 126";
         if (self.session.ua.configuration.codecsAudio) {
           sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"audio",self.session.ua.configuration.codecsAudio);
         }
