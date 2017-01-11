@@ -101,14 +101,12 @@ var Hacks = {
             {
               semantic= x;
             }
-
             if (sdp[x].startsWith("a=group:BUNDLE"))
             {
               bundle= x;
             }
-
         }
-        if (bundle+1===semantic)
+        if (bundle-1===semantic)
         {
             var b = sdp[bundle];
             sdp[bundle] = sdp[semantic];
