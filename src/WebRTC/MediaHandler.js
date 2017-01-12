@@ -179,10 +179,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
     sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
-    if (this.session.ua.configuration.codecsAudio) {
+    if (this.session.ua.configuration.codecsAudio !==null) {
       sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"audio",this.session.ua.configuration.codecsAudio);
     }
-    if (this.session.ua.configuration.codecsVideo) {
+    if (this.session.ua.configuration.codecsVideo !==null) {
       sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"video",this.session.ua.configuration.codecsVideo);
     }
 
@@ -548,10 +548,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
-        if (self.session.ua.configuration.codecsAudio) {
+        if (self.session.ua.configuration.codecsAudio !==null) {
           sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"audio",self.session.ua.configuration.codecsAudio);
         }
-        if (self.session.ua.configuration.codecsVideo) {
+        if (self.session.ua.configuration.codecsVideo !==null) {
           sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"video",self.session.ua.configuration.codecsVideo);
         }
 
