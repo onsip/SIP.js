@@ -1308,13 +1308,13 @@ UA.configuration_check = {
     },
 
     codecsAudio: function(codecsAudio) {
-      if (typeof codecsAudio === 'string') {
+      if (typeof codecsAudio === 'string' || typeof codecsAudio === 'boolean') {
         return codecsAudio;
       }
     },
 
     codecsVideo: function(codecsVideo) {
-      if (typeof codecsVideo === 'string') {
+      if (typeof codecsVideo === 'string' || typeof codecsVideo === 'boolean') {
         return codecsVideo;
       }
     },

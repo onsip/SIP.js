@@ -3262,6 +3262,9 @@ var Hacks = {
         var res = transform.parse(sdp);
         if (typeof codecs !== 'undefined' && codecs !== null)
         {
+          if (typeof codecs ==="boolean" || codecs ==="false"){
+            codecs ="";
+          }
           codecs = codecs.split(" ");
 
           for (var i = res.media.length -1 ; i >= 0 ; i--) {
@@ -3269,7 +3272,7 @@ var Hacks = {
             {
               continue;
             }
-            else if(codecs.length === 0)
+            else if(codecs.length === 0 || codecs[0]==="")
             {
               res.media.splice(i, 1);
             }
@@ -10539,13 +10542,13 @@ UA.configuration_check = {
     },
 
     codecsAudio: function(codecsAudio) {
-      if (typeof codecsAudio === 'string') {
+      if (typeof codecsAudio === 'string' || typeof codecsAudio === 'boolean') {
         return codecsAudio;
       }
     },
 
     codecsVideo: function(codecsVideo) {
-      if (typeof codecsVideo === 'string') {
+      if (typeof codecsVideo === 'string' || typeof codecsVideo === 'boolean') {
         return codecsVideo;
       }
     },
