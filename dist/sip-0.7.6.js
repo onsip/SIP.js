@@ -3285,19 +3285,19 @@ var Hacks = {
             }
             res.media[i].payloads = neworder.join(" ");
             for (j = res.media[i].rtp.length -1 ; j >= 0 ; j--) {
-              if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
+              if (codecs.indexOf(res.media[i].rtp[j].payload) === -1)
               {
                 res.media[i].rtp.splice(j, 1);
               }
             }
             for (j = res.media[i].rtcpFb.length -1 ; j >= 0 ; j--) {
-              if (codecs.indexOf(res.media[i].rtcpFb[j].id) === -1)
+              if (codecs.indexOf(res.media[i].rtcpFb[j].payload) === -1)
               {
                 res.media[i].rtcpFb.splice(j, 1);
               }
             }
             for (j = res.media[i].fmtp.length -1 ; j >= 0 ; j--) {
-              if (codecs.indexOf(res.media[i].fmtp[j].id) === -1)
+              if (codecs.indexOf(res.media[i].fmtp[j].payload) === -1)
               {
                 res.media[i].fmtp.splice(j, 1);
               }
