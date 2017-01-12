@@ -3268,7 +3268,7 @@ var Hacks = {
           codecs = codecs.split(" ");
 
           for (var i = res.media.length -1 ; i >= 0 ; i--) {
-            if (res.media[i].mid !== type)
+            if (res.media[i].type !== type)
             {
               continue;
             }
