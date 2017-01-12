@@ -179,6 +179,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
     sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
+    if (this.session.ua.configuration.codecsAudio) {
+      sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"audio",this.session.ua.configuration.codecsAudio);
+    }
+    if (this.session.ua.configuration.codecsVideo) {
+      sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"video",this.session.ua.configuration.codecsVideo);
+    }
 
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',

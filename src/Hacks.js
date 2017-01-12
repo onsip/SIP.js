@@ -46,15 +46,20 @@ var Hacks = {
         filterCodecs will allow you to limit the codec options in the SDP and prioritize
         **/
         var res = transform.parse(sdp);
-        if (typeof codecs !== 'undefined' && codecs !== "")
+        if (typeof codecs !== 'undefined' && codecs !== null)
         {
           codecs = codecs.split(" ");
 
-          for (var i = 0; i < res.media.length; i++) {
+          for (var i = res.media.length -1 ; i >= 0 ; i--) {
             if (res.media[i].mid !== type)
             {
               continue;
             }
+            else if(codecs.length === 0)
+            {
+              res.media.splice(i, 1);
+            }
+
             var payloadlist = res.media[i].payloads.split(" ");
             for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(payloadlist[j]) === -1)

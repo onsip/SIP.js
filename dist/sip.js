@@ -3260,15 +3260,20 @@ var Hacks = {
         filterCodecs will allow you to limit the codec options in the SDP and prioritize
         **/
         var res = transform.parse(sdp);
-        if (typeof codecs !== 'undefined' && codecs !== "")
+        if (typeof codecs !== 'undefined' && codecs !== null)
         {
           codecs = codecs.split(" ");
 
-          for (var i = 0; i < res.media.length; i++) {
+          for (var i = res.media.length -1 ; i >= 0 ; i--) {
             if (res.media[i].mid !== type)
             {
               continue;
             }
+            else if(codecs.length === 0)
+            {
+              res.media.splice(i, 1);
+            }
+
             var payloadlist = res.media[i].payloads.split(" ");
             for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(payloadlist[j]) === -1)
@@ -11857,6 +11862,12 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
     sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
+    if (this.session.ua.configuration.codecsAudio) {
+      sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"audio",this.session.ua.configuration.codecsAudio);
+    }
+    if (this.session.ua.configuration.codecsVideo) {
+      sdp = SIP.Hacks.AllBrowsers.filterCodecs(sdp,"video",this.session.ua.configuration.codecsVideo);
+    }
 
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
