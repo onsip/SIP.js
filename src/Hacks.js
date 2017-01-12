@@ -61,6 +61,7 @@ var Hacks = {
             else if(codecs.length === 0 || codecs[0]==="")
             {
               res.media.splice(i, 1);
+              continue;
             }
 
             var payloadlist = res.media[i].payloads.split(" ");
