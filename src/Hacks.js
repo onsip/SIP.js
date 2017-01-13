@@ -63,7 +63,10 @@ var Hacks = {
               res.media.splice(i, 1);
               continue;
             }
-
+            if (typeof res.media[i].payloads === "number")
+            {
+              res.media[i].payloads = res.media[i].payloads.toString();
+            }
             var payloadlist = res.media[i].payloads.split(" ");
             for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
               if (codecs.indexOf(payloadlist[j]) === -1)
