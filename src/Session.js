@@ -1588,7 +1588,7 @@ InviteServerContext.prototype = {
           //REVISIT
           this.mute();
         }
-      } else if(this.status === C.STATUS_EARLY_MEDIA) {
+      } else if(this.status === C.STATUS_EARLY_MEDIA || this.status === C.STATUS_WAITING_FOR_ANSWER) {
         request.reply(200);
       }
       break;
