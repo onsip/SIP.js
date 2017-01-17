@@ -5918,6 +5918,8 @@ Session.prototype = {
     .catch(function onFailure (e) {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
+        self.logger.error(e);
+        self.logger.warning("Attempting to send a 200ok even with SDP error");
         request.reply(200, null, ['Contact: ' + self.contact],null,
           function() {
             self.status = C.STATUS_WAITING_FOR_ACK;
@@ -5925,6 +5927,7 @@ Session.prototype = {
             self.setACKTimer();
 
           });
+          return;
       } else {
         self.logger.error(e);
         statusCode = 488;
