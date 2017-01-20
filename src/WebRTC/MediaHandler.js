@@ -431,12 +431,23 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     // MediaHandler.prototype.getRemoteStreams work, keep track of them manually
     this._remoteStreams = [];
 
-    this.peerConnection.onaddstream = function(e) {
-      self.logger.log('stream added: '+ e.stream.id);
-      self._remoteStreams.push(e.stream);
-      self.render();
-      self.emit('addStream', e);
-    };
+    if(this.peerConnection.onaddstream) {
+        this.peerConnection.onaddstream = function(e) {
+            self.logger.log('stream added: '+ e.stream.id);
+            self._remoteStreams.push(e.stream);
+            self.render();
+            self.emit('addStream', e);
+        };
+    } else {
+        this.peerConnection.ontrack = function(e) {
+            self.logger.log('stream added: '+ e.stream.id);
+            self._remoteStreams.push(e.stream);
+            self.render();
+            self.emit('addStream', e);
+        };
+    }
+
+
 
     this.peerConnection.onremovestream = function(e) {
       self.logger.log('stream removed: '+ e.stream.id);
