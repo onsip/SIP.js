@@ -1175,6 +1175,7 @@ UA.configuration_skeleton = (function() {
       "replaces",
       "userAgentString", //SIP.C.USER_AGENT
       "autostart",
+      "rtcpMuxPolicy",
       "stunServers",
       "traceSip",
       "turnServers",
@@ -1573,6 +1574,12 @@ UA.configuration_check = {
         }
       }
       return turnServers;
+    },
+
+    rtcpMuxPolicy: function(rtcpMuxPolicy) {
+      if (typeof rtcpMuxPolicy === 'string') {
+        return rtcpMuxPolicy;
+      }
     },
 
     userAgentString: function(userAgentString) {
