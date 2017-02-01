@@ -173,14 +173,6 @@ UA = function(configuration) {
   if(this.configuration.autostart) {
     this.start();
   }
-
-  if (typeof environment.addEventListener === 'function') {
-    // Google Chrome Packaged Apps don't allow 'unload' listeners:
-    // unload is not available in packaged apps
-    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
-      environment.addEventListener('unload', this.stop.bind(this));
-    }
-  }
 };
 UA.prototype = Object.create(SIP.EventEmitter.prototype);
 
@@ -352,6 +344,14 @@ UA.prototype.stop = function() {
     this.on('transactionDestroyed', transactionsListener);
   }
 
+  if (typeof environment.removeEventListener === 'function') {
+    // Google Chrome Packaged Apps don't allow 'unload' listeners:
+    // unload is not available in packaged apps
+    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
+      environment.removeEventListener('unload', this.environListener);
+    }
+  }
+
   return this;
 };
 
@@ -378,6 +378,15 @@ UA.prototype.start = function() {
     this.logger.log('UA is in READY status, not resuming');
   } else {
     this.logger.error('Connection is down. Auto-Recovery system is trying to connect');
+  }
+
+  if (typeof environment.addEventListener === 'function') {
+    // Google Chrome Packaged Apps don't allow 'unload' listeners:
+    // unload is not available in packaged apps
+    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
+      this.environListener = this.stop.bind(this);
+      environment.addEventListener('unload', this.environListener);
+    }
   }
 
   return this;
