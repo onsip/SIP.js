@@ -14,14 +14,12 @@
  */
 module.exports = function (SIP) {
 var sanityCheck,
- logger,
- message, ua, transport,
  requests = [],
  responses = [],
  all = [];
 
 // Reply
-function reply(status_code) {
+function reply(status_code, message, transport) {
   var to,
     response = SIP.Utils.buildStatusLine(status_code),
     vias = message.getHeaders('via'),
@@ -68,33 +66,33 @@ function reply(status_code) {
  */
 
 // Sanity Check functions for requests
-function rfc3261_8_2_2_1() {
+function rfc3261_8_2_2_1(message, ua, transport) {
   if(!message.ruri || message.ruri.scheme !== 'sip') {
-    reply(416);
+    reply(416, message, transport);
     return false;
   }
 }
 
-function rfc3261_16_3_4() {
+function rfc3261_16_3_4(message, ua, transport) {
   if(!message.to_tag) {
     if(message.call_id.substr(0, 5) === ua.configuration.sipjsId) {
-      reply(482);
+      reply(482, message, transport);
       return false;
     }
   }
 }
 
-function rfc3261_18_3_request() {
+function rfc3261_18_3_request(message, ua, transport) {
   var len = SIP.Utils.str_utf8_length(message.body),
   contentLength = message.getHeader('content-length');
 
   if(len < contentLength) {
-    reply(400);
+    reply(400, message, transport);
     return false;
   }
 }
 
-function rfc3261_8_2_2_2() {
+function rfc3261_8_2_2_2(message, ua, transport) {
   var tr, idx,
     fromTag = message.from_tag,
     call_id = message.call_id,
@@ -109,7 +107,7 @@ function rfc3261_8_2_2_2() {
         for(idx in ua.transactions.ist) {
           tr = ua.transactions.ist[idx];
           if(tr.request.from_tag === fromTag && tr.request.call_id === call_id && tr.request.cseq === cseq) {
-            reply(482);
+            reply(482, message, transport);
             return false;
           }
         }
@@ -122,7 +120,7 @@ function rfc3261_8_2_2_2() {
         for(idx in ua.transactions.nist) {
           tr = ua.transactions.nist[idx];
           if(tr.request.from_tag === fromTag && tr.request.call_id === call_id && tr.request.cseq === cseq) {
-            reply(482);
+            reply(482, message, transport);
             return false;
           }
         }
@@ -132,41 +130,41 @@ function rfc3261_8_2_2_2() {
 }
 
 // Sanity Check functions for responses
-function rfc3261_8_1_3_3() {
+function rfc3261_8_1_3_3(message, ua) {
   if(message.getHeaders('via').length > 1) {
-    logger.warn('More than one Via header field present in the response. Dropping the response');
+    ua.getLogger('sip.sanitycheck').warn('More than one Via header field present in the response. Dropping the response');
     return false;
   }
 }
 
-function rfc3261_18_1_2() {
+function rfc3261_18_1_2(message, ua) {
   var viaHost = ua.configuration.viaHost;
   if(message.via.host !== viaHost || message.via.port !== undefined) {
-    logger.warn('Via sent-by in the response does not match UA Via host value. Dropping the response');
+    ua.getLogger('sip.sanitycheck').warn('Via sent-by in the response does not match UA Via host value. Dropping the response');
     return false;
   }
 }
 
-function rfc3261_18_3_response() {
+function rfc3261_18_3_response(message, ua) {
   var
     len = SIP.Utils.str_utf8_length(message.body),
     contentLength = message.getHeader('content-length');
 
     if(len < contentLength) {
-      logger.warn('Message body length is lower than the value in Content-Length header field. Dropping the response');
+      ua.getLogger('sip.sanitycheck').warn('Message body length is lower than the value in Content-Length header field. Dropping the response');
       return false;
     }
 }
 
 // Sanity Check functions for requests and responses
-function minimumHeaders() {
+function minimumHeaders(message, ua) {
   var
     mandatoryHeaders = ['from', 'to', 'call_id', 'cseq', 'via'],
     idx = mandatoryHeaders.length;
 
   while(idx--) {
     if(!message.hasHeader(mandatoryHeaders[idx])) {
-      logger.warn('Missing mandatory header field : '+ mandatoryHeaders[idx] +'. Dropping the response');
+      ua.getLogger('sip.sanitycheck').warn('Missing mandatory header field : '+ mandatoryHeaders[idx] +'. Dropping the response');
       return false;
     }
   }
@@ -183,18 +181,12 @@ responses.push(rfc3261_18_3_response);
 
 all.push(minimumHeaders);
 
-sanityCheck = function(m, u, t) {
+sanityCheck = function(message, ua, transport) {
   var len, pass;
-
-  message = m;
-  ua = u;
-  transport = t;
-
-  logger = ua.getLogger('sip.sanitycheck');
 
   len = all.length;
   while(len--) {
-    pass = all[len](message);
+    pass = all[len](message, ua, transport);
     if(pass === false) {
       return false;
     }
@@ -203,7 +195,7 @@ sanityCheck = function(m, u, t) {
   if(message instanceof SIP.IncomingRequest) {
     len = requests.length;
     while(len--) {
-      pass = requests[len](message);
+      pass = requests[len](message, ua, transport);
       if(pass === false) {
         return false;
       }
@@ -213,7 +205,7 @@ sanityCheck = function(m, u, t) {
   else if(message instanceof SIP.IncomingResponse) {
     len = responses.length;
     while(len--) {
-      pass = responses[len](message);
+      pass = responses[len](message, ua, transport);
       if(pass === false) {
         return false;
       }
