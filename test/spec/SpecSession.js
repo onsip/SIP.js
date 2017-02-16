@@ -1838,14 +1838,12 @@ describe('InviteClientContext', function() {
   });
 
   it('throws a type error if invalid stun servers are passed in', function() {
-    spyOn(SIP.UA.configuration_check.optional, 'stunServers');
+    spyOn(ua, 'getConfigurationCheck').and.returnValue({optional: {'stunServers': function () {return;}}});
 
     expect(function() { new SIP.InviteClientContext(ua, target, {stunServers: 'fake'});}).toThrowError('Invalid stunServers: fake');
   });
 
   it('throws a type error if invalid turn servers are passed in', function() {
-    spyOn(SIP.UA.configuration_check.optional, 'turnServers');
-
     expect(function() { new SIP.InviteClientContext(ua, target, {turnServers: 'fake'});}).toThrowError('Invalid turnServers: fake');
   });
 
