@@ -471,7 +471,7 @@ Session.prototype = {
   /**
    * Hold
    */
-  hold: function() {
+  hold: function(options) {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -497,7 +497,7 @@ Session.prototype = {
 
     this.onhold('local');
 
-    this.sendReinvite();
+    this.sendReinvite(options);
   },
 
   /**
