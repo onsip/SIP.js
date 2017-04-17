@@ -130,7 +130,7 @@ password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
 
 hostport        = host ( ":" port )?
 
-host            = ( hostname / IPv4address / IPv6reference ) {
+host            = ( hostname / IPv4address / IPv6reference / word ) {
                     options.data.host = text();
                     return options.data.host; }
 
