@@ -130,7 +130,7 @@ password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
 
 hostport        = host ( ":" port )?
 
-host            = ( hostname / IPv4address / IPv6reference / word ) {
+host            = ( hostname / IPv4address / IPv6reference ) {
                     options.data.host = text();
                     return options.data.host; }
 
@@ -140,7 +140,7 @@ hostname        = ( domainlabel "." )* toplabel  "." ? {
 
 domainlabel     = domainlabel: ( [a-zA-Z0-9_-]+ )
 
-toplabel        = toplabel: ( [a-zA-Z][a-zA-Z0-9-]* )
+toplabel        = token //toplabel: ( [a-zA-Z][a-zA-Z0-9-]* )
 
 IPv6reference   = "[" IPv6address "]" {
                     options.data.host_type = 'IPv6';
