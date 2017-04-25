@@ -380,7 +380,7 @@ UA.prototype.start = function() {
     this.logger.error('Connection is down. Auto-Recovery system is trying to connect');
   }
 
-  if (typeof environment.addEventListener === 'function') {
+  if (this.configuration.autostop && typeof environment.addEventListener === 'function') {
     // Google Chrome Packaged Apps don't allow 'unload' listeners:
     // unload is not available in packaged apps
     if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
@@ -947,6 +947,7 @@ UA.prototype.loadConfig = function(configuration) {
 
       //autostarting
       autostart: true,
+      autostop: true,
 
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
@@ -1559,6 +1560,12 @@ UA.prototype.getConfigurationCheck = function () {
       autostart: function(autostart) {
         if (typeof autostart === 'boolean') {
           return autostart;
+        }
+      },
+
+      autostop: function(autostop) {
+        if (typeof autostop === 'boolean') {
+          return autostop;
         }
       },
 
