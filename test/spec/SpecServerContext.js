@@ -170,9 +170,9 @@ describe('ServerContext', function() {
       spyOn(ServerContext.request, 'reply');
     });
 
-    it('defaults to status code 480 if none is provided', function() {
+    it('defaults to status code 486 if none is provided', function() {
       ServerContext.reject(null);
-      expect(ServerContext.request.reply).toHaveBeenCalledWith(480, 'Temporarily Unavailable', [], undefined);
+      expect(ServerContext.request.reply).toHaveBeenCalledWith(486, 'Busy Here', [], undefined);
     });
 
     it('throws an error with an invalid status code', function() {

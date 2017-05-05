@@ -1142,12 +1142,12 @@ describe('InviteServerContext', function() {
       }
     });
 
-    it('replies to the request (480 is default)', function() {
+    it('replies to the request (486 is default)', function() {
       request.reply.calls.reset();
 
       InviteServerContext.reject();
 
-      expect(request.reply.calls.mostRecent().args[0]).toBe(480);
+      expect(request.reply.calls.mostRecent().args[0]).toBe(486);
     });
 
     it('calls rejected, failed, and terminated', function() {
