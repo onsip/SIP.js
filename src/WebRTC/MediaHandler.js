@@ -173,6 +173,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
    * @returns {Promise}
    */
   setDescription: {writable: true, value: function setDescription (message) {
+    var self = this;
     var sdp = message.body;
 
     this.remote_hold = /a=(sendonly|inactive)/.test(sdp);
@@ -188,7 +189,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    return SIP.Utils.promisify(this.peerConnection, 'setRemoteDescription')(description);
+    return SIP.Utils.promisify(this.peerConnection, 'setRemoteDescription')(description)
+      .catch(function setRemoteDescriptionError(e) {
+        self.emit('peerConnection-setRemoteDescriptionFailed', e);
+        throw e;
+      });
   }},
 
   /**
@@ -535,7 +540,15 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
     return SIP.Utils.promisify(pc, methodName, true)(constraints)
+      .catch(function methodError(e) {
+        self.emit('peerConnection-' + methodName + 'Failed', e);
+        throw e;
+      })
       .then(SIP.Utils.promisify(pc, 'setLocalDescription'))
+      .catch(function localDescError(e) {
+        self.emit('peerConnection-selLocalDescriptionFailed', e);
+        throw e;
+      })
       .then(function onSetLocalDescriptionSuccess() {
         var deferred = SIP.Utils.defer();
         if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
@@ -565,7 +578,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         self.ready = true;
         return sdpWrapper.sdp;
       })
-      .catch(function methodFailed (e) {
+      .catch(function createOfferAnswerError (e) {
         self.logger.error(e);
         self.ready = true;
         throw new SIP.Exceptions.GetDescriptionError(e);
