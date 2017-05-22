@@ -236,7 +236,7 @@ UA.prototype.invite = function(target, options) {
   var context = new SIP.InviteClientContext(this, target, options);
 
   this.afterConnected(context.invite.bind(context));
-  this.emit('invite-sent', context);
+  this.emit('inviteSent', context);
   return context;
 };
 
