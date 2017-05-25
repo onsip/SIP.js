@@ -633,15 +633,43 @@ Session.prototype = {
     switch (request.method) {
       case SIP.C.BYE:
         request.reply(200);
-        if(this.status === C.STATUS_CONFIRMED) {
-          this.emit('bye', request);
-          this.terminated(request, SIP.C.causes.BYE);
+        if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_INVITE_SENT) {
+            if (this.endCallCb) {
+                var endCall = this.endCallCb(this);
+                var self = this;
+                this.terminated(request, SIP.C.causes.BYE, endCall);
+                this.emit('bye', request);
+                setTimeout(function () {
+                    if (endCall) {
+                        for (var i in self.ua.sessions) {
+                            if (self.ua.sessions[i].status === C.STATUS_CONFIRMED) {
+                                self.ua.sessions[i].close();
+                            }
+                        }
+                    }
+                }, 1000);
+            } else {
+                this.emit('bye', request);
+                this.terminated(request, SIP.C.causes.BYE);
+            }
         }
         break;
       case SIP.C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
-          this.receiveReinvite(request);
+          this.logger.log('re-INVITE received');
+          // PATCH_actpass: freeSwitch is sending every 1' a re-INVITE on 1:1 conversations and phone calls (pstn)
+          // - If it's a phone call (From pstn), replying 488 stops the re-invites from the server
+          //   However, trying to send an OK ends up in a client 500
+          // - If it's a 1:1 call, we must reply OK instead , otherwise at 1'48" there's a server timeout
+          if(/[F|f]rom:(\s)*<sip:[0-9]*@pstn(.)*>/.test(request.data)){
+            request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
+          }
+          else{
+            request.body = request.body.replace(new RegExp('a=setup:active', 'g'), 'a=setup:actpass');
+            //this.receiveReinvite(request);
+            request.reply(200, null, ['Contact: ' + this.contact], this.mediaHandler.peerConnection.localDescription.sdp);
+          }
         }
         break;
       case SIP.C.INFO:
@@ -1741,6 +1769,11 @@ InviteClientContext = function(ua, target, options) {
 InviteClientContext.prototype = {
   invite: function () {
     var self = this;
+    options = options || {};
+    this.endCallCb = options.endCallCb;
+
+    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
+    this.mediaHint = options.media;
 
     //Save the session into the ua sessions collection.
     //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway

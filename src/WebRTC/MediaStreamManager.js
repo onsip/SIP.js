@@ -137,15 +137,18 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
       return deferred.promise;
     }
   }},
-
   'release': {writable: true, value: function release (streams) {
     streams = [].concat(streams);
     streams.forEach(function (stream) {
       var streamId = MediaStreamManager.streamId(stream);
       if (this.acquisitions[streamId] === false) {
-        stream.getTracks().forEach(function (track) {
-          track.stop();
-        });
+        if (SIP.Hacks.Firefox.isFirefox()) {
+          stream.stop();
+        } else {
+          stream.getTracks().forEach(function (track) {
+            track.stop();
+          });
+        }
       }
       delete this.acquisitions[streamId];
     }, this);
