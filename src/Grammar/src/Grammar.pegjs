@@ -94,7 +94,8 @@ quoted_pair = "\\" ( [\x00-\x09] / [\x0B-\x0C] / [\x0E-\x7F] )
 // SIP URI
 //=======================
 
-SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
+// [maaii] add optional "<" and ">", and make hostport optional for offnet call
+SIP_URI_noparams  = "<"? uri_scheme ":"  userinfo ? hostport ? ">"? {
                         options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port);
                         delete options.data.scheme;
                         delete options.data.user;
@@ -103,7 +104,7 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                         delete options.data.port;
                       }
 
-SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
+SIP_URI         = uri_scheme ":"  userinfo ? hostport ? uri_parameters headers ? {
                         options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
                         delete options.data.scheme;
                         delete options.data.user;
@@ -115,10 +116,12 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                         if (options.startRule === 'SIP_URI') { options.data = options.data.uri;}
                       }
 
-uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
+// [maaii] Add "tel" scheme
+uri_scheme      = uri_scheme:  ( "sips"i / "sip"i / "tel"i ) {
                     options.data.scheme = uri_scheme; }
 
-userinfo        = user (":" password)? "@" {
+// [maaii] Make "@" optional as host is optional 
+userinfo        = user (":" password)? "@"? {
                     options.data.user = decodeURIComponent(text().slice(0, -1));}
 
 user            = ( unreserved / escaped / user_unreserved )+
