@@ -471,7 +471,7 @@ Session.prototype = {
   /**
    * Hold
    */
-  hold: function() {
+  hold: function(options) {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -497,7 +497,7 @@ Session.prototype = {
 
     this.onhold('local');
 
-    this.sendReinvite();
+    this.sendReinvite(options);
   },
 
   /**
@@ -1193,7 +1193,7 @@ InviteServerContext.prototype = {
 
     if (stunServers || turnServers) {
       if (stunServers) {
-        iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+        iceServers = this.ua.getConfigurationCheck().optional['stunServers'](stunServers);
         if (!iceServers) {
           throw new TypeError('Invalid stunServers: '+ stunServers);
         } else {
@@ -1202,7 +1202,7 @@ InviteServerContext.prototype = {
       }
 
       if (turnServers) {
-        iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+        iceServers = this.ua.getConfigurationCheck().optional['turnServers'](turnServers);
         if (!iceServers) {
           throw new TypeError('Invalid turnServers: '+ turnServers);
         } else {
@@ -1377,7 +1377,7 @@ InviteServerContext.prototype = {
     if ((stunServers || turnServers) &&
         (this.status !== C.STATUS_EARLY_MEDIA && this.status !== C.STATUS_ANSWERED_WAITING_FOR_PRACK)) {
       if (stunServers) {
-        iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+        iceServers = this.ua.getConfigurationCheck().optional['stunServers'](stunServers);
         if (!iceServers) {
           throw new TypeError('Invalid stunServers: '+ stunServers);
         } else {
@@ -1386,7 +1386,7 @@ InviteServerContext.prototype = {
       }
 
       if (turnServers) {
-        iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+        iceServers = this.ua.getConfigurationCheck().optional['turnServers'](turnServers);
         if (!iceServers) {
           throw new TypeError('Invalid turnServers: '+ turnServers);
         } else {
@@ -1699,7 +1699,7 @@ InviteClientContext = function(ua, target, options) {
   this.logger = ua.getLogger('sip.inviteclientcontext');
 
   if (stunServers) {
-    iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+    iceServers = this.ua.getConfigurationCheck().optional['stunServers'](stunServers);
     if (!iceServers) {
       throw new TypeError('Invalid stunServers: '+ stunServers);
     } else {
@@ -1708,7 +1708,7 @@ InviteClientContext = function(ua, target, options) {
   }
 
   if (turnServers) {
-    iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+    iceServers = this.ua.getConfigurationCheck().optional['turnServers'](turnServers);
     if (!iceServers) {
       throw new TypeError('Invalid turnServers: '+ turnServers);
     } else {
@@ -2083,7 +2083,8 @@ InviteClientContext.prototype = {
               } else {
                 session.logger.warn('invalid description');
                 session.logger.warn(e);
-                response.reply(488);
+                session.acceptAndTerminate(response, 488, 'Invalid session description');
+                session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }
             });
           }

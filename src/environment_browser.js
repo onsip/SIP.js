@@ -37,6 +37,7 @@ module.exports = {
   RTCSessionDescription: getPrefixedProperty(toplevel, 'RTCSessionDescription'),
 
   addEventListener: getPrefixedProperty(toplevel, 'addEventListener'),
+  removeEventListener: getPrefixedProperty(toplevel, 'removeEventListener'),
   HTMLMediaElement: toplevel.HTMLMediaElement,
 
   attachMediaStream: toplevel.attachMediaStream,

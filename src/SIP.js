@@ -6,14 +6,16 @@
 
 module.exports = function (environment) {
 
-var pkg = require('../package.json');
+var pkg = require('../package.json'),
+    version = pkg.version,
+    title = pkg.title;
 
 var SIP = Object.defineProperties({}, {
   version: {
-    get: function(){ return pkg.version; }
+    get: function(){ return version; }
   },
   name: {
-    get: function(){ return pkg.title; }
+    get: function(){ return title; }
   }
 });
 
