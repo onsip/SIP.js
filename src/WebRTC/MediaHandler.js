@@ -558,8 +558,19 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         }
         return deferred.promise;
       })
-      .then(function readySuccess () {
-        var sdp = pc.localDescription.sdp;
+      .then(function shouldAppendIceToSdp() {
+        // TODO: should make this optional if we want to support ICE Trickling
+        if (pc.localDescription.sdp.indexOf('candidate') < 0) {
+          return SIP.Utils.promisify(pc, methodName, true)(constraints)
+            .then(function(sdp){
+              return sdp.sdp;
+            });
+        } else {
+          return '';
+        }
+      })
+      .then(function readySuccess (sdp) {
+        sdp = sdp || pc.localDescription.sdp;
 
         sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
         sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
