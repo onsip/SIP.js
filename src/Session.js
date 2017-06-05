@@ -550,11 +550,13 @@ Session.prototype = {
 
     if (!this.mediaHandler.hasDescription(request)) {
       this.logger.warn('invalid Content-Type');
-      request.reply(415);
+      request.reply(200);
       return;
     }
 
+
     this.mediaHandler.setDescription(request)
+
     .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
     .then(function(description) {
       var extraHeaders = ['Contact: ' + self.contact];
@@ -574,7 +576,13 @@ Session.prototype = {
     .catch(function onFailure (e) {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
-        statusCode = 500;
+        request.reply(200, null, ['Contact: ' + self.contact],null,
+          function() {
+            self.status = C.STATUS_WAITING_FOR_ACK;
+            self.setInvite2xxTimer(request, null);
+            self.setACKTimer();
+
+          });
       } else {
         self.logger.error(e);
         statusCode = 488;
@@ -636,6 +644,12 @@ Session.prototype = {
         if(this.status === C.STATUS_CONFIRMED) {
           this.emit('bye', request);
           this.terminated(request, SIP.C.causes.BYE);
+        }
+        break;
+      case SIP.C.UPDATE:
+        if(this.status === C.STATUS_CONFIRMED) {
+          this.logger.log('re-INVITE via UPDATE received');
+          request.reply(200);
         }
         break;
       case SIP.C.INVITE:

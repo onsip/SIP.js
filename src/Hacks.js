@@ -7,10 +7,16 @@
  * as to most easily track when particular hacks may not be necessary anymore.
  */
 
+var transform = require('sdp-transform');
+
+
 module.exports = function (SIP) {
 
 //keep to quiet jshint, and remain consistent with other files
 SIP = SIP;
+
+
+
 
 var Hacks = {
   AllBrowsers: {
@@ -33,6 +39,62 @@ var Hacks = {
        *
        **/
       return sdp.replace(/ RTP\/SAVP/gmi, " UDP/TLS/RTP/SAVP");
+    },
+
+    filterCodecs: function (sdp,type,codecs) {
+        /**
+        filterCodecs will allow you to limit the codec options in the SDP and prioritize
+        **/
+        var res = transform.parse(sdp);
+        if (typeof codecs !== 'undefined' && codecs !== "")
+        {
+          codecs = codecs.split(" ");
+
+          for (var i = 0; i < res.media.length; i++) {
+            if (res.media[i].mid !== type)
+            {
+              continue;
+            }
+            var payloadlist = res.media[i].payloads.split(" ");
+            for (var j = payloadlist.length -1 ; j >= 0 ; j--) {
+              if (codecs.indexOf(payloadlist[j]) === -1)
+              {
+                payloadlist.splice(j, 1);
+              }
+            }
+            var neworder = [];
+            for (j=0 ; j< codecs.length; j++) {
+              if (payloadlist.indexOf(codecs[j]) === -1)
+              {
+                neworder.push(codecs[j]);
+              }
+            }
+            res.media[i].payloads = neworder.join(" ");
+            for (j = res.media[i].rtp.length -1 ; j >= 0 ; j--) {
+              if (codecs.indexOf(res.media[i].rtp[j].id) === -1)
+              {
+                res.media[i].rtp.splice(j, 1);
+              }
+            }
+            for (j = res.media[i].rtcpFb.length -1 ; j >= 0 ; j--) {
+              if (codecs.indexOf(res.media[i].rtcpFb[j].id) === -1)
+              {
+                res.media[i].rtcpFb.splice(j, 1);
+              }
+            }
+            for (j = res.media[i].fmtp.length -1 ; j >= 0 ; j--) {
+              if (codecs.indexOf(res.media[i].ftmp[j].id) === -1)
+              {
+                res.media[i].fmtp.splice(j, 1);
+              }
+            }
+
+          }
+        }
+        sdp = transform.write(res);
+
+        return sdp;
+
     }
   },
   Firefox: {
