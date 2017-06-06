@@ -137,7 +137,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
         return self.createOfferOrAnswer(self.RTCConstraints);
       })
       .then(function(sdp) {
-        sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
 
         if (self.local_hold) {
           // Don't receive media
@@ -178,8 +177,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     this.remote_hold = /a=(sendonly|inactive)/.test(sdp);
 
-    sdp = SIP.Hacks.Firefox.cannotHandleExtraWhitespace(sdp);
-    sdp = SIP.Hacks.AllBrowsers.maskDtls(sdp);
 
     var rawDescription = {
       type: this.hasOffer('local') ? 'answer' : 'offer',
@@ -561,8 +558,6 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       .then(function readySuccess () {
         var sdp = pc.localDescription.sdp;
 
-        sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
-        sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',

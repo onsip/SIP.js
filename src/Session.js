@@ -283,8 +283,6 @@ Session.prototype = {
       var getReferMedia = this.mediaHandler.getReferMedia;
       var mediaHint = getReferMedia ? getReferMedia.call(this.mediaHandler) : this.mediaHint;
 
-      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
-
       var referSession = this.ua.invite(target, {
         media: mediaHint,
         params: {
