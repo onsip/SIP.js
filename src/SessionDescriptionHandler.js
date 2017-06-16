@@ -9,23 +9,23 @@
  * @param {Object} [options]
  */
 module.exports = function (EventEmitter) {
-var MediaHandler = function(session, options) {
+var SessionDescriptionHandler = function(session, options) {
   // keep jshint happy
   session = session;
   options = options;
 };
 
-MediaHandler.prototype = Object.create(EventEmitter.prototype, {
-  isReady: {value: function isReady () {}},
+SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
 
   close: {value: function close () {}},
 
   /**
    * @param {Object} [mediaHint] A custom object describing the media to be used during this session.
    */
-  getDescription: {value: function getDescription (mediaHint) {
+  getDescription: {value: function getDescription (constraints, modifier) {
     // keep jshint happy
-    mediaHint = mediaHint;
+    constraints = constraints;
+    modifier = modifier;
   }},
 
   /**
@@ -33,9 +33,9 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {SIP.SIPMessage} message
    * @returns {boolean}
    */
-  hasDescription: {value: function hasDescription (message) {
+  hasSessionDescription: {value: function hasSessionDescription (contentType) {
     // keep jshint happy
-    message = message;
+    contentType = contentType;
   }},
 
   /**
@@ -43,11 +43,13 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {SIP.SIPMessage} message
    * @returns {Promise}
    */
-  setDescription: {value: function setDescription (message) {
+  setDescription: {value: function setDescription (sessionDescription, constraints, modifier) {
     // keep jshint happy
-    message = message;
+    sessionDescription = sessionDescription;
+    constraints = constraints;
+    modifier = modifier;
   }}
 });
 
-return MediaHandler;
+return SessionDescriptionHandler;
 };
