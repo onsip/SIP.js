@@ -22,19 +22,18 @@ var Session, InviteServerContext, InviteClientContext,
   };
 
 /*
- * @param {function returning SIP.MediaHandler} [mediaHandlerFactory]
- *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
+ * @param {function returning SIP.MediaHandler} [sessionDescriptionHandlerFactory]
+ *        (See the documentation for the sessionDescriptionHandlerFactory argument of the UA constructor.)
  */
-Session = function (mediaHandlerFactory) {
+Session = function (sessionDescriptionHandlerFactory) {
   this.status = C.STATUS_NULL;
   this.dialog = null;
   this.earlyDialogs = {};
-  // TODO: Must provide the session with a mediaHandlerFactory, either the default or user provided.
-  // TODO: mediaHandlerFactory -> sessionDescriptionHandlerFactory
-  if (!mediaHandlerFactory) {
+  // TODO: Must provide the session with a sessionDescriptionHandlerFactory, either the default or user provided.
+  if (!sessionDescriptionHandlerFactory) {
     throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
   }
-  this.mediaHandlerFactory = mediaHandlerFactory;
+  this.sessionDescriptionHandlerFactory = sessionDescriptionHandlerFactory;
   // this.mediaHandler gets set by ICC/ISC constructors
   this.hasOffer = false;
   this.hasAnswer = false;
@@ -972,10 +971,10 @@ InviteServerContext = function(ua, request) {
     contentDisp = request.parseHeader('Content-Disposition');
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
+  SIP.Utils.augment(this, SIP.Session, [ua.configuration.sessionDescriptionHandlerFactory]);
 
   //Initialize Media Session
-  this.mediaHandler = this.mediaHandlerFactory(this, {
+  this.mediaHandler = this.sessionDescriptionHandlerFactory(this, {
     // TODO: These default things should probably moved into the SessionDescriptionHandler itself
     // TODO: This may no longer be needed, but we should check things like rtcpMuxPolicy
     RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
@@ -1634,7 +1633,7 @@ InviteClientContext = function(ua, target, options) {
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
     // TODO: Check that this is actually definied
-    mediaHandlerFactory = ua.configuration.mediaHandlerFactory;
+    sessionDescriptionHandlerFactory = ua.configuration.sessionDescriptionHandlerFactory;
 
   this.RTCConstraints = options.RTCConstraints || {};
   this.inviteWithoutSdp = options.inviteWithoutSdp || false;
@@ -1680,7 +1679,7 @@ InviteClientContext = function(ua, target, options) {
   options.extraHeaders = extraHeaders;
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
-  SIP.Utils.augment(this, SIP.Session, [mediaHandlerFactory]);
+  SIP.Utils.augment(this, SIP.Session, [sessionDescriptionHandlerFactory]);
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
@@ -1724,7 +1723,7 @@ InviteClientContext = function(ua, target, options) {
   this.id = this.request.call_id + this.from_tag;
 
   // //Initialize Media Session
-  // this.mediaHandler = this.mediaHandlerFactory(this, {
+  // this.mediaHandler = this.sessionDescriptionHandlerFactory(this, {
   //   RTCConstraints: this.RTCConstraints,
   //   stunServers: this.stunServers,
   //   turnServers: this.turnServers
@@ -1758,7 +1757,7 @@ InviteClientContext.prototype = {
       this.send();
     } else {
       //Initialize Media Session
-      this.mediaHandler = this.mediaHandlerFactory(this, {
+      this.mediaHandler = this.sessionDescriptionHandlerFactory(this, {
         RTCConstraints: this.RTCConstraints,
         stunServers: this.stunServers,
         turnServers: this.turnServers
@@ -2051,7 +2050,7 @@ InviteClientContext.prototype = {
             }*/
             this.accepted(response);
           } else {
-            this.mediaHandler = this.mediaHandlerFactory(this, {
+            this.mediaHandler = this.sessionDescriptionHandlerFactory(this, {
               RTCConstraints: this.RTCConstraints,
               stunServers: this.stunServers,
               turnServers: this.turnServers
