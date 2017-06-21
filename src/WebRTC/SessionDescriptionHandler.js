@@ -7,9 +7,6 @@
   * @class PeerConnection helper Class.
   * @param {SIP.Session} session
   * @param {Object} [options]
-  * @param {SIP.WebRTC.MediaStreamManager} [options.mediaStreamManager]
-  *        The MediaStreamManager to acquire/release streams from/to.
-  *        If not provided, a default MediaStreamManager will be used.
   */
 module.exports = function (SIP) {
 
@@ -36,9 +33,6 @@ var SessionDescriptionHandler = function(session, options) {
     });
   }
 
-
-  // Previously WebRTC.isSupported()
-  // WebRTC.MediaHandler = require('./WebRTC/SessionDescriptionHandler')(SIP);
   var environment = global.window || global;
   this.WebRTC = {
     MediaStream           : environment.MediaStream,

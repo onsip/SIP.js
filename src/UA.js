@@ -2,11 +2,11 @@
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
- * @param {function returning SIP.MediaHandler} [configuration.mediaHandlerFactory]
- *        A function will be invoked by each of the UA's Sessions to build the MediaHandler for that Session.
- *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) MediaHandler.
+ * @param {function returning SIP.sessionDescriptionHandler} [configuration.sessionDescriptionHandlerFactory]
+ *        A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
+ *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  *
- * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [configuration.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  */
 module.exports = function (SIP, environment) {
 var UA,
@@ -227,7 +227,7 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  * @param {String} target
  * @param {Object} views
- * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [options.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  *
  * @throws {TypeError}
  *
@@ -670,18 +670,11 @@ UA.prototype.receiveRequest = function(request) {
           }
         }
 
-        // TODO: kill isSupported
-        // var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
-        // if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request);
-          session.replacee = replacedDialog && replacedDialog.owner;
-          session.on('invite', function() {
-            self.emit('invite', this);
-          });
-        // } else {
-        //   this.logger.warn('INVITE received but WebRTC is not supported');
-        //   request.reply(488);
-        // }
+        session = new SIP.InviteServerContext(this, request);
+        session.replacee = replacedDialog && replacedDialog.owner;
+        session.on('invite', function() {
+          self.emit('invite', this);
+        });
         break;
       case SIP.C.BYE:
         // Out of dialog BYE received
@@ -1030,9 +1023,6 @@ UA.prototype.loadConfig = function(configuration) {
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
 
-      // TODO: This needs to short circuit, we do not want to laod the WebRTC factory if we do not need it aka a mediaHandlerFactory is provided
-      // TODO: Should become SessionDescriptionHandlerFactory
-      // TODO: Is `defaultFactory()` standard?
       sessionDescriptionHandlerFactory: require('./WebRTC/SessionDescriptionHandler')(SIP).defaultFactory,
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
@@ -1212,7 +1202,7 @@ UA.prototype.loadConfig = function(configuration) {
     switch(parameter) {
       case 'uri':
       case 'registrarServer':
-      case 'mediaHandlerFactory':
+      case 'sessionDescriptionHandlerFactory':
         this.logger.log('· ' + parameter + ': ' + settings[parameter]);
         break;
       case 'password':

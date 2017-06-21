@@ -1,9 +1,9 @@
 "use strict";
 /**
- * @fileoverview MediaHandler
+ * @fileoverview SessionDescriptionHandler
  */
 
-/* MediaHandler
+/* SessionDescriptionHandler
  * @class PeerConnection helper Class.
  * @param {SIP.Session} session
  * @param {Object} [options]

@@ -84,7 +84,7 @@ Dialog = function(owner, message, type, state) {
 
     //RENDERBODY
     if (this.state === C.STATUS_EARLY && (!owner.hasOffer)) {
-      this.mediaHandler = owner.mediaHandlerFactory(owner);
+      this.sessionDescriptionHandler = owner.sessionDescriptionHandlerFactory(owner);
     }
   }
 
@@ -113,8 +113,9 @@ Dialog.prototype = {
 
   terminate: function() {
     this.logger.log('dialog ' + this.id.toString() + ' deleted');
-    if (this.mediaHandler && this.state !== C.STATUS_CONFIRMED) {
-      this.mediaHandler.peerConnection.close();
+    if (this.SessionDescriptionHandler && this.state !== C.STATUS_CONFIRMED) {
+      // TODO: This should call .close() on the handler when implemented
+      this.SessionDescriptionHandler.peerConnection.close();
     }
     delete this.owner.ua.dialogs[this.id.toString()];
   },
