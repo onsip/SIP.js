@@ -32,6 +32,12 @@ Utils= {
     };
   },
 
+  reducePromises: function reducePromises(arr, val) {
+    return arr.reduce(function(acc, fn) {
+      return acc = acc.then(fn);
+    }, SIP.Utils.Promise.resolve(val));
+  },
+
   augment: function (object, constructor, args, override) {
     var idx, proto;
 
