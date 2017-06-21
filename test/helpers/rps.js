@@ -48,23 +48,26 @@ RPSMediaHandler.prototype = {
      */
 
     // 'Initialize' your media session.
-    mediaHint || (mediaHint = {});
-    if (['rock', 'paper', 'scissors'].indexOf(mediaHint.gesture) < 0) {
+
+    return new SIP.Utils.Promise(function(resolve, reject) {
+      mediaHint || (mediaHint = {});
+      if (['rock', 'paper', 'scissors'].indexOf(mediaHint.gesture) < 0) {
+        this.timeout = setTimeout(function () {
+          delete this.timeout;
+          reject(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
+        }.bind(this), 0);
+        return;
+      }
+
+      this.myGesture = mediaHint.gesture;
+      this.checkGestures();
+
+      // Provide a description to the session using the callbacks.
       this.timeout = setTimeout(function () {
         delete this.timeout;
-        onFailure(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
+        resolve({ body: this.myGesture, contentType: 'text/plain' });
       }.bind(this), 0);
-      return;
-    }
-
-    this.myGesture = mediaHint.gesture;
-    this.checkGestures();
-
-    // Provide a description to the session using the callbacks.
-    this.timeout = setTimeout(function () {
-      delete this.timeout;
-      onSuccess({ body: this.myGesture, contentType: 'text/plain' });
-    }.bind(this), 0);
+    });
   },
 
   hasDescription: function (message) {
