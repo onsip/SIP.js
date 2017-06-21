@@ -29,7 +29,12 @@ Session = function (mediaHandlerFactory) {
   this.status = C.STATUS_NULL;
   this.dialog = null;
   this.earlyDialogs = {};
-  this.mediaHandlerFactory = mediaHandlerFactory || SIP.WebRTC.MediaHandler.defaultFactory;
+  // TODO: Must provide the session with a mediaHandlerFactory, either the default or user provided.
+  // TODO: mediaHandlerFactory -> sessionDescriptionHandlerFactory
+  if (!mediaHandlerFactory) {
+    throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
+  }
+  this.mediaHandlerFactory = mediaHandlerFactory;
   // this.mediaHandler gets set by ICC/ISC constructors
   this.hasOffer = false;
   this.hasAnswer = false;
@@ -280,6 +285,7 @@ Session.prototype = {
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
+      // TODO: refer
       var getReferMedia = this.mediaHandler.getReferMedia;
       var mediaHint = getReferMedia ? getReferMedia.call(this.mediaHandler) : this.mediaHint;
 
@@ -441,29 +447,31 @@ Session.prototype = {
   * @returns {Boolean}
   */
   isReadyToReinvite: function() {
-    return this.mediaHandler.isReady() &&
-      !this.dialog.uac_pending_reply &&
-      !this.dialog.uas_pending_reply;
+    return true;
   },
 
   /**
    * Mute
    */
   mute: function(options) {
-    var ret = this.mediaHandler.mute(options);
-    if (ret) {
-      this.onmute(ret);
-    }
+    options = options;
+    return;
+    // var ret = this.mediaHandler.mute(options);
+    // if (ret) {
+    //   this.onmute(ret);
+    // }
   },
 
   /**
    * Unmute
    */
   unmute: function(options) {
-    var ret = this.mediaHandler.unmute(options);
-    if (ret) {
-      this.onunmute(ret);
-    }
+    options = options;
+    return;
+    // var ret = this.mediaHandler.unmute(options);
+    // if (ret) {
+    //   this.onunmute(ret);
+    // }
   },
 
   /**
@@ -475,7 +483,7 @@ Session.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    this.mediaHandler.hold();
+    // this.mediaHandler.hold();
 
     // Check if RTCSession is ready to send a reINVITE
     if (!this.isReadyToReinvite()) {
@@ -506,8 +514,6 @@ Session.prototype = {
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
-
-    this.mediaHandler.unhold();
 
     if (!this.isReadyToReinvite()) {
       /* If there is a pending 'hold' action, cancel it and don't queue this one
@@ -546,14 +552,14 @@ Session.prototype = {
   receiveReinvite: function(request) {
     var self = this;
 
-    if (!this.mediaHandler.hasDescription(request)) {
+    if (!this.mediaHandler.hasDescription(request.getHeader('Content-Type'))) {
       this.logger.warn('invalid Content-Type');
       request.reply(415);
       return;
     }
 
-    this.mediaHandler.setDescription(request)
-    .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
+    this.mediaHandler.setDescription(request.body, this.RTCConstraints)
+    .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.RTCConstraints))
     .then(function(description) {
       var extraHeaders = ['Contact: ' + self.contact];
       request.reply(200, null, extraHeaders, description,
@@ -609,8 +615,7 @@ Session.prototype = {
     extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
     this.receiveResponse = this.receiveReinviteResponse;
-    //REVISIT
-    this.mediaHandler.getDescription(self.mediaHint)
+    this.mediaHandler.getDescription(self.mediaHint, this.isOnHold().local ? self.mediaHandler.holdModifier : false)
     .then(
       function(description){
         self.dialog.sendRequest(self, SIP.C.INVITE, {
@@ -727,13 +732,13 @@ Session.prototype = {
 
         this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
 
-        if (!this.mediaHandler.hasDescription(response)) {
+        if (!this.mediaHandler.hasDescription(response.getHeader('Content-Type'))) {
           this.reinviteFailed();
           break;
         }
 
-        //REVISIT
-        this.mediaHandler.setDescription(response)
+        // TODO: Constraints
+        this.mediaHandler.setDescription(response.body)
         .then(
           function onSuccess () {
             self.reinviteSucceeded();
@@ -971,14 +976,16 @@ InviteServerContext = function(ua, request) {
 
   //Initialize Media Session
   this.mediaHandler = this.mediaHandlerFactory(this, {
+    // TODO: These default things should probably moved into the SessionDescriptionHandler itself
+    // TODO: This may no longer be needed, but we should check things like rtcpMuxPolicy
     RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
   });
 
   // Check body and content type
-  if ((!contentDisp && !this.mediaHandler.hasDescription(request)) || (contentDisp && contentDisp.type === 'render')) {
+  if ((!contentDisp && !this.mediaHandler.hasDescription(request.getHeader('Content-Type'))) || (contentDisp && contentDisp.type === 'render')) {
     this.renderbody = request.body;
     this.rendertype = contentType;
-  } else if (!this.mediaHandler.hasDescription(request) && (contentDisp && contentDisp.type === 'session')) {
+  } else if (!this.mediaHandler.hasDescription(request.getHeader('Content-Type')) && (contentDisp && contentDisp.type === 'session')) {
     request.reply(415);
     //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
     return;
@@ -1058,11 +1065,12 @@ InviteServerContext = function(ua, request) {
     self.emit('invite',request);
   }
 
-  if (!this.mediaHandler.hasDescription(request) || this.renderbody) {
+  if (!this.mediaHandler.hasDescription(request.getHeader('Content-Type')) || this.renderbody) {
     SIP.Timers.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
-    this.mediaHandler.setDescription(request)
+    // TODO: Constraints
+    this.mediaHandler.setDescription(request.body)
     .then(
       fireNewSession,
       function onFailure (e) {
@@ -1468,7 +1476,7 @@ InviteServerContext.prototype = {
 
       // TODO - this logic assumes Content-Disposition defaults
       contentType = request.getHeader('Content-Type');
-      if (!this.mediaHandler.hasDescription(request)) {
+      if (!this.mediaHandler.hasDescription(request.getHeader('Content-Type'))) {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
@@ -1506,10 +1514,11 @@ InviteServerContext.prototype = {
     case SIP.C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
         if (!this.hasAnswer) {
-          if(this.mediaHandler.hasDescription(request)) {
+          if(this.mediaHandler.hasDescription(request.getHeader('Content-Type'))) {
             // ACK contains answer to an INVITE w/o SDP negotiation
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(request)
+            // TODO: Constraints
+            this.mediaHandler.setDescription(request.body)
             .then(
               confirmSession.bind(this),
               function onFailure (e) {
@@ -1538,9 +1547,10 @@ InviteServerContext.prototype = {
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         //localMedia = session.mediaHandler.localMedia;
         if(!this.hasAnswer) {
-          if(this.mediaHandler.hasDescription(request)) {
+          if(this.mediaHandler.hasDescription(request.getHeader('Content-Type'))) {
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(request)
+            // TODO: Constraints
+            this.mediaHandler.setDescription(request.body)
             .then(
               function onSuccess () {
                 SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
@@ -1623,13 +1633,8 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders = (options.extraHeaders || []).slice(),
     stunServers = options.stunServers || null,
     turnServers = options.turnServers || null,
-    mediaHandlerFactory = options.mediaHandlerFactory || ua.configuration.mediaHandlerFactory,
-    isMediaSupported = mediaHandlerFactory.isSupported;
-
-  // Check WebRTC support
-  if (isMediaSupported && !isMediaSupported()) {
-    throw new SIP.Exceptions.NotSupportedError('Media not supported');
-  }
+    // TODO: Check that this is actually definied
+    mediaHandlerFactory = ua.configuration.mediaHandlerFactory;
 
   this.RTCConstraints = options.RTCConstraints || {};
   this.inviteWithoutSdp = options.inviteWithoutSdp || false;
@@ -1718,17 +1723,17 @@ InviteClientContext = function(ua, target, options) {
 
   this.id = this.request.call_id + this.from_tag;
 
-  //Initialize Media Session
-  this.mediaHandler = this.mediaHandlerFactory(this, {
-    RTCConstraints: this.RTCConstraints,
-    stunServers: this.stunServers,
-    turnServers: this.turnServers
-  });
-
-  if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
-    this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
-    this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
-  }
+  // //Initialize Media Session
+  // this.mediaHandler = this.mediaHandlerFactory(this, {
+  //   RTCConstraints: this.RTCConstraints,
+  //   stunServers: this.stunServers,
+  //   turnServers: this.turnServers
+  // });
+  //
+  // if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
+  //   this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
+  //   this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
+  // }
 
   SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
   this.mediaHint = options.media;
@@ -1752,7 +1757,19 @@ InviteClientContext.prototype = {
       this.status = C.STATUS_INVITE_SENT;
       this.send();
     } else {
-      this.mediaHandler.getDescription(self.mediaHint)
+      //Initialize Media Session
+      this.mediaHandler = this.mediaHandlerFactory(this, {
+        RTCConstraints: this.RTCConstraints,
+        stunServers: this.stunServers,
+        turnServers: this.turnServers
+      });
+
+      // if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
+      //   this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
+      //   this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
+      // }
+      // TODO: This needs to be morphed correctly and passed from the user in a documented manner
+      this.mediaHandler.getDescription(self.RTCConstraints)
       .then(
         function onSuccess(description) {
           if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
@@ -1901,7 +1918,7 @@ InviteClientContext.prototype = {
             return;
           }
 
-          if (!this.mediaHandler.hasDescription(response)) {
+          if (!this.mediaHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
             this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
@@ -1916,7 +1933,8 @@ InviteClientContext.prototype = {
             this.hasAnswer = true;
             this.dialog.pracked.push(response.getHeader('rseq'));
 
-            this.mediaHandler.setDescription(response)
+            // TODO: Constraints
+            this.mediaHandler.setDescription(response.body)
             .then(
               function onSuccess () {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1951,7 +1969,8 @@ InviteClientContext.prototype = {
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
-            earlyMedia.setDescription(response)
+            // TODO: constraints
+            earlyMedia.setDescription(response.body)
             .then(earlyMedia.getDescription.bind(earlyMedia, session.mediaHint))
             .then(function onSuccess(description) {
               extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1992,14 +2011,6 @@ InviteClientContext.prototype = {
 
         if (this.status === C.STATUS_EARLY_MEDIA && this.dialog) {
           this.status = C.STATUS_CONFIRMED;
-          this.unmute();
-          /*localMedia = this.mediaHandler.localMedia;
-          if (localMedia.getAudioTracks().length > 0) {
-            localMedia.getAudioTracks()[0].enabled = true;
-          }
-          if (localMedia.getVideoTracks().length > 0) {
-            localMedia.getVideoTracks()[0].enabled = true;
-          }*/
           options = {};
           if (this.renderbody) {
             extraHeaders.push('Content-Type: ' + this.rendertype);
@@ -2040,7 +2051,13 @@ InviteClientContext.prototype = {
             }*/
             this.accepted(response);
           } else {
-            if(!this.mediaHandler.hasDescription(response)) {
+            this.mediaHandler = this.mediaHandlerFactory(this, {
+              RTCConstraints: this.RTCConstraints,
+              stunServers: this.stunServers,
+              turnServers: this.turnServers
+            });
+
+            if(!this.mediaHandler.hasDescription(response.getHeader('Content-Type'))) {
               this.acceptAndTerminate(response, 400, 'Missing session description');
               this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               break;
@@ -2049,8 +2066,8 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasOffer = true;
-            this.mediaHandler.setDescription(response)
-            .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
+            this.mediaHandler.setDescription(response.body, this.RTCConstraints)
+            .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.RTCConstraints))
             .then(function onSuccess(description) {
               //var localMedia;
               if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
@@ -2060,14 +2077,6 @@ InviteClientContext.prototype = {
               session.status = C.STATUS_CONFIRMED;
               session.hasAnswer = true;
 
-              session.unmute();
-              /*localMedia = session.mediaHandler.localMedia;
-              if (localMedia.getAudioTracks().length > 0) {
-                localMedia.getAudioTracks()[0].enabled = true;
-              }
-              if (localMedia.getVideoTracks().length > 0) {
-                localMedia.getVideoTracks()[0].enabled = true;
-              }*/
               session.sendRequest(SIP.C.ACK,{
                 body: description,
                 cseq:response.cseq
@@ -2094,7 +2103,7 @@ InviteClientContext.prototype = {
           }
           this.sendRequest(SIP.C.ACK, options);
         } else {
-          if(!this.mediaHandler.hasDescription(response)) {
+          if(!this.mediaHandler.hasDescription(response.getHeader('Content-Type'))) {
             this.acceptAndTerminate(response, 400, 'Missing session description');
             this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             break;
@@ -2103,19 +2112,12 @@ InviteClientContext.prototype = {
             break;
           }
           this.hasAnswer = true;
-          this.mediaHandler.setDescription(response)
+          // TODO: Constraints
+          this.mediaHandler.setDescription(response.body)
           .then(
             function onSuccess () {
               var options = {};//,localMedia;
               session.status = C.STATUS_CONFIRMED;
-              session.unmute();
-              /*localMedia = session.mediaHandler.localMedia;
-              if (localMedia.getAudioTracks().length > 0) {
-                localMedia.getAudioTracks()[0].enabled = true;
-              }
-              if (localMedia.getVideoTracks().length > 0) {
-                localMedia.getVideoTracks()[0].enabled = true;
-              }*/
               if (session.renderbody) {
                 extraHeaders.push('Content-Type: ' + session.rendertype);
                 options.extraHeaders = extraHeaders;
