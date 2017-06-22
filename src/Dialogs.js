@@ -113,9 +113,9 @@ Dialog.prototype = {
 
   terminate: function() {
     this.logger.log('dialog ' + this.id.toString() + ' deleted');
-    if (this.SessionDescriptionHandler && this.state !== C.STATUS_CONFIRMED) {
+    if (this.sessionDescriptionHandler && this.state !== C.STATUS_CONFIRMED) {
       // TODO: This should call .close() on the handler when implemented
-      this.SessionDescriptionHandler.peerConnection.close();
+      this.sessionDescriptionHandler.peerConnection.close();
     }
     delete this.owner.ua.dialogs[this.id.toString()];
   },

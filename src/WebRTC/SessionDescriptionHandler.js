@@ -20,7 +20,7 @@ var SessionDescriptionHandler = function(session, options) {
   this.CONTENT_TYPE = 'application/sdp';
 
   // TODO: Move to UA options
-  this.modifiers = options.modifiers || [];
+  this.modifiers = this.options.modifiers || [];
   if (!Array.isArray(this.modifiers)) {
     this.modifiers = [this.modifiers];
   }

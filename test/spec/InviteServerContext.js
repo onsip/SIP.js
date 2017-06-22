@@ -15,18 +15,18 @@ describe('A UAS receiving an INVITE', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
-        mediaHandlerFactory: function () {
+        sessionDescriptionHandlerFactory: function () {
           return {
             getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
             },
             setDescription: function () { return SIP.Utils.Promise.resolve(); }
           };
         }
       };
 
-      spyOn(ua_config, 'mediaHandlerFactory').and.callThrough();
+      spyOn(ua_config, 'sessionDescriptionHandlerFactory').and.callThrough();
       spyOn(SIP, 'InviteServerContext').and.callThrough();
       var callback = jasmine.createSpy('callback');
 
@@ -40,7 +40,7 @@ describe('A UAS receiving an INVITE', function () {
       jasmine.clock().tick(100);
 
       expect(SIP.InviteServerContext).toHaveBeenCalled();
-      expect(ua_config.mediaHandlerFactory).toHaveBeenCalled();
+      expect(ua_config.sessionDescriptionHandlerFactory).toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
 
       jasmine.clock().uninstall();
@@ -57,11 +57,11 @@ describe('A UAS receiving an INVITE', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
-        mediaHandlerFactory: function () {
+        sessionDescriptionHandlerFactory: function () {
           return {
             getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
             } ,
             setDescription: function () { return SIP.Utils.Promise.resolve(); }
           };
@@ -108,11 +108,11 @@ describe('A UAS receiving an INVITE', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
-        mediaHandlerFactory: function () {
+        sessionDescriptionHandlerFactory: function () {
           return {
             getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
             },
             setDescription: function () { return SIP.Utils.Promise.resolve(); }
           };
@@ -171,11 +171,11 @@ describe('A UAS receiving an INVITE', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
-        mediaHandlerFactory: function () {
+        sessionDescriptionHandlerFactory: function () {
           return {
             getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
-            hasDescription: function (message) {
-              return message.getHeader('Content-Type') === 'application/sdp' && !!message.body;
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
             },
             setDescription: function () { return SIP.Utils.Promise.resolve(); }
           };
@@ -230,7 +230,16 @@ describe('A UAS receiving an INVITE', function () {
           ua_config = {
             replaces: SIP.C.supported.SUPPORTED,
             uri: 'alice@example.com',
-            register: false
+            register: false,
+            sessionDescriptionHandlerFactory = function() {
+              return {
+                getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+                hasDescription: function (contentType) {
+                  return contentType === 'application/sdp';
+                },
+                setDescription: function () { return SIP.Utils.Promise.resolve(); }
+              };
+            }
           };
 
           ua = new SIP.UA(ua_config).once('connected', done);
@@ -325,7 +334,7 @@ describe('A UAS receiving an INVITE', function () {
       var ua_config = {
         register: false,
         uri: 'alice@example.com',
-        mediaHandlerFactory: rpsMediaHandlerFactory,
+        sessionDescriptionHandlerFactory: rpsMediaHandlerFactory,
         traceSip: true
       };
 
