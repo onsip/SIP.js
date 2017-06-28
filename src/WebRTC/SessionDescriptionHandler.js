@@ -19,16 +19,20 @@ var SessionDescriptionHandler = function(session, options) {
 
   this.CONTENT_TYPE = 'application/sdp';
 
-  // TODO: Move to UA options
   this.modifiers = this.options.modifiers || [];
   if (!Array.isArray(this.modifiers)) {
     this.modifiers = [this.modifiers];
   }
 
-  // TODO: Other sdp modifiers on the UA
-  if (this.session.ua.configuration.hackStripTcp) {
+  if (this.options.hackStripTcpCandidates) {
     this.modifiers.push(function(sdp) {
       sdp = sdp.replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
+      return SIP.Utils.Promise.resolve(sdp);
+    });
+  }
+  if (this.options.hackStripTelephoneEvent) {
+    this.modifiers.push(function(sdp) {
+      sdp = sdp.replace(/^a=rtpmap:\d+ telephone-event\/d+/img, "");
       return SIP.Utils.Promise.resolve(sdp);
     });
   }
@@ -41,10 +45,14 @@ var SessionDescriptionHandler = function(session, options) {
     RTCSessionDescription : environment.RTCSessionDescription
   };
 
+  // TODO: Clean this up
   var servers = this.prepareIceServers(this.options.stunServers, this.options.turnServers);
-  this.RTCConstraints = this.options.RTCConstraints || {};
+  this.RTCConfiguration = this.options.RTCConfiguration || {};
+  this.RTCConfiguration = Object.assign(this.RTCConfiguration, {iceServers: servers});
 
-  this.initPeerConnection(servers);
+  this.initPeerConnection(this.RTCConfiguration);
+
+  this.constraints = this.options.constraints || {audio: true, video: true};
 };
 
 /**
@@ -52,27 +60,35 @@ var SessionDescriptionHandler = function(session, options) {
  * @param {Object} [options]
  */
 
- // TODO: The options are going to disappear, and the handler will be responsible for pulling it's own options from the UA
 SessionDescriptionHandler.defaultFactory = function defaultFactory (session, options) {
   return new SessionDescriptionHandler(session, options);
 };
 
 SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandler.prototype, {
-  // Funtions the sesssion can use
-  // TODO: Comments
-  // TODO:
+  // Functions the sesssion can use
+
+  /**
+   * Destructor
+   */
   close: {writable: true, value: function () {
-    return;
+    this.logger.log('closing PeerConnection');
+    // have to check signalingState since this.close() gets called multiple times
+    if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
+      this.peerConnection.close();
+    }
   }},
 
   /**
-   *
+   * Gets the local description from the underlying media implementation
+   * @param {Object} [constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Array} [modifiers] Array with one time use description modifiers
+   * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
   getDescription: {writable: true, value: function (constraints, modifiers) {
     var self = this;
 
-    // We will override the saved constraints with new constraints if provided, otherwise use saved constraints
-    this.constraints = constraints || this.constraints || {};
+    // Merge passed constraints with saved constraints and save
+    this.constraints = Object.assign(this.constraints, constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -132,12 +148,19 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       });
   }},
 
+  /**
+   * Check if the Session Description Handler can handle the Content-Type described by a SIP Message
+   * @param {String} contentType The content type that is in the SIP Message
+   * @returns {boolean}
+   */
   hasDescription: {writable: true, value: function hasDescription (contentType) {
     return contentType === this.CONTENT_TYPE;
   }},
 
   /**
-   *
+   * The modifier that should be used when the session would like to place the call on hold
+   * @param {String} [sdp] The description that will be modified
+   * @returns {Promise} Promise that resolves with modified SDP
    */
   holdModifier: {writable: true, value: function holdModifier (sdp) {
     if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(sdp)) {
@@ -149,11 +172,18 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return SIP.Utils.Promise.resolve(sdp);
   }},
 
+  /**
+   * Set the remote description to the underlying media implementation
+   * @param {String} sessionDescription The description provided by a SIP message to be set on the media implementation
+   * @param {Object} [constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Array} [modifiers] Array with one time use description modifiers
+   * @returns {Promise} Promise that resolves once the description is set
+   */
   setDescription: {writable:true, value: function setDescription (sessionDescription, constraints, modifiers) {
     var self = this;
 
-    // We will override the saved constraints with new constraints if provided, otherwise use saved constraints
-    this.constraints = constraints || this.constraints || {};
+    // Merge passed constraints with saved constraints and save
+    this.constraints = Object.assign(this.constraints, constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -170,8 +200,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         // TODO: This emit does not match what we are doing for getDescription... kind of re: modifier
         self.emit('setDescription', rawDescription);
 
-        var description = new self.WebRTC.RTCSessionDescription(rawDescription);
-        return SIP.Utils.promisify(self.peerConnection, 'setRemoteDescription')(description);
+        return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(rawDescription));
+      })
+      .catch(function modifierError(e) {
+        self.logger.error("The modifiers did not resolve successfully");
+        self.logger.error(e);
+        throw e;
       })
       .then(function setRemoteDescriptionSuccess() {
         self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
@@ -255,9 +289,9 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return servers;
   }},
 
-  initPeerConnection: {writable: true, value: function initPeerConnection(servers) {
-    var self = this,
-      config = this.session.ua.configuration;
+  initPeerConnection: {writable: true, value: function initPeerConnection(config) {
+    var self = this;
+    config = config || {};
 
     this.onIceCompleted = SIP.Utils.defer();
     this.onIceCompleted.promise.then(function(pc) {
@@ -272,15 +306,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.peerConnection.close();
     }
 
-    var connConfig = {
-      iceServers: servers
-    };
-
-    if (config.rtcpMuxPolicy) {
-      connConfig.rtcpMuxPolicy = config.rtcpMuxPolicy;
-    }
-
-    this.peerConnection = new this.WebRTC.RTCPeerConnection(connConfig);
+    this.peerConnection = new this.WebRTC.RTCPeerConnection(config);
 
     this.peerConnection.onaddstream = function(e) {
       self.logger.log('stream added: '+ e.stream.id);
@@ -291,6 +317,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       self.logger.log('stream removed: '+ e.stream.id);
     };
 
+    // TODO: This is broken...
     this.startIceCheckingTimer = function () {
       if (!self.iceCheckingTimer) {
         self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
@@ -373,35 +400,37 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     // Default audio & video to true
     constraints = constraints || {audio: true, video: true};
 
-    var deferred = SIP.Utils.defer();
+    return new SIP.Utils.Promise(function(resolve, reject) {
+      /*
+       * Make the call asynchronous, so that ICCs have a chance
+       * to define callbacks to `userMediaRequest`
+       */
+      SIP.Timers.setTimeout(function () {
+        this.emit('userMediaRequest', constraints);
 
-    /*
-     * Make the call asynchronous, so that ICCs have a chance
-     * to define callbacks to `userMediaRequest`
-     */
-    SIP.Timers.setTimeout(function () {
-      this.emit('userMediaRequest', constraints);
+        var emitThenCall = function(eventName, callback) {
+          var callbackArgs = Array.prototype.slice.call(arguments, 2);
+          // Emit with all of the arguments from the real callback.
+          var newArgs = [eventName].concat(callbackArgs);
+          this.emit.apply(this, newArgs);
+          return callback.apply(null, callbackArgs);
+        }.bind(this);
 
-      var emitThenCall = function(eventName, callback) {
-        var callbackArgs = Array.prototype.slice.call(arguments, 2);
-        // Emit with all of the arguments from the real callback.
-        var newArgs = [eventName].concat(callbackArgs);
-        this.emit.apply(this, newArgs);
-        return callback.apply(null, callbackArgs);
-      }.bind(this);
-
-      if (constraints.audio || constraints.video) {
-        this.WebRTC.getUserMedia(constraints)
-        .then(
-          emitThenCall.bind(this, 'userMedia', function(streams) { deferred.resolve(streams); }),
-          emitThenCall.bind(this, 'userMediaFailed', function(e) {throw e;})
-        );
-      } else {
-        // Local streams were explicitly excluded.
-        deferred.resolve([]);
-      }
-    }.bind(this), 0);
-    return deferred.promise;
+        if (constraints.audio || constraints.video) {
+          this.WebRTC.getUserMedia(constraints)
+          .then(
+            emitThenCall.bind(this, 'userMedia', function(streams) { resolve(streams); }),
+            emitThenCall.bind(this, 'userMediaFailed', function(e) {
+              reject(e);
+              throw e;
+            })
+          );
+        } else {
+          // Local streams were explicitly excluded.
+          resolve([]);
+        }
+      }.bind(this), 0);
+    }.bind(this));
   }},
 
   hasOffer: {writable: true, value: function hasOffer (where) {
