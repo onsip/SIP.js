@@ -24,13 +24,13 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
 
   /**
    * Gets the local description from the underlying media implementation
-   * @param {Object} [constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Object} [options] Options object to be used by getDescription
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
-  getDescription: {value: function getDescription (constraints, modifiers) {
+  getDescription: {value: function getDescription (options, modifiers) {
     // keep jshint happy
-    constraints = constraints;
+    options = options;
     modifiers = modifiers;
   }},
 
@@ -57,14 +57,14 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
   /**
    * Set the remote description to the underlying media implementation
    * @param {String} sessionDescription The description provided by a SIP message to be set on the media implementation
-   * @param {Object} [constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Object} [options] Options object to be used by setDescription
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription: {value: function setDescription (sessionDescription, constraints, modifiers) {
+  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {
     // keep jshint happy
     sessionDescription = sessionDescription;
-    constraints = constraints;
+    options = options;
     modifiers = modifiers;
   }}
 });

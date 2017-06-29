@@ -34,7 +34,7 @@ RPSMediaHandler.prototype = {
   mute: new Function(),
   unmute: new Function(),
 
-  getDescription: function (mediaHint) {
+  getDescription: function (mediaHint, modifiers) {
     var self = this;
         /*
      * Here, you would asynchronously request an offer or answer

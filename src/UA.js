@@ -232,8 +232,8 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  * @throws {TypeError}
  *
  */
-UA.prototype.invite = function(target, options) {
-  var context = new SIP.InviteClientContext(this, target, options);
+UA.prototype.invite = function(target, options, modifiers) {
+  var context = new SIP.InviteClientContext(this, target, options, modifiers);
 
   this.afterConnected(context.invite.bind(context));
   this.emit('inviteSent', context);
@@ -867,74 +867,6 @@ function checkAuthenticationFactory (authenticationFactory) {
   return authenticationFactory;
 }
 
-function checkStunServers (stunServers) {
-  var idx, length, stun_server;
-
-  if (typeof stunServers === 'string') {
-    stunServers = [stunServers];
-  } else if (!(stunServers instanceof Array)) {
-    return;
-  }
-
-  length = stunServers.length;
-  for (idx = 0; idx < length; idx++) {
-    stun_server = stunServers[idx];
-    if (!(/^stuns?:/.test(stun_server))) {
-      stun_server = 'stun:' + stun_server;
-    }
-
-    if(SIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
-      return;
-    } else {
-      stunServers[idx] = stun_server;
-    }
-  }
-  return stunServers;
-}
-
-function checkTurnServers (turnServers) {
-  var idx, jdx, length, turn_server, num_turn_server_urls, url;
-
-  if (turnServers instanceof Array) {
-    // Do nothing
-  } else {
-    turnServers = [turnServers];
-  }
-
-  length = turnServers.length;
-  for (idx = 0; idx < length; idx++) {
-    turn_server = turnServers[idx];
-    //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
-    if (turn_server.server) {
-      turn_server.urls = [turn_server.server];
-    }
-
-    if (!turn_server.urls) {
-      return;
-    }
-
-    if (turn_server.urls instanceof Array) {
-      num_turn_server_urls = turn_server.urls.length;
-    } else {
-      turn_server.urls = [turn_server.urls];
-      num_turn_server_urls = 1;
-    }
-
-    for (jdx = 0; jdx < num_turn_server_urls; jdx++) {
-      url = turn_server.urls[jdx];
-
-      if (!(/^turns?:/.test(url))) {
-        url = 'turn:' + url;
-      }
-
-      if(SIP.Grammar.parse(url, 'turn_URI') === -1) {
-        return;
-      }
-    }
-  }
-  return turnServers;
-}
-
 /**
  * Configuration load.
  * @private
@@ -1001,12 +933,15 @@ UA.prototype.loadConfig = function(configuration) {
       hackAllowUnregisteredOptionTags: false,
 
       // Session Description Handler Options
-      sessionDescriptionHandlerOptions: {
+      sessionDescriptionHandlerFactoryOptions: {
+        constraints: {},
         hackCleanJitsiSdpImageattr: false,
         hackStripTcpCandidates: false,
+        // TODO:
+        hackStripTelephoneEvent: false,
         iceCheckingTimeout: 5000,
-        stunServers: ['stun:stun.l.google.com:19302'],
-        turnServers: []
+        // TODO:
+        rtcConfiguration: {},
       },
 
       contactTransport: 'ws',
@@ -1546,29 +1481,15 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      sessionDescriptionHandlerOptions: function(options) {
-        var sessionDescriptionHandlerOptions = {
-          stunServers: checkStunServers(options.stunServers),
-          turnServers: checkTurnServers(options.turnServers)
-        };
-        if (typeof options.hackCleanJitsiSdpImageattr === 'boolean') {
-          sessionDescriptionHandlerOptions.hackCleanJitsiSdpImageattr = options.hackCleanJitsiSdpImageattr;
-        }
-        if (typeof options.hackStripTcpCandidates === 'boolean') {
-          sessionDescriptionHandlerOptions.hackStripTcp = options.hackStripTcpCandidates;
-        }
-        if (typeof options.rtcpMuxPolicy === 'string') {
-          return sessionDescriptionHandlerOptions.rtcpMuxPolicy = options.rtcpMuxPolicy;
-        }
-        if(SIP.Utils.isDecimal(options.iceCheckingTimeout)) {
-          sessionDescriptionHandlerOptions.iceCheckingTimeout = Math.max(500, options.iceCheckingTimeout);
-        }
-        return sessionDescriptionHandlerOptions;
-      },
-
       sessionDescriptionHandlerFactory: function(sessionDescriptionHandlerFactory) {
         if (sessionDescriptionHandlerFactory instanceof Function) {
           return sessionDescriptionHandlerFactory;
+        }
+      },
+
+      sessionDescriptionHandlerFactoryOptions: function(options) {
+        if (typeof options === 'object') {
+          return options;
         }
       },
 

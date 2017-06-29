@@ -12,6 +12,7 @@ module.exports = function (SIP) {
 
 // Constructor
 var SessionDescriptionHandler = function(session, options) {
+  // TODO: Validate the options
   this.options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
@@ -45,12 +46,7 @@ var SessionDescriptionHandler = function(session, options) {
     RTCSessionDescription : environment.RTCSessionDescription
   };
 
-  // TODO: Clean this up
-  var servers = this.prepareIceServers(this.options.stunServers, this.options.turnServers);
-  this.RTCConfiguration = this.options.RTCConfiguration || {};
-  this.RTCConfiguration = Object.assign(this.RTCConfiguration, {iceServers: servers});
-
-  this.initPeerConnection(this.RTCConfiguration);
+  this.initPeerConnection(this.options);
 
   this.constraints = this.options.constraints || {audio: true, video: true};
 };
@@ -80,15 +76,21 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
   /**
    * Gets the local description from the underlying media implementation
-   * @param {Object} [constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Object} [options] Options object to be used by getDescription
+   * @param {MediaStreamConstraints} [options.constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Object} [options.peerConnectionOptions] If this is set it will recreate the peer connection with the new options
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
-  getDescription: {writable: true, value: function (constraints, modifiers) {
+  getDescription: {writable: true, value: function (options, modifiers) {
     var self = this;
 
+    if (options.peerConnectionOptions) {
+      this.initPeerConnection(options.peerConnectionOptions);
+    }
+
     // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign(this.constraints, constraints);
+    this.constraints = Object.assign(this.constraints, options.constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -175,15 +177,21 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   /**
    * Set the remote description to the underlying media implementation
    * @param {String} sessionDescription The description provided by a SIP message to be set on the media implementation
-   * @param {Object} [constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Object} [options] Options object to be used by getDescription
+   * @param {MediaStreamConstraints} [options.constraints] MediaStreamConstraints https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
+   * @param {Object} [options.peerConnectionOptions] If this is set it will recreate the peer connection with the new options
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription: {writable:true, value: function setDescription (sessionDescription, constraints, modifiers) {
+  setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
     var self = this;
 
+    if (options.peerConnectionOptions) {
+      this.initPeerConnection(options.peerConnectionOptions);
+    }
+
     // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign(this.constraints, constraints);
+    this.constraints = Object.assign(this.constraints, options.constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -243,6 +251,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
           deferred.resolve();
         } else {
+          // TODO: Is this a race condition
           self.onIceCompleted.promise.then(deferred.resolve);
         }
         return  deferred.promise;
@@ -264,34 +273,17 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       });
   }},
 
-  prepareIceServers: {writable: true, value: function prepareIceServers (stunServers, turnServers) {
-    var servers = [],
-      config = this.session.ua.configuration.sessionDescriptionHandlerOptions;
-
-    stunServers = stunServers || config.stunServers;
-    turnServers = turnServers || config.turnServers;
-
-    [].concat(stunServers).forEach(function (server) {
-      servers.push({'urls': server});
-    });
-
-    [].concat(turnServers).forEach(function (server) {
-      var turnServer = {'urls': server.urls};
-      if (server.username) {
-        turnServer.username = server.username;
-      }
-      if (server.password) {
-        turnServer.credential = server.password;
-      }
-      servers.push(turnServer);
-    });
-
-    return servers;
+  addDefaultIceServers: {writable: true, value: function addDefaultIceServers (rtcConfiguration) {
+    if (!rtcConfiguration.iceServers) {
+      rtcConfiguration.iceServers = [{urls: 'stun:stun.l.google.com:19302'}];
+    }
+    return rtcConfiguration;
   }},
 
-  initPeerConnection: {writable: true, value: function initPeerConnection(config) {
+  initPeerConnection: {writable: true, value: function initPeerConnection(options) {
     var self = this;
-    config = config || {};
+    options.rtcConfiguration = options.rtcConfiguration || {};
+    options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
     this.onIceCompleted = SIP.Utils.defer();
     this.onIceCompleted.promise.then(function(pc) {
@@ -306,7 +298,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.peerConnection.close();
     }
 
-    this.peerConnection = new this.WebRTC.RTCPeerConnection(config);
+    this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
 
     this.peerConnection.onaddstream = function(e) {
       self.logger.log('stream added: '+ e.stream.id);
@@ -317,13 +309,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       self.logger.log('stream removed: '+ e.stream.id);
     };
 
-    // TODO: This is broken...
     this.startIceCheckingTimer = function () {
       if (!self.iceCheckingTimer) {
         self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-          self.logger.log('RTCIceChecking Timeout Triggered after '+config.iceCheckingTimeout+' milliseconds');
+          self.logger.log('RTCIceChecking Timeout Triggered after ' + options.iceCheckingTimeout + ' milliseconds');
           self.onIceCompleted.resolve(this);
-        }.bind(this.peerConnection), config.iceCheckingTimeout);
+        }.bind(this.peerConnection), options.iceCheckingTimeout);
       }
     };
 

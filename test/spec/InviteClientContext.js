@@ -11,7 +11,7 @@ describe('An INVITE sent from a UAC', function () {
     };
 
     this.session_options = {
-      RTCConstraints: {
+      sessionDescriptionHandlerOptions: {
         gesture: 'rock'
       }
     };
