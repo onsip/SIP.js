@@ -937,10 +937,8 @@ UA.prototype.loadConfig = function(configuration) {
         constraints: {},
         hackCleanJitsiSdpImageattr: false,
         hackStripTcpCandidates: false,
-        // TODO:
         hackStripTelephoneEvent: false,
         iceCheckingTimeout: 5000,
-        // TODO:
         rtcConfiguration: {},
       },
 
