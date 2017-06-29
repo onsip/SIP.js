@@ -29,7 +29,6 @@ Session = function (sessionDescriptionHandlerFactory) {
   this.status = C.STATUS_NULL;
   this.dialog = null;
   this.earlyDialogs = {};
-  // TODO: Must provide the session with a sessionDescriptionHandlerFactory, either the default or user provided.
   if (!sessionDescriptionHandlerFactory) {
     throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
   }
@@ -531,7 +530,7 @@ Session.prototype = {
       return;
     }
 
-    this.sessionDescriptionHandler.setDescription(request.body, this.constraints)
+    this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
     .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers))
     .then(function(description) {
       var extraHeaders = ['Contact: ' + self.contact];
@@ -711,8 +710,7 @@ Session.prototype = {
           break;
         }
 
-        // TODO: Constraints
-        this.sessionDescriptionHandler.setDescription(response.body)
+        this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
         .then(
           function onSuccess () {
             self.reinviteSucceeded();
@@ -924,7 +922,6 @@ InviteServerContext = function(ua, request) {
     this.rendertype = contentType;
   } else if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) && (contentDisp && contentDisp.type === 'session')) {
     request.reply(415);
-    //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
     return;
   }
 
@@ -1001,8 +998,7 @@ InviteServerContext = function(ua, request) {
     SIP.Timers.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
-    // TODO: Constraints
-    this.sessionDescriptionHandler.setDescription(request.body)
+    this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
     .then(
       fireNewSession,
       function onFailure (e) {
@@ -1342,8 +1338,7 @@ InviteServerContext.prototype = {
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             // ACK contains answer to an INVITE w/o SDP negotiation
             this.hasAnswer = true;
-            // TODO: Constraints
-            this.sessionDescriptionHandler.setDescription(request.body)
+            this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               confirmSession.bind(this),
               function onFailure (e) {
@@ -1359,7 +1354,6 @@ InviteServerContext.prototype = {
           } else if (this.early_sdp) {
             confirmSession.apply(this);
           } else {
-            //TODO: Pass to sessionDescriptionHandler
             this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
@@ -1374,8 +1368,7 @@ InviteServerContext.prototype = {
         if(!this.hasAnswer) {
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             this.hasAnswer = true;
-            // TODO: Constraints
-            this.sessionDescriptionHandler.setDescription(request.body)
+            this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               function onSuccess () {
                 SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
@@ -1388,7 +1381,6 @@ InviteServerContext.prototype = {
                 this.status = C.STATUS_EARLY_MEDIA;
               }.bind(this),
               function onFailure (e) {
-                //TODO: Send to media handler
                 this.logger.warn(e);
                 this.terminate({
                   statusCode: '488',
@@ -1451,7 +1443,6 @@ InviteClientContext = function(ua, target, options, modifiers) {
   options.params = Object.create(options.params || Object.prototype);
 
   var extraHeaders = (options.extraHeaders || []).slice(),
-    // TODO: Check that this is actually definied
     sessionDescriptionHandlerFactory = ua.configuration.sessionDescriptionHandlerFactory;
 
   this.sessionDescriptionHandlerFactoryOptions = ua.configuration.sessionDescriptionHandlerOptions || {};
@@ -1546,7 +1537,6 @@ InviteClientContext.prototype = {
       //Initialize Media Session
       this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
 
-      // TODO: Test this!
       this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
       .then(
         function onSuccess(description) {
@@ -1562,9 +1552,6 @@ InviteClientContext.prototype = {
           if (self.status === C.STATUS_TERMINATED) {
             return;
           }
-          // TODO...fail out
-          //self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
-          //self.failed(null, SIP.C.causes.WEBRTC_ERROR);
           self.failed(null, SIP.C.causes.WEBRTC_ERROR);
           self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
         }
@@ -1711,8 +1698,7 @@ InviteClientContext.prototype = {
             this.hasAnswer = true;
             this.dialog.pracked.push(response.getHeader('rseq'));
 
-            // TODO: Constraints
-            this.sessionDescriptionHandler.setDescription(response.body)
+            this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               function onSuccess () {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1736,7 +1722,7 @@ InviteClientContext.prototype = {
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
-            earlyMedia.setDescription(response.body)
+            earlyMedia.setDescription(response.body, session.sessionDescriptionHandlerOptions, session.modifers)
             .then(earlyMedia.getDescription.bind(earlyMedia, session.sessionDescriptionHandlerOptions, session.modifiers))
             .then(function onSuccess(description) {
               extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1753,8 +1739,6 @@ InviteClientContext.prototype = {
                 if (session.status === C.STATUS_TERMINATED) {
                   return;
                 }
-                // TODO - fail out on error
-                // session.failed(gum error);
                 session.failed(null, SIP.C.causes.WEBRTC_ERROR);
                 session.terminated(null, SIP.C.causes.WEBRTC_ERROR);
               } else {
@@ -1819,7 +1803,7 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasOffer = true;
-            this.sessionDescriptionHandler.setDescription(response.body, this.constraints)
+            this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers))
             .then(function onSuccess(description) {
               //var localMedia;
@@ -1865,8 +1849,7 @@ InviteClientContext.prototype = {
             break;
           }
           this.hasAnswer = true;
-          // TODO: Constraints
-          this.sessionDescriptionHandler.setDescription(response.body)
+          this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
           .then(
             function onSuccess () {
               var options = {};//,localMedia;
