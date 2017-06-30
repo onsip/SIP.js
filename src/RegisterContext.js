@@ -202,7 +202,9 @@ RegisterContext.prototype = {
     };
 
     this.registered_before = this.registered;
-    this.unregister(options);
+    if (this.registered) {
+      this.unregister(options);
+    }
   },
 
   unregister: function(options) {
