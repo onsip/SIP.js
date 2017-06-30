@@ -211,8 +211,7 @@ RegisterContext.prototype = {
     options = options || {};
 
     if(!this.registered && !options.all) {
-      this.logger.warn('already unregistered');
-      return;
+      this.logger.warn('Already unregistered, but sending an unregister anyways.');
     }
 
     extraHeaders = (options.extraHeaders || []).slice();
