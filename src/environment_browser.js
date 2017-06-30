@@ -32,6 +32,5 @@ module.exports = {
   },
 
   addEventListener: getPrefixedProperty(toplevel, 'addEventListener'),
-  removeEventListener: getPrefixedProperty(toplevel, 'removeEventListener'),
-  HTMLMediaElement: toplevel.HTMLMediaElement,
+  removeEventListener: getPrefixedProperty(toplevel, 'removeEventListener')
 };
