@@ -907,23 +907,28 @@ InviteServerContext = function(ua, request) {
   var expires,
     self = this,
     contentType = request.getHeader('Content-Type'),
-    contentDisp = request.parseHeader('Content-Disposition');
+    contentDisp = request.parseHeader('Content-Disposition'); // What is Content-Disposition ?
+
+  // TODO: Keep jshint happy for now as I figure this out
+  contentType = contentType;
+  contentDisp = contentDisp;
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.sessionDescriptionHandlerFactory]);
 
-  // TODO: This should be done in accept, or early media. Not here.
-  //Initialize Media Session
-  this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
-
-  // Check body and content type
-  if ((!contentDisp && !this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) || (contentDisp && contentDisp.type === 'render')) {
-    this.renderbody = request.body;
-    this.rendertype = contentType;
-  } else if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) && (contentDisp && contentDisp.type === 'session')) {
-    request.reply(415);
-    return;
-  }
+  // TODO: The 415 response is somewhat appropriate here... but it is not immediately clear how we can do that check without breaking rules of abstraction.
+  // // TODO: This should be done in accept, or early media. Not here.
+  // //Initialize Media Session
+  // this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
+  //
+  // // Check body and content type
+  // if ((!contentDisp && !this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) || (contentDisp && contentDisp.type === 'render')) {
+  //   this.renderbody = request.body;
+  //   this.rendertype = contentType;
+  // } else if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) && (contentDisp && contentDisp.type === 'session')) {
+  //   request.reply(415);
+  //   return;
+  // }
 
   this.status = C.STATUS_INVITE_RECEIVED;
   this.from_tag = request.from_tag;
@@ -994,20 +999,23 @@ InviteServerContext = function(ua, request) {
     self.emit('invite',request);
   }
 
-  if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) || this.renderbody) {
-    SIP.Timers.setTimeout(fireNewSession, 0);
-  } else {
-    this.hasOffer = true;
-    this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-    .then(
-      fireNewSession,
-      function onFailure (e) {
-        self.logger.warn('invalid description');
-        self.logger.warn(e);
-        request.reply(488);
-      }
-    );
-  }
+  // TODO: With the move of the sessionDescriptionHandler creation... this should just be dont synchronously
+  SIP.Timers.setTimeout(fireNewSession, 0);
+
+  // if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) || this.renderbody) {
+  //   SIP.Timers.setTimeout(fireNewSession, 0);
+  // } else {
+  //   this.hasOffer = true;
+  //   this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+  //   .then(
+  //     fireNewSession,
+  //     function onFailure (e) {
+  //       self.logger.warn('invalid description');
+  //       self.logger.warn(e);
+  //       request.reply(488);
+  //     }
+  //   );
+  // }
 };
 
 InviteServerContext.prototype = {
@@ -1132,11 +1140,12 @@ InviteServerContext.prototype = {
       extraHeaders.push('Require: 100rel');
       extraHeaders.push('RSeq: ' + Math.floor(Math.random() * 10000));
 
+      // TODO: Fix refer in this case
       // Save media hint for later (referred sessions)
-      this.mediaHint = options.media;
+      // this.mediaHint = options.media;
 
       // Get the session description to add to preaccept with
-      this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions)
+      this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
       .then(
         function onSuccess (description) {
           if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
@@ -1189,7 +1198,13 @@ InviteServerContext.prototype = {
         (this.rel100 === SIP.C.supported.REQUIRED ||
          (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
          (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
-      do100rel.apply(this);
+      this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
+        this.hasOffer = true;
+        this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers).then(do100rel.apply(this));
+      } else {
+        do100rel.apply(this);
+      }
     } else {
       normalReply.apply(this);
     }
@@ -1273,11 +1288,24 @@ InviteServerContext.prototype = {
     if (this.status === C.STATUS_EARLY_MEDIA) {
       descriptionCreationSucceeded({});
     } else {
-      this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-      .then(
-        descriptionCreationSucceeded,
-        descriptionCreationFailed
-      );
+      this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      if (this.request.getHeader('Content-Length') === 0 && !this.request.getHeader('Content-Type')) {
+        this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(descriptionCreationSucceeded)
+        .catch(descriptionCreationFailed);
+      } else if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
+        this.hasOffer = true;
+        this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(function() {
+          return this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers);
+        }.bind(this))
+        .then(descriptionCreationSucceeded)
+        .catch(descriptionCreationFailed);
+      } else {
+        this.request.reply(415);
+        // TODO: Events
+        return;
+      }
     }
 
     return this;
@@ -1297,6 +1325,7 @@ InviteServerContext.prototype = {
 
       // TODO - this logic assumes Content-Disposition defaults
       contentType = request.getHeader('Content-Type');
+      // TODO: Why is this looking for a description here?
       if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
         this.renderbody = request.body;
         this.rendertype = contentType;
@@ -1417,6 +1446,14 @@ InviteServerContext.prototype = {
       Session.prototype.receiveRequest.apply(this, [request]);
       break;
     }
+  },
+
+  // Internal Function to setup the handler consistently
+  setupSessionDescriptionHandler: function() {
+    if (this.sessionDescriptionHandler) {
+      return this.sessionDescriptionHandler;
+    }
+    return this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
   },
 
   onTransportError: function() {
