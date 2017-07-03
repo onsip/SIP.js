@@ -188,6 +188,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
     var self = this;
 
+    if (this.setDescriptionLock) {
+      // TODO: What do we want to do if we are locked?
+      // TODO: This is weird because we want to block this, but the calling promise chain should only be called once.
+      //       We do not want to reject the promise, because the failure case could cause a rejection to be sent, when
+      //       really we should be accepting once the original promise completes. This is really a retransmission issue.
+      return;
+    }
+    this.setDescriptionLock = true;
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
@@ -227,6 +235,9 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       .catch(function setRemoteDescriptionError(e) {
         self.emit('peerConnection-setRemoteDescriptionFailed', e);
         throw e;
+      })
+      .finally(function setRemoteDescriptionDone() {
+        this.setDescriptionLock = false;
       });
   }},
 
