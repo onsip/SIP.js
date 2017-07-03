@@ -48,7 +48,7 @@ var SessionDescriptionHandler = function(session, options) {
 
   this.initPeerConnection(this.options);
 
-  this.constraints = this.options.constraints || {audio: true, video: true};
+  this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
 };
 
 /**
@@ -85,12 +85,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   getDescription: {writable: true, value: function (options, modifiers) {
     var self = this;
 
+    options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
     }
 
     // Merge passed constraints with saved constraints and save
     this.constraints = Object.assign(this.constraints, options.constraints);
+    this.constraints = this.checkAndDefaultConstraints(this.constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -186,12 +188,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
     var self = this;
 
+    options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
     }
 
     // Merge passed constraints with saved constraints and save
     this.constraints = Object.assign(this.constraints, options.constraints);
+    this.constraints = this.checkAndDefaultConstraints(this.constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -278,6 +282,16 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       rtcConfiguration.iceServers = [{urls: 'stun:stun.l.google.com:19302'}];
     }
     return rtcConfiguration;
+  }},
+
+  checkAndDefaultConstraints: {writable: true, value: function checkAndDefaultConstraints (constraints) {
+    var defaultConstraints = {audio: true, video: true};
+    constraints = constraints || defaultConstraints;
+    // Empty object check
+    if (Object.keys(constraints).length === 0 && constraints.constructor === Object) {
+      return defaultConstraints;
+    }
+    return constraints;
   }},
 
   initPeerConnection: {writable: true, value: function initPeerConnection(options) {
@@ -389,7 +403,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
   acquire: {writable: true, value: function acquire (constraints) {
     // Default audio & video to true
-    constraints = constraints || {audio: true, video: true};
+    constraints = this.checkAndDefaultConstraints(constraints);
 
     return new SIP.Utils.Promise(function(resolve, reject) {
       /*
