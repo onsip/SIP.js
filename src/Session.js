@@ -283,20 +283,19 @@ Session.prototype = {
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
-      // TODO: refer
-      var getReferMedia = this.sessionDescriptionHandler.getReferMedia;
-      var mediaHint = getReferMedia ? getReferMedia.call(this.sessionDescriptionHandler) : this.mediaHint;
 
-      var referSession = this.ua.invite(target, {
-        media: mediaHint,
-        params: {
-          to_displayName: referTo.friendlyName
-        },
-        extraHeaders: extraHeaders
-      });
+      // Take the original options for the refer and append what is needed to do the refer.
+      // TODO: ISC is broken. Need to save what was passed to that from... accept in most cases I think
+      var options = this.passedOptions;
+      options.params.to_displayName = referTo.friendlyName;
+      options.extraHeaders = extraHeaders;
 
+      var referSession = this.ua.invite(target, options, this.modifiers);
+
+      // TODO: Get rid of callbacks
       callback.call(this, request, referSession);
 
+      // TODO: Is this a race condition with invite? We should wait for the refered session to set up then terminate.
       this.terminate();
     }.bind(this, callback);
   },
@@ -913,6 +912,7 @@ InviteServerContext = function(ua, request) {
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.sessionDescriptionHandlerFactory]);
 
+  // TODO: This should be done in accept, or early media. Not here.
   //Initialize Media Session
   this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
 
@@ -1440,12 +1440,13 @@ SIP.InviteServerContext = InviteServerContext;
 
 InviteClientContext = function(ua, target, options, modifiers) {
   options = options || {};
+  this.passedOptions = options; // Save for later to use with refer
   options.params = Object.create(options.params || Object.prototype);
 
   var extraHeaders = (options.extraHeaders || []).slice(),
     sessionDescriptionHandlerFactory = ua.configuration.sessionDescriptionHandlerFactory;
 
-  this.sessionDescriptionHandlerFactoryOptions = ua.configuration.sessionDescriptionHandlerOptions || {};
+  this.sessionDescriptionHandlerFactoryOptions = ua.configuration.sessionDescriptionHandlerFactoryOptions || {};
   this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
   this.modifiers = modifiers;
 
