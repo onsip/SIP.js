@@ -1115,9 +1115,6 @@ UA.prototype.loadConfig = function(configuration) {
     }
   };
 
-  // media overrides mediaConstraints
-  SIP.Utils.optionsOverride(settings, 'media', 'mediaConstraints', true, this.logger);
-
   var skeleton = {};
   // Fill the value of the configuration_skeleton
   for(parameter in settings) {
