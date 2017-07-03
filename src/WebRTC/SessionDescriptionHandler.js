@@ -410,31 +410,29 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
        */
-      SIP.Timers.setTimeout(function () {
-        this.emit('userMediaRequest', constraints);
+      this.emit('userMediaRequest', constraints);
 
-        var emitThenCall = function(eventName, callback) {
-          var callbackArgs = Array.prototype.slice.call(arguments, 2);
-          // Emit with all of the arguments from the real callback.
-          var newArgs = [eventName].concat(callbackArgs);
-          this.emit.apply(this, newArgs);
-          return callback.apply(null, callbackArgs);
-        }.bind(this);
+      var emitThenCall = function(eventName, callback) {
+        var callbackArgs = Array.prototype.slice.call(arguments, 2);
+        // Emit with all of the arguments from the real callback.
+        var newArgs = [eventName].concat(callbackArgs);
+        this.emit.apply(this, newArgs);
+        return callback.apply(null, callbackArgs);
+      }.bind(this);
 
-        if (constraints.audio || constraints.video) {
-          this.WebRTC.getUserMedia(constraints)
-          .then(
-            emitThenCall.bind(this, 'userMedia', function(streams) { resolve(streams); }),
-            emitThenCall.bind(this, 'userMediaFailed', function(e) {
-              reject(e);
-              throw e;
-            })
-          );
-        } else {
-          // Local streams were explicitly excluded.
-          resolve([]);
-        }
-      }.bind(this), 0);
+      if (constraints.audio || constraints.video) {
+        this.WebRTC.getUserMedia(constraints)
+        .then(
+          emitThenCall.bind(this, 'userMedia', function(streams) { resolve(streams); }),
+          emitThenCall.bind(this, 'userMediaFailed', function(e) {
+            reject(e);
+            throw e;
+          })
+        );
+      } else {
+        // Local streams were explicitly excluded.
+        resolve([]);
+      }
     }.bind(this));
   }},
 
