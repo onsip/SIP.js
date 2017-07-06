@@ -19,19 +19,6 @@ Utils= {
     return deferred;
   },
 
-  promisify: function promisify (object, methodName, callbacksFirst) {
-    var oldMethod = object[methodName];
-    return function promisifiedMethod (arg, onSuccess, onFailure) {
-      return new Utils.Promise(function (resolve, reject) {
-        var oldArgs = [arg, resolve, reject];
-        if (callbacksFirst) {
-          oldArgs = [resolve, reject, arg];
-        }
-        oldMethod.apply(object, oldArgs);
-      }).then(onSuccess, onFailure);
-    };
-  },
-
   reducePromises: function reducePromises(arr, val) {
     return arr.reduce(function(acc, fn) {
       return acc = acc.then(fn);
