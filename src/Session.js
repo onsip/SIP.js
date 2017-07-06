@@ -907,28 +907,15 @@ InviteServerContext = function(ua, request) {
   var expires,
     self = this,
     contentType = request.getHeader('Content-Type'),
-    contentDisp = request.parseHeader('Content-Disposition'); // What is Content-Disposition ?
-
-  // TODO: Keep jshint happy for now as I figure this out
-  contentType = contentType;
-  contentDisp = contentDisp;
+    contentDisp = request.parseHeader('Content-Disposition');
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.sessionDescriptionHandlerFactory]);
 
-  // TODO: The 415 response is somewhat appropriate here... but it is not immediately clear how we can do that check without breaking rules of abstraction.
-  // // TODO: This should be done in accept, or early media. Not here.
-  // //Initialize Media Session
-  // this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
-  //
-  // // Check body and content type
-  // if ((!contentDisp && !this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) || (contentDisp && contentDisp.type === 'render')) {
-  //   this.renderbody = request.body;
-  //   this.rendertype = contentType;
-  // } else if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) && (contentDisp && contentDisp.type === 'session')) {
-  //   request.reply(415);
-  //   return;
-  // }
+  if (contentDisp && contentDisp.type === 'render') {
+    this.renderbody = request.body;
+    this.rendertype = contentType;
+  }
 
   this.status = C.STATUS_INVITE_RECEIVED;
   this.from_tag = request.from_tag;
@@ -968,54 +955,34 @@ InviteServerContext = function(ua, request) {
     return;
   }
 
-  function fireNewSession() {
-    var options = {extraHeaders: ['Contact: ' + self.contact]};
+  var options = {extraHeaders: ['Contact: ' + self.contact]};
 
-    if (self.rel100 !== SIP.C.supported.REQUIRED) {
-      self.progress(options);
-    }
-    self.status = C.STATUS_WAITING_FOR_ANSWER;
+  if (self.rel100 !== SIP.C.supported.REQUIRED) {
+    self.progress(options);
+  }
+  self.status = C.STATUS_WAITING_FOR_ANSWER;
 
-    // Set userNoAnswerTimer
-    self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
-      request.reply(408);
-      self.failed(request, SIP.C.causes.NO_ANSWER);
-      self.terminated(request, SIP.C.causes.NO_ANSWER);
-    }, self.ua.configuration.noAnswerTimeout);
+  // Set userNoAnswerTimer
+  self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
+    request.reply(408);
+    self.failed(request, SIP.C.causes.NO_ANSWER);
+    self.terminated(request, SIP.C.causes.NO_ANSWER);
+  }, self.ua.configuration.noAnswerTimeout);
 
-    /* Set expiresTimer
-     * RFC3261 13.3.1
-     */
-    if (expires) {
-      self.timers.expiresTimer = SIP.Timers.setTimeout(function() {
-        if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
-          request.reply(487);
-          self.failed(request, SIP.C.causes.EXPIRES);
-          self.terminated(request, SIP.C.causes.EXPIRES);
-        }
-      }, expires);
-    }
-
-    self.emit('invite',request);
+  /* Set expiresTimer
+   * RFC3261 13.3.1
+   */
+  if (expires) {
+    self.timers.expiresTimer = SIP.Timers.setTimeout(function() {
+      if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
+        request.reply(487);
+        self.failed(request, SIP.C.causes.EXPIRES);
+        self.terminated(request, SIP.C.causes.EXPIRES);
+      }
+    }, expires);
   }
 
-  // TODO: With the move of the sessionDescriptionHandler creation... this should just be dont synchronously
-  SIP.Timers.setTimeout(fireNewSession, 0);
-
-  // if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type')) || this.renderbody) {
-  //   SIP.Timers.setTimeout(fireNewSession, 0);
-  // } else {
-  //   this.hasOffer = true;
-  //   this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-  //   .then(
-  //     fireNewSession,
-  //     function onFailure (e) {
-  //       self.logger.warn('invalid description');
-  //       self.logger.warn(e);
-  //       request.reply(488);
-  //     }
-  //   );
-  // }
+  self.emit('invite',request);
 };
 
 InviteServerContext.prototype = {
@@ -1139,10 +1106,6 @@ InviteServerContext.prototype = {
       extraHeaders.push('Contact: '+ this.contact);
       extraHeaders.push('Require: 100rel');
       extraHeaders.push('RSeq: ' + Math.floor(Math.random() * 10000));
-
-      // TODO: Fix refer in this case
-      // Save media hint for later (referred sessions)
-      // this.mediaHint = options.media;
 
       // Get the session description to add to preaccept with
       this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
@@ -1317,16 +1280,16 @@ InviteServerContext.prototype = {
 
     function confirmSession() {
       /* jshint validthis:true */
-      var contentType;
+      var contentType, contentDisp;
 
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
 
-      // TODO - this logic assumes Content-Disposition defaults
       contentType = request.getHeader('Content-Type');
-      // TODO: Why is this looking for a description here?
-      if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+      contentDisp = request.getHeader('Content-Disposition');
+
+      if (contentDisp && contentDisp.type === 'render') {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
