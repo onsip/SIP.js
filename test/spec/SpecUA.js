@@ -1144,7 +1144,7 @@ describe('UA', function() {
       it('asynchronously', function () {
         expect(SIP.Transport).toHaveBeenCalled();
       });
-    })
+    });
   });
 
   describe('.loadConfig', function() {
@@ -1307,6 +1307,16 @@ describe('UA', function() {
       UA.loadConfig({custom: { fake: 'fake' }});
 
       expect(UA.configuration.custom['fake']).toBe('fake');
+    });
+
+    it('should set custom user in user part', function () {
+      var userName = 'test';
+
+      UA.loadConfig({ userName: userName });
+
+      expect(UA.configuration.userName).toBe(userName);
+      expect(UA.contact.uri.user).toBe(userName);
+      expect(UA.contact.toString().indexOf(userName) !== -1).toBeTruthy();
     });
   });
 
