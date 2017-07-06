@@ -131,7 +131,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         try {
           streams = [].concat(streams);
           streams.forEach(function (stream) {
-            self.peerConnection.addStream(stream);
+            if (self.peerConnection.addTrack) {
+              stream.getTracks().forEach(function (track) {
+                self.peerConnection.addTrack(track, stream);
+              });
+            } else {
+              // Chrome 59 does not support addTrack
+              self.peerConnection.addStream(stream);
+            }
           }, this);
         } catch(e) {
           self.logger.error('error adding stream');
@@ -212,6 +219,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     modifiers = modifiers.concat(this.modifiers);
 
     return SIP.Utils.reducePromises(modifiers, sessionDescription)
+      .catch(function modifierError(e) {
+        self.logger.error("The modifiers did not resolve successfully");
+        self.logger.error(e);
+        self.setDescriptionLock = false;
+        throw e;
+      })
       .then(function(sdp) {
         var rawDescription = {
           type: self.hasOffer('local') ? 'answer' : 'offer',
@@ -222,22 +235,20 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
         return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(rawDescription));
       })
-      .catch(function modifierError(e) {
-        self.logger.error("The modifiers did not resolve successfully");
-        self.logger.error(e);
+      .catch(function setRemoteDescriptionError(e) {
+        self.emit('peerConnection-setRemoteDescriptionFailed', e);
+        self.setDescriptionLock = false;
         throw e;
       })
       .then(function setRemoteDescriptionSuccess() {
-        self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
-        // TODO: invite w/o sdp case, receiving call case
+        if (self.peerConnection.getRemoteStreams) {
+          self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
+        } else {
+          // TODO: Shim this correctly for Safari
+          self.emit('setRemoteDescription', self.peerConnection.getSenders());
+        }
         self.emit('confirmed', self);
-      })
-      .catch(function setRemoteDescriptionError(e) {
-        self.emit('peerConnection-setRemoteDescriptionFailed', e);
-        throw e;
-      })
-      .finally(function setRemoteDescriptionDone() {
-        this.setDescriptionLock = false;
+        self.setDescriptionLock = false;
       });
   }},
 
@@ -245,18 +256,21 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer () {
     var self = this;
     var methodName;
-    var pc = self.peerConnection;
+    var pc = this.peerConnection;
     // TODO: Lock?
     // TODO: We need to lock on the setRemoteDescription so that it cannot be done 2x
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
-    return SIP.Utils.promisify(pc, methodName, true)()
+    return pc[methodName]()
       .catch(function methodError(e) {
         self.emit('peerConnection-' + methodName + 'Failed', e);
         throw e;
       })
-      .then(SIP.Utils.promisify(pc, 'setLocalDescription'))
+      .then(function(sdp) {
+        console.log(sdp);
+        return pc.setLocalDescription(sdp);
+      })
       .catch(function localDescError(e) {
         self.emit('peerConnection-SetLocalDescriptionFailed', e);
         throw e;
@@ -272,16 +286,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return  deferred.promise;
       })
       .then(function readySuccess() {
-        var sdp = self.peerConnection.localDescription.sdp;
-        var sdpWrapper = {
-          type: methodName === 'createOffer' ? 'offer' : 'answer',
-          sdp: sdp
-        };
+        var localDescription = self.peerConnection.localDescription;
         // This returns unmodified SDP from getDescription
-        self.emit('getDescription', sdpWrapper);
-        return sdpWrapper.sdp;
+        self.emit('getDescription', localDescription);
+        return localDescription.sdp;
       })
-      .catch(function createOfferOrAnserError (e) {
+      .catch(function createOfferOrAnswerError (e) {
         self.logger.error(e);
         // TODO: Not sure if this is correct
         throw new SIP.Exceptions.GetDescriptionError(e);
@@ -325,11 +335,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
 
-    this.peerConnection.onaddstream = function(e) {
-      self.logger.log('stream added: '+ e.stream.id);
-      self.emit('addStream', e);
+    this.peerConnection.ontrack = function(e) {
+      self.logger.log('track added ' + e.track.id);
+      self.emit('addTrack', e);
     };
 
+    // TODO: There is no remove track listener
     this.peerConnection.onremovestream = function(e) {
       self.logger.log('stream removed: '+ e.stream.id);
     };
