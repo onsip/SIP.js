@@ -1310,13 +1310,23 @@ describe('UA', function() {
     });
 
     it('should set custom user in user part', function () {
-      var userName = 'test';
+      var contactName = 'test';
 
-      UA.loadConfig({ userName: userName });
+      UA.loadConfig({ contactName: contactName });
 
-      expect(UA.configuration.userName).toBe(userName);
-      expect(UA.contact.uri.user).toBe(userName);
-      expect(UA.contact.toString().indexOf(userName) !== -1).toBeTruthy();
+      expect(UA.configuration.contactName).toBe(contactName);
+      expect(UA.contact.uri.user).toBe(contactName);
+      expect(UA.contact.toString().indexOf(contactName) !== -1).toBeTruthy();
+    });
+
+    it('should set random token to contactName', function () {
+      var randomToken = 'randomToken';
+      spyOn(SIP.Utils, 'createRandomToken').and.returnValue(randomToken);
+      UA.loadConfig({ });
+
+      expect(UA.configuration.contactName).toBe(randomToken);
+      expect(UA.contact.uri.user).toBe(randomToken);
+      expect(UA.contact.toString().indexOf(randomToken) !== -1).toBeTruthy();
     });
   });
 
