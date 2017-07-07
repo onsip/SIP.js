@@ -1303,7 +1303,7 @@ describe('UA', function() {
     });
 
     it('sets custom config options', function() {
-        UA.loadConfig({custom: { fake: 'fake'}});
+      UA.loadConfig({custom: { fake: 'fake' }});
 
       expect(UA.configuration.custom['fake']).toBe('fake');
     });
