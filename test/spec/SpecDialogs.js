@@ -216,7 +216,7 @@ describe('Dialogs', function() {
       expect(owner.ua.dialogs[Dialog.id.toString()]).toBeUndefined();
     });
 
-    it('calls peerConnection.close if the dialog was in the EARLY state and there is an sessionDescriptionHandler', function() {
+    it('calls sessionDescriptionHandler.close if the dialog was in the EARLY state and there is an sessionDescriptionHandler', function() {
       owner.hasOffer = false;
       Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
 
@@ -224,11 +224,11 @@ describe('Dialogs', function() {
         close: function() { return true; }
       }
 
-      spyOn(Dialog.sessionDescriptionHandler.peerConnection, 'close');
+      spyOn(Dialog.sessionDescriptionHandler, 'close');
 
       Dialog.terminate();
 
-      expect(Dialog.sessionDescriptionHandler.peerConnection.close).toHaveBeenCalled();
+      expect(Dialog.sessionDescriptionHandler.close).toHaveBeenCalled();
     });
   });
 

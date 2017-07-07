@@ -285,10 +285,13 @@ Session.prototype = {
       */
 
       // Take the original options for the refer and append what is needed to do the refer.
-      // TODO: ISC is broken. Need to save what was passed to that from... accept in most cases I think
-      var options = this.passedOptions;
+      var options = this.passedOptions || {};
+      options.params = options.params || {};
       options.params.to_displayName = referTo.friendlyName;
       options.extraHeaders = extraHeaders;
+      if (this.sessionDescriptionHandler) {
+        options.sessionDescriptionHandlerOptions = this.sessionDescriptionHandler.options;
+      }
 
       var referSession = this.ua.invite(target, options, this.modifiers);
 
@@ -981,8 +984,6 @@ InviteServerContext = function(ua, request) {
       }
     }, expires);
   }
-
-  self.emit('invite',request);
 };
 
 InviteServerContext.prototype = {
@@ -1252,7 +1253,7 @@ InviteServerContext.prototype = {
       descriptionCreationSucceeded({});
     } else {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
-      if (this.request.getHeader('Content-Length') === 0 && !this.request.getHeader('Content-Type')) {
+      if (this.request.getHeader('Content-Length') === '0' && !this.request.getHeader('Content-Type')) {
         this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
         .then(descriptionCreationSucceeded)
         .catch(descriptionCreationFailed);
@@ -1327,6 +1328,7 @@ InviteServerContext.prototype = {
     case SIP.C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
         if (!this.hasAnswer) {
+          this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             // ACK contains answer to an INVITE w/o SDP negotiation
             this.hasAnswer = true;
@@ -1358,6 +1360,7 @@ InviteServerContext.prototype = {
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         //localMedia = session.sessionDescriptionHandler.localMedia;
         if(!this.hasAnswer) {
+          this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             this.hasAnswer = true;
             this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
@@ -1684,6 +1687,7 @@ InviteClientContext.prototype = {
             return;
           }
 
+          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));

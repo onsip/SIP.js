@@ -672,9 +672,7 @@ UA.prototype.receiveRequest = function(request) {
 
         session = new SIP.InviteServerContext(this, request);
         session.replacee = replacedDialog && replacedDialog.owner;
-        session.on('invite', function() {
-          self.emit('invite', this);
-        });
+        self.emit('invite', session);
         break;
       case SIP.C.BYE:
         // Out of dialog BYE received

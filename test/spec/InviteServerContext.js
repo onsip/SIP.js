@@ -11,7 +11,7 @@ describe('A UAS receiving an INVITE', function () {
    *
    */
   describe('without SDP', function () {
-    it('creates an invite server context with the UA\'s mediaHandlerFactory, the ISC emits invite', function () {
+    it('creates an invite server context with the UA\'s sessionDescriptionHandlerFactory, the ISC emits invite', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
@@ -40,7 +40,7 @@ describe('A UAS receiving an INVITE', function () {
       jasmine.clock().tick(100);
 
       expect(SIP.InviteServerContext).toHaveBeenCalled();
-      expect(ua_config.sessionDescriptionHandlerFactory).toHaveBeenCalled();
+      expect(ua_config.sessionDescriptionHandlerFactory).not.toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
 
       jasmine.clock().uninstall();
@@ -231,13 +231,14 @@ describe('A UAS receiving an INVITE', function () {
             replaces: SIP.C.supported.SUPPORTED,
             uri: 'alice@example.com',
             register: false,
-            sessionDescriptionHandlerFactory = function() {
+            sessionDescriptionHandlerFactory: function() {
               return {
                 getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
                 hasDescription: function (contentType) {
                   return contentType === 'application/sdp';
                 },
-                setDescription: function () { return SIP.Utils.Promise.resolve(); }
+                setDescription: function () { return SIP.Utils.Promise.resolve(); },
+                close: function() { return; }
               };
             }
           };
@@ -517,7 +518,7 @@ describe('A UAS receiving an INVITE', function () {
         }.bind(this));
 
         this.session.accept({
-          media: { gesture: 'paper' }
+          sessionDescriptionHandlerOptions: { gesture: 'paper' }
         });
       });
 
