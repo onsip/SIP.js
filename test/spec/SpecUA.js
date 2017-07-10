@@ -1144,7 +1144,7 @@ describe('UA', function() {
       it('asynchronously', function () {
         expect(SIP.Transport).toHaveBeenCalled();
       });
-    })
+    });
   });
 
   describe('.loadConfig', function() {
@@ -1307,6 +1307,26 @@ describe('UA', function() {
       UA.loadConfig({custom: { fake: 'fake' }});
 
       expect(UA.configuration.custom['fake']).toBe('fake');
+    });
+
+    it('should set custom user in user part', function () {
+      var contactName = 'test';
+
+      UA.loadConfig({ contactName: contactName });
+
+      expect(UA.configuration.contactName).toBe(contactName);
+      expect(UA.contact.uri.user).toBe(contactName);
+      expect(UA.contact.toString().indexOf(contactName) !== -1).toBeTruthy();
+    });
+
+    it('should set random token to contactName', function () {
+      var randomToken = 'randomToken';
+      spyOn(SIP.Utils, 'createRandomToken').and.returnValue(randomToken);
+      UA.loadConfig({ });
+
+      expect(UA.configuration.contactName).toBe(randomToken);
+      expect(UA.contact.uri.user).toBe(randomToken);
+      expect(UA.contact.toString().indexOf(randomToken) !== -1).toBeTruthy();
     });
   });
 

@@ -943,6 +943,7 @@ UA.prototype.loadConfig = function(configuration) {
       hackCleanJitsiSdpImageattr: false,
       hackStripTcp: false,
 
+      contactName: SIP.Utils.createRandomToken(8), // user name in user part
       contactTransport: 'ws',
       forceRport: false,
 
@@ -963,7 +964,7 @@ UA.prototype.loadConfig = function(configuration) {
         return new SIP.DigestAuthentication(ua);
       }),
 
-      allowLegacyNotifications: false
+      allowLegacyNotifications: false,
     };
 
   // Pre-Configuration
@@ -1095,7 +1096,7 @@ UA.prototype.loadConfig = function(configuration) {
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: settings.contactTransport}),
+    uri: new SIP.URI('sip', settings.contactName, settings.viaHost, null, {transport: settings.contactTransport}),
     toString: function(options){
       options = options || {};
 
@@ -1605,6 +1606,12 @@ UA.prototype.getConfigurationCheck = function () {
       custom: function(custom) {
         if (typeof custom === 'object') {
           return custom;
+        }
+      },
+
+      contactName: function(contactName) {
+        if (typeof contactName === 'string') {
+          return contactName;
         }
       }
     }
