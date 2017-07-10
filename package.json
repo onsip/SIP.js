@@ -38,7 +38,7 @@
     "pegjs": "^0.10.0",
     "pegjs-loader": "^0.5.1",
     "uglifyjs-webpack-plugin": "^0.4.6",
-    "webpack": "^3.0.0"
+    "webpack": "^2.0.0"
   },
   "engines": {
     "node": ">=4.0"
