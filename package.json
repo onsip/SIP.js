@@ -41,7 +41,7 @@
     "webpack": "^3.0.0"
   },
   "engines": {
-    "node": ">=0.12"
+    "node": ">=4.0"
   },
   "license": "MIT",
   "scripts": {

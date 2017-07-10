@@ -6,8 +6,7 @@ script:
   - npm run buildAndTest
 
 node_js:
-  - "0.12"
-  - "4.2"
+  - "4"
   - "stable"
 
 cache:
