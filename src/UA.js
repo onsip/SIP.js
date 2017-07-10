@@ -590,7 +590,6 @@ UA.prototype.destroyTransaction = function(transaction) {
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message, earlySubscription,
     method = request.method,
-    transaction,
     replaces,
     replacedDialog,
     self = this;
@@ -643,7 +642,7 @@ UA.prototype.receiveRequest = function(request) {
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new SIP.ServerContext(this, request);
+    new SIP.ServerContext(this, request);
   }
 
   // Initial Request

@@ -684,7 +684,6 @@ var checkTransaction = function(ua, request) {
         request.reply_sl(481);
         return true;
       }
-      break;
     default:
 
       // Non-INVITE Server Transaction RFC 3261 17.2.2

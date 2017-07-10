@@ -21,7 +21,8 @@ Utils= {
 
   reducePromises: function reducePromises(arr, val) {
     return arr.reduce(function(acc, fn) {
-      return acc = acc.then(fn);
+      acc = acc.then(fn);
+      return acc;
     }, SIP.Utils.Promise.resolve(val));
   },
 
@@ -171,13 +172,10 @@ Utils= {
 
       // Build the complete SIP URI.
       target = SIP.C.SIP + ':' + SIP.Utils.escapeUser(target_user) + '@' + target_domain;
-
       // Finally parse the resulting URI.
-      if (uri = SIP.URI.parse(target)) {
-        return uri;
-      } else {
-        return;
-      }
+      uri = SIP.URI.parse(target);
+
+      return uri;
     } else {
       return;
     }

@@ -26,6 +26,8 @@
     "javascript"
   ],
   "devDependencies": {
+    "eslint": "^4.2.0",
+    "eslint-loader": "^1.9.0",
     "jasmine-core": "^2.6.4",
     "karma": "^1.7.0",
     "karma-cli": "^1.0.1",

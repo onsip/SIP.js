@@ -9,11 +9,7 @@
  * @param {Object} [options]
  */
 module.exports = function (EventEmitter) {
-var SessionDescriptionHandler = function(session, options) {
-  // keep jshint happy
-  session = session;
-  options = options;
-};
+var SessionDescriptionHandler = function(session, options) {};
 
 SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
 
@@ -28,31 +24,21 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
-  getDescription: {value: function getDescription (options, modifiers) {
-    // keep jshint happy
-    options = options;
-    modifiers = modifiers;
-  }},
+  getDescription: {value: function getDescription (options, modifiers) {}},
 
   /**
    * Check if the Session Description Handler can handle the Content-Type described by a SIP Message
    * @param {String} contentType The content type that is in the SIP Message
    * @returns {boolean}
    */
-  hasDescription: {value: function hasSessionDescription (contentType) {
-    // keep jshint happy
-    contentType = contentType;
-  }},
+  hasDescription: {value: function hasSessionDescription (contentType) {}},
 
   /**
    * The modifier that should be used when the session would like to place the call on hold
    * @param {String} [sdp] The description that will be modified
    * @returns {Promise} Promise that resolves with modified SDP
    */
-  holdModifier: {value: function holdModifier (sdp) {
-    // keep jshint happy
-    sdp = sdp;
-  }},
+  holdModifier: {value: function holdModifier (sdp) {}},
 
   /**
    * Set the remote description to the underlying media implementation
@@ -61,12 +47,7 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {
-    // keep jshint happy
-    sessionDescription = sessionDescription;
-    options = options;
-    modifiers = modifiers;
-  }}
+  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}}
 });
 
 return SessionDescriptionHandler;

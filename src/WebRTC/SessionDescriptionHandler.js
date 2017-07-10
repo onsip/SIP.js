@@ -268,7 +268,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function(sdp) {
-        console.log(sdp);
+        self.logger.log(sdp);
         return pc.setLocalDescription(sdp);
       })
       .catch(function localDescError(e) {
