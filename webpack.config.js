@@ -1,4 +1,5 @@
-var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+//var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+var webpack = require('webpack');
 
 module.exports = {
   entry: {
@@ -66,7 +67,8 @@ module.exports = {
     ]
   },
   plugins: [
-    new UglifyJSPlugin({
+    //new UglifyJSPlugin({
+    new webpack.optimize.UglifyJsPlugin({
       include: ['sip.min.js']
     })
   ]
