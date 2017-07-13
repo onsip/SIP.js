@@ -26,7 +26,9 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ### Joseph Frazier
 
-* <joseph@onsip.com>
+* <1212jtraceur@gmail.com>
+* GitHub [@josephfrazier](https://github.com/josephfrazier)
+* Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
 
 ### Eric Green
 

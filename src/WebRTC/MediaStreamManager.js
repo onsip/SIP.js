@@ -50,22 +50,13 @@ MediaStreamManager.render = function render (streams, elements) {
   }
 
   function attachMediaStream(element, stream) {
-    if (typeof element.src !== 'undefined') {
-      environment.revokeObjectURL(element.src);
-      element.src = environment.createObjectURL(stream);
-    } else if (typeof (element.srcObject || element.mozSrcObject) !== 'undefined') {
-      element.srcObject = element.mozSrcObject = stream;
-    } else {
-      return false;
-    }
-
-    return true;
+    element.srcObject = stream;
   }
 
   function ensureMediaPlaying (mediaElement) {
     var interval = 100;
     mediaElement.ensurePlayingIntervalId = SIP.Timers.setInterval(function () {
-      if (mediaElement.paused) {
+      if (mediaElement.paused && mediaElement.srcObject) {
         mediaElement.play();
       }
       else {
@@ -75,10 +66,10 @@ MediaStreamManager.render = function render (streams, elements) {
   }
 
   function attachAndPlay (elements, stream, index) {
-    if (typeof elements === 'function') {
-      elements = elements();
-    }
     var element = elements[index % elements.length];
+    if (typeof element === 'function') {
+      element = element();
+    }
     (environment.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }

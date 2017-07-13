@@ -27,11 +27,6 @@ ClientContext = function (ua, method, target, options) {
   options = Object.create(options || Object.prototype);
   options.extraHeaders = (options.extraHeaders || []).slice();
 
-  if (options.contentType) {
-    this.contentType = options.contentType;
-    options.extraHeaders.push('Content-Type: ' + this.contentType);
-  }
-
   // Build the request
   this.request = new SIP.OutgoingRequest(this.method,
                                          target,
@@ -39,7 +34,11 @@ ClientContext = function (ua, method, target, options) {
                                          options.params,
                                          options.extraHeaders);
   if (options.body) {
-    this.body = options.body;
+    this.body = {};
+    this.body.body = options.body;
+    if (options.contentType) {
+      this.body.contentType = options.contentType;
+    }
     this.request.body = this.body;
   }
 
@@ -59,8 +58,10 @@ ClientContext.prototype.send = function () {
 ClientContext.prototype.cancel = function (options) {
   options = options || {};
 
+  options.extraHeaders = (options.extraHeaders || []).slice();
+
   var cancel_reason = SIP.Utils.getCancelReason(options.status_code, options.reason_phrase);
-  this.request.cancel(cancel_reason);
+  this.request.cancel(cancel_reason, options.extraHeaders);
 
   this.emit('cancel');
 };
