@@ -37,6 +37,12 @@ var SessionDescriptionHandler = function(session, options) {
       return SIP.Utils.Promise.resolve(sdp);
     });
   }
+  if (this.options.hackCleanJitsiSdpImageattr) {
+    this.modifiers.push(function(sdp) {
+      // TODO:
+      return SIP.Utils.Promise.resolve(sdp);
+    });
+  }
 
   var environment = global.window || global;
   this.WebRTC = {
@@ -70,6 +76,17 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.logger.log('closing PeerConnection');
     // have to check signalingState since this.close() gets called multiple times
     if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
+      // TODO: getLocalStreams && getRemoteStreams are deprecated
+      this.peerConnection.getLocalStreams().forEach(function(stream) {
+        stream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+      });
+      this.peerConnection.getRemoteStreams().forEach(function(stream) {
+        stream.getTracks().forEach(function(track) {
+          track.stop();
+        });
+      });
       this.peerConnection.close();
     }
   }},
