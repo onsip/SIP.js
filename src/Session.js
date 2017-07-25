@@ -590,7 +590,10 @@ Session.prototype = {
     extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
     this.receiveResponse = this.receiveReinviteResponse;
-    this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, this.isOnHold().local ? options.modifiers.push(self.sessionDescriptionHandler.holdModifier) : options.modifers)
+    if (this.isOnHold().local) {
+      options.modifiers.push(self.sessionDescriptionHandler.holdModifier);
+    }
+    this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
     .then(
       function(description){
         self.dialog.sendRequest(self, SIP.C.INVITE, {
@@ -1533,6 +1536,7 @@ InviteClientContext.prototype = {
     this.ua.sessions[this.id] = this;
 
     if (this.inviteWithoutSdp) {
+      // TODO: We should save sessionDescriptionHandlerOptions to use on receiveInviteResponse
       //just send an invite with no sdp...
       this.request.body = self.renderbody;
       this.status = C.STATUS_INVITE_SENT;
@@ -1686,7 +1690,7 @@ InviteClientContext.prototype = {
               (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] >= response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
             return;
           }
-
+          // TODO: This may be broken. It may have to be on the early dialog
           this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));

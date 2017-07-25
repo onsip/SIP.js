@@ -135,6 +135,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     // GUM and set myself up
     self.logger.log('acquiring local media');
+    // TODO: Constraints should be named MediaStreamConstraints
     return this.acquire(self.constraints)
       .then(function acquireSucceeded(streams) {
         self.logger.log('acquired local media streams');
@@ -165,7 +166,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return SIP.Utils.Promise.resolve();
       })
       .then(function streamAdditionSucceeded() {
-        return self.createOfferOrAnswer();
+        return self.createOfferOrAnswer(options.RTCOfferOptions);
       })
       .then(SIP.Utils.reducePromises.bind(null, modifiers))
       .then(function(sdp) {
@@ -270,16 +271,19 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   // Internal functions
-  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer () {
+  // TODO: Pass RTCOfferOptions to createOfferOrAnswer and pass down to WebRTC
+  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions) {
     var self = this;
     var methodName;
     var pc = this.peerConnection;
+
+    RTCOfferOptions = RTCOfferOptions || {};
     // TODO: Lock?
     // TODO: We need to lock on the setRemoteDescription so that it cannot be done 2x
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
-    return pc[methodName]()
+    return pc[methodName](RTCOfferOptions)
       .catch(function methodError(e) {
         self.emit('peerConnection-' + methodName + 'Failed', e);
         throw e;
