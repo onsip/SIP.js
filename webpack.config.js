@@ -9,7 +9,7 @@ module.exports = {
     path: __dirname + '/dist',
     filename: '[name].js',
     library: 'SIP',
-    libraryTarget: 'var'
+    libraryTarget: 'umd'
   },
   module: {
     rules: [
