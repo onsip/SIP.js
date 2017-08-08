@@ -1361,7 +1361,6 @@ InviteServerContext.prototype = {
       break;
     case SIP.C.PRACK:
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-        //localMedia = session.sessionDescriptionHandler.localMedia;
         if(!this.hasAnswer) {
           this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
@@ -1569,7 +1568,7 @@ InviteClientContext.prototype = {
   },
 
   receiveInviteResponse: function(response) {
-    var cause, //localMedia,
+    var cause,
       session = this,
       id = response.call_id + response.from_tag + response.to_tag,
       extraHeaders = [],
@@ -1787,8 +1786,7 @@ InviteClientContext.prototype = {
 
         // This is an invite without sdp
         if (!this.hasOffer) {
-          // TODO: localMedia does not exist on sessionDescriptionHandler
-          if (this.earlyDialogs[id] && this.earlyDialogs[id].sessionDescriptionHandler.localMedia) {
+          if (this.earlyDialogs[id] && this.earlyDialogs[id].sessionDescriptionHandler) {
             //REVISIT
             this.hasOffer = true;
             this.hasAnswer = true;
@@ -1861,7 +1859,7 @@ InviteClientContext.prototype = {
           this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
           .then(
             function onSuccess () {
-              var options = {};//,localMedia;
+              var options = {};
               session.status = C.STATUS_CONFIRMED;
               if (session.renderbody) {
                 extraHeaders.push('Content-Type: ' + session.rendertype);
