@@ -119,18 +119,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     // Check to see if the peerConnection already has a local description
     if (this.peerConnection.localDescription && this.peerConnection.localDescription.sdp && this.peerConnection.localDescription.sdp !== '') {
-      if (this.peerConnection.signalingState === 'stable') {
-        // TODO: Events.
-        return SIP.Utils.reducePromises(modifiers, this.peerConnection.localDescription.sdp)
-        .then(function(sdp) {
-          return {
-            body: sdp,
-            contentType: self.CONTENT_TYPE
-          };
-        });
-      }
-      // TODO: Determine if we need to do another GUM
-      return this.createOfferOrAnswer();
+      return this.createOfferOrAnswer({}, modifiers).then(function(sdp) {
+        return {
+          body: sdp,
+          contentType: self.CONTENT_TYPE
+        };
+      });
     }
 
     // GUM and set myself up
@@ -166,9 +160,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return SIP.Utils.Promise.resolve();
       })
       .then(function streamAdditionSucceeded() {
-        return self.createOfferOrAnswer(options.RTCOfferOptions);
+        return self.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
       })
-      .then(SIP.Utils.reducePromises.bind(null, modifiers))
       .then(function(sdp) {
         return {
           body: sdp,
@@ -213,14 +206,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
     var self = this;
 
-    if (this.setDescriptionLock) {
-      // TODO: What do we want to do if we are locked?
-      // TODO: This is weird because we want to block this, but the calling promise chain should only be called once.
-      //       We do not want to reject the promise, because the failure case could cause a rejection to be sent, when
-      //       really we should be accepting once the original promise completes. This is really a retransmission issue.
-      return;
-    }
-    this.setDescriptionLock = true;
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
@@ -240,7 +225,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       .catch(function modifierError(e) {
         self.logger.error("The modifiers did not resolve successfully");
         self.logger.error(e);
-        self.setDescriptionLock = false;
         throw e;
       })
       .then(function(sdp) {
@@ -254,8 +238,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(rawDescription));
       })
       .catch(function setRemoteDescriptionError(e) {
+        self.logger.error(e);
         self.emit('peerConnection-setRemoteDescriptionFailed', e);
-        self.setDescriptionLock = false;
         throw e;
       })
       .then(function setRemoteDescriptionSuccess() {
@@ -266,20 +250,16 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           self.emit('setRemoteDescription', self.peerConnection.getSenders());
         }
         self.emit('confirmed', self);
-        self.setDescriptionLock = false;
       });
   }},
 
   // Internal functions
-  // TODO: Pass RTCOfferOptions to createOfferOrAnswer and pass down to WebRTC
-  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions) {
+  createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions, modifiers) {
     var self = this;
     var methodName;
     var pc = this.peerConnection;
 
     RTCOfferOptions = RTCOfferOptions || {};
-    // TODO: Lock?
-    // TODO: We need to lock on the setRemoteDescription so that it cannot be done 2x
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
@@ -287,6 +267,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       .catch(function methodError(e) {
         self.emit('peerConnection-' + methodName + 'Failed', e);
         throw e;
+      })
+      .then(function(sdp) {
+        return SIP.Utils.reducePromises(modifiers, sdp.sdp)
+        .then(function(modifiedSdp) {
+          sdp.sdp = modifiedSdp;
+          return sdp;
+        });
       })
       .then(function(sdp) {
         self.logger.log(sdp);
