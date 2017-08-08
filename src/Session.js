@@ -1536,7 +1536,6 @@ InviteClientContext.prototype = {
     this.ua.sessions[this.id] = this;
 
     if (this.inviteWithoutSdp) {
-      // TODO: We should save sessionDescriptionHandlerOptions to use on receiveInviteResponse
       //just send an invite with no sdp...
       this.request.body = self.renderbody;
       this.status = C.STATUS_INVITE_SENT;
@@ -1727,7 +1726,7 @@ InviteClientContext.prototype = {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.sessionDescriptionHandler;
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerOptions);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
@@ -1788,6 +1787,7 @@ InviteClientContext.prototype = {
 
         // This is an invite without sdp
         if (!this.hasOffer) {
+          // TODO: localMedia does not exist on sessionDescriptionHandler
           if (this.earlyDialogs[id] && this.earlyDialogs[id].sessionDescriptionHandler.localMedia) {
             //REVISIT
             this.hasOffer = true;

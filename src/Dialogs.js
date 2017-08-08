@@ -82,10 +82,6 @@ Dialog = function(owner, message, type, state) {
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route').reverse();
 
-    //RENDERBODY
-    if (this.state === C.STATUS_EARLY && (!owner.hasOffer)) {
-      this.sessionDescriptionHandler = owner.sessionDescriptionHandlerFactory(owner);
-    }
   }
 
   this.logger = owner.ua.getLogger('sip.dialog', this.id.toString());
