@@ -1168,7 +1168,14 @@ InviteServerContext.prototype = {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
       if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
         this.hasOffer = true;
-        this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers).then(do100rel.apply(this));
+        this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(do100rel.apply(this))
+        .catch(function onFailure(e) {
+          this.logger.warn('invalid description');
+          this.logger.warn(e);
+          this.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          this.terminated(null, SIP.C.causes.WEBRTC_ERROR);
+        }.bind(this));
       } else {
         do100rel.apply(this);
       }
