@@ -549,40 +549,53 @@ describe('Session', function() {
       message.body = null;
       message.headers['Content-Type'] = [];
       message.status_code = 222;
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
       Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
-      expect(Session.sendRequest).toHaveBeenCalled()
+      expect(message.transaction.sendACK).toHaveBeenCalled()
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
 
     it('calls reInviteFailed when the response\'s content-type is not application/sdp with a 2xx status code', function() {
       spyOn(message, 'getHeader').and.returnValue('wrong');
       message.status_code = 222;
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
       Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).toHaveBeenCalled()
-      expect(Session.sendRequest).toHaveBeenCalled();
+      expect(message.transaction.sendACK).toHaveBeenCalled();
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
 
     it('calls sendRequest and setDescription when response has a 2xx status code, a body, and content-type of application/sdp', function() {
       message.status_code = 222;
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
       Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.reinviteFailed).not.toHaveBeenCalled();
-      expect(Session.sendRequest).toHaveBeenCalled();
+
+      expect(message.transaction.sendACK).toHaveBeenCalled();
       expect(Session.sessionDescriptionHandler.setDescription).toHaveBeenCalled();
     });
 
     it('returns without calling sendRequest or reinviteFailed when response status code is neither 1xx or 2xx', function() {
       message.status_code = 333;
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
 
       Session.receiveReinviteResponse(message);
 
@@ -600,19 +613,27 @@ describe('Session', function() {
       spyOn(Session, 'sendRequest');
     });
 
-    it('calls sendRequest twice and returns Session on success', function() {
+    it('calls sendACK once and sendRequest once and returns Session on success', function() {
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
       expect(Session.acceptAndTerminate(message)).toBe(Session);
 
-      expect(Session.sendRequest.calls.count()).toBe(2);
+      expect(message.transaction.sendACK.calls.count()).toBe(1);
+      expect(Session.sendRequest.calls.count()).toBe(1);
     });
 
     it('calls createDialog if this.dialog is null', function() {
       Session.dialog = null;
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
 
       expect(Session.acceptAndTerminate(message)).toBe(Session);
 
       expect(Session.createDialog).toHaveBeenCalled();
-      expect(Session.sendRequest.calls.count()).toBe(2);
+      expect(message.transaction.sendACK.calls.count()).toBe(1);
+      expect(Session.sendRequest.calls.count()).toBe(1);
     });
   });
 
@@ -1874,6 +1895,13 @@ describe('InviteClientContext', function() {
         'a= sendrecv',
         ''].join('\r\n'), ua);
 
+
+      resp.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
+      response.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
       InviteClientContext.createDialog(response, 'UAC', false);
       expect(InviteClientContext.dialog).toBeDefined();
 
@@ -1882,7 +1910,7 @@ describe('InviteClientContext', function() {
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag]).toBeDefined();
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.C.ACK);
+      expect(resp.transaction.sendACK).toHaveBeenCalled();
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.BYE);
     });
 
@@ -1902,6 +1930,13 @@ describe('InviteClientContext', function() {
         'a= sendrecv',
         ''].join('\r\n'), ua);
 
+      resp.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
+      response.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
+
       InviteClientContext.createDialog(response, 'UAC', false);
       expect(InviteClientContext.dialog).toBeDefined();
 
@@ -1914,12 +1949,15 @@ describe('InviteClientContext', function() {
 
     it('ACKs any 200 OKs from the branch on which the call is up after the initial 200 OK', function() {
       InviteClientContext.status = 12;
+      response.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
       InviteClientContext.createDialog(response, 'UAC', false);
       expect(InviteClientContext.dialog).toBeDefined();
 
       InviteClientContext.receiveInviteResponse(response);
 
-      expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
+      expect(response.transaction.sendACK).toHaveBeenCalled();
     });
 
     it('PRACKS any non 200 response that are not retransmissions when it already chose a dialog', function() {
@@ -2176,6 +2214,9 @@ describe('InviteClientContext', function() {
       it('sets the status to confirmed, ACKS, and calls accepted if the status was earlyMedia', function() {
         InviteClientContext.status = 11;
         InviteClientContext.hasAnswer = true;
+        response.transaction = {
+          sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+        };
         InviteClientContext.createDialog(response, 'UAC', false);
         InviteClientContext.mediaHandler = {localMedia: {getAudioTracks: function() {return []},
                                                             getVideoTracks: function() {return []},
@@ -2187,7 +2228,7 @@ describe('InviteClientContext', function() {
         InviteClientContext.receiveInviteResponse(response);
 
         expect(InviteClientContext.status).toBe(12);
-        expect(InviteClientContext.sendRequest).toHaveBeenCalled();
+        expect(response.transaction.sendACK).toHaveBeenCalled();
         expect(InviteClientContext.accepted).toHaveBeenCalledWith(response);
       });
 

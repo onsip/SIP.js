@@ -708,7 +708,7 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
-        this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
+        this.emit("ack", response.transaction.sendACK());
 
         if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
           this.reinviteFailed();
@@ -739,7 +739,7 @@ Session.prototype = {
 
     // An error on dialog creation will fire 'failed' event
     if (this.dialog || this.createDialog(response, 'UAC')) {
-      this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
+      this.emit("ack", response.transaction.sendACK());
       this.sendRequest(SIP.C.BYE, {
         extraHeaders: extraHeaders
       });
@@ -1583,10 +1583,7 @@ InviteClientContext.prototype = {
         if (!this.createDialog(response, 'UAC', true)) {
           return;
         }
-        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK,
-                                          {
-                                            body: SIP.Utils.generateFakeSDP(response.body)
-                                          });
+        this.emit("ack", response.transaction.sendACK({body: SIP.Utils.generateFakeSDP(response.body)}));
         this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
 
         /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
@@ -1599,7 +1596,7 @@ InviteClientContext.prototype = {
         }
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
-        this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
+        this.emit("ack", response.transaction.sendACK());
         return;
       } else if (!this.hasAnswer) {
         // invite w/o sdp is waiting for callback
@@ -1774,8 +1771,7 @@ InviteClientContext.prototype = {
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          options.cseq = response.cseq;
-          this.sendRequest(SIP.C.ACK, options);
+          this.emit("ack", response.transaction.sendACK(options));
           this.accepted(response);
           break;
         }
@@ -1795,7 +1791,7 @@ InviteClientContext.prototype = {
               break;
             }
             this.status = C.STATUS_CONFIRMED;
-            this.sendRequest(SIP.C.ACK, {cseq:response.cseq});
+            this.emit("ack", response.transaction.sendACK());
 
             this.accepted(response);
           } else {
@@ -1821,10 +1817,7 @@ InviteClientContext.prototype = {
               session.status = C.STATUS_CONFIRMED;
               session.hasAnswer = true;
 
-              session.sendRequest(SIP.C.ACK,{
-                body: description,
-                cseq:response.cseq
-              });
+              session.emit("ack", response.transaction.sendACK({body: description}));
               session.accepted(response);
             })
             .catch(function onFailure(e) {
@@ -1845,7 +1838,7 @@ InviteClientContext.prototype = {
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          this.sendRequest(SIP.C.ACK, options);
+          this.emit("ack", response.transaction.sendACK(options));
         } else {
           if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             this.acceptAndTerminate(response, 400, 'Missing session description');
@@ -1866,8 +1859,7 @@ InviteClientContext.prototype = {
                 options.extraHeaders = extraHeaders;
                 options.body = session.renderbody;
               }
-              options.cseq = response.cseq;
-              session.sendRequest(SIP.C.ACK, options);
+              session.emit("ack", response.transaction.sendACK(options));
               session.accepted(response);
             },
             function onFailure (e) {
