@@ -73,60 +73,6 @@ describe('Session', function() {
     expect(Session.remote_hold).toBe(false);
   });
 
-  it('initializes the pending actions array and functions', function() {
-    expect(Session.pending_actions.actions).toBeDefined();
-    expect(Session.pending_actions.length).toBeDefined();
-    expect(Session.pending_actions.isPending).toBeDefined();
-    expect(Session.pending_actions.shift).toBeDefined();
-    expect(Session.pending_actions.push).toBeDefined();
-    expect(Session.pending_actions.pop).toBeDefined();
-  });
-
-  describe('.pending_actions', function() {
-    beforeEach(function() {
-      Session.pending_actions.actions = [{name: 'foo'}, {name: 'bar'}];
-    });
-
-    describe('.length', function() {
-      it('returns the length', function() {
-        expect(Session.pending_actions.length()).toBe(2);
-      });
-    });
-
-    describe('.isPending', function() {
-      it('returns true for objects that are present', function() {
-        expect(Session.pending_actions.isPending('foo')).toBe(true);
-      });
-
-      it('returns false for objects that are not present', function() {
-        expect(Session.pending_actions.isPending('seven')).toBe(false);
-      });
-    });
-
-    describe('.shift', function() {
-      it('returns foo and leaves bar as the only element in the array', function() {
-        expect(Session.pending_actions.shift().name).toBe('foo');
-        expect(Session.pending_actions.isPending('foo')).toBe(false);
-        expect(Session.pending_actions.isPending('bar')).toBe(true);
-      });
-    });
-
-    describe('.push', function() {
-      it('adds seven to the array', function() {
-        Session.pending_actions.push('seven');
-        expect(Session.pending_actions.isPending('seven')).toBe(true);
-      });
-    });
-
-    describe('.pop', function() {
-      it('removes foo from the array', function() {
-        Session.pending_actions.pop('foo');
-        expect(Session.pending_actions.isPending('foo')).toBe(false);
-        expect(Session.pending_actions.isPending('bar')).toBe(true);
-      });
-    });
-  });
-
   it('initializes early_sdp, and rel100', function() {
     expect(Session.early_sdp).toBeNull();
     expect(Session.rel100).toBeDefined();
@@ -361,35 +307,11 @@ describe('Session', function() {
     });
   });
 
-  describe('.isReadyToReinvite', function() {
-    beforeEach(function() {
-      Session.mediaHandler = {isReady: jasmine.createSpy('isReady').and.returnValue(true)};
-
-      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
-    });
-
-    xit('returns false if either of the pending_reply options are true', function() {
-      Session.dialog.uac_pending_reply = true;
-      expect(Session.isReadyToReinvite()).toBe(false);
-
-      Session.dialog.uac_pending_reply = false;
-      Session.dialog.uas_pending_reply = true;
-      expect(Session.isReadyToReinvite()).toBe(false);
-    });
-
-    it('returns true if all above conditions are met', function() {
-      expect(Session.isReadyToReinvite()).toBe(true);
-    });
-  });
-
   describe('.hold', function() {
 
     beforeEach(function() {
       spyOn(Session, 'emit');
       Session.status = 12;
-      Session.mediaHandler = jasmine.createSpyObj('mediaHandler', ['hold']);
-
-      spyOn(Session, 'isReadyToReinvite').and.returnValue(true);
 
       spyOn(Session, 'sendReinvite');
     });
@@ -399,9 +321,6 @@ describe('Session', function() {
 
       expect(function(){Session.hold()}).toThrowError('Invalid status: 0');
     });
-
-    //Note: the pending actions conditionals were skipped because it wouldn't test
-    //anything in relation to this function.
 
     it('does not emit hold if local hold is true', function() {
       Session.local_hold = true;
@@ -423,20 +342,8 @@ describe('Session', function() {
       spyOn(Session, 'emit');
       Session.status = 12;
       Session.local_hold = true;
-      Session.mediaHandler = jasmine.createSpyObj('mediaHandler', ['unhold']);
-
-      spyOn(Session, 'isReadyToReinvite').and.returnValue(true);
 
       spyOn(Session, 'sendReinvite');
-    });
-
-    //Note: the pending actions conditionals were skipped because it wouldn't test
-    //anything in relation to this function.
-
-    it('throws an error if the session is in the incorrect state', function() {
-      Session.status = 0;
-
-      expect(function(){Session.unhold()}).toThrowError('Invalid status: 0');
     });
 
     it('does not emit unhold if local hold is false', function() {
@@ -650,38 +557,6 @@ describe('Session', function() {
       Session.setACKTimer(null, null);
 
       expect(Session.timers.ackTimer).toBeDefined();
-    });
-  });
-
-  describe('.onReadyToReinvite', function() {
-    beforeEach(function() {
-      spyOn(Session, 'hold');
-      spyOn(Session, 'unhold');
-    });
-
-    it('returns without calling hold/unhold if pending_actions is empty', function() {
-      Session.onReadyToReinvite();
-
-      expect(Session.hold).not.toHaveBeenCalled();
-      expect(Session.unhold).not.toHaveBeenCalled();
-    });
-
-    it('calls hold if that is the next action', function() {
-      Session.pending_actions.push('hold');
-
-      Session.onReadyToReinvite();
-
-      expect(Session.hold).toHaveBeenCalled();
-      expect(Session.unhold).not.toHaveBeenCalled();
-    });
-
-    it('calls unhold if that is the next action', function() {
-      Session.pending_actions.push('unhold');
-
-      Session.onReadyToReinvite();
-
-      expect(Session.hold).not.toHaveBeenCalled();
-      expect(Session.unhold).toHaveBeenCalled();
     });
   });
 

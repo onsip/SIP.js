@@ -56,51 +56,6 @@ Session = function (sessionDescriptionHandlerFactory) {
   this.local_hold = false;
   this.remote_hold = false;
 
-  this.pending_actions = {
-    actions: [],
-
-    length: function() {
-      return this.actions.length;
-    },
-
-    isPending: function(name){
-      var
-      idx = 0,
-      length = this.actions.length;
-
-      for (idx; idx<length; idx++) {
-        if (this.actions[idx].name === name) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    shift: function() {
-      return this.actions.shift();
-    },
-
-    push: function(name) {
-      this.actions.push({
-        name: name
-      });
-    },
-
-    pop: function(name) {
-      var
-      idx = 0,
-      length = this.actions.length;
-
-      for (idx; idx<length; idx++) {
-        if (this.actions[idx].name === name) {
-          this.actions.splice(idx,1);
-          length --;
-          idx--;
-        }
-      }
-    }
-   };
-
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
 };
@@ -442,15 +397,6 @@ Session.prototype = {
   },
 
   /**
-  * Check if Session is ready for a re-INVITE
-  *
-  * @returns {Boolean}
-  */
-  isReadyToReinvite: function() {
-    return true;
-  },
-
-  /**
    * Hold
    */
   hold: function(options) {
@@ -459,20 +405,9 @@ Session.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    // Check if RTCSession is ready to send a reINVITE
-    if (!this.isReadyToReinvite()) {
-      /* If there is a pending 'unhold' action, cancel it and don't queue this one
-       * Else, if there isn't any 'hold' action, add this one to the queue
-       * Else, if there is already a 'hold' action, skip
-       */
-      if (this.pending_actions.isPending('unhold')) {
-        this.pending_actions.pop('unhold');
-      } else if (!this.pending_actions.isPending('hold')) {
-        this.pending_actions.push('hold');
-      }
+    if (this.isOnHold().local) {
+      this.logger.log('Session is already on hold, cannot put it on hold again');
       return;
-    } else if (this.local_hold === true) {
-        return;
     }
 
     this.onhold('local');
@@ -489,18 +424,8 @@ Session.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    if (!this.isReadyToReinvite()) {
-      /* If there is a pending 'hold' action, cancel it and don't queue this one
-       * Else, if there isn't any 'unhold' action, add this one to the queue
-       * Else, if there is already a 'unhold' action, skip
-       */
-      if (this.pending_actions.isPending('hold')) {
-        this.pending_actions.pop('hold');
-      } else if (!this.pending_actions.isPending('unhold')) {
-        this.pending_actions.push('unhold');
-      }
-      return;
-    } else if (this.local_hold === false) {
+    if (!this.isOnHold().local) {
+      this.logger.log('Session is not on hold, cannot unhold it');
       return;
     }
 
@@ -602,9 +527,6 @@ Session.prototype = {
         });
       },
       function() {
-        if (self.isReadyToReinvite()) {
-          self.onReadyToReinvite();
-        }
         self.reinviteFailed();
       }
     );
@@ -795,16 +717,6 @@ Session.prototype = {
   /*
    * @private
    */
-  onReadyToReinvite: function() {
-    var action = this.pending_actions.shift();
-
-    if (!action || !this[action.name]) {
-      return;
-    }
-
-    this[action.name]();
-  },
-
   onTransportError: function() {
     if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
