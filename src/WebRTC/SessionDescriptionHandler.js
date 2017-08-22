@@ -55,6 +55,8 @@ var SessionDescriptionHandler = function(session, options) {
   this.initPeerConnection(this.options);
 
   this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
+
+  this.session.emit('SessionDescriptionHandler-created', this);
 };
 
 /**
@@ -342,6 +344,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
 
     this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
+
+    this.session.emit('peerConnection-created', this.peerConnection);
 
     this.peerConnection.ontrack = function(e) {
       self.logger.log('track added ' + e.track.id);
