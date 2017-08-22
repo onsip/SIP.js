@@ -25,25 +25,6 @@ var SessionDescriptionHandler = function(session, options) {
     this.modifiers = [this.modifiers];
   }
 
-  if (this.options.hackStripTcpCandidates) {
-    this.modifiers.push(function(sdp) {
-      sdp = sdp.replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
-      return SIP.Utils.Promise.resolve(sdp);
-    });
-  }
-  if (this.options.hackStripTelephoneEvent) {
-    this.modifiers.push(function(sdp) {
-      sdp = sdp.replace(/^a=rtpmap:\d+ telephone-event\/d+/img, "");
-      return SIP.Utils.Promise.resolve(sdp);
-    });
-  }
-  if (this.options.hackCleanJitsiSdpImageattr) {
-    this.modifiers.push(function(sdp) {
-      // TODO:
-      return SIP.Utils.Promise.resolve(sdp);
-    });
-  }
-
   var environment = global.window || global;
   this.WebRTC = {
     MediaStream           : environment.MediaStream,

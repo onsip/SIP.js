@@ -43,6 +43,9 @@ require('./UA')(SIP, environment);
 require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
 SIP.Grammar = require('./Grammar')(SIP);
+SIP.WebRTC = {
+  Modifiers: require('./WebRTC/Modifiers')(SIP)
+};
 
 return SIP;
 };

@@ -932,9 +932,6 @@ UA.prototype.loadConfig = function(configuration) {
       // Session Description Handler Options
       sessionDescriptionHandlerFactoryOptions: {
         constraints: {},
-        hackCleanJitsiSdpImageattr: false,
-        hackStripTcpCandidates: false,
-        hackStripTelephoneEvent: false,
         iceCheckingTimeout: 5000,
         rtcConfiguration: {},
       },
