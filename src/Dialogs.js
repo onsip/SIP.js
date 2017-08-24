@@ -191,10 +191,6 @@ Dialog.prototype = {
 
               this.removeListener('stateChanged', stateChanged);
               self.uas_pending_reply = false;
-
-              if (self.uac_pending_reply === false) {
-                self.owner.onReadyToReinvite();
-              }
             }
           });
         }
