@@ -37,10 +37,6 @@ var SessionDescriptionHandler = function(session, options) {
 
   this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
 
-  // Flag to disable renegotiation. When set to true, it will not renegotiate
-  // and will throw a RENEGOTIATION_ERROR
-  this.disableRenegotiation = false;
-
   this.session.emit('SessionDescriptionHandler-created', this);
 };
 
@@ -89,7 +85,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   getDescription: {writable: true, value: function (options, modifiers) {
     var self = this;
 
-    if (this.disableRenegotiation) {
+    if (this.session.disableRenegotiation) {
       this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
       throw new SIP.Exceptions.GetDescriptionError("disableRenegotiation flag set to true for this session description handler");
     }
@@ -160,7 +156,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           contentType: self.CONTENT_TYPE
         };
       }).catch(function (e) {
-        this.disableRenegotiation = true;
+        this.session.disableRenegotiation = true;
         throw e;
       });
   }},
@@ -203,11 +199,11 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     // https://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser
     var isFirefox = typeof InstallTrigger !== 'undefined';
-    if (!this.disableRenegotiation && isFirefox && this.peerConnection && this.isVideoHold(sessionDescription)) {
-      this.disableRenegotiation = true;
+    if (!this.session.disableRenegotiation && isFirefox && this.peerConnection && this.isVideoHold(sessionDescription)) {
+      this.session.disableRenegotiation = true;
     }
 
-    if (this.disableRenegotiation) {
+    if (this.session.disableRenegotiation) {
       this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
       throw new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler");
     }
@@ -243,7 +239,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(rawDescription));
       })
       .catch(function setRemoteDescriptionError(e) {
-        self.disableRenegotiation = true;
+        self.session.disableRenegotiation = true;
         self.logger.error(e);
         self.emit('peerConnection-setRemoteDescriptionFailed', e);
         throw e;

@@ -56,6 +56,10 @@ Session = function (sessionDescriptionHandlerFactory) {
   this.local_hold = false;
   this.remote_hold = false;
 
+  // Flag to disable renegotiation. When set to true, it will not renegotiate
+  // and will throw a RENEGOTIATION_ERROR
+  this.disableRenegotiation = false;
+
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
 };
@@ -466,9 +470,9 @@ Session.prototype = {
           self.status = C.STATUS_WAITING_FOR_ACK;
           self.setACKTimer();
 
-          if (self.remote_hold && !self.sessionDescriptionHandler.remote_hold) {
+          if (self.remote_hold) {
             self.onunhold('remote');
-          } else if (!self.remote_hold && self.sessionDescriptionHandler.remote_hold) {
+          } else if (!self.remote_hold) {
             self.onhold('remote');
           }
         });
@@ -641,7 +645,8 @@ Session.prototype = {
         });
         break;
       default:
-        this.logger.warn('Received a non 1XX or 2XX response to a re-invite');
+        this.disableRenegotiation = true;
+        this.logger.log('Received a non 1XX or 2XX response to a re-invite');
         this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('Invalid response to a re-invite'));
     }
   },
