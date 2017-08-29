@@ -87,7 +87,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     if (this.session.disableRenegotiation) {
       this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
-      throw new SIP.Exceptions.GetDescriptionError("disableRenegotiation flag set to true for this session description handler");
+      return SIP.Utils.Promise.reject(new SIP.Exceptions.GetDescriptionError("disableRenegotiation flag set to true for this session description handler"));
     }
 
     options = options || {};
@@ -205,7 +205,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     if (this.session.disableRenegotiation) {
       this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
-      throw new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler");
+      return SIP.Utils.Promise.reject(new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler"));
     }
 
     options = options || {};
