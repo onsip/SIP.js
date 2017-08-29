@@ -440,6 +440,7 @@ IncomingRequest.prototype = new IncomingMessage();
 * @param {Function} [onSuccess] onSuccess callback
 * @param {Function} [onFailure] onFailure callback
 */
+// TODO: Get rid of callbacks and make promise based
 IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onSuccess, onFailure) {
   var rr, vias, length, idx, response,
     to = this.getHeader('To'),

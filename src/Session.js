@@ -464,7 +464,6 @@ Session.prototype = {
       request.reply(200, null, extraHeaders, description,
         function() {
           self.status = C.STATUS_WAITING_FOR_ACK;
-          self.setInvite2xxTimer(request, description);
           self.setACKTimer();
 
           if (self.remote_hold && !self.sessionDescriptionHandler.remote_hold) {
@@ -478,6 +477,10 @@ Session.prototype = {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
         statusCode = 500;
+      } else if (e instanceof SIP.Exceptions.RenegotiationError) {
+        self.emit('renegotiationError', e);
+        self.logger.error(e);
+        statusCode = 488;
       } else {
         self.logger.error(e);
         statusCode = 488;
@@ -492,24 +495,7 @@ Session.prototype = {
 
     var
       self = this,
-       extraHeaders = (options.extraHeaders || []).slice(),
-       eventHandlers = options.eventHandlers || {},
-       succeeded;
-
-    if (eventHandlers.succeeded) {
-      succeeded = eventHandlers.succeeded;
-    }
-    this.reinviteSucceeded = function(){
-      SIP.Timers.clearTimeout(self.timers.ackTimer);
-      SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
-      self.status = C.STATUS_CONFIRMED;
-      succeeded && succeeded.apply(this, arguments);
-    };
-    if (eventHandlers.failed) {
-      this.reinviteFailed = eventHandlers.failed;
-    } else {
-      this.reinviteFailed = function(){};
-    }
+       extraHeaders = (options.extraHeaders || []).slice();
 
     extraHeaders.push('Contact: ' + this.contact);
     extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
@@ -519,17 +505,18 @@ Session.prototype = {
       options.modifiers.push(self.sessionDescriptionHandler.holdModifier);
     }
     this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-    .then(
-      function(description){
-        self.dialog.sendRequest(self, SIP.C.INVITE, {
-          extraHeaders: extraHeaders,
-          body: description
-        });
-      },
-      function() {
-        self.reinviteFailed();
+    .then(function(description) {
+      self.dialog.sendRequest(self, SIP.C.INVITE, {
+        extraHeaders: extraHeaders,
+        body: description
+      });
+    }).catch(function onFailure(e) {
+      self.logger.error('sessionDescriptionHandler error');
+      self.logger.error(e);
+      if (e instanceof SIP.Exceptions.RenegotiationError) {
+        self.emit('renegotiationError', e);
       }
-    );
+    });
   },
 
   receiveRequest: function (request) {
@@ -630,25 +617,32 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
+        // TODO: Handle re-INVITE w/o SDP
+        // 17.1.1.1 - For each final response that is received at the client transaction, the client transaction sends an ACK,
         this.emit("ack", response.transaction.sendACK());
+        // TODO: All of these timers should move into the Transaction layer
+        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
 
         if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
-          this.reinviteFailed();
+          this.logger.error('2XX response received to re-invite but did not have a description');
+          this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('2XX response received to re-invite but did not have a description'));
+
           break;
         }
 
         this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-        .then(
-          function onSuccess () {
-            self.reinviteSucceeded();
-          },
-          function onFailure () {
-            self.reinviteFailed();
-          }
-        );
+        .catch(function onFailure (e) {
+          self.logger.error('Could not set the description in 2XX response');
+          self.logger.error(e);
+          self.emit('renegotiationError', e);
+          self.sendRequest(SIP.C.BYE, {
+            extraHeaders: [SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
+          });
+        });
         break;
       default:
-        this.reinviteFailed();
+        this.logger.warn('Received a non 1XX or 2XX response to a re-invite');
+        this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('Invalid response to a re-invite'));
     }
   },
 

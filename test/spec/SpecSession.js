@@ -406,13 +406,11 @@ describe('Session', function() {
       Session.sessionDescriptionHandler = {getDescription: jasmine.createSpy('getDescription').and.returnValue(SIP.Utils.Promise.resolve(true))};
     });
 
-    it('on success, sets receiveResponse, reinviteSucceeded, and reinviteFailed, and calls getDescription', function(){
+    it('on success, sets receiveResponse and calls getDescription', function(){
       Session.sendReinvite();
 
       expect(Session.sessionDescriptionHandler.getDescription).toHaveBeenCalled();
       expect(Session.receiveResponse).toBe(Session.receiveReinviteResponse);
-      expect(Session.reinviteSucceeded).toBeDefined();
-      expect(Session.reinviteFailed).toBeDefined();
     });
   });
 
@@ -420,9 +418,8 @@ describe('Session', function() {
     beforeEach(function() {
       Session.status = 12;
 
-      Session.reinviteFailed = jasmine.createSpy('reinviteFailed');
-
       spyOn(Session, 'sendRequest');
+      spyOn(Session, 'emit');
 
       Session.sessionDescriptionHandler = {
         hasDescription: function(contentType) {
@@ -432,27 +429,27 @@ describe('Session', function() {
       };
     });
 
-    it('returns without calling sendRequest or reinviteFailed when status is terminated', function() {
+    it('returns without calling sendRequest or emitting renegotiationFailed when status is terminated', function() {
       Session.status = 9;
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.sendRequest).not.toHaveBeenCalled();
-      expect(Session.reinviteFailed).not.toHaveBeenCalled();
+      expect(Session.emit).not.toHaveBeenCalled();
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
 
-    it('returns without calling sendRequest or reinviteFailed when response status code is 1xx', function() {
+    it('returns without calling sendRequest or emitting renegotiationFailed when response status code is 1xx', function() {
       message.status_code = 111;
 
       Session.receiveReinviteResponse(message);
 
       expect(Session.sendRequest).not.toHaveBeenCalled();
-      expect(Session.reinviteFailed).not.toHaveBeenCalled();
+      expect(Session.emit).not.toHaveBeenCalled();
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
 
-    it('calls reInviteFailed when the response has no body with a 2xx status code', function() {
+    it('emits renegotiationError when the response has no body with a 2xx status code', function() {
       message.body = null;
       message.headers['Content-Type'] = [];
       message.status_code = 222;
@@ -463,12 +460,12 @@ describe('Session', function() {
 
       Session.receiveReinviteResponse(message);
 
-      expect(Session.reinviteFailed).toHaveBeenCalled()
+      expect(Session.emit.calls.mostRecent().args[0]).toBe('renegotiationError');
       expect(message.transaction.sendACK).toHaveBeenCalled()
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
 
-    it('calls reInviteFailed when the response\'s content-type is not application/sdp with a 2xx status code', function() {
+    it('emits renegotiationError when the response\'s content-type is not application/sdp with a 2xx status code', function() {
       spyOn(message, 'getHeader').and.returnValue('wrong');
       message.status_code = 222;
       message.transaction = {
@@ -478,7 +475,7 @@ describe('Session', function() {
 
       Session.receiveReinviteResponse(message);
 
-      expect(Session.reinviteFailed).toHaveBeenCalled()
+      expect(Session.emit.calls.mostRecent().args[0]).toBe('renegotiationError');
       expect(message.transaction.sendACK).toHaveBeenCalled();
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
@@ -492,13 +489,13 @@ describe('Session', function() {
 
       Session.receiveReinviteResponse(message);
 
-      expect(Session.reinviteFailed).not.toHaveBeenCalled();
+      expect(Session.emit.calls.mostRecent().args[0]).not.toBe('renegotiationError');
 
       expect(message.transaction.sendACK).toHaveBeenCalled();
       expect(Session.sessionDescriptionHandler.setDescription).toHaveBeenCalled();
     });
 
-    it('returns without calling sendRequest or reinviteFailed when response status code is neither 1xx or 2xx', function() {
+    it('returns without calling sendRequest and emits renegotiationError when response status code is neither 1xx or 2xx', function() {
       message.status_code = 333;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
@@ -507,7 +504,7 @@ describe('Session', function() {
       Session.receiveReinviteResponse(message);
 
       expect(Session.sendRequest).not.toHaveBeenCalled();
-      expect(Session.reinviteFailed).toHaveBeenCalled();
+      expect(Session.emit.calls.mostRecent().args[0]).toBe('renegotiationError');
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
   });
