@@ -483,7 +483,7 @@ Session.prototype = {
         statusCode = 500;
       } else if (e instanceof SIP.Exceptions.RenegotiationError) {
         self.emit('renegotiationError', e);
-        self.logger.error(e);
+        self.logger.warn(e);
         statusCode = 488;
       } else {
         self.logger.error(e);
@@ -515,11 +515,14 @@ Session.prototype = {
         body: description
       });
     }).catch(function onFailure(e) {
-      self.logger.error('sessionDescriptionHandler error');
-      self.logger.error(e);
       if (e instanceof SIP.Exceptions.RenegotiationError) {
         self.emit('renegotiationError', e);
+        self.logger.warn('Renegotiation Error');
+        self.logger.warn(e);
+        return;
       }
+      self.logger.error('sessionDescriptionHandler error');
+      self.logger.error(e);
     });
   },
 
