@@ -44,7 +44,8 @@ require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
 SIP.Grammar = require('./Grammar')(SIP);
 SIP.WebRTC = {
-  Modifiers: require('./WebRTC/Modifiers')(SIP)
+  Modifiers: require('./WebRTC/Modifiers')(SIP),
+  Simple: require('./WebRTC/Simple')(SIP)
 };
 
 return SIP;
