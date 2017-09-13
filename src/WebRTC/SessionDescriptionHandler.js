@@ -471,7 +471,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   isVideoHold: {writable: true, value: function isVideoHold(description) {
-    if (description.search(/^(m=video.*?)[\s\S]*^(a=sendonly?)/gm)) {
+    if (description.search(/^(m=video.*?)[\s\S]*^(a=sendonly?)/gm) !== -1) {
       return true;
     }
     return false;
