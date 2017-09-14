@@ -14,7 +14,7 @@ var C = {
   STATUS_NEW:          1,
   STATUS_CONNECTING:   2,
   STATUS_CONNECTED:    3,
-  STATUS_DISCONNECTED: 4
+  STATUS_COMPLETED:    4
 };
 
 /*
@@ -90,7 +90,7 @@ var Simple = function (options) {
 
   this.ua.on('invite', function(session) {
     // If there is already an active session reject the incoming session
-    if (this.state !== C.STATUS_NULL && this.state !== C.STATUS_DISCONNECTED) {
+    if (this.state !== C.STATUS_NULL && this.state !== C.STATUS_COMPLETED) {
       this.logger.warn('Rejecting incoming call. Simple only supports 1 call at a time');
       session.reject();
       return;
@@ -109,12 +109,10 @@ Simple.prototype = Object.create(SIP.EventEmitter.prototype);
 Simple.prototype.call = function(destination) {
   if (!this.ua && !this.ua.registered) {
     this.logger.warn('A registered UA is required for calling');
-    this.emit('failed');
     return;
   }
-  if (this.state !== C.STATUS_NULL && this.state !== C.STATUS_DISCONNECTED) {
+  if (this.state !== C.STATUS_NULL && this.state !== C.STATUS_COMPLETED) {
     this.logger.warn('Cannot make more than a single call with Simple');
-    this.emit('failed');
     return;
   }
   this.session = this.ua.invite(destination, {
@@ -262,7 +260,7 @@ Simple.prototype.toggleMute = function(mute) {
 Simple.prototype.onAccepted = function() {
   this.state = C.STATUS_CONNECTED;
   this.setupMedia();
-  this.emit('active', this.session);
+  this.emit('connected', this.session);
   this.session.on('hold', function() {
     this.emit('hold', this.session);
   }.bind(this));
@@ -285,7 +283,7 @@ Simple.prototype.onFailed = function() {
 };
 
 Simple.prototype.onEnded = function() {
-  this.state = C.STATUS_DISCONNECTED;
+  this.state = C.STATUS_COMPLETED;
   this.emit('ended', this.session);
 };
 
