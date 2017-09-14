@@ -251,7 +251,7 @@ describe('A UAS receiving an INVITE', function () {
 
         afterEach(function (done) {
           function closeOut() {
-            ua.off();
+            ua.removeAllListeners();
             done();
           }
           if (ua.isConnected()) {

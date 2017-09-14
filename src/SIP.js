@@ -21,7 +21,7 @@ var SIP = Object.defineProperties({}, {
 
 require('./Utils')(SIP, environment);
 SIP.LoggerFactory = require('./LoggerFactory')(environment.console);
-SIP.EventEmitter = require('./EventEmitter')(environment.console);
+SIP.EventEmitter = require('./EventEmitter')();
 SIP.C = require('./Constants')(SIP.name, SIP.version);
 SIP.Exceptions = require('./Exceptions');
 SIP.Timers = require('./Timers')(environment.timers);
