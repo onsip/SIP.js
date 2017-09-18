@@ -59,11 +59,23 @@ var Simple = function (options) {
 
   this.options = options;
 
+  // https://stackoverflow.com/questions/7944460/detect-safari-browser
+  var browserUa = global.navigator.userAgent.toLowerCase();
+  var isSafari = false;
+  if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
+    isSafari = true;
+  }
+  var sessionDescriptionHandlerFactoryOptions = {};
+  if (isSafari) {
+    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.WebRTC.Modifiers.stripG722];
+  }
+
   this.ua = new SIP.UA({
     wsServers:         this.options.ua.wsServers,
     uri:               this.options.ua.uri,
     authorizationUser: this.options.ua.authorizationUser,
     password:          this.options.ua.password,
+    sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
     register:          true,
     traceSip:          true
   });
@@ -115,6 +127,13 @@ Simple.prototype.call = function(destination) {
     this.logger.warn('Cannot make more than a single call with Simple');
     return;
   }
+  // Safari hack, because you cannot call .play() from a non user action
+  if (this.options.media.remote.audio) {
+    this.options.media.remote.audio.autoplay = true;
+  }
+  if (this.options.media.remote.video) {
+    this.options.media.remote.video.autoplay = true;
+  }
   this.session = this.ua.invite(destination, {
     sessionDescriptionHandlerOptions: {
       constraints: {
@@ -132,6 +151,13 @@ Simple.prototype.answer = function() {
   if (this.state !== C.STATUS_NEW && this.state !== C.STATUS_CONNECTING) {
     this.logger.warn('No call to answer');
     return;
+  }
+  // Safari hack, because you cannot call .play() from a non user action
+  if (this.options.media.remote.audio) {
+    this.options.media.remote.audio.autoplay = true;
+  }
+  if (this.options.media.remote.video) {
+    this.options.media.remote.video.autoplay = true;
   }
   return this.session.accept({
     sessionDescriptionHandlerOptions: {
@@ -157,7 +183,6 @@ Simple.prototype.hangup = function() {
     this.logger.warn('No active call to hang up on');
     return;
   }
-  this.emit('ended', this.session);
   if (this.state !== C.STATUS_CONNECTED) {
     return this.session.cancel();
   } else {
@@ -214,20 +239,39 @@ Simple.prototype.sendDTMF = function(tone) {
 
 // Private Helpers
 
-Simple.prototype.setupMedia = function() {
+Simple.prototype.setupRemoteMedia = function() {
   // If there is a video track, it will attach the video and audio to the same element
-  var remoteStream = this.session.sessionDescriptionHandler.peerConnection.getRemoteStreams()[0];
+  var pc = this.session.sessionDescriptionHandler.peerConnection;
+  var remoteStream;
+  if (pc.getReceivers) {
+    // TODO: Make this so that we just replace the media stream on the object
+    remoteStream = new global.window.MediaStream();
+    pc.getReceivers().forEach(function(receiver) {
+      var track = receiver.track;
+      if (track) {
+        remoteStream.addTrack(track);
+      }
+    });
+  } else {
+    remoteStream = pc.getRemoteStreams()[0];
+  }
   if (this.video) {
     this.options.media.remote.video.srcObject = remoteStream;
     this.options.media.remote.video.play();
-    if (this.options.media.local.video) {
-      this.options.media.local.video.srcObject = this.session.sessionDescriptionHandler.peerConnection.getLocalStreams()[0];
-      this.options.media.local.video.volume = 0;
-      this.options.media.local.video.play();
-    }
   } else if (this.audio) {
     this.options.media.remote.audio.srcObject = remoteStream;
     this.options.media.remote.audio.play();
+  }
+};
+
+Simple.prototype.setupLocalMedia = function() {
+  if (this.video && this.options.media.local.video) {
+    // TODO: Forwards compatible
+    var pc = this.session.sessionDescriptionHandler.peerConnection;
+
+    this.options.media.local.video.srcObject = pc.getLocalStreams()[0];
+    this.options.media.local.video.volume = 0;
+    this.options.media.local.video.play();
   }
 };
 
@@ -235,10 +279,13 @@ Simple.prototype.setupSession = function() {
   this.state = C.STATUS_NEW;
   this.emit('new', this.session);
 
+  this.setupLocalMedia();
+
   this.session.on('progress', this.onProgress.bind(this));
   this.session.on('accepted', this.onAccepted.bind(this));
   this.session.on('rejected', this.onEnded.bind(this));
   this.session.on('failed', this.onFailed.bind(this));
+  this.session.on('terminated', this.onEnded.bind(this));
 };
 
 Simple.prototype.destroyMedia = function () {
@@ -246,21 +293,35 @@ Simple.prototype.destroyMedia = function () {
 };
 
 Simple.prototype.toggleMute = function(mute) {
-  this.session.sessionDescriptionHandler.peerConnection.getLocalStreams().forEach(function(stream) {
-    // TODO: Forward/backwards compatible
-    stream.getAudioTracks().forEach(function(track) {
-      track.enabled = !mute;
+  var pc = this.session.sessionDescriptionHandler.peerConnection;
+  if (pc.getSenders) {
+    pc.getSenders().forEach(function(sender) {
+      if (sender.track) {
+        sender.track.enabled = !mute;
+      }
     });
-    stream.getVideoTracks().forEach(function(track) {
-      track.enabled = !mute;
+  } else {
+    pc.getLocalStreams().forEach(function(stream) {
+      stream.getAudioTracks().forEach(function(track) {
+        track.enabled = !mute;
+      });
+      stream.getVideoTracks().forEach(function(track) {
+        track.enabled = !mute;
+      });
     });
-  });
+  }
 };
 
 Simple.prototype.onAccepted = function() {
   this.state = C.STATUS_CONNECTED;
-  this.setupMedia();
   this.emit('connected', this.session);
+
+  this.setupRemoteMedia();
+  this.session.sessionDescriptionHandler.on('addTrack', function() {
+    this.logger.log('A track has been added, triggering new remoteMedia setup');
+    this.setupRemoteMedia();
+  }.bind(this));
+
   this.session.on('hold', function() {
     this.emit('hold', this.session);
   }.bind(this));
