@@ -175,14 +175,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
    * @param {String} [sdp] The description that will be modified
    * @returns {Promise} Promise that resolves with modified SDP
    */
-  holdModifier: {writable: true, value: function holdModifier (sdp) {
-    if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(sdp)) {
-      sdp = sdp.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
+  holdModifier: {writable: true, value: function holdModifier (description) {
+    if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(description.sdp)) {
+      description.sdp = description.sdp.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
     } else {
-      sdp = sdp.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
-      sdp = sdp.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
+      description.sdp = description.sdp.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
+      description.sdp = description.sdp.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
     }
-    return SIP.Utils.Promise.resolve(sdp);
+    return SIP.Utils.Promise.resolve(description);
   }},
 
   /**
@@ -223,20 +223,20 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
     modifiers = modifiers.concat(this.modifiers);
 
-    return SIP.Utils.reducePromises(modifiers, sessionDescription)
+    var description = {
+      type: this.hasOffer('local') ? 'answer' : 'offer',
+      sdp: sessionDescription
+    };
+
+    return SIP.Utils.reducePromises(modifiers, description)
       .catch(function modifierError(e) {
         self.logger.error("The modifiers did not resolve successfully");
         self.logger.error(e);
         throw e;
       })
-      .then(function(sdp) {
-        var rawDescription = {
-          type: self.hasOffer('local') ? 'answer' : 'offer',
-          sdp: sdp
-        };
-        self.emit('setDescription', rawDescription);
-
-        return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(rawDescription));
+      .then(function(modifiedDescription) {
+        self.emit('setDescription', modifiedDescription);
+        return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(modifiedDescription));
       })
       .catch(function setRemoteDescriptionError(e) {
         self.session.disableRenegotiation = true;
@@ -249,6 +249,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
         } else {
           // TODO: Shim this correctly for Safari
+          // This should be the default, and we should fall back to getRemoteStreams if this is not supported
           self.emit('setRemoteDescription', self.peerConnection.getSenders());
         }
         self.emit('confirmed', self);
@@ -271,11 +272,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function(sdp) {
-        return SIP.Utils.reducePromises(modifiers, sdp.sdp)
-        .then(function(modifiedSdp) {
-          sdp.sdp = modifiedSdp;
-          return sdp;
-        });
+        return SIP.Utils.reducePromises(modifiers, sdp);
       })
       .then(function(sdp) {
         self.logger.log(sdp);
@@ -286,18 +283,16 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function onSetLocalDescriptionSuccess() {
-        var deferred = SIP.Utils.defer();
-        if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
-          deferred.resolve();
-        } else {
-          // TODO: Is this a race condition
-          self.onIceCompleted.promise.then(deferred.resolve);
-        }
-        return  deferred.promise;
+        return new SIP.Utils.Promise(function(resolve) {
+          if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
+            resolve();
+          } else {
+            self.onIceCompleted.promise.then(resolve);
+          }
+        });
       })
       .then(function readySuccess() {
         var localDescription = self.peerConnection.localDescription;
-        // This returns unmodified SDP from getDescription
         self.emit('getDescription', localDescription);
         return localDescription.sdp;
       })
