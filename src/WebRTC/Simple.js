@@ -80,10 +80,6 @@ var Simple = function (options) {
     traceSip:          true
   });
 
-  // TODO: Track state
-  // If we track the state of Simple, then we do not have to care about the
-  // state of the underlying session. Makes life a bit simpler.
-
   this.state = C.STATUS_NULL;
 
   this.logger = this.ua.getLogger('sip.simple');
