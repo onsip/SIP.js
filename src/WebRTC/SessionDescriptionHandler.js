@@ -59,17 +59,34 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.logger.log('closing PeerConnection');
     // have to check signalingState since this.close() gets called multiple times
     if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
-      // TODO: getLocalStreams && getRemoteStreams are deprecated
-      this.peerConnection.getLocalStreams().forEach(function(stream) {
-        stream.getTracks().forEach(function(track) {
-          track.stop();
+      if (this.peerConnection.getSenders) {
+        this.peerConnection.getSenders().forEach(function(sender) {
+          if (sender.track) {
+            sender.track.stop();
+          }
         });
-      });
-      this.peerConnection.getRemoteStreams().forEach(function(stream) {
-        stream.getTracks().forEach(function(track) {
-          track.stop();
+      } else {
+        this.logger.warn('Using getLocalStreams which is deprecated');
+        this.peerConnection.getLocalStreams().forEach(function(stream) {
+          stream.getTracks().forEach(function(track) {
+            track.stop();
+          });
         });
-      });
+      }
+      if (this.peerConnection.getReceivers) {
+        this.peerConnection.getReceivers().forEach(function(receiver) {
+          if (receiver.track) {
+            receiver.track.stop();
+          }
+        });
+      } else {
+        this.logger.warn('Using getRemoteStreams which is deprecated');
+        this.peerConnection.getRemoteStreams().forEach(function(stream) {
+          stream.getTracks().forEach(function(track) {
+            track.stop();
+          });
+        });
+      }
       this.peerConnection.close();
     }
   }},
@@ -343,7 +360,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.session.emit('peerConnection-created', this.peerConnection);
 
     this.peerConnection.ontrack = function(e) {
-      self.logger.log('track added ' + e.track.id);
+      self.logger.log('track added');
       self.emit('addTrack', e);
     };
 
