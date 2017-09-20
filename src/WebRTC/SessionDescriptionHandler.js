@@ -265,9 +265,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         if (self.peerConnection.getRemoteStreams) {
           self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
         } else {
-          // TODO: Shim this correctly for Safari
           // This should be the default, and we should fall back to getRemoteStreams if this is not supported
-          self.emit('setRemoteDescription', self.peerConnection.getSenders());
+          self.emit('setRemoteDescription', self.peerConnection.getReceivers());
         }
         self.emit('confirmed', self);
       });
