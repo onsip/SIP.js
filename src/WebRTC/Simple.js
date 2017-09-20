@@ -130,6 +130,10 @@ Simple.prototype.call = function(destination) {
   if (this.options.media.remote.video) {
     this.options.media.remote.video.autoplay = true;
   }
+  if (this.options.media.local && this.options.media.local.video) {
+    this.options.media.local.video.autoplay = true;
+    this.options.media.local.video.volume = 0;
+  }
   this.session = this.ua.invite(destination, {
     sessionDescriptionHandlerOptions: {
       constraints: {
@@ -239,8 +243,10 @@ Simple.prototype.setupRemoteMedia = function() {
   // If there is a video track, it will attach the video and audio to the same element
   var pc = this.session.sessionDescriptionHandler.peerConnection;
   var remoteStream;
-  if (pc.getReceivers) {
-    // TODO: Make this so that we just replace the media stream on the object
+
+  if (pc.getRemoteStreams) {
+    remoteStream = pc.getRemoteStreams()[0];
+  } else {
     remoteStream = new global.window.MediaStream();
     pc.getReceivers().forEach(function(receiver) {
       var track = receiver.track;
@@ -248,34 +254,64 @@ Simple.prototype.setupRemoteMedia = function() {
         remoteStream.addTrack(track);
       }
     });
-  } else {
-    remoteStream = pc.getRemoteStreams()[0];
+    var tracks = remoteStream.getTracks();
+    if (tracks.length > 2) {
+      remoteStream.removeTrack(tracks[0]);
+      remoteStream.removeTrack(tracks[1]);
+    }
   }
   if (this.video) {
     this.options.media.remote.video.srcObject = remoteStream;
-    this.options.media.remote.video.play();
+    this.options.media.remote.video.play().catch(function() {
+      this.logger.log('play was rejected');
+    }.bind(this));
   } else if (this.audio) {
     this.options.media.remote.audio.srcObject = remoteStream;
-    this.options.media.remote.audio.play();
+    this.options.media.remote.audio.play().catch(function() {
+      this.logger.log('play was rejected');
+    }.bind(this));
   }
 };
 
 Simple.prototype.setupLocalMedia = function() {
   if (this.video && this.options.media.local.video) {
-    // TODO: Forwards compatible
     var pc = this.session.sessionDescriptionHandler.peerConnection;
-
-    this.options.media.local.video.srcObject = pc.getLocalStreams()[0];
+    var localStream;
+    if (pc.getSenders) {
+      localStream = new global.window.MediaStream();
+      pc.getSenders().forEach(function(sender) {
+        var track = sender.track;
+        if (track && track.kind === 'video') {
+          localStream.addTrack(track);
+        }
+      });
+    } else {
+      localStream = pc.getLocalStreams()[0];
+    }
+    this.options.media.local.video.srcObject = localStream;
     this.options.media.local.video.volume = 0;
     this.options.media.local.video.play();
+  }
+};
+
+Simple.prototype.cleanupMedia = function() {
+  if (this.video) {
+    this.options.media.remote.video.srcObject = null;
+    this.options.media.remote.video.pause();
+    if (this.options.media.local.video) {
+      this.options.media.local.video.srcObject = null;
+      this.options.media.local.video.pause();
+    }
+  }
+  if (this.audio) {
+    this.options.media.remote.audio.srcObject = null;
+    this.options.media.remote.audio.pause();
   }
 };
 
 Simple.prototype.setupSession = function() {
   this.state = C.STATUS_NEW;
   this.emit('new', this.session);
-
-  this.setupLocalMedia();
 
   this.session.on('progress', this.onProgress.bind(this));
   this.session.on('accepted', this.onAccepted.bind(this));
@@ -312,9 +348,15 @@ Simple.prototype.onAccepted = function() {
   this.state = C.STATUS_CONNECTED;
   this.emit('connected', this.session);
 
+  this.setupLocalMedia();
   this.setupRemoteMedia();
   this.session.sessionDescriptionHandler.on('addTrack', function() {
     this.logger.log('A track has been added, triggering new remoteMedia setup');
+    this.setupRemoteMedia();
+  }.bind(this));
+
+  this.session.sessionDescriptionHandler.on('addStream', function() {
+    this.logger.log('A stream has been added, trigger new remoteMedia setup');
     this.setupRemoteMedia();
   }.bind(this));
 
@@ -342,6 +384,7 @@ Simple.prototype.onFailed = function() {
 Simple.prototype.onEnded = function() {
   this.state = C.STATUS_COMPLETED;
   this.emit('ended', this.session);
+  this.cleanupMedia();
 };
 
 return Simple;
