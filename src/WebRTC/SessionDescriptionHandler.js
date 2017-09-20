@@ -364,6 +364,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       self.emit('addTrack', e);
     };
 
+    this.peerConnection.onaddstream = function(e) {
+      self.logger.warn('Using deprecated stream API');
+      self.logger.log('stream added');
+      self.emit('addStream', e);
+    };
+
     // TODO: There is no remove track listener
     this.peerConnection.onremovestream = function(e) {
       self.logger.log('stream removed: '+ e.stream.id);
