@@ -5,7 +5,7 @@ You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com
 
 ### Node.js
 
-* [Install Node.js via package manager](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager)
+* [Install Node.js via package manager](https://github.com/nodejs/node/wiki)
 * [Install Node.js from sources](http://nodejs.org)
 
 ### Git
@@ -28,39 +28,30 @@ Clone a copy of the main SIP.js git repository by running:
 $ git clone https://github.com/onsip/SIP.js.git
 ```
 
-Install grunt-cli globally:
-```
-$ npm install -g grunt-cli
-```
-
 Enter the directory and install the Node.js dependencies:
 ```
 $ cd SIP.js && npm install
 ```
 
-Make sure you have `grunt` installed by testing:
+Build and test
 ```
-$ grunt -version
-```
-
-Finally, run `grunt` command with no arguments to get a complete version of SIP.js:
-```
-$ grunt
+$ npm run build && npm run commandLineTest
 ```
 
-The built version of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [JSLint](http://jslint.com/). There will be also a file named `dist/sip-devel.js` which is an exact copy of the uncompressed file.
+The built version of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [JSLint](http://jslint.com/). There are copies of each file with the version number in the title in that subdirectory as well
 
 
 ## Development version
 
-Run `grunt devel` for just generating the `dist/sip-devel.js` file. An uncompressed SIP.js source file named `sip-devel.js` will be created in `dist` directory.
+Run `npm run build` for just generating the `dist/sip.js` file. An uncompressed SIP.js source file named `sip.js` will be created in `dist` directory.
 
 
 ## Test units
 
-SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/). Test units use the `dist/sip-devel.js` file. Run the tests as follows:
+SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/). Test units use the `dist/sip.js` file. Run the tests as follows:
 ```
-$ grunt test
+$ npm run commandLineTest
+$ npm run browserTest
 
 Running "jasmine:components" (jasmine) task
 Testing jasmine specs via phantom
@@ -73,6 +64,5 @@ Testing jasmine specs via phantom
 
 If you modify `src/Grammar/src/Grammar.pegjs` then you need to recompile SIP.js grammar files. For that run the following task:
 ```
-$ grunt grammar
+$ npm run build
 ```
-And then build SIP.js again as explained above.

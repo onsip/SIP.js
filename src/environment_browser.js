@@ -31,16 +31,6 @@ module.exports = {
     error: function () {}
   },
 
-  MediaStream: getPrefixedProperty(toplevel, 'MediaStream'),
-  getUserMedia: getPrefixedProperty(toplevel.navigator, 'getUserMedia'),
-  RTCPeerConnection: getPrefixedProperty(toplevel, 'RTCPeerConnection'),
-  RTCSessionDescription: getPrefixedProperty(toplevel, 'RTCSessionDescription'),
-
   addEventListener: getPrefixedProperty(toplevel, 'addEventListener'),
-  removeEventListener: getPrefixedProperty(toplevel, 'removeEventListener'),
-  HTMLMediaElement: toplevel.HTMLMediaElement,
-
-  attachMediaStream: toplevel.attachMediaStream,
-  createObjectURL: toplevel.URL && toplevel.URL.createObjectURL,
-  revokeObjectURL: toplevel.URL && toplevel.URL.revokeObjectURL
+  removeEventListener: getPrefixedProperty(toplevel, 'removeEventListener')
 };

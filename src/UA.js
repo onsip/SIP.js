@@ -2,11 +2,11 @@
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
- * @param {function returning SIP.MediaHandler} [configuration.mediaHandlerFactory]
- *        A function will be invoked by each of the UA's Sessions to build the MediaHandler for that Session.
- *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) MediaHandler.
+ * @param {function returning SIP.sessionDescriptionHandler} [configuration.sessionDescriptionHandlerFactory]
+ *        A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
+ *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  *
- * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [configuration.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  */
 module.exports = function (SIP, environment) {
 var UA,
@@ -227,13 +227,13 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  * @param {String} target
  * @param {Object} views
- * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [options.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  *
  * @throws {TypeError}
  *
  */
-UA.prototype.invite = function(target, options) {
-  var context = new SIP.InviteClientContext(this, target, options);
+UA.prototype.invite = function(target, options, modifiers) {
+  var context = new SIP.InviteClientContext(this, target, options, modifiers);
 
   this.afterConnected(context.invite.bind(context));
   this.emit('inviteSent', context);
@@ -590,7 +590,6 @@ UA.prototype.destroyTransaction = function(transaction) {
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message, earlySubscription,
     method = request.method,
-    transaction,
     replaces,
     replacedDialog,
     self = this;
@@ -643,7 +642,7 @@ UA.prototype.receiveRequest = function(request) {
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new SIP.ServerContext(this, request);
+    new SIP.ServerContext(this, request);
   }
 
   // Initial Request
@@ -670,17 +669,9 @@ UA.prototype.receiveRequest = function(request) {
           }
         }
 
-        var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
-        if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request);
-          session.replacee = replacedDialog && replacedDialog.owner;
-          session.on('invite', function() {
-            self.emit('invite', this);
-          });
-        } else {
-          this.logger.warn('INVITE received but WebRTC is not supported');
-          request.reply(488);
-        }
+        session = new SIP.InviteServerContext(this, request);
+        session.replacee = replacedDialog && replacedDialog.owner;
+        self.emit('invite', session);
         break;
       case SIP.C.BYE:
         // Out of dialog BYE received
@@ -927,10 +918,7 @@ UA.prototype.loadConfig = function(configuration) {
       userAgentString: SIP.C.USER_AGENT,
 
       // Session parameters
-      iceCheckingTimeout: 5000,
       noAnswerTimeout: 60,
-      stunServers: ['stun:stun.l.google.com:19302'],
-      turnServers: [],
 
       // Logging parameters
       traceSip: false,
@@ -940,8 +928,13 @@ UA.prototype.loadConfig = function(configuration) {
       hackIpInContact: false,
       hackWssInTransport: false,
       hackAllowUnregisteredOptionTags: false,
-      hackCleanJitsiSdpImageattr: false,
-      hackStripTcp: false,
+
+      // Session Description Handler Options
+      sessionDescriptionHandlerFactoryOptions: {
+        constraints: {},
+        iceCheckingTimeout: 5000,
+        rtcConfiguration: {},
+      },
 
       contactName: SIP.Utils.createRandomToken(8), // user name in user part
       contactTransport: 'ws',
@@ -958,7 +951,7 @@ UA.prototype.loadConfig = function(configuration) {
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
 
-      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+      sessionDescriptionHandlerFactory: require('./WebRTC/SessionDescriptionHandler')(SIP).defaultFactory,
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);
@@ -1006,10 +999,6 @@ UA.prototype.loadConfig = function(configuration) {
     }
   }
 
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
-
-  var emptyArraysAllowed = ['stunServers', 'turnServers'];
-
   // Check Optional parameters
   for(parameter in configCheck.optional) {
     aliasUnderscored(parameter, this.logger);
@@ -1017,7 +1006,7 @@ UA.prototype.loadConfig = function(configuration) {
       value = configuration[parameter];
 
       // If the parameter value is an empty array, but shouldn't be, apply its default value.
-      if (value instanceof Array && value.length === 0 && emptyArraysAllowed.indexOf(parameter) < 0) { continue; }
+      if (value instanceof Array && value.length === 0) { continue; }
 
       // If the parameter value is null, empty string, or undefined then apply its default value.
       if(value === null || value === "" || value === undefined) { continue; }
@@ -1121,9 +1110,6 @@ UA.prototype.loadConfig = function(configuration) {
     }
   };
 
-  // media overrides mediaConstraints
-  SIP.Utils.optionsOverride(settings, 'media', 'mediaConstraints', true, this.logger);
-
   var skeleton = {};
   // Fill the value of the configuration_skeleton
   for(parameter in settings) {
@@ -1141,7 +1127,7 @@ UA.prototype.loadConfig = function(configuration) {
     switch(parameter) {
       case 'uri':
       case 'registrarServer':
-      case 'mediaHandlerFactory':
+      case 'sessionDescriptionHandlerFactory':
         this.logger.log('· ' + parameter + ': ' + settings[parameter]);
         break;
       case 'password':
@@ -1291,12 +1277,6 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      iceCheckingTimeout: function(iceCheckingTimeout) {
-        if(SIP.Utils.isDecimal(iceCheckingTimeout)) {
-          return Math.max(500, iceCheckingTimeout);
-        }
-      },
-
       hackWssInTransport: function(hackWssInTransport) {
         if (typeof hackWssInTransport === 'boolean') {
           return hackWssInTransport;
@@ -1306,18 +1286,6 @@ UA.prototype.getConfigurationCheck = function () {
       hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
         if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
           return hackAllowUnregisteredOptionTags;
-        }
-      },
-
-      hackCleanJitsiSdpImageattr: function(hackCleanJitsiSdpImageattr) {
-        if (typeof hackCleanJitsiSdpImageattr === 'boolean') {
-          return hackCleanJitsiSdpImageattr;
-        }
-      },
-
-      hackStripTcp: function(hackStripTcp) {
-        if (typeof hackStripTcp === 'boolean') {
-          return hackStripTcp;
         }
       },
 
@@ -1447,78 +1415,10 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      stunServers: function(stunServers) {
-        var idx, length, stun_server;
-
-        if (typeof stunServers === 'string') {
-          stunServers = [stunServers];
-        } else if (!(stunServers instanceof Array)) {
-          return;
-        }
-
-        length = stunServers.length;
-        for (idx = 0; idx < length; idx++) {
-          stun_server = stunServers[idx];
-          if (!(/^stuns?:/.test(stun_server))) {
-            stun_server = 'stun:' + stun_server;
-          }
-
-          if(SIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
-            return;
-          } else {
-            stunServers[idx] = stun_server;
-          }
-        }
-        return stunServers;
-      },
-
       traceSip: function(traceSip) {
         if (typeof traceSip === 'boolean') {
           return traceSip;
         }
-      },
-
-      turnServers: function(turnServers) {
-        var idx, jdx, length, turn_server, num_turn_server_urls, url;
-
-        if (turnServers instanceof Array) {
-          // Do nothing
-        } else {
-          turnServers = [turnServers];
-        }
-
-        length = turnServers.length;
-        for (idx = 0; idx < length; idx++) {
-          turn_server = turnServers[idx];
-          //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
-          if (turn_server.server) {
-            turn_server.urls = [turn_server.server];
-          }
-
-          if (!turn_server.urls) {
-            return;
-          }
-
-          if (turn_server.urls instanceof Array) {
-            num_turn_server_urls = turn_server.urls.length;
-          } else {
-            turn_server.urls = [turn_server.urls];
-            num_turn_server_urls = 1;
-          }
-
-          for (jdx = 0; jdx < num_turn_server_urls; jdx++) {
-            url = turn_server.urls[jdx];
-
-            if (!(/^turns?:/.test(url))) {
-              url = 'turn:' + url;
-            }
-
-            if(SIP.Grammar.parse(url, 'turn_URI') === -1) {
-              return;
-            }
-          }
-        }
-        return turnServers;
       },
 
       rtcpMuxPolicy: function(rtcpMuxPolicy) {
@@ -1571,27 +1471,15 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      mediaHandlerFactory: function(mediaHandlerFactory) {
-        if (mediaHandlerFactory instanceof Function) {
-          var promisifiedFactory = function promisifiedFactory () {
-            var mediaHandler = mediaHandlerFactory.apply(this, arguments);
+      sessionDescriptionHandlerFactory: function(sessionDescriptionHandlerFactory) {
+        if (sessionDescriptionHandlerFactory instanceof Function) {
+          return sessionDescriptionHandlerFactory;
+        }
+      },
 
-            function patchMethod (methodName) {
-              var method = mediaHandler[methodName];
-              if (method.length > 1) {
-                var callbacksFirst = methodName === 'getDescription';
-                mediaHandler[methodName] = SIP.Utils.promisify(mediaHandler, methodName, callbacksFirst);
-              }
-            }
-
-            patchMethod('getDescription');
-            patchMethod('setDescription');
-
-            return mediaHandler;
-          };
-
-          promisifiedFactory.isSupported = mediaHandlerFactory.isSupported;
-          return promisifiedFactory;
+      sessionDescriptionHandlerFactoryOptions: function(options) {
+        if (typeof options === 'object') {
+          return options;
         }
       },
 

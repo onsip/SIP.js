@@ -280,7 +280,7 @@ Transport.prototype = {
     // WebSocket binary message.
     else if (typeof data !== 'string') {
       try {
-        data = String.fromCharCode.apply(null, new Uint8Array(data));
+        data = String.fromCharCode.apply(null, Buffer.alloc(data));
       } catch(evt) {
         this.logger.warn('received WebSocket binary message failed to be converted into string, message discarded');
         return;

@@ -82,10 +82,6 @@ Dialog = function(owner, message, type, state) {
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route').reverse();
 
-    //RENDERBODY
-    if (this.state === C.STATUS_EARLY && (!owner.hasOffer)) {
-      this.mediaHandler = owner.mediaHandlerFactory(owner);
-    }
   }
 
   this.logger = owner.ua.getLogger('sip.dialog', this.id.toString());
@@ -113,8 +109,9 @@ Dialog.prototype = {
 
   terminate: function() {
     this.logger.log('dialog ' + this.id.toString() + ' deleted');
-    if (this.mediaHandler && this.state !== C.STATUS_CONFIRMED) {
-      this.mediaHandler.peerConnection.close();
+    if (this.sessionDescriptionHandler && this.state !== C.STATUS_CONFIRMED) {
+      // TODO: This should call .close() on the handler when implemented
+      this.sessionDescriptionHandler.close();
     }
     delete this.owner.ua.dialogs[this.id.toString()];
   },
@@ -194,10 +191,6 @@ Dialog.prototype = {
 
               this.removeListener('stateChanged', stateChanged);
               self.uas_pending_reply = false;
-
-              if (self.uac_pending_reply === false) {
-                self.owner.onReadyToReinvite();
-              }
             }
           });
         }

@@ -1,13 +1,22 @@
-# Doc: http://manuel.manuelles.nl/blog/2012/06/22/integrate-travis-ci-into-grunt/
-
 sudo: false
 
 language: node_js
 
+script:
+  - npm run buildAndTest
+
 node_js:
-  - "0.12"
-  - "4.2"
+  - "4"
   - "stable"
+
+env:
+  - CXX=g++-4.8
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
 
 cache:
   directories:

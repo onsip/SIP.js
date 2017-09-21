@@ -49,5 +49,15 @@ module.exports = {
     };
     exception.prototype = new Error();
     return exception;
+  }()),
+
+  RenegotiationError: (function(){
+    var exception = function(message) {
+      this.code = 5;
+      this.name = 'RENEGOTIATION_ERROR';
+      this.message = message;
+    };
+    exception.prototype = new Error();
+    return exception;
   }())
 };
