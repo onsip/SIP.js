@@ -254,11 +254,6 @@ Simple.prototype.setupRemoteMedia = function() {
         remoteStream.addTrack(track);
       }
     });
-    var tracks = remoteStream.getTracks();
-    if (tracks.length > 2) {
-      remoteStream.removeTrack(tracks[0]);
-      remoteStream.removeTrack(tracks[1]);
-    }
   }
   if (this.video) {
     this.options.media.remote.video.srcObject = remoteStream;
