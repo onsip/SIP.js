@@ -257,7 +257,7 @@ Simple.prototype.message = function(destination, message) {
     return;
   }
   this.ua.message(destination, message);
-}
+};
 
 // Private Helpers
 
