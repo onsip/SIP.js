@@ -113,6 +113,10 @@ var Simple = function (options) {
     this.setupSession();
   }.bind(this));
 
+  this.ua.on('message', function(message) {
+    this.emit('message', message);
+  }.bind(this));
+
   return this;
 };
 
@@ -121,7 +125,7 @@ Simple.prototype = Object.create(SIP.EventEmitter.prototype);
 // Public
 
 Simple.prototype.call = function(destination) {
-  if (!this.ua && !this.ua.registered) {
+  if (!this.ua || !this.ua.registered) {
     this.logger.warn('A registered UA is required for calling');
     return;
   }
@@ -242,6 +246,18 @@ Simple.prototype.sendDTMF = function(tone) {
   this.logger.log('Sending DTMF tone: ' + tone);
   this.session.dtmf(tone);
 };
+
+Simple.prototype.message = function(destination, message) {
+  if (!this.ua || !this.ua.registered) {
+    this.logger.warn('A registered UA is required to send a message');
+    return;
+  }
+  if (!destination || !message) {
+    this.logger.warn('A destination and message are required to send a message');
+    return;
+  }
+  this.ua.message(destination, message);
+}
 
 // Private Helpers
 
