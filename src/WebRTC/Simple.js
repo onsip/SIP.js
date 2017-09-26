@@ -71,13 +71,18 @@ var Simple = function (options) {
   }
 
   this.ua = new SIP.UA({
+    // User Configurable Options
     wsServers:         this.options.ua.wsServers,
     uri:               this.options.ua.uri,
     authorizationUser: this.options.ua.authorizationUser,
     password:          this.options.ua.password,
-    sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
+    displayName:       this.options.ua.displayName,
+    // Undocumented "Advanced" Options
+    traceSip:          this.options.ua.traceSip,
+    userAgentString:   this.options.ua.userAgentString,
+    // Fixed Options
     register:          true,
-    traceSip:          true
+    sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
   });
 
   this.state = C.STATUS_NULL;
@@ -104,6 +109,7 @@ var Simple = function (options) {
       return;
     }
     this.session = session;
+    this.emit('ringing', this.session);
     this.setupSession();
   }.bind(this));
 
