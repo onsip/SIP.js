@@ -89,7 +89,7 @@ SIP.Subscription.prototype = {
   },
 
   receiveResponse: function(response) {
-    var expires, sub = this,
+    var expires, requestedExpires, sub = this,
         cause = SIP.Utils.getReasonPhrase(response.status_code);
 
     if ((this.state === 'notify_wait' && response.status_code >= 300) ||
@@ -100,9 +100,14 @@ SIP.Subscription.prototype = {
       //As we don't support RFC 5839 or other extensions where the NOTIFY is optional, timer N will not be cleared
       //SIP.Timers.clearTimeout(this.timers.N);
 
-      expires = response.getHeader('Expires');
+      expires = parseInt( response.getHeader('Expires') );
+      for( var i = 0;  i < this.extraHeaders.length && !requestedExpires; i++ ) {
+        var arr = /Expires:\s+(\d*)/.exec( this.extraHeaders[i] ) ;
+        if( arr ) { requestedExpires = parseInt( arr[1] ); }
+      }
 
-      if (expires && expires <= this.expires) {
+
+      if (expires && expires <= requestedExpires) {
         // Preserve new expires value for subsequent requests
         this.expires = expires;
         this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
