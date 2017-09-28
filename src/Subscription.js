@@ -30,6 +30,7 @@ SIP.Subscription = function (ua, target, event, options) {
   } else {
     this.expires = options.expires;
   }
+  this.requestedExpires = this.expires;
 
   options.extraHeaders.push('Event: ' + this.event);
   options.extraHeaders.push('Expires: ' + this.expires);
@@ -102,7 +103,7 @@ SIP.Subscription.prototype = {
 
       expires = response.getHeader('Expires');
 
-      if (expires && expires <= this.expires) {
+      if (expires && expires <= this.requestedExpires) {
         // Preserve new expires value for subsequent requests
         this.expires = expires;
         this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
