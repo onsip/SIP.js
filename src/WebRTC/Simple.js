@@ -121,6 +121,7 @@ var Simple = function (options) {
 };
 
 Simple.prototype = Object.create(SIP.EventEmitter.prototype);
+Simple.C = C;
 
 // Public
 
