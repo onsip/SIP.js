@@ -109,8 +109,8 @@ var Simple = function (options) {
       return;
     }
     this.session = session;
-    this.emit('ringing', this.session);
     this.setupSession();
+    this.emit('ringing', this.session);
   }.bind(this));
 
   this.ua.on('message', function(message) {
@@ -126,7 +126,7 @@ Simple.C = C;
 // Public
 
 Simple.prototype.call = function(destination) {
-  if (!this.ua || !this.ua.registered) {
+  if (!this.ua || !this.ua.isRegistered()) {
     this.logger.warn('A registered UA is required for calling');
     return;
   }
@@ -249,7 +249,7 @@ Simple.prototype.sendDTMF = function(tone) {
 };
 
 Simple.prototype.message = function(destination, message) {
-  if (!this.ua || !this.ua.registered) {
+  if (!this.ua || !this.ua.isRegistered()) {
     this.logger.warn('A registered UA is required to send a message');
     return;
   }
@@ -292,7 +292,7 @@ Simple.prototype.setupRemoteMedia = function() {
 };
 
 Simple.prototype.setupLocalMedia = function() {
-  if (this.video && this.options.media.local.video) {
+  if (this.video && this.options.media.local && this.options.media.local.video) {
     var pc = this.session.sessionDescriptionHandler.peerConnection;
     var localStream;
     if (pc.getSenders) {
@@ -316,7 +316,7 @@ Simple.prototype.cleanupMedia = function() {
   if (this.video) {
     this.options.media.remote.video.srcObject = null;
     this.options.media.remote.video.pause();
-    if (this.options.media.local.video) {
+    if (this.options.media.local && this.options.media.local.video) {
       this.options.media.local.video.srcObject = null;
       this.options.media.local.video.pause();
     }
