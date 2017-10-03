@@ -169,8 +169,6 @@ Dialog.prototype = {
           return true;
         }
         return false;
-    } else if(request.cseq > this.remote_seqnum) {
-      this.remote_seqnum = request.cseq;
     }
 
     switch(request.method) {
@@ -178,9 +176,10 @@ Dialog.prototype = {
       case SIP.C.INVITE:
         if (this.uac_pending_reply === true) {
           request.reply(491);
-        } else if (this.uas_pending_reply === true) {
+        } else if (this.uas_pending_reply === true && request.cseq > this.remote_seqnum) {
           var retryAfter = (Math.random() * 10 | 0) + 1;
           request.reply(500, null, ['Retry-After:' + retryAfter]);
+          this.remote_seqnum = request.cseq;
           return false;
         } else {
           this.uas_pending_reply = true;
@@ -215,6 +214,10 @@ Dialog.prototype = {
         }
         break;
     }
+
+    if(request.cseq > this.remote_seqnum) {
+     this.remote_seqnum = request.cseq;
+   }
 
     return true;
   },
