@@ -101,6 +101,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
    */
   getDescription: {writable: true, value: function (options, modifiers) {
     var self = this;
+    var shouldAcquireMedia = true;
 
     if (this.session.disableRenegotiation) {
       this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
@@ -110,6 +111,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
+    }
+
+    if (this.constraints && options.constraints && this.constraints === options.constraints) {
+      shouldAcquireMedia = false;
     }
 
     // Merge passed constraints with saved constraints and save
@@ -123,7 +128,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     modifiers = modifiers.concat(this.modifiers);
 
     // Check to see if the peerConnection already has a local description
-    if (this.peerConnection.localDescription && this.peerConnection.localDescription.sdp && this.peerConnection.localDescription.sdp !== '') {
+    if (!shouldAcquireMedia && this.peerConnection.localDescription && this.peerConnection.localDescription.sdp && this.peerConnection.localDescription.sdp !== '') {
       return this.createOfferOrAnswer({}, modifiers).then(function(sdp) {
         return {
           body: sdp,
