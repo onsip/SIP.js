@@ -28,6 +28,7 @@ var Session, InviteServerContext, InviteClientContext,
 Session = function (sessionDescriptionHandlerFactory) {
   this.status = C.STATUS_NULL;
   this.dialog = null;
+  this.pendingReinvite = false;
   this.earlyDialogs = {};
   if (!sessionDescriptionHandlerFactory) {
     throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
@@ -448,6 +449,10 @@ Session.prototype = {
     };
   },
 
+  reinvite: function(options) {
+    return this.sendReinvite(options);
+  },
+
   /**
    * In dialog INVITE Reception
    * @private
@@ -494,6 +499,11 @@ Session.prototype = {
   },
 
   sendReinvite: function(options) {
+    if (this.pendingReinvite) {
+      this.logger.warn('Reinvite in progress. Please wait until complete, then try again.');
+      return;
+    }
+    this.pendingReinvite = true;
     options = options || {};
     options.modifiers = options.modifiers || [];
 
@@ -516,6 +526,7 @@ Session.prototype = {
       });
     }).catch(function onFailure(e) {
       if (e instanceof SIP.Exceptions.RenegotiationError) {
+        self.pendingReinvite = false;
         self.emit('renegotiationError', e);
         self.logger.warn('Renegotiation Error');
         self.logger.warn(e);
@@ -627,9 +638,9 @@ Session.prototype = {
         // TODO: Handle re-INVITE w/o SDP
         // 17.1.1.1 - For each final response that is received at the client transaction, the client transaction sends an ACK,
         this.emit("ack", response.transaction.sendACK());
+        this.pendingReinvite = false;
         // TODO: All of these timers should move into the Transaction layer
         SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
-
         if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
           this.logger.error('2XX response received to re-invite but did not have a description');
           this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('2XX response received to re-invite but did not have a description'));
@@ -649,6 +660,7 @@ Session.prototype = {
         break;
       default:
         this.disableRenegotiation = true;
+        this.pendingReinvite = false;
         this.logger.log('Received a non 1XX or 2XX response to a re-invite');
         this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('Invalid response to a re-invite'));
     }
