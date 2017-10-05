@@ -404,7 +404,7 @@ Session.prototype = {
   /**
    * Hold
    */
-  hold: function(options) {
+  hold: function(options, modifiers) {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -415,6 +415,12 @@ Session.prototype = {
       return;
     }
 
+    options = options || {};
+
+    if (modifiers) {
+      options.modifiers = modifiers;
+    }
+
     this.onhold('local');
 
     this.sendReinvite(options);
@@ -423,7 +429,7 @@ Session.prototype = {
   /**
    * Unhold
    */
-  unhold: function(options) {
+  unhold: function(options, modifiers) {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -432,6 +438,12 @@ Session.prototype = {
     if (!this.isOnHold().local) {
       this.logger.log('Session is not on hold, cannot unhold it');
       return;
+    }
+
+    options = options || {};
+
+    if (modifiers) {
+      options.modifiers = modifiers;
     }
 
     this.onunhold('local');
@@ -449,7 +461,13 @@ Session.prototype = {
     };
   },
 
-  reinvite: function(options) {
+  reinvite: function(options, modifiers) {
+    options = options || {};
+
+    if (modifiers) {
+      options.modifiers = modifiers;
+    }
+
     return this.sendReinvite(options);
   },
 
