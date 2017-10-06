@@ -33,7 +33,7 @@ var SessionDescriptionHandler = function(session, options) {
     RTCSessionDescription : environment.RTCSessionDescription
   };
 
-  this.initPeerConnection(this.options);
+  this.initPeerConnection(this.options.peerConnectionOptions);
 
   this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
 
