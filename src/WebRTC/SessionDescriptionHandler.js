@@ -343,6 +343,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
   initPeerConnection: {writable: true, value: function initPeerConnection(options) {
     var self = this;
+    options = options || {};
     options.rtcConfiguration = options.rtcConfiguration || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
