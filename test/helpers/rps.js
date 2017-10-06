@@ -34,7 +34,8 @@ RPSMediaHandler.prototype = {
   mute: new Function(),
   unmute: new Function(),
 
-  getDescription: function (onSuccess, onFailure, mediaHint) {
+  getDescription: function (mediaHint, modifiers) {
+    var self = this;
         /*
      * Here, you would asynchronously request an offer or answer
      * from your media server.  This probably involves creating a
@@ -48,30 +49,34 @@ RPSMediaHandler.prototype = {
      */
 
     // 'Initialize' your media session.
-    mediaHint || (mediaHint = {});
-    if (['rock', 'paper', 'scissors'].indexOf(mediaHint.gesture) < 0) {
-      this.timeout = setTimeout(function () {
-        delete this.timeout;
-        onFailure(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
-      }.bind(this), 0);
-      return;
-    }
 
-    this.myGesture = mediaHint.gesture;
-    this.checkGestures();
+    return new SIP.Utils.Promise(function(resolve, reject) {
+      mediaHint || (mediaHint = {});
+      if (['rock', 'paper', 'scissors'].indexOf(mediaHint.gesture) < 0) {
+        self.timeout = setTimeout(function () {
+          delete self.timeout;
+          reject(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
+        }, 0);
+        return;
+      }
 
-    // Provide a description to the session using the callbacks.
-    this.timeout = setTimeout(function () {
-      delete this.timeout;
-      onSuccess({ body: this.myGesture, contentType: 'text/plain' });
-    }.bind(this), 0);
+      self.myGesture = mediaHint.gesture;
+      self.checkGestures();
+
+      // Provide a description to the session using the callbacks.
+      self.timeout = setTimeout(function () {
+        delete self.timeout;
+        resolve({ body: self.myGesture, contentType: 'text/plain' });
+      }, 0);
+    });
   },
 
   hasDescription: function (message) {
     return true;
   },
 
-  setDescription: function (message, onSuccess, onFailure) {
+  setDescription: function (sessionDescription, constraints, modifiers) {
+    var self = this;
         /*
      * Here, we receive the description of the remote end's offer/answer.
      * In normal WebRTC calls, this would be an RTCSessionDescription with
@@ -82,22 +87,23 @@ RPSMediaHandler.prototype = {
      * String gesture indication the other end chose.
      */
     // Set their gesture based on the remote description
-    var description = message.body;
-    if (['rock', 'paper', 'scissors'].indexOf(description) < 0) {
-      this.timeout = setTimeout(function () {
-        delete this.timeout;
-        onFailure(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
-      }.bind(this), 0);
-    }
+    return new SIP.Utils.Promise(function(resolve, reject) {
+      var description = sessionDescription;
+      if (['rock', 'paper', 'scissors'].indexOf(description) < 0) {
+        self.timeout = setTimeout(function () {
+          delete self.timeout;
+          reject(new SIP.Exceptions.NotSupportedError('Gesture unsupported'));
+        }, 0);
+      }
 
-    this.theirGesture = description;
-    this.checkGestures();
+      self.theirGesture = description;
+      self.checkGestures();
 
-    this.timeout = setTimeout(function () {
-      delete this.timeout;
-      onSuccess();
-    }.bind(this), 0);
-
+      self.timeout = setTimeout(function () {
+        delete self.timeout;
+        resolve();
+      }, 0);
+    });
   },
 
     /*
