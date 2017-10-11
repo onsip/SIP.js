@@ -8,7 +8,7 @@
     "./src/environment.js": "./src/environment_browser.js"
   },
   "homepage": "http://sipjs.com",
-  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
+  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/aboutus/)",
   "contributors": [
     {
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
