@@ -2,13 +2,13 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
   },
   "homepage": "http://sipjs.com",
-  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
+  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/aboutus/)",
   "contributors": [
     {
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
