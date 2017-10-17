@@ -3,7 +3,7 @@ module.exports = function (SIP, environment) {
 
 var DTMF = require('./Session/DTMF')(SIP);
 
-var Session, InviteServerContext, InviteClientContext,
+var Session, InviteServerContext, InviteClientContext, ReferServerContext,
  C = {
     //Session states
     STATUS_NULL:                        0,
@@ -605,27 +605,12 @@ Session.prototype = {
       case SIP.C.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
-          var hasReferListener = this.listeners('refer').length,
-              notifyBody;
-
+          var referContext = new SIP.ReferServerContext(this.ua, request);
+          var hasReferListener = this.listeners('referRequested').length;
           if (hasReferListener) {
-            request.reply(202, 'Accepted');
-            notifyBody = 'SIP/2.0 100 Trying';
-
-            this.sendRequest(SIP.C.NOTIFY, {
-              extraHeaders:[
-                'Event: refer',
-                'Subscription-State: terminated',
-                'Content-Type: message/sipfrag'
-              ],
-              body: notifyBody,
-              receiveResponse: function() {}
-            });
-
-            this.emit('refer', request);
+            this.emit('referRequested', referContext);
           } else {
-            // RFC 3515.2.4.2: 'the UA MAY decline the request.'
-            request.reply(603, 'Declined');
+            referContext.accept({followRefer: true});
           }
         }
         break;
@@ -1907,5 +1892,123 @@ InviteClientContext.prototype = {
 };
 
 SIP.InviteClientContext = InviteClientContext;
+
+ReferServerContext = function(ua, request) {
+  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
+
+  this.status = C.STATUS_INVITE_RECEIVED;
+  this.from_tag = request.from_tag;
+  this.id = request.call_id + this.from_tag;
+  this.request = request;
+  this.contact = this.ua.contact.toString();
+
+  this.referredSession = this.ua.findSession(request);
+
+  this.receiveNonInviteResponse = function () {};
+
+  this.logger = ua.getLogger('sip.referservercontext', this.id);
+
+  // RFC 3515 2.4.1
+  if (!this.request.hasHeader('refer-to')) {
+    this.logger.warn('Invalid REFER packet. A refer-to header is required. Rejecting refer.');
+    this.reject();
+    return;
+  }
+
+  this.referTo = this.request.parseHeader('refer-to');
+
+  this.status = C.STATUS_WAITING_FOR_ANSWER;
+
+
+  // TODO: 100 rel
+
+  // TODO: Expires
+
+};
+
+ReferServerContext.prototype = {
+  // TODO: Event emission
+  progress: function() {
+    this.sendNotify('SIP/2.0 100 Trying');
+    this.emit('referProgressed', this);
+    this.referredSession.emit('referProgressed', this);
+  },
+
+  reject: function() {
+    if (this.status  === C.STATUS_TERMINATED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+    this.logger.log('Rejecting refer');
+    this.status = C.STATUS_TERMINATED;
+    this.request.reply(603, 'Declined');
+    this.emit('referRejected', this);
+    this.referredSession.emit('referRejected', this);
+  },
+
+  accept: function(options, modifiers) {
+    options = options || {};
+    // TODO: Merge options and modifiers with what is on the referrred session.
+
+    if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
+      this.status = C.STATUS_ANSWERED;
+    } else {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+
+    if (options.followRefer) {
+      var target = this.referTo.uri;
+      if (!target.scheme.match("^sips?$")) {
+        this.logger.error('SIP.js can only automatically follow SIP refer target');
+        this.reject();
+        return;
+      }
+
+      this.request.reply(202, 'Accepted');
+
+      var extraHeaders = [];
+      var replaces = target.getHeader('Replaces');
+      if (replaces !== undefined) {
+        extraHeaders.push('Replaces: ' + decodeURIComponent(replaces));
+      }
+
+      target.clearHeaders();
+
+      this.referredSession.hold();
+
+      // TODO: options, modifiers
+      this.targetSession = this.ua.invite(target, options, modifiers);
+
+      this.targetSession.once('progress', this.progress);
+      this.targetSession.once('accepted', function() {
+        this.sendNotify('SIP/2.0 200 OK');
+        this.emit('referAccepted', this);
+        this.referredSession.emit('referAccepted', this);
+      }.bind(this));
+      this.targetSession.once('rejected', this.reject);
+      this.targetSession.once('failed', this.reject);
+
+    } else {
+      this.sendNotify('SIP/2.0 200 OK');
+      this.emit('referAccepted', this);
+      this.referredSession.emit('referAccepted', this);
+    }
+  },
+
+  // Private function to send notifies to the referror
+  sendNotify: function(body) {
+    this.referredSession.sendRequest(SIP.C.NOTIFY, {
+      // These headers are always static
+      extraHeaders:[
+        'Event: refer',
+        'Subscription-State: terminated',
+        'Content-Type: message/sipfrag'
+      ],
+      body: body,
+      receiveResponse: function() {}
+    });
+  }
+};
+
+SIP.ReferServerContext = ReferServerContext;
 
 };
