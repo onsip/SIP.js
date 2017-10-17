@@ -932,8 +932,10 @@ UA.prototype.loadConfig = function(configuration) {
       // Session Description Handler Options
       sessionDescriptionHandlerFactoryOptions: {
         constraints: {},
-        iceCheckingTimeout: 5000,
-        rtcConfiguration: {},
+        peerConnectionOptions: {
+          iceCheckingTimeout: 5000,
+          rtcConfiguration: {}
+        }
       },
 
       contactName: SIP.Utils.createRandomToken(8), // user name in user part

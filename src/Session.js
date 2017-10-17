@@ -1415,6 +1415,8 @@ InviteClientContext = function(ua, target, options, modifiers) {
   this.renderbody = options.renderbody || null;
   this.rendertype = options.rendertype || 'text/plain';
 
+  // Session parameter initialization
+  this.from_tag = SIP.Utils.newTag();
   options.params.from_tag = this.from_tag;
 
   /* Do not add ;ob in initial forming dialog requests if the registration over
@@ -1455,9 +1457,6 @@ InviteClientContext = function(ua, target, options, modifiers) {
   if (this.status !== C.STATUS_NULL) {
     throw new SIP.Exceptions.InvalidStateError(this.status);
   }
-
-  // Session parameter initialization
-  this.from_tag = SIP.Utils.newTag();
 
   // OutgoingSession specific parameters
   this.isCanceled = false;
