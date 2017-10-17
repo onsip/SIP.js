@@ -381,7 +381,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     };
 
     this.startIceCheckingTimer = function () {
-      if (!self.iceCheckingTimer) {
+      if (!self.iceCheckingTimer && options.iceCheckingTimeout) {
         self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
           self.logger.log('RTCIceChecking Timeout Triggered after ' + options.iceCheckingTimeout + ' milliseconds');
           self.onIceCompleted.resolve(this);
