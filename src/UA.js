@@ -699,6 +699,19 @@ UA.prototype.receiveRequest = function(request) {
           request.reply(481, 'Subscription does not exist');
         }
         break;
+      case SIP.C.REFER:
+        if (this.configuration.allowOutOfDialogRefers) {
+          var referContext = new SIP.ReferServerContext(this, request);
+          var hasReferListener = this.listeners('outOfDialogReferRequest').length;
+          if (hasReferListener) {
+            this.emit('outOfDialogReferRequest', referContext);
+          } else {
+            referContext.accept({followRefer: true});
+          }
+          break;
+        }
+        request.reply(405);
+        break;
       default:
         request.reply(405);
         break;
@@ -960,6 +973,8 @@ UA.prototype.loadConfig = function(configuration) {
       }),
 
       allowLegacyNotifications: false,
+
+      allowOutOfDialogRefers: false,
     };
 
   // Pre-Configuration
