@@ -3,7 +3,7 @@ module.exports = function (SIP, environment) {
 
 var DTMF = require('./Session/DTMF')(SIP);
 
-var Session, InviteServerContext, InviteClientContext, ReferServerContext,
+var Session, InviteServerContext, InviteClientContext, ReferServerContext, ReferClientContext,
  C = {
     //Session states
     STATUS_NULL:                        0,
@@ -149,67 +149,17 @@ Session.prototype = {
 
   refer: function(target, options) {
     options = options || {};
-    var extraHeaders = (options.extraHeaders || []).slice(),
-        withReplaces =
-          target instanceof SIP.InviteServerContext ||
-          target instanceof SIP.InviteClientContext,
-        originalTarget = target;
-
-    if (target === undefined) {
-      throw new TypeError('Not enough arguments');
-    }
 
     // Check Session Status
     if (this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    // transform `target` so that it can be a Refer-To header value
-    if (withReplaces) {
-      //Attended Transfer
-      // B.transfer(C)
-      target = '"' + target.remoteIdentity.friendlyName + '" ' +
-        '<' + target.dialog.remote_target.toString() +
-        '?Replaces=' + target.dialog.id.call_id +
-        '%3Bto-tag%3D' + target.dialog.id.remote_tag +
-        '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
-    } else {
-      //Blind Transfer
-      // normalizeTarget allows instances of SIP.URI to pass through unaltered,
-      // so try to make one ahead of time
-      try {
-        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
-      } catch (e) {
-        this.logger.debug(".refer() cannot parse Refer_To from", target);
-        this.logger.debug("...falling through to normalizeTarget()");
-      }
+    this.referContext = new SIP.ReferClientContext(this.ua, this, target, options);
 
-      // Check target validity
-      target = this.ua.normalizeTarget(target);
-      if (!target) {
-        throw new TypeError('Invalid target: ' + originalTarget);
-      }
-    }
+    this.emit('referRequested', this.referContext);
 
-    extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
-    extraHeaders.push('Refer-To: '+ target);
-
-    // Send the request
-    this.sendRequest(SIP.C.REFER, {
-      extraHeaders: extraHeaders,
-      body: options.body,
-      receiveResponse: function (response) {
-        if ( ! /^2[0-9]{2}$/.test(response.status_code) ) {
-          return;
-        }
-        // hang up only if we transferred to a SIP address
-        if (withReplaces || (target.scheme && target.scheme.match("^sips?$"))) {
-          this.terminate();
-        }
-      }.bind(this)
-    });
-    return this;
+    this.referContext.refer();
   },
 
   followRefer: function followRefer (callback) {
@@ -615,6 +565,10 @@ Session.prototype = {
         }
         break;
       case SIP.C.NOTIFY:
+        if (this.referContext && request.hasHeader('event') && request.getHeader('event') === 'refer') {
+          this.referContext.receiveNotify(request);
+          return;
+        }
         request.reply(200, 'OK');
         this.emit('notify', request);
         break;
@@ -1892,6 +1846,103 @@ InviteClientContext.prototype = {
 };
 
 SIP.InviteClientContext = InviteClientContext;
+
+ReferClientContext = function(ua, applicant, target, options) {
+  this.options = options || {};
+  this.extraHeaders = (this.options.extraHeaders || []).slice();
+  this.ua = ua;
+
+  if (applicant === undefined || target === undefined) {
+    throw new TypeError('Not enough arguments');
+  }
+
+  this.applicant = applicant;
+
+  var withReplaces = target instanceof SIP.InviteServerContext ||
+                     target instanceof SIP.InviteClientContext;
+  if (withReplaces) {
+    // Attended Transfer
+    // All of these fields should be defined based on the check above
+    this.target = '"' + target.remoteIdentity.friendlyName + '" ' +
+        '<' + target.dialog.remote_target.toString() +
+        '?Replaces=' + target.dialog.id.call_id +
+        '%3Bto-tag%3D' + target.dialog.id.remote_tag +
+        '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>';
+  } else {
+    // Blind Transfer
+    // Refer-To: <sip:bob@example.com>
+    try {
+      this.target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
+    } catch (e) {
+      this.logger.debug(".refer() cannot parse Refer_To from", target);
+      this.logger.debug("...falling through to normalizeTarget()");
+    }
+
+    // Check target validity
+    this.target = this.ua.normalizeTarget(this.target);
+    if (!this.target) {
+      throw new TypeError('Invalid target: ' + target);
+    }
+  }
+
+  this.extraHeaders.push('Contact: '+ applicant.contact);
+  this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
+  this.extraHeaders.push('Refer-To: '+ this.target);
+};
+
+ReferClientContext.prototype = {
+
+  refer: function(options) {
+    // Passed options will override global options
+    options = options || this.options || {};
+
+    if (options.hold && this.applicant.hold) {
+      this.applicant.hold();
+    }
+
+    this.applicant.sendRequest(SIP.C.REFER, {
+      extraHeaders: this.extraHeaders,
+      body: options.body,
+      receiveResponse: function (response) {
+        if ( ! /^2[0-9]{2}$/.test(response.status_code) ) {
+          this.emit('referRequestAccepted', this);
+          return;
+        }
+      }.bind(this)
+    });
+    return this;
+  },
+
+  receiveNotify: function(request) {
+    // If we can correctly handle this, then we need to send a 200 OK!
+    if (request.hasHeader('Content-Type') && request.getHeader('Content-Type').search(/^message\/sipfrag/) !== -1) {
+      var messageBody = SIP.Grammar.parse(request.body, 'sipfrag');
+      if (messageBody === -1) {
+        request.reply(489, 'Bad Event');
+        return;
+      }
+      switch(true) {
+        case (/^1[0-9]{2}$/.test(messageBody.status_code)):
+          this.emit('referProgress', this);
+          break;
+        case (/^2[0-9]{2}$/.test(messageBody.status_code)):
+          this.emit('referAccepted', this);
+          if (!this.options.activeAfterTransfer && this.applicant.terminate) {
+            this.applicant.terminate();
+          }
+          break;
+        default:
+          this.emit('referRejected', this);
+          break;
+      }
+      request.reply(200);
+      return;
+    }
+    request.reply(489, 'Bad Event');
+  }
+};
+
+SIP.ReferClientContext = ReferClientContext;
 
 ReferServerContext = function(ua, request) {
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);

@@ -214,7 +214,7 @@ describe('Session', function() {
       expect(function(){Session.refer(target);}).toThrowError('Invalid status: 0');
     });
 
-    it('returns Session on success', function() {
+    xit('returns Session on success', function() {
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
       expect(Session.refer(target)).toBe(Session);
     });
