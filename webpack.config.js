@@ -104,9 +104,11 @@ module.exports = {
   },
   plugins: [
     new UglifyJSPlugin({
-      include: ['sip.min.js'],
-      output: {
-        ascii_only: true
+      test: /^sip\.min\.js$/,
+      uglifyOptions: {
+        output: {
+          ascii_only: true
+        }
       }
     }),
     new webpack.BannerPlugin({

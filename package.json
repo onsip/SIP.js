@@ -26,19 +26,19 @@
     "javascript"
   ],
   "devDependencies": {
-    "eslint": "^4.5.0",
+    "eslint": "^4.9.0",
     "eslint-loader": "^1.9.0",
-    "jasmine-core": "^2.6.4",
-    "karma": "^1.7.0",
+    "jasmine-core": "^2.8.0",
+    "karma": "^1.7.1",
     "karma-cli": "^1.0.1",
     "karma-jasmine": "^1.1.0",
     "karma-jasmine-html-reporter": "^0.2.2",
-    "karma-mocha-reporter": "^2.2.3",
+    "karma-mocha-reporter": "^2.2.5",
     "karma-phantomjs-launcher": "^1.0.4",
     "pegjs": "^0.10.0",
-    "pegjs-loader": "^0.5.2",
-    "uglifyjs-webpack-plugin": "^0.4.6",
-    "webpack": "^3.5.5"
+    "pegjs-loader": "^0.5.4",
+    "uglifyjs-webpack-plugin": "^1.0.1",
+    "webpack": "^3.8.1"
   },
   "engines": {
     "node": ">=4.0"
