@@ -37,7 +37,7 @@ require('./RegisterContext')(SIP);
 SIP.SessionDescriptionHandler = require('./SessionDescriptionHandler')(SIP.EventEmitter);
 require('./ClientContext')(SIP);
 require('./ServerContext')(SIP);
-require('./Session')(SIP, environment);
+require('./Session')(SIP);
 require('./Subscription')(SIP);
 require('./UA')(SIP, environment);
 require('./SanityCheck')(SIP);

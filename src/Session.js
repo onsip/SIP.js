@@ -162,57 +162,6 @@ Session.prototype = {
     this.referContext.refer();
   },
 
-  followRefer: function followRefer (callback) {
-    return function referListener (callback, request) {
-      // open non-SIP URIs if possible and keep session open
-      var referTo = request.parseHeader('refer-to');
-      var target = referTo.uri;
-      if (!target.scheme.match("^sips?$")) {
-        var targetString = target.toString();
-        if (typeof environment.open === "function") {
-          environment.open(targetString);
-        } else {
-          this.logger.warn("referred to non-SIP URI but `open` isn't in the environment: " + targetString);
-        }
-        return;
-      }
-
-      var extraHeaders = [];
-
-      /* Copy the Replaces query into a Replaces header */
-      /* TODO - make sure we don't copy a poorly formatted header? */
-      var replaces = target.getHeader('Replaces');
-      if (replaces !== undefined) {
-        extraHeaders.push('Replaces: ' + decodeURIComponent(replaces));
-      }
-
-      // don't embed headers into Request-URI of INVITE
-      target.clearHeaders();
-
-      /*
-        Harmless race condition.  Both sides of REFER
-        may send a BYE, but in the end the dialogs are destroyed.
-      */
-
-      // Take the original options for the refer and append what is needed to do the refer.
-      var options = this.passedOptions || {};
-      options.params = options.params || {};
-      options.params.to_displayName = referTo.friendlyName;
-      options.extraHeaders = extraHeaders;
-      if (this.sessionDescriptionHandler) {
-        options.sessionDescriptionHandlerOptions = this.sessionDescriptionHandler.options;
-      }
-
-      var referSession = this.ua.invite(target, options, this.modifiers);
-
-      // TODO: Get rid of callbacks
-      callback.call(this, request, referSession);
-
-      // TODO: Is this a race condition with invite? We should wait for the refered session to set up then terminate.
-      this.terminate();
-    }.bind(this, callback);
-  },
-
   sendRequest: function(method,options) {
     options = options || {};
     var self = this;
