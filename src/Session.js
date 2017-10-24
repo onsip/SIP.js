@@ -1918,20 +1918,14 @@ ReferServerContext = function(ua, request) {
   this.referTo = this.request.parseHeader('refer-to');
 
   this.status = C.STATUS_WAITING_FOR_ANSWER;
-
-
-  // TODO: 100 rel
-
-  // TODO: Expires
-
 };
 
 ReferServerContext.prototype = {
-  // TODO: Event emission
+
   progress: function() {
     this.sendNotify('SIP/2.0 100 Trying');
-    this.emit('referProgressed', this);
-    this.referredSession.emit('referProgressed', this);
+    this.emit('referProgress', this);
+    this.referredSession.emit('referProgress', this);
   },
 
   reject: function() {
@@ -1955,6 +1949,9 @@ ReferServerContext.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
+    this.request.reply(202, 'Accepted');
+    this.emit('referRequestAccepted', this);
+
     if (options.followRefer) {
       var target = this.referTo.uri;
       if (!target.scheme.match("^sips?$")) {
@@ -1962,8 +1959,6 @@ ReferServerContext.prototype = {
         this.reject();
         return;
       }
-
-      this.request.reply(202, 'Accepted');
 
       var extraHeaders = [];
       var replaces = target.getHeader('Replaces');
@@ -1973,19 +1968,17 @@ ReferServerContext.prototype = {
 
       target.clearHeaders();
 
-      this.referredSession.hold();
-
       // TODO: options, modifiers
       this.targetSession = this.ua.invite(target, options, modifiers);
 
-      this.targetSession.once('progress', this.progress);
+      this.targetSession.once('progress', this.progress.bind(this));
       this.targetSession.once('accepted', function() {
         this.sendNotify('SIP/2.0 200 OK');
         this.emit('referAccepted', this);
         this.referredSession.emit('referAccepted', this);
       }.bind(this));
-      this.targetSession.once('rejected', this.reject);
-      this.targetSession.once('failed', this.reject);
+      this.targetSession.once('rejected', this.reject.bind(this));
+      this.targetSession.once('failed', this.reject.bind(this));
 
     } else {
       this.sendNotify('SIP/2.0 200 OK');
