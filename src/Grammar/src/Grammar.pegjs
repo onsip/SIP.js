@@ -914,3 +914,7 @@ uuid          = hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
 hex4          = HEXDIG HEXDIG HEXDIG HEXDIG
 hex8          = hex4 hex4
 hex12         = hex4 hex4 hex4
+
+// RFC 3420 (message/sipfrag)
+
+sipfrag = SIP_Version SP Status_Code SP Method
