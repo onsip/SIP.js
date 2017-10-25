@@ -39,7 +39,7 @@ describe('RegisterContext', function() {
     expect(RegisterContext.registrar).toBe(ua.configuration.registrarServer);
     expect(RegisterContext.expires).toBe(ua.configuration.registerExpires);
     expect(RegisterContext.call_id).toBeDefined();
-    expect(RegisterContext.cseq).toEqual(80);
+    expect(RegisterContext.cseq).toBeGreaterThan(0);
     expect(RegisterContext.to_uri).toBe(ua.configuration.uri);
     expect(RegisterContext.registrationTimer).toBeDefined();
     expect(RegisterContext.registered).toBeFalsy();
