@@ -97,7 +97,8 @@ module.exports = {
             "uuid",
             "WWW_Authenticate",
             "challenge",
-            "sipfrag"
+            "sipfrag",
+            "Referred_By"
           ]
         }
       }
