@@ -510,7 +510,11 @@ Session.prototype = {
             this.emit('referRequested', referContext);
           } else {
             this.logger.log('No referRequested listeners, automatically accepting and following the refer');
-            referContext.accept({followRefer: true});
+            var options = {followRefer: true};
+            if (this.passedOptions) {
+              options.inviteOptions = this.passedOptions;
+            }
+            referContext.accept(options, this.modifiers);
           }
         }
         break;
@@ -1837,6 +1841,7 @@ ReferClientContext = function(ua, applicant, target, options) {
     }
   }
 
+  this.extraHeaders.push('Referred-By: ' + applicant.from); // TODO: is from correct here?
   this.extraHeaders.push('Contact: '+ applicant.contact);
   this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   this.extraHeaders.push('Refer-To: '+ this.target);
@@ -1888,6 +1893,7 @@ ReferClientContext.prototype = {
           break;
       }
       request.reply(200);
+      this.emit('notify', request);
       return;
     }
     request.reply(489, 'Bad Event');
@@ -1907,20 +1913,6 @@ ReferServerContext = function(ua, request) {
   this.request = request;
   this.contact = this.ua.contact.toString();
 
-  this.referredSession = this.ua.findSession(request);
-
-  // Needed to send the NOTIFY's
-  this.cseq = request.cseq; // TODO: Update the referred session's cseq?
-  this.call_id = this.request.call_id;
-  this.from_uri = this.request.to.uri;
-  this.from_tag = this.request.to.parameters.tag;
-  this.remote_target = this.request.headers.Contact[0].parsed.uri;
-  this.to_uri = this.request.from.uri;
-  this.to_tag = this.request.from_tag;
-  this.route_set = this.request.getHeaders('record-route');
-
-  this.receiveNonInviteResponse = function () {};
-
   this.logger = ua.getLogger('sip.referservercontext', this.id);
 
   // RFC 3515 2.4.1
@@ -1932,35 +1924,54 @@ ReferServerContext = function(ua, request) {
 
   this.referTo = this.request.parseHeader('refer-to');
 
+  // TODO: Must set expiration timer and send 202 if there is no response by then
+
+  this.referredSession = this.ua.findSession(request);
+
+  // Needed to send the NOTIFY's
+  this.cseq = Math.floor(Math.random() * 10000);
+  this.call_id = this.request.call_id;
+  this.from_uri = this.request.to.uri;
+  this.from_tag = this.request.to.parameters.tag;
+  this.remote_target = this.request.headers.Contact[0].parsed.uri;
+  this.to_uri = this.request.from.uri;
+  this.to_tag = this.request.from_tag;
+  this.route_set = this.request.getHeaders('record-route');
+
+  this.receiveNonInviteResponse = function () {};
+
+  if (this.request.hasHeader('referred-by')) {
+    this.referredBy = this.request.getHeader('referred-by');
+  }
+
+  if (this.request.hasHeader('replaces')) {
+    this.replaces = this.request.getHeader('replaces');
+  }
+
   this.status = C.STATUS_WAITING_FOR_ANSWER;
 };
 
 ReferServerContext.prototype = {
 
   progress: function() {
-    this.sendNotify('SIP/2.0 100 Trying');
-    this.emit('referProgress', this);
-    if (this.referredSession) {
-      this.referredSession.emit('referProgress', this);
+    if (this.status !== C.STATUS_WAITING_FOR_ANSWER) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
     }
+    this.request.reply(100);
   },
 
-  reject: function() {
+  reject: function(options) {
     if (this.status  === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
     this.logger.log('Rejecting refer');
     this.status = C.STATUS_TERMINATED;
-    this.request.reply(603, 'Declined');
+    SIP.ServerContext.prototype.reject.call(this, options);
     this.emit('referRejected', this);
-    if (this.referredSession) {
-      this.referredSession.emit('referRejected', this);
-    }
   },
 
   accept: function(options, modifiers) {
     options = options || {};
-    // TODO: Merge options and modifiers with what is on the referrred session.
 
     if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
       this.status = C.STATUS_ANSWERED;
@@ -1981,18 +1992,32 @@ ReferServerContext.prototype = {
         return;
       }
 
-      var extraHeaders = [];
-      var replaces = target.getHeader('Replaces');
-      if (replaces !== undefined) {
-        extraHeaders.push('Replaces: ' + decodeURIComponent(replaces));
+      var inviteOptions = options.inviteOptions || {};
+      var extraHeaders = (inviteOptions.extraHeaders || []).slice();
+      if (this.replaces) {
+        // decodeURIComponent is a holdover from 2c086eb4. Not sure that it is actually necessary
+        extraHeaders.push('Replaces: ' + decodeURIComponent(this.replaces));
       }
+
+      if (this.referredBy) {
+        extraHeaders.push('Referred-By: ' + this.referredBy);
+      }
+
+      inviteOptions.extraHeaders = extraHeaders;
 
       target.clearHeaders();
 
-      // TODO: options, modifiers
       this.targetSession = this.ua.invite(target, options, modifiers);
 
-      this.targetSession.once('progress', this.progress.bind(this));
+      this.emit('referInviteSent', this);
+
+      this.targetSession.once('progress', function() {
+        this.sendNotify('SIP/2.0 100 Trying');
+        this.emit('referProgress', this);
+        if (this.referredSession) {
+          this.referredSession.emit('referProgress', this);
+        }
+      }.bind(this));
       this.targetSession.once('accepted', function() {
         this.logger.log('Successfully followed the refer');
         this.sendNotify('SIP/2.0 200 OK');
@@ -2001,8 +2026,24 @@ ReferServerContext.prototype = {
           this.referredSession.emit('referAccepted', this);
         }
       }.bind(this));
-      this.targetSession.once('rejected', this.reject.bind(this));
-      this.targetSession.once('failed', this.reject.bind(this));
+
+      var referFailed = function(response) {
+        if (this.status === C.STATUS_TERMINATED) {
+          return; // No throw here because it is possible this gets called multiple times
+        }
+        this.logger.log('Refer was not successful. Resuming session');
+        if (response && response.status_code === 429) {
+          this.logger.log('Alerting referror that identity is required.');
+          this.sendNotify('SIP/2.0 429 Provide Referrer Identity');
+          return;
+        }
+        this.sendNotify('SIP/2.0 603 Declined');
+        // Must change the status after sending the final Notify or it will not send due to check
+        this.status = C.STATUS_TERMINATED;
+      };
+
+      this.targetSession.once('rejected', referFailed.bind(this));
+      this.targetSession.once('failed', referFailed.bind(this));
 
     } else {
       this.logger.log('Accepted refer, but did not automatically follow it');
@@ -2014,14 +2055,19 @@ ReferServerContext.prototype = {
     }
   },
 
-  // Private function to send notifies to the referror
   sendNotify: function(body) {
+    if (this.status !== C.STATUS_ANSWERED) {
+      throw new SIP.Exceptions.InvalidStateError(this.status);
+    }
+    if (SIP.Grammar.parse(body, 'sipfrag') === -1) {
+      throw new Error('sipfrag body is required to send notify for refer');
+    }
+
     var request = new SIP.OutgoingRequest(
       SIP.C.NOTIFY,
       this.remote_target,
       this.ua,
       {
-        // First NOTIFY should have the same cseq as the refer. Then it should increment
         cseq: this.cseq += 1,  // randomly generated then incremented on each additional notify
         call_id: this.call_id, // refer call_id
         from_uri: this.from_uri,
