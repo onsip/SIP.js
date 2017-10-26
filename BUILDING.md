@@ -48,7 +48,7 @@ Run `npm run build` for just generating the `dist/sip.js` file. An uncompressed 
 
 ## Test units
 
-SIP.js includes test units based on [Jasmine](http://pivotal.github.io/jasmine/). Test units use the `dist/sip.js` file. Run the tests as follows:
+SIP.js includes test units based on [Jasmine](https://jasmine.github.io/). Test units use the `dist/sip.js` file. Run the tests as follows:
 ```
 $ npm run commandLineTest
 $ npm run browserTest
