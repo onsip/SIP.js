@@ -159,7 +159,7 @@ Session.prototype = {
 
     this.emit('referRequested', this.referContext);
 
-    this.referContext.refer(options);
+    this.referContext.refer();
   },
 
   sendRequest: function(method,options) {
