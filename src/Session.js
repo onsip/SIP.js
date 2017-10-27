@@ -1841,7 +1841,9 @@ ReferClientContext = function(ua, applicant, target, options) {
     }
   }
 
-  this.extraHeaders.push('Referred-By: ' + applicant.from); // TODO: is from correct here?
+  if (applicant.remoteIdentity) {
+    this.extraHeaders.push('Referred-By: ' + applicant.remoteIdentity);
+  }
   this.extraHeaders.push('Contact: '+ applicant.contact);
   this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   this.extraHeaders.push('Refer-To: '+ this.target);
