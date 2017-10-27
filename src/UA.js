@@ -704,9 +704,9 @@ UA.prototype.receiveRequest = function(request) {
         if (this.configuration.allowOutOfDialogRefers) {
           this.logger.log('Allow out of dialog refers is enabled on the UA');
           var referContext = new SIP.ReferServerContext(this, request);
-          var hasReferListener = this.listeners('outOfDialogReferRequest').length;
+          var hasReferListener = this.listeners('outOfDialogReferRequested').length;
           if (hasReferListener) {
-            this.emit('outOfDialogReferRequest', referContext);
+            this.emit('outOfDialogReferRequested', referContext);
           } else {
             this.logger.log('No outOfDialogReferRequest listeners, automatically accepting and following the out of dialog refer');
             referContext.accept({followRefer: true});
