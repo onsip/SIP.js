@@ -53,9 +53,8 @@ Session = function (sessionDescriptionHandlerFactory) {
   this.endTime = null;
   this.tones = null;
 
-  // Mute/Hold state
+  // Hold state
   this.local_hold = false;
-  this.remote_hold = false;
 
   // Flag to disable renegotiation. When set to true, it will not renegotiate
   // and will throw a RENEGOTIATION_ERROR
@@ -410,18 +409,16 @@ Session.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    if (this.isOnHold().local) {
+    if (this.local_hold) {
       this.logger.log('Session is already on hold, cannot put it on hold again');
       return;
     }
 
     options = options || {};
+    options.modifiers = modifiers || [];
+    options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
 
-    if (modifiers) {
-      options.modifiers = modifiers;
-    }
-
-    this.onhold('local');
+    this.local_hold = true;
 
     this.sendReinvite(options);
   },
@@ -435,7 +432,7 @@ Session.prototype = {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    if (!this.isOnHold().local) {
+    if (!this.local_hold) {
       this.logger.log('Session is not on hold, cannot unhold it');
       return;
     }
@@ -446,19 +443,9 @@ Session.prototype = {
       options.modifiers = modifiers;
     }
 
-    this.onunhold('local');
+    this.local_hold = false;
 
     this.sendReinvite(options);
-  },
-
-  /**
-   * isOnHold
-   */
-  isOnHold: function() {
-    return {
-      local: this.local_hold,
-      remote: this.remote_hold
-    };
   },
 
   reinvite: function(options, modifiers) {
@@ -484,6 +471,8 @@ Session.prototype = {
       return;
     }
 
+    self.emit('reinvite', this);
+
     this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
     .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers))
     .then(function(description) {
@@ -492,12 +481,7 @@ Session.prototype = {
         function() {
           self.status = C.STATUS_WAITING_FOR_ACK;
           self.setACKTimer();
-
-          if (self.remote_hold) {
-            self.onunhold('remote');
-          } else if (!self.remote_hold) {
-            self.onhold('remote');
-          }
+          self.emit('reinviteAccepted', self);
         });
     })
     .catch(function onFailure (e) {
@@ -513,6 +497,7 @@ Session.prototype = {
         statusCode = 488;
       }
       request.reply(statusCode);
+      self.emit('reinviteFailed', self);
     });
   },
 
@@ -532,15 +517,12 @@ Session.prototype = {
     extraHeaders.push('Contact: ' + this.contact);
     extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
-    this.receiveResponse = this.receiveReinviteResponse;
-    if (this.isOnHold().local) {
-      options.modifiers.push(self.sessionDescriptionHandler.holdModifier);
-    }
     this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
     .then(function(description) {
-      self.dialog.sendRequest(self, SIP.C.INVITE, {
+      self.sendRequest(SIP.C.INVITE, {
         extraHeaders: extraHeaders,
-        body: description
+        body: description,
+        receiveResponse: self.receiveReinviteResponse.bind(self)
       });
     }).catch(function onFailure(e) {
       if (e instanceof SIP.Exceptions.RenegotiationError) {
@@ -774,22 +756,6 @@ Session.prototype = {
   },
 
   /**
-   * @private
-   */
-  onhold: function(originator) {
-    this[originator === 'local' ? 'local_hold' : 'remote_hold'] = true;
-    this.emit('hold', { originator: originator });
-  },
-
-  /**
-   * @private
-   */
-  onunhold: function(originator) {
-    this[originator === 'local' ? 'local_hold' : 'remote_hold'] = false;
-    this.emit('unhold', { originator: originator });
-  },
-
-  /*
    * @private
    */
 
