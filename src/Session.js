@@ -1948,8 +1948,8 @@ ReferServerContext = function(ua, request) {
     this.referredBy = this.request.getHeader('referred-by');
   }
 
-  if (this.request.hasHeader('replaces')) {
-    this.replaces = this.request.getHeader('replaces');
+  if (this.referTo.uri.hasHeader('replaces')) {
+    this.replaces = this.referTo.uri.getHeader('replaces');
   }
 
   this.status = C.STATUS_WAITING_FOR_ANSWER;
