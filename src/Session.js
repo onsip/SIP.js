@@ -2011,7 +2011,7 @@ ReferServerContext.prototype = {
 
       target.clearHeaders();
 
-      this.targetSession = this.ua.invite(target, options, modifiers);
+      this.targetSession = this.ua.invite(target, inviteOptions, modifiers);
 
       this.emit('referInviteSent', this);
 
