@@ -68,9 +68,8 @@ describe('Session', function() {
     expect(Session.tones).toBeNull();
   });
 
-  it('initializes mute/hold state info', function() {
+  it('initializes local_hold state info', function() {
     expect(Session.local_hold).toBe(false);
-    expect(Session.remote_hold).toBe(false);
   });
 
   it('initializes early_sdp, and rel100', function() {
@@ -321,53 +320,6 @@ describe('Session', function() {
 
       expect(function(){Session.hold()}).toThrowError('Invalid status: 0');
     });
-
-    it('does not emit hold if local hold is true', function() {
-      Session.local_hold = true;
-
-      Session.hold();
-
-      expect(Session.emit).not.toHaveBeenCalled();
-    });
-
-    it('emits hold on success', function() {
-      Session.hold();
-
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('hold');
-    });
-  });
-
-  describe('.unhold', function() {
-    beforeEach(function() {
-      spyOn(Session, 'emit');
-      Session.status = 12;
-      Session.local_hold = true;
-
-      spyOn(Session, 'sendReinvite');
-    });
-
-    it('does not emit unhold if local hold is false', function() {
-      Session.local_hold = false;
-
-      Session.unhold();
-
-      expect(Session.emit).not.toHaveBeenCalled();
-    });
-
-    it('emits unhold on success', function() {
-      Session.unhold();
-
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('unhold');
-    });
-  });
-
-  describe('.isOnHold', function() {
-    it('returns the values of local_hold and remote_hold', function() {
-      Session.local_hold = 'local';
-      Session.remote_hold = 'remote';
-
-      expect(Session.isOnHold()).toEqual({local: 'local', remote: 'remote'});
-    });
   });
 
   describe('.receiveReinvite', function() {
@@ -398,19 +350,6 @@ describe('Session', function() {
       Session.receiveReinvite(message);
 
       expect(Session.sessionDescriptionHandler.setDescription).toHaveBeenCalled();
-    });
-  });
-
-  describe('.sendReinvite', function() {
-    beforeEach(function() {
-      Session.sessionDescriptionHandler = {getDescription: jasmine.createSpy('getDescription').and.returnValue(SIP.Utils.Promise.resolve(true))};
-    });
-
-    it('on success, sets receiveResponse and calls getDescription', function(){
-      Session.sendReinvite();
-
-      expect(Session.sessionDescriptionHandler.getDescription).toHaveBeenCalled();
-      expect(Session.receiveResponse).toBe(Session.receiveReinviteResponse);
     });
   });
 
@@ -649,60 +588,6 @@ describe('Session', function() {
       Session.onDialogError();
 
       expect(Session.failed).toHaveBeenCalled();
-    });
-  });
-
-  describe('.onhold', function() {
-    beforeEach(function() {
-      Session.local_hold = false;
-      Session.remote_hold = false;
-
-      spyOn(Session, 'emit');
-    });
-
-    it('sets local_hold to true and emits hold when originator is local', function(){
-      expect(Session.local_hold).toBe(false);
-
-      Session.onhold('local');
-
-      expect(Session.local_hold).toBe(true);
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('hold');
-    });
-
-    it('sets remote_hold to true and emits hold when originator is remote', function(){
-      expect(Session.remote_hold).toBe(false);
-
-      Session.onhold('remote');
-
-      expect(Session.remote_hold).toBe(true);
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('hold');
-    });
-  });
-
-  describe('.onunhold', function() {
-    beforeEach(function() {
-      Session.local_hold = true;
-      Session.remote_hold = true;
-
-      spyOn(Session, 'emit');
-    });
-
-    it('sets local_hold to false and emits unhold when originator is local', function(){
-      expect(Session.local_hold).toBe(true);
-
-      Session.onunhold('local');
-
-      expect(Session.local_hold).toBe(false);
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('unhold');
-    });
-
-    it('sets remote_hold to false and emit unhold when originator is remote', function(){
-      expect(Session.remote_hold).toBe(true);
-
-      Session.onunhold('remote');
-
-      expect(Session.remote_hold).toBe(false);
-      expect(Session.emit.calls.mostRecent().args[0]).toBe('unhold');
     });
   });
 

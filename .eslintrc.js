@@ -2,6 +2,9 @@ module.exports = {
     "env": {
         "node": true
     },
+    "globals": {
+      "Uint8Array": false
+    },
     "extends": "eslint:recommended",
     "rules": {
         "accessor-pairs": "error",

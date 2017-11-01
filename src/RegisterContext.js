@@ -21,7 +21,7 @@ RegisterContext = function (ua) {
 
   // Call-ID and CSeq values RFC3261 10.2
   this.call_id = SIP.Utils.createRandomToken(22);
-  this.cseq = 80;
+  this.cseq = Math.floor(Math.random() * 10000);
 
   this.to_uri = ua.configuration.uri;
 
