@@ -21,7 +21,7 @@ RegisterContext = function (ua) {
 
   // Call-ID and CSeq values RFC3261 10.2
   this.call_id = SIP.Utils.createRandomToken(22);
-  this.cseq = 80;
+  this.cseq = Math.floor(Math.random() * 10000);
 
   this.to_uri = ua.configuration.uri;
 
@@ -202,7 +202,9 @@ RegisterContext.prototype = {
     };
 
     this.registered_before = this.registered;
-    this.unregister(options);
+    if (this.registered) {
+      this.unregister(options);
+    }
   },
 
   unregister: function(options) {
@@ -211,8 +213,7 @@ RegisterContext.prototype = {
     options = options || {};
 
     if(!this.registered && !options.all) {
-      this.logger.warn('already unregistered');
-      return;
+      this.logger.warn('Already unregistered, but sending an unregister anyways.');
     }
 
     extraHeaders = (options.extraHeaders || []).slice();

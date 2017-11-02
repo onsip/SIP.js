@@ -1,5 +1,5 @@
 "use strict";
-var Grammar = require('./Grammar/dist/Grammar');
+var Grammar = require('./Grammar/src/Grammar.pegjs');
 
 module.exports = function (SIP) {
 

@@ -46,10 +46,6 @@ RequestSender.prototype = {
 
           this.removeListener('stateChanged', stateChanged);
           self.dialog.uac_pending_reply = false;
-
-          if (self.dialog.uas_pending_reply === false) {
-            self.dialog.owner.onReadyToReinvite();
-          }
         }
       });
     }
