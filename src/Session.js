@@ -504,22 +504,22 @@ Session.prototype = {
       case SIP.C.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
-          var referContext = new SIP.ReferServerContext(this.ua, request);
+          this.referContext = new SIP.ReferServerContext(this.ua, request);
           var hasReferListener = this.listeners('referRequested').length;
           if (hasReferListener) {
-            this.emit('referRequested', referContext);
+            this.emit('referRequested', this.referContext);
           } else {
             this.logger.log('No referRequested listeners, automatically accepting and following the refer');
             var options = {followRefer: true};
             if (this.passedOptions) {
               options.inviteOptions = this.passedOptions;
             }
-            referContext.accept(options, this.modifiers);
+            this.referContext.accept(options, this.modifiers);
           }
         }
         break;
       case SIP.C.NOTIFY:
-        if (this.referContext && request.hasHeader('event') && request.getHeader('event') === 'refer') {
+        if ((this.referContext && this.referContext instanceof SIP.ReferClientContext) && request.hasHeader('event') && request.getHeader('event') === 'refer') {
           this.referContext.receiveNotify(request);
           return;
         }
