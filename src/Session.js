@@ -1971,7 +1971,7 @@ ReferServerContext.prototype = {
     this.logger.log('Rejecting refer');
     this.status = C.STATUS_TERMINATED;
     SIP.ServerContext.prototype.reject.call(this, options);
-    this.emit('referRejected', this);
+    this.emit('referRequestRejected', this);
   },
 
   accept: function(options, modifiers) {
@@ -2037,13 +2037,17 @@ ReferServerContext.prototype = {
         }
         this.logger.log('Refer was not successful. Resuming session');
         if (response && response.status_code === 429) {
-          this.logger.log('Alerting referror that identity is required.');
+          this.logger.log('Alerting referrer that identity is required.');
           this.sendNotify('SIP/2.0 429 Provide Referrer Identity');
           return;
         }
         this.sendNotify('SIP/2.0 603 Declined');
         // Must change the status after sending the final Notify or it will not send due to check
         this.status = C.STATUS_TERMINATED;
+        this.emit('referRejected', this);
+        if (this.referredSession) {
+          this.referredSession.emit('referRejected');
+        }
       };
 
       this.targetSession.once('rejected', referFailed.bind(this));
