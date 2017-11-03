@@ -2,11 +2,11 @@
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
- * @param {function returning SIP.MediaHandler} [configuration.mediaHandlerFactory]
- *        A function will be invoked by each of the UA's Sessions to build the MediaHandler for that Session.
- *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) MediaHandler.
+ * @param {function returning SIP.sessionDescriptionHandler} [configuration.sessionDescriptionHandlerFactory]
+ *        A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
+ *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  *
- * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [configuration.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  */
 module.exports = function (SIP, environment) {
 var UA,
@@ -22,22 +22,16 @@ var UA,
     CONFIGURATION_ERROR:  1,
     NETWORK_ERROR:        2,
 
-    /* UA events and corresponding SIP Methods.
-     * Dynamically added to 'Allow' header field if the
-     * corresponding event handler is set.
-     */
-    EVENT_METHODS: {
-      'invite': 'INVITE',
-      'message': 'MESSAGE'
-    },
-
     ALLOWED_METHODS: [
       'ACK',
       'CANCEL',
+      'INVITE',
+      'MESSAGE',
       'BYE',
       'OPTIONS',
       'INFO',
-      'NOTIFY'
+      'NOTIFY',
+      'REFER'
     ],
 
     ACCEPTED_BODY_TYPES: [
@@ -77,6 +71,7 @@ UA = function(configuration) {
   this.data = {};
   this.sessions = {};
   this.subscriptions = {};
+  this.earlySubscriptions = {};
   this.transport = null;
   this.contact = null;
   this.status = C.STATUS_INIT;
@@ -178,14 +173,6 @@ UA = function(configuration) {
   if(this.configuration.autostart) {
     this.start();
   }
-
-  if (typeof environment.addEventListener === 'function') {
-    // Google Chrome Packaged Apps don't allow 'unload' listeners:
-    // unload is not available in packaged apps
-    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
-      environment.addEventListener('unload', this.stop.bind(this));
-    }
-  }
 };
 UA.prototype = Object.create(SIP.EventEmitter.prototype);
 
@@ -240,15 +227,16 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  * @param {String} target
  * @param {Object} views
- * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [options.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  *
  * @throws {TypeError}
  *
  */
-UA.prototype.invite = function(target, options) {
-  var context = new SIP.InviteClientContext(this, target, options);
+UA.prototype.invite = function(target, options, modifiers) {
+  var context = new SIP.InviteClientContext(this, target, options, modifiers);
 
   this.afterConnected(context.invite.bind(context));
+  this.emit('inviteSent', context);
   return context;
 };
 
@@ -324,10 +312,16 @@ UA.prototype.stop = function() {
     this.sessions[session].terminate();
   }
 
-  //Run _close_ on every Subscription
+  //Run _close_ on every confirmed Subscription
   for(subscription in this.subscriptions) {
     this.logger.log('unsubscribing from subscription ' + subscription);
     this.subscriptions[subscription].close();
+  }
+
+  //Run _close_ on every early Subscription
+  for(subscription in this.earlySubscriptions) {
+    this.logger.log('unsubscribing from early subscription ' + subscription);
+    this.earlySubscriptions[subscription].close();
   }
 
   // Run  _close_ on every applicant
@@ -349,6 +343,14 @@ UA.prototype.stop = function() {
     this.transport.disconnect();
   } else {
     this.on('transactionDestroyed', transactionsListener);
+  }
+
+  if (typeof environment.removeEventListener === 'function') {
+    // Google Chrome Packaged Apps don't allow 'unload' listeners:
+    // unload is not available in packaged apps
+    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
+      environment.removeEventListener('unload', this.environListener);
+    }
   }
 
   return this;
@@ -377,6 +379,15 @@ UA.prototype.start = function() {
     this.logger.log('UA is in READY status, not resuming');
   } else {
     this.logger.error('Connection is down. Auto-Recovery system is trying to connect');
+  }
+
+  if (this.configuration.autostop && typeof environment.addEventListener === 'function') {
+    // Google Chrome Packaged Apps don't allow 'unload' listeners:
+    // unload is not available in packaged apps
+    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
+      this.environListener = this.stop.bind(this);
+      environment.addEventListener('unload', this.environListener);
+    }
   }
 
   return this;
@@ -577,12 +588,10 @@ UA.prototype.destroyTransaction = function(transaction) {
  * @param {SIP.IncomingRequest} request.
  */
 UA.prototype.receiveRequest = function(request) {
-  var dialog, session, message,
+  var dialog, session, message, earlySubscription,
     method = request.method,
-    transaction,
     replaces,
     replacedDialog,
-    methodLower = request.method.toLowerCase(),
     self = this;
 
   function ruriMatches (uri) {
@@ -620,16 +629,10 @@ UA.prototype.receiveRequest = function(request) {
   if(method === SIP.C.OPTIONS) {
     new SIP.Transactions.NonInviteServerTransaction(request, this);
     request.reply(200, null, [
-      'Allow: '+ SIP.Utils.getAllowedMethods(this),
+      'Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString(),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
   } else if (method === SIP.C.MESSAGE) {
-    if (!this.listeners(methodLower).length) {
-      // UA is not listening for this.  Reject immediately.
-      new SIP.Transactions.NonInviteServerTransaction(request, this);
-      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
-      return;
-    }
     message = new SIP.ServerContext(this, request);
     message.body = request.body;
     message.content_type = request.getHeader('Content-Type') || 'text/plain';
@@ -639,7 +642,7 @@ UA.prototype.receiveRequest = function(request) {
   } else if (method !== SIP.C.INVITE &&
              method !== SIP.C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new SIP.ServerContext(this, request);
+    new SIP.ServerContext(this, request);
   }
 
   // Initial Request
@@ -666,17 +669,9 @@ UA.prototype.receiveRequest = function(request) {
           }
         }
 
-        var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
-        if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request);
-          session.replacee = replacedDialog && replacedDialog.owner;
-          session.on('invite', function() {
-            self.emit('invite', this);
-          });
-        } else {
-          this.logger.warn('INVITE received but WebRTC is not supported');
-          request.reply(488);
-        }
+        session = new SIP.InviteServerContext(this, request);
+        session.replacee = replacedDialog && replacedDialog.owner;
+        self.emit('invite', session);
         break;
       case SIP.C.BYE:
         // Out of dialog BYE received
@@ -696,6 +691,14 @@ UA.prototype.receiveRequest = function(request) {
          * and without To tag.
          */
         break;
+      case SIP.C.NOTIFY:
+        if (this.configuration.allowLegacyNotifications && this.listeners('notify').length > 0) {
+          request.reply(200, null);
+          self.emit('notify', {request: request});
+        } else {
+          request.reply(481, 'Subscription does not exist');
+        }
+        break;
       default:
         request.reply(405);
         break;
@@ -712,10 +715,13 @@ UA.prototype.receiveRequest = function(request) {
       dialog.receiveRequest(request);
     } else if (method === SIP.C.NOTIFY) {
       session = this.findSession(request);
+      earlySubscription = this.findEarlySubscription(request);
       if(session) {
         session.receiveRequest(request);
+      } else if(earlySubscription) {
+        earlySubscription.receiveRequest(request);
       } else {
-        this.logger.warn('received NOTIFY request for a non existent session');
+        this.logger.warn('received NOTIFY request for a non existent session or subscription');
         request.reply(481, 'Subscription does not exist');
       }
     }
@@ -758,6 +764,16 @@ UA.prototype.findDialog = function(request) {
   return this.dialogs[request.call_id + request.from_tag + request.to_tag] ||
           this.dialogs[request.call_id + request.to_tag + request.from_tag] ||
           null;
+};
+
+/**
+ * Get the subscription which has not been confirmed to which the request belongs to, if any
+ * @private
+ * @param {SIP.IncomingRequest}
+ * @returns {SIP.Subscription|null}
+ */
+UA.prototype.findEarlySubscription = function(request) {
+  return this.earlySubscriptions[request.call_id + request.to_tag + request.getHeader('event')] || null;
 };
 
 /**
@@ -871,6 +887,12 @@ UA.prototype.loadConfig = function(configuration) {
         ws_uri: 'wss://edge.sip.onsip.com'
       }],
 
+      //Custom Configuration Settings
+      custom: {},
+
+      //Display name
+      displayName: '',
+
       // Password
       password: null,
 
@@ -896,10 +918,7 @@ UA.prototype.loadConfig = function(configuration) {
       userAgentString: SIP.C.USER_AGENT,
 
       // Session parameters
-      iceCheckingTimeout: 5000,
       noAnswerTimeout: 60,
-      stunServers: ['stun:stun.l.google.com:19302'],
-      turnServers: [],
 
       // Logging parameters
       traceSip: false,
@@ -910,11 +929,22 @@ UA.prototype.loadConfig = function(configuration) {
       hackWssInTransport: false,
       hackAllowUnregisteredOptionTags: false,
 
+      // Session Description Handler Options
+      sessionDescriptionHandlerFactoryOptions: {
+        constraints: {},
+        peerConnectionOptions: {
+          iceCheckingTimeout: 5000,
+          rtcConfiguration: {}
+        }
+      },
+
+      contactName: SIP.Utils.createRandomToken(8), // user name in user part
       contactTransport: 'ws',
       forceRport: false,
 
       //autostarting
       autostart: true,
+      autostop: true,
 
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
@@ -923,11 +953,13 @@ UA.prototype.loadConfig = function(configuration) {
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
 
-      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+      sessionDescriptionHandlerFactory: require('./WebRTC/SessionDescriptionHandler')(SIP).defaultFactory,
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);
-      })
+      }),
+
+      allowLegacyNotifications: false,
     };
 
   // Pre-Configuration
@@ -951,14 +983,16 @@ UA.prototype.loadConfig = function(configuration) {
     configuration[parameter] = hasParameter ? configuration[parameter] : configuration[underscored];
   }
 
+  var configCheck = this.getConfigurationCheck();
+
   // Check Mandatory parameters
-  for(parameter in UA.configuration_check.mandatory) {
+  for(parameter in configCheck.mandatory) {
     aliasUnderscored(parameter, this.logger);
     if(!configuration.hasOwnProperty(parameter)) {
       throw new SIP.Exceptions.ConfigurationError(parameter);
     } else {
       value = configuration[parameter];
-      checked_value = UA.configuration_check.mandatory[parameter](value);
+      checked_value = configCheck.mandatory[parameter](value);
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
@@ -967,18 +1001,14 @@ UA.prototype.loadConfig = function(configuration) {
     }
   }
 
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
-
-  var emptyArraysAllowed = ['stunServers', 'turnServers'];
-
   // Check Optional parameters
-  for(parameter in UA.configuration_check.optional) {
+  for(parameter in configCheck.optional) {
     aliasUnderscored(parameter, this.logger);
     if(configuration.hasOwnProperty(parameter)) {
       value = configuration[parameter];
 
       // If the parameter value is an empty array, but shouldn't be, apply its default value.
-      if (value instanceof Array && value.length === 0 && emptyArraysAllowed.indexOf(parameter) < 0) { continue; }
+      if (value instanceof Array && value.length === 0) { continue; }
 
       // If the parameter value is null, empty string, or undefined then apply its default value.
       if(value === null || value === "" || value === undefined) { continue; }
@@ -986,7 +1016,7 @@ UA.prototype.loadConfig = function(configuration) {
       // NOTE: JS does not allow "value === NaN", the following does the work:
       else if(typeof(value) === 'number' && isNaN(value)) { continue; }
 
-      checked_value = UA.configuration_check.optional[parameter](value);
+      checked_value = configCheck.optional[parameter](value);
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
@@ -1057,7 +1087,7 @@ UA.prototype.loadConfig = function(configuration) {
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: settings.contactTransport}),
+    uri: new SIP.URI('sip', settings.contactName, settings.viaHost, null, {transport: settings.contactTransport}),
     toString: function(options){
       options = options || {};
 
@@ -1082,27 +1112,24 @@ UA.prototype.loadConfig = function(configuration) {
     }
   };
 
-  // media overrides mediaConstraints
-  SIP.Utils.optionsOverride(settings, 'media', 'mediaConstraints', true, this.logger);
-
+  var skeleton = {};
   // Fill the value of the configuration_skeleton
   for(parameter in settings) {
-    UA.configuration_skeleton[parameter].value = settings[parameter];
+    skeleton[parameter] = {
+      value: settings[parameter],
+      writable: (parameter === 'register' || parameter === 'custom'),
+      configurable: false
+    };
   }
 
-  Object.defineProperties(this.configuration, UA.configuration_skeleton);
-
-  // Clean UA.configuration_skeleton
-  for(parameter in settings) {
-    UA.configuration_skeleton[parameter].value = '';
-  }
+  Object.defineProperties(this.configuration, skeleton);
 
   this.logger.log('configuration parameters after validation:');
   for(parameter in settings) {
     switch(parameter) {
       case 'uri':
       case 'registrarServer':
-      case 'mediaHandlerFactory':
+      case 'sessionDescriptionHandlerFactory':
         this.logger.log('· ' + parameter + ': ' + settings[parameter]);
         break;
       case 'password':
@@ -1117,494 +1144,368 @@ UA.prototype.loadConfig = function(configuration) {
 };
 
 /**
- * Configuration Object skeleton.
- * @private
- */
-UA.configuration_skeleton = (function() {
-  var idx,  parameter,
-    skeleton = {},
-    parameters = [
-      // Internal parameters
-      "sipjsId",
-      "hostportParams",
-
-      // Optional user configurable parameters
-      "uri",
-      "wsServers",
-      "authorizationUser",
-      "connectionRecoveryMaxInterval",
-      "connectionRecoveryMinInterval",
-      "keepAliveInterval",
-      "extraSupported",
-      "displayName",
-      "hackViaTcp", // false.
-      "hackIpInContact", //false
-      "hackWssInTransport", //false
-      "hackAllowUnregisteredOptionTags", //false
-      "contactTransport", // 'ws'
-      "forceRport", // false
-      "iceCheckingTimeout",
-      "instanceId",
-      "noAnswerTimeout", // 30 seconds.
-      "password",
-      "registerExpires", // 600 seconds.
-      "registrarServer",
-      "reliable",
-      "rel100",
-      "replaces",
-      "userAgentString", //SIP.C.USER_AGENT
-      "autostart",
-      "stunServers",
-      "traceSip",
-      "turnServers",
-      "usePreloadedRoute",
-      "wsServerMaxReconnection",
-      "wsServerReconnectionTimeout",
-      "mediaHandlerFactory",
-      "media",
-      "mediaConstraints",
-      "authenticationFactory",
-
-      // Post-configuration generated parameters
-      "via_core_value",
-      "viaHost"
-    ];
-
-  for(idx in parameters) {
-    parameter = parameters[idx];
-    skeleton[parameter] = {
-      value: '',
-      writable: false,
-      configurable: false
-    };
-  }
-
-  skeleton['register'] = {
-    value: '',
-    writable: true,
-    configurable: false
-  };
-
-  return skeleton;
-}());
-
-/**
  * Configuration checker.
  * @private
  * @return {Boolean}
  */
-UA.configuration_check = {
-  mandatory: {
-  },
-
-  optional: {
-
-    uri: function(uri) {
-      var parsed;
-
-      if (!(/^sip:/i).test(uri)) {
-        uri = SIP.C.SIP + ':' + uri;
-      }
-      parsed = SIP.URI.parse(uri);
-
-      if(!parsed) {
-        return;
-      } else if(!parsed.user) {
-        return;
-      } else {
-        return parsed;
-      }
+UA.prototype.getConfigurationCheck = function () {
+  return {
+    mandatory: {
     },
 
-    //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
-    wsServers: function(wsServers) {
-      var idx, length, url;
+    optional: {
 
-      /* Allow defining wsServers parameter as:
-       *  String: "host"
-       *  Array of Strings: ["host1", "host2"]
-       *  Array of Objects: [{ws_uri:"host1", weight:1}, {ws_uri:"host2", weight:0}]
-       *  Array of Objects and Strings: [{ws_uri:"host1"}, "host2"]
-       */
-      if (typeof wsServers === 'string') {
-        wsServers = [{ws_uri: wsServers}];
-      } else if (wsServers instanceof Array) {
+      uri: function(uri) {
+        var parsed;
+
+        if (!(/^sip:/i).test(uri)) {
+          uri = SIP.C.SIP + ':' + uri;
+        }
+        parsed = SIP.URI.parse(uri);
+
+        if(!parsed) {
+          return;
+        } else if(!parsed.user) {
+          return;
+        } else {
+          return parsed;
+        }
+      },
+
+      //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
+      wsServers: function(wsServers) {
+        var idx, length, url;
+
+        /* Allow defining wsServers parameter as:
+         *  String: "host"
+         *  Array of Strings: ["host1", "host2"]
+         *  Array of Objects: [{ws_uri:"host1", weight:1}, {ws_uri:"host2", weight:0}]
+         *  Array of Objects and Strings: [{ws_uri:"host1"}, "host2"]
+         */
+        if (typeof wsServers === 'string') {
+          wsServers = [{ws_uri: wsServers}];
+        } else if (wsServers instanceof Array) {
+          length = wsServers.length;
+          for (idx = 0; idx < length; idx++) {
+            if (typeof wsServers[idx] === 'string'){
+              wsServers[idx] = {ws_uri: wsServers[idx]};
+            }
+          }
+        } else {
+          return;
+        }
+
+        if (wsServers.length === 0) {
+          return false;
+        }
+
         length = wsServers.length;
         for (idx = 0; idx < length; idx++) {
-          if (typeof wsServers[idx] === 'string'){
-            wsServers[idx] = {ws_uri: wsServers[idx]};
+          if (!wsServers[idx].ws_uri) {
+            return;
           }
-        }
-      } else {
-        return;
-      }
-
-      if (wsServers.length === 0) {
-        return false;
-      }
-
-      length = wsServers.length;
-      for (idx = 0; idx < length; idx++) {
-        if (!wsServers[idx].ws_uri) {
-          return;
-        }
-        if (wsServers[idx].weight && !Number(wsServers[idx].weight)) {
-          return;
-        }
-
-        url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
-
-        if(url === -1) {
-          return;
-        } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
-          return;
-        } else {
-          wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
-
-          if (!wsServers[idx].weight) {
-            wsServers[idx].weight = 0;
+          if (wsServers[idx].weight && !Number(wsServers[idx].weight)) {
+            return;
           }
 
-          wsServers[idx].status = 0;
-          wsServers[idx].scheme = url.scheme.toUpperCase();
-        }
-      }
-      return wsServers;
-    },
+          url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
 
-    authorizationUser: function(authorizationUser) {
-      if(SIP.Grammar.parse('"'+ authorizationUser +'"', 'quoted_string') === -1) {
-        return;
-      } else {
-        return authorizationUser;
-      }
-    },
+          if(url === -1) {
+            return;
+          } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
+            return;
+          } else {
+            wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
 
-    connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
-      var value;
-      if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
-        value = Number(connectionRecoveryMaxInterval);
-        if(value > 0) {
-          return value;
-        }
-      }
-    },
+            if (!wsServers[idx].weight) {
+              wsServers[idx].weight = 0;
+            }
 
-    connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
-      var value;
-      if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
-        value = Number(connectionRecoveryMinInterval);
-        if(value > 0) {
-          return value;
-        }
-      }
-    },
-
-    displayName: function(displayName) {
-      if(SIP.Grammar.parse('"' + displayName + '"', 'displayName') === -1) {
-        return;
-      } else {
-        return displayName;
-      }
-    },
-
-    hackViaTcp: function(hackViaTcp) {
-      if (typeof hackViaTcp === 'boolean') {
-        return hackViaTcp;
-      }
-    },
-
-    hackIpInContact: function(hackIpInContact) {
-      if (typeof hackIpInContact === 'boolean') {
-        return hackIpInContact;
-      }
-      else if (typeof hackIpInContact === 'string' && SIP.Grammar.parse(hackIpInContact, 'host') !== -1) {
-        return hackIpInContact;
-      }
-    },
-
-    iceCheckingTimeout: function(iceCheckingTimeout) {
-      if(SIP.Utils.isDecimal(iceCheckingTimeout)) {
-        return Math.max(500, iceCheckingTimeout);
-      }
-    },
-
-    hackWssInTransport: function(hackWssInTransport) {
-      if (typeof hackWssInTransport === 'boolean') {
-        return hackWssInTransport;
-      }
-    },
-
-    hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
-      if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
-        return hackAllowUnregisteredOptionTags;
-      }
-    },
-
-    contactTransport: function(contactTransport) {
-      if (typeof contactTransport === 'string') {
-        return contactTransport;
-      }
-    },
-
-    forceRport: function(forceRport) {
-      if (typeof forceRport === 'boolean') {
-        return forceRport;
-      }
-    },
-
-    instanceId: function(instanceId) {
-      if(typeof instanceId !== 'string') {
-        return;
-      }
-
-      if ((/^uuid:/i.test(instanceId))) {
-        instanceId = instanceId.substr(5);
-      }
-
-      if(SIP.Grammar.parse(instanceId, 'uuid') === -1) {
-        return;
-      } else {
-        return instanceId;
-      }
-    },
-
-    keepAliveInterval: function(keepAliveInterval) {
-      var value;
-      if (SIP.Utils.isDecimal(keepAliveInterval)) {
-        value = Number(keepAliveInterval);
-        if (value > 0) {
-          return value;
-        }
-      }
-    },
-
-    extraSupported: function(optionTags) {
-      var idx, length;
-
-      if (!(optionTags instanceof Array)) {
-        return;
-      }
-
-      length = optionTags.length;
-      for (idx = 0; idx < length; idx++) {
-        if (typeof optionTags[idx] !== 'string') {
-          return;
-        }
-      }
-
-      return optionTags;
-    },
-
-    noAnswerTimeout: function(noAnswerTimeout) {
-      var value;
-      if (SIP.Utils.isDecimal(noAnswerTimeout)) {
-        value = Number(noAnswerTimeout);
-        if (value > 0) {
-          return value;
-        }
-      }
-    },
-
-    password: function(password) {
-      return String(password);
-    },
-
-    rel100: function(rel100) {
-      if(rel100 === SIP.C.supported.REQUIRED) {
-        return SIP.C.supported.REQUIRED;
-      } else if (rel100 === SIP.C.supported.SUPPORTED) {
-        return SIP.C.supported.SUPPORTED;
-      } else  {
-        return SIP.C.supported.UNSUPPORTED;
-      }
-    },
-
-    replaces: function(replaces) {
-      if(replaces === SIP.C.supported.REQUIRED) {
-        return SIP.C.supported.REQUIRED;
-      } else if (replaces === SIP.C.supported.SUPPORTED) {
-        return SIP.C.supported.SUPPORTED;
-      } else  {
-        return SIP.C.supported.UNSUPPORTED;
-      }
-    },
-
-    register: function(register) {
-      if (typeof register === 'boolean') {
-        return register;
-      }
-    },
-
-    registerExpires: function(registerExpires) {
-      var value;
-      if (SIP.Utils.isDecimal(registerExpires)) {
-        value = Number(registerExpires);
-        if (value > 0) {
-          return value;
-        }
-      }
-    },
-
-    registrarServer: function(registrarServer) {
-      var parsed;
-
-      if(typeof registrarServer !== 'string') {
-        return;
-      }
-
-      if (!/^sip:/i.test(registrarServer)) {
-        registrarServer = SIP.C.SIP + ':' + registrarServer;
-      }
-      parsed = SIP.URI.parse(registrarServer);
-
-      if(!parsed) {
-        return;
-      } else if(parsed.user) {
-        return;
-      } else {
-        return parsed;
-      }
-    },
-
-    stunServers: function(stunServers) {
-      var idx, length, stun_server;
-
-      if (typeof stunServers === 'string') {
-        stunServers = [stunServers];
-      } else if (!(stunServers instanceof Array)) {
-        return;
-      }
-
-      length = stunServers.length;
-      for (idx = 0; idx < length; idx++) {
-        stun_server = stunServers[idx];
-        if (!(/^stuns?:/.test(stun_server))) {
-          stun_server = 'stun:' + stun_server;
-        }
-
-        if(SIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
-          return;
-        } else {
-          stunServers[idx] = stun_server;
-        }
-      }
-      return stunServers;
-    },
-
-    traceSip: function(traceSip) {
-      if (typeof traceSip === 'boolean') {
-        return traceSip;
-      }
-    },
-
-    turnServers: function(turnServers) {
-      var idx, jdx, length, turn_server, num_turn_server_urls, url;
-
-      if (turnServers instanceof Array) {
-        // Do nothing
-      } else {
-        turnServers = [turnServers];
-      }
-
-      length = turnServers.length;
-      for (idx = 0; idx < length; idx++) {
-        turn_server = turnServers[idx];
-        //Backwards compatibility: Allow defining the turn_server url with the 'server' property.
-        if (turn_server.server) {
-          turn_server.urls = [turn_server.server];
-        }
-
-        if (!turn_server.urls || !turn_server.username || !turn_server.password) {
-          return;
-        }
-
-        if (turn_server.urls instanceof Array) {
-          num_turn_server_urls = turn_server.urls.length;
-        } else {
-          turn_server.urls = [turn_server.urls];
-          num_turn_server_urls = 1;
-        }
-
-        for (jdx = 0; jdx < num_turn_server_urls; jdx++) {
-          url = turn_server.urls[jdx];
-
-          if (!(/^turns?:/.test(url))) {
-            url = 'turn:' + url;
+            wsServers[idx].status = 0;
+            wsServers[idx].scheme = url.scheme.toUpperCase();
           }
+        }
+        return wsServers;
+      },
 
-          if(SIP.Grammar.parse(url, 'turn_URI') === -1) {
+      authorizationUser: function(authorizationUser) {
+        if(SIP.Grammar.parse('"'+ authorizationUser +'"', 'quoted_string') === -1) {
+          return;
+        } else {
+          return authorizationUser;
+        }
+      },
+
+      connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
+        var value;
+        if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
+          value = Number(connectionRecoveryMaxInterval);
+          if(value > 0) {
+            return value;
+          }
+        }
+      },
+
+      connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
+        var value;
+        if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
+          value = Number(connectionRecoveryMinInterval);
+          if(value > 0) {
+            return value;
+          }
+        }
+      },
+
+      displayName: function(displayName) {
+        if(SIP.Grammar.parse('"' + displayName + '"', 'displayName') === -1) {
+          return;
+        } else {
+          return displayName;
+        }
+      },
+
+      hackViaTcp: function(hackViaTcp) {
+        if (typeof hackViaTcp === 'boolean') {
+          return hackViaTcp;
+        }
+      },
+
+      hackIpInContact: function(hackIpInContact) {
+        if (typeof hackIpInContact === 'boolean') {
+          return hackIpInContact;
+        }
+        else if (typeof hackIpInContact === 'string' && SIP.Grammar.parse(hackIpInContact, 'host') !== -1) {
+          return hackIpInContact;
+        }
+      },
+
+      hackWssInTransport: function(hackWssInTransport) {
+        if (typeof hackWssInTransport === 'boolean') {
+          return hackWssInTransport;
+        }
+      },
+
+      hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
+        if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
+          return hackAllowUnregisteredOptionTags;
+        }
+      },
+
+      contactTransport: function(contactTransport) {
+        if (typeof contactTransport === 'string') {
+          return contactTransport;
+        }
+      },
+
+      forceRport: function(forceRport) {
+        if (typeof forceRport === 'boolean') {
+          return forceRport;
+        }
+      },
+
+      instanceId: function(instanceId) {
+        if(typeof instanceId !== 'string') {
+          return;
+        }
+
+        if ((/^uuid:/i.test(instanceId))) {
+          instanceId = instanceId.substr(5);
+        }
+
+        if(SIP.Grammar.parse(instanceId, 'uuid') === -1) {
+          return;
+        } else {
+          return instanceId;
+        }
+      },
+
+      keepAliveInterval: function(keepAliveInterval) {
+        var value;
+        if (SIP.Utils.isDecimal(keepAliveInterval)) {
+          value = Number(keepAliveInterval);
+          if (value > 0) {
+            return value;
+          }
+        }
+      },
+
+      extraSupported: function(optionTags) {
+        var idx, length;
+
+        if (!(optionTags instanceof Array)) {
+          return;
+        }
+
+        length = optionTags.length;
+        for (idx = 0; idx < length; idx++) {
+          if (typeof optionTags[idx] !== 'string') {
             return;
           }
         }
-      }
-      return turnServers;
-    },
 
-    userAgentString: function(userAgentString) {
-      if (typeof userAgentString === 'string') {
-        return userAgentString;
-      }
-    },
+        return optionTags;
+      },
 
-    usePreloadedRoute: function(usePreloadedRoute) {
-      if (typeof usePreloadedRoute === 'boolean') {
-        return usePreloadedRoute;
-      }
-    },
-
-    wsServerMaxReconnection: function(wsServerMaxReconnection) {
-      var value;
-      if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
-        value = Number(wsServerMaxReconnection);
-        if (value > 0) {
-          return value;
-        }
-      }
-    },
-
-    wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
-      var value;
-      if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
-        value = Number(wsServerReconnectionTimeout);
-        if (value > 0) {
-          return value;
-        }
-      }
-    },
-
-    autostart: function(autostart) {
-      if (typeof autostart === 'boolean') {
-        return autostart;
-      }
-    },
-
-    mediaHandlerFactory: function(mediaHandlerFactory) {
-      if (mediaHandlerFactory instanceof Function) {
-        var promisifiedFactory = function promisifiedFactory () {
-          var mediaHandler = mediaHandlerFactory.apply(this, arguments);
-
-          function patchMethod (methodName) {
-            var method = mediaHandler[methodName];
-            if (method.length > 1) {
-              var callbacksFirst = methodName === 'getDescription';
-              mediaHandler[methodName] = SIP.Utils.promisify(mediaHandler, methodName, callbacksFirst);
-            }
+      noAnswerTimeout: function(noAnswerTimeout) {
+        var value;
+        if (SIP.Utils.isDecimal(noAnswerTimeout)) {
+          value = Number(noAnswerTimeout);
+          if (value > 0) {
+            return value;
           }
+        }
+      },
 
-          patchMethod('getDescription');
-          patchMethod('setDescription');
+      password: function(password) {
+        return String(password);
+      },
 
-          return mediaHandler;
-        };
+      rel100: function(rel100) {
+        if(rel100 === SIP.C.supported.REQUIRED) {
+          return SIP.C.supported.REQUIRED;
+        } else if (rel100 === SIP.C.supported.SUPPORTED) {
+          return SIP.C.supported.SUPPORTED;
+        } else  {
+          return SIP.C.supported.UNSUPPORTED;
+        }
+      },
 
-        promisifiedFactory.isSupported = mediaHandlerFactory.isSupported;
-        return promisifiedFactory;
+      replaces: function(replaces) {
+        if(replaces === SIP.C.supported.REQUIRED) {
+          return SIP.C.supported.REQUIRED;
+        } else if (replaces === SIP.C.supported.SUPPORTED) {
+          return SIP.C.supported.SUPPORTED;
+        } else  {
+          return SIP.C.supported.UNSUPPORTED;
+        }
+      },
+
+      register: function(register) {
+        if (typeof register === 'boolean') {
+          return register;
+        }
+      },
+
+      registerExpires: function(registerExpires) {
+        var value;
+        if (SIP.Utils.isDecimal(registerExpires)) {
+          value = Number(registerExpires);
+          if (value > 0) {
+            return value;
+          }
+        }
+      },
+
+      registrarServer: function(registrarServer) {
+        var parsed;
+
+        if(typeof registrarServer !== 'string') {
+          return;
+        }
+
+        if (!/^sip:/i.test(registrarServer)) {
+          registrarServer = SIP.C.SIP + ':' + registrarServer;
+        }
+        parsed = SIP.URI.parse(registrarServer);
+
+        if(!parsed) {
+          return;
+        } else if(parsed.user) {
+          return;
+        } else {
+          return parsed;
+        }
+      },
+
+      traceSip: function(traceSip) {
+        if (typeof traceSip === 'boolean') {
+          return traceSip;
+        }
+      },
+
+      rtcpMuxPolicy: function(rtcpMuxPolicy) {
+        if (typeof rtcpMuxPolicy === 'string') {
+          return rtcpMuxPolicy;
+        }
+      },
+
+      userAgentString: function(userAgentString) {
+        if (typeof userAgentString === 'string') {
+          return userAgentString;
+        }
+      },
+
+      usePreloadedRoute: function(usePreloadedRoute) {
+        if (typeof usePreloadedRoute === 'boolean') {
+          return usePreloadedRoute;
+        }
+      },
+
+      wsServerMaxReconnection: function(wsServerMaxReconnection) {
+        var value;
+        if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
+          value = Number(wsServerMaxReconnection);
+          if (value > 0) {
+            return value;
+          }
+        }
+      },
+
+      wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
+        var value;
+        if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
+          value = Number(wsServerReconnectionTimeout);
+          if (value > 0) {
+            return value;
+          }
+        }
+      },
+
+      autostart: function(autostart) {
+        if (typeof autostart === 'boolean') {
+          return autostart;
+        }
+      },
+
+      autostop: function(autostop) {
+        if (typeof autostop === 'boolean') {
+          return autostop;
+        }
+      },
+
+      sessionDescriptionHandlerFactory: function(sessionDescriptionHandlerFactory) {
+        if (sessionDescriptionHandlerFactory instanceof Function) {
+          return sessionDescriptionHandlerFactory;
+        }
+      },
+
+      sessionDescriptionHandlerFactoryOptions: function(options) {
+        if (typeof options === 'object') {
+          return options;
+        }
+      },
+
+      authenticationFactory: checkAuthenticationFactory,
+
+      allowLegacyNotifications: function(allowLegacyNotifications) {
+        if (typeof allowLegacyNotifications === 'boolean') {
+          return allowLegacyNotifications;
+        }
+      },
+
+      custom: function(custom) {
+        if (typeof custom === 'object') {
+          return custom;
+        }
+      },
+
+      contactName: function(contactName) {
+        if (typeof contactName === 'string') {
+          return contactName;
+        }
       }
-    },
-
-    authenticationFactory: checkAuthenticationFactory
-  }
+    }
+  };
 };
 
 UA.C = C;

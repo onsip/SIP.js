@@ -4,7 +4,20 @@ describe('Dialogs', function() {
   var Dialog;
 
   beforeEach(function() {
-    var ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
+    var ua = new SIP.UA({
+      uri: 'alice@example.com',
+      wsServers: 'ws:server.example.com',
+      sessionDescriptionHandlerFactory: function() {
+        return {
+          getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+          hasDescription: function (contentType) {
+            return contentType === 'application/sdp';
+          },
+          setDescription: function () { return SIP.Utils.Promise.resolve(); },
+          close: function() { return true; }
+        };
+      }
+    });
     ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send']);
     message = SIP.Parser.parseMessage([
       'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -126,23 +139,21 @@ describe('Dialogs', function() {
     expect(Dialog.remote_target).toBe(message.parseHeader('contact').uri);
     expect(Dialog.route_set).toEqual(message.getHeaders('record-route').reverse());
 
-    expect(Dialog.mediaHandler).toBeUndefined();
+    expect(Dialog.sessionDescriptionHandler).toBeUndefined();
 
     owner.hasOffer = false;
     Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
-
-    expect(Dialog.mediaHandler).toBeDefined();
   });
 
-  it('uses the mediaHandlerFactory of its owner session', function () {
+  xit('uses the sessionDescriptionHandlerFactory of its owner session', function () {
     // acts like a constructor that doesn't need 'new'
-    function mediaHandlerConstructor () {
-      return Object.create(mediaHandlerConstructor.prototype);
+    function sessionDescriptionHandlerConstructor () {
+      return Object.create(sessionDescriptionHandlerConstructor.prototype);
     };
-    owner.mediaHandlerFactory = mediaHandlerConstructor;
+    owner.sessionDescriptionHandlerFactory = sessionDescriptionHandlerConstructor;
     owner.hasOffer = false;
     Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
-    expect(Dialog.mediaHandler instanceof mediaHandlerConstructor).toBe(true);
+    expect(Dialog.sessionDescriptionHandler instanceof sessionDescriptionHandlerConstructor).toBe(true);
   });
 
   it('sets logger, owner, dialogs array, and logs', function() {
@@ -203,15 +214,16 @@ describe('Dialogs', function() {
       expect(owner.ua.dialogs[Dialog.id.toString()]).toBeUndefined();
     });
 
-    it('calls peerConnection.close if the dialog was in the EARLY state and there is an mediaHandler', function() {
+    it('calls sessionDescriptionHandler.close if the dialog was in the EARLY state and there is an sessionDescriptionHandler', function() {
       owner.hasOffer = false;
       Dialog = new SIP.Dialog(owner, message, 'UAC', 1);
-
-      spyOn(Dialog.mediaHandler.peerConnection, 'close');
+      Dialog.sessionDescriptionHandler = {
+        close: jasmine.createSpy('close')
+      };
 
       Dialog.terminate();
 
-      expect(Dialog.mediaHandler.peerConnection.close).toHaveBeenCalled();
+      expect(Dialog.sessionDescriptionHandler.close).toHaveBeenCalled();
     });
   });
 
@@ -239,7 +251,7 @@ describe('Dialogs', function() {
     var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(owner.ua)]);
+      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString()]);
 
       request.server_transaction = {on: jasmine.createSpy('on')};
       request.reply = jasmine.createSpy('reply');
@@ -344,7 +356,7 @@ describe('Dialogs', function() {
     var request;
 
     beforeEach(function() {
-      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.Utils.getAllowedMethods(owner.ua)]);
+      request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString()]);
 
       spyOn(owner, 'receiveRequest');
     });

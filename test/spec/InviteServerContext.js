@@ -11,19 +11,22 @@ describe('A UAS receiving an INVITE', function () {
    *
    */
   describe('without SDP', function () {
-    it('creates an invite server context with the UA\'s mediaHandlerFactory, the ISC emits invite', function () {
+    it('creates an invite server context with the UA\'s sessionDescriptionHandlerFactory, the ISC emits invite', function () {
       ua_config = {
         uri: 'alice@example.com',
         register: false,
-        mediaHandlerFactory: function () {
+        sessionDescriptionHandlerFactory: function () {
           return {
-            getDescription: function () {},
-            setDescription: function () {}
+            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
+            },
+            setDescription: function () { return SIP.Utils.Promise.resolve(); }
           };
         }
       };
 
-      spyOn(ua_config, 'mediaHandlerFactory').and.callThrough();
+      spyOn(ua_config, 'sessionDescriptionHandlerFactory').and.callThrough();
       spyOn(SIP, 'InviteServerContext').and.callThrough();
       var callback = jasmine.createSpy('callback');
 
@@ -37,7 +40,7 @@ describe('A UAS receiving an INVITE', function () {
       jasmine.clock().tick(100);
 
       expect(SIP.InviteServerContext).toHaveBeenCalled();
-      expect(ua_config.mediaHandlerFactory).toHaveBeenCalled();
+      expect(ua_config.sessionDescriptionHandlerFactory).not.toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
 
       jasmine.clock().uninstall();
@@ -53,7 +56,16 @@ describe('A UAS receiving an INVITE', function () {
     beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
-        register: false
+        register: false,
+        sessionDescriptionHandlerFactory: function () {
+          return {
+            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
+            } ,
+            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+          };
+        }
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
@@ -95,7 +107,16 @@ describe('A UAS receiving an INVITE', function () {
     beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
-        register: false
+        register: false,
+        sessionDescriptionHandlerFactory: function () {
+          return {
+            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
+            },
+            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+          };
+        }
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
@@ -149,7 +170,16 @@ describe('A UAS receiving an INVITE', function () {
     beforeEach(function (done) {
       ua_config = {
         uri: 'alice@example.com',
-        register: false
+        register: false,
+        sessionDescriptionHandlerFactory: function () {
+          return {
+            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            hasDescription: function (contentType) {
+              return contentType === 'application/sdp';
+            },
+            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+          };
+        }
       };
 
       ua = new SIP.UA(ua_config).once('connected', function () {
@@ -200,7 +230,17 @@ describe('A UAS receiving an INVITE', function () {
           ua_config = {
             replaces: SIP.C.supported.SUPPORTED,
             uri: 'alice@example.com',
-            register: false
+            register: false,
+            sessionDescriptionHandlerFactory: function() {
+              return {
+                getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+                hasDescription: function (contentType) {
+                  return contentType === 'application/sdp';
+                },
+                setDescription: function () { return SIP.Utils.Promise.resolve(); },
+                close: function() { return; }
+              };
+            }
           };
 
           ua = new SIP.UA(ua_config).once('connected', done);
@@ -211,7 +251,7 @@ describe('A UAS receiving an INVITE', function () {
 
         afterEach(function (done) {
           function closeOut() {
-            ua.off();
+            ua.removeAllListeners();
             done();
           }
           if (ua.isConnected()) {
@@ -262,7 +302,7 @@ describe('A UAS receiving an INVITE', function () {
           }
         });
 
-        it('neither emits "replaced" on the replaced session, nor terminates it', function () {
+        xit('neither emits "replaced" on the replaced session, nor terminates it', function () {
           ua.dialogs['or1ek18v4gti27r1vt91' + 'dt0sj4e5ek' + 'qviijql90r'] = {
             // https://stackoverflow.com/questions/22049210/how-to-mark-a-jasmine-test-as-failed#comment33440129_22049210
             owner: {
@@ -295,7 +335,7 @@ describe('A UAS receiving an INVITE', function () {
       var ua_config = {
         register: false,
         uri: 'alice@example.com',
-        mediaHandlerFactory: rpsMediaHandlerFactory,
+        sessionDescriptionHandlerFactory: rpsMediaHandlerFactory,
         traceSip: true
       };
 
@@ -478,7 +518,7 @@ describe('A UAS receiving an INVITE', function () {
         }.bind(this));
 
         this.session.accept({
-          media: { gesture: 'paper' }
+          sessionDescriptionHandlerOptions: { gesture: 'paper' }
         });
       });
 

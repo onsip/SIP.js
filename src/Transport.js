@@ -18,6 +18,16 @@ var Transport,
     STATUS_ERROR:        2
   };
 
+/**
+ * Compute an amount of time in seconds to wait before sending another
+ * keep-alive.
+ * @returns {Number}
+ */
+function computeKeepAliveTimeout(upperBound) {
+  var lowerBound = upperBound * 0.8;
+  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
+}
+
 Transport = function(ua, server) {
 
   this.logger = ua.getLogger('sip.transport');
@@ -114,6 +124,7 @@ Transport.prototype = {
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
       this.ws.close();
+      this.ws = null;
     }
 
     if (this.reconnectTimer !== null) {
@@ -140,6 +151,7 @@ Transport.prototype = {
 
     if(this.ws) {
       this.ws.close();
+      this.ws = null;
     }
 
     this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
@@ -160,6 +172,11 @@ Transport.prototype = {
 
     this.ws.onclose = function(e) {
       transport.onClose(e);
+      // Always cleanup. Eases GC, prevents potential memory leaks.
+      this.onopen = null;
+      this.onclose = null;
+      this.onmessage = null;
+      this.onerror = null;
     };
 
     this.ws.onmessage = function(e) {
@@ -327,7 +344,8 @@ Transport.prototype = {
   * @param {event} e
   */
   onError: function(e) {
-    this.logger.warn('WebSocket connection error: ' + JSON.stringify(e));
+    this.logger.warn('WebSocket connection error: ');
+    this.logger.warn(e);
   },
 
   /**
@@ -355,16 +373,6 @@ Transport.prototype = {
     }
   }
 };
-
-/**
- * Compute an amount of time in seconds to wait before sending another
- * keep-alive.
- * @returns {Number}
- */
-function computeKeepAliveTimeout(upperBound) {
-  var lowerBound = upperBound * 0.8;
-  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
-}
 
 Transport.C = C;
 return Transport;

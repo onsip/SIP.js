@@ -156,18 +156,18 @@ describe('EventEmitter', function () {
       EventEmitter.on('aaa', foo);
       expect(EventEmitter.listeners('aaa').length).toBe(1);
 
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       expect(EventEmitter.listeners('aaa').length).toBe(0);
 
       EventEmitter.on('aaa', foo);
       EventEmitter.on('aaa', foo);
-      EventEmitter.off('aaa', bar);
-      EventEmitter.off('aaa', baz);
+      EventEmitter.removeListener('aaa', bar);
+      EventEmitter.removeListener('aaa', baz);
       expect(EventEmitter.listeners('aaa').length).toBe(2);
 
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       // remove twice since it was added twice above
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       expect(EventEmitter.listeners('aaa').length).toBe(0);
     });
 
@@ -175,18 +175,18 @@ describe('EventEmitter', function () {
       EventEmitter.on('aaa', foo);
       expect(EventEmitter.listeners('aaa').length).toBe(1);
 
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       expect(EventEmitter.listeners('aaa').length).toBe(0);
 
       EventEmitter.on('aaa', foo);
       EventEmitter.on('aaa', foo);
-      EventEmitter.off('aaa', bar);
-      EventEmitter.off('aaa', baz);
+      EventEmitter.removeListener('aaa', bar);
+      EventEmitter.removeListener('aaa', baz);
       expect(EventEmitter.listeners('aaa').length).toBe(2);
 
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       // remove twice since it was added twice above
-      EventEmitter.off('aaa', foo);
+      EventEmitter.removeListener('aaa', foo);
       expect(EventEmitter.listeners('aaa').length).toBe(0);
 
       EventEmitter.emit('aaa');
@@ -205,7 +205,7 @@ describe('EventEmitter', function () {
       EventEmitter.on('aaa', foo, that);
       EventEmitter.on('aaa', bar, baz);
 
-      EventEmitter.off('aaa');
+      EventEmitter.removeAllListeners('aaa');
 
       expect(EventEmitter.listeners('aaa').length).toBe(0);
     });
@@ -216,7 +216,7 @@ describe('EventEmitter', function () {
       EventEmitter.on('bbb', baz);
       EventEmitter.on('ccc', bar, baz);
 
-      EventEmitter.off('aaa');
+      EventEmitter.removeAllListeners('aaa');
 
       expect(EventEmitter.listeners('aaa').length).toBe(0);
       expect(EventEmitter.listeners('bbb').length).toBe(1);
@@ -231,7 +231,7 @@ describe('EventEmitter', function () {
       EventEmitter.on('ccc', bar, that);
       EventEmitter.once('ddd', function () {});
 
-      EventEmitter.off();
+      EventEmitter.removeAllListeners();
 
       expect(EventEmitter.listeners('aaa').length).toBe(0);
       expect(EventEmitter.listeners('bbb').length).toBe(0);
@@ -241,13 +241,13 @@ describe('EventEmitter', function () {
 
     it('returns this', function () {
       EventEmitter.on('aaa', function () {});
-      expect(EventEmitter.off('aaa')).toBe(EventEmitter);
+      expect(EventEmitter.removeAllListeners('aaa')).toBe(EventEmitter);
 
       EventEmitter.on('aaa', foo);
-      expect(EventEmitter.off('aaa', foo)).toBe(EventEmitter);
+      expect(EventEmitter.removeListener('aaa', foo)).toBe(EventEmitter);
 
-      expect(EventEmitter.off('bbb')).toBe(EventEmitter);
-      expect(EventEmitter.off()).toBe(EventEmitter);
+      expect(EventEmitter.removeAllListeners('bbb')).toBe(EventEmitter);
+      expect(EventEmitter.removeAllListeners()).toBe(EventEmitter);
     });
   });
 

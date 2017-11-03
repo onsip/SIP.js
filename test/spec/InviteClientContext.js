@@ -7,11 +7,11 @@ describe('An INVITE sent from a UAC', function () {
   beforeEach(function (done) {
     this.ua_config = {
       register: false,
-      mediaHandlerFactory: rpsMediaHandlerFactory
+      sessionDescriptionHandlerFactory: rpsMediaHandlerFactory
     };
 
     this.session_options = {
-      media: {
+      sessionDescriptionHandlerOptions: {
         gesture: 'rock'
       }
     };

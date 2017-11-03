@@ -1,22 +1,24 @@
 # AUTHORS
 
-## Will Mitchell
-
-* Lead Developer
-* <will@onsip.com>
-* /wakamoleguy on [GitHub](https://github.com/wakamoleguy) and [Twitter](https://twitter.com/wakamoleguy)
-
 ## James Criscuolo
 
 * <james@onsip.com>
+
+## Joseph Frazier
+
+* <1212jtraceur@gmail.com>
+* GitHub [@josephfrazier](https://github.com/josephfrazier)
+* Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
 
 ## Eric Green
 
 * <eric.green@onsip.com>
 
-## Joseph Frazier
+## Will Mitchell
 
-* <joseph@onsip.com>
+* <wakamoleguy@gmail.com>
+* GitHub [@wakamoleguy](https://github.com/wakamoleguy)
+* Twitter [@wakamoleguy](https://twitter.com/wakamoleguy)
 
 ## JsSIP Authors
 

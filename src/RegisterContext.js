@@ -21,11 +21,12 @@ RegisterContext = function (ua) {
 
   // Call-ID and CSeq values RFC3261 10.2
   this.call_id = SIP.Utils.createRandomToken(22);
-  this.cseq = 80;
+  this.cseq = Math.floor(Math.random() * 10000);
 
   this.to_uri = ua.configuration.uri;
 
   params.to_uri = this.to_uri;
+  params.to_displayName = ua.configuration.displayName;
   params.call_id = this.call_id;
   params.cseq = this.cseq;
 
@@ -49,7 +50,7 @@ RegisterContext.prototype = {
     this.options = options || {};
     extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
-    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
     // Save original extraHeaders to be used in .close
     this.closeHeaders = this.options.closeWithHeaders ?
@@ -201,7 +202,9 @@ RegisterContext.prototype = {
     };
 
     this.registered_before = this.registered;
-    this.unregister(options);
+    if (this.registered) {
+      this.unregister(options);
+    }
   },
 
   unregister: function(options) {
@@ -210,8 +213,7 @@ RegisterContext.prototype = {
     options = options || {};
 
     if(!this.registered && !options.all) {
-      this.logger.warn('already unregistered');
-      return;
+      this.logger.warn('Already unregistered, but sending an unregister anyways.');
     }
 
     extraHeaders = (options.extraHeaders || []).slice();

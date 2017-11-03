@@ -239,12 +239,23 @@ OutgoingRequest.prototype = {
     msg += getSupportedHeader(this);
     msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
-    if(this.body) {
-      length = SIP.Utils.str_utf8_length(this.body);
-      msg += 'Content-Length: ' + length + '\r\n\r\n';
-      msg += this.body;
+    if (this.body) {
+      if (typeof this.body === 'string') {
+        length = SIP.Utils.str_utf8_length(this.body);
+        msg += 'Content-Length: ' + length + '\r\n\r\n';
+        msg += this.body;
+      } else {
+        if (this.body.body && this.body.contentType) {
+          length = SIP.Utils.str_utf8_length(this.body.body);
+          msg += 'Content-Type: ' + this.body.contentType + '\r\n';
+          msg += 'Content-Length: ' + length + '\r\n\r\n';
+          msg += this.body.body;
+        } else {
+          msg += 'Content-Length: ' + 0 + '\r\n\r\n';
+        }
+      }
     } else {
-      msg += 'Content-Length: 0\r\n\r\n';
+      msg += 'Content-Length: ' + 0 + '\r\n\r\n';
     }
 
     return msg;
@@ -429,6 +440,7 @@ IncomingRequest.prototype = new IncomingMessage();
 * @param {Function} [onSuccess] onSuccess callback
 * @param {Function} [onFailure] onFailure callback
 */
+// TODO: Get rid of callbacks and make promise based
 IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onSuccess, onFailure) {
   var rr, vias, length, idx, response,
     to = this.getHeader('To'),
@@ -473,11 +485,22 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   response += getSupportedHeader(this);
   response += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
-  if(body) {
-    length = SIP.Utils.str_utf8_length(body);
-    response += 'Content-Type: application/sdp\r\n';
-    response += 'Content-Length: ' + length + '\r\n\r\n';
-    response += body;
+  if (body) {
+    if (typeof body === 'string') {
+      length = SIP.Utils.str_utf8_length(body);
+      response += 'Content-Type: application/sdp\r\n';
+      response += 'Content-Length: ' + length + '\r\n\r\n';
+      response += body;
+    } else {
+      if (body.body && body.contentType) {
+        length = SIP.Utils.str_utf8_length(body.body);
+        response += 'Content-Type: ' + body.contentType + '\r\n';
+        response += 'Content-Length: ' + length + '\r\n\r\n';
+        response += body.body;
+      } else {
+        response += 'Content-Length: ' + 0 + '\r\n\r\n';
+      }
+    }
   } else {
     response += 'Content-Length: ' + 0 + '\r\n\r\n';
   }

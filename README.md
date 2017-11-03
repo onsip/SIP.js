@@ -20,23 +20,25 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ## Authors
 
-### Will Mitchell
-
-* Lead Developer
-* <will@onsip.com>
-* /wakamoleguy on [GitHub](http://github.com/wakamoleguy), [Twitter](http://twitter.com/wakamoleguy)
-
 ### James Criscuolo
 
 * <james@onsip.com>
+
+### Joseph Frazier
+
+* <1212jtraceur@gmail.com>
+* GitHub [@josephfrazier](https://github.com/josephfrazier)
+* Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
 
 ### Eric Green
 
 * <eric.green@onsip.com>
 
-### Joseph Frazier
+### Will Mitchell
 
-* <joseph@onsip.com>
+* <wakamoleguy@gmail.com>
+* GitHub [@wakamoleguy](http://github.com/wakamoleguy)
+* Twitter [@wakamoleguy](http://twitter.com/wakamoleguy)
 
 ### JsSIP Authors
 

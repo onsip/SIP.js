@@ -1,8 +1,8 @@
 {
   options.data = {}; // Object to which header attributes will be assigned during parsing
 
-  function list (first, rest) {
-    return [first].concat(rest);
+  function list (head, tail) {
+    return [head].concat(tail);
   }
 }
 
@@ -412,7 +412,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                           header = null;
                         }
                         options.data.multi_header.push( { 'position': peg$currPos,
-                                                  'offset': offset(),
+                                                  'offset': location().start.offset,
                                                   'parsed': header
                                                 });}
 
@@ -668,7 +668,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                     header = null;
                   }
                   options.data.multi_header.push( { 'position': peg$currPos,
-                                            'offset': offset(),
+                                            'offset': location().start.offset,
                                             'parsed': header
                                           });}
 
@@ -710,9 +710,9 @@ replaces_params   = "from-tag"i EQUAL from_tag: token {
 // REQUIRE
 
 Require   =  value:(
-                first:option_tag
-                rest:(COMMA r:option_tag {return r;})*
-                { return list(first, rest); }
+                head:option_tag
+                tail:(COMMA r:option_tag {return r;})*
+                { return list(head, tail); }
               )?
               {
                 if (options.startRule === 'Require') {
@@ -743,11 +743,11 @@ substate_value       = ( "active"i / "pending"i / "terminated"i
 
 extension_substate   = token
 
-subexp_params        = ("reason"i EQUAL reason: event_reason_value) {
+subexp_params        = "reason"i EQUAL reason: event_reason_value {
                         if (typeof reason !== 'undefined') options.data.reason = reason; }
-                       / ("expires"i EQUAL expires: delta_seconds) {
+                       / "expires"i EQUAL expires: delta_seconds {
                         if (typeof expires !== 'undefined') options.data.expires = expires; }
-                       / ("retry_after"i EQUAL retry_after: delta_seconds) {
+                       / "retry_after"i EQUAL retry_after: delta_seconds {
                         if (typeof retry_after !== 'undefined') options.data.retry_after = retry_after; }
                        / generic_param
 
@@ -771,9 +771,9 @@ Subject  = ( TEXT_UTF8_TRIM )?
 // SUPPORTED
 
 Supported  =  value:(
-                first:option_tag
-                rest:(COMMA r:option_tag {return r;})*
-                { return list(first, rest); }
+                head:option_tag
+                tail:(COMMA r:option_tag {return r;})*
+                { return list(head, tail); }
               )?
               {
                 if (options.startRule === 'Supported') {
@@ -892,8 +892,6 @@ stun_host_port    = stun_host ( ":" port )?
 
 stun_host         = host: (IPv4address / IPv6reference / reg_name) {
                       options.data.host = host; }
-
-reg_name          = $ ( stun_unreserved / escaped / sub_delims )*
 
 stun_unreserved   = ALPHA / DIGIT / "-" / "." / "_" / "~"
 

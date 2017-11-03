@@ -40,7 +40,7 @@ describe('ClientContext', function() {
   });
 
   it('sets the body', function () {
-    expect(ClientContext.body).toBe('{"foo":"bar"}');
+    expect(ClientContext.body.body).toBe('{"foo":"bar"}');
   });
 
   it('has no body by default', function () {
@@ -48,7 +48,7 @@ describe('ClientContext', function() {
   });
 
   it('sets the contentType', function () {
-    expect(ClientContext.contentType).toBe('application/json');
+    expect(ClientContext.body.contentType).toBe('application/json');
   });
 
   it('has no contentType by default', function () {

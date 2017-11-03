@@ -82,10 +82,6 @@ Dialog = function(owner, message, type, state) {
     this.remote_target = contact.uri;
     this.route_set = message.getHeaders('record-route').reverse();
 
-    //RENDERBODY
-    if (this.state === C.STATUS_EARLY && (!owner.hasOffer)) {
-      this.mediaHandler = owner.mediaHandlerFactory(owner);
-    }
   }
 
   this.logger = owner.ua.getLogger('sip.dialog', this.id.toString());
@@ -113,8 +109,9 @@ Dialog.prototype = {
 
   terminate: function() {
     this.logger.log('dialog ' + this.id.toString() + ' deleted');
-    if (this.mediaHandler && this.state !== C.STATUS_CONFIRMED) {
-      this.mediaHandler.peerConnection.close();
+    if (this.sessionDescriptionHandler && this.state !== C.STATUS_CONFIRMED) {
+      // TODO: This should call .close() on the handler when implemented
+      this.sessionDescriptionHandler.close();
     }
     delete this.owner.ua.dialogs[this.id.toString()];
   },
@@ -172,8 +169,6 @@ Dialog.prototype = {
           return true;
         }
         return false;
-    } else if(request.cseq > this.remote_seqnum) {
-      this.remote_seqnum = request.cseq;
     }
 
     switch(request.method) {
@@ -181,9 +176,10 @@ Dialog.prototype = {
       case SIP.C.INVITE:
         if (this.uac_pending_reply === true) {
           request.reply(491);
-        } else if (this.uas_pending_reply === true) {
+        } else if (this.uas_pending_reply === true && request.cseq > this.remote_seqnum) {
           var retryAfter = (Math.random() * 10 | 0) + 1;
           request.reply(500, null, ['Retry-After:' + retryAfter]);
+          this.remote_seqnum = request.cseq;
           return false;
         } else {
           this.uas_pending_reply = true;
@@ -194,10 +190,6 @@ Dialog.prototype = {
 
               this.removeListener('stateChanged', stateChanged);
               self.uas_pending_reply = false;
-
-              if (self.uac_pending_reply === false) {
-                self.owner.onReadyToReinvite();
-              }
             }
           });
         }
@@ -223,16 +215,32 @@ Dialog.prototype = {
         break;
     }
 
+    if(request.cseq > this.remote_seqnum) {
+     this.remote_seqnum = request.cseq;
+   }
+
     return true;
   },
 
   sendRequest: function(applicant, method, options) {
     options = options || {};
 
-    var
-      extraHeaders = (options.extraHeaders || []).slice(),
-      body = options.body || null,
-      request = this.createRequest(method, extraHeaders, body),
+    var extraHeaders = (options.extraHeaders || []).slice();
+
+    var body = null;
+    if (options.body) {
+      if (options.body.body) {
+        body = options.body;
+      } else {
+        body = {};
+        body.body = options.body;
+        if (options.contentType) {
+          body.contentType = options.contentType;
+        }
+      }
+    }
+
+    var request = this.createRequest(method, extraHeaders, body),
       request_sender = new RequestSender(this, applicant, request);
 
     request_sender.send();

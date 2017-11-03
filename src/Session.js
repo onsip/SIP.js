@@ -22,15 +22,19 @@ var Session, InviteServerContext, InviteClientContext,
   };
 
 /*
- * @param {function returning SIP.MediaHandler} [mediaHandlerFactory]
- *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
+ * @param {function returning SIP.sessionDescriptionHandler} [sessionDescriptionHandlerFactory]
+ *        (See the documentation for the sessionDescriptionHandlerFactory argument of the UA constructor.)
  */
-Session = function (mediaHandlerFactory) {
+Session = function (sessionDescriptionHandlerFactory) {
   this.status = C.STATUS_NULL;
   this.dialog = null;
+  this.pendingReinvite = false;
   this.earlyDialogs = {};
-  this.mediaHandlerFactory = mediaHandlerFactory || SIP.WebRTC.MediaHandler.defaultFactory;
-  // this.mediaHandler gets set by ICC/ISC constructors
+  if (!sessionDescriptionHandlerFactory) {
+    throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
+  }
+  this.sessionDescriptionHandlerFactory = sessionDescriptionHandlerFactory;
+  // this.sessionDescriptionHandler gets set by ICC/ISC constructors
   this.hasOffer = false;
   this.hasAnswer = false;
 
@@ -49,54 +53,12 @@ Session = function (mediaHandlerFactory) {
   this.endTime = null;
   this.tones = null;
 
-  // Mute/Hold state
+  // Hold state
   this.local_hold = false;
-  this.remote_hold = false;
 
-  this.pending_actions = {
-    actions: [],
-
-    length: function() {
-      return this.actions.length;
-    },
-
-    isPending: function(name){
-      var
-      idx = 0,
-      length = this.actions.length;
-
-      for (idx; idx<length; idx++) {
-        if (this.actions[idx].name === name) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    shift: function() {
-      return this.actions.shift();
-    },
-
-    push: function(name) {
-      this.actions.push({
-        name: name
-      });
-    },
-
-    pop: function(name) {
-      var
-      idx = 0,
-      length = this.actions.length;
-
-      for (idx; idx<length; idx++) {
-        if (this.actions[idx].name === name) {
-          this.actions.splice(idx,1);
-          length --;
-          idx--;
-        }
-      }
-    }
-   };
+  // Flag to disable renegotiation. When set to true, it will not renegotiate
+  // and will throw a RENEGOTIATION_ERROR
+  this.disableRenegotiation = false;
 
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
@@ -229,7 +191,7 @@ Session.prototype = {
     }
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
     extraHeaders.push('Refer-To: '+ target);
 
     // Send the request
@@ -280,21 +242,22 @@ Session.prototype = {
         Harmless race condition.  Both sides of REFER
         may send a BYE, but in the end the dialogs are destroyed.
       */
-      var getReferMedia = this.mediaHandler.getReferMedia;
-      var mediaHint = getReferMedia ? getReferMedia.call(this.mediaHandler) : this.mediaHint;
 
-      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+      // Take the original options for the refer and append what is needed to do the refer.
+      var options = this.passedOptions || {};
+      options.params = options.params || {};
+      options.params.to_displayName = referTo.friendlyName;
+      options.extraHeaders = extraHeaders;
+      if (this.sessionDescriptionHandler) {
+        options.sessionDescriptionHandlerOptions = this.sessionDescriptionHandler.options;
+      }
 
-      var referSession = this.ua.invite(target, {
-        media: mediaHint,
-        params: {
-          to_displayName: referTo.friendlyName
-        },
-        extraHeaders: extraHeaders
-      });
+      var referSession = this.ua.invite(target, options, this.modifiers);
 
+      // TODO: Get rid of callbacks
       callback.call(this, request, referSession);
 
+      // TODO: Is this a race condition with invite? We should wait for the refered session to set up then terminate.
       this.terminate();
     }.bind(this, callback);
   },
@@ -351,8 +314,8 @@ Session.prototype = {
     this.logger.log('closing INVITE session ' + this.id);
 
     // 1st Step. Terminate media.
-    if (this.mediaHandler){
-      this.mediaHandler.close();
+    if (this.sessionDescriptionHandler){
+      this.sessionDescriptionHandler.close();
     }
 
     // 2nd Step. Terminate signaling.
@@ -438,121 +401,61 @@ Session.prototype = {
   },
 
   /**
-  * Check if Session is ready for a re-INVITE
-  *
-  * @returns {Boolean}
-  */
-  isReadyToReinvite: function() {
-    return this.mediaHandler.isReady() &&
-      !this.dialog.uac_pending_reply &&
-      !this.dialog.uas_pending_reply;
-  },
-
-  /**
-   * Mute
-   */
-  mute: function(options) {
-    var ret = this.mediaHandler.mute(options);
-    if (ret) {
-      this.onmute(ret);
-    }
-  },
-
-  /**
-   * Unmute
-   */
-  unmute: function(options) {
-    var ret = this.mediaHandler.unmute(options);
-    if (ret) {
-      this.onunmute(ret);
-    }
-  },
-
-  /**
    * Hold
    */
-  hold: function() {
+  hold: function(options, modifiers) {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    this.mediaHandler.hold();
-
-    // Check if RTCSession is ready to send a reINVITE
-    if (!this.isReadyToReinvite()) {
-      /* If there is a pending 'unhold' action, cancel it and don't queue this one
-       * Else, if there isn't any 'hold' action, add this one to the queue
-       * Else, if there is already a 'hold' action, skip
-       */
-      if (this.pending_actions.isPending('unhold')) {
-        this.pending_actions.pop('unhold');
-      } else if (!this.pending_actions.isPending('hold')) {
-        this.pending_actions.push('hold');
-      }
+    if (this.local_hold) {
+      this.logger.log('Session is already on hold, cannot put it on hold again');
       return;
-    } else if (this.local_hold === true) {
-        return;
     }
 
-    this.onhold('local');
+    options = options || {};
+    options.modifiers = modifiers || [];
+    options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
 
-    this.sendReinvite({
-      mangle: function(body){
+    this.local_hold = true;
 
-        // Don't receive media
-        // TODO - This will break for media streams with different directions.
-        if (!(/a=(sendrecv|sendonly|recvonly|inactive)/).test(body)) {
-          body = body.replace(/(m=[^\r]*\r\n)/g, '$1a=sendonly\r\n');
-        } else {
-          body = body.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
-          body = body.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
-        }
-
-        return body;
-      }
-    });
+    this.sendReinvite(options);
   },
 
   /**
    * Unhold
    */
-  unhold: function() {
+  unhold: function(options, modifiers) {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
 
-    this.mediaHandler.unhold();
-
-    if (!this.isReadyToReinvite()) {
-      /* If there is a pending 'hold' action, cancel it and don't queue this one
-       * Else, if there isn't any 'unhold' action, add this one to the queue
-       * Else, if there is already a 'unhold' action, skip
-       */
-      if (this.pending_actions.isPending('hold')) {
-        this.pending_actions.pop('hold');
-      } else if (!this.pending_actions.isPending('unhold')) {
-        this.pending_actions.push('unhold');
-      }
-      return;
-    } else if (this.local_hold === false) {
+    if (!this.local_hold) {
+      this.logger.log('Session is not on hold, cannot unhold it');
       return;
     }
 
-    this.onunhold('local');
+    options = options || {};
 
-    this.sendReinvite();
+    if (modifiers) {
+      options.modifiers = modifiers;
+    }
+
+    this.local_hold = false;
+
+    this.sendReinvite(options);
   },
 
-  /**
-   * isOnHold
-   */
-  isOnHold: function() {
-    return {
-      local: this.local_hold,
-      remote: this.remote_hold
-    };
+  reinvite: function(options, modifiers) {
+    options = options || {};
+
+    if (modifiers) {
+      options.modifiers = modifiers;
+    }
+
+    return this.sendReinvite(options);
   },
 
   /**
@@ -562,93 +465,76 @@ Session.prototype = {
   receiveReinvite: function(request) {
     var self = this;
 
-    if (!request.body) {
-      return;
-    }
-
-    if (request.getHeader('Content-Type') !== 'application/sdp') {
+    if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
       this.logger.warn('invalid Content-Type');
       request.reply(415);
       return;
     }
 
-    this.mediaHandler.setDescription(request.body)
-    .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
-    .then(function(body) {
-      request.reply(200, null, ['Contact: ' + self.contact], body,
+    self.emit('reinvite', this);
+
+    this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+    .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers))
+    .then(function(description) {
+      var extraHeaders = ['Contact: ' + self.contact];
+      request.reply(200, null, extraHeaders, description,
         function() {
           self.status = C.STATUS_WAITING_FOR_ACK;
-          self.setInvite2xxTimer(request, body);
           self.setACKTimer();
-
-          // Are we holding?
-          var hold = (/a=(sendonly|inactive)/).test(request.body);
-
-          if (self.remote_hold && !hold) {
-            self.onunhold('remote');
-          } else if (!self.remote_hold && hold) {
-            self.onhold('remote');
-          }
+          self.emit('reinviteAccepted', self);
         });
     })
     .catch(function onFailure (e) {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
         statusCode = 500;
+      } else if (e instanceof SIP.Exceptions.RenegotiationError) {
+        self.emit('renegotiationError', e);
+        self.logger.warn(e);
+        statusCode = 488;
       } else {
         self.logger.error(e);
         statusCode = 488;
       }
       request.reply(statusCode);
+      self.emit('reinviteFailed', self);
     });
   },
 
   sendReinvite: function(options) {
+    if (this.pendingReinvite) {
+      this.logger.warn('Reinvite in progress. Please wait until complete, then try again.');
+      return;
+    }
+    this.pendingReinvite = true;
     options = options || {};
+    options.modifiers = options.modifiers || [];
 
     var
       self = this,
-       extraHeaders = (options.extraHeaders || []).slice(),
-       eventHandlers = options.eventHandlers || {},
-       mangle = options.mangle || null;
-
-    if (eventHandlers.succeeded) {
-      this.reinviteSucceeded = eventHandlers.succeeded;
-    } else {
-      this.reinviteSucceeded = function(){
-        SIP.Timers.clearTimeout(self.timers.ackTimer);
-        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
-        self.status = C.STATUS_CONFIRMED;
-      };
-    }
-    if (eventHandlers.failed) {
-      this.reinviteFailed = eventHandlers.failed;
-    } else {
-      this.reinviteFailed = function(){};
-    }
+       extraHeaders = (options.extraHeaders || []).slice();
 
     extraHeaders.push('Contact: ' + this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-    extraHeaders.push('Content-Type: application/sdp');
+    extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
 
-    this.receiveResponse = this.receiveReinviteResponse;
-    //REVISIT
-    this.mediaHandler.getDescription(self.mediaHint)
-    .then(mangle)
-    .then(
-      function(body){
-        self.dialog.sendRequest(self, SIP.C.INVITE, {
-          extraHeaders: extraHeaders,
-          body: body
-        });
-      },
-      function() {
-        if (self.isReadyToReinvite()) {
-          self.onReadyToReinvite();
-        }
-        self.reinviteFailed();
+    this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
+    .then(function(description) {
+      self.sendRequest(SIP.C.INVITE, {
+        extraHeaders: extraHeaders,
+        body: description,
+        receiveResponse: self.receiveReinviteResponse.bind(self)
+      });
+    }).catch(function onFailure(e) {
+      if (e instanceof SIP.Exceptions.RenegotiationError) {
+        self.pendingReinvite = false;
+        self.emit('renegotiationError', e);
+        self.logger.warn('Renegotiation Error');
+        self.logger.warn(e);
+        return;
       }
-    );
+      self.logger.error('sessionDescriptionHandler error');
+      self.logger.error(e);
+    });
   },
 
   receiveRequest: function (request) {
@@ -668,6 +554,10 @@ Session.prototype = {
         break;
       case SIP.C.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
+          if (this.onInfo) {
+            return this.onInfo(request);
+          }
+
           var body, tone, duration,
               contentType = request.getHeader('content-type'),
               reg_tone = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/,
@@ -697,33 +587,36 @@ Session.prototype = {
       case SIP.C.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
-          request.reply(202, 'Accepted');
-          var
-            hasReferListener = this.listeners('refer').length,
-            notifyBody = hasReferListener ?
-              'SIP/2.0 100 Trying' :
-              // RFC 3515.2.4.2: 'the UA MAY decline the request.'
-              'SIP/2.0 603 Declined'
-          ;
-
-          this.sendRequest(SIP.C.NOTIFY, {
-            extraHeaders:[
-              'Event: refer',
-              'Subscription-State: terminated',
-              'Content-Type: message/sipfrag'
-            ],
-            body: notifyBody,
-            receiveResponse: function() {}
-          });
+          var hasReferListener = this.listeners('refer').length,
+              notifyBody;
 
           if (hasReferListener) {
+            request.reply(202, 'Accepted');
+            notifyBody = 'SIP/2.0 100 Trying';
+
+            this.sendRequest(SIP.C.NOTIFY, {
+              extraHeaders:[
+                'Event: refer',
+                'Subscription-State: terminated',
+                'Content-Type: message/sipfrag'
+              ],
+              body: notifyBody,
+              receiveResponse: function() {}
+            });
+
             this.emit('refer', request);
+          } else {
+            // RFC 3515.2.4.2: 'the UA MAY decline the request.'
+            request.reply(603, 'Declined');
           }
         }
         break;
       case SIP.C.NOTIFY:
         request.reply(200, 'OK');
         this.emit('notify', request);
+        break;
+      case SIP.C.UPDATE:
+        request.reply(200, 'OK');
         break;
     }
   },
@@ -733,8 +626,7 @@ Session.prototype = {
    * @private
    */
   receiveReinviteResponse: function(response) {
-    var self = this,
-        contentType = response.getHeader('Content-Type');
+    var self = this;
 
     if (this.status === C.STATUS_TERMINATED) {
       return;
@@ -746,29 +638,34 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
-        this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
+        // TODO: Handle re-INVITE w/o SDP
+        // 17.1.1.1 - For each final response that is received at the client transaction, the client transaction sends an ACK,
+        this.emit("ack", response.transaction.sendACK());
+        this.pendingReinvite = false;
+        // TODO: All of these timers should move into the Transaction layer
+        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
+        if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
+          this.logger.error('2XX response received to re-invite but did not have a description');
+          this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('2XX response received to re-invite but did not have a description'));
 
-        if(!response.body) {
-          this.reinviteFailed();
-          break;
-        } else if (contentType !== 'application/sdp') {
-          this.reinviteFailed();
           break;
         }
 
-        //REVISIT
-        this.mediaHandler.setDescription(response.body)
-        .then(
-          function onSuccess () {
-            self.reinviteSucceeded();
-          },
-          function onFailure () {
-            self.reinviteFailed();
-          }
-        );
+        this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+        .catch(function onFailure (e) {
+          self.logger.error('Could not set the description in 2XX response');
+          self.logger.error(e);
+          self.emit('renegotiationError', e);
+          self.sendRequest(SIP.C.BYE, {
+            extraHeaders: [SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
+          });
+        });
         break;
       default:
-        this.reinviteFailed();
+        this.disableRenegotiation = true;
+        this.pendingReinvite = false;
+        this.logger.log('Received a non 1XX or 2XX response to a re-invite');
+        this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('Invalid response to a re-invite'));
     }
   },
 
@@ -781,7 +678,7 @@ Session.prototype = {
 
     // An error on dialog creation will fire 'failed' event
     if (this.dialog || this.createDialog(response, 'UAC')) {
-      this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
+      this.emit("ack", response.transaction.sendACK());
       this.sendRequest(SIP.C.BYE, {
         extraHeaders: extraHeaders
       });
@@ -795,7 +692,7 @@ Session.prototype = {
    * Response retransmissions cannot be accomplished by transaction layer
    *  since it is destroyed when receiving the first 2xx answer
    */
-  setInvite2xxTimer: function(request, body) {
+  setInvite2xxTimer: function(request, description) {
     var self = this,
         timeout = SIP.Timers.T1;
 
@@ -806,7 +703,9 @@ Session.prototype = {
 
       self.logger.log('no ACK received, attempting to retransmit OK');
 
-      request.reply(200, null, ['Contact: ' + self.contact], body);
+      var extraHeaders = ['Contact: ' + self.contact];
+
+      request.reply(200, null, extraHeaders, description);
 
       timeout = Math.min(timeout * 2, SIP.Timers.T2);
 
@@ -835,16 +734,6 @@ Session.prototype = {
   /*
    * @private
    */
-  onReadyToReinvite: function() {
-    var action = this.pending_actions.shift();
-
-    if (!action || !this[action.name]) {
-      return;
-    }
-
-    this[action.name]();
-  },
-
   onTransportError: function() {
     if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
@@ -872,38 +761,6 @@ Session.prototype = {
   /**
    * @private
    */
-  onhold: function(originator) {
-    this[originator === 'local' ? 'local_hold' : 'remote_hold'] = true;
-    this.emit('hold', { originator: originator });
-  },
-
-  /**
-   * @private
-   */
-  onunhold: function(originator) {
-    this[originator === 'local' ? 'local_hold' : 'remote_hold'] = false;
-    this.emit('unhold', { originator: originator });
-  },
-
-  /*
-   * @private
-   */
-  onmute: function(options) {
-    this.emit('muted', {
-      audio: options.audio,
-      video: options.video
-    });
-  },
-
-  /*
-   * @private
-   */
-  onunmute: function(options) {
-    this.emit('unmuted', {
-      audio: options.audio,
-      video: options.video
-    });
-  },
 
   failed: function(response, cause) {
     if (this.status === C.STATUS_TERMINATED) {
@@ -960,23 +817,6 @@ Session.prototype = {
   }
 };
 
-Session.desugar = function desugar(options) {
-  if (environment.HTMLMediaElement && options instanceof environment.HTMLMediaElement) {
-    options = {
-      media: {
-        constraints: {
-          audio: true,
-          video: options.tagName === 'VIDEO'
-        },
-        render: {
-          remote: options
-        }
-      }
-    };
-  }
-  return options || {};
-};
-
 
 Session.C = C;
 SIP.Session = Session;
@@ -988,22 +828,13 @@ InviteServerContext = function(ua, request) {
     contentType = request.getHeader('Content-Type'),
     contentDisp = request.parseHeader('Content-Disposition');
 
-  // Check body and content type
-  if ((!contentDisp && contentType !== 'application/sdp') || (contentDisp && contentDisp.type === 'render')) {
+  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
+  SIP.Utils.augment(this, SIP.Session, [ua.configuration.sessionDescriptionHandlerFactory]);
+
+  if (contentDisp && contentDisp.type === 'render') {
     this.renderbody = request.body;
     this.rendertype = contentType;
-  } else if (contentType !== 'application/sdp' && (contentDisp && contentDisp.type === 'session')) {
-    request.reply(415);
-    //TODO: instead of 415, pass off to the media handler, who can then decide if we can use it
-    return;
   }
-
-  //TODO: move this into media handler
-  SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
-  SIP.Hacks.AllBrowsers.maskDtls(request);
-
-  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
 
   this.status = C.STATUS_INVITE_RECEIVED;
   this.from_tag = request.from_tag;
@@ -1043,60 +874,31 @@ InviteServerContext = function(ua, request) {
     return;
   }
 
-  //Initialize Media Session
-  this.mediaHandler = this.mediaHandlerFactory(this, {
-    RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
-  });
+  var options = {extraHeaders: ['Contact: ' + self.contact]};
 
-  if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
-    this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
-    this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
+  if (self.rel100 !== SIP.C.supported.REQUIRED) {
+    self.progress(options);
   }
+  self.status = C.STATUS_WAITING_FOR_ANSWER;
 
-  function fireNewSession() {
-    var options = {extraHeaders: ['Contact: ' + self.contact]};
+  // Set userNoAnswerTimer
+  self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
+    request.reply(408);
+    self.failed(request, SIP.C.causes.NO_ANSWER);
+    self.terminated(request, SIP.C.causes.NO_ANSWER);
+  }, self.ua.configuration.noAnswerTimeout);
 
-    if (self.rel100 !== SIP.C.supported.REQUIRED) {
-      self.progress(options);
-    }
-    self.status = C.STATUS_WAITING_FOR_ANSWER;
-
-    // Set userNoAnswerTimer
-    self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
-      request.reply(408);
-      self.failed(request, SIP.C.causes.NO_ANSWER);
-      self.terminated(request, SIP.C.causes.NO_ANSWER);
-    }, self.ua.configuration.noAnswerTimeout);
-
-    /* Set expiresTimer
-     * RFC3261 13.3.1
-     */
-    if (expires) {
-      self.timers.expiresTimer = SIP.Timers.setTimeout(function() {
-        if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
-          request.reply(487);
-          self.failed(request, SIP.C.causes.EXPIRES);
-          self.terminated(request, SIP.C.causes.EXPIRES);
-        }
-      }, expires);
-    }
-
-    self.emit('invite',request);
-  }
-
-  if (!request.body || this.renderbody) {
-    SIP.Timers.setTimeout(fireNewSession, 0);
-  } else {
-    this.hasOffer = true;
-    this.mediaHandler.setDescription(request.body)
-    .then(
-      fireNewSession,
-      function onFailure (e) {
-        self.logger.warn('invalid SDP');
-        self.logger.warn(e);
-        request.reply(488);
+  /* Set expiresTimer
+   * RFC3261 13.3.1
+   */
+  if (expires) {
+    self.timers.expiresTimer = SIP.Timers.setTimeout(function() {
+      if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
+        request.reply(487);
+        self.failed(request, SIP.C.causes.EXPIRES);
+        self.terminated(request, SIP.C.causes.EXPIRES);
       }
-    );
+    }, expires);
   }
 };
 
@@ -1128,7 +930,7 @@ InviteServerContext.prototype = {
 
       this.receiveRequest = function(request) {
         if (request.method === SIP.C.ACK) {
-          this.request(SIP.C.BYE, {
+          this.sendRequest(SIP.C.BYE, {
             extraHeaders: extraHeaders,
             body: body
           });
@@ -1137,7 +939,7 @@ InviteServerContext.prototype = {
       };
 
       this.request.server_transaction.on('stateChanged', function(){
-        if (this.state === SIP.Transactions.C.STATUS_TERMINATED) {
+        if (this.state === SIP.Transactions.C.STATUS_TERMINATED && this.dialog) {
           this.request = new SIP.OutgoingRequest(
             SIP.C.BYE,
             this.dialog.remote_target,
@@ -1193,7 +995,7 @@ InviteServerContext.prototype = {
   },
 
   /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+   * @param {Object} [options.sessionDescriptionHandlerOptions] gets passed to SIP.SessionDescriptionHandler.getDescription as options
    */
   progress: function (options) {
     options = options || {};
@@ -1222,24 +1024,21 @@ InviteServerContext.prototype = {
       extraHeaders.push('Require: 100rel');
       extraHeaders.push('RSeq: ' + Math.floor(Math.random() * 10000));
 
-      // Save media hint for later (referred sessions)
-      this.mediaHint = options.media;
-
       // Get the session description to add to preaccept with
-      this.mediaHandler.getDescription(options.media)
+      this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
       .then(
-        function onSuccess (body) {
+        function onSuccess (description) {
           if (this.isCanceled || this.status === C.STATUS_TERMINATED) {
             return;
           }
 
-          this.early_sdp = body;
+          this.early_sdp = description.body;
           this[this.hasOffer ? 'hasAnswer' : 'hasOffer'] = true;
 
           // Retransmit until we get a response or we time out (see prackTimer below)
           var timeout = SIP.Timers.T1;
           this.timers.rel1xxTimer = SIP.Timers.setTimeout(function rel1xxRetransmission() {
-            this.request.reply(statusCode, null, extraHeaders, body);
+            this.request.reply(statusCode, null, extraHeaders, description);
             timeout *= 2;
             this.timers.rel1xxTimer = SIP.Timers.setTimeout(rel1xxRetransmission.bind(this), timeout);
           }.bind(this), timeout);
@@ -1257,7 +1056,7 @@ InviteServerContext.prototype = {
           }.bind(this), SIP.Timers.T1 * 64);
 
           // Send the initial response
-          response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+          response = this.request.reply(statusCode, reasonPhrase, extraHeaders, description);
           this.emit('progress', response, reasonPhrase);
         }.bind(this),
 
@@ -1279,7 +1078,20 @@ InviteServerContext.prototype = {
         (this.rel100 === SIP.C.supported.REQUIRED ||
          (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
          (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
-      do100rel.apply(this);
+      this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
+        this.hasOffer = true;
+        this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(do100rel.apply(this))
+        .catch(function onFailure(e) {
+          this.logger.warn('invalid description');
+          this.logger.warn(e);
+          this.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          this.terminated(null, SIP.C.causes.WEBRTC_ERROR);
+        }.bind(this));
+      } else {
+        do100rel.apply(this);
+      }
     } else {
       normalReply.apply(this);
     }
@@ -1287,28 +1099,25 @@ InviteServerContext.prototype = {
   },
 
   /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+   * @param {Object} [options.sessionDescriptionHandlerOptions] gets passed to SIP.SessionDescriptionHandler.getDescription as options
    */
   accept: function(options) {
-    options = Object.create(Session.desugar(options));
-    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
-    this.mediaHint = options.media;
+    options = options || {};
 
-    // commented out now-unused hold-related variables for jshint. See below. JMF 2014-1-21
+    this.onInfo = options.onInfo;
+
     var
-      //idx, length, hasAudio, hasVideo,
       self = this,
       request = this.request,
       extraHeaders = (options.extraHeaders || []).slice(),
-    //mediaStream = options.mediaStream || null,
-      sdpCreationSucceeded = function(body) {
+      descriptionCreationSucceeded = function(description) {
         var
           response,
           // run for reply success callback
           replySucceeded = function() {
             self.status = C.STATUS_WAITING_FOR_ACK;
 
-            self.setInvite2xxTimer(request, body);
+            self.setInvite2xxTimer(request, description);
             self.setACKTimer();
           },
 
@@ -1318,16 +1127,8 @@ InviteServerContext.prototype = {
             self.terminated(null, SIP.C.causes.CONNECTION_ERROR);
           };
 
-        // Chrome might call onaddstream before accept() is called, which means
-        // mediaHandler.render() was called without a renderHint, so we need to
-        // re-render now that mediaHint.render has been set.
-        //
-        // Chrome seems to be in the right regarding this, see
-        // http://dev.w3.org/2011/webrtc/editor/webrtc.html#widl-RTCPeerConnection-onaddstream
-        self.mediaHandler.render();
-
         extraHeaders.push('Contact: ' + self.contact);
-        extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(self.ua));
+        extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
         if(!self.hasOffer) {
           self.hasOffer = true;
@@ -1335,7 +1136,7 @@ InviteServerContext.prototype = {
           self.hasAnswer = true;
         }
         response = request.reply(200, null, extraHeaders,
-                      body,
+                      description,
                       replySucceeded,
                       replyFailed
                      );
@@ -1344,13 +1145,11 @@ InviteServerContext.prototype = {
         }
       },
 
-      sdpCreationFailed = function() {
+      descriptionCreationFailed = function() {
         if (self.status === C.STATUS_TERMINATED) {
           return;
         }
-        // TODO - fail out on error
         self.request.reply(480);
-        //self.failed(response, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
         self.failed(null, SIP.C.causes.WEBRTC_ERROR);
         self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
       };
@@ -1373,48 +1172,27 @@ InviteServerContext.prototype = {
 
     SIP.Timers.clearTimeout(this.timers.userNoAnswerTimer);
 
-    // this hold-related code breaks FF accepting new calls - JMF 2014-1-21
-    /*
-    length = this.getRemoteStreams().length;
-
-    for (idx = 0; idx < length; idx++) {
-      if (this.mediaHandler.getRemoteStreams()[idx].getVideoTracks().length > 0) {
-        hasVideo = true;
-      }
-      if (this.mediaHandler.getRemoteStreams()[idx].getAudioTracks().length > 0) {
-        hasAudio = true;
-      }
-    }
-
-    if (!hasAudio && this.mediaConstraints.audio === true) {
-      this.mediaConstraints.audio = false;
-      if (mediaStream) {
-        length = mediaStream.getAudioTracks().length;
-        for (idx = 0; idx < length; idx++) {
-          mediaStream.removeTrack(mediaStream.getAudioTracks()[idx]);
-        }
-      }
-    }
-
-    if (!hasVideo && this.mediaConstraints.video === true) {
-      this.mediaConstraints.video = false;
-      if (mediaStream) {
-        length = mediaStream.getVideoTracks().length;
-        for (idx = 0; idx < length; idx++) {
-          mediaStream.removeTrack(mediaStream.getVideoTracks()[idx]);
-        }
-      }
-    }
-    */
-
     if (this.status === C.STATUS_EARLY_MEDIA) {
-      sdpCreationSucceeded();
+      descriptionCreationSucceeded({});
     } else {
-      this.mediaHandler.getDescription(self.mediaHint)
-      .then(
-        sdpCreationSucceeded,
-        sdpCreationFailed
-      );
+      this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      if (this.request.getHeader('Content-Length') === '0' && !this.request.getHeader('Content-Type')) {
+        this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(descriptionCreationSucceeded)
+        .catch(descriptionCreationFailed);
+      } else if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
+        this.hasOffer = true;
+        this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
+        .then(function() {
+          return this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers);
+        }.bind(this))
+        .then(descriptionCreationSucceeded)
+        .catch(descriptionCreationFailed);
+      } else {
+        this.request.reply(415);
+        // TODO: Events
+        return;
+      }
     }
 
     return this;
@@ -1426,19 +1204,21 @@ InviteServerContext.prototype = {
 
     function confirmSession() {
       /* jshint validthis:true */
-      var contentType;
+      var contentType, contentDisp;
 
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
-      this.unmute();
 
-      // TODO - this logic assumes Content-Disposition defaults
       contentType = request.getHeader('Content-Type');
-      if (contentType !== 'application/sdp') {
+      contentDisp = request.getHeader('Content-Disposition');
+
+      if (contentDisp && contentDisp.type === 'render') {
         this.renderbody = request.body;
         this.rendertype = contentType;
       }
+
+      this.emit('confirmed', request);
     }
 
     switch(request.method) {
@@ -1471,13 +1251,11 @@ InviteServerContext.prototype = {
     case SIP.C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
         if (!this.hasAnswer) {
-          if(request.body && request.getHeader('content-type') === 'application/sdp') {
+          this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+          if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             // ACK contains answer to an INVITE w/o SDP negotiation
-            SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
-            SIP.Hacks.AllBrowsers.maskDtls(request);
-
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(request.body)
+            this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               confirmSession.bind(this),
               function onFailure (e) {
@@ -1493,7 +1271,6 @@ InviteServerContext.prototype = {
           } else if (this.early_sdp) {
             confirmSession.apply(this);
           } else {
-            //TODO: Pass to mediahandler
             this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
@@ -1504,11 +1281,11 @@ InviteServerContext.prototype = {
       break;
     case SIP.C.PRACK:
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-        //localMedia = session.mediaHandler.localMedia;
         if(!this.hasAnswer) {
-          if(request.body && request.getHeader('content-type') === 'application/sdp') {
+          this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+          if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             this.hasAnswer = true;
-            this.mediaHandler.setDescription(request.body)
+            this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               function onSuccess () {
                 SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
@@ -1519,11 +1296,8 @@ InviteServerContext.prototype = {
                   this.accept();
                 }
                 this.status = C.STATUS_EARLY_MEDIA;
-                //REVISIT
-                this.mute();
               }.bind(this),
               function onFailure (e) {
-                //TODO: Send to media handler
                 this.logger.warn(e);
                 this.terminate({
                   statusCode: '488',
@@ -1551,8 +1325,6 @@ InviteServerContext.prototype = {
             this.accept();
           }
           this.status = C.STATUS_EARLY_MEDIA;
-          //REVISIT
-          this.mute();
         }
       } else if(this.status === C.STATUS_EARLY_MEDIA) {
         request.reply(200);
@@ -1562,6 +1334,14 @@ InviteServerContext.prototype = {
       Session.prototype.receiveRequest.apply(this, [request]);
       break;
     }
+  },
+
+  // Internal Function to setup the handler consistently
+  setupSessionDescriptionHandler: function() {
+    if (this.sessionDescriptionHandler) {
+      return this.sessionDescriptionHandler;
+    }
+    return this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
   },
 
   onTransportError: function() {
@@ -1583,22 +1363,18 @@ InviteServerContext.prototype = {
 
 SIP.InviteServerContext = InviteServerContext;
 
-InviteClientContext = function(ua, target, options) {
-  options = Object.create(Session.desugar(options));
+InviteClientContext = function(ua, target, options, modifiers) {
+  options = options || {};
+  this.passedOptions = options; // Save for later to use with refer
   options.params = Object.create(options.params || Object.prototype);
 
-  var iceServers,
-    extraHeaders = (options.extraHeaders || []).slice(),
-    stunServers = options.stunServers || null,
-    turnServers = options.turnServers || null,
-    isMediaSupported = ua.configuration.mediaHandlerFactory.isSupported;
+  var extraHeaders = (options.extraHeaders || []).slice(),
+    sessionDescriptionHandlerFactory = ua.configuration.sessionDescriptionHandlerFactory;
 
-  // Check WebRTC support
-  if (isMediaSupported && !isMediaSupported()) {
-    throw new SIP.Exceptions.NotSupportedError('Media not supported');
-  }
+  this.sessionDescriptionHandlerFactoryOptions = ua.configuration.sessionDescriptionHandlerFactoryOptions || {};
+  this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
+  this.modifiers = modifiers;
 
-  this.RTCConstraints = options.RTCConstraints || {};
   this.inviteWithoutSdp = options.inviteWithoutSdp || false;
 
   // Set anonymous property
@@ -1608,6 +1384,8 @@ InviteClientContext = function(ua, target, options) {
   this.renderbody = options.renderbody || null;
   this.rendertype = options.rendertype || 'text/plain';
 
+  // Session parameter initialization
+  this.from_tag = SIP.Utils.newTag();
   options.params.from_tag = this.from_tag;
 
   /* Do not add ;ob in initial forming dialog requests if the registration over
@@ -1626,10 +1404,8 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Privacy: id');
   }
   extraHeaders.push('Contact: '+ this.contact);
-  extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
-  if (!this.inviteWithoutSdp) {
-    extraHeaders.push('Content-Type: application/sdp');
-  } else if (this.renderbody) {
+  extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
+  if (this.inviteWithoutSdp && this.renderbody) {
     extraHeaders.push('Content-Type: ' + this.rendertype);
     extraHeaders.push('Content-Disposition: render;handling=optional');
   }
@@ -1644,15 +1420,12 @@ InviteClientContext = function(ua, target, options) {
   options.extraHeaders = extraHeaders;
 
   SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
+  SIP.Utils.augment(this, SIP.Session, [sessionDescriptionHandlerFactory]);
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
     throw new SIP.Exceptions.InvalidStateError(this.status);
   }
-
-  // Session parameter initialization
-  this.from_tag = SIP.Utils.newTag();
 
   // OutgoingSession specific parameters
   this.isCanceled = false;
@@ -1665,42 +1438,11 @@ InviteClientContext = function(ua, target, options) {
 
   this.logger = ua.getLogger('sip.inviteclientcontext');
 
-  if (stunServers) {
-    iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
-    if (!iceServers) {
-      throw new TypeError('Invalid stunServers: '+ stunServers);
-    } else {
-      this.stunServers = iceServers;
-    }
-  }
-
-  if (turnServers) {
-    iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
-    if (!iceServers) {
-      throw new TypeError('Invalid turnServers: '+ turnServers);
-    } else {
-      this.turnServers = iceServers;
-    }
-  }
-
   ua.applicants[this] = this;
 
   this.id = this.request.call_id + this.from_tag;
 
-  //Initialize Media Session
-  this.mediaHandler = this.mediaHandlerFactory(this, {
-    RTCConstraints: this.RTCConstraints,
-    stunServers: this.stunServers,
-    turnServers: this.turnServers
-  });
-
-  if (this.mediaHandler && this.mediaHandler.getRemoteStreams) {
-    this.getRemoteStreams = this.mediaHandler.getRemoteStreams.bind(this.mediaHandler);
-    this.getLocalStreams = this.mediaHandler.getLocalStreams.bind(this.mediaHandler);
-  }
-
-  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
-  this.mediaHint = options.media;
+  this.onInfo = options.onInfo;
 };
 
 InviteClientContext.prototype = {
@@ -1711,22 +1453,23 @@ InviteClientContext.prototype = {
     //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway
     this.ua.sessions[this.id] = this;
 
-    //Note: due to the way Firefox handles gUM calls, it is recommended to make the gUM call at the app level
-    // and hand sip.js a stream as the mediaHint
     if (this.inviteWithoutSdp) {
       //just send an invite with no sdp...
       this.request.body = self.renderbody;
       this.status = C.STATUS_INVITE_SENT;
       this.send();
     } else {
-      this.mediaHandler.getDescription(self.mediaHint)
+      //Initialize Media Session
+      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+
+      this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
       .then(
-        function onSuccess(offer) {
+        function onSuccess(description) {
           if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
             return;
           }
           self.hasOffer = true;
-          self.request.body = offer;
+          self.request.body = description;
           self.status = C.STATUS_INVITE_SENT;
           self.send();
         },
@@ -1734,9 +1477,6 @@ InviteClientContext.prototype = {
           if (self.status === C.STATUS_TERMINATED) {
             return;
           }
-          // TODO...fail out
-          //self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
-          //self.failed(null, SIP.C.causes.WEBRTC_ERROR);
           self.failed(null, SIP.C.causes.WEBRTC_ERROR);
           self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
         }
@@ -1747,7 +1487,7 @@ InviteClientContext.prototype = {
   },
 
   receiveInviteResponse: function(response) {
-    var cause, //localMedia,
+    var cause,
       session = this,
       id = response.call_id + response.from_tag + response.to_tag,
       extraHeaders = [],
@@ -1762,10 +1502,7 @@ InviteClientContext.prototype = {
         if (!this.createDialog(response, 'UAC', true)) {
           return;
         }
-        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK,
-                                          {
-                                            body: SIP.Utils.generateFakeSDP(response.body)
-                                          });
+        this.emit("ack", response.transaction.sendACK({body: SIP.Utils.generateFakeSDP(response.body)}));
         this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
 
         /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
@@ -1778,7 +1515,7 @@ InviteClientContext.prototype = {
         }
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
-        this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
+        this.emit("ack", response.transaction.sendACK());
         return;
       } else if (!this.hasAnswer) {
         // invite w/o sdp is waiting for callback
@@ -1819,7 +1556,7 @@ InviteClientContext.prototype = {
     // Proceed to cancellation if the user requested.
     if(this.isCanceled) {
       if(response.status_code >= 100 && response.status_code < 200) {
-        this.request.cancel(this.cancelReason);
+        this.request.cancel(this.cancelReason, extraHeaders);
         this.canceled(null);
       } else if(response.status_code >= 200 && response.status_code < 299) {
         this.acceptAndTerminate(response);
@@ -1867,11 +1604,9 @@ InviteClientContext.prototype = {
               (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] >= response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
             return;
           }
-
-          SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
-          SIP.Hacks.AllBrowsers.maskDtls(response);
-
-          if (!response.body) {
+          // TODO: This may be broken. It may have to be on the early dialog
+          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+          if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
             this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
@@ -1886,7 +1621,7 @@ InviteClientContext.prototype = {
             this.hasAnswer = true;
             this.dialog.pracked.push(response.getHeader('rseq'));
 
-            this.mediaHandler.setDescription(response.body)
+            this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               function onSuccess () {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1896,18 +1631,7 @@ InviteClientContext.prototype = {
                   receiveResponse: function() {}
                 });
                 session.status = C.STATUS_EARLY_MEDIA;
-                session.mute();
                 session.emit('progress', response);
-                /*
-                if (session.status === C.STATUS_EARLY_MEDIA) {
-                  localMedia = session.mediaHandler.localMedia;
-                  if (localMedia.getAudioTracks().length > 0) {
-                    localMedia.getAudioTracks()[0].enabled = false;
-                  }
-                  if (localMedia.getVideoTracks().length > 0) {
-                    localMedia.getVideoTracks()[0].enabled = false;
-                  }
-                }*/
               },
               function onFailure (e) {
                 session.logger.warn(e);
@@ -1917,18 +1641,17 @@ InviteClientContext.prototype = {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.mediaHandler;
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerOptions);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
-            earlyMedia.setDescription(response.body)
-            .then(earlyMedia.getDescription.bind(earlyMedia, session.mediaHint))
-            .then(function onSuccess(sdp) {
-              extraHeaders.push('Content-Type: application/sdp');
+            earlyMedia.setDescription(response.body, session.sessionDescriptionHandlerOptions, session.modifers)
+            .then(earlyMedia.getDescription.bind(earlyMedia, session.sessionDescriptionHandlerOptions, session.modifiers))
+            .then(function onSuccess(description) {
               extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
               earlyDialog.sendRequest(session, SIP.C.PRACK, {
                 extraHeaders: extraHeaders,
-                body: sdp
+                body: description
               });
               session.status = C.STATUS_EARLY_MEDIA;
               session.emit('progress', response);
@@ -1939,14 +1662,12 @@ InviteClientContext.prototype = {
                 if (session.status === C.STATUS_TERMINATED) {
                   return;
                 }
-                // TODO - fail out on error
-                // session.failed(gum error);
                 session.failed(null, SIP.C.causes.WEBRTC_ERROR);
                 session.terminated(null, SIP.C.causes.WEBRTC_ERROR);
               } else {
                 earlyDialog.pracked.splice(earlyDialog.pracked.indexOf(response.getHeader('rseq')), 1);
                 // Could not set remote description
-                session.logger.warn('invalid SDP');
+                session.logger.warn('invalid description');
                 session.logger.warn(e);
               }
             });
@@ -1963,22 +1684,13 @@ InviteClientContext.prototype = {
 
         if (this.status === C.STATUS_EARLY_MEDIA && this.dialog) {
           this.status = C.STATUS_CONFIRMED;
-          this.unmute();
-          /*localMedia = this.mediaHandler.localMedia;
-          if (localMedia.getAudioTracks().length > 0) {
-            localMedia.getAudioTracks()[0].enabled = true;
-          }
-          if (localMedia.getVideoTracks().length > 0) {
-            localMedia.getVideoTracks()[0].enabled = true;
-          }*/
           options = {};
           if (this.renderbody) {
             extraHeaders.push('Content-Type: ' + this.rendertype);
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          options.cseq = response.cseq;
-          this.sendRequest(SIP.C.ACK, options);
+          this.emit("ack", response.transaction.sendACK(options));
           this.accepted(response);
           break;
         }
@@ -1987,34 +1699,24 @@ InviteClientContext.prototype = {
           break;
         }
 
-        SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
-        SIP.Hacks.AllBrowsers.maskDtls(response);
-
         // This is an invite without sdp
         if (!this.hasOffer) {
-          if (this.earlyDialogs[id] && this.earlyDialogs[id].mediaHandler.localMedia) {
+          if (this.earlyDialogs[id] && this.earlyDialogs[id].sessionDescriptionHandler) {
             //REVISIT
             this.hasOffer = true;
             this.hasAnswer = true;
-            this.mediaHandler = this.earlyDialogs[id].mediaHandler;
+            this.sessionDescriptionHandler = this.earlyDialogs[id].sessionDescriptionHandler;
             if (!this.createDialog(response, 'UAC')) {
               break;
             }
             this.status = C.STATUS_CONFIRMED;
-            this.sendRequest(SIP.C.ACK, {cseq:response.cseq});
+            this.emit("ack", response.transaction.sendACK());
 
-            this.unmute();
-            /*
-            localMedia = session.mediaHandler.localMedia;
-            if (localMedia.getAudioTracks().length > 0) {
-              localMedia.getAudioTracks()[0].enabled = true;
-            }
-            if (localMedia.getVideoTracks().length > 0) {
-              localMedia.getVideoTracks()[0].enabled = true;
-            }*/
             this.accepted(response);
           } else {
-            if(!response.body) {
+            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+
+            if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
               this.acceptAndTerminate(response, 400, 'Missing session description');
               this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               break;
@@ -2023,32 +1725,18 @@ InviteClientContext.prototype = {
               break;
             }
             this.hasOffer = true;
-            this.mediaHandler.setDescription(response.body)
-            .then(this.mediaHandler.getDescription.bind(this.mediaHandler, this.mediaHint))
-            .then(function onSuccess(sdp) {
+            this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+            .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers))
+            .then(function onSuccess(description) {
               //var localMedia;
               if(session.isCanceled || session.status === C.STATUS_TERMINATED) {
                 return;
               }
 
-              sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
-
               session.status = C.STATUS_CONFIRMED;
               session.hasAnswer = true;
 
-              session.unmute();
-              /*localMedia = session.mediaHandler.localMedia;
-              if (localMedia.getAudioTracks().length > 0) {
-                localMedia.getAudioTracks()[0].enabled = true;
-              }
-              if (localMedia.getVideoTracks().length > 0) {
-                localMedia.getVideoTracks()[0].enabled = true;
-              }*/
-              session.sendRequest(SIP.C.ACK,{
-                body: sdp,
-                extraHeaders:['Content-Type: application/sdp'],
-                cseq:response.cseq
-              });
+              session.emit("ack", response.transaction.sendACK({body: description}));
               session.accepted(response);
             })
             .catch(function onFailure(e) {
@@ -2056,9 +1744,10 @@ InviteClientContext.prototype = {
                 // TODO do something here
                 session.logger.warn("there was a problem");
               } else {
-                session.logger.warn('invalid SDP');
+                session.logger.warn('invalid description');
                 session.logger.warn(e);
-                response.reply(488);
+                session.acceptAndTerminate(response, 488, 'Invalid session description');
+                session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }
             });
           }
@@ -2068,9 +1757,9 @@ InviteClientContext.prototype = {
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          this.sendRequest(SIP.C.ACK, options);
+          this.emit("ack", response.transaction.sendACK(options));
         } else {
-          if(!response.body) {
+          if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             this.acceptAndTerminate(response, 400, 'Missing session description');
             this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
             break;
@@ -2079,26 +1768,17 @@ InviteClientContext.prototype = {
             break;
           }
           this.hasAnswer = true;
-          this.mediaHandler.setDescription(response.body)
+          this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
           .then(
             function onSuccess () {
-              var options = {};//,localMedia;
+              var options = {};
               session.status = C.STATUS_CONFIRMED;
-              session.unmute();
-              /*localMedia = session.mediaHandler.localMedia;
-              if (localMedia.getAudioTracks().length > 0) {
-                localMedia.getAudioTracks()[0].enabled = true;
-              }
-              if (localMedia.getVideoTracks().length > 0) {
-                localMedia.getVideoTracks()[0].enabled = true;
-              }*/
               if (session.renderbody) {
                 extraHeaders.push('Content-Type: ' + session.rendertype);
                 options.extraHeaders = extraHeaders;
                 options.body = session.renderbody;
               }
-              options.cseq = response.cseq;
-              session.sendRequest(SIP.C.ACK, options);
+              session.emit("ack", response.transaction.sendACK(options));
               session.accepted(response);
             },
             function onFailure (e) {
@@ -2120,6 +1800,8 @@ InviteClientContext.prototype = {
   cancel: function(options) {
     options = options || {};
 
+    options.extraHeaders = (options.extraHeaders || []).slice();
+
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED || this.status === C.STATUS_CONFIRMED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -2137,7 +1819,7 @@ InviteClientContext.prototype = {
     } else if (this.status === C.STATUS_INVITE_SENT ||
                this.status === C.STATUS_1XX_RECEIVED ||
                this.status === C.STATUS_EARLY_MEDIA) {
-      this.request.cancel(cancel_reason);
+      this.request.cancel(cancel_reason, options.extraHeaders);
     }
 
     return this.canceled();
@@ -2169,7 +1851,6 @@ InviteClientContext.prototype = {
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
-      this.unmute();
 
       this.accepted();
     }
