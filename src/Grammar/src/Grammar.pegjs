@@ -917,7 +917,7 @@ hex12         = hex4 hex4 hex4
 
 // RFC 3420 (message/sipfrag)
 
-sipfrag = SIP_Version SP Status_Code SP Method
+sipfrag = SIP_Version SP Status_Code SP Method CRLF?
 
 // RFC 3892 (Referred-By)
 
