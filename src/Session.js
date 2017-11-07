@@ -1810,6 +1810,8 @@ ReferClientContext = function(ua, applicant, target, options) {
     throw new TypeError('Not enough arguments');
   }
 
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.REFER, applicant.remoteIdentity.uri.toString(), options]);
+
   this.applicant = applicant;
 
   var withReplaces = target instanceof SIP.InviteServerContext ||
