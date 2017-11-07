@@ -70,6 +70,10 @@ var Simple = function (options) {
     sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.WebRTC.Modifiers.stripG722];
   }
 
+  if (!this.options.ua.uri) {
+    this.anonymous = true;
+  }
+
   this.ua = new SIP.UA({
     // User Configurable Options
     wsServers:         this.options.ua.wsServers,
@@ -126,7 +130,7 @@ Simple.C = C;
 // Public
 
 Simple.prototype.call = function(destination) {
-  if (!this.ua || !this.ua.isRegistered()) {
+  if (!this.ua || !this.checkRegistration()) {
     this.logger.warn('A registered UA is required for calling');
     return;
   }
@@ -249,7 +253,7 @@ Simple.prototype.sendDTMF = function(tone) {
 };
 
 Simple.prototype.message = function(destination, message) {
-  if (!this.ua || !this.ua.isRegistered()) {
+  if (!this.ua || !this.checkRegistration()) {
     this.logger.warn('A registered UA is required to send a message');
     return;
   }
@@ -261,6 +265,10 @@ Simple.prototype.message = function(destination, message) {
 };
 
 // Private Helpers
+
+Simple.prototype.checkRegistration = function() {
+  return (this.anonymous || (this.ua && this.ua.isRegistered()));
+};
 
 Simple.prototype.setupRemoteMedia = function() {
   // If there is a video track, it will attach the video and audio to the same element
