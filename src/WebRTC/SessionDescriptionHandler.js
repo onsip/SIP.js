@@ -412,10 +412,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
       var stateEvent;
 
-      if (this.iceConnectionState === 'checking') {
-        self.startIceCheckingTimer();
-      }
-
       switch (this.iceConnectionState) {
       case 'new':
         stateEvent = 'iceConnection';
