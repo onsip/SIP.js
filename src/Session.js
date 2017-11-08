@@ -416,7 +416,7 @@ Session.prototype = {
 
     options = options || {};
     options.modifiers = modifiers || [];
-    options.modifiers.push(this.sessionDescriptionHandler.holdModifier);
+    options.modifiers.push(this.sessionDescriptionHandler.holdModifier.bind(this.sessionDescriptionHandler));
 
     this.local_hold = true;
 
