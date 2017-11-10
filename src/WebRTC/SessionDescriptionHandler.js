@@ -113,13 +113,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.initPeerConnection(options.peerConnectionOptions);
     }
 
-    if (this.constraints && options.constraints && this.constraints === options.constraints) {
-      shouldAcquireMedia = false;
-    }
-
     // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign(this.constraints, options.constraints);
-    this.constraints = this.checkAndDefaultConstraints(this.constraints);
+    var newConstraints = Object.assign({}, this.constraints, options.constraints);
+    newConstraints = this.checkAndDefaultConstraints(newConstraints);
+    if (JSON.stringify(newConstraints) !== JSON.stringify(this.constraints)) {
+        this.constraints = newConstraints;
+    } else {
+        shouldAcquireMedia = false;
+    }
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
