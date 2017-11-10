@@ -206,7 +206,7 @@ Simple.prototype.hangup = function() {
 };
 
 Simple.prototype.hold = function() {
-  if (this.state !== C.STATUS_CONNECTED || this.session.isOnHold().local) {
+  if (this.state !== C.STATUS_CONNECTED || this.session.local_hold) {
     this.logger.warn('Cannot put call on hold');
     return;
   }
@@ -216,7 +216,7 @@ Simple.prototype.hold = function() {
 };
 
 Simple.prototype.unhold = function() {
-  if (this.state !== C.STATUS_CONNECTED || !this.session.isOnHold().local) {
+  if (this.state !== C.STATUS_CONNECTED || !this.session.local_hold) {
     this.logger.warn('Cannot unhold a call that is not on hold');
     return;
   }
