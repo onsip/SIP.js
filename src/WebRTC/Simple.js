@@ -53,8 +53,7 @@ var Simple = function (options) {
   if (!this.audio && !this.video) {
     // Need to do at least audio or video
     // Error
-    this.logger.error('At least one remote audio or video element is required for Simple.');
-    return;
+    throw 'At least one remote audio or video element is required for Simple.';
   }
 
   this.options = options;
