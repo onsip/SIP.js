@@ -336,16 +336,6 @@ describe('Session', function() {
       };
     });
 
-    it('does not call setDescription and replies with 415 if contentType is not application/sdp', function() {
-      spyOn(message, 'getHeader').and.returnValue('incorrect');
-      spyOn(message, 'reply');
-
-      Session.receiveReinvite(message);
-
-      expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
-      expect(message.reply).toHaveBeenCalledWith(415);
-    });
-
     it('calls setDescription on success', function() {
       Session.receiveReinvite(message);
 
@@ -1129,6 +1119,16 @@ describe('InviteServerContext', function() {
       it('calls sessionDescriptionHandler.setDescription when the ACK contains an answer to an invite w/o sdp', function() {
         InviteServerContext.hasOffer = true;
 
+        InviteServerContext.sessionDescriptionHandler = {
+          hasDescription: function() {
+            return true;
+          },
+          setDescription: jasmine.createSpy('setDescription').and.returnValue(SIP.Utils.Promise.resolve(true)),
+          close: function() {
+            return;
+          }
+        };
+
         req = SIP.Parser.parseMessage([
           'ACK sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
           'Max-Forwards: 65',
@@ -1158,6 +1158,13 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
+        InviteServerContext.sessionDescriptionHandler = {
+          hasDescription: function() {
+            return false;
+          },
+          close: function() { return; }
+        };
+
         InviteServerContext.receiveRequest(req);
 
         expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
@@ -1167,14 +1174,6 @@ describe('InviteServerContext', function() {
         expect(InviteServerContext.accepted).not.toHaveBeenCalled();
       });
 
-      it('calls failed if the above two conditions are not true', function() {
-        spyOn(InviteServerContext, 'failed');
-
-        InviteServerContext.receiveRequest(req);
-
-        expect(InviteServerContext.failed).toHaveBeenCalledWith(req, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-      });
-
       it('calls confirmSession if there was an invite w/ sdp originally', function() {
         InviteServerContext.hasOffer = true;
         InviteServerContext.hasAnswer = true;
@@ -1182,6 +1181,13 @@ describe('InviteServerContext', function() {
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'emit');
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
+
+        InviteServerContext.sessionDescriptionHandler = {
+          hasDescription: function() {
+            return false;
+          },
+          close: function() { return; }
+        };
 
         InviteServerContext.receiveRequest(req);
 
