@@ -72,7 +72,10 @@ RPSMediaHandler.prototype = {
   },
 
   hasDescription: function (message) {
-    return true;
+    if (message) {
+      return true;
+    }
+    return false;
   },
 
   setDescription: function (sessionDescription, constraints, modifiers) {
