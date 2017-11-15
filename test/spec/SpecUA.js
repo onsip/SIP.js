@@ -81,10 +81,6 @@ describe('UA', function() {
     }]);
   });
 
-  xit('can be created with empty stunServers list', function () {
-    expect(new SIP.UA({stunServers: []}).configuration.stunServers).toEqual([]);
-  });
-
   it('sets the instance variables', function() {
     UA = undefined;
 
@@ -1634,26 +1630,6 @@ describe('UA', function() {
       });
     });
 
-    xdescribe('.stunServers', function() {
-      it('fails for anything except a string or an array', function() {
-        expect(configCheck.optional.stunServers()).toBeUndefined();
-        expect(configCheck.optional.stunServers(7)).toBeUndefined();
-        expect(configCheck.optional.stunServers(true)).toBeUndefined();
-        expect(configCheck.optional.stunServers({even: 'objects'})).toBeUndefined();
-      });
-
-      //Note this case returns ['stun:'], which is horrible
-      //Also, the argument [7] will return ['stun:7'], equally horrible
-      xit('fails for an invalid stun_uri', function() {
-        expect(configCheck.optional.stunServers([''])).toBeUndefined();
-      });
-
-      it('works with a string or an array', function() {
-        expect(configCheck.optional.stunServers(['example.com'])).toEqual(['stun:example.com']);
-        expect(configCheck.optional.stunServers('example.com')).toEqual(['stun:example.com']);
-      });
-    });
-
     describe('.traceSip', function() {
       it('fails for all types except boolean', function() {
         expect(configCheck.optional.traceSip()).toBeUndefined();
@@ -1666,49 +1642,6 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(configCheck.optional.traceSip(true)).toBe(true);
         expect(configCheck.optional.traceSip(false)).toBe(false);
-      });
-    });
-
-    xdescribe('.turnServers', function() {
-      it('works whether an array is passed or not', function() {
-        expect(configCheck.optional.turnServers({urls: ['example.com'], username: 'alice', password: 'pass'})).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
-        expect(configCheck.optional.turnServers([{urls: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{urls: ['example.com'], username: 'alice', password: 'pass'}]);
-        submitted_turn_servers = {
-          urls: ['example.com', 'example.org', 'example.net'],
-          username: 'alice',
-          password: 'pass'
-        };
-        expect(configCheck.optional.turnServers(submitted_turn_servers)).toEqual([submitted_turn_servers]);
-      });
-
-      it('works if you pass in server instead of urls (backwards compatible', function() {
-        expect(configCheck.optional.turnServers([{server: 'example.com', username: 'alice', password: 'pass'}])).toEqual([{server:'example.com', urls: ['example.com'], username: 'alice', password: 'pass'}]);
-      });
-
-      it('fails if url is missing', function() {
-        expect(configCheck.optional.turnServers({username: 'alice', password: 'pass'})).toBeUndefined();
-      });
-
-      it('allows username or password to be missing', function() {
-        expect(configCheck.optional.turnServers({urls: 'example.com', username: 'alice'})).toBeDefined();
-        expect(configCheck.optional.turnServers({urls: 'example.com', password: 'pass'})).toBeDefined();
-      });
-
-      it('fails if the url passed is not a valid turn_uri', function() {
-        expect(configCheck.optional.turnServers([{urls: '', username: 'alice', password: 'pass'}])).toBeUndefined();
-        submitted_turn_servers = [
-          {
-            urls: ['example.com', 'example.org'],
-            username: 'alice',
-            password: 'pass'
-          },
-          {
-            urls: [''],
-            username: 'alice',
-            password: 'pass'
-          }
-        ];
-        expect(configCheck.optional.turnServers(submitted_turn_servers)).toBeUndefined();
       });
     });
 
