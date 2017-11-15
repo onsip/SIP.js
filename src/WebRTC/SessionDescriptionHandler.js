@@ -324,6 +324,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       });
   }},
 
+  addDefaultIceCheckingTimeout: {writable: true, value: function addDefaultIceCheckingTimeout (peerConnectionOptions) {
+    if (peerConnectionOptions.iceCheckingTimeout === undefined) {
+      peerConnectionOptions.iceCheckingTimeout = 5000;
+    }
+    return peerConnectionOptions;
+  }},
+
   addDefaultIceServers: {writable: true, value: function addDefaultIceServers (rtcConfiguration) {
     if (!rtcConfiguration.iceServers) {
       rtcConfiguration.iceServers = [{urls: 'stun:stun.l.google.com:19302'}];
@@ -344,6 +351,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   initPeerConnection: {writable: true, value: function initPeerConnection(options) {
     var self = this;
     options = options || {};
+    options = this.addDefaultIceCheckingTimeout(options);
     options.rtcConfiguration = options.rtcConfiguration || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
