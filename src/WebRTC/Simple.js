@@ -274,9 +274,7 @@ Simple.prototype.setupRemoteMedia = function() {
   var pc = this.session.sessionDescriptionHandler.peerConnection;
   var remoteStream;
 
-  if (pc.getRemoteStreams) {
-    remoteStream = pc.getRemoteStreams()[0];
-  } else {
+  if (pc.getReceivers) {
     remoteStream = new global.window.MediaStream();
     pc.getReceivers().forEach(function(receiver) {
       var track = receiver.track;
@@ -284,6 +282,8 @@ Simple.prototype.setupRemoteMedia = function() {
         remoteStream.addTrack(track);
       }
     });
+  } else {
+    remoteStream = pc.getRemoteStreams()[0];
   }
   if (this.video) {
     this.options.media.remote.video.srcObject = remoteStream;
