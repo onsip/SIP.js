@@ -33,6 +33,10 @@ var SessionDescriptionHandler = function(session, options) {
     RTCSessionDescription : environment.RTCSessionDescription
   };
 
+  this.iceGatheringDeferred = null;
+  this.iceGatheringTimeout = false;
+  this.iceGatheringTimer = null;
+
   this.initPeerConnection(this.options.peerConnectionOptions);
 
   this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
@@ -87,6 +91,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           });
         });
       }
+      this.resetIceGatheringComplete();
       this.peerConnection.close();
     }
   }},
@@ -305,13 +310,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function onSetLocalDescriptionSuccess() {
-        return new SIP.Utils.Promise(function(resolve) {
-          if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
-            resolve();
-          } else {
-            self.onIceCompleted.promise.then(resolve);
-          }
-        });
+        return self.waitForIceGatheringComplete();
       })
       .then(function readySuccess() {
         var localDescription = self.peerConnection.localDescription;
@@ -348,16 +347,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     options.rtcConfiguration = options.rtcConfiguration || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
-    this.onIceCompleted = SIP.Utils.defer();
-    this.onIceCompleted.promise.then(function(pc) {
-      self.emit('iceGatheringComplete', pc);
-      if (self.iceCheckingTimer) {
-        SIP.Timers.clearTimeout(self.iceCheckingTimer);
-        self.iceCheckingTimer = null;
-      }
-    });
-
     if (this.peerConnection) {
+      this.resetIceGatheringComplete();
       this.peerConnection.close();
     }
 
@@ -381,32 +372,30 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       self.logger.log('stream removed: '+ e.stream.id);
     };
 
-    this.startIceCheckingTimer = function () {
-      if (!self.iceCheckingTimer && options.iceCheckingTimeout) {
-        self.iceCheckingTimer = SIP.Timers.setTimeout(function() {
-          self.logger.log('RTCIceChecking Timeout Triggered after ' + options.iceCheckingTimeout + ' milliseconds');
-          self.onIceCompleted.resolve(this);
-        }.bind(this.peerConnection), options.iceCheckingTimeout);
-      }
-    };
-
     this.peerConnection.onicecandidate = function(e) {
       self.emit('iceCandidate', e);
       if (e.candidate) {
         self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
-        self.startIceCheckingTimer();
-      } else {
-        self.onIceCompleted.resolve(this);
       }
     };
 
     this.peerConnection.onicegatheringstatechange = function () {
       self.logger.log('RTCIceGatheringState changed: ' + this.iceGatheringState);
-      if (this.iceGatheringState === 'gathering') {
+      switch (this.iceGatheringState) {
+      case 'gathering':
         self.emit('iceGathering', this);
-      }
-      if (this.iceGatheringState === 'complete') {
-        self.onIceCompleted.resolve(this);
+        if (!self.iceGatheringTimer && options.iceCheckingTimeout) {
+          self.iceGatheringTimeout = false;
+          self.iceGatheringTimer = SIP.Timers.setTimeout(function() {
+            self.logger.log('RTCIceChecking Timeout Triggered after ' + options.iceCheckingTimeout + ' milliseconds');
+            self.iceGatheringTimeout = true;
+            self.triggerIceGatheringComplete();
+          }, options.iceCheckingTimeout);
+        }
+        break;
+      case 'complete':
+        self.triggerIceGatheringComplete();
+        break;
       }
     };
 
@@ -440,18 +429,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return;
       }
       self.emit(stateEvent, this);
-
-      //Bria state changes are always connected -> disconnected -> connected on accept, so session gets terminated
-      //normal calls switch from failed to connected in some cases, so checking for failed and terminated
-      /*if (this.iceConnectionState === 'failed') {
-        self.session.terminate({
-        cause: SIP.C.causes.RTP_TIMEOUT,
-        status_code: 200,
-        reason_phrase: SIP.C.causes.RTP_TIMEOUT
-      });
-      } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
-      self.onIceCompleted(this);
-      }*/
     };
   }},
 
@@ -500,6 +477,51 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   hasOffer: {writable: true, value: function hasOffer (where) {
     var offerState = 'have-' + where + '-offer';
     return this.peerConnection.signalingState === offerState;
+  }},
+
+  // ICE gathering state handling
+
+  isIceGatheringComplete: {writable: true, value: function isIceGatheringComplete() {
+    return this.peerConnection.iceGatheringState === 'complete' || this.iceGatheringTimeout;
+  }},
+
+  resetIceGatheringComplete: {writable: true, value: function rejectIceGatheringComplete() {
+    this.iceGatheringTimeout = false;
+
+    if (this.iceGatheringTimer) {
+      SIP.Timers.clearTimeout(this.iceGatheringTimer);
+      this.iceGatheringTimer = null;
+    }
+
+    if (this.iceGatheringDeferred) {
+      this.iceGatheringDeferred.reject();
+      this.iceGatheringDeferred = null;
+    }
+  }},
+
+  triggerIceGatheringComplete: {writable: true, value: function triggerIceGatheringComplete() {
+    if (this.isIceGatheringComplete()) {
+      this.emit('iceGatheringComplete', this);
+
+      if (this.iceGatheringTimer) {
+        SIP.Timers.clearTimeout(this.iceGatheringTimer);
+        this.iceGatheringTimer = null;
+      }
+
+      if (this.iceGatheringDeferred) {
+        this.iceGatheringDeferred.resolve();
+        this.iceGatheringDeferred = null;
+      }
+    }
+  }},
+
+  waitForIceGatheringComplete: {writable: true, value: function waitForIceGatheringComplete() {
+    if (this.isIceGatheringComplete()) {
+      return SIP.Utils.Promise.resolve();
+    } else if (!this.isIceGatheringDeferred) {
+      this.iceGatheringDeferred = SIP.Utils.defer();
+    }
+    return this.iceGatheringDeferred.promise;
   }}
 });
 
