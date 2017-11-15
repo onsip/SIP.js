@@ -60,6 +60,27 @@ describe('WebRTC/SessionDescriptionHandler', function() {
     expect(handler.peerConnection).toBeTruthy();
   });
 
+  it('adds default ice gathering timeout', function() {
+    // no value
+    expect(handler.addDefaultIceCheckingTimeout({})).toEqual({
+      iceCheckingTimeout: 5000
+    });
+
+    // 0 value to disable the timeout
+    expect(handler.addDefaultIceCheckingTimeout({
+      iceCheckingTimeout: 0
+    })).toEqual({
+      iceCheckingTimeout: 0
+    });
+
+    // other value
+    expect(handler.addDefaultIceCheckingTimeout({
+      iceCheckingTimeout: 1234
+    })).toEqual({
+      iceCheckingTimeout: 1234
+    });
+  });
+
   it('waits for ice gathering to complete', function(done) {
     handler.waitForIceGatheringComplete().then(function() {
       expect(handler.iceGatheringDeferred).toBe(null);
