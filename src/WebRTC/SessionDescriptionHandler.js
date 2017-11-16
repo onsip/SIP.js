@@ -135,7 +135,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     // Check to see if the peerConnection already has a local description
     if (!shouldAcquireMedia && this.peerConnection.localDescription && this.peerConnection.localDescription.sdp && this.peerConnection.localDescription.sdp !== '') {
-      return this.createOfferOrAnswer({}, modifiers).then(function(sdp) {
+      return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers).then(function(sdp) {
         return {
           body: sdp,
           contentType: self.CONTENT_TYPE
