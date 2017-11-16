@@ -1420,12 +1420,6 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      rtcpMuxPolicy: function(rtcpMuxPolicy) {
-        if (typeof rtcpMuxPolicy === 'string') {
-          return rtcpMuxPolicy;
-        }
-      },
-
       userAgentString: function(userAgentString) {
         if (typeof userAgentString === 'string') {
           return userAgentString;
