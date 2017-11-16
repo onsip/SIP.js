@@ -362,17 +362,29 @@ Session.prototype = {
    * @private
    */
   receiveReinvite: function(request) {
-    var self = this;
+    var self = this,
+        promise;
     // TODO: Should probably check state of the session
 
     self.emit('reinvite', this);
 
-    // TODO: Should move this into this function or make it common across the board
-    this.handleSessionDescription(request, {
-      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-      modifiers: this.modifiers
-    })
-    .catch(function onFailure (e) {
+    // Invite w/o SDP
+    if (request.getHeader('Content-Length') === '0' && !request.getHeader('Content-Type')) {
+      promise = this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers);
+
+    // Invite w/ SDP
+    } else if (this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+      promise = this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+        .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers));
+
+    // Bad Packet (should never get hit)
+    } else {
+      request.reply(415);
+      this.emit('reinviteFailed', self);
+      return;
+    }
+
+    promise.catch(function onFailure (e) {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
         statusCode = 500;
@@ -391,7 +403,6 @@ Session.prototype = {
       var extraHeaders = ['Contact: ' + self.contact];
       request.reply(200, null, extraHeaders, description,
         function() {
-          // TODO: HACKS
           self.status = C.STATUS_WAITING_FOR_ACK;
 
           self.setACKTimer();
@@ -528,7 +539,6 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
-        // TODO: Handle re-INVITE w/o SDP
         // 17.1.1.1 - For each final response that is received at the client transaction, the client transaction sends an ACK,
         this.emit("ack", response.transaction.sendACK());
         this.pendingReinvite = false;
@@ -704,28 +714,6 @@ Session.prototype = {
   connecting: function(request) {
     this.emit('connecting', { request: request });
     return this;
-  },
-
-  handleSessionDescription: function(request, options) {
-    // TODO: This should return a promise from the session description handler
-    // Invite w/o SDP
-    if (request.getHeader('Content-Length') === '0' && !request.getHeader('Content-Type')) {
-      return this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers);
-
-    // Invite w/ SDP
-    } else if (this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
-      return this.sessionDescriptionHandler.setDescription(request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
-        .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, options.sessionDescriptionHandlerOptions, options.modifiers));
-
-    // TODO: else not needed. automatically an else by returns
-    // Bad Packet (should never get hit)
-    } else {
-      // Do not reply 415
-      request.reply(415);
-      // TODO: Events
-      // TODO: Reject promise
-      return;
-    }
   }
 };
 
