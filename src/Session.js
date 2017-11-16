@@ -384,6 +384,27 @@ Session.prototype = {
       return;
     }
 
+    var _receiveRequest = this.receiveRequest;
+
+    // HACK to catch the ACK
+    this.receiveRequest = function(request) {
+      if (request.method === SIP.C.ACK &&
+        this.status === C.STATUS_WAITING_FOR_ACK &&
+        this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+          this.hasAnswer = true;
+          this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+          .then(function() {
+            SIP.Timers.clearTimeout(this.timers.ackTimer);
+            SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+            this.status = C.STATUS_CONFIRMED;
+
+            this.emit('confirmed', request);
+          }.bind(this));
+      } else {
+        _receiveRequest.call(this, request);
+      }
+    }.bind(this);
+
     promise.catch(function onFailure (e) {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
@@ -1743,6 +1764,7 @@ InviteClientContext.prototype = {
     }
 
     if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
+
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
