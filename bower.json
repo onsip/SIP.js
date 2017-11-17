@@ -15,7 +15,7 @@
     "webrtc"
   ],
   "license": "MIT",
-  "homepage": "http://sipjs.com",
+  "homepage": "https://sipjs.com",
   "ignore": [
     "**/.*",
     "node_modules",
