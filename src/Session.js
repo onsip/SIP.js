@@ -1804,9 +1804,8 @@ SIP.InviteClientContext = InviteClientContext;
 ReferClientContext = function(ua, applicant, target, options) {
   this.options = options || {};
   this.extraHeaders = (this.options.extraHeaders || []).slice();
-  this.ua = ua;
 
-  if (applicant === undefined || target === undefined) {
+  if (ua === undefined || applicant === undefined || target === undefined) {
     throw new TypeError('Not enough arguments');
   }
 
@@ -1841,9 +1840,10 @@ ReferClientContext = function(ua, applicant, target, options) {
     }
   }
 
-  if (applicant.remoteIdentity) {
-    this.extraHeaders.push('Referred-By: ' + applicant.remoteIdentity);
+  if (this.ua) {
+    this.extraHeaders.push('Referred-By: <' + this.ua.configuration.uri + '>');
   }
+  // TODO: Check that this is correct isc/icc
   this.extraHeaders.push('Contact: '+ applicant.contact);
   this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   this.extraHeaders.push('Refer-To: '+ this.target);
