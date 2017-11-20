@@ -237,7 +237,7 @@ InviteClientTransaction.prototype.sendACK = function(options) {
   options = options || {};
 
   if (this.response.getHeader('contact')) {
-    ruri = this.response.getHeader('contact').replace(/</g, '').replace(/>/g, '');
+    ruri = this.response.parseHeader('contact').uri;
   } else {
     ruri = this.request.ruri;
   }
