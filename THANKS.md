@@ -21,6 +21,10 @@ Thank you to all of the contributors with code and patches to the SIP.js project
 * [Pavlo Mykhalov](https://github.com/growtofill)
 * [Microcow](https://github.com/Mirocow)
 * [The RingCentral Team](https://github.com/ringcentral)
+* [Jeremy Lainé](https://github.com/jlaine)
+* [Matthieu Sieben](https://github.com/matthieusieben)
+* [Dan Jenkins](https://github.com/danjenkins)
+* [Vadym Yatsyuk](https://github.com/VadimDez)
 
 Much credit goes to the original authors of the JsSIP project.  Thank you to all.
 

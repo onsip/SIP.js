@@ -2,13 +2,13 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "main": "dist/sip.min.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
   },
-  "homepage": "http://sipjs.com",
-  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/aboutus/)",
+  "homepage": "https://sipjs.com",
+  "author": "OnSIP <developer@onsip.com> (https://sipjs.com/aboutus/)",
   "contributors": [
     {
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
@@ -35,6 +35,7 @@
     "karma-jasmine-html-reporter": "^0.2.2",
     "karma-mocha-reporter": "^2.2.5",
     "karma-phantomjs-launcher": "^1.0.4",
+    "karma-webpack": "^2.0.6",
     "pegjs": "^0.10.0",
     "pegjs-loader": "^0.5.4",
     "uglifyjs-webpack-plugin": "^1.0.1",

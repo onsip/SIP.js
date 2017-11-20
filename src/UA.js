@@ -932,10 +932,7 @@ UA.prototype.loadConfig = function(configuration) {
       // Session Description Handler Options
       sessionDescriptionHandlerFactoryOptions: {
         constraints: {},
-        peerConnectionOptions: {
-          iceCheckingTimeout: 5000,
-          rtcConfiguration: {}
-        }
+        peerConnectionOptions: {}
       },
 
       contactName: SIP.Utils.createRandomToken(8), // user name in user part
@@ -1420,12 +1417,6 @@ UA.prototype.getConfigurationCheck = function () {
       traceSip: function(traceSip) {
         if (typeof traceSip === 'boolean') {
           return traceSip;
-        }
-      },
-
-      rtcpMuxPolicy: function(rtcpMuxPolicy) {
-        if (typeof rtcpMuxPolicy === 'string') {
-          return rtcpMuxPolicy;
         }
       },
 

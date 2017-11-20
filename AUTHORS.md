@@ -3,16 +3,18 @@
 ## James Criscuolo
 
 * <james@onsip.com>
+* GitHub [@james-criscuolo](https://github.com/james-criscuolo)
+
+## Eric Green
+
+* <eric.green@onsip.com>
+* GitHub [@egreenmachine](https://github.com/egreenmachine)
 
 ## Joseph Frazier
 
 * <1212jtraceur@gmail.com>
 * GitHub [@josephfrazier](https://github.com/josephfrazier)
 * Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
-
-## Eric Green
-
-* <eric.green@onsip.com>
 
 ## Will Mitchell
 
@@ -27,4 +29,3 @@ SIP.js includes substantial portions of the JsSIP software.  JsSIP's authors are
 * José Luis Millán (GitHub [@jmillan](https://github.com/jmillan))
 * Iñaki Baz Castillo (GitHub [@ibc](https://github.com/ibc))
 * Saúl Ibarra Corretgé (Github [@saghul](https://github.com/saghul))
-

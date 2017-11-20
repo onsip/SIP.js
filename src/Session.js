@@ -1143,6 +1143,8 @@ InviteServerContext.prototype = {
       },
 
       descriptionCreationFailed = function() {
+        // TODO: This should check the actual error and make sure it is an
+        //        "expected" error. Otherwise it should throw.
         if (self.status === C.STATUS_TERMINATED) {
           return;
         }
@@ -1175,16 +1177,16 @@ InviteServerContext.prototype = {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
       if (this.request.getHeader('Content-Length') === '0' && !this.request.getHeader('Content-Type')) {
         this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-        .then(descriptionCreationSucceeded)
-        .catch(descriptionCreationFailed);
+        .catch(descriptionCreationFailed)
+        .then(descriptionCreationSucceeded);
       } else if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
         this.hasOffer = true;
         this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
         .then(function() {
           return this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers);
         }.bind(this))
-        .then(descriptionCreationSucceeded)
-        .catch(descriptionCreationFailed);
+        .catch(descriptionCreationFailed)
+        .then(descriptionCreationSucceeded);
       } else {
         this.request.reply(415);
         // TODO: Events

@@ -7,8 +7,8 @@ var banner = '\
 \n\
  SIP version ' + pkg.version + '\n\
  Copyright (c) 2014-' + year + ' Junction Networks, Inc <http://www.onsip.com>\n\
- Homepage: http://sipjs.com\n\
- License: http://sipjs.com/license/\n\
+ Homepage: https://sipjs.com\n\
+ License: https://sipjs.com/license/\n\
 \n\
 \n\
  ~~~SIP.js contains substantial portions of JsSIP under the following license~~~\n\
