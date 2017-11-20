@@ -273,11 +273,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function setRemoteDescriptionSuccess() {
-        if (self.peerConnection.getRemoteStreams) {
-          self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
-        } else {
-          // This should be the default, and we should fall back to getRemoteStreams if this is not supported
+        if (self.peerConnection.getReceivers) {
           self.emit('setRemoteDescription', self.peerConnection.getReceivers());
+        } else {
+          self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
         }
         self.emit('confirmed', self);
       });
