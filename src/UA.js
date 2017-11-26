@@ -223,6 +223,15 @@ UA.prototype.afterConnected = function afterConnected (callback) {
 };
 
 /**
+ * Returns a promise which resolves once the UA is connected.
+ */
+UA.prototype.waitForConnected = function() {
+  return new SIP.Utils.Promise(function(resolve) {
+    this.afterConnected(resolve);
+  }.bind(this));
+};
+
+/**
  * Make an outgoing call.
  *
  * @param {String} target
@@ -235,8 +244,13 @@ UA.prototype.afterConnected = function afterConnected (callback) {
 UA.prototype.invite = function(target, options, modifiers) {
   var context = new SIP.InviteClientContext(this, target, options, modifiers);
 
-  this.afterConnected(context.invite.bind(context));
-  this.emit('inviteSent', context);
+  // Delay sending actual invite until the next 'tick' if we are already
+  // connected, so that API consumers can register to events fired by the
+  // the session.
+  this.waitForConnected().then(function() {
+    context.invite();
+    this.emit('inviteSent', context);
+  }.bind(this));
   return context;
 };
 
