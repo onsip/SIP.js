@@ -1830,9 +1830,11 @@ ReferClientContext.prototype = {
     this.applicant.sendRequest(SIP.C.REFER, {
       extraHeaders: this.extraHeaders,
       receiveResponse: function (response) {
-        if ( ! /^2[0-9]{2}$/.test(response.status_code) ) {
+        if (/^1[0-9]{2}$/.test(response.status_code) ) {
+          this.emit('referRequestProgress', this);
+        } else if (/^2[0-9]{2}$/.test(response.status_code) ) {
           this.emit('referRequestAccepted', this);
-        } else if ( ! /^[4-6][0-9]{2}%/.test(response.status_code)) {
+        } else if (/^[4-6][0-9]{2}$/.test(response.status_code)) {
           this.emit('referRequestRejected', this);
         }
         if (options.receiveResponse) {
