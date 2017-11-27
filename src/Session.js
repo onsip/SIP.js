@@ -1832,7 +1832,8 @@ ReferClientContext.prototype = {
       receiveResponse: function (response) {
         if ( ! /^2[0-9]{2}$/.test(response.status_code) ) {
           this.emit('referRequestAccepted', this);
-          return;
+        } else if ( ! /^[4-6][0-9]{2}%/.test(response.status_code)) {
+          this.emit('referRequestRejected', this);
         }
         if (options.receiveResponse) {
           options.receiveResponse(response);
