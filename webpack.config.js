@@ -96,7 +96,9 @@ module.exports = {
             "turn_URI",
             "uuid",
             "WWW_Authenticate",
-            "challenge"
+            "challenge",
+            "sipfrag",
+            "Referred_By"
           ]
         }
       }
