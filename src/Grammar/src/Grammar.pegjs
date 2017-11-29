@@ -914,3 +914,17 @@ uuid          = hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
 hex4          = HEXDIG HEXDIG HEXDIG HEXDIG
 hex8          = hex4 hex4
 hex12         = hex4 hex4 hex4
+
+// RFC 3420 (message/sipfrag)
+
+sipfrag = SIP_Version SP Status_Code SP Method CRLF?
+
+// RFC 3892 (Referred-By)
+
+Referred_By = ("Referred-By" / "b")  HCOLON  referrer_uri ( SEMI (referredby_id_param / generic_param))*
+
+referrer_uri = (name_addr / addr_spec)
+
+referredby_id_param = "cid" EQUAL sip_clean_msg_id
+
+sip_clean_msg_id = LDQUOT mark "@" (mark / host) RDQUOT
