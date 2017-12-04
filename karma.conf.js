@@ -13,7 +13,7 @@ module.exports = function(config) {
       'test/polyfills/*.js',
       'test/helpers/*.js',
       'dist/sip.js',
-      'test/spec/*.js'
+      'test/spec/**/*.js'
     ],
 
     // list of files to exclude
@@ -21,7 +21,9 @@ module.exports = function(config) {
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {},
+    preprocessors: {
+      'test/spec/WebRTC/SessionDescriptionHandler.spec.js': 'webpack'
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
@@ -62,10 +64,11 @@ module.exports = function(config) {
     concurrency: Infinity,
 
     plugins : [
-	    'karma-jasmine',
+      'karma-jasmine',
       'karma-jasmine-html-reporter',
       'karma-mocha-reporter',
-	    'karma-phantomjs-launcher'
-	  ]
+      'karma-phantomjs-launcher',
+      'karma-webpack'
+    ]
   })
 }

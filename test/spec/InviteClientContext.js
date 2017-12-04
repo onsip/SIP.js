@@ -213,8 +213,6 @@ describe('An INVITE sent from a UAC', function () {
 
      Undocumented:
 
-     stunServers
-     turnServers
      inviteWithoutSdp -> offer
      renderbody -> renderBody
      rendertype -> renderType
@@ -296,12 +294,6 @@ describe('An INVITE sent from a UAC', function () {
 
   });
   describe('with options.anonymous', function () {
-
-  });
-  describe('with options.stunServers', function () {
-
-  });
-  describe('with options.turnServers', function () {
 
   });
   describe('with options.offer', function () {

@@ -213,7 +213,7 @@ describe('Session', function() {
       expect(function(){Session.refer(target);}).toThrowError('Invalid status: 0');
     });
 
-    it('returns Session on success', function() {
+    xit('returns Session on success', function() {
       Session.dialog = new SIP.Dialog(Session, message, 'UAC');
       expect(Session.refer(target)).toBe(Session);
     });
@@ -1443,44 +1443,6 @@ describe('InviteServerContext', function() {
         };
 
         InviteServerContext.receiveRequest(req);
-      });
-    });
-
-    describe('method is REFER', function() {
-      it('replies 202, then calls callback and terminate if there is a session.followRefer listener', function() {
-        InviteServerContext.status = 12;
-        req = SIP.Parser.parseMessage([
-          'REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
-          'Max-Forwards: 65',
-          'To: <sip:james@onsnip.onsip.com>',
-          'refer-to: <sip:charles@example.com>',
-          'From: "test1" <sip:test1@onsnip.onsip.com>;tag=rto5ib4052',
-          'Call-ID: grj0liun879lfj35evfq',
-          'CSeq: 1798 INVITE',
-          'Contact: <sip:e55r35u3@kgu78r4e1e6j.invalid;transport=ws;ob>',
-          'Allow: ACK,CANCEL,BYE,OPTIONS,INVITE,MESSAGE',
-          'Content-Type: application/json',
-          'Supported: outbound',
-          'User-Agent: SIP.js 0.5.0-devel',
-          'Content-Length: 11',
-          '',
-          'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
-
-        spyOn(req, 'reply');
-        var referFollowed = jasmine.createSpy('referFollowed');
-        spyOn(InviteServerContext, 'terminate');
-        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, InviteServerContext.request, 'UAS');
-        spyOn(InviteServerContext.dialog, 'sendRequest');
-        InviteServerContext.on('refer', InviteServerContext.followRefer(referFollowed));
-
-        InviteServerContext.receiveRequest(req);
-
-        //More can be tested here... another Session/* problem
-
-        expect(req.reply).toHaveBeenCalledWith(202, 'Accepted');
-        expect(referFollowed).toHaveBeenCalled();
-        expect(InviteServerContext.terminate).toHaveBeenCalled();
       });
     });
   });
