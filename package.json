@@ -49,7 +49,8 @@
     "build": "webpack --progress && cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js  dist/sip-$npm_package_version.min.js",
     "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "karma start --reporters mocha --browsers PhantomJS --single-run",
-    "buildAndTest": "npm run build && npm run commandLineTest"
+    "buildAndTest": "npm run build && npm run commandLineTest",
+    "prepublish": "npm i && npm run build"
   },
   "dependencies": {
     "ws": "^1.0.1"
