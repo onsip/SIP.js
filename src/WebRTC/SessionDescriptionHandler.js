@@ -242,7 +242,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
 
     // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign(this.constraints, options.constraints);
+    this.constraints = Object.assign({}, this.constraints, options.constraints);
     this.constraints = this.checkAndDefaultConstraints(this.constraints);
 
     modifiers = modifiers || [];
