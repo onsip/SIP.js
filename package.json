@@ -50,7 +50,7 @@
     "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "karma start --reporters mocha --browsers PhantomJS --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
-    "prepublish": "npm i && npm run build"
+    "prepack": "npm run build"
   },
   "dependencies": {
     "ws": "^1.0.1"
