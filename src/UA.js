@@ -699,6 +699,22 @@ UA.prototype.receiveRequest = function(request) {
           request.reply(481, 'Subscription does not exist');
         }
         break;
+      case SIP.C.REFER:
+        this.logger.log('Received an out of dialog refer');
+        if (this.configuration.allowOutOfDialogRefers) {
+          this.logger.log('Allow out of dialog refers is enabled on the UA');
+          var referContext = new SIP.ReferServerContext(this, request);
+          var hasReferListener = this.listeners('outOfDialogReferRequested').length;
+          if (hasReferListener) {
+            this.emit('outOfDialogReferRequested', referContext);
+          } else {
+            this.logger.log('No outOfDialogReferRequest listeners, automatically accepting and following the out of dialog refer');
+            referContext.accept({followRefer: true});
+          }
+          break;
+        }
+        request.reply(405);
+        break;
       default:
         request.reply(405);
         break;
@@ -932,10 +948,7 @@ UA.prototype.loadConfig = function(configuration) {
       // Session Description Handler Options
       sessionDescriptionHandlerFactoryOptions: {
         constraints: {},
-        peerConnectionOptions: {
-          iceCheckingTimeout: 5000,
-          rtcConfiguration: {}
-        }
+        peerConnectionOptions: {}
       },
 
       contactName: SIP.Utils.createRandomToken(8), // user name in user part
@@ -960,6 +973,8 @@ UA.prototype.loadConfig = function(configuration) {
       }),
 
       allowLegacyNotifications: false,
+
+      allowOutOfDialogRefers: false,
     };
 
   // Pre-Configuration
@@ -1420,12 +1435,6 @@ UA.prototype.getConfigurationCheck = function () {
       traceSip: function(traceSip) {
         if (typeof traceSip === 'boolean') {
           return traceSip;
-        }
-      },
-
-      rtcpMuxPolicy: function(rtcpMuxPolicy) {
-        if (typeof rtcpMuxPolicy === 'string') {
-          return rtcpMuxPolicy;
         }
       },
 

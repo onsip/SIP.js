@@ -7,14 +7,14 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ## Website and Documentation
 
-* [SIPjs.com](http://sipjs.com)
+* [SIPjs.com](https://sipjs.com)
 * [Mailing List](https://groups.google.com/forum/#!forum/sip_js)
 * [Issue Tracking](https://github.com/onsip/sip.js/issues)
 
 
 ## Download
 
-* [sipjs.com/download](http://sipjs.com/download/)
+* [sipjs.com/download](https://sipjs.com/download/)
 * Bower: `bower install sip.js`
 * npm: `npm install sip.js`
 
@@ -23,16 +23,18 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 ### James Criscuolo
 
 * <james@onsip.com>
+* GitHub [@james-criscuolo](https://github.com/james-criscuolo)
+
+### Eric Green
+
+* <eric.green@onsip.com>
+* GitHub [@egreenmachine](https://github.com/egreenmachine)
 
 ### Joseph Frazier
 
 * <1212jtraceur@gmail.com>
 * GitHub [@josephfrazier](https://github.com/josephfrazier)
 * Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
-
-### Eric Green
-
-* <eric.green@onsip.com>
 
 ### Will Mitchell
 
@@ -50,7 +52,7 @@ SIP.js contains substantial portions of the JsSIP software. JsSIP's authors at t
 
 ## License
 
-SIP.js is released under the [MIT license](http://sipjs.com/license).
+SIP.js is released under the [MIT license](https://sipjs.com/license).
 
 SIP.js contains substantial portions of the JsSIP software, under the following license:
 

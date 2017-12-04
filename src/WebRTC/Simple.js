@@ -53,8 +53,7 @@ var Simple = function (options) {
   if (!this.audio && !this.video) {
     // Need to do at least audio or video
     // Error
-    this.logger.error('At least one remote audio or video element is required for Simple.');
-    return;
+    throw new Error('At least one remote audio or video element is required for Simple.');
   }
 
   this.options = options;
@@ -68,6 +67,10 @@ var Simple = function (options) {
   var sessionDescriptionHandlerFactoryOptions = {};
   if (isSafari) {
     sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.WebRTC.Modifiers.stripG722];
+  }
+
+  if (!this.options.ua.uri) {
+    this.anonymous = true;
   }
 
   this.ua = new SIP.UA({
@@ -126,7 +129,7 @@ Simple.C = C;
 // Public
 
 Simple.prototype.call = function(destination) {
-  if (!this.ua || !this.ua.isRegistered()) {
+  if (!this.ua || !this.checkRegistration()) {
     this.logger.warn('A registered UA is required for calling');
     return;
   }
@@ -202,7 +205,7 @@ Simple.prototype.hangup = function() {
 };
 
 Simple.prototype.hold = function() {
-  if (this.state !== C.STATUS_CONNECTED || this.session.isOnHold().local) {
+  if (this.state !== C.STATUS_CONNECTED || this.session.local_hold) {
     this.logger.warn('Cannot put call on hold');
     return;
   }
@@ -212,7 +215,7 @@ Simple.prototype.hold = function() {
 };
 
 Simple.prototype.unhold = function() {
-  if (this.state !== C.STATUS_CONNECTED || !this.session.isOnHold().local) {
+  if (this.state !== C.STATUS_CONNECTED || !this.session.local_hold) {
     this.logger.warn('Cannot unhold a call that is not on hold');
     return;
   }
@@ -249,7 +252,7 @@ Simple.prototype.sendDTMF = function(tone) {
 };
 
 Simple.prototype.message = function(destination, message) {
-  if (!this.ua || !this.ua.isRegistered()) {
+  if (!this.ua || !this.checkRegistration()) {
     this.logger.warn('A registered UA is required to send a message');
     return;
   }
@@ -262,14 +265,16 @@ Simple.prototype.message = function(destination, message) {
 
 // Private Helpers
 
+Simple.prototype.checkRegistration = function() {
+  return (this.anonymous || (this.ua && this.ua.isRegistered()));
+};
+
 Simple.prototype.setupRemoteMedia = function() {
   // If there is a video track, it will attach the video and audio to the same element
   var pc = this.session.sessionDescriptionHandler.peerConnection;
   var remoteStream;
 
-  if (pc.getRemoteStreams) {
-    remoteStream = pc.getRemoteStreams()[0];
-  } else {
+  if (pc.getReceivers) {
     remoteStream = new global.window.MediaStream();
     pc.getReceivers().forEach(function(receiver) {
       var track = receiver.track;
@@ -277,6 +282,8 @@ Simple.prototype.setupRemoteMedia = function() {
         remoteStream.addTrack(track);
       }
     });
+  } else {
+    remoteStream = pc.getRemoteStreams()[0];
   }
   if (this.video) {
     this.options.media.remote.video.srcObject = remoteStream;

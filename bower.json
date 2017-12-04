@@ -1,10 +1,10 @@
 {
   "name": "sip.js",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "authors": [
     "James Criscuolo <james@onsip.com>",
-    "Joseph Frazier <1212jtraceur@gmail.com>",
     "Eric Green <eric.green@onsip.com>",
+    "Joseph Frazier <1212jtraceur@gmail.com>",
     "Will Mitchell <wakamoleguy@gmail.com>"
   ],
   "description": "A JavaScript SIP stack for WebRTC, instant messaging, and more!",
@@ -15,7 +15,7 @@
     "webrtc"
   ],
   "license": "MIT",
-  "homepage": "http://sipjs.com",
+  "homepage": "https://sipjs.com",
   "ignore": [
     "**/.*",
     "node_modules",
