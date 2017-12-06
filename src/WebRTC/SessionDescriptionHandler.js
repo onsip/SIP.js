@@ -313,6 +313,9 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       })
       .then(function readySuccess() {
         var localDescription = self.peerConnection.localDescription;
+        return SIP.Utils.reducePromises(modifiers, localDescription);
+      })
+      .then(function(localDescription) {
         self.emit('getDescription', localDescription);
         return localDescription.sdp;
       })
