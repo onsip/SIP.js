@@ -10,6 +10,7 @@ window.SIPHelper = {
     response.data = null;
 
     response.body = (body || 'foo').toString();
+    response.setHeader('Content-Type', 'rps');
 
     /*
      * We aren't going to parse a bunch of strings,

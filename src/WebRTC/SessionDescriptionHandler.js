@@ -242,7 +242,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
 
     // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign(this.constraints, options.constraints);
+    this.constraints = Object.assign({}, this.constraints, options.constraints);
     this.constraints = this.checkAndDefaultConstraints(this.constraints);
 
     modifiers = modifiers || [];
@@ -313,6 +313,9 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       })
       .then(function readySuccess() {
         var localDescription = self.peerConnection.localDescription;
+        return SIP.Utils.reducePromises(modifiers, localDescription);
+      })
+      .then(function(localDescription) {
         self.emit('getDescription', localDescription);
         return localDescription.sdp;
       })
@@ -354,13 +357,17 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     options.rtcConfiguration = options.rtcConfiguration || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
+    this.logger.log('initPeerConnection');
+
     if (this.peerConnection) {
+      this.logger.log('Already have a peer connection for this session. Tearing down.');
       this.resetIceGatheringComplete();
       this.peerConnection.close();
     }
 
     this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
 
+    this.logger.log('New peer connection created');
     this.session.emit('peerConnection-created', this.peerConnection);
 
     this.peerConnection.ontrack = function(e) {
