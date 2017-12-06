@@ -357,13 +357,17 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     options.rtcConfiguration = options.rtcConfiguration || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
+    this.logger.log('initPeerConnection');
+
     if (this.peerConnection) {
+      this.logger.log('Already have a peer connection for this session. Tearing down.');
       this.resetIceGatheringComplete();
       this.peerConnection.close();
     }
 
     this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
 
+    this.logger.log('New peer connection created');
     this.session.emit('peerConnection-created', this.peerConnection);
 
     this.peerConnection.ontrack = function(e) {
