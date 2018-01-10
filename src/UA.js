@@ -989,6 +989,8 @@ UA.prototype.loadConfig = function(configuration) {
       allowLegacyNotifications: false,
 
       allowOutOfDialogRefers: false,
+
+      allowEarlyMedia: false,
     };
 
   // Pre-Configuration
@@ -1525,6 +1527,12 @@ UA.prototype.getConfigurationCheck = function () {
       contactName: function(contactName) {
         if (typeof contactName === 'string') {
           return contactName;
+        }
+      },
+
+      allowEarlyMedia: function(allowEarlyMedia) {
+        if (typeof allowEarlyMedia === 'boolean') {
+          return allowEarlyMedia;
         }
       }
     }

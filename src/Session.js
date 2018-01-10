@@ -1520,11 +1520,12 @@ InviteClientContext.prototype = {
               (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length-1] >= response.getHeader('rseq') && this.earlyDialogs[id].pracked.length > 0)) {
             return;
           }
+
           // TODO: This may be broken. It may have to be on the early dialog
-          // The following if statement may solve the issue
-          if (!this.sessionDescriptionHandler) {
+          if (!this.ua.configuration.allowEarlyMedia) {
             this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
           }
+
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
@@ -1593,7 +1594,7 @@ InviteClientContext.prototype = {
           }
         } else {
           // Early media
-          if (this.hasOffer && response.status_code === 183) {
+          if (this.ua.configuration.allowEarlyMedia && this.hasOffer && response.status_code === 183) {
             this.hasAnswer = false;
             this.sessionDescriptionHandler.setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
               .then(function onSuccess() {
