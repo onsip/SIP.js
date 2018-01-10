@@ -1522,7 +1522,7 @@ InviteClientContext.prototype = {
           }
 
           // TODO: This may be broken. It may have to be on the early dialog
-          if (!this.ua.configuration.allowEarlyMedia) {
+          if (!this.sessionDescriptionHandler) {
             this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
           }
 
