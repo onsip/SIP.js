@@ -567,8 +567,8 @@ Session.prototype = {
         SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
         if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
           this.logger.error('2XX response received to re-invite but did not have a description');
+          this.emit('reinviteFailed', self);
           this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('2XX response received to re-invite but did not have a description'));
-
           break;
         }
 
@@ -576,16 +576,20 @@ Session.prototype = {
         .catch(function onFailure (e) {
           self.logger.error('Could not set the description in 2XX response');
           self.logger.error(e);
+          self.emit('reinviteFailed', self);
           self.emit('renegotiationError', e);
           self.sendRequest(SIP.C.BYE, {
             extraHeaders: [SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
           });
+        }).then(function() {
+          self.emit('reinviteAccepted', self);
         });
         break;
       default:
         this.disableRenegotiation = true;
         this.pendingReinvite = false;
         this.logger.log('Received a non 1XX or 2XX response to a re-invite');
+        this.emit('reinviteFailed', self);
         this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('Invalid response to a re-invite'));
     }
   },
