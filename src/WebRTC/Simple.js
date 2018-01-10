@@ -231,6 +231,7 @@ Simple.prototype.mute = function() {
   }
   this.logger.log('Muting Audio');
   this.toggleMute(true);
+  this.emit('mute', this);
 };
 
 Simple.prototype.unmute = function() {
@@ -240,6 +241,7 @@ Simple.prototype.unmute = function() {
   }
   this.logger.log('Unmuting Audio');
   this.toggleMute(false);
+  this.emit('unmute', this);
 };
 
 Simple.prototype.sendDTMF = function(tone) {
