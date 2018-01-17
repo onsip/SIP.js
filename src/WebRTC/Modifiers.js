@@ -14,7 +14,7 @@ Modifiers = {
   },
 
   stripTelephoneEvent: function(description) {
-    description.sdp = description.sdp.replace(/^a=rtpmap:\d+ telephone-event\/d+/img, "");
+    description.sdp = description.sdp.replace(/^a=rtpmap:\d+ telephone-event\/\d+\r\n/img, "");
     return SIP.Utils.Promise.resolve(description);
   },
 
