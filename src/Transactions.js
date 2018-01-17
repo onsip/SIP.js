@@ -264,7 +264,7 @@ InviteClientTransaction.prototype.sendACK = function(options) {
       self.logger.warn("ACK Request timed out");
     },
     onTransportError: this.request_sender.applicant.applicant ? this.request_sender.applicant.applicant.onRequestTransportError : function() {
-      self.loigger.warn("ACK Request had a transport error");
+      self.logger.warn("ACK Request had a transport error");
     },
     receiveResponse: options.receiveResponse || function() {
       self.logger.warn("Received a response to an ACK which was unexpected. Dropping Response.");

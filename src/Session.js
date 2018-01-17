@@ -34,7 +34,7 @@ Session = function (sessionDescriptionHandlerFactory) {
     throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
   }
   this.sessionDescriptionHandlerFactory = sessionDescriptionHandlerFactory;
-  // this.sessionDescriptionHandler gets set by ICC/ISC constructors
+
   this.hasOffer = false;
   this.hasAnswer = false;
 
@@ -362,28 +362,50 @@ Session.prototype = {
    * @private
    */
   receiveReinvite: function(request) {
-    var self = this;
-
-    if (!this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
-      this.logger.warn('invalid Content-Type');
-      request.reply(415);
-      return;
-    }
+    var self = this,
+        promise;
+    // TODO: Should probably check state of the session
 
     self.emit('reinvite', this);
 
-    this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-    .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers))
-    .then(function(description) {
-      var extraHeaders = ['Contact: ' + self.contact];
-      request.reply(200, null, extraHeaders, description,
-        function() {
-          self.status = C.STATUS_WAITING_FOR_ACK;
-          self.setACKTimer();
-          self.emit('reinviteAccepted', self);
-        });
-    })
-    .catch(function onFailure (e) {
+    // Invite w/o SDP
+    if (request.getHeader('Content-Length') === '0' && !request.getHeader('Content-Type')) {
+      promise = this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers);
+
+    // Invite w/ SDP
+    } else if (this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+      promise = this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+        .then(this.sessionDescriptionHandler.getDescription.bind(this.sessionDescriptionHandler, this.sessionDescriptionHandlerOptions, this.modifiers));
+
+    // Bad Packet (should never get hit)
+    } else {
+      request.reply(415);
+      this.emit('reinviteFailed', self);
+      return;
+    }
+
+    var _receiveRequest = this.receiveRequest;
+
+    // HACK to catch the ACK
+    this.receiveRequest = function(request) {
+      if (request.method === SIP.C.ACK &&
+        this.status === C.STATUS_WAITING_FOR_ACK &&
+        this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+          this.hasAnswer = true;
+          this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+          .then(function() {
+            SIP.Timers.clearTimeout(this.timers.ackTimer);
+            SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+            this.status = C.STATUS_CONFIRMED;
+
+            this.emit('confirmed', request);
+          }.bind(this));
+      } else {
+        _receiveRequest.call(this, request);
+      }
+    }.bind(this);
+
+    promise.catch(function onFailure (e) {
       var statusCode;
       if (e instanceof SIP.Exceptions.GetDescriptionError) {
         statusCode = 500;
@@ -397,6 +419,16 @@ Session.prototype = {
       }
       request.reply(statusCode);
       self.emit('reinviteFailed', self);
+    })
+    .then(function(description) {
+      var extraHeaders = ['Contact: ' + self.contact];
+      request.reply(200, null, extraHeaders, description,
+        function() {
+          self.status = C.STATUS_WAITING_FOR_ACK;
+
+          self.setACKTimer();
+          self.emit('reinviteAccepted', self);
+        });
     });
   },
 
@@ -531,7 +563,6 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
-        // TODO: Handle re-INVITE w/o SDP
         // 17.1.1.1 - For each final response that is received at the client transaction, the client transaction sends an ACK,
         this.emit("ack", response.transaction.sendACK());
         this.pendingReinvite = false;
@@ -539,8 +570,8 @@ Session.prototype = {
         SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
         if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
           this.logger.error('2XX response received to re-invite but did not have a description');
+          this.emit('reinviteFailed', self);
           this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('2XX response received to re-invite but did not have a description'));
-
           break;
         }
 
@@ -548,16 +579,20 @@ Session.prototype = {
         .catch(function onFailure (e) {
           self.logger.error('Could not set the description in 2XX response');
           self.logger.error(e);
+          self.emit('reinviteFailed', self);
           self.emit('renegotiationError', e);
           self.sendRequest(SIP.C.BYE, {
             extraHeaders: [SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
           });
+        }).then(function() {
+          self.emit('reinviteAccepted', self);
         });
         break;
       default:
         this.disableRenegotiation = true;
         this.pendingReinvite = false;
         this.logger.log('Received a non 1XX or 2XX response to a re-invite');
+        this.emit('reinviteFailed', self);
         this.emit('renegotiationError', new SIP.Exceptions.RenegotiationError('Invalid response to a re-invite'));
     }
   },
@@ -1145,30 +1180,23 @@ InviteServerContext.prototype = {
       break;
     case SIP.C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
-        if (!this.hasAnswer) {
-          this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
-          if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
-            // ACK contains answer to an INVITE w/o SDP negotiation
-            this.hasAnswer = true;
-            this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-            .then(
-              confirmSession.bind(this),
-              function onFailure (e) {
-                this.logger.warn(e);
-                this.terminate({
-                  statusCode: '488',
-                  reasonPhrase: 'Bad Media Description'
-                });
-                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-                this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-              }.bind(this)
-            );
-          } else if (this.early_sdp) {
-            confirmSession.apply(this);
-          } else {
-            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-            this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-          }
+        if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+          // ACK contains answer to an INVITE w/o SDP negotiation
+          this.hasAnswer = true;
+          this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+          .then(
+            // TODO: Catch then .then
+            confirmSession.bind(this),
+            function onFailure (e) {
+              this.logger.warn(e);
+              this.terminate({
+                statusCode: '488',
+                reasonPhrase: 'Bad Media Description'
+              });
+              this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            }.bind(this)
+          );
         } else {
           confirmSession.apply(this);
         }
@@ -1536,7 +1564,7 @@ InviteClientContext.prototype = {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerOptions);
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
@@ -1743,6 +1771,7 @@ InviteClientContext.prototype = {
     }
 
     if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
+
       SIP.Timers.clearTimeout(this.timers.ackTimer);
       SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
