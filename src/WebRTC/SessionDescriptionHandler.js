@@ -370,21 +370,18 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.logger.log('New peer connection created');
     this.session.emit('peerConnection-created', this.peerConnection);
 
-    this.peerConnection.ontrack = function(e) {
-      self.logger.log('track added');
-      self.emit('addTrack', e);
-    };
-
-    this.peerConnection.onaddstream = function(e) {
-      self.logger.warn('Using deprecated stream API');
-      self.logger.log('stream added');
-      self.emit('addStream', e);
-    };
-
-    // TODO: There is no remove track listener
-    this.peerConnection.onremovestream = function(e) {
-      self.logger.log('stream removed: '+ e.stream.id);
-    };
+    if ('ontrack' in this.peerConnection) {
+      this.peerConnection.ontrack = function(e) {
+        self.logger.log('track added');
+        self.emit('addTrack', e);
+      };
+    } else {
+      this.logger.warn('Using onaddstream which is deprecated');
+      this.peerConnection.onaddstream = function(e) {
+        self.logger.log('stream added');
+        self.emit('addStream', e);
+      };
+    }
 
     this.peerConnection.onicecandidate = function(e) {
       self.emit('iceCandidate', e);
