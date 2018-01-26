@@ -30,6 +30,7 @@ Session = function (sessionDescriptionHandlerFactory) {
   this.dialog = null;
   this.pendingReinvite = false;
   this.earlyDialogs = {};
+  this.dtmfSender = null;
   if (!sessionDescriptionHandlerFactory) {
     throw new SIP.Exceptions.SessionDescriptionHandlerMissing('A session description handler is required for the session to function');
   }
@@ -66,9 +67,8 @@ Session = function (sessionDescriptionHandlerFactory) {
 
 Session.prototype = {
   dtmf: function(tones, options) {
-    var tone, dtmfs = [],
+    var tone, pc, dtmfs = [],
         self = this;
-
     options = options || {};
 
     if (tones === undefined) {
@@ -85,14 +85,28 @@ Session.prototype = {
       throw new TypeError('Invalid tones: '+ tones);
     }
 
-    tones = tones.toString().split('');
+    if (this.sessionDescriptionHandler) {
+      pc = this.sessionDescriptionHandler.peerConnection;
+    }
+    // initialize DTMF sender if applicable
+    if (pc && pc.getSenders) {
+      this.dtmfSender = pc.getSenders()[0].dtmf;
+    }
+    if (pc && !this.dtmfSender && pc.addTrack) {
+      var stream = pc.getLocalStreams()[0];
+      var audioTracks = stream.getAudioTracks();
+      this.dtmfSender = pc.createDTMFSender(audioTracks[0]);
+    } else if (!this.dtmfSender) {
+      tones = tones.toString().split('');
 
-    while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
+      while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
 
-    if (this.tones) {
-      // Tones are already queued, just add to the queue
-      this.tones =  this.tones.concat(dtmfs);
-      return this;
+      if (this.tones) {
+        // Tones are already queued, just add to the queue
+        this.tones =  this.tones.concat(dtmfs);
+        return this;
+      }
+      this.tones = dtmfs;
     }
 
     var sendDTMF = function () {
@@ -118,8 +132,11 @@ Session.prototype = {
       SIP.Timers.setTimeout(sendDTMF, timeout);
     };
 
-    this.tones = dtmfs;
-    sendDTMF();
+    if (this.dtmfSender) {
+      this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
+    } else {
+      sendDTMF();
+    }
     return this;
   },
 
