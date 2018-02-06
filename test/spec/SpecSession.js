@@ -151,6 +151,27 @@ describe('Session', function() {
     it('returns Session on success', function() {
       expect(Session.dtmf(1)).toBe(Session);
     });
+
+    describe('RTCDTMFSender', function() {
+      beforeEach(function() {
+        Session.ua = ua = new SIP.UA({uri: 'jim@example.com', dtmfType: SIP.C.dtmfType.RFC_2833}).start();
+        Session.sessionDescriptionHandler = {};
+      });
+
+      it('calls SessionDescriptionHandler.sendDtmf when the correct configuration is given', function() {
+        Session.sessionDescriptionHandler = { sendDtmf: function(tones, options) {return true;} };
+        spyOn(Session.sessionDescriptionHandler, 'sendDtmf').and.callThrough();
+        Session.dtmf('7');
+        expect(Session.sessionDescriptionHandler.sendDtmf).toHaveBeenCalledWith(['7'], {});
+      });
+
+      it('logs a warning when SessionDescriptionHandler.sendDtmf returns false', function() {
+        Session.sessionDescriptionHandler.sendDtmf = function(tones, options) {return false;}
+        spyOn(Session.logger, 'warn');
+        Session.dtmf('7');
+        expect(Session.logger.warn).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('.bye', function() {
