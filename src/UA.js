@@ -976,6 +976,10 @@ UA.prototype.loadConfig = function(configuration) {
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
 
+      // DTMF type: 'info' or '2833' (RFC 2833)
+      // https://tools.ietf.org/html/rfc2833
+      dtmfType: SIP.C.dtmfType.INFO,
+
       // Replaces header (RFC 3891)
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
@@ -1164,6 +1168,14 @@ UA.prototype.loadConfig = function(configuration) {
       case 'password':
         this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
         break;
+      case 'dtmfType':
+        this.logger.log('· ' + parameter + ': ' + settings[parameter]);
+        if (settings[parameter] !== SIP.C.dtmfType.RFC_2833) {
+          this.logger.warn('dtmfType: info - dtmf via info packet to be deprecated');
+        } else if (settings[parameter] === SIP.C.dtmfType.RFC_2833) {
+          this.logger.warn('dtmfType: 2833 - WebRTC endpoints will not receive RFC 2833 DTMF tones, consider using default dtmfType');
+        }
+        break;
       default:
         this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
     }
@@ -1290,6 +1302,16 @@ UA.prototype.getConfigurationCheck = function () {
           return;
         } else {
           return displayName;
+        }
+      },
+
+      dtmfType: function(dtmfType) {
+        if (dtmfType !== SIP.C.dtmfType.RFC_2833) {
+          // this.logger.warn('dtmfType: info - dtmf via info packet to be deprecated');
+          return SIP.C.dtmfType.INFO;
+        } else if (dtmfType === SIP.C.dtmfType.RFC_2833) {
+          // this.logger.warn('dtmfType: 2833 - WebRTC endpoints will not receive RFC 2833 DTMF tones, consider using default dtmfType');
+          return SIP.C.dtmfType.RFC_2833;
         }
       },
 

@@ -48,7 +48,15 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}}
+  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}},
+
+  /**
+   * Send in-band dtmf on the peer connection (RFC 2833)
+   * @param {Array} tones An array of strings of numbers to be enqueued via RTCDTMFSender.insertDTMF
+   * @param {Object} [options] Options object to be used by RTCDTMFSender.insertDTMF. Supports members duration and interToneGap
+   * @returns {boolean}
+   */
+   sendDtmf: {value: function sendDtmf (tones, options) {}},
 });
 
 return SessionDescriptionHandler;

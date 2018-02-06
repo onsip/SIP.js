@@ -67,7 +67,8 @@ Session = function (sessionDescriptionHandlerFactory) {
 Session.prototype = {
   dtmf: function(tones, options) {
     var tone, dtmfs = [],
-        self = this;
+        self = this,
+        dtmfType = this.ua.configuration.dtmfType;
 
     options = options || {};
 
@@ -86,14 +87,6 @@ Session.prototype = {
     }
 
     tones = tones.toString().split('');
-
-    while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
-
-    if (this.tones) {
-      // Tones are already queued, just add to the queue
-      this.tones =  this.tones.concat(dtmfs);
-      return this;
-    }
 
     var sendDTMF = function () {
       var dtmf, timeout;
@@ -118,8 +111,24 @@ Session.prototype = {
       SIP.Timers.setTimeout(sendDTMF, timeout);
     };
 
-    this.tones = dtmfs;
-    sendDTMF();
+    if (dtmfType === SIP.C.dtmfType.RFC_2833) {
+      var sent = this.sessionDescriptionHandler.sendDtmf(tones, options);
+      if (!sent) {
+        this.logger.warn("Attempted to use dtmfType 2833 without necessary browser support, falling back to info packet method");
+        dtmfType = SIP.C.dtmfType.INFO;
+      }
+    }
+    if (dtmfType === SIP.C.dtmfType.INFO) {
+      while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
+
+      if (this.tones) {
+        // Tones are already queued, just add to the queue
+        this.tones =  this.tones.concat(dtmfs);
+        return this;
+      }
+      this.tones = dtmfs;
+      sendDTMF();
+    }
     return this;
   },
 
