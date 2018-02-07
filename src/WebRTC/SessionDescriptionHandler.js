@@ -283,6 +283,45 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       });
   }},
 
+  /**
+   * Send in-band dtmf on the peer connection (RFC 2833)
+   * @param {String} tones A string containing dtmf digits
+   * @param {Object} [options] Options object to be used by sendDtmf
+   * @returns {boolean}
+   */
+  sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
+    if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
+      var senders = this.peerConnection.getSenders();
+      if (senders[0]) {
+        this.dtmfSender = senders[0].dtmf;
+      }
+    }
+    if (!this.dtmfSender && this.hasBrowserTrackSupport()) {
+      var streams = this.peerConnection.getLocalStreams();
+      if (streams[0]) {
+        var audioTracks = streams[0].getAudioTracks();
+        if (audioTracks[0]) {
+          this.dtmfSender = this.peerConnection.createDTMFSender(audioTracks[0]);
+        }
+      }
+    } else if (!this.dtmfSender) {
+      return false;
+    }
+    this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
+    try {
+      this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
+    }
+    catch (e) {
+      if (e.toString() ===  "InvalidStateError" || e.toString() ===  "InvalidCharacterError") {
+        this.logger.error(e);
+        return false;
+      } else {
+        throw e;
+      }
+    }
+    return true;
+  }},
+
   // Internal functions
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions, modifiers) {
     var self = this;
@@ -349,38 +388,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       return defaultConstraints;
     }
     return constraints;
-  }},
-
-  sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
-    if (this.hasBrowserGetSenderSupport()) {
-      this.dtmfSender = this.getSenders()[0].dtmf;
-    }
-    if (!this.dtmfSender && this.hasBrowserTrackSupport()) {
-      var stream = this.getStreams()[0];
-      var audioTracks = stream.getAudioTracks();
-      this.dtmfSender = this.createDtmfSender(audioTracks[0]);
-    } else if (!this.dtmfSender) {
-      return false;
-    }
-    this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
-    this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
-    return true;
-  }},
-
-  createDTMFSender: {writable: true, value: function createDtmfSender (track) {
-    if (this.hasBrowserTrackSupport()) {
-      return this.peerConnection.createDTMFSender(track);
-    }
-  }},
-
-  getSenders: {writable: true, value: function getSenders () {
-    if (this.hasBrowserGetSenderSupport()) {
-      return this.peerConnection.getSenders();
-    }
-  }},
-
-  getStreams: {writable: true, value: function getStreams () {
-    return this.peerConnection.getLocalStreams();
   }},
 
   hasBrowserTrackSupport: {writable: true, value: function hasBrowserTrackSupport () {

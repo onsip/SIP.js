@@ -86,8 +86,6 @@ Session.prototype = {
       throw new TypeError('Invalid tones: '+ tones);
     }
 
-    tones = tones.toString().split('');
-
     var sendDTMF = function () {
       var dtmf, timeout;
 
@@ -114,11 +112,12 @@ Session.prototype = {
     if (dtmfType === SIP.C.dtmfType.RFC_2833) {
       var sent = this.sessionDescriptionHandler.sendDtmf(tones, options);
       if (!sent) {
-        this.logger.warn("Attempted to use dtmfType 2833 without necessary browser support, falling back to info packet method");
+        this.logger.warn("Attempt to use dtmfType 2833 has failed, falling back to info packet method");
         dtmfType = SIP.C.dtmfType.INFO;
       }
     }
     if (dtmfType === SIP.C.dtmfType.INFO) {
+      tones = tones.toString().split('');
       while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
 
       if (this.tones) {

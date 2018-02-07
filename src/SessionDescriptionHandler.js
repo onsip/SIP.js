@@ -52,8 +52,8 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
 
   /**
    * Send in-band dtmf on the peer connection (RFC 2833)
-   * @param {Array} tones An array of strings of numbers to be enqueued via RTCDTMFSender.insertDTMF
-   * @param {Object} [options] Options object to be used by RTCDTMFSender.insertDTMF. Supports members duration and interToneGap
+   * @param {String} tones A string containing dtmf digits
+   * @param {Object} [options] Options object to be used by sendDtmf
    * @returns {boolean}
    */
    sendDtmf: {value: function sendDtmf (tones, options) {}},
