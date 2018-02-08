@@ -310,7 +310,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
     try {
       this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
-      this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
     }
     catch (e) {
       if (e.type ===  "InvalidStateError" || e.type ===  "InvalidCharacterError") {
@@ -320,6 +319,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       }
     }
+    this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
     return true;
   }},
 
