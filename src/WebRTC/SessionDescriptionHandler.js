@@ -284,10 +284,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   /**
-   * Send in-band dtmf on the peer connection (RFC 2833)
+   * Send in-band dtmf (RFC 2833)
    * @param {String} tones A string containing dtmf digits
    * @param {Object} [options] Options object to be used by sendDtmf
-   * @returns {boolean}
+   * @returns {boolean} True if dtmf send is successful, otherwise false
    */
   sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
     if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
@@ -298,21 +298,22 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
     if (!this.dtmfSender && this.hasBrowserTrackSupport()) {
       var streams = this.peerConnection.getLocalStreams();
-      if (streams[0]) {
+      if (streams.length > 0) {
         var audioTracks = streams[0].getAudioTracks();
-        if (audioTracks[0]) {
+        if (audioTracks.length > 0) {
           this.dtmfSender = this.peerConnection.createDTMFSender(audioTracks[0]);
         }
       }
-    } else if (!this.dtmfSender) {
+    }
+    if (!this.dtmfSender) {
       return false;
     }
-    this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
     try {
       this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
+      this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
     }
     catch (e) {
-      if (e.toString() ===  "InvalidStateError" || e.toString() ===  "InvalidCharacterError") {
+      if (e.type ===  "InvalidStateError" || e.type ===  "InvalidCharacterError") {
         this.logger.error(e);
         return false;
       } else {
