@@ -292,7 +292,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
     if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
       var senders = this.peerConnection.getSenders();
-      if (senders[0]) {
+      if (senders.length > 0) {
         this.dtmfSender = senders[0].dtmf;
       }
     }
