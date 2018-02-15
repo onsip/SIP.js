@@ -17,6 +17,7 @@ var SessionDescriptionHandler = function(session, options) {
 
   this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
   this.session = session;
+  this.dtmfSender = null;
 
   this.CONTENT_TYPE = 'application/sdp';
 
@@ -282,6 +283,46 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       });
   }},
 
+  /**
+   * Send in-band dtmf (RFC 2833)
+   * @param {String} tones A string containing dtmf digits
+   * @param {Object} [options] Options object to be used by sendDtmf
+   * @returns {boolean} True if dtmf send is successful, otherwise false
+   */
+  sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
+    if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
+      var senders = this.peerConnection.getSenders();
+      if (senders.length > 0) {
+        this.dtmfSender = senders[0].dtmf;
+      }
+    }
+    if (!this.dtmfSender && this.hasBrowserTrackSupport()) {
+      var streams = this.peerConnection.getLocalStreams();
+      if (streams.length > 0) {
+        var audioTracks = streams[0].getAudioTracks();
+        if (audioTracks.length > 0) {
+          this.dtmfSender = this.peerConnection.createDTMFSender(audioTracks[0]);
+        }
+      }
+    }
+    if (!this.dtmfSender) {
+      return false;
+    }
+    try {
+      this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
+    }
+    catch (e) {
+      if (e.type ===  "InvalidStateError" || e.type ===  "InvalidCharacterError") {
+        this.logger.error(e);
+        return false;
+      } else {
+        throw e;
+      }
+    }
+    this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
+    return true;
+  }},
+
   // Internal functions
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions, modifiers) {
     var self = this;
@@ -348,6 +389,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       return defaultConstraints;
     }
     return constraints;
+  }},
+
+  hasBrowserTrackSupport: {writable: true, value: function hasBrowserTrackSupport () {
+    return Boolean(this.peerConnection.addTrack);
+  }},
+
+  hasBrowserGetSenderSupport: {writable: true, value: function hasBrowserGetSenderSupport () {
+    return Boolean(this.peerConnection.getSenders);
   }},
 
   initPeerConnection: {writable: true, value: function initPeerConnection(options) {

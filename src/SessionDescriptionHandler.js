@@ -48,7 +48,15 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}}
+  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}},
+
+  /**
+   * Send in-band dtmf (RFC 2833)
+   * @param {String} tones A string containing dtmf digits
+   * @param {Object} [options] Options object to be used by sendDtmf
+   * @returns {boolean} True if dtmf send is successful, otherwise false
+   */
+   sendDtmf: {value: function sendDtmf (tones, options) {}},
 });
 
 return SessionDescriptionHandler;

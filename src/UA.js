@@ -976,6 +976,10 @@ UA.prototype.loadConfig = function(configuration) {
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
 
+      // DTMF type: 'info' or '2833' (RFC 2833)
+      // https://tools.ietf.org/html/rfc2833
+      dtmfType: SIP.C.dtmfType.INFO,
+
       // Replaces header (RFC 3891)
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
@@ -1290,6 +1294,14 @@ UA.prototype.getConfigurationCheck = function () {
           return;
         } else {
           return displayName;
+        }
+      },
+
+      dtmfType: function(dtmfType) {
+        if (dtmfType !== SIP.C.dtmfType.RFC_2833) {
+          return SIP.C.dtmfType.INFO;
+        } else if (dtmfType === SIP.C.dtmfType.RFC_2833) {
+          return SIP.C.dtmfType.RFC_2833;
         }
       },
 
