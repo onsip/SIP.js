@@ -339,7 +339,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function(sdp) {
-        return SIP.Utils.reducePromises(modifiers, sdp);
+        return SIP.Utils.reducePromises(modifiers, self.createRTCSessionDescriptionInit(sdp));
       })
       .then(function(sdp) {
         self.logger.log(sdp);
@@ -353,7 +353,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return self.waitForIceGatheringComplete();
       })
       .then(function readySuccess() {
-        var localDescription = self.peerConnection.localDescription;
+        var localDescription = self.createRTCSessionDescriptionInit(self.peerConnection.localDescription);
         return SIP.Utils.reducePromises(modifiers, localDescription);
       })
       .then(function(localDescription) {
@@ -365,6 +365,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         // TODO: Not sure if this is correct
         throw new SIP.Exceptions.GetDescriptionError(e);
       });
+  }},
+
+  // Creates an RTCSessionDescriptionInit from an RTCSessionDescription
+  createRTCSessionDescriptionInit: {writable: true, value: function createRTCSessionDescriptionInit(RTCSessionDescription) {
+    return {
+      type: RTCSessionDescription.type,
+      sdp: RTCSessionDescription.sdp
+    };
   }},
 
   addDefaultIceCheckingTimeout: {writable: true, value: function addDefaultIceCheckingTimeout (peerConnectionOptions) {
