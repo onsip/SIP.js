@@ -544,7 +544,7 @@ Session.prototype = {
         }
         break;
       case SIP.C.NOTIFY:
-        if ((this.referContext && this.referContext instanceof SIP.ReferClientContext) && request.hasHeader('event') && request.getHeader('event') === 'refer') {
+        if ((this.referContext && this.referContext instanceof SIP.ReferClientContext) && request.hasHeader('event') && /^refer(;.*)?$/.test(request.getHeader('event'))) {
           this.referContext.receiveNotify(request);
           return;
         }
