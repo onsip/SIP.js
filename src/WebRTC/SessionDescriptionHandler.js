@@ -284,10 +284,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   /**
-   * Send in-band dtmf (RFC 2833)
-   * @param {String} tones A string containing dtmf digits
+   * Send DTMF via RTP (RFC 4733)
+   * @param {String} tones A string containing DTMF digits
    * @param {Object} [options] Options object to be used by sendDtmf
-   * @returns {boolean} True if dtmf send is successful, otherwise false
+   * @returns {boolean} true if DTMF send is successful, false otherwise
    */
   sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
     if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
@@ -319,7 +319,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       }
     }
-    this.logger.log('DTMF sent via RFC 2833: ' + tones.toString());
+    this.logger.log('DTMF sent via RTP: ' + tones.toString());
     return true;
   }},
 

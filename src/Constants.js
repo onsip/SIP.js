@@ -199,7 +199,7 @@ return {
 
   dtmfType: {
     INFO: 'info',
-    RFC_2833: '2833'
+    RTP: 'rtp'
   }
 };
 };

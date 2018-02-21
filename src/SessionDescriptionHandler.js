@@ -51,10 +51,10 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
   setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}},
 
   /**
-   * Send in-band dtmf (RFC 2833)
-   * @param {String} tones A string containing dtmf digits
+   * Send DTMF via RTP (RFC 4733)
+   * @param {String} tones A string containing DTMF digits
    * @param {Object} [options] Options object to be used by sendDtmf
-   * @returns {boolean} True if dtmf send is successful, otherwise false
+   * @returns {boolean} true if DTMF send is successful, false otherwise
    */
    sendDtmf: {value: function sendDtmf (tones, options) {}},
 });
