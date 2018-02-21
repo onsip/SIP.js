@@ -1015,6 +1015,7 @@ InviteServerContext.prototype = {
          (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
          (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
       if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
         this.hasOffer = true;
         this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
@@ -1114,6 +1115,7 @@ InviteServerContext.prototype = {
       descriptionCreationSucceeded({});
     } else {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
       if (this.request.getHeader('Content-Length') === '0' && !this.request.getHeader('Content-Type')) {
         this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
         .catch(descriptionCreationFailed)
@@ -1214,6 +1216,7 @@ InviteServerContext.prototype = {
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         if(!this.hasAnswer) {
           this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+          this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             this.hasAnswer = true;
             this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
@@ -1392,6 +1395,7 @@ InviteClientContext.prototype = {
     } else {
       //Initialize Media Session
       this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
       this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
       .then(
@@ -1537,6 +1541,7 @@ InviteClientContext.prototype = {
           }
           // TODO: This may be broken. It may have to be on the early dialog
           this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+          this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
@@ -1573,6 +1578,7 @@ InviteClientContext.prototype = {
           } else {
             var earlyDialog = this.earlyDialogs[id];
             var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+            this.emit('SessionDescriptionHandler-created', earlyMedia);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
@@ -1646,6 +1652,7 @@ InviteClientContext.prototype = {
             this.accepted(response);
           } else {
             this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+            this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
             if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
               this.acceptAndTerminate(response, 400, 'Missing session description');

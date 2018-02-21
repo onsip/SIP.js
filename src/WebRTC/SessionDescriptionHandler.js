@@ -41,8 +41,6 @@ var SessionDescriptionHandler = function(session, options) {
   this.initPeerConnection(this.options.peerConnectionOptions);
 
   this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
-
-  this.session.emit('SessionDescriptionHandler-created', this);
 };
 
 /**
