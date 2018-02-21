@@ -319,7 +319,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       }
     }
-    this.logger.info('DTMF sent via RFC 2833: ' + tones.toString());
+    this.logger.log('DTMF sent via RFC 2833: ' + tones.toString());
     return true;
   }},
 
