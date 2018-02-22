@@ -1736,14 +1736,14 @@ describe('UA', function() {
       });
     });
     describe('.dtmfType', function() {
-      it('is set to SIP.C.dtmfType.INFO on any input that isn\'t SIP.C.dtmfType.RFC_2833', function() {
+      it('is set to SIP.C.dtmfType.INFO on any input that isn\'t SIP.C.dtmfType.RTP', function() {
         expect(configCheck.optional.dtmfType(SIP.C.dtmfType.INFO)).toBe(SIP.C.dtmfType.INFO);
         expect(configCheck.optional.dtmfType('cat')).toBe(SIP.C.dtmfType.INFO);
         expect(configCheck.optional.dtmfType('')).toBe(SIP.C.dtmfType.INFO);
         expect(configCheck.optional.dtmfType()).toBe(SIP.C.dtmfType.INFO);
       });
-      it('can be set to SIP.C.dtmfType.RFC_2833', function() {
-        expect(configCheck.optional.dtmfType(SIP.C.dtmfType.RFC_2833)).toBe(SIP.C.dtmfType.RFC_2833);
+      it('can be set to SIP.C.dtmfType.RTP', function() {
+        expect(configCheck.optional.dtmfType(SIP.C.dtmfType.RTP)).toBe(SIP.C.dtmfType.RTP);
       });
     });
   });

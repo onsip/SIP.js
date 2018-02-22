@@ -154,7 +154,7 @@ describe('Session', function() {
 
     describe('RTCDTMFSender', function() {
       beforeEach(function() {
-        Session.ua = ua = new SIP.UA({uri: 'jim@example.com', dtmfType: SIP.C.dtmfType.RFC_2833}).start();
+        Session.ua = ua = new SIP.UA({uri: 'jim@example.com', dtmfType: SIP.C.dtmfType.RTP}).start();
         Session.sessionDescriptionHandler = { sendDtmf: function(tones, options) {} };
       });
 

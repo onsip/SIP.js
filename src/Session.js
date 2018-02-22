@@ -109,10 +109,10 @@ Session.prototype = {
       SIP.Timers.setTimeout(sendDTMF, timeout);
     };
 
-    if (dtmfType === SIP.C.dtmfType.RFC_2833) {
+    if (dtmfType === SIP.C.dtmfType.RTP) {
       var sent = this.sessionDescriptionHandler.sendDtmf(tones, options);
       if (!sent) {
-        this.logger.warn("Attempt to use dtmfType 2833 has failed, falling back to info packet method");
+        this.logger.warn("Attempt to use dtmfType 'RTP' has failed, falling back to INFO packet method");
         dtmfType = SIP.C.dtmfType.INFO;
       }
     }

@@ -976,8 +976,9 @@ UA.prototype.loadConfig = function(configuration) {
       //Reliable Provisional Responses
       rel100: SIP.C.supported.UNSUPPORTED,
 
-      // DTMF type: 'info' or '2833' (RFC 2833)
-      // https://tools.ietf.org/html/rfc2833
+      // DTMF type: 'info' or 'rtp' (RFC 4733)
+      // RTP Payload Spec: https://tools.ietf.org/html/rfc4733
+      // WebRTC Audio Spec: https://tools.ietf.org/html/rfc7874
       dtmfType: SIP.C.dtmfType.INFO,
 
       // Replaces header (RFC 3891)
@@ -1298,10 +1299,13 @@ UA.prototype.getConfigurationCheck = function () {
       },
 
       dtmfType: function(dtmfType) {
-        if (dtmfType !== SIP.C.dtmfType.RFC_2833) {
-          return SIP.C.dtmfType.INFO;
-        } else if (dtmfType === SIP.C.dtmfType.RFC_2833) {
-          return SIP.C.dtmfType.RFC_2833;
+        switch (dtmfType) {
+          case SIP.C.dtmfType.RTP:
+            return SIP.C.dtmfType.RTP;
+          case SIP.C.dtmfType.INFO:
+            // Fall through
+          default:
+            return SIP.C.dtmfType.INFO;
         }
       },
 
