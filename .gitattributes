@@ -1,1 +1,4 @@
 *.min.js binary
+
+# eslint expects all JS files to have Unix line endings
+*.js text eol=lf
