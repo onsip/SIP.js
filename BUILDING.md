@@ -38,8 +38,7 @@ Build and test
 $ npm run build && npm run commandLineTest
 ```
 
-The built version of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [JSLint](http://jslint.com/). There are copies of each file with the version number in the title in that subdirectory as well
-
+The built version of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [ESLint](https://eslint.org/). There are copies of each file with the version number in the title in that subdirectory as well.
 
 ## Development version
 
