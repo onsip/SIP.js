@@ -340,7 +340,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return SIP.Utils.reducePromises(modifiers, self.createRTCSessionDescriptionInit(sdp));
       })
       .then(function(sdp) {
-        self.logger.log(sdp);
+        self.resetIceGatheringComplete();
         return pc.setLocalDescription(sdp);
       })
       .catch(function localDescError(e) {
@@ -551,7 +551,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return this.peerConnection.iceGatheringState === 'complete' || this.iceGatheringTimeout;
   }},
 
-  resetIceGatheringComplete: {writable: true, value: function rejectIceGatheringComplete() {
+  resetIceGatheringComplete: {writable: true, value: function resetIceGatheringComplete() {
     this.iceGatheringTimeout = false;
 
     if (this.iceGatheringTimer) {
