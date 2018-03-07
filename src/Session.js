@@ -590,7 +590,7 @@ Session.prototype = {
           self.emit('reinviteFailed', self);
           self.emit('renegotiationError', e);
           self.sendRequest(SIP.C.BYE, {
-            extraHeaders: [SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
+            extraHeaders: ['Reason: ' + SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
           });
         }).then(function() {
           self.emit('reinviteAccepted', self);
