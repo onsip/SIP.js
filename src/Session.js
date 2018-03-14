@@ -2,6 +2,7 @@
 module.exports = function (SIP) {
 
 var DTMF = require('./Session/DTMF')(SIP);
+var SessionDescriptionHandlerObserver = require('./SessionDescriptionHandlerObserver');
 
 var Session, InviteServerContext, InviteClientContext, ReferServerContext, ReferClientContext,
  C = {
@@ -1275,7 +1276,7 @@ InviteServerContext.prototype = {
     if (this.sessionDescriptionHandler) {
       return this.sessionDescriptionHandler;
     }
-    return this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
+    return this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
   },
 
   onTransportError: function() {
@@ -1394,7 +1395,7 @@ InviteClientContext.prototype = {
       this.send();
     } else {
       //Initialize Media Session
-      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
       this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
       this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
@@ -1540,7 +1541,7 @@ InviteClientContext.prototype = {
             return;
           }
           // TODO: This may be broken. It may have to be on the early dialog
-          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
           this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1577,7 +1578,7 @@ InviteClientContext.prototype = {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
             this.emit('SessionDescriptionHandler-created', earlyMedia);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
@@ -1651,7 +1652,7 @@ InviteClientContext.prototype = {
 
             this.accepted(response);
           } else {
-            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
             this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
             if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {

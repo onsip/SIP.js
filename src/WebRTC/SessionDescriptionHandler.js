@@ -11,15 +11,18 @@
 module.exports = function (SIP) {
 
 // Constructor
-var SessionDescriptionHandler = function(session, options) {
+var SessionDescriptionHandler = function(session, observer, options) {
   // TODO: Validate the options
   this.options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
   this.session = session;
+  this.observer = observer;
   this.dtmfSender = null;
 
   this.CONTENT_TYPE = 'application/sdp';
+
+  this.logger.log('SessionDescriptionHandlerOptions: ' + JSON.stringify(this.options));
 
   this.modifiers = this.options.modifiers || [];
   if (!Array.isArray(this.modifiers)) {
@@ -48,8 +51,8 @@ var SessionDescriptionHandler = function(session, options) {
  * @param {Object} [options]
  */
 
-SessionDescriptionHandler.defaultFactory = function defaultFactory (session, options) {
-  return new SessionDescriptionHandler(session, options);
+SessionDescriptionHandler.defaultFactory = function defaultFactory (session, observer, options) {
+  return new SessionDescriptionHandler(session, observer, options);
 };
 
 SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandler.prototype, {
@@ -426,10 +429,11 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.session.emit('peerConnection-created', this.peerConnection);
 
     if ('ontrack' in this.peerConnection) {
-      this.peerConnection.ontrack = function(e) {
+      this.peerConnection.addEventListener('track', function(e) {
         self.logger.log('track added');
+        self.observer.trackAdded();
         self.emit('addTrack', e);
-      };
+      });
     } else {
       this.logger.warn('Using onaddstream which is deprecated');
       this.peerConnection.onaddstream = function(e) {
@@ -509,23 +513,16 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
        */
       this.emit('userMediaRequest', constraints);
 
-      var emitThenCall = function(eventName, callback) {
-        var callbackArgs = Array.prototype.slice.call(arguments, 2);
-        // Emit with all of the arguments from the real callback.
-        var newArgs = [eventName].concat(callbackArgs);
-        this.emit.apply(this, newArgs);
-        return callback.apply(null, callbackArgs);
-      }.bind(this);
-
       if (constraints.audio || constraints.video) {
         this.WebRTC.getUserMedia(constraints)
-        .then(
-          emitThenCall.bind(this, 'userMedia', function(streams) { resolve(streams); }),
-          emitThenCall.bind(this, 'userMediaFailed', function(e) {
-            reject(e);
-            throw e;
-          })
-        );
+        .then(function(streams) {
+          this.observer.trackAdded();
+          this.emit('userMedia', streams);
+          resolve(streams);
+        }.bind(this)).catch(function(e) {
+          this.emit('userMediaFailed', e);
+          reject(e);
+        }.bind(this));
       } else {
         // Local streams were explicitly excluded.
         resolve([]);

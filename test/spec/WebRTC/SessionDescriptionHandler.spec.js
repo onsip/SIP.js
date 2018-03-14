@@ -1,4 +1,9 @@
 var SessionDescriptionHandler = require('../../../src/WebRTC/SessionDescriptionHandler')(SIP);
+var SessionDescriptionHandlerObserver = {
+  trackAdded: function() {
+    return;
+  }
+};
 
 function setIceGatheringState(pc, state) {
   pc.iceGatheringState = state;
@@ -38,7 +43,7 @@ describe('WebRTC/SessionDescriptionHandler', function() {
       getUserMedia: function() {}
     };
 
-    handler = new SessionDescriptionHandler(mockSession, {
+    handler = new SessionDescriptionHandler(mockSession, SessionDescriptionHandlerObserver, {
       peerConnectionOptions: {
         iceCheckingTimeout: 500
       }
