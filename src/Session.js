@@ -593,6 +593,7 @@ Session.prototype = {
           self.sendRequest(SIP.C.BYE, {
             extraHeaders: ['Reason: ' + SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
           });
+          self.terminated(null, SIP.C.causes.INCOMPATIBLE_SDP);
         }).then(function() {
           self.emit('reinviteAccepted', self);
         });
