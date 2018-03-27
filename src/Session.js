@@ -717,6 +717,9 @@ Session.prototype = {
   },
 
   canceled: function() {
+    if (this.sessionDescriptionHandler) {
+      this.sessionDescriptionHandler.close();
+    }
     this.emit('cancel');
     return this;
   },
