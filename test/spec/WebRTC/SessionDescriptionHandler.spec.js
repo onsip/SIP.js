@@ -2,7 +2,10 @@ var SessionDescriptionHandler = require('../../../src/WebRTC/SessionDescriptionH
 var SessionDescriptionHandlerObserver = {
   trackAdded: function() {
     return;
-  }
+  },
+  directionChanged: function() {
+    return;
+  },
 };
 
 function setIceGatheringState(pc, state) {

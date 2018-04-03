@@ -22,7 +22,18 @@ var SessionDescriptionHandler = function(session, observer, options) {
 
   this.CONTENT_TYPE = 'application/sdp';
 
+  this.C = {};
+  this.C.DIRECTION = {
+    NULL:     null,
+    SENDRECV: "sendrecv",
+    SENDONLY: "sendonly",
+    RECVONLY: "recvonly",
+    INACTIVE: "inactive"
+  };
+
   this.logger.log('SessionDescriptionHandlerOptions: ' + JSON.stringify(this.options));
+
+  this.direction = this.C.DIRECTION.NULL;
 
   this.modifiers = this.options.modifiers || [];
   if (!Array.isArray(this.modifiers)) {
@@ -324,6 +335,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return true;
   }},
 
+  getDirection: {writable: true, value: function getDirection() {
+    return this.direction;
+  }},
+
   // Internal functions
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions, modifiers) {
     var self = this;
@@ -359,6 +374,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       })
       .then(function(localDescription) {
         self.emit('getDescription', localDescription);
+        self.setDirection(localDescription.sdp);
         return localDescription.sdp;
       })
       .catch(function createOfferOrAnswerError (e) {
@@ -560,6 +576,28 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.iceGatheringDeferred.reject();
       this.iceGatheringDeferred = null;
     }
+  }},
+
+  setDirection: {writable: true, value: function setDirection(sdp) {
+    var match = sdp.match(/a=(sendrecv|sendonly|recvonly|inactive)/);
+    if (match === null) {
+      this.direction = this.C.DIRECTION.NULL;
+      this.observer.directionChanged();
+      return;
+    }
+    var direction = match[1];
+    switch (direction) {
+      case this.C.DIRECTION.SENDRECV:
+      case this.C.DIRECTION.SENDONLY:
+      case this.C.DIRECTION.RECVONLY:
+      case this.C.DIRECTION.INACTIVE:
+        this.direction = direction;
+        break;
+      default:
+        this.direction = this.C.DIRECTION.NULL;
+        break;
+    }
+    this.observer.directionChanged();
   }},
 
   triggerIceGatheringComplete: {writable: true, value: function triggerIceGatheringComplete() {

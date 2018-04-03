@@ -19,6 +19,10 @@ SessionDescriptionHandlerObserver.prototype = {
   trackAdded: function() {
     this.session.emit('trackAdded');
   },
+
+  directionChanged: function() {
+    this.session.emit('directionChanged');
+  },
 };
 
 module.exports = SessionDescriptionHandlerObserver;

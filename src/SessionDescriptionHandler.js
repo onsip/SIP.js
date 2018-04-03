@@ -57,6 +57,12 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
    * @returns {boolean} true if DTMF send is successful, false otherwise
    */
    sendDtmf: {value: function sendDtmf (tones, options) {}},
+
+   /**
+   * Get the direction of the session description
+   * @returns {String} direction of the description
+   */
+   getDirection: {value: function getDirection() {}},
 });
 
 return SessionDescriptionHandler;
