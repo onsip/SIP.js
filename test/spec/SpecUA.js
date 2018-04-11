@@ -1186,6 +1186,8 @@ describe('UA', function() {
       expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
       expect(UA.configuration.replaces).toBe(SIP.C.supported.UNSUPPORTED);
       expect(UA.configuration.allowLegacyNotifications).toBe(false);
+
+      expect(UA.configuration.dtmfType).toBe(SIP.C.dtmfType.INFO);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1731,6 +1733,17 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(configCheck.optional.allowLegacyNotifications(true)).toBe(true);
         expect(configCheck.optional.allowLegacyNotifications(false)).toBe(false);
+      });
+    });
+    describe('.dtmfType', function() {
+      it('is set to SIP.C.dtmfType.INFO on any input that isn\'t SIP.C.dtmfType.RTP', function() {
+        expect(configCheck.optional.dtmfType(SIP.C.dtmfType.INFO)).toBe(SIP.C.dtmfType.INFO);
+        expect(configCheck.optional.dtmfType('cat')).toBe(SIP.C.dtmfType.INFO);
+        expect(configCheck.optional.dtmfType('')).toBe(SIP.C.dtmfType.INFO);
+        expect(configCheck.optional.dtmfType()).toBe(SIP.C.dtmfType.INFO);
+      });
+      it('can be set to SIP.C.dtmfType.RTP', function() {
+        expect(configCheck.optional.dtmfType(SIP.C.dtmfType.RTP)).toBe(SIP.C.dtmfType.RTP);
       });
     });
   });

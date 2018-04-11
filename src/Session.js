@@ -2,6 +2,7 @@
 module.exports = function (SIP) {
 
 var DTMF = require('./Session/DTMF')(SIP);
+var SessionDescriptionHandlerObserver = require('./SessionDescriptionHandlerObserver');
 
 var Session, InviteServerContext, InviteClientContext, ReferServerContext, ReferClientContext,
  C = {
@@ -67,7 +68,8 @@ Session = function (sessionDescriptionHandlerFactory) {
 Session.prototype = {
   dtmf: function(tones, options) {
     var tone, dtmfs = [],
-        self = this;
+        self = this,
+        dtmfType = this.ua.configuration.dtmfType;
 
     options = options || {};
 
@@ -83,16 +85,6 @@ Session.prototype = {
     // Check tones
     if ((typeof tones !== 'string' && typeof tones !== 'number') || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
       throw new TypeError('Invalid tones: '+ tones);
-    }
-
-    tones = tones.toString().split('');
-
-    while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
-
-    if (this.tones) {
-      // Tones are already queued, just add to the queue
-      this.tones =  this.tones.concat(dtmfs);
-      return this;
     }
 
     var sendDTMF = function () {
@@ -118,8 +110,26 @@ Session.prototype = {
       SIP.Timers.setTimeout(sendDTMF, timeout);
     };
 
-    this.tones = dtmfs;
-    sendDTMF();
+    tones = tones.toString();
+    if (dtmfType === SIP.C.dtmfType.RTP) {
+      var sent = this.sessionDescriptionHandler.sendDtmf(tones, options);
+      if (!sent) {
+        this.logger.warn("Attempt to use dtmfType 'RTP' has failed, falling back to INFO packet method");
+        dtmfType = SIP.C.dtmfType.INFO;
+      }
+    }
+    if (dtmfType === SIP.C.dtmfType.INFO) {
+      tones = tones.split('');
+      while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
+
+      if (this.tones) {
+        // Tones are already queued, just add to the queue
+        this.tones =  this.tones.concat(dtmfs);
+        return this;
+      }
+      this.tones = dtmfs;
+      sendDTMF();
+    }
     return this;
   },
 
@@ -384,13 +394,9 @@ Session.prototype = {
       return;
     }
 
-    var _receiveRequest = this.receiveRequest;
-
-    // HACK to catch the ACK
     this.receiveRequest = function(request) {
-      if (request.method === SIP.C.ACK &&
-        this.status === C.STATUS_WAITING_FOR_ACK &&
-        this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
+      if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
+        if (this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
           this.hasAnswer = true;
           this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
           .then(function() {
@@ -400,8 +406,15 @@ Session.prototype = {
 
             this.emit('confirmed', request);
           }.bind(this));
+        } else {
+          SIP.Timers.clearTimeout(this.timers.ackTimer);
+          SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+          this.status = C.STATUS_CONFIRMED;
+
+          this.emit('confirmed', request);
+        }
       } else {
-        _receiveRequest.call(this, request);
+        SIP.Session.prototype.receiveRequest.apply(this, [request]);
       }
     }.bind(this);
 
@@ -533,7 +546,7 @@ Session.prototype = {
         }
         break;
       case SIP.C.NOTIFY:
-        if ((this.referContext && this.referContext instanceof SIP.ReferClientContext) && request.hasHeader('event') && request.getHeader('event') === 'refer') {
+        if ((this.referContext && this.referContext instanceof SIP.ReferClientContext) && request.hasHeader('event') && /^refer(;.*)?$/.test(request.getHeader('event'))) {
           this.referContext.receiveNotify(request);
           return;
         }
@@ -579,8 +592,9 @@ Session.prototype = {
           self.emit('reinviteFailed', self);
           self.emit('renegotiationError', e);
           self.sendRequest(SIP.C.BYE, {
-            extraHeaders: [SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
+            extraHeaders: ['Reason: ' + SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
           });
+          self.terminated(null, SIP.C.causes.INCOMPATIBLE_SDP);
         }).then(function() {
           self.emit('reinviteAccepted', self);
         });
@@ -704,6 +718,9 @@ Session.prototype = {
   },
 
   canceled: function() {
+    if (this.sessionDescriptionHandler) {
+      this.sessionDescriptionHandler.close();
+    }
     this.emit('cancel');
     return this;
   },
@@ -1004,6 +1021,7 @@ InviteServerContext.prototype = {
          (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
          (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
       if (this.sessionDescriptionHandler.hasDescription(this.request.getHeader('Content-Type'))) {
         this.hasOffer = true;
         this.sessionDescriptionHandler.setDescription(this.request.body, options.sessionDescriptionHandlerOptions, options.modifiers)
@@ -1103,6 +1121,7 @@ InviteServerContext.prototype = {
       descriptionCreationSucceeded({});
     } else {
       this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
       if (this.request.getHeader('Content-Length') === '0' && !this.request.getHeader('Content-Type')) {
         this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
         .catch(descriptionCreationFailed)
@@ -1203,6 +1222,7 @@ InviteServerContext.prototype = {
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         if(!this.hasAnswer) {
           this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
+          this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
             this.hasAnswer = true;
             this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
@@ -1261,7 +1281,7 @@ InviteServerContext.prototype = {
     if (this.sessionDescriptionHandler) {
       return this.sessionDescriptionHandler;
     }
-    return this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
+    return this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
   },
 
   onTransportError: function() {
@@ -1380,7 +1400,8 @@ InviteClientContext.prototype = {
       this.send();
     } else {
       //Initialize Media Session
-      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
       this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
       .then(
@@ -1525,7 +1546,8 @@ InviteClientContext.prototype = {
             return;
           }
           // TODO: This may be broken. It may have to be on the early dialog
-          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+          this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
@@ -1561,7 +1583,8 @@ InviteClientContext.prototype = {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+            this.emit('SessionDescriptionHandler-created', earlyMedia);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
 
@@ -1634,7 +1657,8 @@ InviteClientContext.prototype = {
 
             this.accepted(response);
           } else {
-            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+            this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
             if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
               this.acceptAndTerminate(response, 400, 'Missing session description');

@@ -22,19 +22,28 @@ describe('WebRTC/Simple', function() {
       }
     });
     expect(simple).toBeTruthy();
-    expect(simple.ua.configuration).toEqual({
+
+    var expected = {
       authorizationUser: undefined,
       displayName: undefined,
       password: undefined,
       register: true,
       sessionDescriptionHandlerFactoryOptions: {
-        // FIXME: phantomjs is detected as safari!
-        modifiers: [SIP.WebRTC.Modifiers.stripG722]
       },
       traceSip: undefined,
       uri: 'bob@example.com',
       userAgentString: undefined,
       wsServers: ['wss://sip-ws.example.com'],
-    });
+    }
+
+    // FIXME: phantomjs is detected as safari!
+    var browserUa = navigator.userAgent.toLowerCase();
+    if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
+      expected.sessionDescriptionHandlerFactoryOptions = {
+        modifiers: [SIP.WebRTC.Modifiers.stripG722],
+      }
+    }
+
+    expect(simple.ua.configuration).toEqual(expected);
   });
 });

@@ -234,7 +234,7 @@ Utils= {
 
   getReasonHeaderValue: function getReasonHeaderValue (code, reason) {
     reason = SIP.Utils.getReasonPhrase(code, reason);
-    return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
+    return 'SIP;cause=' + code + ';text="' + reason + '"';
   },
 
   getCancelReason: function getCancelReason (code, reason) {

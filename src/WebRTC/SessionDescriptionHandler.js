@@ -11,14 +11,29 @@
 module.exports = function (SIP) {
 
 // Constructor
-var SessionDescriptionHandler = function(session, options) {
+var SessionDescriptionHandler = function(session, observer, options) {
   // TODO: Validate the options
   this.options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
   this.session = session;
+  this.observer = observer;
+  this.dtmfSender = null;
 
   this.CONTENT_TYPE = 'application/sdp';
+
+  this.C = {};
+  this.C.DIRECTION = {
+    NULL:     null,
+    SENDRECV: "sendrecv",
+    SENDONLY: "sendonly",
+    RECVONLY: "recvonly",
+    INACTIVE: "inactive"
+  };
+
+  this.logger.log('SessionDescriptionHandlerOptions: ' + JSON.stringify(this.options));
+
+  this.direction = this.C.DIRECTION.NULL;
 
   this.modifiers = this.options.modifiers || [];
   if (!Array.isArray(this.modifiers)) {
@@ -40,8 +55,6 @@ var SessionDescriptionHandler = function(session, options) {
   this.initPeerConnection(this.options.peerConnectionOptions);
 
   this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
-
-  this.session.emit('SessionDescriptionHandler-created', this);
 };
 
 /**
@@ -49,8 +62,8 @@ var SessionDescriptionHandler = function(session, options) {
  * @param {Object} [options]
  */
 
-SessionDescriptionHandler.defaultFactory = function defaultFactory (session, options) {
-  return new SessionDescriptionHandler(session, options);
+SessionDescriptionHandler.defaultFactory = function defaultFactory (session, observer, options) {
+  return new SessionDescriptionHandler(session, observer, options);
 };
 
 SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandler.prototype, {
@@ -282,6 +295,50 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       });
   }},
 
+  /**
+   * Send DTMF via RTP (RFC 4733)
+   * @param {String} tones A string containing DTMF digits
+   * @param {Object} [options] Options object to be used by sendDtmf
+   * @returns {boolean} true if DTMF send is successful, false otherwise
+   */
+  sendDtmf: {writable: true, value: function sendDtmf (tones, options) {
+    if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
+      var senders = this.peerConnection.getSenders();
+      if (senders.length > 0) {
+        this.dtmfSender = senders[0].dtmf;
+      }
+    }
+    if (!this.dtmfSender && this.hasBrowserTrackSupport()) {
+      var streams = this.peerConnection.getLocalStreams();
+      if (streams.length > 0) {
+        var audioTracks = streams[0].getAudioTracks();
+        if (audioTracks.length > 0) {
+          this.dtmfSender = this.peerConnection.createDTMFSender(audioTracks[0]);
+        }
+      }
+    }
+    if (!this.dtmfSender) {
+      return false;
+    }
+    try {
+      this.dtmfSender.insertDTMF(tones, options.duration, options.interToneGap);
+    }
+    catch (e) {
+      if (e.type ===  "InvalidStateError" || e.type ===  "InvalidCharacterError") {
+        this.logger.error(e);
+        return false;
+      } else {
+        throw e;
+      }
+    }
+    this.logger.log('DTMF sent via RTP: ' + tones.toString());
+    return true;
+  }},
+
+  getDirection: {writable: true, value: function getDirection() {
+    return this.direction;
+  }},
+
   // Internal functions
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions, modifiers) {
     var self = this;
@@ -298,10 +355,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         throw e;
       })
       .then(function(sdp) {
-        return SIP.Utils.reducePromises(modifiers, sdp);
+        return SIP.Utils.reducePromises(modifiers, self.createRTCSessionDescriptionInit(sdp));
       })
       .then(function(sdp) {
-        self.logger.log(sdp);
+        self.resetIceGatheringComplete();
         return pc.setLocalDescription(sdp);
       })
       .catch(function localDescError(e) {
@@ -312,11 +369,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return self.waitForIceGatheringComplete();
       })
       .then(function readySuccess() {
-        var localDescription = self.peerConnection.localDescription;
+        var localDescription = self.createRTCSessionDescriptionInit(self.peerConnection.localDescription);
         return SIP.Utils.reducePromises(modifiers, localDescription);
       })
       .then(function(localDescription) {
         self.emit('getDescription', localDescription);
+        self.setDirection(localDescription.sdp);
         return localDescription.sdp;
       })
       .catch(function createOfferOrAnswerError (e) {
@@ -324,6 +382,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         // TODO: Not sure if this is correct
         throw new SIP.Exceptions.GetDescriptionError(e);
       });
+  }},
+
+  // Creates an RTCSessionDescriptionInit from an RTCSessionDescription
+  createRTCSessionDescriptionInit: {writable: true, value: function createRTCSessionDescriptionInit(RTCSessionDescription) {
+    return {
+      type: RTCSessionDescription.type,
+      sdp: RTCSessionDescription.sdp
+    };
   }},
 
   addDefaultIceCheckingTimeout: {writable: true, value: function addDefaultIceCheckingTimeout (peerConnectionOptions) {
@@ -350,6 +416,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return constraints;
   }},
 
+  hasBrowserTrackSupport: {writable: true, value: function hasBrowserTrackSupport () {
+    return Boolean(this.peerConnection.addTrack);
+  }},
+
+  hasBrowserGetSenderSupport: {writable: true, value: function hasBrowserGetSenderSupport () {
+    return Boolean(this.peerConnection.getSenders);
+  }},
+
   initPeerConnection: {writable: true, value: function initPeerConnection(options) {
     var self = this;
     options = options || {};
@@ -370,21 +444,19 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.logger.log('New peer connection created');
     this.session.emit('peerConnection-created', this.peerConnection);
 
-    this.peerConnection.ontrack = function(e) {
-      self.logger.log('track added');
-      self.emit('addTrack', e);
-    };
-
-    this.peerConnection.onaddstream = function(e) {
-      self.logger.warn('Using deprecated stream API');
-      self.logger.log('stream added');
-      self.emit('addStream', e);
-    };
-
-    // TODO: There is no remove track listener
-    this.peerConnection.onremovestream = function(e) {
-      self.logger.log('stream removed: '+ e.stream.id);
-    };
+    if ('ontrack' in this.peerConnection) {
+      this.peerConnection.addEventListener('track', function(e) {
+        self.logger.log('track added');
+        self.observer.trackAdded();
+        self.emit('addTrack', e);
+      });
+    } else {
+      this.logger.warn('Using onaddstream which is deprecated');
+      this.peerConnection.onaddstream = function(e) {
+        self.logger.log('stream added');
+        self.emit('addStream', e);
+      };
+    }
 
     this.peerConnection.onicecandidate = function(e) {
       self.emit('iceCandidate', e);
@@ -457,23 +529,16 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
        */
       this.emit('userMediaRequest', constraints);
 
-      var emitThenCall = function(eventName, callback) {
-        var callbackArgs = Array.prototype.slice.call(arguments, 2);
-        // Emit with all of the arguments from the real callback.
-        var newArgs = [eventName].concat(callbackArgs);
-        this.emit.apply(this, newArgs);
-        return callback.apply(null, callbackArgs);
-      }.bind(this);
-
       if (constraints.audio || constraints.video) {
         this.WebRTC.getUserMedia(constraints)
-        .then(
-          emitThenCall.bind(this, 'userMedia', function(streams) { resolve(streams); }),
-          emitThenCall.bind(this, 'userMediaFailed', function(e) {
-            reject(e);
-            throw e;
-          })
-        );
+        .then(function(streams) {
+          this.observer.trackAdded();
+          this.emit('userMedia', streams);
+          resolve(streams);
+        }.bind(this)).catch(function(e) {
+          this.emit('userMediaFailed', e);
+          reject(e);
+        }.bind(this));
       } else {
         // Local streams were explicitly excluded.
         resolve([]);
@@ -499,7 +564,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return this.peerConnection.iceGatheringState === 'complete' || this.iceGatheringTimeout;
   }},
 
-  resetIceGatheringComplete: {writable: true, value: function rejectIceGatheringComplete() {
+  resetIceGatheringComplete: {writable: true, value: function resetIceGatheringComplete() {
     this.iceGatheringTimeout = false;
 
     if (this.iceGatheringTimer) {
@@ -511,6 +576,28 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.iceGatheringDeferred.reject();
       this.iceGatheringDeferred = null;
     }
+  }},
+
+  setDirection: {writable: true, value: function setDirection(sdp) {
+    var match = sdp.match(/a=(sendrecv|sendonly|recvonly|inactive)/);
+    if (match === null) {
+      this.direction = this.C.DIRECTION.NULL;
+      this.observer.directionChanged();
+      return;
+    }
+    var direction = match[1];
+    switch (direction) {
+      case this.C.DIRECTION.SENDRECV:
+      case this.C.DIRECTION.SENDONLY:
+      case this.C.DIRECTION.RECVONLY:
+      case this.C.DIRECTION.INACTIVE:
+        this.direction = direction;
+        break;
+      default:
+        this.direction = this.C.DIRECTION.NULL;
+        break;
+    }
+    this.observer.directionChanged();
   }},
 
   triggerIceGatheringComplete: {writable: true, value: function triggerIceGatheringComplete() {
