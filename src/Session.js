@@ -110,6 +110,7 @@ Session.prototype = {
       SIP.Timers.setTimeout(sendDTMF, timeout);
     };
 
+    tones = tones.toString();
     if (dtmfType === SIP.C.dtmfType.RTP) {
       var sent = this.sessionDescriptionHandler.sendDtmf(tones, options);
       if (!sent) {
@@ -118,7 +119,7 @@ Session.prototype = {
       }
     }
     if (dtmfType === SIP.C.dtmfType.INFO) {
-      tones = tones.toString().split('');
+      tones = tones.split('');
       while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
 
       if (this.tones) {
