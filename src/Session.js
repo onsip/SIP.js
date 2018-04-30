@@ -378,6 +378,10 @@ Session.prototype = {
 
     self.emit('reinvite', this);
 
+    if (request.hasHeader('P-Asserted-Identity')) {
+      this.assertedIdentity = new SIP.NameAddrHeader.parse(request.getHeader('P-Asserted-Identity'));
+    }
+
     // Invite w/o SDP
     if (request.getHeader('Content-Length') === '0' && !request.getHeader('Content-Type')) {
       promise = this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers);
@@ -1533,6 +1537,10 @@ InviteClientContext.prototype = {
 
         this.status = C.STATUS_1XX_RECEIVED;
 
+        if (response.hasHeader('P-Asserted-Identity')) {
+          this.assertedIdentity = new SIP.NameAddrHeader.parse(response.getHeader('P-Asserted-Identity'));
+        }
+
         if(response.hasHeader('require') &&
            response.getHeader('require').indexOf('100rel') !== -1) {
 
@@ -1623,6 +1631,10 @@ InviteClientContext.prototype = {
         var cseq = this.request.cseq + ' ' + this.request.method;
         if (cseq !== response.getHeader('cseq')) {
           break;
+        }
+
+        if (response.hasHeader('P-Asserted-Identity')) {
+          this.assertedIdentity = new SIP.NameAddrHeader.parse(response.getHeader('P-Asserted-Identity'));
         }
 
         if (this.status === C.STATUS_EARLY_MEDIA && this.dialog) {
