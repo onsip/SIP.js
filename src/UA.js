@@ -72,6 +72,7 @@ UA = function(configuration) {
   this.sessions = {};
   this.subscriptions = {};
   this.earlySubscriptions = {};
+  this.publishers = {};
   this.transport = null;
   this.contact = null;
   this.status = C.STATUS_INIT;
@@ -262,6 +263,25 @@ UA.prototype.subscribe = function(target, event, options) {
 };
 
 /**
+ * Send PUBLISH Event State Publication (RFC3903)
+ *
+ * @param {String} target
+ * @param {String} event
+ * @param {String} body
+ * @param {Object} [options]
+ * @param {Boolean} unpublish on UA close
+ *
+ * @throws {TypeError}
+ *
+ */
+UA.prototype.publish = function(target, event, body, options, removeOnClose) {
+  var pub = new SIP.Publish(this, target, event, body, options, removeOnClose);
+
+  this.afterConnected(pub.publish.bind(pub));
+  return pub;
+};
+
+/**
  * Send a message.
  *
  * @param {String} target
@@ -296,7 +316,7 @@ UA.prototype.request = function (method, target, options) {
  *
  */
 UA.prototype.stop = function() {
-  var session, subscription, applicant,
+  var session, subscription, applicant, publisher,
     ua = this;
 
   function transactionsListener() {
@@ -336,6 +356,12 @@ UA.prototype.stop = function() {
   for(subscription in this.earlySubscriptions) {
     this.logger.log('unsubscribing from early subscription ' + subscription);
     this.earlySubscriptions[subscription].close();
+  }
+
+  //Run _close_ on every Publisher
+  for(publisher in this.publishers) {
+    this.logger.log('unpublish ' + publisher);
+    this.publishers[publisher].unpublish();
   }
 
   // Run  _close_ on every applicant

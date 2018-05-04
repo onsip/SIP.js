@@ -39,6 +39,7 @@ require('./ClientContext')(SIP);
 require('./ServerContext')(SIP);
 require('./Session')(SIP);
 require('./Subscription')(SIP);
+require('./Publish')(SIP);
 require('./UA')(SIP, environment);
 require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);

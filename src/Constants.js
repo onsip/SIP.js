@@ -77,6 +77,7 @@ return {
   REGISTER:   'REGISTER',
   UPDATE:     'UPDATE',
   SUBSCRIBE:  'SUBSCRIBE',
+  PUBLISH:    'PUBLISH',
   REFER:      'REFER',
   PRACK:      'PRACK',
 
