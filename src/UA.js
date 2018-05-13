@@ -269,15 +269,14 @@ UA.prototype.subscribe = function(target, event, options) {
  * @param {String} event
  * @param {String} body
  * @param {Object} [options]
- * @param {Boolean} unpublish on UA close
  *
- * @throws {TypeError}
+ * @throws {SIP.Exceptions.MethodParameterError}
  *
  */
-UA.prototype.publish = function(target, event, body, options, removeOnClose) {
-  var pub = new SIP.Publish(this, target, event, body, options, removeOnClose);
+UA.prototype.publish = function(target, event, body, options) {
+  var pub = new SIP.PublishContext(this, target, event, options);
 
-  this.afterConnected(pub.publish.bind(pub));
+  this.afterConnected(pub.publish.bind(pub, body));
   return pub;
 };
 
@@ -361,7 +360,7 @@ UA.prototype.stop = function() {
   //Run _close_ on every Publisher
   for(publisher in this.publishers) {
     this.logger.log('unpublish ' + publisher);
-    this.publishers[publisher].unpublish();
+    this.publishers[publisher].close();
   }
 
   // Run  _close_ on every applicant
