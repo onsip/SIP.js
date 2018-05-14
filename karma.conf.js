@@ -57,7 +57,12 @@ module.exports = function(config) {
 
     client: {
       clearContext: false,
-      captureConsole: false
+      captureConsole: false,
+      jasmine: {
+        // only necessary due to potential bug in SpecSanityCheck 8.2.2.2, running
+        // those out of order causes them to fail
+        random: false
+      }
     },
 
     // Concurrency level

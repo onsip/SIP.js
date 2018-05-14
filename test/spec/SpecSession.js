@@ -1468,7 +1468,7 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.onInfo = function onInfo(request) {
           try {
-            assert.equal(req, request);
+            expect(req).toBe(request);
           } catch (error) {
             return done(error);
           }
