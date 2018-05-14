@@ -8,7 +8,7 @@ script:
   - npm run buildAndTest
 
 node_js:
-  - "4"
+  - "6"
   - "stable"
 
 env:
