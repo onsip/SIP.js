@@ -40,8 +40,9 @@
     "karma-webpack": "^3.0.0",
     "pegjs": "^0.10.0",
     "pegjs-loader": "^0.5.4",
-    "uglifyjs-webpack-plugin": "^1.0.1",
-    "webpack": "^3.8.1"
+    "uglifyjs-webpack-plugin": "^1.2.5",
+    "webpack": "^4.8.3",
+    "webpack-cli": "^2.1.3"
   },
   "engines": {
     "node": ">=6.0"
@@ -49,7 +50,10 @@
   "license": "MIT",
   "scripts": {
     "prebuild": "eslint src/*.js src/**/*.js",
-    "build": "webpack --progress && cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js  dist/sip-$npm_package_version.min.js",
+    "build-dev": "webpack --progress --env.buildType dev",
+    "build-prod": "webpack --progress --env.buildType prod",
+    "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js  dist/sip-$npm_package_version.min.js",
+    "build": "npm run build-dev && npm run build-prod && npm run copy-dist-files",
     "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "karma start --reporters mocha --browsers PhantomJS --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest"
