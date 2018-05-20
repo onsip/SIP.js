@@ -155,6 +155,8 @@ PublishContext.prototype.sendPublishRequest =  function() {
     this.pubRequest = new SIP.ClientContext(this.ua, SIP.C.PUBLISH, this.target, reqOptions);
 
     this.pubRequest.receiveResponse = function(response) {this.receivePublishResponse(response);}.bind(this);
+    this.pubRequest.onRequestTimeout = function() {this.onRequestTimeout();}.bind(this);
+    this.pubRequest.onTransportError = function() {this.onTransportError();}.bind(this);
 
     this.pubRequest.send();
 };
@@ -259,6 +261,22 @@ PublishContext.prototype.receivePublishResponse = function(response) {
       this.pubRequestBody = null;
       this.pubRequestEtag = null;
     }
+};
+
+/**
+ * @private
+ *
+ */
+PublishContext.prototype.onRequestTimeout = function() {
+  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+};
+
+/**
+ * @private
+ *
+ */
+PublishContext.prototype.onTransportError = function() {
+  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
 };
 
 SIP.PublishContext = PublishContext;
