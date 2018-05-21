@@ -14,7 +14,7 @@ module.exports = function (SIP) {
 var SessionDescriptionHandler = function(session, observer, options) {
   // TODO: Validate the options
   this.options = options || {};
-
+  this.initialTrack = null;
   this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
   this.session = session;
   this.observer = observer;
@@ -173,8 +173,11 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           streams = [].concat(streams);
           streams.forEach(function (stream) {
             if (self.peerConnection.addTrack) {
+              if (self.initialTrack) {
+                self.peerConnection.removeTrack(self.initialTrack);
+              }
               stream.getTracks().forEach(function (track) {
-                self.peerConnection.addTrack(track, stream);
+                self.initialTrack = self.peerConnection.addTrack(track, stream);
               });
             } else {
               // Chrome 59 does not support addTrack
