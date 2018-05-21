@@ -22,17 +22,18 @@ describe('PublishContext', function() {
 
       expect(Publish.pubRequestBody).toBeNull();
       expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequest).toBeNull();
       expect(Publish.publish_refresh_timer).toBeNull();
       expect(Publish.pubRequestExpires).toBe(3600);
       expect(Publish.options.extraHeaders).toEqual([]);
       expect(Publish.options.contentType).toBe('text/plain');
+      expect(Publish.options.body).toBeUndefined();
       expect(Publish.options.expires).toBe(3600);
-      expect(Publish.options.removeOnClose).toBe(true);
-      expect(Publish.target).toBe('alice@example.com');
+      expect(Publish.options.unpublishOnClose).toBe(true);
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
       expect(Publish.event).toBe('presence');
-      expect(Publish.body).toBeNull();
+      expect(Publish.request).toBeDefined();
       expect(Publish.logger).toBeDefined();
+      expect(Publish.method).toBe(SIP.C.PUBLISH);
 
     });
 
@@ -41,24 +42,25 @@ describe('PublishContext', function() {
 		contentType: 'application/json',
 		expires: 180,
 		extraHeaders: ['X-Foo: foo', 'X-Bar: bar'],
-                removeOnClose: false
+                unpublishOnClose: false
       };
 
       Publish = new SIP.PublishContext(ua, 'alice@example.com', 'presence', testOptions);
 
       expect(Publish.pubRequestBody).toBeNull();
       expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequest).toBeNull();
       expect(Publish.publish_refresh_timer).toBeNull();
       expect(Publish.pubRequestExpires).toBe(180);
       expect(Publish.options.extraHeaders).toEqual(['X-Foo: foo','X-Bar: bar']);
       expect(Publish.options.contentType).toBe('application/json');
       expect(Publish.options.expires).toBe(180);
-      expect(Publish.options.removeOnClose).toBe(false);
-      expect(Publish.target).toBe('alice@example.com');
+      expect(Publish.options.unpublishOnClose).toBe(false);
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
       expect(Publish.event).toBe('presence');
-      expect(Publish.body).toBeNull();
+      expect(Publish.options.body).toBeUndefined();
+      expect(Publish.request).toBeDefined();
       expect(Publish.logger).toBeDefined();
+      expect(Publish.method).toBe(SIP.C.PUBLISH);
 
     });
 
@@ -66,7 +68,7 @@ describe('PublishContext', function() {
       expect(function() {new SIP.PublishContext(ua, 'alice@example.com');}).toThrowError('Missing parameter: Event');
     });
 
-    it('throws a type error if event is not empty', function() {
+    it('throws a type error if event is empty', function() {
       expect(function() {new SIP.PublishContext(ua, 'alice@example.com', '');}).toThrowError('Missing parameter: Event');
     });
 
@@ -74,7 +76,7 @@ describe('PublishContext', function() {
       expect(function() {new SIP.PublishContext(ua);}).toThrowError('Missing parameter: Target');
     });
 
-    it('throws a type error if target is set empty', function() {
+    it('throws a type error if target is empty', function() {
       expect(function() {new SIP.PublishContext(ua, '');}).toThrowError('Missing parameter: Target');
     });
 
@@ -96,43 +98,68 @@ describe('PublishContext', function() {
 
       Publish.publish('ExampleBody');
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBeNull();
       expect(Publish.pubRequestBody).toBe('ExampleBody');
       expect(Publish.pubRequestExpires).toBe(3600);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBe('ExampleBody');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBe(Publish);
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish call with no body and no ETag', function() {
       spyOn(SIP.Timers, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
-      Publish.pubRequest = true;
+      Publish.request = true;
 
       expect(function() {Publish.publish();}).toThrowError('Missing parameter: Body');
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBeNull();
       expect(Publish.pubRequestBody).toBeNull();
       expect(Publish.pubRequestExpires).toBe(3600);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBeNull();
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBeUndefined();
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBeUndefined();;
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
+
+    it('publish call with no body and Expire = 0', function() {
+      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(Publish, 'sendPublishRequest');
+
+      Publish.request = true;
+      Publish.pubRequestEtag = 'SomeValue';
+      Publish.pubRequestExpires = 0;
+
+      expect(function() {Publish.publish();}).toThrowError('Missing parameter: Expire');
+
+      expect(Publish.request).toBeNull();
+      expect(Publish.pubRequestEtag).toBe('SomeValue');
+      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestExpires).toBe(0);
+
+      expect(Publish.event).toBe('presence');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBeUndefined();
+
+      expect(Publish.sendPublishRequest.calls.count()).toBe(0);
+      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
+    })
 
     it('publish modify call, with both body and ETag set', function() {
       spyOn(SIP.Timers, 'clearTimeout');
@@ -141,79 +168,79 @@ describe('PublishContext', function() {
       Publish.body = 'ExampleBody';
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.pubRequest = true;
+      Publish.request = true;
 
       Publish.publish('ExampleBodyModify');
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('TestETag');
       expect(Publish.pubRequestBody).toBe('ExampleBodyModify');
       expect(Publish.pubRequestExpires).toBe(180);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBe('ExampleBodyModify');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBe('ExampleBodyModify');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBe(Publish);
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish refresh call, with no body but with ETag set', function() {
       spyOn(SIP.Timers, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
-      Publish.body = 'ExampleBody';
+      Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.pubRequest = true;
-      ua.publishers['alice@example.com'+':'+'presence'] = Publish;
+      Publish.request = true;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.publish();
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('TestETag');
       expect(Publish.pubRequestBody).toBeNull();
       expect(Publish.pubRequestExpires).toBe(180);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBe('ExampleBody');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBe(Publish);
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish call with body and no ETag set, with Expires = 0 after unpublish', function() {
       spyOn(SIP.Timers, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
-      Publish.body = 'ExampleBody';
+      Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 0;
       Publish.pubRequestEtag = null;
-      Publish.pubRequest = true;
-      ua.publishers['alice@example.com'+':'+'presence'] = Publish;
+      Publish.request = true;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.publish('ExampleBodyNew');
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBeNull();
       expect(Publish.pubRequestBody).toBe('ExampleBodyNew');
       expect(Publish.pubRequestExpires).toBe(3600);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBe('ExampleBodyNew');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBe('ExampleBodyNew');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBe(Publish);
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
   });
@@ -223,92 +250,97 @@ describe('PublishContext', function() {
       spyOn(SIP.Timers, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
-      Publish.body = 'ExampleBody';
+      Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.pubRequest = true;
-      ua.publishers['alice@example.com'+':'+'presence'] = Publish;
+      Publish.request = true;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.unpublish();
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('TestETag');
       expect(Publish.pubRequestBody).toBeNull();
       expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBe('ExampleBody');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBe(Publish);
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('unpublish call with no ETag set', function() {
       spyOn(SIP.Timers, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
-      Publish.body = 'ExampleBody';
+      Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = null;
-      Publish.pubRequest = true;
-      ua.publishers['alice@example.com'+':'+'presence'] = Publish;
+      Publish.request = true;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.unpublish();
 
-      expect(Publish.pubRequest).toBeNull();
+      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequestBody).toBe('ExampleBody');
-      expect(Publish.pubRequestExpires).toBe(180);
+      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.event).toBe('presence');
-      expect(Publish.target).toBe('alice@example.com');
-      expect(Publish.body).toBe('ExampleBody');
+      expect(Publish.target instanceof(SIP.URI)).toBeTruthy();
+      expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBe(Publish);
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
   });
 
   describe('.close', function() {
-    it('close call with options.removeOnClose set', function() {
+    it('close call with options.unpublishOnClose set to true', function() {
       spyOn(Publish, 'unpublish');
-      Publish.options.removeOnClose = true;
-      ua.publishers['alice@example.com'+':'+'presence'] = Publish;
+      Publish.options.unpublishOnClose = true;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.close();
 
       expect(Publish.unpublish.calls.count()).toBe(1);
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBeUndefined();;
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
 
-    it('close call with options.removeOnClose set', function() {
+    it('close call with options.unpublishOnClose set to false', function() {
       spyOn(Publish, 'unpublish');
-      Publish.options.removeOnClose = false;
-      ua.publishers['alice@example.com'+':'+'presence'] = Publish;
+      Publish.options.unpublishOnClose = false;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.close();
 
+      expect(Publish.request).toBeNull();
+      expect(Publish.pubRequestEtag).toBeNull();
+      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestExpires).toBe(0);
+
       expect(Publish.unpublish.calls.count()).toBe(0);
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBeUndefined();;
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
 
     it('close call with undefined publishers', function() {
       spyOn(Publish, 'unpublish');
-      Publish.options.removeOnClose = true;
-      ua.publishers['alice@example.com'+':'+'presence'] === undefined;
+      Publish.options.unpublishOnClose = true;
+      ua.publishers['sip:alice@example.com'+':'+'presence'] === undefined;
 
       Publish.close();
 
       expect(Publish.unpublish.calls.count()).toBe(1);
-      expect(ua.publishers['alice@example.com'+':'+'presence']).toBeUndefined();;
+      expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
 
   });
@@ -320,20 +352,17 @@ describe('PublishContext', function() {
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.pubRequest = null;
+      Publish.request = null;
 
       Publish.sendPublishRequest();
 
-      expect(Publish.pubRequest instanceof(SIP.ClientContext)).toBeTruthy();
-      expect(typeof Publish.pubRequest.receiveResponse === "function").toBeTruthy();
+      expect(Publish.request instanceof(SIP.OutgoingRequest)).toBeTruthy();
 
-      expect(Publish.pubRequest.ua).toBe(ua);
-      expect(Publish.pubRequest.body.body).toBe('ExampleBody');
-      expect(Publish.pubRequest.body.contentType).toBe('text/plain');
-      expect(Publish.pubRequest.method).toBe(SIP.C.PUBLISH);
+      expect(Publish.request.ua).toBe(ua);
+      expect(Publish.request.body.body).toBe('ExampleBody');
+      expect(Publish.request.body.contentType).toBe('text/plain');
 
-      expect(Publish.pubRequest.request instanceof(SIP.OutgoingRequest)).toBeTruthy();
-      expect(Publish.pubRequest.request.extraHeaders).toEqual(jasmine.arrayContaining(['X-Foo: foo', 'X-Bar: bar', 'Event: presence', 'Expires: 180', 'SIP-If-Match: TestETag']));
+      expect(Publish.request.extraHeaders).toEqual(jasmine.arrayContaining(['X-Foo: foo', 'X-Bar: bar', 'Event: presence', 'Expires: 180', 'SIP-If-Match: TestETag']));
 
       expect(SIP.ClientContext.prototype.send.calls.count()).toBe(1);
 
@@ -345,19 +374,16 @@ describe('PublishContext', function() {
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.pubRequest = null;
+      Publish.request = null;
 
       Publish.sendPublishRequest();
 
-      expect(Publish.pubRequest instanceof(SIP.ClientContext)).toBeTruthy();
-      expect(typeof Publish.pubRequest.receiveResponse === "function").toBeTruthy();
+      expect(Publish.request instanceof(SIP.OutgoingRequest)).toBeTruthy();
 
-      expect(Publish.pubRequest.ua).toBe(ua);
-      expect(Publish.pubRequest.body).toBeUndefined();
-      expect(Publish.pubRequest.method).toBe(SIP.C.PUBLISH);
+      expect(Publish.request.ua).toBe(ua);
+      expect(Publish.request.body).toBeUndefined();
 
-      expect(Publish.pubRequest.request instanceof(SIP.OutgoingRequest)).toBeTruthy();
-      expect(Publish.pubRequest.request.extraHeaders).toEqual(jasmine.arrayContaining(['X-Foo: foo', 'X-Bar: bar', 'Event: presence', 'Expires: 180', 'SIP-If-Match: TestETag']));
+      expect(Publish.request.extraHeaders).toEqual(jasmine.arrayContaining(['X-Foo: foo', 'X-Bar: bar', 'Event: presence', 'Expires: 180', 'SIP-If-Match: TestETag']));
 
       expect(SIP.ClientContext.prototype.send.calls.count()).toBe(1);
 
@@ -365,7 +391,7 @@ describe('PublishContext', function() {
 
   });
 
-  describe('.receivePublishResponse', function() {
+  describe('.receiveResponse', function() {
     it('1xx provisional response to PUBLISH', function() {
       spyOn(Publish, 'emit');
 
@@ -388,7 +414,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       expect(Publish.pubRequestEtag).toBe('TestETag');
       expect(Publish.pubRequestBody).toBe('ExampleBody');
@@ -420,7 +446,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
@@ -454,7 +480,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 0;
@@ -488,7 +514,7 @@ describe('PublishContext', function() {
         'Content-Length: 0',
         '',
         ''].join('\r\n'), ua);
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 0;
@@ -504,7 +530,7 @@ describe('PublishContext', function() {
       spyOn(Publish, 'publish');
       spyOn(Publish.logger, 'warn');
 
-      Publish.body = 'ExampleBody';
+      Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
@@ -522,7 +548,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 180;
@@ -554,7 +580,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 0;
@@ -570,7 +596,7 @@ describe('PublishContext', function() {
       spyOn(Publish, 'publish');
       spyOn(Publish.logger, 'warn');
 
-      Publish.body = 'ExampleBody';
+      Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 60;
       Publish.pubRequestEtag = 'TestETag';
@@ -589,7 +615,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 1800;
@@ -623,7 +649,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 0;
@@ -657,7 +683,7 @@ describe('PublishContext', function() {
         '',
         ''].join('\r\n'), ua);
 
-      Publish.receivePublishResponse(response);
+      Publish.receiveResponse(response);
 
       expect(Publish.pubRequestEtag).toBeNull();
       expect(Publish.pubRequestBody).toBeNull();
@@ -667,6 +693,32 @@ describe('PublishContext', function() {
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'Temporarily Unavailable');
       expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
 
+    });
+
+  });
+
+  describe('.onRequestTimeout', function() {
+    it('Request timeout handling', function() {
+      spyOn(SIP.ClientContext.prototype, 'onRequestTimeout');
+      spyOn(Publish, 'emit');
+
+      Publish.onRequestTimeout();
+
+      expect(SIP.ClientContext.prototype.onRequestTimeout.calls.count()).toBe(1);
+      expect(Publish.emit).toHaveBeenCalledWith('unpublished', null, SIP.C.causes.REQUEST_TIMEOUT);
+    });
+
+  });
+
+  describe('.onTransportError', function() {
+    it('Transport error handling', function() {
+      spyOn(SIP.ClientContext.prototype, 'onTransportError');
+      spyOn(Publish, 'emit');
+
+      Publish.onTransportError();
+
+      expect(SIP.ClientContext.prototype.onTransportError.calls.count()).toBe(1);
+      expect(Publish.emit).toHaveBeenCalledWith('unpublished', null, SIP.C.causes.CONNECTION_ERROR);
     });
 
   });

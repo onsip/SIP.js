@@ -13,31 +13,26 @@ module.exports = function (SIP) {
 var PublishContext;
 
 PublishContext = function (ua, target, event, options) {
-  this.ua = ua;
-
-  this.logger = this.ua.getLogger('sip.publish');
-
   this.options = options = (options || {});
   this.options.extraHeaders = (options.extraHeaders || []).slice();
   this.options.contentType = (options.contentType || 'text/plain');
 
   if (typeof options.expires !== 'number' || (options.expires%1) !== 0 ) {
     this.options.expires = 3600;
-    this.logger.warn('Expires must be a number. Using default of 3600');
   } else {
-    this.options.expires = options.expires;
+    this.options.expires = Number(options.expires);
   }
 
-  if (typeof(options.removeOnClose) !== "boolean") {
-    this.options.removeOnClose = true;
+  if (typeof(options.unpublishOnClose) !== "boolean") {
+    this.options.unpublishOnClose = true;
   } else {
-    this.options.removeOnClose = options.removeOnClose;
+    this.options.unpublishOnClose = options.unpublishOnClose;
   }
 
   if (target === undefined || target === null || target === '') {
     throw new SIP.Exceptions.MethodParameterError('Publish','Target',target);
   } else {
-    this.target = target;
+    this.target =  ua.normalizeTarget(target);
   }
 
   if (event === undefined || event === null || event === '') {
@@ -46,18 +41,23 @@ PublishContext = function (ua, target, event, options) {
     this.event = event;
   }
 
-  this.body = null;
+  // Call parent constructor
+  SIP.ClientContext.call(this, ua, SIP.C.PUBLISH, this.target, this.options);
 
-  this.pubRequest = null;
+  this.logger = this.ua.getLogger('sip.publish');
 
   this.pubRequestBody = null;
-  this.pubRequestExpires = Number(options.expires);
+  this.pubRequestExpires = this.options.expires;
   this.pubRequestEtag = null;
 
   this.publish_refresh_timer = null;
 };
 
-PublishContext.prototype = Object.create(SIP.EventEmitter.prototype);
+// Extend ClientContext
+PublishContext.prototype = Object.create(SIP.ClientContext.prototype);
+
+// Restore the class constructor
+PublishContext.prototype.constructor = PublishContext;
 
 /**
  * Publish
@@ -67,13 +67,13 @@ PublishContext.prototype = Object.create(SIP.EventEmitter.prototype);
  */
 PublishContext.prototype.publish = function(body) {
     // Clean up before the run
-    this.pubRequest = null;
+    this.request = null;
     SIP.Timers.clearTimeout(this.publish_refresh_timer);
 
     if (body !== undefined && body !== null && body !== '') {
       // is Inital or Modify request
-      this.body = body;
-      this.pubRequestBody = this.body;
+      this.options.body = body;
+      this.pubRequestBody = this.options.body;
 
       if (this.pubRequestExpires === 0) {
         // This is Initial request after unpublish
@@ -81,8 +81,8 @@ PublishContext.prototype.publish = function(body) {
         this.pubRequestEtag = null;
       }
 
-      if (!(this.ua.publishers[this.target+':'+this.event])) {
-        this.ua.publishers[this.target+':'+this.event] = this;
+      if (!(this.ua.publishers[this.target.toString()+':'+this.event])) {
+        this.ua.publishers[this.target.toString()+':'+this.event] = this;
       }
 
     } else {
@@ -92,6 +92,11 @@ PublishContext.prototype.publish = function(body) {
       if (this.pubRequestEtag === null) {
         //Request not valid
         throw new SIP.Exceptions.MethodParameterError('Publish', 'Body', body);
+      }
+
+      if (this.pubRequestExpires === 0) {
+        //Request not valid
+        throw new SIP.Exceptions.MethodParameterError('Publish', 'Expire', this.pubRequestExpires);
       }
     }
 
@@ -104,12 +109,13 @@ PublishContext.prototype.publish = function(body) {
  */
 PublishContext.prototype.unpublish = function() {
     // Clean up before the run
-    this.pubRequest = null;
+    this.request = null;
     SIP.Timers.clearTimeout(this.publish_refresh_timer);
 
+    this.pubRequestBody = null;
+    this.pubRequestExpires = 0;
+
     if (this.pubRequestEtag !== null) {
-      this.pubRequestBody = null;
-      this.pubRequestExpires = 0;
       this.sendPublishRequest();
     }
 };
@@ -119,14 +125,20 @@ PublishContext.prototype.unpublish = function() {
  *
  */
 PublishContext.prototype.close = function() {
-
-    // Unpublish, if requested
-    if (this.options.removeOnClose) {
+    // Send unpublish, if requested
+    if (this.options.unpublishOnClose) {
       this.unpublish();
+    } else {
+      this.request = null;
+      SIP.Timers.clearTimeout(this.publish_refresh_timer);
+
+      this.pubRequestBody = null;
+      this.pubRequestExpires = 0;
+      this.pubRequestEtag = null;
     }
 
-    if (this.ua.publishers[this.target+':'+this.event]) {
-      delete this.ua.publishers[this.target+':'+this.event];
+    if (this.ua.publishers[this.target.toString()+':'+this.event]) {
+      delete this.ua.publishers[this.target.toString()+':'+this.event];
     }
 };
 
@@ -147,25 +159,22 @@ PublishContext.prototype.sendPublishRequest =  function() {
       reqOptions.extraHeaders.push('SIP-If-Match: '+ this.pubRequestEtag);
     }
 
+    this.request = new SIP.OutgoingRequest(SIP.C.PUBLISH, this.target, this.ua, this.options.params, reqOptions.extraHeaders);
+
     if (this.pubRequestBody !== null) {
-      reqOptions.body = this.pubRequestBody;
-      reqOptions.contentType = this.options.contentType;
+      this.request.body = {};
+      this.request.body.body = this.pubRequestBody;
+      this.request.body.contentType = this.options.contentType;
     }
 
-    this.pubRequest = new SIP.ClientContext(this.ua, SIP.C.PUBLISH, this.target, reqOptions);
-
-    this.pubRequest.receiveResponse = function(response) {this.receivePublishResponse(response);}.bind(this);
-    this.pubRequest.onRequestTimeout = function() {this.onRequestTimeout();}.bind(this);
-    this.pubRequest.onTransportError = function() {this.onTransportError();}.bind(this);
-
-    this.pubRequest.send();
+    this.send();
 };
 
 /**
  * @private
  *
  */
-PublishContext.prototype.receivePublishResponse = function(response) {
+PublishContext.prototype.receiveResponse = function(response) {
     var expires, minExpires,
         cause = SIP.Utils.getReasonPhrase(response.status_code);
 
@@ -212,7 +221,7 @@ PublishContext.prototype.receivePublishResponse = function(response) {
           this.logger.warn('412 response to PUBLISH, recovering');
           this.pubRequestEtag = null;
           this.emit('progress', response, cause);
-          this.publish(this.body);
+          this.publish(this.options.body);
         } else {
           this.logger.warn('412 response to PUBLISH, recovery failed');
           this.pubRequestExpires = 0;
@@ -230,7 +239,7 @@ PublishContext.prototype.receivePublishResponse = function(response) {
             this.logger.warn('423 code in response to PUBLISH, adjusting the Expires value and trying to recover');
             this.pubRequestExpires = minExpires;
             this.emit('progress', response, cause);
-            this.publish(this.body);
+            this.publish(this.options.body);
           } else {
             this.logger.warn('Bad 423 response Min-Expires header received for PUBLISH');
             this.pubRequestExpires = 0;
@@ -263,20 +272,14 @@ PublishContext.prototype.receivePublishResponse = function(response) {
     }
 };
 
-/**
- * @private
- *
- */
-PublishContext.prototype.onRequestTimeout = function() {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+PublishContext.prototype.onRequestTimeout = function () {
+  SIP.ClientContext.prototype.onRequestTimeout.call(this);
+  this.emit('unpublished', null, SIP.C.causes.REQUEST_TIMEOUT);
 };
 
-/**
- * @private
- *
- */
-PublishContext.prototype.onTransportError = function() {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
+PublishContext.prototype.onTransportError = function () {
+  SIP.ClientContext.prototype.onTransportError.call(this);
+  this.emit('unpublished', null, SIP.C.causes.CONNECTION_ERROR);
 };
 
 SIP.PublishContext = PublishContext;
