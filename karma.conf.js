@@ -13,7 +13,9 @@ module.exports = function(config) {
       'test/polyfills/*.js',
       'test/helpers/*.js',
       'dist/sip.js',
-      'test/spec/**/*.js'
+      'test/spec/**/*.js',
+      './node_modules/phantomjs-polyfill-object-assign/object-assign-polyfill.js',
+
     ],
 
     // list of files to exclude

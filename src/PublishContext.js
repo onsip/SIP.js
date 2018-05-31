@@ -51,6 +51,10 @@ PublishContext = function (ua, target, event, options) {
   this.pubRequestEtag = null;
 
   this.publish_refresh_timer = null;
+
+  ua.on('transportCreated', function (transport) {
+    transport.on('transportError', this.onTransportError.bind(this));
+  }.bind(this));
 };
 
 // Extend ClientContext

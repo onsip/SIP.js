@@ -25,7 +25,7 @@ SIP.EventEmitter = require('./EventEmitter')();
 SIP.C = require('./Constants')(SIP.name, SIP.version);
 SIP.Exceptions = require('./Exceptions');
 SIP.Timers = require('./Timers')(environment.timers);
-SIP.Transport = environment.Transport(SIP, environment.WebSocket);
+SIP.Transport = require('./Transport')(SIP);
 require('./Parser')(SIP);
 require('./SIPMessage')(SIP);
 require('./URI')(SIP);
@@ -48,6 +48,7 @@ SIP.WebRTC = {
   Modifiers: require('./WebRTC/Modifiers')(SIP),
   Simple: require('./WebRTC/Simple')(SIP)
 };
+SIP.Web = {};
 
 return SIP;
 };

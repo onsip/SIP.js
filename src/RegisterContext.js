@@ -40,6 +40,9 @@ RegisterContext = function (ua) {
   this.registered = false;
 
   this.logger = ua.getLogger('sip.registercontext');
+  ua.on('transportCreated', function (transport) {
+    transport.on('disconnected', this.onTransportDisconnected.bind(this));
+  }.bind(this));
 };
 
 RegisterContext.prototype = Object.create({}, {
@@ -258,11 +261,6 @@ RegisterContext.prototype = Object.create({}, {
     this.onRequestTimeout = function() {
       // Not actually unregistered...
       //this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
-    };
-
-    this.onTransportError = function() {
-      // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
     };
 
     this.cseq++;

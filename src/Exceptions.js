@@ -72,6 +72,15 @@ module.exports = {
     };
     exception.prototype = new Error();
     return exception;
-  }())
+  }()),
 
+  TransportError: (function(){
+    var exception = function(message) {
+      this.code = 7;
+      this.name = 'TRANSPORT_ERROR';
+      this.message = message;
+    };
+    exception.prototype = new Error();
+    return exception;
+  }()),
 };
