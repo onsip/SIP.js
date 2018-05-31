@@ -74,63 +74,6 @@ describe('Transport', function() {
     });
   });
 
-  // describe('.afterConnected', function () {
-  //   var callback;
-  //
-  //   beforeEach(function () {
-  //     callback = jasmine.createSpy('callback');
-  //   });
-  //
-  //   it('calls a callback if connected', function () {
-  //     this.ua.transport.afterConnected(callback);
-  //     expect(callback).toHaveBeenCalled();
-  //   });
-  //
-  //   it('does not call a callback if disconnected', function () {
-  //     this.ua.transport.userClosed = true;
-  //     this.ua.transport.onClose(onCloseOptions);
-  //     this.ua.transport.afterConnected(callback);
-  //     expect(callback).not.toHaveBeenCalled();
-  //   });
-  //
-  //   it('calls a callback if given while disconnected and then reconnects', function () {
-  //     this.ua.transport.userClosed = true;
-  //     this.ua.transport.onClose(onCloseOptions);
-  //     this.ua.transport.afterConnected(callback);
-  //     this.ua.transport.status = 0;
-  //     this.ua.transport.onOpen();
-  //     expect(callback).toHaveBeenCalled();
-  //   });
-  // });
-  //
-  // describe('.waitForConnected', function () {
-  //   var callback;
-  //
-  //   describe('when connected', function () {
-  //     beforeEach(function (done) {
-  //       callback = jasmine.createSpy('callback');
-  //       this.ua.transport.waitForConnected().then(callback).then(done);
-  //     });
-  //
-  //     it('calls a callback', function () {
-  //       expect(callback).toHaveBeenCalled();
-  //     });
-  //   });
-  //
-  //   describe('when disconnected', function () {
-  //     beforeEach(function () {
-  //       callback = jasmine.createSpy('callback');
-  //       this.ua.transport.userClosed = true;
-  //       this.ua.transport.onClose(onCloseOptions);
-  //       this.ua.transport.waitForConnected().then(callback);
-  //     });
-  //
-  //     it('does not call a callback', function () {
-  //       expect(callback).not.toHaveBeenCalled();
-  //     });
-  //   });
-  // });
-
   describe('.isConnected', function () {
     it('is true when connected', function () {
       expect(this.ua.transport.isConnected()).toBeTruthy();

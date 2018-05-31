@@ -858,7 +858,7 @@ UA.prototype.loadConfig = function(configuration) {
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
 
-      sessionDescriptionHandlerFactory: require('./WebRTC/SessionDescriptionHandler')(SIP).defaultFactory,
+      sessionDescriptionHandlerFactory: require('./Web/SessionDescriptionHandler')(SIP).defaultFactory,
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);

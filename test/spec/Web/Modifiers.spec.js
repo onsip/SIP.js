@@ -1,6 +1,6 @@
-var Modifiers = require('../../../src/WebRTC/Modifiers')(SIP);
+var Modifiers = require('../../../src/Web/Modifiers')(SIP);
 
-describe('WebRTC/Modifiers', function () {
+describe('Web/Modifiers', function () {
   var sdpWrapper;
 
   beforeEach(function () {

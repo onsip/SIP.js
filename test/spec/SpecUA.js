@@ -67,7 +67,7 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
-    // var defaultFactory = SIP.WebRTC.sessionDescriptionHandler.defaultFactory;
+    // var defaultFactory = SIP.Web.sessionDescriptionHandler.defaultFactory;
     // expect(UA.configuration.sessionDescriptionHandlerFactory).toBe(defaultFactory);
     expect(UA.log).toBeDefined();
     expect(UA.logger).toBeDefined();
@@ -739,8 +739,8 @@ describe('UA', function() {
                       getHeader : function () {},
                       parseHeader: function () {}
                     };
-      var webrtc = SIP.WebRTC.isSupported;
-      spyOn(SIP.WebRTC, 'isSupported').and.callFake(function () {
+      var webrtc = SIP.Web.isSupported;
+      spyOn(SIP.Web, 'isSupported').and.callFake(function () {
         return false;
       });
 

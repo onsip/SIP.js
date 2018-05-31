@@ -66,7 +66,7 @@ var Simple = function (options) {
   }
   var sessionDescriptionHandlerFactoryOptions = {};
   if (isSafari) {
-    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.WebRTC.Modifiers.stripG722];
+    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.Web.Modifiers.stripG722];
   }
 
   if (!this.options.ua.uri) {

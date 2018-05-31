@@ -1586,7 +1586,7 @@ describe('InviteClientContext', function() {
     xit('calls sessionDescriptionHandler.getDescription async and returns this on success', function(done) {
       var callback, s;
 
-      spyOn(SIP.WebRTC, 'getUserMedia').and.callThrough();
+      spyOn(SIP.Web, 'getUserMedia').and.callThrough();
       callback = jasmine.createSpy('callback').and.callFake(function () {
         done();
         //jasmine.clock().uninstall();
@@ -1599,7 +1599,7 @@ describe('InviteClientContext', function() {
 
       s.sessionDescriptionHandler.on('userMediaRequest', callback);
 
-      expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
+      expect(SIP.Web.getUserMedia).not.toHaveBeenCalled();
       expect(callback).not.toHaveBeenCalled();
 
       //jasmine.clock().tick(100);
@@ -1632,7 +1632,7 @@ describe('InviteClientContext', function() {
       spyOn(SIP.Dialog.prototype, 'sendRequest');
       spyOn(InviteClientContext, 'sendRequest');
 
-      // SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
+      // SIP.Web.getUserMedia = jasmine.createSpy('getUserMedia');
     });
 
     it('accepts and terminates a 200 OK from a branch that\'s replying after the call has been established', function() {

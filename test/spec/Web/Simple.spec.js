@@ -1,4 +1,4 @@
-describe('WebRTC/Simple', function() {
+describe('Web/Simple', function() {
   beforeEach(function() {
     spyOn(SIP, 'UA').and.callFake(function(configuration) {
       this.configuration = configuration;
@@ -10,7 +10,7 @@ describe('WebRTC/Simple', function() {
   });
 
   it('creates instance', function() {
-    var simple = new SIP.WebRTC.Simple({
+    var simple = new SIP.Web.Simple({
       media: {
         remote: {
           audio: {}
