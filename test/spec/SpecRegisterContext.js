@@ -1,3 +1,4 @@
+/* eslint-disable strict, no-undef */
 describe('RegisterContext', function() {
   var RegisterContext;
   var ua;
@@ -11,9 +12,10 @@ describe('RegisterContext', function() {
         registrarServer : 'registrar' ,
         registerExpires : 999,
         uri : 'uri',
-        instanceId : 'instance'
+        instanceId : 'instance',
       },
       contact : 'contact',
+      on: function() {},
       getLogger : function() {
         return { log : log };
       },
@@ -149,24 +151,24 @@ describe('RegisterContext', function() {
     });
   });
 
-  describe('.onTransportClosed', function() {
+  describe('.onTransportDisconnected', function() {
     it('takes the registered variable and move it to registered_before variable', function() {
       expect(RegisterContext.registered_before).not.toEqual(RegisterContext.registered);
-      RegisterContext.onTransportClosed();
+      RegisterContext.onTransportDisconnected();
       expect(RegisterContext.registered_before).toEqual(RegisterContext.registered);
     });
 
     it('clears the registration timer if it is set', function() {
       RegisterContext.registrationTimer = SIP.Timers.setTimeout(function() {return;},999999);
       expect(RegisterContext.registrationTimer).not.toEqual(null);
-      RegisterContext.onTransportClosed();
+      RegisterContext.onTransportDisconnected();
     });
 
     it('calls unregistered if it is registered', function() {
       spyOn(RegisterContext, 'unregistered').and.returnValue('unregister');
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
-      RegisterContext.onTransportClosed();
+      RegisterContext.onTransportDisconnected();
       expect(RegisterContext.unregistered).toHaveBeenCalledWith(null, SIP.C.causes.CONNECTION_ERROR);
     });
   });
@@ -296,7 +298,7 @@ describe('RegisterContext', function() {
       expect(RegisterContext.onRequestTimeout).toBeDefined();
     });
 
-    it('defines onTransportError', function() {
+    xit('defines onTransportError', function() {
       delete RegisterContext.onTransportError;
       RegisterContext.registered = true;
       expect(RegisterContext.onTransportError).toBeUndefined();

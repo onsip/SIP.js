@@ -13,7 +13,9 @@ module.exports = function(config) {
       'test/polyfills/*.js',
       'test/helpers/*.js',
       'dist/sip.js',
-      'test/spec/**/*.js'
+      'test/spec/**/*.js',
+      './node_modules/phantomjs-polyfill-object-assign/object-assign-polyfill.js',
+
     ],
 
     // list of files to exclude
@@ -22,8 +24,8 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/spec/WebRTC/SessionDescriptionHandler.spec.js': 'webpack',
-      'test/spec/WebRTC/Modifiers.spec.js': 'webpack'
+      'test/spec/Web/SessionDescriptionHandler.spec.js': 'webpack',
+      'test/spec/Web/Modifiers.spec.js': 'webpack'
     },
 
     // test results reporter to use

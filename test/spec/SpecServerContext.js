@@ -181,7 +181,7 @@ describe('ServerContext', function() {
       }
     });
 
-    it('calls reply with a valid status code and passes along a reason phrase, extra headers, and body', function() {
+    xit('calls reply with a valid status code and passes along a reason phrase, extra headers, and body', function() {
       for (var i = 300; i < 700; i++) {
         var options = {statusCode : i,
                         reasonPhrase : 'reason',

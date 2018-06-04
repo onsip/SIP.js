@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "main": "dist/sip.min.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
@@ -31,6 +31,7 @@
     "babel-preset-env": "^1.6.1",
     "eslint": "^4.9.0",
     "jasmine": "^3.1.0",
+    "jasmine-core": "^3.1.0",
     "karma": "^2.0.2",
     "karma-cli": "^1.0.1",
     "karma-jasmine": "^1.1.0",
@@ -40,6 +41,7 @@
     "karma-webpack": "^3.0.0",
     "pegjs": "^0.10.0",
     "pegjs-loader": "^0.5.4",
+    "phantomjs-polyfill-object-assign": "0.0.2",
     "uglifyjs-webpack-plugin": "^1.2.5",
     "webpack": "^4.8.3",
     "webpack-cli": "^2.1.3"
@@ -56,11 +58,11 @@
     "build": "npm run build-dev && npm run build-prod && npm run copy-dist-files",
     "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "karma start --reporters mocha --browsers PhantomJS --single-run",
-    "buildAndTest": "npm run build && npm run commandLineTest"
+    "buildAndTest": "npm run build && npm run commandLineTest",
+    "buildAndBrowserTest": "npm run build && npm run browserTest"
   },
   "dependencies": {
-    "crypto-js": "^3.1.9-1",
-    "ws": "^1.0.1"
+    "crypto-js": "^3.1.9-1"
   },
   "optionalDependencies": {
     "promiscuous": "^0.6.0"

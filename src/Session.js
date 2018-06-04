@@ -846,10 +846,12 @@ InviteServerContext = function(ua, request) {
       }
     }, expires);
   }
+
+  ua.transport.on('transportError', this.onTransportError.bind(this));
 };
 
-InviteServerContext.prototype = {
-  reject: function(options) {
+InviteServerContext.prototype = Object.create({}, {
+  reject: {writable: true, value: function(options) {
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
@@ -859,9 +861,9 @@ InviteServerContext.prototype = {
 
     SIP.ServerContext.prototype.reject.call(this, options);
     return this.terminated();
-  },
+  }},
 
-  terminate: function(options) {
+  terminate: {writable: true, value: function(options) {
     options = options || {};
 
     var
@@ -938,12 +940,12 @@ InviteServerContext.prototype = {
     }
 
     return this;
-  },
+  }},
 
   /*
    * @param {Object} [options.sessionDescriptionHandlerOptions] gets passed to SIP.SessionDescriptionHandler.getDescription as options
    */
-  progress: function (options) {
+  progress: {writable: true, value: function (options) {
     options = options || {};
     var
       statusCode = options.statusCode || 180,
@@ -1043,12 +1045,12 @@ InviteServerContext.prototype = {
       normalReply.apply(this);
     }
     return this;
-  },
+  }},
 
   /*
    * @param {Object} [options.sessionDescriptionHandlerOptions] gets passed to SIP.SessionDescriptionHandler.getDescription as options
    */
-  accept: function(options) {
+  accept: {writable: true, value: function(options) {
     options = options || {};
 
     this.onInfo = options.onInfo;
@@ -1146,9 +1148,9 @@ InviteServerContext.prototype = {
     }
 
     return this;
-  },
+  }},
 
-  receiveRequest: function(request) {
+  receiveRequest: {writable: true, value: function(request) {
 
     // ISC RECEIVE REQUEST
 
@@ -1278,32 +1280,32 @@ InviteServerContext.prototype = {
       Session.prototype.receiveRequest.apply(this, [request]);
       break;
     }
-  },
+  }},
 
   // Internal Function to setup the handler consistently
-  setupSessionDescriptionHandler: function() {
+  setupSessionDescriptionHandler: {writable: true, value: function() {
     if (this.sessionDescriptionHandler) {
       return this.sessionDescriptionHandler;
     }
     return this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
-  },
+  }},
 
-  onTransportError: function() {
+  onTransportError: {writable: true, value: function() {
     if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
     }
-  },
+  }},
 
-  onRequestTimeout: function() {
+  onRequestTimeout: {writable: true, value: function() {
     if (this.status === C.STATUS_CONFIRMED) {
       this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
     } else if (this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
       this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
     }
-  }
+  }}
 
-};
+});
 
 SIP.InviteServerContext = InviteServerContext;
 
@@ -1387,10 +1389,12 @@ InviteClientContext = function(ua, target, options, modifiers) {
   this.id = this.request.call_id + this.from_tag;
 
   this.onInfo = options.onInfo;
+
+  ua.transport.on('transportError', this.onTransportError.bind(this));
 };
 
-InviteClientContext.prototype = {
-  invite: function () {
+InviteClientContext.prototype = Object.create({}, {
+  invite: {writable: true, value: function () {
     var self = this;
 
     //Save the session into the ua sessions collection.
@@ -1429,9 +1433,9 @@ InviteClientContext.prototype = {
     }
 
     return this;
-  },
+  }},
 
-  receiveInviteResponse: function(response) {
+  receiveInviteResponse: {writable: true, value: function(response) {
     var cause,
       session = this,
       id = response.call_id + response.from_tag + response.to_tag,
@@ -1751,9 +1755,9 @@ InviteClientContext.prototype = {
         this.failed(response, cause);
         this.terminated(response, cause);
     }
-  },
+  }},
 
-  cancel: function(options) {
+  cancel: {writable: true, value: function(options) {
     options = options || {};
 
     options.extraHeaders = (options.extraHeaders || []).slice();
@@ -1779,9 +1783,9 @@ InviteClientContext.prototype = {
     }
 
     return this.canceled();
-  },
+  }},
 
-  terminate: function(options) {
+  terminate: {writable: true, value: function(options) {
     if (this.status === C.STATUS_TERMINATED) {
       return this;
     }
@@ -1793,9 +1797,9 @@ InviteClientContext.prototype = {
     }
 
     return this;
-  },
+  }},
 
-  receiveRequest: function(request) {
+  receiveRequest: {writable: true, value: function(request) {
     // ICC RECEIVE REQUEST
 
     // Reject CANCELs
@@ -1813,24 +1817,24 @@ InviteClientContext.prototype = {
     }
 
     return Session.prototype.receiveRequest.apply(this, [request]);
-  },
+  }},
 
-  onTransportError: function() {
+  onTransportError: {writable: true, value: function() {
     if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.CONNECTION_ERROR);
     }
-  },
+  }},
 
-  onRequestTimeout: function() {
+  onRequestTimeout: {writable: true, value: function() {
     if (this.status === C.STATUS_CONFIRMED) {
       this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
     } else if (this.status !== C.STATUS_TERMINATED) {
       this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
       this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
     }
-  }
+  }}
 
-};
+});
 
 SIP.InviteClientContext = InviteClientContext;
 
@@ -1880,11 +1884,13 @@ ReferClientContext = function(ua, applicant, target, options) {
   this.extraHeaders.push('Contact: '+ applicant.contact);
   this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   this.extraHeaders.push('Refer-To: '+ this.target);
+
+  ua.transport.on('transportError', this.onTransportError.bind(this));
 };
 
-ReferClientContext.prototype = {
+ReferClientContext.prototype = Object.create({}, {
 
-  refer: function(options) {
+  refer: {writable: true, value: function(options) {
     options = options || {};
 
     var extraHeaders = (this.extraHeaders || []).slice();
@@ -1908,9 +1914,9 @@ ReferClientContext.prototype = {
       }.bind(this)
     });
     return this;
-  },
+  }},
 
-  receiveNotify: function(request) {
+  receiveNotify: {writable: true, value: function(request) {
     // If we can correctly handle this, then we need to send a 200 OK!
     if (request.hasHeader('Content-Type') && request.getHeader('Content-Type').search(/^message\/sipfrag/) !== -1) {
       var messageBody = SIP.Grammar.parse(request.body, 'sipfrag');
@@ -1937,8 +1943,8 @@ ReferClientContext.prototype = {
       return;
     }
     request.reply(489, 'Bad Event');
-  }
-};
+  }}
+});
 
 SIP.ReferClientContext = ReferClientContext;
 
@@ -1988,19 +1994,21 @@ ReferServerContext = function(ua, request) {
     this.replaces = this.referTo.uri.getHeader('replaces');
   }
 
+  ua.transport.on('transportError', this.onTransportError.bind(this));
+
   this.status = C.STATUS_WAITING_FOR_ANSWER;
 };
 
-ReferServerContext.prototype = {
+ReferServerContext.prototype = Object.create({}, {
 
-  progress: function() {
+  progress: {writable: true, value: function() {
     if (this.status !== C.STATUS_WAITING_FOR_ANSWER) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
     this.request.reply(100);
-  },
+  }},
 
-  reject: function(options) {
+  reject: {writable: true, value: function(options) {
     if (this.status  === C.STATUS_TERMINATED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
@@ -2008,9 +2016,9 @@ ReferServerContext.prototype = {
     this.status = C.STATUS_TERMINATED;
     SIP.ServerContext.prototype.reject.call(this, options);
     this.emit('referRequestRejected', this);
-  },
+  }},
 
-  accept: function(options, modifiers) {
+  accept: {writable: true, value: function(options, modifiers) {
     options = options || {};
 
     if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
@@ -2097,9 +2105,9 @@ ReferServerContext.prototype = {
         this.referredSession.emit('referAccepted', this);
       }
     }
-  },
+  }},
 
-  sendNotify: function(body) {
+  sendNotify: {writable: true, value: function(body) {
     if (this.status !== C.STATUS_ANSWERED) {
       throw new SIP.Exceptions.InvalidStateError(this.status);
     }
@@ -2140,8 +2148,8 @@ ReferServerContext.prototype = {
         return;
       }
     }, this.ua).send();
-  }
-};
+  }}
+});
 
 SIP.ReferServerContext = ReferServerContext;
 

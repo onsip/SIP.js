@@ -41,6 +41,12 @@ Utils= {
     constructor.apply(object, args);
   },
 
+  defaultOptions: function(defaultOptions, overridingOptions) {
+    defaultOptions = defaultOptions || {};
+    overridingOptions = overridingOptions || {};
+    return Object.assign({}, defaultOptions, overridingOptions);
+  },
+
   optionsOverride: function (options, winner, loser, isDeprecated, logger, defaultValue) {
     if (isDeprecated && options[loser]) {
       logger.warn(loser + ' is deprecated, please use ' + winner + ' instead');

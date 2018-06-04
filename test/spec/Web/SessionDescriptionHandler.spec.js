@@ -1,4 +1,4 @@
-var SessionDescriptionHandler = require('../../../src/WebRTC/SessionDescriptionHandler')(SIP);
+var SessionDescriptionHandler = require('../../../src/Web/SessionDescriptionHandler')(SIP);
 var SessionDescriptionHandlerObserver = {
   trackAdded: function() {
     return;
@@ -13,7 +13,7 @@ function setIceGatheringState(pc, state) {
   pc.onicegatheringstatechange.call(pc);
 }
 
-describe('WebRTC/SessionDescriptionHandler', function() {
+describe('Web/SessionDescriptionHandler', function() {
   var realMediaDevices,
     realRTCPeerConnection,
     handler;

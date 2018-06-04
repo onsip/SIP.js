@@ -48,6 +48,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.type = C.NON_INVITE_CLIENT;
   this.transport = transport;
+  this.transport.on('transportError', this.onTransportError.bind(this));
   this.id = 'z9hG4bK' + Math.floor(Math.random() * 10000000);
   this.request_sender = request_sender;
   this.request = request;
@@ -147,6 +148,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.type = C.INVITE_CLIENT;
   this.transport = transport;
+  this.transport.on('transportError', this.onTransportError.bind(this));
   this.id = 'z9hG4bK' + Math.floor(Math.random() * 10000000);
   this.request_sender = request_sender;
   this.request = request;
@@ -264,7 +266,7 @@ InviteClientTransaction.prototype.sendACK = function(options) {
       self.logger.warn("ACK Request timed out");
     },
     onTransportError: this.request_sender.applicant.applicant ? this.request_sender.applicant.applicant.onRequestTransportError : function() {
-      self.loigger.warn("ACK Request had a transport error");
+      self.logger.warn("ACK Request had a transport error");
     },
     receiveResponse: options.receiveResponse || function() {
       self.logger.warn("Received a response to an ACK which was unexpected. Dropping Response.");
@@ -377,6 +379,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
   var via;
 
   this.transport = transport;
+  this.transport.on('transportError', this.onTransportError.bind(this));
   this.id = 'z9hG4bK' + Math.floor(Math.random() * 10000000);
   this.request_sender = request_sender;
   this.request = request;
@@ -615,12 +618,20 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
         /* falls through */
         case C.STATUS_ACCEPTED:
           // Note that this point will be reached for proceeding tr.state also.
-          if(!this.transport.send(response)) {
+          // if(!this.transport.send(response)) {
+          //   this.onTransportError();
+          //   deferred.reject();
+          // } else {
+          //   deferred.resolve();
+          // }
+          try {
+            this.transport.send(response);
+          } catch (error) {
+            this.logger.error(error);
             this.onTransportError();
             deferred.reject();
-          } else {
-            deferred.resolve();
           }
+          deferred.resolve();
           break;
     }
   } else if(status_code >= 300 && status_code <= 699) {
@@ -631,14 +642,20 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           this.resendProvisionalTimer = null;
         }
 
-        if(!this.transport.send(response)) {
+        // if(!this.transport.send(response)) {
+        //   this.onTransportError();
+        //   deferred.reject();
+        // } else {
+        try {
+          this.transport.send(response);
+        } catch (error) {
+          this.logger.error(error);
           this.onTransportError();
           deferred.reject();
-        } else {
-          this.stateChanged(C.STATUS_COMPLETED);
-          this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
-          deferred.resolve();
         }
+        this.stateChanged(C.STATUS_COMPLETED);
+        this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
+        deferred.resolve();
         break;
     }
   }
