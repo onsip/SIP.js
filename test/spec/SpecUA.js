@@ -232,6 +232,15 @@ describe('UA', function() {
       expect(UA.earlySubscriptions[subscription].close).toHaveBeenCalled();
     });
 
+    it('closes any publishers', function () {
+      var publisher = jasmine.createSpyObj('publish', ['close']);
+      UA.publishers[publisher] = publisher;
+
+      UA.stop();
+
+      expect(UA.publishers[publisher].close).toHaveBeenCalled();
+    });
+
     it('closes any applicants', function () {
       var applicant = jasmine.createSpyObj('applicant', ['close']);
       UA.applicants[applicant] = applicant;
@@ -489,6 +498,43 @@ describe('UA', function() {
       UA.subscribe(target, event, options);
       expect(subscribeSpy).toHaveBeenCalledWith();
     });
+  });
+
+  describe('.publish', function() {
+    var publishSpy;
+    var target;
+    var event;
+    var body;
+
+    beforeEach(function() {
+      target = 'target';
+      event = 'event';
+      body = 'body';
+
+      publishSpy = jasmine.createSpy('publish');
+
+      spyOn(SIP, 'PublishContext').and.returnValue({
+        publish: publishSpy
+      });
+    });
+
+    it('sets up a listener for connected if the transport has not connected', function() {
+      spyOn(UA, 'once');
+
+      UA.publish(target, event, body);
+
+      expect(UA.once).toHaveBeenCalled();
+    });
+
+    it('creates a Publish with itself, target, body and options as parameters', function() {
+      spyOn(UA, 'isConnected').and.returnValue(true);
+
+      var options = {};
+      UA.publish(target, event, body, options);
+      expect(SIP.PublishContext).toHaveBeenCalledWith(UA,target, event, options);
+      expect(publishSpy).toHaveBeenCalledWith('body');
+    });
+
   });
 
   describe('.request', function() {
