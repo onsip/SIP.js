@@ -4,6 +4,7 @@ describe('Subscription', function() {
 
   beforeEach(function() {
     ua = new SIP.UA({uri: 'james@onsnip.onsip.com'}).start();
+    ua.transport.ws.onopen();
 
     Subscription = new SIP.Subscription(ua, 'james@onsnip.onsip.com', 'dialog');
   });

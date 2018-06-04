@@ -2,6 +2,7 @@
 
   /** WebSocket **/
   function FakeWebSocket(server, protocol) {
+    this.onopen = function () {};
     this.readyState = 0; // CONNECTING
     var that = this;
     spyOn(this, 'send');
@@ -28,7 +29,13 @@
     },
     causeError: function (e) {
       if (this.onerror) this.onerror(e);
-    }
+    },
+    addEventListener: function (e,callback) {
+      if (e === 'open') {
+        this.onopen = callback;
+      }
+    },
+    removeEventListener: function (e,callback) {}
   };
   FakeWebSocket.CONNECTING = 0;
   FakeWebSocket.OPEN = 1;

@@ -66,7 +66,7 @@ var Simple = function (options) {
   }
   var sessionDescriptionHandlerFactoryOptions = {};
   if (isSafari) {
-    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.WebRTC.Modifiers.stripG722];
+    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.Web.Modifiers.stripG722];
   }
 
   if (!this.options.ua.uri) {
@@ -75,17 +75,16 @@ var Simple = function (options) {
 
   this.ua = new SIP.UA({
     // User Configurable Options
-    wsServers:         this.options.ua.wsServers,
     uri:               this.options.ua.uri,
     authorizationUser: this.options.ua.authorizationUser,
     password:          this.options.ua.password,
     displayName:       this.options.ua.displayName,
     // Undocumented "Advanced" Options
-    traceSip:          this.options.ua.traceSip,
     userAgentString:   this.options.ua.userAgentString,
     // Fixed Options
     register:          true,
     sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
+    transportOptions: {wsServers: this.options.ua.wsServers}
   });
 
   this.state = C.STATUS_NULL;

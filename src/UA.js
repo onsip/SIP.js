@@ -72,6 +72,7 @@ UA = function(configuration) {
   this.sessions = {};
   this.subscriptions = {};
   this.earlySubscriptions = {};
+  this.publishers = {};
   this.transport = null;
   this.contact = null;
   this.status = C.STATUS_INIT;
@@ -83,7 +84,6 @@ UA = function(configuration) {
     ict: {}
   };
 
-  this.transportRecoverAttempts = 0;
   this.transportRecoveryTimer = null;
 
   Object.defineProperties(this, {
@@ -197,38 +197,13 @@ UA.prototype.unregister = function(options) {
   this.configuration.register = false;
 
   var context = this.registerContext;
-  this.afterConnected(context.unregister.bind(context, options));
+  this.transport.afterConnected(context.unregister.bind(context, options));
 
   return this;
 };
 
 UA.prototype.isRegistered = function() {
   return this.registerContext.registered;
-};
-
-/**
- * Connection state.
- * @param {Boolean}
- */
-UA.prototype.isConnected = function() {
-  return this.transport ? this.transport.connected : false;
-};
-
-UA.prototype.afterConnected = function afterConnected (callback) {
-  if (this.isConnected()) {
-    callback();
-  } else {
-    this.once('connected', callback);
-  }
-};
-
-/**
- * Returns a promise which resolves once the UA is connected.
- */
-UA.prototype.waitForConnected = function() {
-  return new SIP.Utils.Promise(function(resolve) {
-    this.afterConnected(resolve);
-  }.bind(this));
 };
 
 /**
@@ -243,11 +218,10 @@ UA.prototype.waitForConnected = function() {
  */
 UA.prototype.invite = function(target, options, modifiers) {
   var context = new SIP.InviteClientContext(this, target, options, modifiers);
-
   // Delay sending actual invite until the next 'tick' if we are already
   // connected, so that API consumers can register to events fired by the
   // the session.
-  this.waitForConnected().then(function() {
+  this.transport.afterConnected(function() {
     context.invite();
     this.emit('inviteSent', context);
   }.bind(this));
@@ -257,8 +231,26 @@ UA.prototype.invite = function(target, options, modifiers) {
 UA.prototype.subscribe = function(target, event, options) {
   var sub = new SIP.Subscription(this, target, event, options);
 
-  this.afterConnected(sub.subscribe.bind(sub));
+  this.transport.afterConnected(sub.subscribe.bind(sub));
   return sub;
+};
+
+/**
+ * Send PUBLISH Event State Publication (RFC3903)
+ *
+ * @param {String} target
+ * @param {String} event
+ * @param {String} body
+ * @param {Object} [options]
+ *
+ * @throws {SIP.Exceptions.MethodParameterError}
+ *
+ */
+UA.prototype.publish = function(target, event, body, options) {
+  var pub = new SIP.PublishContext(this, target, event, options);
+
+  this.transport.afterConnected(pub.publish.bind(pub, body));
+  return pub;
 };
 
 /**
@@ -287,7 +279,7 @@ UA.prototype.message = function(target, body, options) {
 UA.prototype.request = function (method, target, options) {
   var req = new SIP.ClientContext(this, method, target, options);
 
-  this.afterConnected(req.send.bind(req));
+  this.transport.afterConnected(req.send.bind(req));
   return req;
 };
 
@@ -296,7 +288,7 @@ UA.prototype.request = function (method, target, options) {
  *
  */
 UA.prototype.stop = function() {
-  var session, subscription, applicant,
+  var session, subscription, applicant, publisher,
     ua = this;
 
   function transactionsListener() {
@@ -312,9 +304,6 @@ UA.prototype.stop = function() {
     this.logger.warn('UA already closed');
     return this;
   }
-
-  // Clear transportRecoveryTimer
-  SIP.Timers.clearTimeout(this.transportRecoveryTimer);
 
   // Close registerContext
   this.logger.log('closing registerContext');
@@ -336,6 +325,12 @@ UA.prototype.stop = function() {
   for(subscription in this.earlySubscriptions) {
     this.logger.log('unsubscribing from early subscription ' + subscription);
     this.earlySubscriptions[subscription].close();
+  }
+
+  //Run _close_ on every Publisher
+  for(publisher in this.publishers) {
+    this.logger.log('unpublish ' + publisher);
+    this.publishers[publisher].close();
   }
 
   // Run  _close_ on every applicant
@@ -376,17 +371,24 @@ UA.prototype.stop = function() {
  *
  */
 UA.prototype.start = function() {
-  var server;
+  // var server;
 
   this.logger.log('user requested startup...');
   if (this.status === C.STATUS_INIT) {
-    server = this.getNextWsServer();
     this.status = C.STATUS_STARTING;
-    new SIP.Transport(this, server);
+    if (!this.configuration.transportConstructor) {
+      throw new SIP.Exceptions.TransportError("Transport constructor not set");
+    }
+    this.transport = new this.configuration.transportConstructor(this.getLogger('sip.transport'), this.configuration.transportOptions);
+    this.setTransportListeners();
+    this.emit('transportCreated', this.transport);
+    this.transport.connect();
+
   } else if(this.status === C.STATUS_USER_CLOSED) {
     this.logger.log('resuming');
     this.status = C.STATUS_READY;
     this.transport.connect();
+
   } else if (this.status === C.STATUS_STARTING) {
     this.logger.log('UA is in STARTING status, not opening new connection');
   } else if (this.status === C.STATUS_READY) {
@@ -452,72 +454,26 @@ UA.prototype.getLogger = function(category, label) {
 // Event Handlers
 //==============================
 
-/**
- * Transport Close event
- * @private
- * @event
- * @param {SIP.Transport} transport.
- */
-UA.prototype.onTransportClosed = function(transport) {
-  // Run _onTransportError_ callback on every client transaction using _transport_
-  var type, idx, length,
-    client_transactions = ['nict', 'ict', 'nist', 'ist'];
 
-  transport.server.status = SIP.Transport.C.STATUS_DISCONNECTED;
-  this.logger.log('connection state set to '+ SIP.Transport.C.STATUS_DISCONNECTED);
-
-  length = client_transactions.length;
-  for (type = 0; type < length; type++) {
-    for(idx in this.transactions[client_transactions[type]]) {
-      this.transactions[client_transactions[type]][idx].onTransportError();
-    }
-  }
-
-  // Close sessions if GRUU is not being used
-  if (!this.contact.pub_gruu) {
-    this.closeSessionsOnTransportError();
-  }
-
-};
-
-/**
- * Unrecoverable transport event.
- * Connection reattempt logic has been done and didn't success.
- * @private
- * @event
- * @param {SIP.Transport} transport.
- */
-UA.prototype.onTransportError = function(transport) {
-  var server;
-
-  this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ SIP.Transport.C.STATUS_ERROR);
-
-  // Close sessions.
-  //Mark this transport as 'down'
-  transport.server.status = SIP.Transport.C.STATUS_ERROR;
-
-  this.emit('disconnected', {
-    transport: transport
-  });
-
-  // try the next transport if the UA isn't closed
+UA.prototype.onTransportError = function() {
   if(this.status === C.STATUS_USER_CLOSED) {
     return;
   }
 
-  server = this.getNextWsServer();
-
-  if(server) {
-    new SIP.Transport(this, server);
-  }else {
-    this.closeSessionsOnTransportError();
-    if (!this.error || this.error !== C.NETWORK_ERROR) {
-      this.status = C.STATUS_NOT_READY;
-      this.error = C.NETWORK_ERROR;
-    }
-    // Transport Recovery process
-    this.recoverTransport();
+  if (!this.error || this.error !== C.NETWORK_ERROR) {
+    this.status = C.STATUS_NOT_READY;
+    this.error = C.NETWORK_ERROR;
   }
+};
+
+/**
+ * Helper function. Sets transport listeners
+ * @private
+ */
+UA.prototype.setTransportListeners = function () {
+  this.transport.on('connected', this.onTransportConnected.bind(this));
+  this.transport.on('message', this.onTransportReceiveMsg.bind(this));
+  this.transport.on('transportError', this.onTransportError.bind(this));
 };
 
 /**
@@ -526,47 +482,59 @@ UA.prototype.onTransportError = function(transport) {
  * @event
  * @param {SIP.Transport} transport.
  */
-UA.prototype.onTransportConnected = function(transport) {
-  this.transport = transport;
-
-  // Reset transport recovery counter
-  this.transportRecoverAttempts = 0;
-
-  transport.server.status = SIP.Transport.C.STATUS_READY;
-  this.logger.log('connection state set to '+ SIP.Transport.C.STATUS_READY);
-
-  if(this.status === C.STATUS_USER_CLOSED) {
-    return;
-  }
-
-  this.status = C.STATUS_READY;
-  this.error = null;
-
-  if(this.configuration.register) {
+UA.prototype.onTransportConnected = function() {
+  if (this.configuration.register) {
     this.configuration.authenticationFactory.initialize().then(function () {
       this.registerContext.onTransportConnected();
     }.bind(this));
   }
-
-  this.emit('connected', {
-    transport: transport
-  });
 };
 
-
 /**
- * Transport connecting event
+ * Transport message receipt event.
  * @private
- * @param {SIP.Transport} transport.
- * #param {Integer} attempts.
+ * @event
+ * @param {String} message
  */
-  UA.prototype.onTransportConnecting = function(transport, attempts) {
-    this.emit('connecting', {
-      transport: transport,
-      attempts: attempts
-    });
-  };
 
+ UA.prototype.onTransportReceiveMsg = function (message) {
+   var transaction;
+   message = SIP.Parser.parseMessage(message, this);
+
+   if(this.status === SIP.UA.C.STATUS_USER_CLOSED && message instanceof SIP.IncomingRequest) {
+     this.logger.warn('UA received message when status = USER_CLOSED - aborting');
+     return;
+   }
+   // Do some sanity check
+   if(SIP.sanityCheck(message, this, this.transport)) {
+     if(message instanceof SIP.IncomingRequest) {
+       message.transport = this.transport;
+       this.receiveRequest(message);
+     } else if(message instanceof SIP.IncomingResponse) {
+       /* Unike stated in 18.1.2, if a response does not match
+       * any transaction, it is discarded here and no passed to the core
+       * in order to be discarded there.
+       */
+       switch(message.method) {
+         case SIP.C.INVITE:
+           transaction = this.transactions.ict[message.via_branch];
+           if(transaction) {
+             transaction.receiveResponse(message);
+           }
+           break;
+         case SIP.C.ACK:
+           // Just in case ;-)
+           break;
+         default:
+           transaction = this.transactions.nict[message.via_branch];
+           if(transaction) {
+             transaction.receiveResponse(message);
+           }
+           break;
+       }
+     }
+   }
+ };
 
 /**
  * new Transaction
@@ -806,82 +774,6 @@ UA.prototype.findEarlySubscription = function(request) {
   return this.earlySubscriptions[request.call_id + request.to_tag + request.getHeader('event')] || null;
 };
 
-/**
- * Retrieve the next server to which connect.
- * @private
- * @returns {Object} ws_server
- */
-UA.prototype.getNextWsServer = function() {
-  // Order servers by weight
-  var idx, length, ws_server,
-    candidates = [];
-
-  length = this.configuration.wsServers.length;
-  for (idx = 0; idx < length; idx++) {
-    ws_server = this.configuration.wsServers[idx];
-
-    if (ws_server.status === SIP.Transport.C.STATUS_ERROR) {
-      continue;
-    } else if (candidates.length === 0) {
-      candidates.push(ws_server);
-    } else if (ws_server.weight > candidates[0].weight) {
-      candidates = [ws_server];
-    } else if (ws_server.weight === candidates[0].weight) {
-      candidates.push(ws_server);
-    }
-  }
-
-  idx = Math.floor(Math.random() * candidates.length);
-
-  return candidates[idx];
-};
-
-/**
- * Close all sessions on transport error.
- * @private
- */
-UA.prototype.closeSessionsOnTransportError = function() {
-  var idx;
-
-  // Run _transportError_ for every Session
-  for(idx in this.sessions) {
-    this.sessions[idx].onTransportError();
-  }
-  // Call registerContext _onTransportClosed_
-  this.registerContext.onTransportClosed();
-};
-
-UA.prototype.recoverTransport = function(ua) {
-  var idx, length, k, nextRetry, count, server;
-
-  ua = ua || this;
-  count = ua.transportRecoverAttempts;
-
-  length = ua.configuration.wsServers.length;
-  for (idx = 0; idx < length; idx++) {
-    ua.configuration.wsServers[idx].status = 0;
-  }
-
-  server = ua.getNextWsServer();
-
-  k = Math.floor((Math.random() * Math.pow(2,count)) +1);
-  nextRetry = k * ua.configuration.connectionRecoveryMinInterval;
-
-  if (nextRetry > ua.configuration.connectionRecoveryMaxInterval) {
-    this.logger.log('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
-    nextRetry = ua.configuration.connectionRecoveryMinInterval;
-    count = 0;
-  }
-
-  this.logger.log('next connection attempt in '+ nextRetry +' seconds');
-
-  this.transportRecoveryTimer = SIP.Timers.setTimeout(
-    function(){
-      ua.transportRecoverAttempts = count + 1;
-      new SIP.Transport(ua, server);
-    }, nextRetry * 1000);
-};
-
 function checkAuthenticationFactory (authenticationFactory) {
   if (!(authenticationFactory instanceof Function)) {
     return;
@@ -909,13 +801,6 @@ UA.prototype.loadConfig = function(configuration) {
       viaHost: SIP.Utils.createRandomToken(12) + '.invalid',
 
       uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
-      wsServers: [{
-        scheme: 'WSS',
-        sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
-        status: 0,
-        weight: 0,
-        ws_uri: 'wss://edge.sip.onsip.com'
-      }],
 
       //Custom Configuration Settings
       custom: {},
@@ -932,26 +817,14 @@ UA.prototype.loadConfig = function(configuration) {
       registrarServer: null,
 
       // Transport related parameters
-      wsServerMaxReconnection: 3,
-      wsServerReconnectionTimeout: 4,
-
-      connectionRecoveryMinInterval: 2,
-      connectionRecoveryMaxInterval: 30,
-
-      keepAliveInterval: 0,
-
-      extraSupported: [],
-
-      usePreloadedRoute: false,
+      transportConstructor: require('./Web/Transport')(SIP),
+      transportOptions: {},
 
       //string to be inserted into User-Agent request header
       userAgentString: SIP.C.USER_AGENT,
 
       // Session parameters
       noAnswerTimeout: 60,
-
-      // Logging parameters
-      traceSip: false,
 
       // Hacks
       hackViaTcp: false,
@@ -985,7 +858,7 @@ UA.prototype.loadConfig = function(configuration) {
       // http://tools.ietf.org/html/rfc3891
       replaces: SIP.C.supported.UNSUPPORTED,
 
-      sessionDescriptionHandlerFactory: require('./WebRTC/SessionDescriptionHandler')(SIP).defaultFactory,
+      sessionDescriptionHandlerFactory: require('./Web/SessionDescriptionHandler')(SIP).defaultFactory,
 
       authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
         return new SIP.DigestAuthentication(ua);
@@ -1057,13 +930,6 @@ UA.prototype.loadConfig = function(configuration) {
         throw new SIP.Exceptions.ConfigurationError(parameter, value);
       }
     }
-  }
-
-  // Sanity Checks
-
-  // Connection recovery intervals
-  if(settings.connectionRecoveryMaxInterval < settings.connectionRecoveryMinInterval) {
-    throw new SIP.Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
   }
 
   // Post Configuration Process
@@ -1149,14 +1015,11 @@ UA.prototype.loadConfig = function(configuration) {
   var skeleton = {};
   // Fill the value of the configuration_skeleton
   for(parameter in settings) {
-    skeleton[parameter] = {
-      value: settings[parameter],
-      writable: (parameter === 'register' || parameter === 'custom'),
-      configurable: false
-    };
+    skeleton[parameter] = settings[parameter];
   }
 
-  Object.defineProperties(this.configuration, skeleton);
+  Object.assign(this.configuration, skeleton);
+
 
   this.logger.log('configuration parameters after validation:');
   for(parameter in settings) {
@@ -1206,60 +1069,16 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
-      wsServers: function(wsServers) {
-        var idx, length, url;
-
-        /* Allow defining wsServers parameter as:
-         *  String: "host"
-         *  Array of Strings: ["host1", "host2"]
-         *  Array of Objects: [{ws_uri:"host1", weight:1}, {ws_uri:"host2", weight:0}]
-         *  Array of Objects and Strings: [{ws_uri:"host1"}, "host2"]
-         */
-        if (typeof wsServers === 'string') {
-          wsServers = [{ws_uri: wsServers}];
-        } else if (wsServers instanceof Array) {
-          length = wsServers.length;
-          for (idx = 0; idx < length; idx++) {
-            if (typeof wsServers[idx] === 'string'){
-              wsServers[idx] = {ws_uri: wsServers[idx]};
-            }
-          }
-        } else {
-          return;
+      transportConstructor: function(transportConstructor) {
+        if (typeof transportConstructor === Function) {
+          return transportConstructor;
         }
+      },
 
-        if (wsServers.length === 0) {
-          return false;
+      transportOptions: function(transportOptions) {
+        if (typeof transportOptions === 'object') {
+          return transportOptions;
         }
-
-        length = wsServers.length;
-        for (idx = 0; idx < length; idx++) {
-          if (!wsServers[idx].ws_uri) {
-            return;
-          }
-          if (wsServers[idx].weight && !Number(wsServers[idx].weight)) {
-            return;
-          }
-
-          url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
-
-          if(url === -1) {
-            return;
-          } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
-            return;
-          } else {
-            wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
-
-            if (!wsServers[idx].weight) {
-              wsServers[idx].weight = 0;
-            }
-
-            wsServers[idx].status = 0;
-            wsServers[idx].scheme = url.scheme.toUpperCase();
-          }
-        }
-        return wsServers;
       },
 
       authorizationUser: function(authorizationUser) {
@@ -1267,26 +1086,6 @@ UA.prototype.getConfigurationCheck = function () {
           return;
         } else {
           return authorizationUser;
-        }
-      },
-
-      connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
-        var value;
-        if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
-          value = Number(connectionRecoveryMaxInterval);
-          if(value > 0) {
-            return value;
-          }
-        }
-      },
-
-      connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
-        var value;
-        if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
-          value = Number(connectionRecoveryMinInterval);
-          if(value > 0) {
-            return value;
-          }
         }
       },
 
@@ -1364,33 +1163,6 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      keepAliveInterval: function(keepAliveInterval) {
-        var value;
-        if (SIP.Utils.isDecimal(keepAliveInterval)) {
-          value = Number(keepAliveInterval);
-          if (value > 0) {
-            return value;
-          }
-        }
-      },
-
-      extraSupported: function(optionTags) {
-        var idx, length;
-
-        if (!(optionTags instanceof Array)) {
-          return;
-        }
-
-        length = optionTags.length;
-        for (idx = 0; idx < length; idx++) {
-          if (typeof optionTags[idx] !== 'string') {
-            return;
-          }
-        }
-
-        return optionTags;
-      },
-
       noAnswerTimeout: function(noAnswerTimeout) {
         var value;
         if (SIP.Utils.isDecimal(noAnswerTimeout)) {
@@ -1462,41 +1234,9 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      traceSip: function(traceSip) {
-        if (typeof traceSip === 'boolean') {
-          return traceSip;
-        }
-      },
-
       userAgentString: function(userAgentString) {
         if (typeof userAgentString === 'string') {
           return userAgentString;
-        }
-      },
-
-      usePreloadedRoute: function(usePreloadedRoute) {
-        if (typeof usePreloadedRoute === 'boolean') {
-          return usePreloadedRoute;
-        }
-      },
-
-      wsServerMaxReconnection: function(wsServerMaxReconnection) {
-        var value;
-        if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
-          value = Number(wsServerMaxReconnection);
-          if (value > 0) {
-            return value;
-          }
-        }
-      },
-
-      wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
-        var value;
-        if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
-          value = Number(wsServerReconnectionTimeout);
-          if (value > 0) {
-            return value;
-          }
         }
       },
 
@@ -1542,7 +1282,7 @@ UA.prototype.getConfigurationCheck = function () {
         if (typeof contactName === 'string') {
           return contactName;
         }
-      }
+      },
     }
   };
 };

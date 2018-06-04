@@ -59,5 +59,28 @@ module.exports = {
     };
     exception.prototype = new Error();
     return exception;
-  }())
+  }()),
+
+  MethodParameterError: (function(){
+    var exception = function(method, parameter, value) {
+      this.code = 6;
+      this.name = 'METHOD_PARAMETER_ERROR';
+      this.method = method;
+      this.parameter = parameter;
+      this.value = value;
+      this.message = (!this.value)? 'Missing parameter: '+ this.parameter : 'Invalid value '+ JSON.stringify(this.value) +' for parameter "'+ this.parameter +'"';
+    };
+    exception.prototype = new Error();
+    return exception;
+  }()),
+
+  TransportError: (function(){
+    var exception = function(message) {
+      this.code = 7;
+      this.name = 'TRANSPORT_ERROR';
+      this.message = message;
+    };
+    exception.prototype = new Error();
+    return exception;
+  }()),
 };
