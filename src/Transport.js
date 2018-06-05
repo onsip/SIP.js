@@ -40,14 +40,14 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   isConnected: {writable: true, value: function isConnected () {}},
 
   /**
-  * Sends a message then emits a sentMsg event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendMsgPromise
+  * Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise
   * @param {SIP.OutgoingRequest|String} msg
   * @param {Object} options
   * @returns {Promise}
   */
   send: {writable: true, value: function send (msg, options) {
     options = options || {};
-    return this.sendMsgPromise(msg).then(function (data) {!data.overrideEvent && this.emit('sentMsg', data.msg);}.bind(this));
+    return this.sendPromise(msg).then(function (data) {!data.overrideEvent && this.emit('messageSent', data.msg);}.bind(this));
   }},
 
   /**
@@ -57,7 +57,7 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   * @param {Object} [options]
   * @returns {Promise}
   */
-  sendMsgPromise: {writable: true, value: function sendMsgPromise (msg, options) {}},
+  sendPromise: {writable: true, value: function sendPromise (msg, options) {}},
 
   /**
   * To be called when a message is received

@@ -17,7 +17,7 @@ describe('Transport', function() {
     this.ua.transport.on('disconnected', disconnectedSpy);
 
     messageSpy = jasmine.createSpy('message');
-    this.ua.transport.on('sentMsg', messageSpy);
+    this.ua.transport.on('messageSent', messageSpy);
 
     this.ua.transport.ws.onopen();
   });

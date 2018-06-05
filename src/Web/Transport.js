@@ -81,7 +81,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
    * @param {Object} [options]
    * @returns {Promise}
    */
-  sendMsgPromise: {writable: true, value: function sendMsgPromise (msg, options) {
+  sendPromise: {writable: true, value: function sendPromise (msg, options) {
     options = options || {};
     if (!this.statusAssert(C.STATUS_OPEN, options.force)) {
       this.onError('unable to send message - WebSocket not open');
