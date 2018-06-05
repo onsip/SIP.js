@@ -40,10 +40,6 @@ Transport = function(logger, options) {
   this.connectionPromise = null;
   this.connectionTimeout = null;
 
-  // Reconnection stuff
-  this.transportRecoverAttempts = 0;
-  this.transportRecoveryTimer = null;
-
   this.reconnectionAttempts = 0;
   this.reconnectTimer = null;
   this.lastTransportError = {};
@@ -155,8 +151,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         reject();
         return;
       }
-
-      this.transportRecoverAttempts = 0;
 
       if (!this.ws) {
         reject();
@@ -590,13 +584,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         }
       }
     }
-
-    // Sanity Checks
-
-    // Connection recovery intervals
-    // if(settings.connectionRecoveryMaxInterval < settings.connectionRecoveryMinInterval) {
-    //   throw new SIP.Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
-    // }
 
     var skeleton = {};
     // Fill the value of the configuration_skeleton

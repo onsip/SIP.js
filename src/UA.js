@@ -84,8 +84,6 @@ UA = function(configuration) {
     ict: {}
   };
 
-  this.transportRecoveryTimer = null;
-
   Object.defineProperties(this, {
     transactionsCount: {
       get: function() {
