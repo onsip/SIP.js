@@ -23,6 +23,7 @@ describe('Web/Modifiers', function () {
     Modifiers.stripTelephoneEvent(sdpWrapper).then(function (description) {
       expect(description.type).toBe('offer');
       expect(description.sdp).not.toContain('a=rtpmap:126 telephone-event/8000');
+      expect(description.sdp).toContain('m=audio 53026 RTP/SAVPF 111 103 104 0 8 106 105 13\r\n');
 
       done();
     });
