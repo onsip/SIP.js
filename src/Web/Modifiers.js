@@ -32,9 +32,6 @@ Modifiers = {
       for (var i = 3; i < mline.length; i=i+1) {
         if (mline[i] === "9") {
           mline.splice(i, 1);
-          var numberOfCodecs = parseInt(mline[1], 10);
-          numberOfCodecs = numberOfCodecs - 1;
-          mline[1] = numberOfCodecs.toString();
         }
       }
       mline = mline.join(" ");
