@@ -53,7 +53,8 @@ module.exports = function (env) {
       path: __dirname + '/dist',
       filename: '[name].js',
       library: 'SIP',
-      libraryTarget: 'umd'
+      libraryTarget: 'umd',
+      globalObject: 'this'
     },
     module: {
       rules: [
