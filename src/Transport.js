@@ -93,10 +93,11 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   }},
 
   /**
-   * Returns a promise which resolves once the UA is connected.
+   * Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected()
    * @returns {Promise}
    */
   waitForConnected: {writable: true, value: function waitForConnected () {
+    console.warn("DEPRECATION WARNING Transport.waitForConnected(): use afterConnected() instead");
     return new SIP.Utils.Promise(function(resolve) {
       this.afterConnected(resolve);
     }.bind(this));
