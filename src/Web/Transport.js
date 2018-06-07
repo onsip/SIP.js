@@ -304,6 +304,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @private
   */
   reconnect: {writable: true, value: function reconnect () {
+    this.connectionPromise = null;
     if (this.noAvailableServers()) {
       this.logger.warn('no available ws servers left - going to closed state');
       this.status = C.STATUS_CLOSED;
@@ -311,7 +312,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       return;
     }
 
-    this.connectionPromise = null;
     if (this.isConnected()) {
       this.logger.warn('attempted to reconnect while connected - forcing disconnect');
       this.disconnect({force: true});
@@ -346,10 +346,9 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * Resets the error state of all servers in the configuration
   */
   resetServerErrorStatus: {writable: true, value: function resetServerErrorStatus () {
-    var idx, length, wsServer;
+    var idx, length = this.configuration.wsServers.length;
     for(idx = 0; idx < length; idx++) {
-      wsServer = this.configuration.wsServers[idx];
-      wsServer.isError = false;
+      this.configuration.wsServers[idx].isError = false;
     }
   }},
 
