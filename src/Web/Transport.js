@@ -307,6 +307,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     if (this.noAvailableServers()) {
       this.logger.warn('no available ws servers left - going to closed state');
       this.status = C.STATUS_CLOSED;
+      this.resetServerErrorStatus();
       return;
     }
 
@@ -327,14 +328,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.server = this.getNextWsServer();
       this.reconnectionAttempts = 0;
       this.reconnect();
-      //recover
     } else if (this.reconnectionAttempts === 1) {
       this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
       this.disposeWs();
       this.connect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
-
       this.reconnectTimer = SIP.Timers.setTimeout(function() {
         this.disposeWs();
         this.connect();
@@ -343,6 +342,16 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     }
   }},
 
+  /**
+  * Resets the error state of all servers in the configuration
+  */
+  resetServerErrorStatus: {writable: true, value: function resetServerErrorStatus () {
+    var idx, length, wsServer;
+    for(idx = 0; idx < length; idx++) {
+      wsServer = this.configuration.wsServers[idx];
+      wsServer.isError = false;
+    }
+  }},
 
   /**
   * Retrieve the next server to which connect.
