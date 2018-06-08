@@ -618,12 +618,6 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
         /* falls through */
         case C.STATUS_ACCEPTED:
           // Note that this point will be reached for proceeding tr.state also.
-          // if(!this.transport.send(response)) {
-          //   this.onTransportError();
-          //   deferred.reject();
-          // } else {
-          //   deferred.resolve();
-          // }
           try {
             this.transport.send(response);
           } catch (error) {
@@ -641,11 +635,6 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           SIP.Timers.clearInterval(this.resendProvisionalTimer);
           this.resendProvisionalTimer = null;
         }
-
-        // if(!this.transport.send(response)) {
-        //   this.onTransportError();
-        //   deferred.reject();
-        // } else {
         try {
           this.transport.send(response);
         } catch (error) {
