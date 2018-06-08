@@ -46,7 +46,7 @@ describe('Web/SessionDescriptionHandler', function() {
       getUserMedia: function() {}
     };
 
-    handler = new SessionDescriptionHandler(mockSession, SessionDescriptionHandlerObserver, {
+    handler = new SessionDescriptionHandler(console, SessionDescriptionHandlerObserver, {
       peerConnectionOptions: {
         iceCheckingTimeout: 500
       }

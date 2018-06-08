@@ -2,7 +2,6 @@
 module.exports = function (SIP) {
 
 var DTMF = require('./Session/DTMF')(SIP);
-var SessionDescriptionHandlerObserver = require('./SessionDescriptionHandlerObserver');
 
 var Session, InviteServerContext, InviteClientContext, ReferServerContext, ReferClientContext,
  C = {
@@ -56,10 +55,6 @@ Session = function (sessionDescriptionHandlerFactory) {
 
   // Hold state
   this.local_hold = false;
-
-  // Flag to disable renegotiation. When set to true, it will not renegotiate
-  // and will throw a RENEGOTIATION_ERROR
-  this.disableRenegotiation = false;
 
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
@@ -604,7 +599,6 @@ Session.prototype = {
         });
         break;
       default:
-        this.disableRenegotiation = true;
         this.pendingReinvite = false;
         this.logger.log('Received a non 1XX or 2XX response to a re-invite');
         this.emit('reinviteFailed', self);
@@ -1287,7 +1281,7 @@ InviteServerContext.prototype = Object.create({}, {
     if (this.sessionDescriptionHandler) {
       return this.sessionDescriptionHandler;
     }
-    return this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
+    return this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
   }},
 
   onTransportError: {writable: true, value: function() {
@@ -1408,7 +1402,7 @@ InviteClientContext.prototype = Object.create({}, {
       this.send();
     } else {
       //Initialize Media Session
-      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
       this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
       this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
@@ -1558,7 +1552,7 @@ InviteClientContext.prototype = Object.create({}, {
             return;
           }
           // TODO: This may be broken. It may have to be on the early dialog
-          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
           this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1595,7 +1589,7 @@ InviteClientContext.prototype = Object.create({}, {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
             this.emit('SessionDescriptionHandler-created', earlyMedia);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
@@ -1673,7 +1667,7 @@ InviteClientContext.prototype = Object.create({}, {
 
             this.accepted(response);
           } else {
-            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
             this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
             if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {

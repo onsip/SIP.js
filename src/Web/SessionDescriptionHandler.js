@@ -11,12 +11,11 @@
 module.exports = function (SIP) {
 
 // Constructor
-var SessionDescriptionHandler = function(session, observer, options) {
+var SessionDescriptionHandler = function(logger, observer, options) {
   // TODO: Validate the options
   this.options = options || {};
 
-  this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
-  this.session = session;
+  this.logger = logger;
   this.observer = observer;
   this.dtmfSender = null;
 
@@ -62,8 +61,11 @@ var SessionDescriptionHandler = function(session, observer, options) {
  * @param {Object} [options]
  */
 
-SessionDescriptionHandler.defaultFactory = function defaultFactory (session, observer, options) {
-  return new SessionDescriptionHandler(session, observer, options);
+SessionDescriptionHandler.defaultFactory = function defaultFactory (session, options) {
+  var logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
+  var SessionDescriptionHandlerObserver = require('./SessionDescriptionHandlerObserver');
+  var observer = new SessionDescriptionHandlerObserver(session, options);
+  return new SessionDescriptionHandler(logger, observer, options);
 };
 
 SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandler.prototype, {
@@ -120,11 +122,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   getDescription: {writable: true, value: function (options, modifiers) {
     var self = this;
     var shouldAcquireMedia = true;
-
-    if (this.session.disableRenegotiation) {
-      this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
-      return SIP.Utils.Promise.reject(new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler"));
-    }
 
     options = options || {};
     if (options.peerConnectionOptions) {
@@ -197,7 +194,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           contentType: self.CONTENT_TYPE
         };
       }).catch(function (e) {
-        this.session.disableRenegotiation = true;
         throw e;
       });
   }},
@@ -238,17 +234,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
     var self = this;
 
-    // https://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser
-    var isFirefox = typeof InstallTrigger !== 'undefined';
-    if (!this.session.disableRenegotiation && isFirefox && this.peerConnection && this.isVideoHold(sessionDescription)) {
-      this.session.disableRenegotiation = true;
-    }
-
-    if (this.session.disableRenegotiation) {
-      this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
-      return SIP.Utils.Promise.reject(new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler"));
-    }
-
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
@@ -280,7 +265,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(modifiedDescription));
       })
       .catch(function setRemoteDescriptionError(e) {
-        self.session.disableRenegotiation = true;
         self.logger.error(e);
         self.emit('peerConnection-setRemoteDescriptionFailed', e);
         throw e;
@@ -442,7 +426,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
 
     this.logger.log('New peer connection created');
-    this.session.emit('peerConnection-created', this.peerConnection);
 
     if ('ontrack' in this.peerConnection) {
       this.peerConnection.addEventListener('track', function(e) {
