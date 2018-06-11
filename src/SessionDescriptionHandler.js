@@ -10,7 +10,7 @@
  * @param {Object} [options]
  */
 module.exports = function (EventEmitter) {
-var SessionDescriptionHandler = function(session, observer, options) {};
+var SessionDescriptionHandler = function() {};
 
 SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
 
