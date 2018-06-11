@@ -244,8 +244,10 @@ Session.prototype = {
     }
 
     this.status = C.STATUS_TERMINATED;
+    this.ua.transport.removeListener("transportError", this.errorListener);
 
     delete this.ua.sessions[this.id];
+
     return this;
   },
 
@@ -841,7 +843,8 @@ InviteServerContext = function(ua, request) {
     }, expires);
   }
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 };
 
 InviteServerContext.prototype = Object.create({}, {
@@ -1384,7 +1387,8 @@ InviteClientContext = function(ua, target, options, modifiers) {
 
   this.onInfo = options.onInfo;
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 };
 
 InviteClientContext.prototype = Object.create({}, {
@@ -1879,7 +1883,8 @@ ReferClientContext = function(ua, applicant, target, options) {
   this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   this.extraHeaders.push('Refer-To: '+ this.target);
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 };
 
 ReferClientContext.prototype = Object.create({}, {
@@ -1988,7 +1993,8 @@ ReferServerContext = function(ua, request) {
     this.replaces = this.referTo.uri.getHeader('replaces');
   }
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 
   this.status = C.STATUS_WAITING_FOR_ANSWER;
 };

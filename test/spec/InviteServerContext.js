@@ -286,7 +286,6 @@ describe('A UAS receiving an INVITE', function () {
               }
             }
           };
-          // ua.transport.ws.receiveMessage(Messages.Invite.replaces);
           ua.transport.onMessage({data: Messages.Invite.replaces});
         });
       });
@@ -335,7 +334,6 @@ describe('A UAS receiving an INVITE', function () {
               }
             }
           };
-          // ua.transport.ws.receiveMessage(Messages.Invite.replaces);
           ua.transport.onMessage({data: Messages.Invite.replaces});
         });
       });

@@ -276,13 +276,15 @@ describe('Session', function() {
       expect(Session.close()).toBe(Session);
     });
 
-    it('deletes the session from the ua, deletes the dialog, and returns the Session on success', function() {
+    it('deletes the session from the ua, deletes the dialog, removes transport listeners and returns the Session on success', function() {
       Session.id = 777;
       Session.ua.sessions = {777: Session};
+      spyOn(Session.ua.transport, "removeListener");
 
       expect(Session.close()).toBe(Session);
       expect(Session.dialog).toBeUndefined();
       expect(Session.ua.sessions[777]).toBeUndefined();
+      expect(Session.ua.transport.removeListener).toHaveBeenCalled();
     });
   });
 
