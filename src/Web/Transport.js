@@ -103,7 +103,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   disconnectPromise: {writable: true, value: function disconnectPromise (options) {
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      SIP.Utils.Promise.reject();
+      return SIP.Utils.Promise.reject();
     }
 
     if(this.ws) {

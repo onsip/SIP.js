@@ -641,7 +641,7 @@ describe('UA', function() {
     var transaction;
     beforeEach(function() {
       transaction = { type : 'transaction-type' ,
-                      id : 'id' };
+                      id : 'id'};
       UA.transactions[transaction.type] = {};
     });
 

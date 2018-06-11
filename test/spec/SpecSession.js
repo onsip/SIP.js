@@ -192,7 +192,7 @@ describe('Session', function() {
       Session.status = 12;
     });
 
-    it('logs an error and returns this if the session status is terminated', function() {
+    it('logs an error and returns this if the session status is terminated',  function() {
       spyOn(Session.logger, 'error');
       Session.status = 9;
 
@@ -715,7 +715,7 @@ describe('InviteServerContext', function() {
         };
       }
     });
-    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server','on']);
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server','on','removeListener']);
     ua.transport.server.scheme = 'wss';
 
     request = SIP.Parser.parseMessage([
@@ -1186,6 +1186,8 @@ describe('InviteServerContext', function() {
         InviteServerContext.early_sdp = true;
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'accepted').and.callThrough();
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
 
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
@@ -1212,6 +1214,9 @@ describe('InviteServerContext', function() {
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'emit');
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
+
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
 
         InviteServerContext.sessionDescriptionHandler = {
           hasDescription: function() {
@@ -1360,6 +1365,8 @@ describe('InviteServerContext', function() {
 
     describe('method is INVITE', function() {
       it('calls receiveReinvite', function() {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1390,6 +1397,8 @@ describe('InviteServerContext', function() {
 
     describe('method is INFO', function() {
       it('makes a new DTMF', function() {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1421,6 +1430,8 @@ describe('InviteServerContext', function() {
       });
 
       it('returns a 415 if DTMF packet had the wrong content-type header', function() {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1449,6 +1460,8 @@ describe('InviteServerContext', function() {
       });
 
       it('invokes onInfo if onInfo is set', function(done) {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1506,7 +1519,7 @@ describe('InviteClientContext', function() {
       }
     });
 
-    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server', 'on']);
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server', 'on', 'removeListener']);
     ua.transport.server.scheme = 'wss';
 
     InviteClientContext = new SIP.InviteClientContext(ua, target);

@@ -22,6 +22,8 @@ describe('SanityCheck', function () {
 
   beforeAll(function () {
     ua = new SIP.UA();
+    transport = jasmine.createSpyObj('transport', ['on', 'send', 'server', 'removeListener']);
+    transport.server.scheme = 'WSS';
     ua.transport = transport;
     h.via = h.via.replace('MYHOST', ua.configuration.viaHost);
     h.v = h.v.replace('MYHOST', ua.configuration.viaHost);
@@ -54,7 +56,7 @@ describe('SanityCheck', function () {
   });
 
   afterEach(function () {
-    ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
+    ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'on']);
     ua.stop();
   });
 
@@ -137,7 +139,7 @@ describe('SanityCheck', function () {
         message = p(h.response + h.f + h.cseq + h.t + h.i + '\r\n');
         expectDropped(message);
       });
-    
+
     });
   });
 
