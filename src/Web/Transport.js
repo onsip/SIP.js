@@ -338,7 +338,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         this.disposeWs();
         this.connect();
         this.reconnectTimer = null;
-      }, this.configuration.reconnectionTimeout * 1000);
+      }.bind(this), this.configuration.reconnectionTimeout * 1000);
     }
   }},
 
