@@ -121,60 +121,6 @@ describe('Transport', function() {
     });
   });
 
-  xdescribe('.recoverTransport', function() {
-    beforeEach(function() {
-      spyOn(Math, 'random').and.returnValue(0);
-      spyOn(this.ua.transport.logger, 'log');
-    });
-
-    it('logs if the next retry time exceeds the max_interval', function(){
-      this.ua.transport.configuration = {wsServers: [{status:1, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: -1};
-
-      this.ua.transport.recoverTransport();
-
-      expect(this.ua.transport.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
-    });
-
-    it('calls getNextWsServer', function() {
-      spyOn(this.ua.transport, 'getNextWsServer').and.callThrough();
-
-      this.ua.transport.recoverTransport();
-
-      expect(this.ua.transport.getNextWsServer).toHaveBeenCalled();
-    });
-
-    it('sets the transportRecoveryTimer', function() {
-      expect(this.ua.transport.transportRecoveryTimer).toBeNull();
-
-      this.ua.transport.recoverTransport();
-
-      expect(this.ua.transport.transportRecoveryTimer).toBeDefined();
-    });
-
-    describe('logs before setting the transport recovery timer, then attempts to make a new transport', function() {
-      beforeEach(function (done) {
-        spyOn(this.ua.transport, 'reconnect');
-
-        this.ua.transport.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
-        this.ua.transport.transportRecoverAttempts = 0;
-
-        this.ua.transport.recoverTransport(this.ua.transport);
-
-        expect(this.ua.transport.logger.log).toHaveBeenCalledWith('next connection attempt in 1 seconds');
-
-        setTimeout(function () {
-          if (this.ua.transport.transportRecoverAttempts > 0) {
-            done();
-          }
-        }.bind(this),1100);
-      });
-
-      it('asynchronously', function () {
-        expect(this.ua.transport.reconnect).toHaveBeenCalled();
-      });
-    });
-  });
-
   describe('.loadConfig', function() {
     beforeEach(function() {
       this.ua.transport.configuration = {};

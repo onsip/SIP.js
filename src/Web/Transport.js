@@ -42,7 +42,6 @@ Transport = function(logger, options) {
 
   this.reconnectionAttempts = 0;
   this.reconnectTimer = null;
-  this.lastTransportError = {};
 
   // Keep alive
   this.keepAliveInterval = null;
@@ -96,6 +95,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * Disconnect socket.
   */
   disconnectPromise: {writable: true, value: function disconnectPromise (options) {
+    options = options || {};
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
       return SIP.Utils.Promise.reject();
     }
@@ -125,7 +125,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       return this.connectionPromise;
     }
     options = options || {};
-    this.server = this.server || this.getNextWsServer();
+    this.server = this.server || this.getNextWsServer(options.force);
 
     this.connectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
 
@@ -135,6 +135,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         return;
       }
 
+      this.status = C.STATUS_CONNECTING;
       this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
       try {
         this.ws = new WebSocket(this.server.ws_uri, 'sip');
@@ -195,33 +196,29 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @param {event} e
   */
   onClose: {writable: true, value: function onClose (e) {
-    var oldStatus = this.status;
-    this.status = C.STATUS_CLOSED; // quietly force status to closed
-
     this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-    this.lastTransportError = {code: e.code, reason: e.reason};
-    this.emit('disconnected', this.lastTransportError);
+    this.emit('disconnected', {code: e.code, reason: e.reason});
+
+    if (this.status === C.STATUS_OPEN && e.wasClean === false) {
+      this.disposeWs();
+      this.logger.warn('WebSocket abrupt disconnection');
+    }
+    if (this.status !== C.STATUS_CLOSING) {
+      this.emit('transportError');
+    }
 
     this.stopSendingKeepAlives();
     SIP.Timers.clearTimeout(this.connectionTimeout);
     this.connectionTimeout = null;
 
-    if (this.reconnectionAttempts > 0) {
-      this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-      this.reconnect();
-    } else {
-      if (oldStatus === C.STATUS_OPEN && e.wasClean === false) {
-        this.disposeWs();
-        this.logger.warn('WebSocket abrupt disconnection');
-      }
-      // Check whether the user requested to close.
-      if (oldStatus === C.STATUS_CLOSING) {
-        return;
-      } else {
-        this.emit('transportError');
-        this.reconnect();
-      }
+    // Check whether the user requested to close.
+    if (this.status === C.STATUS_CLOSING) {
+      this.status = C.STATUS_CLOSED;
+      return;
     }
+    this.status = C.STATUS_CLOSED; // quietly force status to closed
+    this.connectionPromise = null;
+    this.reconnect();
   }},
 
   /**
@@ -299,6 +296,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   reconnect: {writable: true, value: function reconnect () {
     this.connectionPromise = null;
+    this.disposeWs();
+
+    if (this.reconnectionAttempts > 0) {
+      this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
+    }
+
     if (this.noAvailableServers()) {
       this.logger.warn('no available ws servers left - going to closed state');
       this.status = C.STATUS_CLOSED;
@@ -310,7 +313,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.logger.warn('attempted to reconnect while connected - forcing disconnect');
       this.disconnect({force: true});
     }
-    this.status = C.STATUS_CONNECTING; // quietly force status to connecting
 
     this.reconnectionAttempts += 1;
 
@@ -322,17 +324,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.server = this.getNextWsServer();
       this.reconnectionAttempts = 0;
       this.reconnect();
-    } else if (this.reconnectionAttempts === 1) {
-      this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
-      this.disposeWs();
-      this.connect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
       this.reconnectTimer = SIP.Timers.setTimeout(function() {
-        this.disposeWs();
         this.connect();
         this.reconnectTimer = null;
-      }.bind(this), this.configuration.reconnectionTimeout * 1000);
+      }.bind(this), (this.reconnectionAttempts === 1) ? 0 : this.configuration.reconnectionTimeout * 1000);
     }
   }},
 
@@ -349,9 +346,10 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   /**
   * Retrieve the next server to which connect.
   * @private
+  * @param {Boolean} force allows bypass of server error status checking
   * @returns {Object} wsServer
   */
-  getNextWsServer: {writable: true, value: function getNextWsServer () {
+  getNextWsServer: {writable: true, value: function getNextWsServer (force) {
     if (this.noAvailableServers()) {
       this.logger.warn('attempted to get next ws server but there are no available ws servers left');
       return;
@@ -364,7 +362,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     for (idx = 0; idx < length; idx++) {
       wsServer = this.configuration.wsServers[idx];
 
-      if (wsServer.isError) {
+      if (wsServer.isError && !force) {
         continue;
       } else if (candidates.length === 0) {
         candidates.push(wsServer);
@@ -386,13 +384,13 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @returns {Boolean}
   */
   noAvailableServers: {writable: true, value: function noAvailableServers () {
-    var server, isAllError = true;
+    var server;
     for (server in this.configuration.wsServers) {
       if (!this.configuration.wsServers[server].isError) {
-        isAllError = false;
+        return false;
       }
     }
-    return isAllError;
+    return true;
   }},
 
   //==============================
