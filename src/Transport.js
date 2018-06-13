@@ -21,12 +21,14 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   */
   connect: {writable: true, value: function connect (options) {
     options = options || {};
-    return this.connectPromise(options).then(function (overrideEvent) {!overrideEvent && this.emit('connected');}.bind(this));
+    return this.connectPromise(options).then(function (data) {!data.overrideEvent && this.emit('connected');}.bind(this));
   }},
 
   /**
   * Called by connect, must return a promise
+  * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
   * @abstract
+  * @private
   * @param {Object} [options]
   * @returns {Promise}
   */
@@ -52,7 +54,9 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
 
   /**
   * Called by send, must return a promise
+  * promise must resolve to an object. object supports 2 parameters: msg - string (mandatory) and overrideEvent - Boolean (optional)
   * @abstract
+  * @private
   * @param {SIP.OutgoingRequest|String} msg
   * @param {Object} [options]
   * @returns {Promise}
@@ -73,12 +77,14 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   */
   disconnect: {writable: true, value: function disconnect (options) {
     options = options || {};
-    return this.disconnectPromise(options).then(function (overrideEvent) {!overrideEvent && this.emit('disconnected');}.bind(this));
+    return this.disconnectPromise(options).then(function (data) {!data.overrideEvent && this.emit('disconnected');}.bind(this));
   }},
 
   /**
   * Called by disconnect, must return a promise
+  * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
   * @abstract
+  * @private
   * @param {Object} [options]
   * @returns {Promise}
   */
