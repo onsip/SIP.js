@@ -52,13 +52,7 @@ Transport = function(logger, options) {
 
   this.configuration = {};
 
-  try {
-    this.loadConfig(options);
-  } catch(e) {
-    this.status = C.STATUS_NOT_READY;
-    this.error = C.CONFIGURATION_ERROR;
-    throw e;
-  }
+  this.loadConfig(options);
 };
 
 Transport.prototype = Object.create(SIP.Transport.prototype, {
