@@ -325,6 +325,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.logger.log('transport ' + this.server.ws_uri + ' failed | connection state set to \'error\'');
       this.server.isError = true;
       this.emit('transportError');
+      this.disposeWs();
       this.server = this.getNextWsServer();
       this.reconnectionAttempts = 0;
       this.reconnect();
