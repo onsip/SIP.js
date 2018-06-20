@@ -4,22 +4,24 @@ describe('Transport', function() {
   var connectedSpy, disconnectedSpy, messageSpy, onCloseOptions;
   onCloseOptions = {code: "1", reason: "test"};
 
-  beforeEach(function() {
+  beforeEach(function(done) {
     this.ua_config = {
-      autostart: true
+      autostart: false
     };
     this.ua = new SIP.UA(this.ua_config);
+    this.ua.on('transportCreated', function (transport) {
+      connectedSpy = jasmine.createSpy('connected');
+      transport.on('connected', connectedSpy);
 
-    connectedSpy = jasmine.createSpy('connected');
-    this.ua.transport.on('connected', connectedSpy);
+      disconnectedSpy = jasmine.createSpy('disconnected');
+      transport.on('disconnected', disconnectedSpy);
 
-    disconnectedSpy = jasmine.createSpy('disconnected');
-    this.ua.transport.on('disconnected', disconnectedSpy);
+      messageSpy = jasmine.createSpy('message');
+      transport.on('messageSent', messageSpy);
 
-    messageSpy = jasmine.createSpy('message');
-    this.ua.transport.on('messageSent', messageSpy);
-
-    this.ua.transport.ws.onopen();
+      transport.connect().then(done);
+    });
+    this.ua.start();
   });
 
   describe('.connect', function () {
