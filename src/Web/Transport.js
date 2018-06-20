@@ -40,6 +40,10 @@ Transport = function(logger, options) {
   this.connectionPromise = null;
   this.connectionTimeout = null;
 
+  this.boundOnOpen = null;
+  this.boundOnMessage = null;
+  this.boundOnClose = null;
+
   this.reconnectionAttempts = 0;
   this.reconnectTimer = null;
 
@@ -156,10 +160,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         this.onError('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
       }.bind(this), this.configuration.connectionTimeout * 1000);
 
-      this.ws.addEventListener('open', this.onOpen.bind(this, resolve));
-      this.ws.addEventListener('message', this.onMessage.bind(this));
-      this.ws.addEventListener('close', this.onClose.bind(this));
-
+      this.boundOnOpen = this.onOpen.bind(this);
+      this.boundOnMessage = this.onMessage.bind(this);
+      this.boundOnClose = this.onClose.bind(this);
+      this.ws.addEventListener('open', this.boundOnOpen);
+      this.ws.addEventListener('message', this.boundOnMessage);
+      this.ws.addEventListener('close', this.boundOnClose);
     }.bind(this));
 
     return this.connectionPromise;
@@ -228,10 +234,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   disposeWs: {writable: true, value: function disposeWs () {
     if (this.ws) {
-      this.ws.removeEventListener('open', this.onOpen.bind(this));
-      this.ws.removeEventListener('message', this.onMessage.bind(this));
-      this.ws.removeEventListener('error', this.onError.bind(this));
-      this.ws.removeEventListener('close', this.onClose.bind(this));
+      this.ws.removeEventListener('open', this.boundOnOpen);
+      this.ws.removeEventListener('message', this.boundOnMessage);
+      this.ws.removeEventListener('close', this.boundOnClose);
+      this.boundOnOpen = null;
+      this.boundOnMessage = null;
+      this.boundOnClose = null;
       this.ws = null;
     }
   }},
