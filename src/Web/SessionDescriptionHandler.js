@@ -165,6 +165,21 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         self.logger.error(err);
         throw err;
       })
+      .then(function removeStreams(streams) {
+        try {
+          // Remove old tracks
+          if (self.peerConnection.removeTrack) {
+            self.peerConnection.getSenders().forEach(function (sender) {
+              self.peerConnection.removeTrack(sender);
+            });
+          }
+          return streams;
+        } catch(e) {
+          self.logger.error('error removing streams');
+          self.logger.error(e);
+          return SIP.Utils.Promise.reject(e);
+        }
+      })
       .then(function addStreams(streams) {
         try {
           streams = [].concat(streams);
@@ -238,10 +253,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
     }
-
-    // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign({}, this.constraints, options.constraints);
-    this.constraints = this.checkAndDefaultConstraints(this.constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
