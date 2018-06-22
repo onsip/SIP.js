@@ -286,7 +286,6 @@ describe('A UAS receiving an INVITE', function () {
               }
             }
           };
-          // ua.transport.ws.receiveMessage(Messages.Invite.replaces);
           ua.transport.onMessage({data: Messages.Invite.replaces});
         });
       });
@@ -335,7 +334,6 @@ describe('A UAS receiving an INVITE', function () {
               }
             }
           };
-          // ua.transport.ws.receiveMessage(Messages.Invite.replaces);
           ua.transport.onMessage({data: Messages.Invite.replaces});
         });
       });
@@ -383,7 +381,7 @@ describe('A UAS receiving an INVITE', function () {
           this.byeSpy = jasmine.createSpy('bye');
           this.session.on('bye', this.byeSpy);
 
-          spyOn(this.ua.transport, 'send');
+          spyOn(this.ua.transport, 'send').and.callThrough();
           done();
         }.bind(this));
       this.ua.transport.once('connected', function () {
@@ -475,10 +473,7 @@ describe('A UAS receiving an INVITE', function () {
 
       describe('by a CANCEL from the UAC', function () {
         beforeEach(function () {
-          this.ua.transport.send.and.callFake(function (msg) {
-            console.log('"Sending" message:', msg);
-            return true;
-          });
+          this.ua.transport.send.and.callThrough();
           this.ua.transport.onMessage({data: Messages.Invite.rps.cancel});
         });
 
@@ -525,14 +520,11 @@ describe('A UAS receiving an INVITE', function () {
 
       beforeEach(function (done) {
         var once = true;
-        this.ua.transport.send.and.callFake(function () {
-          this.ua.transport.send.and.stub();
+        this.ua.transport.on('messageSent', function () {
           setTimeout(function () {
             this.ua.transport.onMessage({data: Messages.Invite.rps.ack(this.session.request.to_tag)});
             done();
           }.bind(this), 100);
-
-          return true;
         }.bind(this));
 
         this.session.accept({

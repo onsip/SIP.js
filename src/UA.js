@@ -1030,6 +1030,9 @@ UA.prototype.loadConfig = function(configuration) {
       case 'password':
         this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
         break;
+      case 'transportConstructor':
+          this.logger.log('· ' + parameter + ': ' + settings[parameter].name);
+        break;
       default:
         this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
     }

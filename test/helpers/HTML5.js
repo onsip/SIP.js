@@ -31,11 +31,36 @@
       if (this.onerror) this.onerror(e);
     },
     addEventListener: function (e,callback) {
-      if (e === 'open') {
-        this.onopen = callback;
+      switch(e) {
+        case 'open':
+          this.onopen = callback;
+          break;
+        case 'close':
+          this.onclose = callback;
+          break;
+        case 'message':
+          this.onmessage = callback;
+          break;
+        default:
+          break;
       }
     },
-    removeEventListener: function (e,callback) {}
+    removeEventListener: function (e,callback) {
+      // for this dummy websocket that only supports 1 listener per event, we won't bother checking the callback
+      switch(e) {
+        case 'open':
+          this.onopen = undefined;
+          break;
+        case 'close':
+          this.onclose = undefined;
+          break;
+        case 'message':
+          this.onmessage = undefined;
+          break;
+        default:
+          break;
+      }
+    }
   };
   FakeWebSocket.CONNECTING = 0;
   FakeWebSocket.OPEN = 1;
