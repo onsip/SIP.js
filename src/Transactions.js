@@ -288,6 +288,7 @@ InviteClientTransaction.prototype.cancel_request = function(tr, reason, extraHea
   this.cancel += 'To: ' + request.headers['To'].toString() + '\r\n';
   this.cancel += 'From: ' + request.headers['From'].toString() + '\r\n';
   this.cancel += 'Call-ID: ' + request.headers['Call-ID'].toString() + '\r\n';
+  this.cancel += 'Max-Forwards: ' + SIP.UA.C.MAX_FORWARDS + '\r\n';
   this.cancel += 'CSeq: ' + request.headers['CSeq'].toString().split(' ')[0] +
   ' CANCEL\r\n';
 
