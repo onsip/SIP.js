@@ -40,7 +40,7 @@ var banner = '\
 
 
 module.exports = function (env) {
-  var mode = env.buildType === 'prod' ? 'production' : 'development';
+  var mode = env.buildType === 'prod' ? 'production' : 'none';
 
   var entry = {};
   entry['sip' + (env.buildType === 'prod' ? '.min' : '')] = __dirname + '/src/index.js';
