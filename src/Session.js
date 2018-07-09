@@ -2,7 +2,6 @@
 module.exports = function (SIP) {
 
 var DTMF = require('./Session/DTMF')(SIP);
-var SessionDescriptionHandlerObserver = require('./SessionDescriptionHandlerObserver');
 
 var Session, InviteServerContext, InviteClientContext, ReferServerContext, ReferClientContext,
  C = {
@@ -56,10 +55,6 @@ Session = function (sessionDescriptionHandlerFactory) {
 
   // Hold state
   this.local_hold = false;
-
-  // Flag to disable renegotiation. When set to true, it will not renegotiate
-  // and will throw a RENEGOTIATION_ERROR
-  this.disableRenegotiation = false;
 
   this.early_sdp = null;
   this.rel100 = SIP.C.supported.UNSUPPORTED;
@@ -168,7 +163,7 @@ Session.prototype = {
 
     this.emit('referRequested', this.referContext);
 
-    this.referContext.refer();
+    this.referContext.refer(options);
   },
 
   sendRequest: function(method,options) {
@@ -249,8 +244,10 @@ Session.prototype = {
     }
 
     this.status = C.STATUS_TERMINATED;
+    this.ua.transport.removeListener("transportError", this.errorListener);
 
     delete this.ua.sessions[this.id];
+
     return this;
   },
 
@@ -604,7 +601,6 @@ Session.prototype = {
         });
         break;
       default:
-        this.disableRenegotiation = true;
         this.pendingReinvite = false;
         this.logger.log('Received a non 1XX or 2XX response to a re-invite');
         this.emit('reinviteFailed', self);
@@ -847,7 +843,8 @@ InviteServerContext = function(ua, request) {
     }, expires);
   }
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 };
 
 InviteServerContext.prototype = Object.create({}, {
@@ -1287,7 +1284,7 @@ InviteServerContext.prototype = Object.create({}, {
     if (this.sessionDescriptionHandler) {
       return this.sessionDescriptionHandler;
     }
-    return this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
+    return this.sessionDescriptionHandlerFactory(this, this.ua.configuration.sessionDescriptionHandlerFactoryOptions);
   }},
 
   onTransportError: {writable: true, value: function() {
@@ -1390,7 +1387,8 @@ InviteClientContext = function(ua, target, options, modifiers) {
 
   this.onInfo = options.onInfo;
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 };
 
 InviteClientContext.prototype = Object.create({}, {
@@ -1408,7 +1406,7 @@ InviteClientContext.prototype = Object.create({}, {
       this.send();
     } else {
       //Initialize Media Session
-      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
       this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
       this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
@@ -1558,7 +1556,7 @@ InviteClientContext.prototype = Object.create({}, {
             return;
           }
           // TODO: This may be broken. It may have to be on the early dialog
-          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
           this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
           if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1595,7 +1593,7 @@ InviteClientContext.prototype = Object.create({}, {
             );
           } else {
             var earlyDialog = this.earlyDialogs[id];
-            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+            var earlyMedia = earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
             this.emit('SessionDescriptionHandler-created', earlyMedia);
 
             earlyDialog.pracked.push(response.getHeader('rseq'));
@@ -1673,7 +1671,7 @@ InviteClientContext.prototype = Object.create({}, {
 
             this.accepted(response);
           } else {
-            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, new SessionDescriptionHandlerObserver(this), this.sessionDescriptionHandlerFactoryOptions);
+            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
             this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
             if(!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
@@ -1885,7 +1883,8 @@ ReferClientContext = function(ua, applicant, target, options) {
   this.extraHeaders.push('Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString());
   this.extraHeaders.push('Refer-To: '+ this.target);
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 };
 
 ReferClientContext.prototype = Object.create({}, {
@@ -1994,7 +1993,8 @@ ReferServerContext = function(ua, request) {
     this.replaces = this.referTo.uri.getHeader('replaces');
   }
 
-  ua.transport.on('transportError', this.onTransportError.bind(this));
+  this.errorListener = this.onTransportError.bind(this);
+  ua.transport.on('transportError', this.errorListener);
 
   this.status = C.STATUS_WAITING_FOR_ANSWER;
 };

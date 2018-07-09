@@ -4,22 +4,24 @@ describe('Transport', function() {
   var connectedSpy, disconnectedSpy, messageSpy, onCloseOptions;
   onCloseOptions = {code: "1", reason: "test"};
 
-  beforeEach(function() {
+  beforeEach(function(done) {
     this.ua_config = {
-      autostart: true
+      autostart: false
     };
     this.ua = new SIP.UA(this.ua_config);
+    this.ua.on('transportCreated', function (transport) {
+      connectedSpy = jasmine.createSpy('connected');
+      transport.on('connected', connectedSpy);
 
-    connectedSpy = jasmine.createSpy('connected');
-    this.ua.transport.on('connected', connectedSpy);
+      disconnectedSpy = jasmine.createSpy('disconnected');
+      transport.on('disconnected', disconnectedSpy);
 
-    disconnectedSpy = jasmine.createSpy('disconnected');
-    this.ua.transport.on('disconnected', disconnectedSpy);
+      messageSpy = jasmine.createSpy('message');
+      transport.on('messageSent', messageSpy);
 
-    messageSpy = jasmine.createSpy('message');
-    this.ua.transport.on('sentMsg', messageSpy);
-
-    this.ua.transport.ws.onopen();
+      transport.connect().then(done);
+    });
+    this.ua.start();
   });
 
   describe('.connect', function () {
@@ -118,60 +120,6 @@ describe('Transport', function() {
       can4.isError = true;
 
       expect(this.ua.transport.getNextWsServer()).not.toBe(can4);
-    });
-  });
-
-  xdescribe('.recoverTransport', function() {
-    beforeEach(function() {
-      spyOn(Math, 'random').and.returnValue(0);
-      spyOn(this.ua.transport.logger, 'log');
-    });
-
-    it('logs if the next retry time exceeds the max_interval', function(){
-      this.ua.transport.configuration = {wsServers: [{status:1, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: -1};
-
-      this.ua.transport.recoverTransport();
-
-      expect(this.ua.transport.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
-    });
-
-    it('calls getNextWsServer', function() {
-      spyOn(this.ua.transport, 'getNextWsServer').and.callThrough();
-
-      this.ua.transport.recoverTransport();
-
-      expect(this.ua.transport.getNextWsServer).toHaveBeenCalled();
-    });
-
-    it('sets the transportRecoveryTimer', function() {
-      expect(this.ua.transport.transportRecoveryTimer).toBeNull();
-
-      this.ua.transport.recoverTransport();
-
-      expect(this.ua.transport.transportRecoveryTimer).toBeDefined();
-    });
-
-    describe('logs before setting the transport recovery timer, then attempts to make a new transport', function() {
-      beforeEach(function (done) {
-        spyOn(this.ua.transport, 'reconnect');
-
-        this.ua.transport.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
-        this.ua.transport.transportRecoverAttempts = 0;
-
-        this.ua.transport.recoverTransport(this.ua.transport);
-
-        expect(this.ua.transport.logger.log).toHaveBeenCalledWith('next connection attempt in 1 seconds');
-
-        setTimeout(function () {
-          if (this.ua.transport.transportRecoverAttempts > 0) {
-            done();
-          }
-        }.bind(this),1100);
-      });
-
-      it('asynchronously', function () {
-        expect(this.ua.transport.reconnect).toHaveBeenCalled();
-      });
     });
   });
 

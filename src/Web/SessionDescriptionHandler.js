@@ -11,14 +11,15 @@
 module.exports = function (SIP) {
 
 // Constructor
-var SessionDescriptionHandler = function(session, observer, options) {
+var SessionDescriptionHandler = function(logger, observer, options) {
   // TODO: Validate the options
   this.options = options || {};
 
-  this.logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
-  this.session = session;
+  this.logger = logger;
   this.observer = observer;
   this.dtmfSender = null;
+
+  this.shouldAcquireMedia = true;
 
   this.CONTENT_TYPE = 'application/sdp';
 
@@ -62,8 +63,11 @@ var SessionDescriptionHandler = function(session, observer, options) {
  * @param {Object} [options]
  */
 
-SessionDescriptionHandler.defaultFactory = function defaultFactory (session, observer, options) {
-  return new SessionDescriptionHandler(session, observer, options);
+SessionDescriptionHandler.defaultFactory = function defaultFactory (session, options) {
+  var logger = session.ua.getLogger('sip.invitecontext.sessionDescriptionHandler', session.id);
+  var SessionDescriptionHandlerObserver = require('./SessionDescriptionHandlerObserver');
+  var observer = new SessionDescriptionHandlerObserver(session, options);
+  return new SessionDescriptionHandler(logger, observer, options);
 };
 
 SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandler.prototype, {
@@ -118,14 +122,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
   getDescription: {writable: true, value: function (options, modifiers) {
-    var self = this;
-    var shouldAcquireMedia = true;
-
-    if (this.session.disableRenegotiation) {
-      this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
-      return SIP.Utils.Promise.reject(new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler"));
-    }
-
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
@@ -136,8 +132,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     newConstraints = this.checkAndDefaultConstraints(newConstraints);
     if (JSON.stringify(newConstraints) !== JSON.stringify(this.constraints)) {
         this.constraints = newConstraints;
-    } else {
-        shouldAcquireMedia = false;
+        this.shouldAcquireMedia = true;
     }
 
     modifiers = modifiers || [];
@@ -146,60 +141,23 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
     modifiers = modifiers.concat(this.modifiers);
 
-    // Check to see if the peerConnection already has a local description
-    if (!shouldAcquireMedia && this.peerConnection.localDescription && this.peerConnection.localDescription.sdp && this.peerConnection.localDescription.sdp !== '') {
-      return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers).then(function(sdp) {
-        return {
-          body: sdp,
-          contentType: self.CONTENT_TYPE
-        };
-      });
-    }
-
-    // GUM and set myself up
-    self.logger.log('acquiring local media');
-    // TODO: Constraints should be named MediaStreamConstraints
-    return this.acquire(self.constraints)
-      .then(function acquireSucceeded(streams) {
-        self.logger.log('acquired local media streams');
-        return streams;
-      }, function acquireFailed(err) {
-        self.logger.error('unable to acquire streams');
-        self.logger.error(err);
-        throw err;
-      })
-      .then(function addStreams(streams) {
-        try {
-          streams = [].concat(streams);
-          streams.forEach(function (stream) {
-            if (self.peerConnection.addTrack) {
-              stream.getTracks().forEach(function (track) {
-                self.peerConnection.addTrack(track, stream);
-              });
-            } else {
-              // Chrome 59 does not support addTrack
-              self.peerConnection.addStream(stream);
-            }
-          }, this);
-        } catch(e) {
-          self.logger.error('error adding stream');
-          self.logger.error(e);
-          return SIP.Utils.Promise.reject(e);
-        }
-        return SIP.Utils.Promise.resolve();
-      })
-      .then(function streamAdditionSucceeded() {
-        return self.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
-      })
-      .then(function(sdp) {
-        return {
-          body: sdp,
-          contentType: self.CONTENT_TYPE
-        };
-      }).catch(function (e) {
-        this.session.disableRenegotiation = true;
-        throw e;
-      });
+    return SIP.Utils.Promise.resolve()
+    .then(function() {
+      if (this.shouldAcquireMedia) {
+        return this.acquire(this.constraints).then(function() {
+          this.shouldAcquireMedia = false;
+        }.bind(this));
+      }
+    }.bind(this))
+    .then(function() {
+      return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
+    }.bind(this))
+    .then(function(sdp) {
+      return {
+        body: sdp,
+        contentType: this.CONTENT_TYPE
+      };
+    }.bind(this));
   }},
 
   /**
@@ -238,25 +196,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
     var self = this;
 
-    // https://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser
-    var isFirefox = typeof InstallTrigger !== 'undefined';
-    if (!this.session.disableRenegotiation && isFirefox && this.peerConnection && this.isVideoHold(sessionDescription)) {
-      this.session.disableRenegotiation = true;
-    }
-
-    if (this.session.disableRenegotiation) {
-      this.logger.warn("The flag \"disableRenegotiation\" is set to true for this session description handler. We will not try to renegotiate.");
-      return SIP.Utils.Promise.reject(new SIP.Exceptions.RenegotiationError("disableRenegotiation flag set to true for this session description handler"));
-    }
-
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
     }
-
-    // Merge passed constraints with saved constraints and save
-    this.constraints = Object.assign({}, this.constraints, options.constraints);
-    this.constraints = this.checkAndDefaultConstraints(this.constraints);
 
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
@@ -269,30 +212,39 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       sdp: sessionDescription
     };
 
-    return SIP.Utils.reducePromises(modifiers, description)
-      .catch(function modifierError(e) {
-        self.logger.error("The modifiers did not resolve successfully");
-        self.logger.error(e);
-        throw e;
-      })
-      .then(function(modifiedDescription) {
-        self.emit('setDescription', modifiedDescription);
-        return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(modifiedDescription));
-      })
-      .catch(function setRemoteDescriptionError(e) {
-        self.session.disableRenegotiation = true;
-        self.logger.error(e);
-        self.emit('peerConnection-setRemoteDescriptionFailed', e);
-        throw e;
-      })
-      .then(function setRemoteDescriptionSuccess() {
-        if (self.peerConnection.getReceivers) {
-          self.emit('setRemoteDescription', self.peerConnection.getReceivers());
-        } else {
-          self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
-        }
-        self.emit('confirmed', self);
-      });
+    return SIP.Utils.Promise.resolve()
+    .then(function() {
+      if (this.shouldAcquireMedia) {
+        return this.acquire(this.constrains).then(function() {
+          this.shouldAcquireMedia = false;
+        }.bind(this));
+      }
+    }.bind(this))
+    .then(function() {
+      return SIP.Utils.reducePromises(modifiers, description);
+    })
+    .catch(function modifierError(e) {
+      self.logger.error("The modifiers did not resolve successfully");
+      self.logger.error(e);
+      throw e;
+    })
+    .then(function(modifiedDescription) {
+      self.emit('setDescription', modifiedDescription);
+      return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(modifiedDescription));
+    })
+    .catch(function setRemoteDescriptionError(e) {
+      self.logger.error(e);
+      self.emit('peerConnection-setRemoteDescriptionFailed', e);
+      throw e;
+    })
+    .then(function setRemoteDescriptionSuccess() {
+      if (self.peerConnection.getReceivers) {
+        self.emit('setRemoteDescription', self.peerConnection.getReceivers());
+      } else {
+        self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
+      }
+      self.emit('confirmed', self);
+    });
   }},
 
   /**
@@ -442,7 +394,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
 
     this.logger.log('New peer connection created');
-    this.session.emit('peerConnection-created', this.peerConnection);
 
     if ('ontrack' in this.peerConnection) {
       this.peerConnection.addEventListener('track', function(e) {
@@ -527,6 +478,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
        */
+      this.logger.log('acquiring local media');
       this.emit('userMediaRequest', constraints);
 
       if (constraints.audio || constraints.video) {
@@ -543,14 +495,54 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         // Local streams were explicitly excluded.
         resolve([]);
       }
+    }.bind(this))
+    .catch(function acquireFailed(err) {
+      this.logger.error('unable to acquire streams');
+      this.logger.error(err);
+      return SIP.Utils.Promise.reject(err);
+    }.bind(this))
+    .then(function acquireSucceeded(streams) {
+      this.logger.log('acquired local media streams');
+      try {
+        // Remove old tracks
+        if (this.peerConnection.removeTrack) {
+          this.peerConnection.getSenders().forEach(function (sender) {
+            this.peerConnection.removeTrack(sender);
+          });
+        }
+        return streams;
+      } catch(e) {
+        return SIP.Utils.Promise.reject(e);
+      }
+    }.bind(this))
+    .catch(function removeStreamsFailed(err) {
+      this.logger.error('error removing streams');
+      this.logger.error(err);
+      return SIP.Utils.Promise.reject(err);
+    }.bind(this))
+    .then(function addStreams(streams) {
+      try {
+        streams = [].concat(streams);
+        streams.forEach(function (stream) {
+          if (this.peerConnection.addTrack) {
+            stream.getTracks().forEach(function (track) {
+              this.peerConnection.addTrack(track, stream);
+            }, this);
+          } else {
+            // Chrome 59 does not support addTrack
+            this.peerConnection.addStream(stream);
+          }
+        }, this);
+      } catch(e) {
+        return SIP.Utils.Promise.reject(e);
+      }
+      return SIP.Utils.Promise.resolve();
+    }.bind(this))
+    .catch(function addStreamsFailed(err) {
+      this.logger.error('error adding stream');
+      this.logger.error(err);
+      return SIP.Utils.Promise.reject(err);
     }.bind(this));
-  }},
-
-  isVideoHold: {writable: true, value: function isVideoHold(description) {
-    if (description.search(/^(m=video.*?)[\s\S]*^(a=sendonly?)/gm) !== -1) {
-      return true;
-    }
-    return false;
   }},
 
   hasOffer: {writable: true, value: function hasOffer (where) {

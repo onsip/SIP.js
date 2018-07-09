@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "main": "dist/sip.min.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
@@ -31,7 +31,6 @@
     "babel-preset-env": "^1.6.1",
     "eslint": "^4.9.0",
     "jasmine": "^3.1.0",
-    "jasmine-core": "^3.1.0",
     "karma": "^2.0.2",
     "karma-cli": "^1.0.1",
     "karma-jasmine": "^1.1.0",

@@ -84,8 +84,6 @@ UA = function(configuration) {
     ict: {}
   };
 
-  this.transportRecoveryTimer = null;
-
   Object.defineProperties(this, {
     transactionsCount: {
       get: function() {
@@ -1031,6 +1029,9 @@ UA.prototype.loadConfig = function(configuration) {
         break;
       case 'password':
         this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
+        break;
+      case 'transportConstructor':
+          this.logger.log('· ' + parameter + ': ' + settings[parameter].name);
         break;
       default:
         this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));

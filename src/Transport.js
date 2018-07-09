@@ -21,12 +21,14 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   */
   connect: {writable: true, value: function connect (options) {
     options = options || {};
-    return this.connectPromise(options).then(function (overrideEvent) {!overrideEvent && this.emit('connected');}.bind(this));
+    return this.connectPromise(options).then(function (data) {!data.overrideEvent && this.emit('connected');}.bind(this));
   }},
 
   /**
   * Called by connect, must return a promise
+  * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
   * @abstract
+  * @private
   * @param {Object} [options]
   * @returns {Promise}
   */
@@ -40,24 +42,26 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   isConnected: {writable: true, value: function isConnected () {}},
 
   /**
-  * Sends a message then emits a sentMsg event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendMsgPromise
+  * Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise
   * @param {SIP.OutgoingRequest|String} msg
   * @param {Object} options
   * @returns {Promise}
   */
   send: {writable: true, value: function send (msg, options) {
     options = options || {};
-    return this.sendMsgPromise(msg).then(function (data) {!data.overrideEvent && this.emit('sentMsg', data.msg);}.bind(this));
+    return this.sendPromise(msg).then(function (data) {!data.overrideEvent && this.emit('messageSent', data.msg);}.bind(this));
   }},
 
   /**
   * Called by send, must return a promise
+  * promise must resolve to an object. object supports 2 parameters: msg - string (mandatory) and overrideEvent - Boolean (optional)
   * @abstract
+  * @private
   * @param {SIP.OutgoingRequest|String} msg
   * @param {Object} [options]
   * @returns {Promise}
   */
-  sendMsgPromise: {writable: true, value: function sendMsgPromise (msg, options) {}},
+  sendPromise: {writable: true, value: function sendPromise (msg, options) {}},
 
   /**
   * To be called when a message is received
@@ -73,12 +77,14 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   */
   disconnect: {writable: true, value: function disconnect (options) {
     options = options || {};
-    return this.disconnectPromise(options).then(function (overrideEvent) {!overrideEvent && this.emit('disconnected');}.bind(this));
+    return this.disconnectPromise(options).then(function (data) {!data.overrideEvent && this.emit('disconnected');}.bind(this));
   }},
 
   /**
   * Called by disconnect, must return a promise
+  * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
   * @abstract
+  * @private
   * @param {Object} [options]
   * @returns {Promise}
   */
@@ -93,10 +99,11 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
   }},
 
   /**
-   * Returns a promise which resolves once the UA is connected.
+   * Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected()
    * @returns {Promise}
    */
   waitForConnected: {writable: true, value: function waitForConnected () {
+    console.warn("DEPRECATION WARNING Transport.waitForConnected(): use afterConnected() instead");
     return new SIP.Utils.Promise(function(resolve) {
       this.afterConnected(resolve);
     }.bind(this));

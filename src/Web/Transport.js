@@ -38,15 +38,18 @@ Transport = function(logger, options) {
   this.server = null;
 
   this.connectionPromise = null;
+  this.connectDeferredResolve = null;
   this.connectionTimeout = null;
 
-  // Reconnection stuff
-  this.transportRecoverAttempts = 0;
-  this.transportRecoveryTimer = null;
+  this.disconnectionPromise = null;
+  this.disconnectDeferredResolve = null;
+
+  this.boundOnOpen = null;
+  this.boundOnMessage = null;
+  this.boundOnClose = null;
 
   this.reconnectionAttempts = 0;
   this.reconnectTimer = null;
-  this.lastTransportError = {};
 
   // Keep alive
   this.keepAliveInterval = null;
@@ -56,13 +59,7 @@ Transport = function(logger, options) {
 
   this.configuration = {};
 
-  try {
-    this.loadConfig(options);
-  } catch(e) {
-    this.status = C.STATUS_NOT_READY;
-    this.error = C.CONFIGURATION_ERROR;
-    throw e;
-  }
+  this.loadConfig(options);
 };
 
 Transport.prototype = Object.create(SIP.Transport.prototype, {
@@ -81,7 +78,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
    * @param {Object} [options]
    * @returns {Promise}
    */
-  sendMsgPromise: {writable: true, value: function sendMsgPromise (msg, options) {
+  sendPromise: {writable: true, value: function sendPromise (msg, options) {
     options = options || {};
     if (!this.statusAssert(C.STATUS_OPEN, options.force)) {
       this.onError('unable to send message - WebSocket not open');
@@ -106,25 +103,32 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * Disconnect socket.
   */
   disconnectPromise: {writable: true, value: function disconnectPromise (options) {
+    if (this.disconnectionPromise) {
+      return this.disconnectionPromise;
+    }
+    options = options || {};
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      SIP.Utils.Promise.reject();
+      return SIP.Utils.Promise.reject('Failed status transition - attempted to disconnect a socket that was not open');
     }
+    this.disconnectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
+      this.disconnectDeferredResolve = resolve;
 
-    if(this.ws) {
-      // Clear reconnectTimer
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      if (this.reconnectTimer) {
+        SIP.Timers.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
 
-      this.stopSendingKeepAlives();
+      if (this.ws) {
+        this.stopSendingKeepAlives();
 
-      this.logger.log('closing WebSocket ' + this.server.ws_uri);
-      this.ws.close(options.code, options.reason);
-    }
+        this.logger.log('closing WebSocket ' + this.server.ws_uri);
+        this.ws.close(options.code, options.reason);
+      } else {
+        reject('Attempted to disconnect but the websocket doesn\'t exist');
+      }
+    }.bind(this));
 
-    if (this.reconnectTimer) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    return SIP.Utils.Promise.resolve({overrideEvent: true});
+    return this.disconnectionPromise;
   }},
 
   /**
@@ -135,31 +139,33 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       return this.connectionPromise;
     }
     options = options || {};
-    this.server = this.server || this.getNextWsServer();
+    this.server = this.server || this.getNextWsServer(options.force);
 
     this.connectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
 
       if ((this.status === C.STATUS_OPEN || this.status === C.STATUS_CLOSING) && !options.force) {
         this.logger.warn('WebSocket ' + this.server.ws_uri + ' is already connected');
-        reject();
+        reject('Failed status check - attempted to open a connection but already open/closing');
         return;
       }
 
+      this.connectDeferredResolve = resolve;
+
+      this.status = C.STATUS_CONNECTING;
       this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
+      this.disposeWs();
       try {
         this.ws = new WebSocket(this.server.ws_uri, 'sip');
       } catch (e) {
         this.ws = null;
         this.status = C.STATUS_CLOSED; // force status to closed in error case
         this.onError('error connecting to WebSocket ' + this.server.ws_uri + ':' + e);
-        reject();
+        reject('Failed to create a websocket');
         return;
       }
 
-      this.transportRecoverAttempts = 0;
-
       if (!this.ws) {
-        reject();
+        reject('Unexpected instance websocket not set');
         return;
       }
 
@@ -167,10 +173,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         this.onError('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
       }.bind(this), this.configuration.connectionTimeout * 1000);
 
-      this.ws.addEventListener('open', this.onOpen.bind(this, resolve));
-      this.ws.addEventListener('message', this.onMessage.bind(this));
-      this.ws.addEventListener('close', this.onClose.bind(this));
-
+      this.boundOnOpen = this.onOpen.bind(this);
+      this.boundOnMessage = this.onMessage.bind(this);
+      this.boundOnClose = this.onClose.bind(this);
+      this.ws.addEventListener('open', this.boundOnOpen);
+      this.ws.addEventListener('message', this.boundOnMessage);
+      this.ws.addEventListener('close', this.boundOnClose);
     }.bind(this));
 
     return this.connectionPromise;
@@ -182,7 +190,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @event
   * @param {event} e
   */
-  onOpen: {writable: true, value: function onOpen (resolve) {
+  onOpen: {writable: true, value: function onOpen () {
     this.status = C.STATUS_OPEN; // quietly force status to open
     this.emit('connected');
     SIP.Timers.clearTimeout(this.connectionTimeout);
@@ -197,9 +205,18 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     // Reset reconnectionAttempts
     this.reconnectionAttempts = 0;
 
+    // Reset disconnection promise so we can disconnect from a fresh state
+    this.disconnectionPromise = null;
+    this.disconnectDeferredResolve = null;
+
     // Start sending keep-alives
     this.startSendingKeepAlives();
-    resolve({overrideEvent: true});
+
+    if (this.connectDeferredResolve) {
+      this.connectDeferredResolve({overrideEvent: true});
+    } else {
+      this.logger.warn('Unexpected websocket.onOpen with no connectDeferredResolve');
+    }
   }},
 
   /**
@@ -207,33 +224,31 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @param {event} e
   */
   onClose: {writable: true, value: function onClose (e) {
-    var oldStatus = this.status;
-    this.status = C.STATUS_CLOSED; // quietly force status to closed
-
     this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-    this.lastTransportError = {code: e.code, reason: e.reason};
-    this.emit('disconnected', this.lastTransportError);
+    this.emit('disconnected', {code: e.code, reason: e.reason});
+
+    if (this.status !== C.STATUS_CLOSING) {
+      this.logger.warn('WebSocket abrupt disconnection');
+      this.emit('transportError');
+    }
 
     this.stopSendingKeepAlives();
+
+    // Clean up connection variables so we can connect again from a fresh state
     SIP.Timers.clearTimeout(this.connectionTimeout);
     this.connectionTimeout = null;
+    this.connectionPromise = null;
+    this.connectDeferredResolve = null;
 
-    if (this.reconnectionAttempts > 0) {
-      this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-      this.reconnect();
-    } else {
-      if (oldStatus === C.STATUS_OPEN && e.wasClean === false) {
-        this.disposeWs();
-        this.logger.warn('WebSocket abrupt disconnection');
-      }
-      // Check whether the user requested to close.
-      if (oldStatus === C.STATUS_CLOSING) {
-        return;
-      } else {
-        this.emit('transportError');
-        this.reconnect();
-      }
+    // Check whether the user requested to close.
+    if (this.disconnectDeferredResolve) {
+      this.disconnectDeferredResolve({ overrideEvent: true });
+      this.statusTransition(C.STATUS_CLOSED);
+      this.disconnectDeferredResolve = null;
+      return;
     }
+    this.status = C.STATUS_CLOSED; // quietly force status to closed
+    this.reconnect();
   }},
 
   /**
@@ -243,10 +258,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   disposeWs: {writable: true, value: function disposeWs () {
     if (this.ws) {
-      this.ws.removeEventListener('open', this.onOpen.bind(this));
-      this.ws.removeEventListener('message', this.onMessage.bind(this));
-      this.ws.removeEventListener('error', this.onError.bind(this));
-      this.ws.removeEventListener('close', this.onClose.bind(this));
+      this.ws.removeEventListener('open', this.boundOnOpen);
+      this.ws.removeEventListener('message', this.boundOnMessage);
+      this.ws.removeEventListener('close', this.boundOnClose);
+      this.boundOnOpen = null;
+      this.boundOnMessage = null;
+      this.boundOnClose = null;
       this.ws = null;
     }
   }},
@@ -310,18 +327,21 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @private
   */
   reconnect: {writable: true, value: function reconnect () {
+    if (this.reconnectionAttempts > 0) {
+      this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
+    }
+
     if (this.noAvailableServers()) {
       this.logger.warn('no available ws servers left - going to closed state');
       this.status = C.STATUS_CLOSED;
+      this.resetServerErrorStatus();
       return;
     }
 
-    this.connectionPromise = null;
     if (this.isConnected()) {
       this.logger.warn('attempted to reconnect while connected - forcing disconnect');
       this.disconnect({force: true});
     }
-    this.status = C.STATUS_CONNECTING; // quietly force status to connecting
 
     this.reconnectionAttempts += 1;
 
@@ -333,29 +353,32 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.server = this.getNextWsServer();
       this.reconnectionAttempts = 0;
       this.reconnect();
-      //recover
-    } else if (this.reconnectionAttempts === 1) {
-      this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
-      this.disposeWs();
-      this.connect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
-
       this.reconnectTimer = SIP.Timers.setTimeout(function() {
-        this.disposeWs();
         this.connect();
         this.reconnectTimer = null;
-      }, this.configuration.reconnectionTimeout * 1000);
+      }.bind(this), (this.reconnectionAttempts === 1) ? 0 : this.configuration.reconnectionTimeout * 1000);
     }
   }},
 
+  /**
+  * Resets the error state of all servers in the configuration
+  */
+  resetServerErrorStatus: {writable: true, value: function resetServerErrorStatus () {
+    var idx, length = this.configuration.wsServers.length;
+    for(idx = 0; idx < length; idx++) {
+      this.configuration.wsServers[idx].isError = false;
+    }
+  }},
 
   /**
   * Retrieve the next server to which connect.
   * @private
+  * @param {Boolean} force allows bypass of server error status checking
   * @returns {Object} wsServer
   */
-  getNextWsServer: {writable: true, value: function getNextWsServer () {
+  getNextWsServer: {writable: true, value: function getNextWsServer (force) {
     if (this.noAvailableServers()) {
       this.logger.warn('attempted to get next ws server but there are no available ws servers left');
       return;
@@ -368,7 +391,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     for (idx = 0; idx < length; idx++) {
       wsServer = this.configuration.wsServers[idx];
 
-      if (wsServer.isError) {
+      if (wsServer.isError && !force) {
         continue;
       } else if (candidates.length === 0) {
         candidates.push(wsServer);
@@ -390,13 +413,13 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @returns {Boolean}
   */
   noAvailableServers: {writable: true, value: function noAvailableServers () {
-    var server, isAllError = true;
+    var server;
     for (server in this.configuration.wsServers) {
       if (!this.configuration.wsServers[server].isError) {
-        isAllError = false;
+        return false;
       }
     }
-    return isAllError;
+    return true;
   }},
 
   //==============================
@@ -590,13 +613,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         }
       }
     }
-
-    // Sanity Checks
-
-    // Connection recovery intervals
-    // if(settings.connectionRecoveryMaxInterval < settings.connectionRecoveryMinInterval) {
-    //   throw new SIP.Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
-    // }
 
     var skeleton = {};
     // Fill the value of the configuration_skeleton
