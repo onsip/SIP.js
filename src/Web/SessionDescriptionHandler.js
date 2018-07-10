@@ -338,10 +338,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
   // Creates an RTCSessionDescriptionInit from an RTCSessionDescription
   createRTCSessionDescriptionInit: {writable: true, value: function createRTCSessionDescriptionInit(RTCSessionDescription) {
-    return {
+    return new this.WebRTC.RTCSessionDescription({
       type: RTCSessionDescription.type,
       sdp: RTCSessionDescription.sdp
-    };
+    });
   }},
 
   addDefaultIceCheckingTimeout: {writable: true, value: function addDefaultIceCheckingTimeout (peerConnectionOptions) {
