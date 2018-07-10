@@ -508,7 +508,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         if (this.peerConnection.removeTrack) {
           this.peerConnection.getSenders().forEach(function (sender) {
             this.peerConnection.removeTrack(sender);
-          });
+          }, this);
         }
         return streams;
       } catch(e) {
