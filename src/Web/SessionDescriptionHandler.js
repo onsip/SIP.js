@@ -153,6 +153,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
     }.bind(this))
     .then(function(sdp) {
+      this.emit('getDescription', sdp);
       return {
         body: sdp,
         contentType: this.CONTENT_TYPE
@@ -214,7 +215,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     return SIP.Utils.Promise.resolve()
     .then(function() {
-      if (this.shouldAcquireMedia) {
+      // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
+      if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
         return this.acquire(this.constrains).then(function() {
           this.shouldAcquireMedia = false;
         }.bind(this));
@@ -325,7 +327,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return SIP.Utils.reducePromises(modifiers, localDescription);
       })
       .then(function(localDescription) {
-        self.emit('getDescription', localDescription);
         self.setDirection(localDescription.sdp);
         return localDescription.sdp;
       })
@@ -359,7 +360,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   checkAndDefaultConstraints: {writable: true, value: function checkAndDefaultConstraints (constraints) {
-    var defaultConstraints = {audio: true, video: true};
+    var defaultConstraints = {audio: true, video: !this.options.alwaysAcquireMediaFirst};
+
     constraints = constraints || defaultConstraints;
     // Empty object check
     if (Object.keys(constraints).length === 0 && constraints.constructor === Object) {
@@ -508,7 +510,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         if (this.peerConnection.removeTrack) {
           this.peerConnection.getSenders().forEach(function (sender) {
             this.peerConnection.removeTrack(sender);
-          });
+          }, this);
         }
         return streams;
       } catch(e) {

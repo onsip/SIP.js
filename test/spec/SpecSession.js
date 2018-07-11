@@ -1592,9 +1592,8 @@ describe('InviteClientContext', function() {
 
   describe('.invite', function() {
 
-    it('sets SessionDescriptionHandler and ua.sessions', function() {
+    it('sets ua.sessions', function() {
       InviteClientContext.invite();
-      expect(InviteClientContext.sessionDescriptionHandler).toBeDefined();
       expect(InviteClientContext.ua.sessions[InviteClientContext.id]).toBe(InviteClientContext);
     });
 

@@ -35,6 +35,7 @@ describe('Web/Simple', function() {
 
       transportOptions: {
         wsServers: ['wss://sip-ws.example.com'],
+        traceSip: undefined
       }
     }
 

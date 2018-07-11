@@ -61,12 +61,19 @@ var Simple = function (options) {
   // https://stackoverflow.com/questions/7944460/detect-safari-browser
   var browserUa = global.navigator.userAgent.toLowerCase();
   var isSafari = false;
+  var isFirefox = false;
   if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
     isSafari = true;
+  } else if (browserUa.indexOf('firefox') > -1 && browserUa.indexOf('chrome') < 0) {
+    isFirefox = true;
   }
   var sessionDescriptionHandlerFactoryOptions = {};
   if (isSafari) {
     sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.Web.Modifiers.stripG722];
+  }
+
+  if (isFirefox) {
+    sessionDescriptionHandlerFactoryOptions.alwaysAcquireMediaFirst = true;
   }
 
   if (!this.options.ua.uri) {
@@ -84,7 +91,10 @@ var Simple = function (options) {
     // Fixed Options
     register:          true,
     sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
-    transportOptions: {wsServers: this.options.ua.wsServers}
+    transportOptions: {
+      traceSip: this.options.ua.traceSip,
+      wsServers: this.options.ua.wsServers
+    }
   });
 
   this.state = C.STATUS_NULL;

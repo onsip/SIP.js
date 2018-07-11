@@ -1399,37 +1399,39 @@ InviteClientContext.prototype = Object.create({}, {
     //Note: placing in constructor breaks call to request.cancel on close... User does not need this anyway
     this.ua.sessions[this.id] = this;
 
-    if (this.inviteWithoutSdp) {
-      //just send an invite with no sdp...
-      this.request.body = self.renderbody;
-      this.status = C.STATUS_INVITE_SENT;
-      this.send();
-    } else {
-      //Initialize Media Session
-      this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
-      this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
+    // This should allow the function to return so that listeners can be set up for these events
+    SIP.Utils.Promise.resolve().then(function() {
+      if (this.inviteWithoutSdp) {
+        //just send an invite with no sdp...
+        this.request.body = self.renderbody;
+        this.status = C.STATUS_INVITE_SENT;
+        this.send();
+      } else {
+        //Initialize Media Session
+        this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(this, this.sessionDescriptionHandlerFactoryOptions);
+        this.emit('SessionDescriptionHandler-created', this.sessionDescriptionHandler);
 
-      this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
-      .then(
-        function onSuccess(description) {
-          if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
-            return;
+        this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
+        .then(
+          function onSuccess(description) {
+            if (self.isCanceled || self.status === C.STATUS_TERMINATED) {
+              return;
+            }
+            self.hasOffer = true;
+            self.request.body = description;
+            self.status = C.STATUS_INVITE_SENT;
+            self.send();
+          },
+          function onFailure() {
+            if (self.status === C.STATUS_TERMINATED) {
+              return;
+            }
+            self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+            self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
           }
-          self.hasOffer = true;
-          self.request.body = description;
-          self.status = C.STATUS_INVITE_SENT;
-          self.send();
-        },
-        function onFailure() {
-          if (self.status === C.STATUS_TERMINATED) {
-            return;
-          }
-          self.failed(null, SIP.C.causes.WEBRTC_ERROR);
-          self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
-        }
-      );
-    }
-
+        );
+      }
+    }.bind(this));
     return this;
   }},
 
