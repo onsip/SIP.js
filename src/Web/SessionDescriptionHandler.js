@@ -153,6 +153,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
     }.bind(this))
     .then(function(sdp) {
+      this.emit('getDescription', sdp);
       return {
         body: sdp,
         contentType: this.CONTENT_TYPE
@@ -325,7 +326,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return SIP.Utils.reducePromises(modifiers, localDescription);
       })
       .then(function(localDescription) {
-        self.emit('getDescription', localDescription);
         self.setDirection(localDescription.sdp);
         return localDescription.sdp;
       })
