@@ -215,7 +215,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     return SIP.Utils.Promise.resolve()
     .then(function() {
-      if (this.shouldAcquireMedia) {
+      // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
+      if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
         return this.acquire(this.constrains).then(function() {
           this.shouldAcquireMedia = false;
         }.bind(this));
@@ -359,7 +360,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   checkAndDefaultConstraints: {writable: true, value: function checkAndDefaultConstraints (constraints) {
-    var defaultConstraints = {audio: true, video: true};
+    var defaultConstraints = {audio: true, video: !this.options.alwaysAcquireMediaFirst};
+
     constraints = constraints || defaultConstraints;
     // Empty object check
     if (Object.keys(constraints).length === 0 && constraints.constructor === Object) {
