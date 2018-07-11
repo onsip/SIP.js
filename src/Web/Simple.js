@@ -84,7 +84,10 @@ var Simple = function (options) {
     // Fixed Options
     register:          true,
     sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
-    transportOptions: {wsServers: this.options.ua.wsServers}
+    transportOptions: {
+      traceSip: this.options.ua.traceSip,
+      wsServers: this.options.ua.wsServers
+    }
   });
 
   this.state = C.STATUS_NULL;
