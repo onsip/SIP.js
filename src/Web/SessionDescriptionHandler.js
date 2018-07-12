@@ -216,7 +216,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     .then(function() {
       // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
       if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
-        return this.acquire(this.constrains).then(function() {
+        return this.acquire(this.constraints).then(function() {
           this.shouldAcquireMedia = false;
         }.bind(this));
       }
