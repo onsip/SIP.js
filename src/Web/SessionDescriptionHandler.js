@@ -45,8 +45,7 @@ var SessionDescriptionHandler = function(logger, observer, options) {
   this.WebRTC = {
     MediaStream           : environment.MediaStream,
     getUserMedia          : environment.navigator.mediaDevices.getUserMedia.bind(environment.navigator.mediaDevices),
-    RTCPeerConnection     : environment.RTCPeerConnection,
-    RTCSessionDescription : environment.RTCSessionDescription
+    RTCPeerConnection     : environment.RTCPeerConnection
   };
 
   this.iceGatheringDeferred = null;
@@ -232,7 +231,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     })
     .then(function(modifiedDescription) {
       self.emit('setDescription', modifiedDescription);
-      return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(modifiedDescription));
+      return self.peerConnection.setRemoteDescription(modifiedDescription);
     })
     .catch(function setRemoteDescriptionError(e) {
       self.logger.error(e);
