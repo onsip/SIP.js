@@ -14,8 +14,6 @@ module.exports = function(config) {
       'test/helpers/*.js',
       'dist/sip.js',
       'test/spec/**/*.js',
-      './node_modules/phantomjs-polyfill-object-assign/object-assign-polyfill.js',
-
     ],
 
     // list of files to exclude
@@ -72,10 +70,10 @@ module.exports = function(config) {
     concurrency: Infinity,
 
     plugins : [
+      'karma-chrome-launcher',
       'karma-jasmine',
       'karma-jasmine-html-reporter',
       'karma-mocha-reporter',
-      'karma-phantomjs-launcher',
       'karma-webpack'
     ]
   })
