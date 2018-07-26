@@ -438,6 +438,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     }
 
     this.keepAliveDebounceTimeout = SIP.Timers.setTimeout(function() {
+      this.clearKeepAliveTimeout();
       this.emit('keepAliveDebounceTimeout');
     }.bind(this), this.configuration.keepAliveDebounce * 1000);
 
