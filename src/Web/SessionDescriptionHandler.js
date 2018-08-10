@@ -126,6 +126,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.initPeerConnection(options.peerConnectionOptions);
     }
 
+    var mediaOptions = options.media || {};
+
     // Merge passed constraints with saved constraints and save
     var newConstraints = Object.assign({}, this.constraints, options.constraints);
     newConstraints = this.checkAndDefaultConstraints(newConstraints);
@@ -143,7 +145,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     return SIP.Utils.Promise.resolve()
     .then(function() {
       if (this.shouldAcquireMedia) {
-        return this.acquire(this.constraints).then(function() {
+        return this.acquire(this.constraints, mediaOptions).then(function() {
           this.shouldAcquireMedia = false;
         }.bind(this));
       }
@@ -201,6 +203,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.initPeerConnection(options.peerConnectionOptions);
     }
 
+    var mediaOptions = options.media || {};
+
     modifiers = modifiers || [];
     if (!Array.isArray(modifiers)) {
       modifiers = [modifiers];
@@ -216,7 +220,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     .then(function() {
       // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
       if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
-        return this.acquire(this.constraints).then(function() {
+        return this.acquire(this.constraints, mediaOptions).then(function() {
           this.shouldAcquireMedia = false;
         }.bind(this));
       }
@@ -470,7 +474,9 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     };
   }},
 
-  acquire: {writable: true, value: function acquire (constraints) {
+  acquire: {writable: true, value: function acquire (constraints, options) {
+    options = options || {};
+
     // Default audio & video to true
     constraints = this.checkAndDefaultConstraints(constraints);
 
@@ -478,10 +484,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       /**
        * If media streams have been provided in options use them instead of requesting new ones
        */
-      if (this.options.media) {
+      if (options.streams) {
         this.logger.log('reusing media stream');
         this.observer.trackAdded();
-        resolve(this.options.media);
+        resolve(options.streams);
       } else {
         /*
         * Make the call asynchronous, so that ICCs have a chance
