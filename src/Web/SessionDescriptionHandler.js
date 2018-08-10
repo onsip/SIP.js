@@ -475,26 +475,35 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     constraints = this.checkAndDefaultConstraints(constraints);
 
     return new SIP.Utils.Promise(function(resolve, reject) {
-      /*
-       * Make the call asynchronous, so that ICCs have a chance
-       * to define callbacks to `userMediaRequest`
+      /**
+       * If media streams have been provided in options use them instead of requesting new ones
        */
-      this.logger.log('acquiring local media');
-      this.emit('userMediaRequest', constraints);
-
-      if (constraints.audio || constraints.video) {
-        this.WebRTC.getUserMedia(constraints)
-        .then(function(streams) {
-          this.observer.trackAdded();
-          this.emit('userMedia', streams);
-          resolve(streams);
-        }.bind(this)).catch(function(e) {
-          this.emit('userMediaFailed', e);
-          reject(e);
-        }.bind(this));
+      if (this.options.media) {
+        this.logger.log('reusing media stream');
+        this.observer.trackAdded();
+        resolve(this.options.media);
       } else {
-        // Local streams were explicitly excluded.
-        resolve([]);
+        /*
+        * Make the call asynchronous, so that ICCs have a chance
+        * to define callbacks to `userMediaRequest`
+        */
+        this.logger.log('acquiring local media');
+        this.emit('userMediaRequest', constraints);
+
+        if (constraints.audio || constraints.video) {
+          this.WebRTC.getUserMedia(constraints)
+          .then(function(streams) {
+            this.observer.trackAdded();
+            this.emit('userMedia', streams);
+            resolve(streams);
+          }.bind(this)).catch(function(e) {
+            this.emit('userMediaFailed', e);
+            reject(e);
+          }.bind(this));
+        } else {
+          // Local streams were explicitly excluded.
+          resolve([]);
+        }
       }
     }.bind(this))
     .catch(function acquireFailed(err) {
