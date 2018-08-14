@@ -1071,7 +1071,7 @@ UA.prototype.getConfigurationCheck = function () {
       },
 
       transportConstructor: function(transportConstructor) {
-        if (typeof transportConstructor === Function) {
+        if (transportConstructor instanceof Function) {
           return transportConstructor;
         }
       },

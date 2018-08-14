@@ -45,8 +45,7 @@ var SessionDescriptionHandler = function(logger, observer, options) {
   this.WebRTC = {
     MediaStream           : environment.MediaStream,
     getUserMedia          : environment.navigator.mediaDevices.getUserMedia.bind(environment.navigator.mediaDevices),
-    RTCPeerConnection     : environment.RTCPeerConnection,
-    RTCSessionDescription : environment.RTCSessionDescription
+    RTCPeerConnection     : environment.RTCPeerConnection
   };
 
   this.iceGatheringDeferred = null;
@@ -152,10 +151,10 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     .then(function() {
       return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
     }.bind(this))
-    .then(function(sdp) {
-      this.emit('getDescription', sdp);
+    .then(function(description) {
+      this.emit('getDescription', description);
       return {
-        body: sdp,
+        body: description.sdp,
         contentType: this.CONTENT_TYPE
       };
     }.bind(this));
@@ -217,7 +216,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     .then(function() {
       // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
       if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
-        return this.acquire(this.constrains).then(function() {
+        return this.acquire(this.constraints).then(function() {
           this.shouldAcquireMedia = false;
         }.bind(this));
       }
@@ -232,7 +231,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     })
     .then(function(modifiedDescription) {
       self.emit('setDescription', modifiedDescription);
-      return self.peerConnection.setRemoteDescription(new self.WebRTC.RTCSessionDescription(modifiedDescription));
+      return self.peerConnection.setRemoteDescription(modifiedDescription);
     })
     .catch(function setRemoteDescriptionError(e) {
       self.logger.error(e);
@@ -328,7 +327,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       })
       .then(function(localDescription) {
         self.setDirection(localDescription.sdp);
-        return localDescription.sdp;
+        return localDescription;
       })
       .catch(function createOfferOrAnswerError (e) {
         self.logger.error(e);
