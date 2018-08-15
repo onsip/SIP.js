@@ -382,6 +382,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     options = options || {};
     options = this.addDefaultIceCheckingTimeout(options);
     options.rtcConfiguration = options.rtcConfiguration || {};
+    options.rtcConstraints = options.rtcConstraints || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
 
     this.logger.log('initPeerConnection');
@@ -392,7 +393,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.peerConnection.close();
     }
 
-    this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
+    this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration, options.rtcConstraints);
 
     this.logger.log('New peer connection created');
 
