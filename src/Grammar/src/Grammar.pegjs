@@ -813,7 +813,7 @@ via_ttl           = "ttl"i EQUAL via_ttl_value: ttl {
 via_maddr         = "maddr"i EQUAL via_maddr: host {
                       options.data.maddr = via_maddr; }
 
-via_received      = "received"i EQUAL via_received: (IPv4address / IPv6address) {
+via_received      = "received"i EQUAL via_received: (IPv4address / IPv6address / IPv6reference) {
                       options.data.received = via_received; }
 
 via_branch        = "branch"i EQUAL via_branch: token {
