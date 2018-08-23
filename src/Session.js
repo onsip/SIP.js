@@ -554,6 +554,9 @@ Session.prototype = {
         request.reply(200, 'OK');
         this.emit('notify', request);
         break;
+      case SIP.C.UPDATE:
+        request.reply(200, 'OK');
+        break;
     }
   },
 

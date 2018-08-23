@@ -1,5 +1,5 @@
 {
-  "name": "sip.js",
+  "name": "m800-sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
   "version": "0.11.3",
@@ -57,7 +57,8 @@
     "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
-    "buildAndBrowserTest": "npm run build && npm run browserTest"
+    "buildAndBrowserTest": "npm run build && npm run browserTest",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "crypto-js": "^3.1.9-1"
