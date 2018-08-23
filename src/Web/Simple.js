@@ -61,12 +61,19 @@ var Simple = function (options) {
   // https://stackoverflow.com/questions/7944460/detect-safari-browser
   var browserUa = global.navigator.userAgent.toLowerCase();
   var isSafari = false;
+  var isFirefox = false;
   if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
     isSafari = true;
+  } else if (browserUa.indexOf('firefox') > -1 && browserUa.indexOf('chrome') < 0) {
+    isFirefox = true;
   }
   var sessionDescriptionHandlerFactoryOptions = {};
   if (isSafari) {
-    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.WebRTC.Modifiers.stripG722];
+    sessionDescriptionHandlerFactoryOptions.modifiers = [SIP.Web.Modifiers.stripG722];
+  }
+
+  if (isFirefox) {
+    sessionDescriptionHandlerFactoryOptions.alwaysAcquireMediaFirst = true;
   }
 
   if (!this.options.ua.uri) {
@@ -75,17 +82,19 @@ var Simple = function (options) {
 
   this.ua = new SIP.UA({
     // User Configurable Options
-    wsServers:         this.options.ua.wsServers,
     uri:               this.options.ua.uri,
     authorizationUser: this.options.ua.authorizationUser,
     password:          this.options.ua.password,
     displayName:       this.options.ua.displayName,
     // Undocumented "Advanced" Options
-    traceSip:          this.options.ua.traceSip,
     userAgentString:   this.options.ua.userAgentString,
     // Fixed Options
     register:          true,
     sessionDescriptionHandlerFactoryOptions: sessionDescriptionHandlerFactoryOptions,
+    transportOptions: {
+      traceSip: this.options.ua.traceSip,
+      wsServers: this.options.ua.wsServers
+    }
   });
 
   this.state = C.STATUS_NULL;

@@ -25,6 +25,8 @@ Thank you to all of the contributors with code and patches to the SIP.js project
 * [Matthieu Sieben](https://github.com/matthieusieben)
 * [Dan Jenkins](https://github.com/danjenkins)
 * [Vadym Yatsyuk](https://github.com/VadimDez)
+* [Jim Greenberg](https://github.com/JimGreenberg)
+* [andrew127](https://github.com/andrew127)
 
 Much credit goes to the original authors of the JsSIP project.  Thank you to all.
 

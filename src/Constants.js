@@ -77,6 +77,7 @@ return {
   REGISTER:   'REGISTER',
   UPDATE:     'UPDATE',
   SUBSCRIBE:  'SUBSCRIBE',
+  PUBLISH:    'PUBLISH',
   REFER:      'REFER',
   PRACK:      'PRACK',
 
@@ -195,6 +196,11 @@ return {
     tdialog:                    true,  // RFC 4538
     timer:                      true,  // RFC 4028
     uui:                        true   // RFC 7433
+  },
+
+  dtmfType: {
+    INFO: 'info',
+    RTP: 'rtp'
   }
 };
 };

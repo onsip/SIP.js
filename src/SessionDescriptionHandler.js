@@ -10,7 +10,7 @@
  * @param {Object} [options]
  */
 module.exports = function (EventEmitter) {
-var SessionDescriptionHandler = function(session, options) {};
+var SessionDescriptionHandler = function() {};
 
 SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
 
@@ -48,7 +48,21 @@ SessionDescriptionHandler.prototype = Object.create(EventEmitter.prototype, {
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}}
+  setDescription: {value: function setDescription (sessionDescription, options, modifiers) {}},
+
+  /**
+   * Send DTMF via RTP (RFC 4733)
+   * @param {String} tones A string containing DTMF digits
+   * @param {Object} [options] Options object to be used by sendDtmf
+   * @returns {boolean} true if DTMF send is successful, false otherwise
+   */
+   sendDtmf: {value: function sendDtmf (tones, options) {}},
+
+   /**
+   * Get the direction of the session description
+   * @returns {String} direction of the description
+   */
+   getDirection: {value: function getDirection() {}},
 });
 
 return SessionDescriptionHandler;

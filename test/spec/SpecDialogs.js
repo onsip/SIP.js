@@ -18,7 +18,7 @@ describe('Dialogs', function() {
         };
       }
     });
-    ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send']);
+    ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send', 'on', 'removeListener']);
     message = SIP.Parser.parseMessage([
       'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
       'Max-Forwards: 65',

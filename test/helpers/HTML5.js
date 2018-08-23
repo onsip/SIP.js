@@ -2,6 +2,7 @@
 
   /** WebSocket **/
   function FakeWebSocket(server, protocol) {
+    this.onopen = function () {};
     this.readyState = 0; // CONNECTING
     var that = this;
     spyOn(this, 'send');
@@ -28,6 +29,37 @@
     },
     causeError: function (e) {
       if (this.onerror) this.onerror(e);
+    },
+    addEventListener: function (e,callback) {
+      switch(e) {
+        case 'open':
+          this.onopen = callback;
+          break;
+        case 'close':
+          this.onclose = callback;
+          break;
+        case 'message':
+          this.onmessage = callback;
+          break;
+        default:
+          break;
+      }
+    },
+    removeEventListener: function (e,callback) {
+      // for this dummy websocket that only supports 1 listener per event, we won't bother checking the callback
+      switch(e) {
+        case 'open':
+          this.onopen = undefined;
+          break;
+        case 'close':
+          this.onclose = undefined;
+          break;
+        case 'message':
+          this.onmessage = undefined;
+          break;
+        default:
+          break;
+      }
     }
   };
   FakeWebSocket.CONNECTING = 0;

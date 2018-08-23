@@ -24,6 +24,9 @@ ServerContext = function (ua, request) {
 
   this.localIdentity = request.to;
   this.remoteIdentity = request.from;
+  if (request.hasHeader('P-Asserted-Identity')) {
+    this.assertedIdentity = new SIP.NameAddrHeader.parse(request.getHeader('P-Asserted-Identity'));
+  }
 };
 
 ServerContext.prototype = Object.create(SIP.EventEmitter.prototype);

@@ -1,7 +1,7 @@
+/* eslint-disable strict, no-undef */
 describe('UA', function() {
   var UA;
   var uri;
-  var connectedRestore;
 
   beforeEach(function() {
     uri = 'alice@example.com';
@@ -38,13 +38,6 @@ describe('UA', function() {
 
     expect(noParams).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual(jasmine.any(String));
-    expect(myUA.configuration.wsServers).toEqual([{
-      scheme: 'WSS',
-      sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
-      status: 0,
-      weight: 0,
-      ws_uri: 'wss://edge.sip.onsip.com'
-    }]);
   });
 
   it('can be created with just a string URI', function () {
@@ -55,13 +48,6 @@ describe('UA', function() {
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
-    expect(myUA.configuration.wsServers).toEqual([{
-      scheme: 'WSS',
-      sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
-      status: 0,
-      weight: 0,
-      ws_uri: 'wss://edge.sip.onsip.com'
-    }]);
   });
 
   it('can be created with just a String (object) URI', function () {
@@ -72,13 +58,6 @@ describe('UA', function() {
 
     expect(oneParam).not.toThrow();
     expect(myUA.configuration.uri.toString()).toEqual('sip:will@example.com');
-    expect(myUA.configuration.wsServers).toEqual([{
-      scheme: 'WSS',
-      sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
-      status: 0,
-      weight: 0,
-      ws_uri: 'wss://edge.sip.onsip.com'
-    }]);
   });
 
   it('sets the instance variables', function() {
@@ -88,7 +67,7 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
-    // var defaultFactory = SIP.WebRTC.sessionDescriptionHandler.defaultFactory;
+    // var defaultFactory = SIP.Web.sessionDescriptionHandler.defaultFactory;
     // expect(UA.configuration.sessionDescriptionHandlerFactory).toBe(defaultFactory);
     expect(UA.log).toBeDefined();
     expect(UA.logger).toBeDefined();
@@ -103,7 +82,6 @@ describe('UA', function() {
     expect(UA.status).toBeDefined();
     expect(UA.error).toBeDefined();
     expect(UA.transactions).toBeDefined();
-    expect(UA.transportRecoverAttempts).toBeDefined();
 
     // var mediaHandlerFactory = function(){};
     // mediaHandlerFactory.isSupported = function(){};
@@ -125,29 +103,21 @@ describe('UA', function() {
 
   describe('.start', function() {
     beforeEach(function() {
-      spyOn(SIP, 'Transport');
-      SIP.Transport.C = {
-        STATUS_READY:        0,
-        STATUS_DISCONNECTED: 1,
-        STATUS_ERROR:        2
-      };
+      spyOn(UA.configuration, 'transportConstructor').and.callThrough();
 
-      UA.transport = {connect: jasmine.createSpy('connect')};
+      UA.transport = jasmine.createSpyObj('transport', ['connect', 'on']);
     });
 
-    it('creates a SIP transport if the status is C.STATUS_INIT', function() {
+    xit('creates a SIP transport if the status is C.STATUS_INIT', function() {
       UA.status = SIP.UA.C.STATUS_INIT;
-      UA.getNextWsServer = jasmine.createSpy('getNextWsServer').and.callFake(function() {
-        return 'ws-server';
-      });
       UA.start();
-      expect(SIP.Transport).toHaveBeenCalledWith(UA, 'ws-server');
+      expect(UA.configuration.transportConstructor).toHaveBeenCalled();
     });
 
     it('sets the status to ready and connect the transport if the status is C.STATUS_USER_CLOSED', function() {
       UA.status = SIP.UA.C.STATUS_USER_CLOSED;
       UA.start();
-      expect(UA.transport.connect).toHaveBeenCalledWith();
+      expect(UA.transport.connect).toHaveBeenCalled();
       expect(UA.status).toBe(SIP.UA.C.STATUS_READY);
     });
 
@@ -191,13 +161,13 @@ describe('UA', function() {
       expect(UA.logger.warn).toHaveBeenCalledWith('UA already closed');
     });
 
-    it('clears the transportRecoveryTimer', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
-
-      UA.stop();
-
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
-    });
+    // it('clears the transportRecoveryTimer', function() {
+    //   spyOn(SIP.Timers, 'clearTimeout');
+    //
+    //   UA.stop();
+    //
+    //   expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
+    // });
 
     it('unregisters', function () {
       UA.stop();
@@ -230,6 +200,15 @@ describe('UA', function() {
       UA.stop();
 
       expect(UA.earlySubscriptions[subscription].close).toHaveBeenCalled();
+    });
+
+    it('closes any publishers', function () {
+      var publisher = jasmine.createSpyObj('publish', ['close']);
+      UA.publishers[publisher] = publisher;
+
+      UA.stop();
+
+      expect(UA.publishers[publisher].close).toHaveBeenCalled();
     });
 
     it('closes any applicants', function () {
@@ -307,8 +286,7 @@ describe('UA', function() {
 
     beforeEach(function() {
       options = 'options';
-      UA.transport = {};
-      UA.transport.connected = true;
+      UA.transport.ws.onopen();
     });
 
     it('does not require any arguments', function () {
@@ -346,22 +324,6 @@ describe('UA', function() {
     });
   });
 
-  describe('.isConnected', function() {
-    it('returns false if the transport is undefined', function() {
-      UA.transport = undefined;
-      expect(UA.isConnected()).toBe(false);
-    });
-    it('returns transport.connected if the transport is defined', function() {
-      UA.transport = {};
-      UA.transport.connected = true;
-      expect(UA.isConnected()).toBe(UA.transport.connected);
-      UA.transport.connected = false;
-      expect(UA.isConnected()).toBe(UA.transport.connected);
-      UA.transport.connected = "fishsticks";
-      expect(UA.isConnected()).toBe(UA.transport.connected);
-    });
-  });
-
   describe('.message', function() {
     var target;
     var body;
@@ -377,6 +339,7 @@ describe('UA', function() {
       spyOn(SIP, 'ClientContext').and.returnValue({
         send: messageSpy
       });
+      jasmine.createSpyObj('transport', ['once']);
 
     });
 
@@ -385,15 +348,15 @@ describe('UA', function() {
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
-      spyOn(UA, 'once');
+      spyOn(UA.transport, 'once');
 
       UA.message(target, body, options);
 
-      expect(UA.once).toHaveBeenCalled();
+      expect(UA.transport.once).toHaveBeenCalled();
     });
 
     it('passes no options to message.send', function () {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      spyOn(UA.transport, 'isConnected').and.returnValue(true);
 
       options = undefined;
       UA.message(target, body, options);
@@ -401,8 +364,6 @@ describe('UA', function() {
     });
 
     it('creates a ClientContext with itself, target, body, options.contentType and options as parameters', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
-
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
@@ -410,7 +371,7 @@ describe('UA', function() {
     });
 
     it('calls ClientContext.send method with no options provided to it', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      spyOn(UA.transport, 'isConnected').and.returnValue(true);
 
       options = { option : 'config' };
 
@@ -430,18 +391,19 @@ describe('UA', function() {
       spyOn(SIP, 'InviteClientContext').and.returnValue({
         invite: inviteSpy
       });
+
+      jasmine.createSpyObj('transport', ['once']);
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
-      spyOn(UA, 'once');
+      spyOn(UA.transport, 'once');
 
       UA.invite(target);
-
-      expect(UA.once).toHaveBeenCalled();
+      expect(UA.transport.once).toHaveBeenCalled();
     });
 
     it('creates an Invite Client Context with itself, target, and options as parameters', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      // spyOn(UA, 'isConnected').and.returnValue(true);
 
       var options = {};
       var modifiers = []
@@ -461,41 +423,77 @@ describe('UA', function() {
       target = 'target';
       event = 'event'
       subscribeSpy = jasmine.createSpy('subscribe');
+      jasmine.createSpyObj('transport', ['once']);
 
       spyOn(SIP, 'Subscription').and.returnValue({
         subscribe: subscribeSpy
       });
+
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
-      spyOn(UA, 'once');
+      spyOn(UA.transport, 'once');
 
       UA.subscribe(target, event);
 
-      expect(UA.once).toHaveBeenCalled();
+      expect(UA.transport.once).toHaveBeenCalled();
     });
 
     it('creates a Subscription with itself, target, and options as parameters', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
-
       var options = {};
       UA.subscribe(target, event, options);
       expect(SIP.Subscription).toHaveBeenCalledWith(UA,target, event, options);
     });
 
     it('calls the Subscription method with no arguments', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      spyOn(UA.transport, 'isConnected').and.returnValue(true);
       var options = { option : 'things' };
       UA.subscribe(target, event, options);
       expect(subscribeSpy).toHaveBeenCalledWith();
     });
   });
 
+  describe('.publish', function() {
+    var publishSpy;
+    var target;
+    var event;
+    var body;
+
+    beforeEach(function() {
+      target = 'target';
+      event = 'event';
+      body = 'body';
+
+      publishSpy = jasmine.createSpy('publish');
+
+      spyOn(SIP, 'PublishContext').and.returnValue({
+        publish: publishSpy
+      });
+    });
+
+    it('sets up a listener for connected if the transport has not connected', function() {
+      spyOn(UA.transport, 'once');
+
+      UA.publish(target, event, body);
+
+      expect(UA.transport.once).toHaveBeenCalled();
+    });
+
+    it('creates a Publish with itself, target, body and options as parameters', function() {
+      spyOn(UA.transport, 'isConnected').and.returnValue(true);
+
+      var options = {};
+      UA.publish(target, event, body, options);
+      expect(SIP.PublishContext).toHaveBeenCalledWith(UA,target, event, options);
+      expect(publishSpy).toHaveBeenCalledWith('body');
+    });
+
+  });
+
   describe('.request', function() {
     var method;
     var target;
     var options;
-    var sendSpy;
 
     beforeEach(function() {
       method = 'method';
@@ -507,25 +505,26 @@ describe('UA', function() {
       spyOn(SIP, 'ClientContext').and.returnValue({
         send: requestSpy
       });
+      jasmine.createSpyObj('transport', ['once']);
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
-      spyOn(UA, 'once');
+      spyOn(UA.transport, 'once');
 
       UA.request(method, target, options);
 
-      expect(UA.once).toHaveBeenCalled();
+      expect(UA.transport.once).toHaveBeenCalled();
     });
 
     it('creates a ClientContext with itself, the method, target and options provided', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      // spyOn(UA, 'isConnected').and.returnValue(true);
 
       UA.request(method,target,options);
       expect(SIP.ClientContext).toHaveBeenCalledWith(UA, method, target, options);
     });
 
     it('calls ClientContext.send method with no parameters', function() {
-      spyOn(UA, 'isConnected').and.returnValue(true);
+      spyOn(UA.transport, 'isConnected').and.returnValue(true);
 
       UA.request(method,target,options);
       expect(requestSpy).toHaveBeenCalledWith();
@@ -605,7 +604,7 @@ describe('UA', function() {
 
   xdescribe('.onTransportConnected', function() {});
 
-  describe('.onTransportConnecting', function() {
+  xdescribe('.onTransportConnecting', function() {
     it('emits a connecting event', function() {
       var callback = jasmine.createSpy('callback');
       UA.on('connecting', callback);
@@ -642,7 +641,7 @@ describe('UA', function() {
     var transaction;
     beforeEach(function() {
       transaction = { type : 'transaction-type' ,
-                      id : 'id' };
+                      id : 'id'};
       UA.transactions[transaction.type] = {};
     });
 
@@ -740,8 +739,8 @@ describe('UA', function() {
                       getHeader : function () {},
                       parseHeader: function () {}
                     };
-      var webrtc = SIP.WebRTC.isSupported;
-      spyOn(SIP.WebRTC, 'isSupported').and.callFake(function () {
+      var webrtc = SIP.Web.isSupported;
+      spyOn(SIP.Web, 'isSupported').and.callFake(function () {
         return false;
       });
 
@@ -1037,43 +1036,7 @@ describe('UA', function() {
     });
   });
 
-  describe('.getNextWsServer', function() {
-    var can1, can2, can3, can4;
-
-    beforeEach(function() {
-      can1 = {status: 0, weight: 0};
-      can2 = {status: 0, weight: 1};
-      can3 = {status: 0, weight: 1};
-      can4 = {status: 0, weight: 2};
-
-      //Note: can't just set wsServers at this point
-      UA.configuration = {wsServers: [can1,can2,can3,can4]};
-    });
-
-    it('selects the candidate with the highest weight', function() {
-      expect(UA.getNextWsServer()).toBe(can4);
-    });
-
-    it('selects one of the candidates with the highest weight', function() {
-      can4.weight = 0;
-
-      spyOn(Math, 'random').and.returnValue(0.9);
-
-      expect(UA.getNextWsServer()).toBe(can3);
-
-      Math.random.and.returnValue(0.4);
-
-      expect(UA.getNextWsServer()).toBe(can2);
-    });
-
-    it('does not select a candidate that has a transport error', function() {
-      can4.status = 2;
-
-      expect(UA.getNextWsServer()).not.toBe(can4);
-    });
-  });
-
-  describe('.closeSessionsOnTransportError', function() {
+  xdescribe('.closeSessionsOnTransportError', function() {
     it('calls onTransportError for all the sessions in the sessions object', function() {
       var session = jasmine.createSpyObj('session', ['onTransportError', 'terminate']);
       UA.sessions[session] = session;
@@ -1090,60 +1053,6 @@ describe('UA', function() {
     });
   });
 
-  describe('.recoverTransport', function() {
-    beforeEach(function() {
-      spyOn(Math, 'random').and.returnValue(0);
-    });
-
-    it('logs if the next retry time exceeds the max_interval', function(){
-      UA.configuration = {wsServers: [{status:1, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: -1};
-
-      UA.recoverTransport(UA);
-
-      expect(UA.logger.log).toHaveBeenCalledWith('time for next connection attempt exceeds connectionRecoveryMaxInterval, resetting counter');
-    });
-
-    it('calls getNextWsServer', function() {
-      spyOn(UA, 'getNextWsServer').and.callThrough();
-
-      UA.recoverTransport(UA);
-
-      expect(UA.getNextWsServer).toHaveBeenCalled();
-    });
-
-    it('sets the transportRecoveryTimer', function() {
-      expect(UA.transportRecoveryTimer).toBeNull();
-
-      UA.recoverTransport(UA);
-
-      expect(UA.transportRecoveryTimer).toBeDefined();
-    });
-
-    describe('logs before setting the transport recovery timer, then attempts to make a new transport', function() {
-      beforeEach(function (done) {
-        spyOn(SIP, 'Transport');
-        SIP.Transport.C = {STATUS_READY: 0, STATUS_DISCONNECTED: 1, STATUS_ERROR: 2};
-
-        UA.configuration = {wsServers: [{status:0, weight: 0}], connectionRecoveryMinInterval: 1, connectionRecoveryMaxInterval: 7};
-        UA.transportRecoverAttempts = 0;
-
-        UA.recoverTransport(UA);
-
-        expect(UA.logger.log).toHaveBeenCalledWith('next connection attempt in 1 seconds');
-
-        setTimeout(function () {
-          if (UA.transportRecoverAttempts > 0) {
-            done();
-          }
-        },1100);
-      });
-
-      it('asynchronously', function () {
-        expect(SIP.Transport).toHaveBeenCalled();
-      });
-    });
-  });
-
   describe('.loadConfig', function() {
     beforeEach(function() {
       UA.configuration = {};
@@ -1155,7 +1064,6 @@ describe('UA', function() {
       expect(UA.configuration.viaHost).toBeDefined();
 
       expect(UA.configuration.uri).toBeDefined();
-      expect(UA.configuration.wsServers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', status: 0, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
 
       expect(UA.configuration.password).toBeNull();
 
@@ -1163,20 +1071,10 @@ describe('UA', function() {
       expect(UA.configuration.register).toBe(true);
       //registrarServer is set to null here, then switched later in the function if it wasn't passed in
 
-      expect(UA.configuration.wsServerMaxReconnection).toBe(3);
-      expect(UA.configuration.wsServerReconnectionTimeout).toBe(4);
-
-      expect(UA.configuration.connectionRecoveryMinInterval).toBe(2);
-      expect(UA.configuration.connectionRecoveryMaxInterval).toBe(30);
-
       expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
-
-      expect(UA.configuration.usePreloadedRoute).toBe(false);
 
       //defaults to 60, then multiplies by 1000 later in the function
       expect(UA.configuration.noAnswerTimeout).toBe(60000);
-
-      expect(UA.configuration.traceSip).toBe(false);
 
       expect(UA.configuration.hackViaTcp).toBe(false);
       expect(UA.configuration.hackIpInContact).toBe(false);
@@ -1186,6 +1084,10 @@ describe('UA', function() {
       expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
       expect(UA.configuration.replaces).toBe(SIP.C.supported.UNSUPPORTED);
       expect(UA.configuration.allowLegacyNotifications).toBe(false);
+
+      expect(UA.configuration.dtmfType).toBe(SIP.C.dtmfType.INFO);
+
+      expect(UA.configuration.transportOptions).toBeDefined();
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1220,10 +1122,6 @@ describe('UA', function() {
       UA.loadConfig({fake: 'fake'});
 
       expect(UA.logger.log).toHaveBeenCalledWith('· fake: "fake"');
-    });
-
-    it('makes sure the connection recovery max interval is greater than the min interval', function() {
-      expect(function(){UA.loadConfig({connectionRecoveryMaxInterval: 1, connectionRecoveryMinInterval: 2});}).toThrowError('Invalid value 1 for parameter "connectionRecoveryMaxInterval"');
     });
 
     it('allows 0 to be passed as a display name', function() {
@@ -1271,25 +1169,6 @@ describe('UA', function() {
       expect(UA.contact.pub_gruu).toBeNull();
       expect(UA.contact.uri).toBeDefined();
       expect(UA.contact.toString).toBeDefined();
-    });
-
-    //I'd check the filling of the configuration skeleton, but it is cleared soon after
-
-    //the setting of the configuration was checked with the default test
-    it('sets all parameters (except register and custom) as writable/configurable false', function() {
-      UA.loadConfig({});
-
-      expect(UA.configuration['uri']).toBeDefined();
-      expect(Object.getOwnPropertyDescriptor(UA.configuration, 'uri').writable).toBe(false);
-      expect(Object.getOwnPropertyDescriptor(UA.configuration, 'uri').configurable).toBe(false);
-    });
-
-    it('sets the register parameter as writable true, configurable false', function() {
-      UA.loadConfig({});
-
-      expect(UA.configuration['register']).toBeDefined();
-      expect(Object.getOwnPropertyDescriptor(UA.configuration, 'register').writable).toBe(true);
-      expect(Object.getOwnPropertyDescriptor(UA.configuration, 'register').configurable).toBe(false);
     });
 
     it('sets custom config options', function() {
@@ -1340,38 +1219,6 @@ describe('UA', function() {
       });
     });
 
-    describe('.wsServers', function() {
-      it('fails for types that are not string or array (of strings or objects', function() {
-        expect(configCheck.optional.wsServers(7)).toBeUndefined();
-      });
-
-      it('fails for an empty array', function() {
-        //NOTE: this is the only case that false is returned (instead of nothing)
-        expect(configCheck.optional.wsServers([])).toBe(false);
-      });
-
-      it('fails if ws_uri attribute is missing', function() {
-        expect(configCheck.optional.wsServers([{sandwich: 'ham'}])).toBeUndefined();
-      });
-
-      it('fails if weight attribute is not a number', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ham', weight: 'scissors'}])).toBeUndefined()
-      });
-
-      it('fails if the ws_uri is invalid', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ham'}])).toBeUndefined();
-      });
-
-      it('fails if the url scheme is not wss or ws', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
-      });
-
-      it('returns correctly if none of the above is wrong', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
-        expect(configCheck.optional.wsServers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, status: 0, scheme: 'WSS'}]);
-      });
-    });
-
     describe('.authorizationUser', function() {
       //Try to make this fail, you can't
       xit('fails if a type besides a string is passed in', function() {
@@ -1385,42 +1232,6 @@ describe('UA', function() {
         expect(configCheck.optional.authorizationUser({even: 'objects'})).toEqual({even: 'objects'});
         expect(configCheck.optional.authorizationUser(['arrays'])).toEqual(['arrays']);
         expect(configCheck.optional.authorizationUser(true)).toEqual(true);
-      });
-    });
-
-    describe('.connectionRecoveryMaxInterval', function() {
-      it('fails for anything but numbers', function() {
-        expect(configCheck.optional.connectionRecoveryMaxInterval(true)).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMaxInterval('string')).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMaxInterval(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMaxInterval({even: 'objects'})).toBeUndefined();
-      });
-
-      it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.connectionRecoveryMaxInterval(0)).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMaxInterval(-7)).toBeUndefined();
-      });
-
-      it('passes for positive numbers', function() {
-        expect(configCheck.optional.connectionRecoveryMaxInterval(7)).toBe(7);
-      });
-    });
-
-    describe('.connectionRecoveryMinInterval', function() {
-      it('fails for anything but numbers', function() {
-        expect(configCheck.optional.connectionRecoveryMinInterval(true)).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMinInterval('string')).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMinInterval(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMinInterval({even: 'objects'})).toBeUndefined();
-      });
-
-      it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.connectionRecoveryMinInterval(0)).toBeUndefined();
-        expect(configCheck.optional.connectionRecoveryMinInterval(-7)).toBeUndefined();
-      });
-
-      it('passes for positive numbers', function() {
-        expect(configCheck.optional.connectionRecoveryMinInterval(7)).toBe(7);
       });
     });
 
@@ -1624,21 +1435,6 @@ describe('UA', function() {
       });
     });
 
-    describe('.traceSip', function() {
-      it('fails for all types except boolean', function() {
-        expect(configCheck.optional.traceSip()).toBeUndefined();
-        expect(configCheck.optional.traceSip(7)).toBeUndefined();
-        expect(configCheck.optional.traceSip('string')).toBeUndefined();
-        expect(configCheck.optional.traceSip({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.traceSip(['arrays'])).toBeUndefined();
-      });
-
-      it('passes for boolean parameters', function() {
-        expect(configCheck.optional.traceSip(true)).toBe(true);
-        expect(configCheck.optional.traceSip(false)).toBe(false);
-      });
-    });
-
     describe('.userAgentString', function() {
       it('fails for all types except string', function() {
         expect(configCheck.optional.userAgentString()).toBeUndefined();
@@ -1651,57 +1447,6 @@ describe('UA', function() {
       it('passes for string parameters', function() {
         expect(configCheck.optional.userAgentString('string')).toBe('string');
         expect(configCheck.optional.userAgentString(SIP.C.USER_AGENT + ' string')).toBe(SIP.C.USER_AGENT + ' string');
-      });
-    });
-
-    describe('.usePreloadedRoute', function() {
-      it('fails for all types except boolean', function() {
-        expect(configCheck.optional.usePreloadedRoute()).toBeUndefined();
-        expect(configCheck.optional.usePreloadedRoute(7)).toBeUndefined();
-        expect(configCheck.optional.usePreloadedRoute('string')).toBeUndefined();
-        expect(configCheck.optional.usePreloadedRoute({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.usePreloadedRoute(['arrays'])).toBeUndefined();
-      });
-
-      it('passes for boolean parameters', function() {
-        expect(configCheck.optional.usePreloadedRoute(true)).toBe(true);
-        expect(configCheck.optional.usePreloadedRoute(false)).toBe(false);
-      });
-    });
-
-    describe('.wsServerMaxReconnection', function() {
-      it('fails for anything but numbers', function() {
-        expect(configCheck.optional.wsServerMaxReconnection(true)).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection('string')).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection({even: 'objects'})).toBeUndefined();
-      });
-
-      it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.wsServerMaxReconnection(0)).toBeUndefined();
-        expect(configCheck.optional.wsServerMaxReconnection(-7)).toBeUndefined();
-      });
-
-      it('passes for positive numbers', function() {
-        expect(configCheck.optional.wsServerMaxReconnection(7)).toBe(7);
-      });
-    });
-
-    describe('.wsServerReconnectionTimeout', function() {
-      it('fails for anything but numbers', function() {
-        expect(configCheck.optional.wsServerReconnectionTimeout(true)).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout('string')).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout({even: 'objects'})).toBeUndefined();
-      });
-
-      it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.wsServerReconnectionTimeout(0)).toBeUndefined();
-        expect(configCheck.optional.wsServerReconnectionTimeout(-7)).toBeUndefined();
-      });
-
-      it('passes for positive numbers', function() {
-        expect(configCheck.optional.wsServerReconnectionTimeout(7)).toBe(7);
       });
     });
 
@@ -1731,6 +1476,17 @@ describe('UA', function() {
       it('passes for boolean parameters', function() {
         expect(configCheck.optional.allowLegacyNotifications(true)).toBe(true);
         expect(configCheck.optional.allowLegacyNotifications(false)).toBe(false);
+      });
+    });
+    describe('.dtmfType', function() {
+      it('is set to SIP.C.dtmfType.INFO on any input that isn\'t SIP.C.dtmfType.RTP', function() {
+        expect(configCheck.optional.dtmfType(SIP.C.dtmfType.INFO)).toBe(SIP.C.dtmfType.INFO);
+        expect(configCheck.optional.dtmfType('cat')).toBe(SIP.C.dtmfType.INFO);
+        expect(configCheck.optional.dtmfType('')).toBe(SIP.C.dtmfType.INFO);
+        expect(configCheck.optional.dtmfType()).toBe(SIP.C.dtmfType.INFO);
+      });
+      it('can be set to SIP.C.dtmfType.RTP', function() {
+        expect(configCheck.optional.dtmfType(SIP.C.dtmfType.RTP)).toBe(SIP.C.dtmfType.RTP);
       });
     });
   });

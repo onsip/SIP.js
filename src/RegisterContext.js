@@ -40,10 +40,13 @@ RegisterContext = function (ua) {
   this.registered = false;
 
   this.logger = ua.getLogger('sip.registercontext');
+  ua.on('transportCreated', function (transport) {
+    transport.on('disconnected', this.onTransportDisconnected.bind(this));
+  }.bind(this));
 };
 
-RegisterContext.prototype = {
-  register: function (options) {
+RegisterContext.prototype = Object.create({}, {
+  register: {writable: true, value: function register  (options) {
     var self = this, extraHeaders;
 
     // Handle Options
@@ -168,13 +171,13 @@ RegisterContext.prototype = {
     this.request.setHeader('cseq', this.cseq + ' REGISTER');
     this.request.extraHeaders = extraHeaders;
     this.send();
-  },
+  }},
 
-  registrationFailure: function (response, cause) {
+  registrationFailure: {writable: true, value: function registrationFailure  (response, cause) {
     this.emit('failed', response || null, cause || null);
-  },
+  }},
 
-  onTransportClosed: function() {
+  onTransportDisconnected: {writable: true, value: function onTransportDisconnected () {
     this.registered_before = this.registered;
     if (this.registrationTimer !== null) {
       SIP.Timers.clearTimeout(this.registrationTimer);
@@ -189,13 +192,13 @@ RegisterContext.prototype = {
     if(this.registered) {
       this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
     }
-  },
+  }},
 
-  onTransportConnected: function() {
+  onTransportConnected: {writable: true, value: function onTransportConnected () {
     this.register(this.options);
-  },
+  }},
 
-  close: function() {
+  close: {writable: true, value: function close () {
     var options = {
       all: false,
       extraHeaders: this.closeHeaders
@@ -205,9 +208,9 @@ RegisterContext.prototype = {
     if (this.registered) {
       this.unregister(options);
     }
-  },
+  }},
 
-  unregister: function(options) {
+  unregister: {writable: true, value: function unregister (options) {
     var extraHeaders;
 
     options = options || {};
@@ -260,25 +263,20 @@ RegisterContext.prototype = {
       //this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
     };
 
-    this.onTransportError = function() {
-      // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
-    };
-
     this.cseq++;
     this.request.cseq = this.cseq;
     this.request.setHeader('cseq', this.cseq + ' REGISTER');
     this.request.extraHeaders = extraHeaders;
 
     this.send();
-  },
+  }},
 
-  unregistered: function(response, cause) {
+  unregistered: {writable: true, value: function unregistered (response, cause) {
     this.registered = false;
     this.emit('unregistered', response || null, cause || null);
-  }
+  }}
 
-};
+});
 
 
 SIP.RegisterContext = RegisterContext;

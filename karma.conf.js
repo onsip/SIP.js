@@ -13,7 +13,7 @@ module.exports = function(config) {
       'test/polyfills/*.js',
       'test/helpers/*.js',
       'dist/sip.js',
-      'test/spec/**/*.js'
+      'test/spec/**/*.js',
     ],
 
     // list of files to exclude
@@ -22,8 +22,8 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/spec/WebRTC/SessionDescriptionHandler.spec.js': 'webpack',
-      'test/spec/WebRTC/Modifiers.spec.js': 'webpack'
+      'test/spec/Web/SessionDescriptionHandler.spec.js': 'webpack',
+      'test/spec/Web/Modifiers.spec.js': 'webpack'
     },
 
     // test results reporter to use
@@ -57,7 +57,12 @@ module.exports = function(config) {
 
     client: {
       clearContext: false,
-      captureConsole: false
+      captureConsole: false,
+      jasmine: {
+        // only necessary due to potential bug in SpecSanityCheck 8.2.2.2, running
+        // those out of order causes them to fail
+        random: false
+      }
     },
 
     // Concurrency level
@@ -65,10 +70,10 @@ module.exports = function(config) {
     concurrency: Infinity,
 
     plugins : [
+      'karma-chrome-launcher',
       'karma-jasmine',
       'karma-jasmine-html-reporter',
       'karma-mocha-reporter',
-      'karma-phantomjs-launcher',
       'karma-webpack'
     ]
   })

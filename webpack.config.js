@@ -1,5 +1,5 @@
-var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 var webpack = require('webpack');
+var UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 var pkg = require('./package.json');
 var year = new Date().getFullYear();
@@ -37,84 +37,96 @@ var banner = '\
  ~~~ end JsSIP license ~~~\n\
 \n\n\n';
 
-module.exports = {
-  entry: {
-    'sip': __dirname + '/src/index.js',
-    'sip.min': __dirname + '/src/index.js'
-  },
-  output: {
-    path: __dirname + '/dist',
-    filename: '[name].js',
-    library: 'SIP',
-    libraryTarget: 'umd'
-  },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: "babel-loader",
-        options: {
-          presets: ['env']
+
+
+module.exports = function (env) {
+  var mode = env.buildType === 'prod' ? 'production' : 'none';
+
+  var entry = {};
+  entry['sip' + (env.buildType === 'prod' ? '.min' : '')] = __dirname + '/src/index.js';
+
+
+  return {
+    mode: mode,
+    entry: entry,
+    output: {
+      path: __dirname + '/dist',
+      filename: '[name].js',
+      library: 'SIP',
+      libraryTarget: 'umd',
+      globalObject: 'this'
+    },
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loader: "babel-loader",
+          options: {
+            presets: ['env']
+          }
+        },
+        {
+          test: /\.pegjs$/,
+          loader: 'pegjs-loader',
+          options: {
+            'optimize': 'size',
+            'allowedStartRules':
+            [
+              "Contact",
+              "Name_Addr_Header",
+              "Record_Route",
+              "Request_Response",
+              "SIP_URI",
+              "Subscription_State",
+              "Supported",
+              "Require",
+              "Via",
+              "absoluteURI",
+              "Call_ID",
+              "Content_Disposition",
+              "Content_Length",
+              "Content_Type",
+              "CSeq",
+              "displayName",
+              "Event",
+              "From",
+              "host",
+              "Max_Forwards",
+              "Min_SE",
+              "Proxy_Authenticate",
+              "quoted_string",
+              "Refer_To",
+              "Replaces",
+              "Session_Expires",
+              "stun_URI",
+              "To",
+              "turn_URI",
+              "uuid",
+              "WWW_Authenticate",
+              "challenge",
+              "sipfrag",
+              "Referred_By"
+            ]
+          }
         }
-      },
-      {
-        test: /\.pegjs$/,
-        loader: 'pegjs-loader',
-        options: {
-          'optimize': 'size',
-          'allowedStartRules':
-          [
-            "Contact",
-            "Name_Addr_Header",
-            "Record_Route",
-            "Request_Response",
-            "SIP_URI",
-            "Subscription_State",
-            "Supported",
-            "Require",
-            "Via",
-            "absoluteURI",
-            "Call_ID",
-            "Content_Disposition",
-            "Content_Length",
-            "Content_Type",
-            "CSeq",
-            "displayName",
-            "Event",
-            "From",
-            "host",
-            "Max_Forwards",
-            "Min_SE",
-            "Proxy_Authenticate",
-            "quoted_string",
-            "Refer_To",
-            "Replaces",
-            "Session_Expires",
-            "stun_URI",
-            "To",
-            "turn_URI",
-            "uuid",
-            "WWW_Authenticate",
-            "challenge",
-            "sipfrag",
-            "Referred_By"
-          ]
-        }
-      }
+      ]
+    },
+    optimization: {
+      minimizer: [
+        new UglifyJsPlugin({
+          uglifyOptions: {
+            output: {
+              ascii_only: true
+            }
+          }
+        })
+      ]
+    },
+    plugins: [
+      new webpack.BannerPlugin({
+        banner: banner
+      })
     ]
-  },
-  plugins: [
-    new UglifyJSPlugin({
-      test: /^sip\.min\.js$/,
-      uglifyOptions: {
-        output: {
-          ascii_only: true
-        }
-      }
-    }),
-    new webpack.BannerPlugin({
-      banner: banner
-    })
-  ]
-};
+  };
+}

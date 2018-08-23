@@ -1,4 +1,4 @@
-describe('WebRTC/Simple', function() {
+describe('Web/Simple', function() {
   beforeEach(function() {
     spyOn(SIP, 'UA').and.callFake(function(configuration) {
       this.configuration = configuration;
@@ -10,7 +10,7 @@ describe('WebRTC/Simple', function() {
   });
 
   it('creates instance', function() {
-    var simple = new SIP.WebRTC.Simple({
+    var simple = new SIP.Web.Simple({
       media: {
         remote: {
           audio: {}
@@ -22,19 +22,31 @@ describe('WebRTC/Simple', function() {
       }
     });
     expect(simple).toBeTruthy();
-    expect(simple.ua.configuration).toEqual({
+
+    var expected = {
       authorizationUser: undefined,
       displayName: undefined,
       password: undefined,
       register: true,
       sessionDescriptionHandlerFactoryOptions: {
-        // FIXME: phantomjs is detected as safari!
-        modifiers: [SIP.WebRTC.Modifiers.stripG722]
       },
-      traceSip: undefined,
       uri: 'bob@example.com',
       userAgentString: undefined,
-      wsServers: ['wss://sip-ws.example.com'],
-    });
+
+      transportOptions: {
+        wsServers: ['wss://sip-ws.example.com'],
+        traceSip: undefined
+      }
+    }
+
+    // FIXME: phantomjs is detected as safari!
+    var browserUa = navigator.userAgent.toLowerCase();
+    if (browserUa.indexOf('safari') > -1 && browserUa.indexOf('chrome') < 0) {
+      expected.sessionDescriptionHandlerFactoryOptions = {
+        modifiers: [SIP.Web.Modifiers.stripG722],
+      }
+    }
+
+    expect(simple.ua.configuration).toEqual(expected);
   });
 });

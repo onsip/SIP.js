@@ -1,11 +1,19 @@
-var SessionDescriptionHandler = require('../../../src/WebRTC/SessionDescriptionHandler')(SIP);
+var SessionDescriptionHandler = require('../../../src/Web/SessionDescriptionHandler')(SIP);
+var SessionDescriptionHandlerObserver = {
+  trackAdded: function() {
+    return;
+  },
+  directionChanged: function() {
+    return;
+  },
+};
 
 function setIceGatheringState(pc, state) {
   pc.iceGatheringState = state;
   pc.onicegatheringstatechange.call(pc);
 }
 
-describe('WebRTC/SessionDescriptionHandler', function() {
+describe('Web/SessionDescriptionHandler', function() {
   var realMediaDevices,
     realRTCPeerConnection,
     handler;
@@ -38,7 +46,7 @@ describe('WebRTC/SessionDescriptionHandler', function() {
       getUserMedia: function() {}
     };
 
-    handler = new SessionDescriptionHandler(mockSession, {
+    handler = new SessionDescriptionHandler(console, SessionDescriptionHandlerObserver, {
       peerConnectionOptions: {
         iceCheckingTimeout: 500
       }

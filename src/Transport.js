@@ -1,379 +1,114 @@
 "use strict";
+/* eslint-disable */
 /**
  * @fileoverview Transport
  */
 
-/**
- * @augments SIP
- * @class Transport
- * @param {SIP.UA} ua
- * @param {Object} server ws_server Object
+/* Transport
+ * @class Abstract transport layer parent class
+ * @param {Logger} logger
+ * @param {Object} [options]
  */
-module.exports = function (SIP, WebSocket) {
-var Transport,
-  C = {
-    // Transport status codes
-    STATUS_READY:        0,
-    STATUS_DISCONNECTED: 1,
-    STATUS_ERROR:        2
-  };
+module.exports = function (SIP) {
+var Transport = function(logger, options) {};
 
-/**
- * Compute an amount of time in seconds to wait before sending another
- * keep-alive.
- * @returns {Number}
- */
-function computeKeepAliveTimeout(upperBound) {
-  var lowerBound = upperBound * 0.8;
-  return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
-}
-
-Transport = function(ua, server) {
-
-  this.logger = ua.getLogger('sip.transport');
-  this.ua = ua;
-  this.ws = null;
-  this.server = server;
-  this.reconnection_attempts = 0;
-  this.closed = false;
-  this.connected = false;
-  this.reconnectTimer = null;
-  this.lastTransportError = {};
-
-  this.keepAliveInterval = ua.configuration.keepAliveInterval;
-  this.keepAliveTimeout = null;
-  this.keepAliveTimer = null;
-
-  this.ua.transport = this;
-
-  // Connect
-  this.connect();
-};
-
-Transport.prototype = {
-  /**
-   * Send a message.
-   * @param {SIP.OutgoingRequest|String} msg
-   * @returns {Boolean}
-   */
-  send: function(msg) {
-    var message = msg.toString();
-
-    if(this.ws && this.ws.readyState === WebSocket.OPEN) {
-      if (this.ua.configuration.traceSip === true) {
-        this.logger.log('sending WebSocket message:\n\n' + message + '\n');
-      }
-      this.ws.send(message);
-      return true;
-    } else {
-      this.logger.warn('unable to send message, WebSocket is not open');
-      return false;
-    }
-  },
+Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
 
   /**
-   * Send a keep-alive (a double-CRLF sequence).
-   * @private
-   * @returns {Boolean}
-   */
-  sendKeepAlive: function() {
-    if(this.keepAliveTimeout) { return; }
-
-    this.keepAliveTimeout = SIP.Timers.setTimeout(function() {
-      this.ua.emit('keepAliveTimeout');
-    }.bind(this), 10000);
-
-    return this.send('\r\n\r\n');
-  },
-
-  /**
-   * Start sending keep-alives.
-   * @private
-   */
-  startSendingKeepAlives: function() {
-    if (this.keepAliveInterval && !this.keepAliveTimer) {
-      this.keepAliveTimer = SIP.Timers.setTimeout(function() {
-        this.sendKeepAlive();
-        this.keepAliveTimer = null;
-        this.startSendingKeepAlives();
-      }.bind(this), computeKeepAliveTimeout(this.keepAliveInterval));
-    }
-  },
-
-  /**
-   * Stop sending keep-alives.
-   * @private
-   */
-  stopSendingKeepAlives: function() {
-    SIP.Timers.clearTimeout(this.keepAliveTimer);
-    SIP.Timers.clearTimeout(this.keepAliveTimeout);
-    this.keepAliveTimer = null;
-    this.keepAliveTimeout = null;
-  },
-
-  /**
-  * Disconnect socket.
+  * Returns the promise designated by the child layer then emits a connected event. Automatically emits an event upon resolution, unless overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of connectPromise
+  * @param {Object} [options]
+  * @returns {Promise}
   */
-  disconnect: function() {
-    if(this.ws) {
-      // Clear reconnectTimer
-      SIP.Timers.clearTimeout(this.reconnectTimer);
-
-      this.stopSendingKeepAlives();
-
-      this.closed = true;
-      this.logger.log('closing WebSocket ' + this.server.ws_uri);
-      this.ws.close();
-      this.ws = null;
-    }
-
-    if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-      this.ua.emit('disconnected', {
-        transport: this,
-        code: this.lastTransportError.code,
-        reason: this.lastTransportError.reason
-      });
-    }
-  },
+  connect: {writable: true, value: function connect (options) {
+    options = options || {};
+    return this.connectPromise(options).then(function (data) {!data.overrideEvent && this.emit('connected');}.bind(this));
+  }},
 
   /**
-  * Connect socket.
-  */
-  connect: function() {
-    var transport = this;
-
-    if(this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      this.logger.log('WebSocket ' + this.server.ws_uri + ' is already connected');
-      return false;
-    }
-
-    if(this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-
-    this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
-    this.ua.onTransportConnecting(this,
-      (this.reconnection_attempts === 0)?1:this.reconnection_attempts);
-
-    try {
-      this.ws = new WebSocket(this.server.ws_uri, 'sip');
-    } catch(e) {
-      this.logger.warn('error connecting to WebSocket ' + this.server.ws_uri + ': ' + e);
-    }
-
-    this.ws.binaryType = 'arraybuffer';
-
-    this.ws.onopen = function() {
-      transport.onOpen();
-    };
-
-    this.ws.onclose = function(e) {
-      transport.onClose(e);
-      // Always cleanup. Eases GC, prevents potential memory leaks.
-      this.onopen = null;
-      this.onclose = null;
-      this.onmessage = null;
-      this.onerror = null;
-    };
-
-    this.ws.onmessage = function(e) {
-      transport.onMessage(e);
-    };
-
-    this.ws.onerror = function(e) {
-      transport.onError(e);
-    };
-  },
-
-  // Transport Event Handlers
-
-  /**
-  * @event
-  * @param {event} e
-  */
-  onOpen: function() {
-    this.connected = true;
-
-    this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
-    // Clear reconnectTimer since we are not disconnected
-    if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    // Reset reconnection_attempts
-    this.reconnection_attempts = 0;
-    // Disable closed
-    this.closed = false;
-    // Trigger onTransportConnected callback
-    this.ua.onTransportConnected(this);
-    // Start sending keep-alives
-    this.startSendingKeepAlives();
-  },
-
-  /**
-  * @event
-  * @param {event} e
-  */
-  onClose: function(e) {
-    var connected_before = this.connected;
-
-    this.lastTransportError.code = e.code;
-    this.lastTransportError.reason = e.reason;
-
-    this.stopSendingKeepAlives();
-
-    if (this.reconnection_attempts > 0) {
-      this.logger.log('Reconnection attempt ' + this.reconnection_attempts + ' failed (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-      this.reconnect();
-    } else {
-      this.connected = false;
-      this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-
-      if(e.wasClean === false) {
-        this.logger.warn('WebSocket abrupt disconnection');
-      }
-      // Transport was connected
-      if(connected_before === true) {
-        this.ua.onTransportClosed(this);
-        // Check whether the user requested to close.
-        if(!this.closed) {
-          this.reconnect();
-        } else {
-          this.ua.emit('disconnected', {
-            transport: this,
-            code: this.lastTransportError.code,
-            reason: this.lastTransportError.reason
-          });
-
-        }
-      } else {
-        // This is the first connection attempt
-        //Network error
-        this.ua.onTransportError(this);
-      }
-    }
-  },
-
-  /**
-  * @event
-  * @param {event} e
-  */
-  onMessage: function(e) {
-    var message, transaction,
-      data = e.data;
-
-    // CRLF Keep Alive response from server. Ignore it.
-    if(data === '\r\n') {
-      SIP.Timers.clearTimeout(this.keepAliveTimeout);
-      this.keepAliveTimeout = null;
-
-      if (this.ua.configuration.traceSip === true) {
-        this.logger.log('received WebSocket message with CRLF Keep Alive response');
-      }
-
-      return;
-    }
-
-    // WebSocket binary message.
-    else if (typeof data !== 'string') {
-      try {
-        data = String.fromCharCode.apply(null, new Uint8Array(data));
-      } catch(evt) {
-        this.logger.warn('received WebSocket binary message failed to be converted into string, message discarded');
-        return;
-      }
-
-      if (this.ua.configuration.traceSip === true) {
-        this.logger.log('received WebSocket binary message:\n\n' + data + '\n');
-      }
-    }
-
-    // WebSocket text message.
-    else {
-      if (this.ua.configuration.traceSip === true) {
-        this.logger.log('received WebSocket text message:\n\n' + data + '\n');
-      }
-    }
-
-    message = SIP.Parser.parseMessage(data, this.ua);
-
-    if (!message) {
-      return;
-    }
-
-    if(this.ua.status === SIP.UA.C.STATUS_USER_CLOSED && message instanceof SIP.IncomingRequest) {
-      return;
-    }
-
-    // Do some sanity check
-    if(SIP.sanityCheck(message, this.ua, this)) {
-      if(message instanceof SIP.IncomingRequest) {
-        message.transport = this;
-        this.ua.receiveRequest(message);
-      } else if(message instanceof SIP.IncomingResponse) {
-        /* Unike stated in 18.1.2, if a response does not match
-        * any transaction, it is discarded here and no passed to the core
-        * in order to be discarded there.
-        */
-        switch(message.method) {
-          case SIP.C.INVITE:
-            transaction = this.ua.transactions.ict[message.via_branch];
-            if(transaction) {
-              transaction.receiveResponse(message);
-            }
-            break;
-          case SIP.C.ACK:
-            // Just in case ;-)
-            break;
-          default:
-            transaction = this.ua.transactions.nict[message.via_branch];
-            if(transaction) {
-              transaction.receiveResponse(message);
-            }
-            break;
-        }
-      }
-    }
-  },
-
-  /**
-  * @event
-  * @param {event} e
-  */
-  onError: function(e) {
-    this.logger.warn('WebSocket connection error: ');
-    this.logger.warn(e);
-  },
-
-  /**
-  * Reconnection attempt logic.
+  * Called by connect, must return a promise
+  * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
+  * @abstract
   * @private
+  * @param {Object} [options]
+  * @returns {Promise}
   */
-  reconnect: function() {
-    var transport = this;
+  connectPromise: {writable: true, value: function connectPromise (options) {}},
 
-    this.reconnection_attempts += 1;
+  /**
+  * Returns true if the transport is connected
+  * @abstract
+  * @returns {Boolean}
+  */
+  isConnected: {writable: true, value: function isConnected () {}},
 
-    if(this.reconnection_attempts > this.ua.configuration.wsServerMaxReconnection) {
-      this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
-      this.ua.onTransportError(this);
-    } else if (this.reconnection_attempts === 1) {
-      this.logger.log('Connection to WebSocket ' + this.server.ws_uri + ' severed, attempting first reconnect');
-      transport.connect();
+  /**
+  * Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise
+  * @param {SIP.OutgoingRequest|String} msg
+  * @param {Object} options
+  * @returns {Promise}
+  */
+  send: {writable: true, value: function send (msg, options) {
+    options = options || {};
+    return this.sendPromise(msg).then(function (data) {!data.overrideEvent && this.emit('messageSent', data.msg);}.bind(this));
+  }},
+
+  /**
+  * Called by send, must return a promise
+  * promise must resolve to an object. object supports 2 parameters: msg - string (mandatory) and overrideEvent - Boolean (optional)
+  * @abstract
+  * @private
+  * @param {SIP.OutgoingRequest|String} msg
+  * @param {Object} [options]
+  * @returns {Promise}
+  */
+  sendPromise: {writable: true, value: function sendPromise (msg, options) {}},
+
+  /**
+  * To be called when a message is received
+  * @abstract
+  * @param {Event} e
+  */
+  onMessage: {writable: true, value: function onMessage (e) {}},
+
+  /**
+  * Returns the promise designated by the child layer then emits a disconnected event. Automatically emits an event upon resolution, unless overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of disconnectPromise
+  * @param {Object} [options]
+  * @returns {Promise}
+  */
+  disconnect: {writable: true, value: function disconnect (options) {
+    options = options || {};
+    return this.disconnectPromise(options).then(function (data) {!data.overrideEvent && this.emit('disconnected');}.bind(this));
+  }},
+
+  /**
+  * Called by disconnect, must return a promise
+  * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
+  * @abstract
+  * @private
+  * @param {Object} [options]
+  * @returns {Promise}
+  */
+  disconnectPromise: {writable: true, value: function disconnectPromise (options) {}},
+
+  afterConnected: {writable: true, value: function afterConnected (callback) {
+    if (this.isConnected()) {
+      callback();
     } else {
-      this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
-
-      this.reconnectTimer = SIP.Timers.setTimeout(function() {
-        transport.connect();
-        transport.reconnectTimer = null;
-      }, this.ua.configuration.wsServerReconnectionTimeout * 1000);
+      this.once('connected', callback);
     }
-  }
-};
+  }},
 
-Transport.C = C;
+  /**
+   * Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected()
+   * @returns {Promise}
+   */
+  waitForConnected: {writable: true, value: function waitForConnected () {
+    console.warn("DEPRECATION WARNING Transport.waitForConnected(): use afterConnected() instead");
+    return new SIP.Utils.Promise(function(resolve) {
+      this.afterConnected(resolve);
+    }.bind(this));
+  }},
+});
+
 return Transport;
 };

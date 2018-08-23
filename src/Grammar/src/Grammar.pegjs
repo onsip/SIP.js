@@ -346,8 +346,10 @@ NOTIFYm           = "\x4E\x4F\x54\x49\x46\x59" // NOTIFY in caps
 
 REFERm            = "\x52\x45\x46\x45\x52" // REFER in caps
 
+PUBLISHm          = "\x50\x55\x42\x4c\x49\x53\x48" // PUBLISH in caps
+
 Method            = ( INVITEm / ACKm / OPTIONSm / BYEm / CANCELm / REGISTERm
-                    / SUBSCRIBEm / NOTIFYm / REFERm / extension_method ){
+                    / SUBSCRIBEm / PUBLISHm / NOTIFYm / REFERm / extension_method ){
 
                     options.data.method = text();
                     return options.data.method; }
@@ -621,6 +623,11 @@ qop_value           = qop_value: ( "auth-int"i / "auth"i / token ) {
                         options.data.qop || (options.data.qop=[]);
                         options.data.qop.push(qop_value.toLowerCase()); }
 
+// PUBLISH ETag
+
+SIP_ETag       = token
+
+SIP_If_Match   = token
 
 // PROXY-REQUIRE
 

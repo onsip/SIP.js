@@ -1,4 +1,4 @@
-sudo: false
+sudo: required
 
 language: node_js
 
@@ -6,17 +6,8 @@ script:
   - npm run buildAndTest
 
 node_js:
-  - "4"
+  - "6"
   - "stable"
-
-env:
-  - CXX=g++-4.8
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
 
 cache:
   directories:

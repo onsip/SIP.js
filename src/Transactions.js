@@ -72,9 +72,9 @@ NonInviteClientTransaction.prototype.send = function() {
   this.stateChanged(C.STATUS_TRYING);
   this.F = SIP.Timers.setTimeout(tr.timer_F.bind(tr), SIP.Timers.TIMER_F);
 
-  if(!this.transport.send(this.request)) {
+  this.transport.send(this.request).catch(function () {
     this.onTransportError();
-  }
+  }.bind(this));
 };
 
 NonInviteClientTransaction.prototype.onTransportError = function() {
@@ -183,9 +183,9 @@ InviteClientTransaction.prototype.send = function() {
   this.stateChanged(C.STATUS_CALLING);
   this.B = SIP.Timers.setTimeout(tr.timer_B.bind(tr), SIP.Timers.TIMER_B);
 
-  if(!this.transport.send(this.request)) {
+  this.transport.send(this.request).catch(function () {
     this.onTransportError();
-  }
+  }.bind(this));
 };
 
 InviteClientTransaction.prototype.onTransportError = function() {
@@ -200,6 +200,7 @@ InviteClientTransaction.prototype.onTransportError = function() {
     this.request_sender.onTransportError();
   }
 };
+
 
 // RFC 6026 7.2
 InviteClientTransaction.prototype.timer_M = function() {
@@ -287,6 +288,7 @@ InviteClientTransaction.prototype.cancel_request = function(tr, reason, extraHea
   this.cancel += 'To: ' + request.headers['To'].toString() + '\r\n';
   this.cancel += 'From: ' + request.headers['From'].toString() + '\r\n';
   this.cancel += 'Call-ID: ' + request.headers['Call-ID'].toString() + '\r\n';
+  this.cancel += 'Max-Forwards: ' + SIP.UA.C.MAX_FORWARDS + '\r\n';
   this.cancel += 'CSeq: ' + request.headers['CSeq'].toString().split(' ')[0] +
   ' CANCEL\r\n';
 
@@ -389,9 +391,9 @@ var AckClientTransaction = function(request_sender, request, transport) {
 AckClientTransaction.prototype = Object.create(SIP.EventEmitter.prototype);
 
 AckClientTransaction.prototype.send = function() {
-  if(!this.transport.send(this.request)) {
+  this.transport.send(this.request).catch(function () {
     this.onTransportError();
-  }
+  }.bind(this));
 };
 
 AckClientTransaction.prototype.onTransportError = function() {
@@ -410,7 +412,7 @@ var NonInviteServerTransaction = function(request, ua) {
   this.type = C.NON_INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
-  this.transport = request.transport;
+  this.transport = ua.transport;
   this.ua = ua;
   this.last_response = '';
   request.server_transaction = this;
@@ -459,18 +461,18 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
     switch(this.state) {
       case C.STATUS_TRYING:
         this.stateChanged(C.STATUS_PROCEEDING);
-        if(!this.transport.send(response))  {
+        this.transport.send(response).catch(function () {
           this.onTransportError();
-        }
+        }.bind(this));
         break;
       case C.STATUS_PROCEEDING:
         this.last_response = response;
-        if(!this.transport.send(response)) {
+        this.transport.send(response).then(function () {
+          deferred.resolve();
+        }).catch(function () {
           this.onTransportError();
           deferred.reject();
-        } else {
-          deferred.resolve();
-        }
+        }.bind(this));
         break;
     }
   } else if(status_code >= 200 && status_code <= 699) {
@@ -480,12 +482,12 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
         this.stateChanged(C.STATUS_COMPLETED);
         this.last_response = response;
         this.J = SIP.Timers.setTimeout(tr.timer_J.bind(tr), SIP.Timers.TIMER_J);
-        if(!this.transport.send(response)) {
+        this.transport.send(response).then(function () {
+          deferred.resolve();
+        }).catch(function () {
           this.onTransportError();
           deferred.reject();
-        } else {
-          deferred.resolve();
-        }
+        }.bind(this));
         break;
       case C.STATUS_COMPLETED:
         break;
@@ -505,7 +507,7 @@ var InviteServerTransaction = function(request, ua) {
   this.type = C.INVITE_SERVER;
   this.id = request.via_branch;
   this.request = request;
-  this.transport = request.transport;
+  this.transport = ua.transport;
   this.ua = ua;
   this.last_response = '';
   request.server_transaction = this;
@@ -574,9 +576,9 @@ InviteServerTransaction.prototype.onTransportError = function() {
 };
 
 InviteServerTransaction.prototype.resend_provisional = function() {
-  if(!this.transport.send(this.last_response)) {
+  this.transport.send(this.request).catch(function () {
     this.onTransportError();
-  }
+  }.bind(this));
 };
 
 // INVITE Server Transaction RFC 3261 17.2.1
@@ -587,11 +589,11 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
   if(status_code >= 100 && status_code <= 199) {
     switch(this.state) {
       case C.STATUS_PROCEEDING:
-        if(!this.transport.send(response)) {
-          this.onTransportError();
-        }
-        this.last_response = response;
-        break;
+      this.transport.send(response).catch(function () {
+        this.onTransportError();
+      }.bind(this));
+      this.last_response = response;
+      break;
     }
   }
 
@@ -615,12 +617,13 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
         /* falls through */
         case C.STATUS_ACCEPTED:
           // Note that this point will be reached for proceeding tr.state also.
-          if(!this.transport.send(response)) {
+          this.transport.send(response).then(function () {
+            deferred.resolve();
+          }).catch(function (error) {
+            this.logger.error(error);
             this.onTransportError();
             deferred.reject();
-          } else {
-            deferred.resolve();
-          }
+          }.bind(this));
           break;
     }
   } else if(status_code >= 300 && status_code <= 699) {
@@ -630,15 +633,15 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           SIP.Timers.clearInterval(this.resendProvisionalTimer);
           this.resendProvisionalTimer = null;
         }
-
-        if(!this.transport.send(response)) {
-          this.onTransportError();
-          deferred.reject();
-        } else {
+        this.transport.send(response).then(function () {
           this.stateChanged(C.STATUS_COMPLETED);
           this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
           deferred.resolve();
-        }
+        }.bind(this)).catch(function (error) {
+          this.logger.error(error);
+          this.onTransportError();
+          deferred.reject();
+        }.bind(this));
         break;
     }
   }

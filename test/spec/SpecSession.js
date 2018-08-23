@@ -5,6 +5,7 @@ describe('Session', function() {
 
   beforeEach(function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
+    ua.transport.ws.onopen();
 
     Session = new SIP.EventEmitter();
     var sessionDescriptionHandlerFactory = function() {
@@ -151,6 +152,35 @@ describe('Session', function() {
     it('returns Session on success', function() {
       expect(Session.dtmf(1)).toBe(Session);
     });
+
+    describe('RTCDTMFSender', function() {
+      beforeEach(function() {
+        Session.ua = ua = new SIP.UA({uri: 'jim@example.com', dtmfType: SIP.C.dtmfType.RTP}).start();
+        Session.ua.transport.ws.onopen();
+        Session.sessionDescriptionHandler = { sendDtmf: function(tones, options) {} };
+      });
+
+      it('calls SessionDescriptionHandler.sendDtmf when the correct configuration is given', function() {
+        Session.sessionDescriptionHandler.sendDtmf = function(tones, options) {return false;}
+        spyOn(Session.sessionDescriptionHandler, 'sendDtmf').and.returnValue(true)
+        Session.dtmf('7');
+        expect(Session.sessionDescriptionHandler.sendDtmf).toHaveBeenCalledWith('7', {});
+      });
+
+      it('logs a warning when SessionDescriptionHandler.sendDtmf returns false', function() {
+        spyOn(Session.logger, 'warn');
+        Session.dtmf('7');
+        expect(Session.logger.warn).toHaveBeenCalled();
+      });
+
+      it('sendDtmf is not called when dtmfType is SIP.C.dtmfType.INFO', function() {
+        Session.ua = ua = new SIP.UA({uri: 'jim@example.com', dtmfType: SIP.C.dtmfType.INFO}).start();
+        Session.ua.transport.ws.onopen();
+        spyOn(Session.sessionDescriptionHandler, 'sendDtmf');
+        Session.dtmf('7');
+        expect(Session.sessionDescriptionHandler.sendDtmf).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('.bye', function() {
@@ -162,7 +192,7 @@ describe('Session', function() {
       Session.status = 12;
     });
 
-    it('logs an error and returns this if the session status is terminated', function() {
+    it('logs an error and returns this if the session status is terminated',  function() {
       spyOn(Session.logger, 'error');
       Session.status = 9;
 
@@ -246,13 +276,15 @@ describe('Session', function() {
       expect(Session.close()).toBe(Session);
     });
 
-    it('deletes the session from the ua, deletes the dialog, and returns the Session on success', function() {
+    it('deletes the session from the ua, deletes the dialog, removes transport listeners and returns the Session on success', function() {
       Session.id = 777;
       Session.ua.sessions = {777: Session};
+      spyOn(Session.ua.transport, "removeListener");
 
       expect(Session.close()).toBe(Session);
       expect(Session.dialog).toBeUndefined();
       expect(Session.ua.sessions[777]).toBeUndefined();
+      expect(Session.ua.transport.removeListener).toHaveBeenCalled();
     });
   });
 
@@ -680,11 +712,12 @@ describe('InviteServerContext', function() {
             return contentType === 'application/sdp';
           },
           setDescription: jasmine.createSpy('setDescription').and.returnValue(SIP.Utils.Promise.resolve()),
-          close: function() {return true;}
+          close: function() {return true;},
+          on: function () {}
         };
       }
     });
-    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server']);
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect','server','on','removeListener']);
     ua.transport.server.scheme = 'wss';
 
     request = SIP.Parser.parseMessage([
@@ -1155,6 +1188,8 @@ describe('InviteServerContext', function() {
         InviteServerContext.early_sdp = true;
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'accepted').and.callThrough();
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
 
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
@@ -1181,6 +1216,9 @@ describe('InviteServerContext', function() {
         spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'emit');
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
+
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
 
         InviteServerContext.sessionDescriptionHandler = {
           hasDescription: function() {
@@ -1329,6 +1367,8 @@ describe('InviteServerContext', function() {
 
     describe('method is INVITE', function() {
       it('calls receiveReinvite', function() {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1359,6 +1399,8 @@ describe('InviteServerContext', function() {
 
     describe('method is INFO', function() {
       it('makes a new DTMF', function() {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1390,6 +1432,8 @@ describe('InviteServerContext', function() {
       });
 
       it('returns a 415 if DTMF packet had the wrong content-type header', function() {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1418,6 +1462,8 @@ describe('InviteServerContext', function() {
       });
 
       it('invokes onInfo if onInfo is set', function(done) {
+        var catchSpy = jasmine.createSpy('catch');
+        InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
         InviteServerContext.status = 12;
         req = SIP.Parser.parseMessage([
           'INFO sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
@@ -1441,7 +1487,7 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.onInfo = function onInfo(request) {
           try {
-            assert.equal(req, request);
+            expect(req).toBe(request);
           } catch (error) {
             return done(error);
           }
@@ -1475,7 +1521,7 @@ describe('InviteClientContext', function() {
       }
     });
 
-    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server']);
+    ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect', 'server', 'on', 'removeListener']);
     ua.transport.server.scheme = 'wss';
 
     InviteClientContext = new SIP.InviteClientContext(ua, target);
@@ -1546,16 +1592,15 @@ describe('InviteClientContext', function() {
 
   describe('.invite', function() {
 
-    it('sets SessionDescriptionHandler and ua.sessions', function() {
+    it('sets ua.sessions', function() {
       InviteClientContext.invite();
-      expect(InviteClientContext.sessionDescriptionHandler).toBeDefined();
       expect(InviteClientContext.ua.sessions[InviteClientContext.id]).toBe(InviteClientContext);
     });
 
     xit('calls sessionDescriptionHandler.getDescription async and returns this on success', function(done) {
       var callback, s;
 
-      spyOn(SIP.WebRTC, 'getUserMedia').and.callThrough();
+      spyOn(SIP.Web, 'getUserMedia').and.callThrough();
       callback = jasmine.createSpy('callback').and.callFake(function () {
         done();
         //jasmine.clock().uninstall();
@@ -1568,7 +1613,7 @@ describe('InviteClientContext', function() {
 
       s.sessionDescriptionHandler.on('userMediaRequest', callback);
 
-      expect(SIP.WebRTC.getUserMedia).not.toHaveBeenCalled();
+      expect(SIP.Web.getUserMedia).not.toHaveBeenCalled();
       expect(callback).not.toHaveBeenCalled();
 
       //jasmine.clock().tick(100);
@@ -1601,7 +1646,7 @@ describe('InviteClientContext', function() {
       spyOn(SIP.Dialog.prototype, 'sendRequest');
       spyOn(InviteClientContext, 'sendRequest');
 
-      // SIP.WebRTC.getUserMedia = jasmine.createSpy('getUserMedia');
+      // SIP.Web.getUserMedia = jasmine.createSpy('getUserMedia');
     });
 
     it('accepts and terminates a 200 OK from a branch that\'s replying after the call has been established', function() {

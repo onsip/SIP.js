@@ -23,17 +23,17 @@ describe('NameAddrHeader', function() {
   it('can create a string of itself', function() {
     expect(name.toString()).toEqual(toStringAll);
   });
-  
+
   it('can set the display name to null', function () {
     name.displayName = null;
     expect(name.toString()).toEqual(toStringUri);
   });
-  
+
   it('can set the display name to 0', function () {
     name.displayName = 0;
     expect(name.toString()).toEqual('"0" ' + toStringUri);
   });
-  
+
   it('can set the display name to ""', function () {
     name.displayName = "";
     expect(name.toString()).toEqual(toStringUri);

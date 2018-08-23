@@ -1,6 +1,6 @@
-var Modifiers = require('../../../src/WebRTC/Modifiers')(SIP);
+var Modifiers = require('../../../src/Web/Modifiers')(SIP);
 
-describe('WebRTC/Modifiers', function () {
+describe('Web/Modifiers', function () {
   var sdpWrapper;
 
   beforeEach(function () {
@@ -23,6 +23,7 @@ describe('WebRTC/Modifiers', function () {
     Modifiers.stripTelephoneEvent(sdpWrapper).then(function (description) {
       expect(description.type).toBe('offer');
       expect(description.sdp).not.toContain('a=rtpmap:126 telephone-event/8000');
+      expect(description.sdp).toContain('m=audio 53026 RTP/SAVPF 111 103 104 0 8 106 105 13\r\n');
 
       done();
     });
