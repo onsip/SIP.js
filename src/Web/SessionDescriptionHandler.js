@@ -410,10 +410,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       };
     }
 
-    this.peerConnection.onicecandidate = function(e) {
+    this.peerConnection.onicecandidate = function (e) {
       self.emit('iceCandidate', e);
       if (e.candidate) {
-        self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+        self.logger.log('ICE candidate received: ' + (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+      } else if (e.candidate === null) {
+        // indicates the end of candidate gathering
+        self.logger.log('ICE candidate gathering complete');
+        self.triggerIceGatheringComplete();
       }
     };
 
