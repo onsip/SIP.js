@@ -1,6 +1,8 @@
 # SIP.js
 
 [![Build Status](https://travis-ci.org/onsip/SIP.js.png?branch=master)](https://travis-ci.org/onsip/SIP.js)
+[![Code Quality: Javascript](https://img.shields.io/lgtm/grade/javascript/g/onsip/SIP.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/onsip/SIP.js/context:javascript)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/onsip/SIP.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/onsip/SIP.js/alerts)
 
 A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
