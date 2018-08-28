@@ -149,7 +149,7 @@ describe('Grammar', function () {
         it('can set header params and uri params', function () {
           c3.uri.setParam('newUriParam', 'zxCV');
           c3.setParam('newHeaderParam', 'zxCV');
-          expect(c3.toString()).toEqual('<sips:domain.com:5;newuriparam=zxcv>;newheaderparam=zxCV');
+          expect(c3.toString()).toEqual('<sips:domain.com:5;newuriparam=zxCV>;newheaderparam=zxCV');
         });
       });
     });

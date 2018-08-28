@@ -103,7 +103,7 @@ URI = function(scheme, user, host, port, parameters, headers) {
 URI.prototype = {
   setParam: function(key, value) {
     if(key) {
-      this.parameters[key.toLowerCase()] = (typeof value === 'undefined' || value === null) ? null : value.toString().toLowerCase();
+      this.parameters[key.toLowerCase()] = (typeof value === 'undefined' || value === null) ? null : value.toString();
     }
   },
 

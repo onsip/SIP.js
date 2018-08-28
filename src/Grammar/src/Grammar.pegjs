@@ -230,7 +230,7 @@ other_param       = param: pname value: ( "=" pvalue )? {
                       else {
                         value = value[1];
                       }
-                      options.data.uri_params[param.toLowerCase()] = value && value.toLowerCase();}
+                      options.data.uri_params[param.toLowerCase()] = value;}
 
 pname             = $ paramchar +
 
