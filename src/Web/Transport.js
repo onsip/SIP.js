@@ -275,7 +275,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   onMessage: {writable: true, value: function onMessage (e) {
     var data = e.data;
     // CRLF Keep Alive response from server. Clear our keep alive timeout.
-    if(data === '\r\n') {
+    if (/^(\r\n)+$/.test(data)) {
       this.clearKeepAliveTimeout();
 
       if (this.configuration.traceSip === true) {
