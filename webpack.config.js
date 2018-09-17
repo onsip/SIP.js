@@ -61,10 +61,7 @@ module.exports = function (env) {
         {
           test: /\.js$/,
           exclude: /node_modules/,
-          loader: "babel-loader",
-          options: {
-            presets: ['env']
-          }
+          loader: "awesome-typescript-loader"
         },
         {
           test: /\.pegjs$/,
