@@ -234,6 +234,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       return self.peerConnection.setRemoteDescription(modifiedDescription);
     })
     .catch(function setRemoteDescriptionError(e) {
+      // Check the original SDP for video, and ensure that we have want to do audio fallback
+      if ((/^m=video.+$/gm).test(sessionDescription) && !options.disableAudioFallback) {
+        // Do not try to audio fallback again
+        options.disableAudioFallback = true;
+        // Remove video first, then do the other modifiers
+        return this.setDescription(sessionDescription, options, [SIP.Web.Modifiers.stripVideo].concat(modifiers));
+      }
       self.logger.error(e);
       self.emit('peerConnection-setRemoteDescriptionFailed', e);
       throw e;
