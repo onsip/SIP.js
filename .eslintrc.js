@@ -5,6 +5,9 @@ module.exports = {
     "globals": {
       "Uint8Array": false
     },
+    "parserOptions": {
+      "ecmaVersion": 6
+    },
     "extends": "eslint:recommended",
     "rules": {
         "accessor-pairs": "error",
