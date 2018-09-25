@@ -433,6 +433,8 @@ Session.prototype = {
       }
       request.reply(statusCode);
       self.emit('reinviteFailed', self);
+      // TODO: This could be better
+      throw e;
     })
     .then(function(description) {
       var extraHeaders = ['Contact: ' + self.contact];
@@ -565,6 +567,14 @@ Session.prototype = {
     var self = this;
 
     if (this.status === C.STATUS_TERMINATED) {
+      this.logger.error('Received reinvite response, but in STATUS_TERMINATED');
+      // TODO: Do we need to send a SIP response?
+      return;
+    }
+
+    if (!this.pendingReinvite) {
+      this.logger.error('Received reinvite response, but have no pending reinvite');
+      // TODO: Do we need to send a SIP response?
       return;
     }
 

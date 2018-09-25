@@ -410,7 +410,24 @@ describe('Session', function() {
       expect(Session.sessionDescriptionHandler.setDescription).not.toHaveBeenCalled();
     });
 
+    it('returns without emitting anything when the response status code is 2xx and there is no pending reinvite', function() {
+      Session.pendingReinvite = false;
+
+      message.body = null;
+      message.headers['Content-Type'] = [];
+      message.status_code = 204;
+      message.transaction = {
+        sendACK: jasmine.createSpy('sendACK').and.returnValue({})
+      };
+
+      Session.receiveReinviteResponse(message);
+
+      expect(Session.emit).not.toHaveBeenCalled();
+    });
+
     it('emits renegotiationError when the response has no body with a 2xx status code', function() {
+      Session.pendingReinvite = true;
+
       message.body = null;
       message.headers['Content-Type'] = [];
       message.status_code = 222;
@@ -427,6 +444,8 @@ describe('Session', function() {
     });
 
     it('emits renegotiationError when the response\'s content-type is not application/sdp with a 2xx status code', function() {
+      Session.pendingReinvite = true;
+
       spyOn(message, 'getHeader').and.returnValue('wrong');
       message.status_code = 222;
       message.transaction = {
@@ -442,6 +461,8 @@ describe('Session', function() {
     });
 
     it('calls sendRequest and setDescription when response has a 2xx status code, a body, and content-type of application/sdp', function() {
+      Session.pendingReinvite = true;
+
       message.status_code = 222;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
@@ -457,6 +478,8 @@ describe('Session', function() {
     });
 
     it('returns without calling sendRequest and emits renegotiationError when response status code is neither 1xx or 2xx', function() {
+      Session.pendingReinvite = true;
+
       message.status_code = 333;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
