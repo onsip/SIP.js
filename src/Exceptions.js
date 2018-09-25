@@ -41,6 +41,7 @@ module.exports = {
     return exception;
   }()),
 
+  // Deprecated
   GetDescriptionError: (function(){
     var exception = function(message) {
       this.code = 4;
@@ -79,6 +80,18 @@ module.exports = {
       this.code = 7;
       this.name = 'TRANSPORT_ERROR';
       this.message = message;
+    };
+    exception.prototype = new Error();
+    return exception;
+  }()),
+
+  SessionDescriptionHandlerError: (function(){
+    var exception = function(method, error, message) {
+      this.code = 8;
+      this.name = 'SESSION_DESCRIPTION_HANDLER_ERROR';
+      this.method = method;
+      this.error = error;
+      this.message = message || 'Error with Session Description Handler';
     };
     exception.prototype = new Error();
     return exception;
