@@ -800,6 +800,8 @@ UA.prototype.loadConfig = function(configuration) {
 
       uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
 
+      domain: null,
+
       //Custom Configuration Settings
       custom: {},
 
@@ -950,6 +952,12 @@ UA.prototype.loadConfig = function(configuration) {
   hostportParams.user = null;
   settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, '');
 
+  // D2Nova Stephen Chen: customize the domain
+  if (settings.domain) {
+    settings.uri.host = settings.domain;
+    settings.uri.port = '';
+  }
+
   /* Check whether authorizationUser is explicitly defined.
    * Take 'settings.uri.user' value if not.
    */
@@ -1067,6 +1075,12 @@ UA.prototype.getConfigurationCheck = function () {
           return;
         } else {
           return parsed;
+        }
+      },
+      // D2Nova Stephen Chen: validate the domain via Grammar parsing.
+      domain: function(domain) {
+        if (domain && typeof domain === 'string' && SIP.Grammar.parse(domain, 'host') !== -1) {
+          return domain;
         }
       },
 
