@@ -47,6 +47,7 @@ Transport = function(logger, options) {
   this.boundOnOpen = null;
   this.boundOnMessage = null;
   this.boundOnClose = null;
+  this.boundOnError = null;
 
   this.reconnectionAttempts = 0;
   this.reconnectTimer = null;
@@ -176,9 +177,11 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.boundOnOpen = this.onOpen.bind(this);
       this.boundOnMessage = this.onMessage.bind(this);
       this.boundOnClose = this.onClose.bind(this);
+      this.boundOnError = this.onError.bind(this);
       this.ws.addEventListener('open', this.boundOnOpen);
       this.ws.addEventListener('message', this.boundOnMessage);
       this.ws.addEventListener('close', this.boundOnClose);
+      this.ws.addEventListener('error', this.boundOnError);
     }.bind(this));
 
     return this.connectionPromise;
@@ -261,9 +264,11 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.ws.removeEventListener('open', this.boundOnOpen);
       this.ws.removeEventListener('message', this.boundOnMessage);
       this.ws.removeEventListener('close', this.boundOnClose);
+      this.ws.removeEventListener('error', this.boundOnError);
       this.boundOnOpen = null;
       this.boundOnMessage = null;
       this.boundOnClose = null;
+      this.boundOnError = null;
       this.ws = null;
     }
   }},
