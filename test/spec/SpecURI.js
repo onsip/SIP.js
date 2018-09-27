@@ -62,9 +62,9 @@ describe("URI", function() {
       expect(URI.parameters).toEqual({"key":"value"});
     });
     
-    it("sets a parameter and make the parameter lowercase", function() {
+    it("sets a parameter and doesn't change the case", function() {
       URI.setParam("key","VALUE");
-      expect(URI.parameters).toEqual({"key":"value"});
+      expect(URI.parameters).toEqual({"key":"VALUE"});
     });
   });
   
@@ -347,13 +347,13 @@ describe("URI", function() {
       });
     }
 
-    itsMethod('parses non-null parameter foo', 'getParam', 'foo', 'abc');
+    itsMethod('parses non-null parameter foo', 'getParam', 'foo', 'ABc');
     itsMethod('parses null parameter baz', 'getParam', 'baz', null);
     itsMethod('parses header list x-header-1', 'getHeader', 'x-header-1', ['AaA1', 'AAA2']);
     itsMethod('parses header X-HEADER-2', 'getHeader', 'X-HEADER-2', ['BbB']);
     itsMethod('doesn\'t parse missing header "nooo"', 'getHeader', 'nooo', undefined);
-    itsMethod('correctly toString()s itself', 'toString', undefined, 'sip:aliCE@versatica.com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
-    itsMethod('correctly toRaw()s itself', 'toRaw', undefined, 'SIP:aliCE@versaTICA.Com:6060;transport=tcp;foo=abc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
+    itsMethod('correctly toString()s itself', 'toString', undefined, 'sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
+    itsMethod('correctly toRaw()s itself', 'toRaw', undefined, 'SIP:aliCE@versaTICA.Com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB');
 
     var newUser = 'Iñaki:PASSWD';
     describe('when setting the user to "' + newUser + '"', function () {
@@ -366,7 +366,7 @@ describe("URI", function() {
       });
 
       it('can delete parameter "foo" and delete header "x-header-1"', function () {
-        expect(uri.deleteParam('foo')).toEqual('abc');
+        expect(uri.deleteParam('foo')).toEqual('ABc');
         expect(uri.deleteHeader('x-header-1')).toEqual(['AaA1', 'AAA2']);
         expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versatica.com:6060;transport=tcp;baz?X-Header-2=BbB');
       });

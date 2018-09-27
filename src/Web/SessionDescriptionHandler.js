@@ -224,19 +224,34 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     .then(function() {
       return SIP.Utils.reducePromises(modifiers, description);
     })
-    .catch(function modifierError(e) {
-      self.logger.error("The modifiers did not resolve successfully");
-      self.logger.error(e);
-      throw e;
+    .catch((e) => {
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+        throw e;
+      }
+      const error = new SIP.Exceptions.SessionDescriptionHandlerError("setDescription", e, "The modifiers did not resolve successfully");
+      this.logger.error(error.message);
+      self.emit('peerConnection-setRemoteDescriptionFailed', error);
+      throw error;
     })
     .then(function(modifiedDescription) {
       self.emit('setDescription', modifiedDescription);
       return self.peerConnection.setRemoteDescription(modifiedDescription);
     })
-    .catch(function setRemoteDescriptionError(e) {
-      self.logger.error(e);
-      self.emit('peerConnection-setRemoteDescriptionFailed', e);
-      throw e;
+    .catch((e) => {
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+        throw e;
+      }
+      // Check the original SDP for video, and ensure that we have want to do audio fallback
+      if ((/^m=video.+$/gm).test(sessionDescription) && !options.disableAudioFallback) {
+        // Do not try to audio fallback again
+        options.disableAudioFallback = true;
+        // Remove video first, then do the other modifiers
+        return this.setDescription(sessionDescription, options, [SIP.Web.Modifiers.stripVideo].concat(modifiers));
+      }
+      const error = new SIP.Exceptions.SessionDescriptionHandlerError("setDescription", e);
+      this.logger.error(error.error);
+      this.emit('peerConnection-setRemoteDescriptionFailed', error);
+      throw error;
     })
     .then(function setRemoteDescriptionSuccess() {
       if (self.peerConnection.getReceivers) {
@@ -303,9 +318,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
     return pc[methodName](RTCOfferOptions)
-      .catch(function methodError(e) {
-        self.emit('peerConnection-' + methodName + 'Failed', e);
-        throw e;
+      .catch((e) => {
+        if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+          throw e;
+        }
+        const error = new SIP.Exceptions.SessionDescriptionHandlerError("createOfferOrAnswer", e, 'peerConnection-' + methodName + 'Failed');
+        this.emit('peerConnection-' + methodName + 'Failed', error);
+        throw error;
       })
       .then(function(sdp) {
         return SIP.Utils.reducePromises(modifiers, self.createRTCSessionDescriptionInit(sdp));
@@ -314,9 +333,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         self.resetIceGatheringComplete();
         return pc.setLocalDescription(sdp);
       })
-      .catch(function localDescError(e) {
-        self.emit('peerConnection-SetLocalDescriptionFailed', e);
-        throw e;
+      .catch((e) => {
+        if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+          throw e;
+        }
+        const error = new SIP.Exceptions.SessionDescriptionHandlerError("createOfferOrAnswer", e, 'peerConnection-SetLocalDescriptionFailed');
+        this.emit('peerConnection-SetLocalDescriptionFailed', error);
+        throw error;
       })
       .then(function onSetLocalDescriptionSuccess() {
         return self.waitForIceGatheringComplete();
@@ -329,10 +352,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         self.setDirection(localDescription.sdp);
         return localDescription;
       })
-      .catch(function createOfferOrAnswerError (e) {
-        self.logger.error(e);
-        // TODO: Not sure if this is correct
-        throw new SIP.Exceptions.GetDescriptionError(e);
+      .catch((e) => {
+        if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+          throw e;
+        }
+        const error = new SIP.Exceptions.SessionDescriptionHandlerError("createOfferOrAnswer", e);
+        this.logger.error(error);
+        throw error;
       });
   }},
 
@@ -410,10 +436,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       };
     }
 
-    this.peerConnection.onicecandidate = function(e) {
+    this.peerConnection.onicecandidate = function (e) {
       self.emit('iceCandidate', e);
       if (e.candidate) {
-        self.logger.log('ICE candidate received: '+ (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+        self.logger.log('ICE candidate received: ' + (e.candidate.candidate === null ? null : e.candidate.candidate.trim()));
+      } else if (e.candidate === null) {
+        // indicates the end of candidate gathering
+        self.logger.log('ICE candidate gathering complete');
+        self.triggerIceGatheringComplete();
       }
     };
 
@@ -497,11 +527,16 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         resolve([]);
       }
     }.bind(this))
-    .catch(function acquireFailed(err) {
-      this.logger.error('unable to acquire streams');
-      this.logger.error(err);
-      return SIP.Utils.Promise.reject(err);
-    }.bind(this))
+    .catch((e) => {
+      // TODO: This propogates downwards
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+        throw e;
+      }
+      const error = new SIP.Exceptions.SessionDescriptionHandlerError("acquire", e, "unable to acquire streams");
+      this.logger.error(error.message);
+      this.logger.error(error.error);
+      throw error;
+    })
     .then(function acquireSucceeded(streams) {
       this.logger.log('acquired local media streams');
       try {
@@ -516,11 +551,15 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         return SIP.Utils.Promise.reject(e);
       }
     }.bind(this))
-    .catch(function removeStreamsFailed(err) {
-      this.logger.error('error removing streams');
-      this.logger.error(err);
-      return SIP.Utils.Promise.reject(err);
-    }.bind(this))
+    .catch((e) => {
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+        throw e;
+      }
+      const error = new SIP.Exceptions.SessionDescriptionHandlerError("acquire", e, "error removing streams");
+      this.logger.error(error.message);
+      this.logger.error(error.error);
+      throw error;
+    })
     .then(function addStreams(streams) {
       try {
         streams = [].concat(streams);
@@ -539,11 +578,15 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       }
       return SIP.Utils.Promise.resolve();
     }.bind(this))
-    .catch(function addStreamsFailed(err) {
-      this.logger.error('error adding stream');
-      this.logger.error(err);
-      return SIP.Utils.Promise.reject(err);
-    }.bind(this));
+    .catch((e) => {
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+        throw e;
+      }
+      const error = new SIP.Exceptions.SessionDescriptionHandlerError("acquire", e, "error adding stream");
+      this.logger.error(error.message);
+      this.logger.error(error.error);
+      throw error;
+    });
   }},
 
   hasOffer: {writable: true, value: function hasOffer (where) {

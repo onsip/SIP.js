@@ -52,6 +52,14 @@ function stripPayload(sdp, payload) {
   return lines.join('\r\n');
 }
 
+function stripMediaDescription(sdp, description) {
+  const descriptionRegExp = new RegExp("m=" + description + ".*$", "gm");
+  if (descriptionRegExp.test(sdp)) {
+    sdp = sdp.split(/^m=/gm).filter((section) => (section.substr(0, description.length) !== description)).join('m=');
+  }
+  return sdp;
+}
+
 Modifiers = {
   stripTcpCandidates: function(description) {
     description.sdp = description.sdp.replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
@@ -78,6 +86,11 @@ Modifiers = {
       description.sdp = stripPayload(description.sdp, payload);
       return SIP.Utils.Promise.resolve(description);
     };
+  },
+
+  stripVideo: function(description) {
+    description.sdp = stripMediaDescription(description, "video");
+    return SIP.Utils.Promise.resolve(description);
   }
 };
 

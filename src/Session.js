@@ -421,7 +421,7 @@ Session.prototype = {
 
     promise.catch(function onFailure (e) {
       var statusCode;
-      if (e instanceof SIP.Exceptions.GetDescriptionError) {
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
         statusCode = 500;
       } else if (e instanceof SIP.Exceptions.RenegotiationError) {
         self.emit('renegotiationError', e);
@@ -433,6 +433,8 @@ Session.prototype = {
       }
       request.reply(statusCode);
       self.emit('reinviteFailed', self);
+      // TODO: This could be better
+      throw e;
     })
     .then(function(description) {
       var extraHeaders = ['Contact: ' + self.contact];
@@ -565,6 +567,14 @@ Session.prototype = {
     var self = this;
 
     if (this.status === C.STATUS_TERMINATED) {
+      this.logger.error('Received reinvite response, but in STATUS_TERMINATED');
+      // TODO: Do we need to send a SIP response?
+      return;
+    }
+
+    if (!this.pendingReinvite) {
+      this.logger.error('Received reinvite response, but have no pending reinvite');
+      // TODO: Do we need to send a SIP response?
       return;
     }
 
@@ -1612,7 +1622,8 @@ InviteClientContext.prototype = Object.create({}, {
               session.emit('progress', response);
             })
             .catch(function onFailure(e) {
-              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+              // TODO: This is a bit wonky
+              if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
                 earlyDialog.pracked.push(response.getHeader('rseq'));
                 if (session.status === C.STATUS_TERMINATED) {
                   return;
@@ -1700,12 +1711,10 @@ InviteClientContext.prototype = Object.create({}, {
               session.accepted(response);
             })
             .catch(function onFailure(e) {
-              if (e instanceof SIP.Exceptions.GetDescriptionError) {
-                // TODO do something here
-                session.logger.warn("there was a problem");
-              } else {
+              if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
                 session.logger.warn('invalid description');
                 session.logger.warn(e);
+                // TODO: This message is inconsistent
                 session.acceptAndTerminate(response, 488, 'Invalid session description');
                 session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
               }
