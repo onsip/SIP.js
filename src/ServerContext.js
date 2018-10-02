@@ -24,6 +24,7 @@ ServerContext = function (ua, request) {
 
   this.localIdentity = request.to;
   this.remoteIdentity = request.from;
+  this.diversion = request.diversion;
   if (request.hasHeader('P-Asserted-Identity')) {
     this.assertedIdentity = new SIP.NameAddrHeader.parse(request.getHeader('P-Asserted-Identity'));
   }

@@ -163,6 +163,15 @@ function parseHeader(message, data, headerStart, headerEnd) {
         message.refer_to = parsed;
       }
       break;
+    case 'diversion':
+      const parts = headerValue.split(':');
+      if(parts[1] && parts[1].split('@')[0]) {
+        parsed = parts[1].split('@')[0];
+      } else {
+        parsed = null;
+      }
+      message.diversion = parsed;
+      break;
     default:
       // Do not parse this header.
       message.setHeader(headerName, headerValue);
