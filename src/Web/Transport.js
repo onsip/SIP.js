@@ -339,6 +339,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     if (this.noAvailableServers()) {
       this.logger.warn('no available ws servers left - going to closed state');
       this.status = C.STATUS_CLOSED;
+      this.emit('closed');
       this.resetServerErrorStatus();
       return;
     }
