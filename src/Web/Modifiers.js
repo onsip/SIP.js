@@ -89,7 +89,7 @@ Modifiers = {
   },
 
   stripVideo: function(description) {
-    description.sdp = stripMediaDescription(description, "video");
+    description.sdp = stripMediaDescription(description.sdp, "video");
     return SIP.Utils.Promise.resolve(description);
   }
 };
