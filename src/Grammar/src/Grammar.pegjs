@@ -140,7 +140,8 @@ hostname        = ( domainlabel "." )* toplabel  "." ? {
 
 domainlabel     = domainlabel: ( [a-zA-Z0-9_-]+ )
 
-toplabel        = toplabel: ( [a-zA-Z][a-zA-Z0-9-]* )
+// D2Nova Stephen Chen: support GUID format domain
+toplabel        = toplabel: ( [a-zA-Z0-9][a-zA-Z0-9-]* )
 
 IPv6reference   = "[" IPv6address "]" {
                     options.data.host_type = 'IPv6';
