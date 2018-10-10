@@ -337,11 +337,16 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     }
 
     if (this.noAvailableServers()) {
-      this.logger.warn('no available ws servers left - going to closed state');
       this.status = C.STATUS_CLOSED;
       this.emit('closed');
       this.resetServerErrorStatus();
-      return;
+      if (!this.configuration.alwaysReconnect) {
+        this.logger.warn('no available ws servers left - going to closed state');
+        return;
+      }
+      this.logger.warn('no available ws servers left - restarting');
+      this.reconnectionAttempts = 0;
+      this.server = this.getNextWsServer();
     }
 
     if (this.isConnected()) {
@@ -548,6 +553,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
 
         connectionTimeout: 5,
 
+        alwaysReconnect: true,
         maxReconnectionAttempts: 3,
         reconnectionTimeout: 4,
 
@@ -731,6 +737,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         traceSip: function(traceSip) {
           if (typeof traceSip === 'boolean') {
             return traceSip;
+          }
+        },
+
+        alwaysReconnect: function(alwaysReconnect) {
+          if (typeof alwaysReconnect === 'boolean') {
+            return alwaysReconnect;
           }
         },
 
