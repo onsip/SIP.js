@@ -1101,7 +1101,11 @@ InviteServerContext.prototype = Object.create({}, {
         }
       },
 
-      descriptionCreationFailed = function() {
+      descriptionCreationFailed = function(err) {
+        if (err instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+            self.logger.log(err.message);
+            self.logger.log(err.error);
+        }
         // TODO: This should check the actual error and make sure it is an
         //        "expected" error. Otherwise it should throw.
         if (self.status === C.STATUS_TERMINATED) {
@@ -1432,7 +1436,11 @@ InviteClientContext.prototype = Object.create({}, {
             self.status = C.STATUS_INVITE_SENT;
             self.send();
           },
-          function onFailure() {
+          function onFailure(err) {
+            if (err instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+              self.logger.log(err.message);
+              self.logger.log(err.error);
+            }
             if (self.status === C.STATUS_TERMINATED) {
               return;
             }
