@@ -54,8 +54,27 @@ function stripPayload(sdp, payload) {
 
 function stripMediaDescription(sdp, description) {
   const descriptionRegExp = new RegExp("m=" + description + ".*$", "gm");
+  const groupRegExp = new RegExp("^a=group:.*$", "gm");
+
   if (descriptionRegExp.test(sdp)) {
-    sdp = sdp.split(/^m=/gm).filter((section) => (section.substr(0, description.length) !== description)).join('m=');
+    let midLineToRemove;
+    sdp = sdp.split(/^m=/gm).filter((section) => {
+      if (section.substr(0, description.length) === description) {
+        midLineToRemove = section.match(/^a=mid:.*$/gm);
+        if (midLineToRemove) {
+          midLineToRemove = midLineToRemove[0].match(/:.+$/g)[0].substr(1);
+        }
+        return false;
+      }
+      return true;
+    }).join('m=');
+    let groupLine = sdp.match(groupRegExp);
+    if (groupLine && groupLine.length === 1) {
+      groupLine = groupLine[0];
+      const groupRegExpReplace = new RegExp("\ *" + midLineToRemove + "[^\ ]*", "g");
+      groupLine = groupLine.replace(groupRegExpReplace, "");
+      sdp = sdp.split(groupRegExp).join(groupLine);
+    }
   }
   return sdp;
 }
