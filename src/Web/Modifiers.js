@@ -91,6 +91,23 @@ Modifiers = {
   stripVideo: function(description) {
     description.sdp = stripMediaDescription(description.sdp, "video");
     return SIP.Utils.Promise.resolve(description);
+  },
+
+  addMidLines: function(description) {
+    let sdp = description.sdp;
+    if (sdp.search(/^a=mid.*$/gm) === -1) {
+      const mlines = sdp.match(/^m=.*$/gm);
+      sdp = sdp.split(/^m=.*$/gm);
+      mlines.forEach((elem, idx) => {
+        mlines[idx] = elem + '\na=mid:' + idx;
+      });
+      sdp.forEach((elem, idx) => {
+        sdp[idx] = elem + mlines[idx];
+      });
+      sdp = sdp.join('');
+      description.sdp = sdp;
+    }
+    return SIP.Utils.Promise.resolve(description);
   }
 };
 
