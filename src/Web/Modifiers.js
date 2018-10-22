@@ -121,7 +121,9 @@ Modifiers = {
         mlines[idx] = elem + '\na=mid:' + idx;
       });
       sdp.forEach((elem, idx) => {
-        sdp[idx] = elem + mlines[idx];
+        if (mlines[idx]) {
+          sdp[idx] = elem + mlines[idx];
+        }
       });
       sdp = sdp.join('');
       description.sdp = sdp;

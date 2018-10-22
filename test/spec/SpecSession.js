@@ -2134,9 +2134,12 @@ describe('InviteClientContext', function() {
       expect(function() {InviteClientContext.cancel();}).toThrowError('Invalid status: 9');
     });
 
-    it('throws a type error if the status code is invalid or less than 200', function() {
-      expect(function() {InviteClientContext.cancel({status_code: 100});}).toThrowError('Invalid status_code: 100');
+    it('throws a type error if the status code is invalid', function() {
       expect(function() {InviteClientContext.cancel({status_code: 700});}).toThrowError('Invalid status_code: 700');
+    });
+
+    it('throws a type error if the status code is less than 200', function() {
+      expect(function() {InviteClientContext.cancel({status_code: 100});}).toThrowError('Invalid status_code: 100');
     });
 
     it('sets isCanceled to true, calls canceled, and returns this if status is NULL', function() {
