@@ -13,6 +13,21 @@ SIP.Subscription = function (ua, target, event, options) {
   options = Object.create(options || Object.prototype);
   this.extraHeaders = options.extraHeaders = (options.extraHeaders || []).slice();
 
+  var state;
+  Object.defineProperty(this, 'state', {
+    get: function () {
+      return state;
+    },
+    set: function (value) {
+      if (state !== value) {
+        state = value;
+        if (state === 'terminated') {
+          this.emit('terminated');
+        }
+      }
+    }
+  });
+
   this.id = null;
   this.state = 'init';
 
