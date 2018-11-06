@@ -769,6 +769,7 @@ describe('InviteServerContext', function() {
 
   afterEach(function(){
     if(ua.status !== 2) {
+      ua.sessions = [];
       ua.stop();
     };
   });

@@ -1213,6 +1213,7 @@ InviteServerContext.prototype = Object.create({}, {
       break;
     case SIP.C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
+        this.status = C.STATUS_CONFIRMED;
         if(this.sessionDescriptionHandler.hasDescription(request.getHeader('Content-Type'))) {
           // ACK contains answer to an INVITE w/o SDP negotiation
           this.hasAnswer = true;
