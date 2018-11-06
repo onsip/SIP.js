@@ -1,4 +1,7 @@
 "use strict";
+
+const timers = require('timers');
+
 /**
  * @fileoverview SIP TIMERS
  */
@@ -10,7 +13,7 @@ var
   T1 = 500,
   T2 = 4000,
   T4 = 5000;
-module.exports = function (timers) {
+module.exports = function () {
   var Timers = {
     T1: T1,
     T2: T2,

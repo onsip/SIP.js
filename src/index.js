@@ -1,2 +1,2 @@
 "use strict";
-module.exports = require('./SIP')(require('./environment'));
+module.exports = require('./SIP')();

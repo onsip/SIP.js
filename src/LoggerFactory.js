@@ -6,7 +6,7 @@ var levels = {
   'debug': 3
 };
 
-module.exports = function (console) {
+module.exports = function () {
 
 var LoggerFactory = function () {
   var logger,
@@ -86,6 +86,7 @@ Object.keys(levels).forEach(function (targetName) {
   LoggerFactory.prototype[targetName] = function (category, label, content) {
     if (this.level >= levels[targetName]) {
       if (this.builtinEnabled) {
+        // eslint-disable-next-line no-console
         this.print(console[targetName], category, label, content);
       }
 

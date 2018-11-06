@@ -4,7 +4,7 @@
  */
 "use strict";
 
-module.exports = function (environment) {
+module.exports = function () {
 
 var pkg = require('../package.json'),
     version = pkg.version,
@@ -19,12 +19,12 @@ var SIP = Object.defineProperties({}, {
   }
 });
 
-require('./Utils')(SIP, environment);
-SIP.LoggerFactory = require('./LoggerFactory')(environment.console);
+require('./Utils')(SIP);
+SIP.LoggerFactory = require('./LoggerFactory')();
 SIP.EventEmitter = require('./EventEmitter')();
 SIP.C = require('./Constants')(SIP.name, SIP.version);
 SIP.Exceptions = require('./Exceptions');
-SIP.Timers = require('./Timers')(environment.timers);
+SIP.Timers = require('./Timers')();
 SIP.Transport = require('./Transport')(SIP);
 require('./Parser')(SIP);
 require('./SIPMessage')(SIP);
@@ -40,7 +40,7 @@ require('./ServerContext')(SIP);
 require('./Session')(SIP);
 require('./Subscription')(SIP);
 require('./PublishContext')(SIP);
-require('./UA')(SIP, environment);
+require('./UA')(SIP);
 require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
 SIP.Grammar = require('./Grammar')(SIP);

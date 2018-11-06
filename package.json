@@ -5,9 +5,6 @@
   "version": "0.11.6",
   "license": "MIT",
   "main": "dist/sip.js",
-  "browser": {
-    "./src/environment.js": "./src/environment_browser.js"
-  },
   "homepage": "https://sipjs.com",
   "author": "OnSIP <developer@onsip.com> (https://sipjs.com/aboutus/)",
   "contributors": [

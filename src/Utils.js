@@ -3,12 +3,12 @@
  * @fileoverview Utils
  */
 
-module.exports = function (SIP, environment) {
+module.exports = function (SIP) {
 var Utils;
 
 Utils= {
 
-  Promise: environment.Promise,
+  Promise: global.Promise,
 
   defer: function defer () {
     var deferred = {};

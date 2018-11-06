@@ -1,4 +1,7 @@
 "use strict";
+
+const environment = global.window || global;
+
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
@@ -8,7 +11,7 @@
  *
  * @param {Object} [configuration.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  */
-module.exports = function (SIP, environment) {
+module.exports = function (SIP) {
 var UA,
   C = {
     // UA status codes
