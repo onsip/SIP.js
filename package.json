@@ -38,7 +38,6 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-webpack": "^3.0.5",
     "pegjs": "^0.10.0",
-    "pegjs-loader": "^0.5.4",
     "typescript": "^3.1.6",
     "webpack": "^4.25.1",
     "webpack-cli": "^3.1.2"
@@ -48,10 +47,11 @@
   },
   "scripts": {
     "prebuild": "eslint src/*.js src/**/*.js",
-    "build-dev": "webpack --progress --env.buildType dev",
-    "build-prod": "webpack --progress --env.buildType prod",
+    "generate-grammar": "node build/grammarGenerator.js",
+    "build-dev": "webpack --progress --config build/webpack.config.js --env.buildType dev",
+    "build-prod": "webpack --progress --config build/webpack.config.js --env.buildType prod",
     "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js  dist/sip-$npm_package_version.min.js",
-    "build": "npm run build-dev && npm run build-prod && npm run copy-dist-files",
+    "build": "npm run generate-grammar && npm run build-dev && npm run build-prod && npm run copy-dist-files",
     "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
