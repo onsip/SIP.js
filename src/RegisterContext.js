@@ -3,35 +3,29 @@ module.exports = function (SIP) {
 
 var RegisterContext;
 
-RegisterContext = function (ua) {
-  var params = {},
-      regId = 1;
-
+RegisterContext = function (ua, options = {}) {
+  this.options = options;
+  this.options.extraContactHeaderParams = this.options.extraContactHeaderParams || [];
+  this.options.instanceId = this.options.instanceId || ua.configuration.instanceId; // TODO: No way to turn off instance-id and reg-id
+  this.options.params = this.options.params || {};
+  this.options.regId = this.options.regId || 1;
   this.registrar = ua.configuration.registrarServer;
   this.expires = ua.configuration.registerExpires;
 
-
   // Contact header
   this.contact = ua.contact.toString();
-
-  if(regId) {
-    this.contact += ';reg-id='+ regId;
-    this.contact += ';+sip.instance="<urn:uuid:'+ ua.configuration.instanceId+'>"';
-  }
 
   // Call-ID and CSeq values RFC3261 10.2
   this.call_id = SIP.Utils.createRandomToken(22);
   this.cseq = Math.floor(Math.random() * 10000);
 
-  this.to_uri = ua.configuration.uri;
-
-  params.to_uri = this.to_uri;
-  params.to_displayName = ua.configuration.displayName;
-  params.call_id = this.call_id;
-  params.cseq = this.cseq;
+  this.options.params.to_uri = this.options.params.to_uri || ua.configuration.uri;
+  this.options.params.to_displayName = this.options.params.to_displayName || ua.configuration.displayName;
+  this.options.params.call_id = this.options.params.call_id || this.call_id;
+  this.options.params.cseq = this.options.params.cseq || this.cseq;
 
   // Extends ClientContext
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar, {params: params}]);
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar, this.options]);
 
   this.registrationTimer = null;
   this.registrationExpiredTimer = null;
@@ -48,9 +42,20 @@ RegisterContext = function (ua) {
 RegisterContext.prototype = Object.create({}, {
   register: {writable: true, value: function register (options = {}) {
     // Handle Options
-    this.options = options;
-    let extraHeaders = (this.options.extraHeaders || []).slice();
-    extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    this.options = SIP.Utils.defaultOptions(this.options, options);
+    const extraHeaders = (this.options.extraHeaders || []).slice();
+
+    let contact = this.contact;
+    contact += ';reg-id=' + this.options.regId; // TODO: No way to turn this off
+    contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
+
+    if (this.options.extraContactHeaderParams) {
+      this.options.extraContactHeaderParams.forEach((header) => {
+        contact += ';' + header;
+      });
+    }
+
+    extraHeaders.push('Contact: ' + contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
     // Save original extraHeaders to be used in .close
