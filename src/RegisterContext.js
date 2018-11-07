@@ -46,12 +46,10 @@ RegisterContext = function (ua) {
 };
 
 RegisterContext.prototype = Object.create({}, {
-  register: {writable: true, value: function register  (options) {
-    var self = this, extraHeaders;
-
+  register: {writable: true, value: function register (options = {}) {
     // Handle Options
-    this.options = options || {};
-    extraHeaders = (this.options.extraHeaders || []).slice();
+    this.options = options;
+    let extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
     extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
@@ -118,14 +116,14 @@ RegisterContext.prototype = Object.create({}, {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
-          this.registrationTimer = SIP.Timers.setTimeout(function() {
-            self.registrationTimer = null;
-            self.register(self.options);
+          this.registrationTimer = SIP.Timers.setTimeout(() => {
+            this.registrationTimer = null;
+            this.register(this.options);
           }, (expires * 1000) - 3000);
-          this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
-            self.logger.warn('registration expired');
-            if (self.registered) {
-              self.unregistered(null, SIP.C.causes.EXPIRES);
+          this.registrationExpiredTimer = SIP.Timers.setTimeout(() => {
+            this.logger.warn('registration expired');
+            if (this.registered) {
+              this.unregistered(null, SIP.C.causes.EXPIRES);
             }
           }, expires * 1000);
 
