@@ -177,7 +177,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.boundOnOpen = this.onOpen.bind(this);
       this.boundOnMessage = this.onMessage.bind(this);
       this.boundOnClose = this.onClose.bind(this);
-      this.boundOnError = this.onError.bind(this);
+      this.boundOnError = this.onWebsocketError.bind(this);
       this.ws.addEventListener('open', this.boundOnOpen);
       this.ws.addEventListener('message', this.boundOnMessage);
       this.ws.addEventListener('close', this.boundOnClose);
@@ -231,7 +231,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     this.emit('disconnected', {code: e.code, reason: e.reason});
 
     if (this.status !== C.STATUS_CLOSING) {
-      this.logger.warn('WebSocket abrupt disconnection');
+      this.logger.warn('WebSocket closed without SIP.js requesting it');
       this.emit('transportError');
     }
 
@@ -320,11 +320,20 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
 
   /**
   * @event
-  * @param {event} e
+  * @param {string} e
   */
   onError: {writable: true, value: function onError (e) {
     this.logger.warn('Transport error: ' + e);
     this.emit('transportError');
+  }},
+
+  /**
+   * @event
+   * @private
+   * @param {event} e
+   */
+  onWebsocketError: {writable: false, value: function onWebsocketError () {
+    this.onError('The Websocket had an error');
   }},
 
   /**
