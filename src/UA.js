@@ -9,7 +9,6 @@ const environment = global.window || global;
  *        A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
  *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  *
- * @param {Object} [configuration.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  */
 module.exports = function (SIP) {
 var UA,
