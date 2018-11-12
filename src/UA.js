@@ -165,7 +165,7 @@ UA = function(configuration) {
   }
 
   // Initialize registerContext
-  this.registerContext = new SIP.RegisterContext(this);
+  this.registerContext = new SIP.RegisterContext(this, configuration.registerOptions);
   this.registerContext.on('failed', selfEmit('registrationFailed'));
   this.registerContext.on('registered', selfEmit('registered'));
   this.registerContext.on('unregistered', selfEmit('unregistered'));
@@ -812,9 +812,7 @@ UA.prototype.loadConfig = function(configuration) {
       password: null,
 
       // Registration parameters
-      registerExpires: 600,
-      register: true,
-      registrarServer: null,
+      registerOptions: {},
 
       // Transport related parameters
       transportConstructor: require('./Web/Transport')(SIP),
@@ -914,11 +912,6 @@ UA.prototype.loadConfig = function(configuration) {
   // Allow passing 0 number as displayName.
   if (settings.displayName === 0) {
     settings.displayName = '0';
-  }
-
-  // Instance-id for GRUU
-  if (!settings.instanceId) {
-    settings.instanceId = SIP.Utils.newUUID();
   }
 
   // sipjsId instance parameter. Static random tag of length 5
@@ -1127,22 +1120,6 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      instanceId: function(instanceId) {
-        if(typeof instanceId !== 'string') {
-          return;
-        }
-
-        if ((/^uuid:/i.test(instanceId))) {
-          instanceId = instanceId.substr(5);
-        }
-
-        if(SIP.Grammar.parse(instanceId, 'uuid') === -1) {
-          return;
-        } else {
-          return instanceId;
-        }
-      },
-
       noAnswerTimeout: function(noAnswerTimeout) {
         var value;
         if (SIP.Utils.isDecimal(noAnswerTimeout)) {
@@ -1177,40 +1154,9 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      register: function(register) {
-        if (typeof register === 'boolean') {
-          return register;
-        }
-      },
-
-      registerExpires: function(registerExpires) {
-        var value;
-        if (SIP.Utils.isDecimal(registerExpires)) {
-          value = Number(registerExpires);
-          if (value > 0) {
-            return value;
-          }
-        }
-      },
-
-      registrarServer: function(registrarServer) {
-        var parsed;
-
-        if(typeof registrarServer !== 'string') {
-          return;
-        }
-
-        if (!/^sip:/i.test(registrarServer)) {
-          registrarServer = SIP.C.SIP + ':' + registrarServer;
-        }
-        parsed = SIP.URI.parse(registrarServer);
-
-        if(!parsed) {
-          return;
-        } else if(parsed.user) {
-          return;
-        } else {
-          return parsed;
+      registerOptions: function(registerOptions) {
+        if (typeof registerOptions === 'object') {
+          return registerOptions;
         }
       },
 
