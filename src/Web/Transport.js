@@ -567,32 +567,10 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         traceSip: false,
       };
 
-    // Pre-Configuration
-    function aliasUnderscored (parameter, logger) {
-      var underscored = parameter.replace(/([a-z][A-Z])/g, function (m) {
-        return m[0] + '_' + m[1].toLowerCase();
-      });
-
-      if (parameter === underscored) {
-        return;
-      }
-
-      var hasParameter = configuration.hasOwnProperty(parameter);
-      if (configuration.hasOwnProperty(underscored)) {
-        logger.warn(underscored + ' is deprecated, please use ' + parameter);
-        if (hasParameter) {
-          logger.warn(parameter + ' overriding ' + underscored);
-        }
-      }
-
-      configuration[parameter] = hasParameter ? configuration[parameter] : configuration[underscored];
-    }
-
     var configCheck = this.getConfigurationCheck();
 
     // Check Mandatory parameters
     for(parameter in configCheck.mandatory) {
-      aliasUnderscored(parameter, this.logger);
       if(!configuration.hasOwnProperty(parameter)) {
         throw new SIP.Exceptions.ConfigurationError(parameter);
       } else {
@@ -608,7 +586,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
 
     // Check Optional parameters
     for(parameter in configCheck.optional) {
-      aliasUnderscored(parameter, this.logger);
       if(configuration.hasOwnProperty(parameter)) {
         value = configuration[parameter];
 
