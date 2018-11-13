@@ -110,7 +110,9 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     options = options || {};
     options.code = options.code || 1000;
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      return SIP.Utils.Promise.reject('Failed status transition - attempted to disconnect a socket that was not open');
+      return this.connectionPromise
+        .then(() => Promise.reject('The websocket did not disconnect'))
+        .catch(() => Promise.resolve({overrideEvent: true}));
     }
     this.emit('disconnecting');
     this.disconnectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
@@ -138,10 +140,13 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * Connect socket.
   */
   connectPromise: {writable: true, value: function connectPromise (options) {
+    options = options || {};
+    if (this.status === C.STATUS_CLOSING && !options.force) {
+      return Promise.reject('WebSocket ' + this.server.ws_uri + ' is closing');
+    }
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    options = options || {};
     this.server = this.server || this.getNextWsServer(options.force);
 
     this.connectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
@@ -172,9 +177,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         return;
       }
 
-      this.connectionTimeout = SIP.Timers.setTimeout(function() {
-        this.onError('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
-      }.bind(this), this.configuration.connectionTimeout * 1000);
+      this.connectionTimeout = SIP.Timers.setTimeout(() => {
+        this.statusTransition(C.STATUS_CLOSED);
+        this.logger.warn('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
+        this.emit('disconnected', {code: 1000});
+        reject('Connection timeout');
+      }, this.configuration.connectionTimeout * 1000);
 
       this.boundOnOpen = this.onOpen.bind(this);
       this.boundOnMessage = this.onMessage.bind(this);
@@ -196,6 +204,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @param {event} e
   */
   onOpen: {writable: true, value: function onOpen () {
+    if (this.status === C.STATUS_CLOSED) { // Indicated that the transport thinks the ws is dead already
+      const ws = this.ws;
+      this.disposeWs();
+      ws.close(1000);
+      return;
+    }
     this.status = C.STATUS_OPEN; // quietly force status to open
     this.emit('connected');
     SIP.Timers.clearTimeout(this.connectionTimeout);
@@ -525,9 +539,10 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   statusTransition: {writable: true, value: function statusTransition (status, force) {
     this.logger.log('Attempting to transition status from ' + Object.keys(C)[this.status] + ' to ' + Object.keys(C)[status]);
-    if ((status === C.STATUS_OPEN && this.statusAssert(C.STATUS_CONNECTING, force)) ||
+    if ((status === C.STATUS_CONNECTING && this.statusAssert(C.STATUS_CLOSED)) ||
+        (status === C.STATUS_OPEN && this.statusAssert(C.STATUS_CONNECTING, force)) ||
         (status === C.STATUS_CLOSING && this.statusAssert(C.STATUS_OPEN, force))    ||
-        (status === C.STATUS_CLOSED && this.statusAssert(C.STATUS_CLOSING, force)))
+        (status === C.STATUS_CLOSED))
     {
       this.status = status;
       return true;
