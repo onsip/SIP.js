@@ -44,8 +44,6 @@ describe('RegisterContext', function() {
     expect(RegisterContext.options).toBeDefined();
     expect(RegisterContext.options.registrar).toBeDefined();
     expect(RegisterContext.options.expires).toBe(ua.configuration.registerOptions.expires);
-    expect(RegisterContext.call_id).toBeDefined();
-    expect(RegisterContext.cseq).toBeGreaterThan(0);
     expect(RegisterContext.registrationTimer).toBeDefined();
     expect(RegisterContext.registered).toBeFalsy();
     expect(RegisterContext.contact).toBeDefined();
@@ -192,20 +190,6 @@ describe('RegisterContext', function() {
     });
   });
 
-  describe('.onTransportConnected', function(){
-    it('calls register', function() {
-      var options = { traceSip: true, extraHeaders: [ 'X-Foo: foo', 'X-Bar: bar' ] };
-      RegisterContext.options = options;
-
-      spyOn(RegisterContext, 'register').and.returnValue('register');
-      expect(RegisterContext.register).not.toHaveBeenCalled();
-
-      RegisterContext.onTransportConnected();
-
-      expect(RegisterContext.register).toHaveBeenCalledWith(options);
-    });
-  });
-
   describe('.close', function() {
     beforeEach(function(){
       spyOn(RegisterContext, 'unregister').and.returnValue('unregister');
@@ -296,7 +280,7 @@ describe('RegisterContext', function() {
       var cseqBefore = RegisterContext.cseq;
       RegisterContext.unregister();
       expect(RegisterContext.send).toHaveBeenCalledWith();
-      expect(RegisterContext.request.call_id).toBe(RegisterContext.call_id);
+      expect(RegisterContext.request.call_id).toBe(RegisterContext.options.params.call_id);
       expect(RegisterContext.request.cseq).toBe(cseqBefore + 1);
       expect(RegisterContext.cseq).toBe(cseqBefore+1);
     });

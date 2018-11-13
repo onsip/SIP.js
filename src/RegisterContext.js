@@ -12,8 +12,8 @@ RegisterContext = function (ua, options = {}) {
 
   this.options.params.to_uri = this.options.params.to_uri || ua.configuration.uri;
   this.options.params.to_displayName = this.options.params.to_displayName || ua.configuration.displayName;
-  this.options.params.call_id = this.options.params.call_id || this.call_id;
-  this.options.params.cseq = this.options.params.cseq || this.cseq;
+  this.options.params.call_id = this.options.params.call_id || SIP.Utils.createRandomToken(22);
+  this.options.params.cseq = this.options.params.cseq || Math.floor(Math.random() * 10000);
 
   /* If no 'registrarServer' is set use the 'uri' value without user portion. */
   if (!this.options.registrar) {
@@ -27,12 +27,14 @@ RegisterContext = function (ua, options = {}) {
     this.options.registrar = registrarServer;
   }
 
+  // Registration expires
+  this.expires = this.options.expires;
+
+  // Cseq
+  this.cseq = this.options.params.cseq;
+
   // Contact header
   this.contact = ua.contact.toString();
-
-  // Call-ID and CSeq values RFC3261 10.2
-  this.call_id = SIP.Utils.createRandomToken(22);
-  this.cseq = Math.floor(Math.random() * 10000);
 
   // Extends ClientContext
   SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.options.registrar, this.options]);
@@ -197,7 +199,7 @@ RegisterContext.prototype = Object.create({}, {
     const extraHeaders = (this.options.extraHeaders || []).slice();
 
     let contact = this.contact;
-    contact += ';reg-id=' + this.options.regId; // TODO: No way to turn this off
+    contact += ';reg-id=' + this.options.regId;
     contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
 
     if (this.options.extraContactHeaderParams) {
