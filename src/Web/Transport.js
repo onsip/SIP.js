@@ -111,6 +111,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
       return SIP.Utils.Promise.reject('Failed status transition - attempted to disconnect a socket that was not open');
     }
+    this.emit('disconnecting');
     this.disconnectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
       this.disconnectDeferredResolve = resolve;
 
