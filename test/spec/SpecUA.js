@@ -98,7 +98,7 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
-    expect(SIP.RegisterContext).toHaveBeenCalledWith(UA);
+    expect(SIP.RegisterContext).toHaveBeenCalled();
   });
 
   describe('.start', function() {
@@ -265,9 +265,9 @@ describe('UA', function() {
       expect(UA.registerContext.register).toHaveBeenCalled();
     });
 
-    it('sets the register configuration option to true', function() {
+    it('sets the register configuration option to true, if registerAfterDisconnect flag is passed', function() {
       UA.configuration.register = false;
-      UA.register(options)
+      UA.register({registerAfterDisconnect: true})
       expect(UA.configuration.register).toBeTruthy();
     });
 
@@ -1067,8 +1067,6 @@ describe('UA', function() {
 
       expect(UA.configuration.password).toBeNull();
 
-      expect(UA.configuration.registerExpires).toBe(600);
-      expect(UA.configuration.register).toBe(true);
       //registrarServer is set to null here, then switched later in the function if it wasn't passed in
 
       expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
@@ -1130,28 +1128,10 @@ describe('UA', function() {
       expect(UA.configuration.displayName).toBe('0');
     });
 
-    it('sets an instanceId if one is not passed in also sets sipjsId', function() {
-      UA.loadConfig({});
-
-      expect(UA.configuration.instanceId).toBeDefined();
-
-      expect(UA.configuration.sipjsId).toBeDefined();
-      expect(UA.configuration.sipjsId.length).toBe(5);
-    });
-
     it('sets auth user to uri user if auth user is not passed in', function() {
       UA.loadConfig({uri: 'james@onsnip.onsip.com'});
 
       expect(UA.configuration.authorizationUser).toBe(UA.configuration.uri.user);
-    });
-
-    it('sets the registrarServer to the uri (without user) if it is not passed in', function() {
-      UA.loadConfig({uri: 'james@onsnip.onsip.com'});
-
-      var reg = UA.configuration.uri.clone();
-      reg.user = null;
-
-      expect(UA.configuration.registrarServer).toEqual(reg);
     });
 
     it('uses getRandomTestNetIP for viaHost if hackIpInContact is set to true', function() {
@@ -1286,22 +1266,6 @@ describe('UA', function() {
       });
     });
 
-    describe('.instanceId', function() {
-      it('fails for everything but string hex pattern (see below)', function() {
-        expect(configCheck.optional.instanceId()).toBeUndefined();
-        expect(configCheck.optional.instanceId(7)).toBeUndefined();
-        expect(configCheck.optional.instanceId({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.instanceId(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.instanceId(false)).toBeUndefined();
-        expect(configCheck.optional.instanceId(7)).toBeUndefined(7);
-      });
-
-      it('passes if passed (hex8)-(hex4)-(hex4)-(hex4)-(hex12) as a string (may have uuid: in front, but removes this)', function() {
-        expect(configCheck.optional.instanceId('8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
-        expect(configCheck.optional.instanceId('uuid:8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
-      });
-    });
-
     describe('.noAnswerTimeout', function() {
       it('fails for anything but numbers', function() {
         expect(configCheck.optional.noAnswerTimeout(true)).toBeUndefined();
@@ -1377,61 +1341,6 @@ describe('UA', function() {
         expect(configCheck.optional.replaces(7)).toBe(SIP.C.supported.UNSUPPORTED);
         expect(configCheck.optional.replaces({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
         expect(configCheck.optional.replaces(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
-      });
-    });
-
-    describe('.register', function() {
-      it('fails for all types except boolean', function() {
-        expect(configCheck.optional.register()).toBeUndefined();
-        expect(configCheck.optional.register(7)).toBeUndefined();
-        expect(configCheck.optional.register('string')).toBeUndefined();
-        expect(configCheck.optional.register({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.register(['arrays'])).toBeUndefined();
-      });
-
-      it('passes for boolean parameters', function() {
-        expect(configCheck.optional.register(true)).toBe(true);
-        expect(configCheck.optional.register(false)).toBe(false);
-      });
-    });
-
-    describe('.registerExpires', function() {
-      it('fails for anything but numbers', function() {
-        expect(configCheck.optional.registerExpires(true)).toBeUndefined();
-        expect(configCheck.optional.registerExpires('string')).toBeUndefined();
-        expect(configCheck.optional.registerExpires(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.registerExpires({even: 'objects'})).toBeUndefined();
-      });
-
-      it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.registerExpires(0)).toBeUndefined();
-        expect(configCheck.optional.registerExpires(-7)).toBeUndefined();
-      });
-
-      it('passes for positive numbers', function() {
-        expect(configCheck.optional.registerExpires(7)).toBe(7);
-      });
-    });
-
-    describe('.registrarServer', function() {
-      it('only accepts strings', function() {
-        expect(configCheck.optional.registrarServer()).toBeUndefined();
-        expect(configCheck.optional.registrarServer(7)).toBeUndefined();
-        expect(configCheck.optional.registrarServer(true)).toBeUndefined();
-        expect(configCheck.optional.registrarServer({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.registrarServer(['arrays'])).toBeUndefined();
-      });
-
-      it('fails for a string that is not a valid uri (parse returns nothing)', function() {
-        expect(configCheck.optional.registrarServer('@example.com')).toBeUndefined();
-      });
-
-      it('fails for a string that is a valid uri, but has a user', function() {
-        expect(configCheck.optional.registrarServer('alice@example.com')).toBeUndefined();
-      });
-      it('passes for a string that is a valid uri without a user and returns a URI', function() {
-        expect(configCheck.optional.registrarServer('example.com')).toBeDefined();
-        expect(configCheck.optional.registrarServer('sip:example.com')).toBeDefined();
       });
     });
 
