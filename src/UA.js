@@ -793,7 +793,7 @@ function checkAuthenticationFactory (authenticationFactory) {
  */
 UA.prototype.loadConfig = function(configuration) {
   // Settings and default values
-  var parameter, value, checked_value, hostportParams, registrarServer,
+  var parameter, value, checked_value, hostportParams,
     settings = {
       /* Host address
       * Value to be set in Via sent_by and host part of Contact FQDN
@@ -929,13 +929,6 @@ UA.prototype.loadConfig = function(configuration) {
     settings.authorizationUser = settings.uri.user;
   }
 
-  /* If no 'registrarServer' is set use the 'uri' value without user portion. */
-  if (!settings.registrarServer) {
-    registrarServer = settings.uri.clone();
-    registrarServer.user = null;
-    settings.registrarServer = registrarServer;
-  }
-
   // User noAnswerTimeout
   settings.noAnswerTimeout = settings.noAnswerTimeout * 1000;
 
@@ -995,7 +988,6 @@ UA.prototype.loadConfig = function(configuration) {
   for(parameter in settings) {
     switch(parameter) {
       case 'uri':
-      case 'registrarServer':
       case 'sessionDescriptionHandlerFactory':
         this.logger.log('· ' + parameter + ': ' + settings[parameter]);
         break;

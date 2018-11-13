@@ -10,9 +10,13 @@ RegisterContext = function (ua, options = {}) {
 
   this.loadConfig(options);
 
+  this.options.params.to_uri = this.options.params.to_uri || ua.configuration.uri;
+  this.options.params.to_displayName = this.options.params.to_displayName || ua.configuration.displayName;
+  this.options.params.call_id = this.options.params.call_id || this.call_id;
+  this.options.params.cseq = this.options.params.cseq || this.cseq;
+
   /* If no 'registrarServer' is set use the 'uri' value without user portion. */
   if (!this.options.registrar) {
-    // TODO: This
     let registrarServer = {};
     if (typeof ua.configuration.uri === 'object') {
       registrarServer = ua.configuration.uri.clone();
@@ -129,7 +133,7 @@ RegisterContext.prototype = Object.create({}, {
         },
         extraContactHeaderParams: function(extraContactHeaderParams) {
           if (extraContactHeaderParams instanceof Array) {
-            extraContactHeaderParams = extraContactHeaderParams.filter((contactHeaderParam) => (typeof contactHeaderParam === 'string'));
+            return extraContactHeaderParams.filter((contactHeaderParam) => (typeof contactHeaderParam === 'string'));
           }
         },
         instanceId: function(instanceId) {
