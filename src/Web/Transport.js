@@ -181,6 +181,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         this.statusTransition(C.STATUS_CLOSED);
         this.logger.warn('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
         this.emit('disconnected', {code: 1000});
+        this.connectionPromise = null;
         reject('Connection timeout');
       }, this.configuration.connectionTimeout * 1000);
 
