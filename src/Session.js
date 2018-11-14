@@ -477,10 +477,11 @@ Session.prototype = {
         self.emit('renegotiationError', e);
         self.logger.warn('Renegotiation Error');
         self.logger.warn(e);
-        return;
+        throw e;
       }
       self.logger.error('sessionDescriptionHandler error');
       self.logger.error(e);
+      throw e;
     });
   },
 
@@ -606,6 +607,7 @@ Session.prototype = {
             extraHeaders: ['Reason: ' + SIP.Utils.getReasonHeaderValue(488, 'Not Acceptable Here')]
           });
           self.terminated(null, SIP.C.causes.INCOMPATIBLE_SDP);
+          throw e;
         }).then(function() {
           self.emit('reinviteAccepted', self);
         });
@@ -1044,6 +1046,7 @@ InviteServerContext.prototype = Object.create({}, {
           this.logger.warn(e);
           this.failed(null, SIP.C.causes.WEBRTC_ERROR);
           this.terminated(null, SIP.C.causes.WEBRTC_ERROR);
+          throw e;
         }.bind(this));
       } else {
         do100rel.apply(this);
@@ -1106,14 +1109,10 @@ InviteServerContext.prototype = Object.create({}, {
             self.logger.log(err.message);
             self.logger.log(err.error);
         }
-        // TODO: This should check the actual error and make sure it is an
-        //        "expected" error. Otherwise it should throw.
-        if (self.status === C.STATUS_TERMINATED) {
-          return;
-        }
         self.request.reply(480);
         self.failed(null, SIP.C.causes.WEBRTC_ERROR);
         self.terminated(null, SIP.C.causes.WEBRTC_ERROR);
+        throw err;
       };
 
     // Check Session Status
@@ -1218,19 +1217,16 @@ InviteServerContext.prototype = Object.create({}, {
           // ACK contains answer to an INVITE w/o SDP negotiation
           this.hasAnswer = true;
           this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-          .then(
-            // TODO: Catch then .then
-            confirmSession.bind(this),
-            function onFailure (e) {
-              this.logger.warn(e);
-              this.terminate({
-                statusCode: '488',
-                reasonPhrase: 'Bad Media Description'
-              });
-              this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-              this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
-            }.bind(this)
-          );
+          .catch((e) => {
+            this.logger.warn(e);
+            this.terminate({  // TODO: This should be a BYE
+              statusCode: '488',
+              reasonPhrase: 'Bad Media Description'
+            });
+            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            throw e;
+          }).then(() => confirmSession());
         } else {
           confirmSession.apply(this);
         }
