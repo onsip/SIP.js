@@ -181,10 +181,7 @@ UA.prototype = Object.create(SIP.EventEmitter.prototype);
 //=================
 
 UA.prototype.register = function(options) {
-  options = options || {};
-  if (options.registerAfterDisconnect) {
-    this.configuration.register = true;
-  }
+  this.configuration.register = true;
   this.registerContext.register(options);
 
   return this;
@@ -487,7 +484,9 @@ UA.prototype.setTransportListeners = function () {
  */
 UA.prototype.onTransportConnected = function() {
   if (this.configuration.register) {
-    this.registerContext.register();
+    this.configuration.authenticationFactory.initialize().then(function () {
+      this.registerContext.onTransportConnected();
+    }.bind(this));
   }
 };
 
