@@ -265,9 +265,13 @@ describe('UA', function() {
       expect(UA.registerContext.register).toHaveBeenCalled();
     });
 
-    it('sets the register configuration option to true, if registerAfterDisconnect flag is passed', function() {
+    it('sets the register configuration option to true, if register flag is passed', function() {
       UA.configuration.register = false;
+<<<<<<< HEAD
       UA.register({register: true});
+=======
+      UA.register({register: true})
+>>>>>>> 66d8323... Make registration more transparent
       expect(UA.configuration.register).toBeTruthy();
     });
 

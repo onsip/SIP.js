@@ -180,8 +180,10 @@ UA.prototype = Object.create(SIP.EventEmitter.prototype);
 //  High Level API
 //=================
 
-UA.prototype.register = function(options) {
-  this.configuration.register = true;
+UA.prototype.register = function(options = {}) {
+  if (options.register) {
+    this.configuration.register = true;
+  }
   this.registerContext.register(options);
 
   return this;
@@ -484,9 +486,8 @@ UA.prototype.setTransportListeners = function () {
  */
 UA.prototype.onTransportConnected = function() {
   if (this.configuration.register) {
-    this.configuration.authenticationFactory.initialize().then(function () {
-      this.registerContext.onTransportConnected();
-    }.bind(this));
+    // In an effor to maintain behavior from when we "initialized" an authentication factory, this is in a Promise.then
+    Promise.resolve().then(() => this.registerContext.register());
   }
 };
 
