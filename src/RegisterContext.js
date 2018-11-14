@@ -64,7 +64,6 @@ RegisterContext.prototype = Object.create({}, {
       instanceId: null,
       params: {},
       regId: null,
-      register: true,
       registrar: null,
     };
 
@@ -164,11 +163,6 @@ RegisterContext.prototype = Object.create({}, {
             if (value >= 0) {
               return value;
             }
-          }
-        },
-        register: function(register) {
-          if (typeof register === 'boolean') {
-            return register;
           }
         },
         registrar: function(registrar) {

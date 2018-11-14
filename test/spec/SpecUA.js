@@ -267,7 +267,7 @@ describe('UA', function() {
 
     it('sets the register configuration option to true, if registerAfterDisconnect flag is passed', function() {
       UA.configuration.register = false;
-      UA.register({registerAfterDisconnect: true})
+      UA.register({register: true});
       expect(UA.configuration.register).toBeTruthy();
     });
 

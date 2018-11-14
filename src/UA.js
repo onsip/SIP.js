@@ -811,6 +811,8 @@ UA.prototype.loadConfig = function(configuration) {
       // Password
       password: null,
 
+      register: true,
+
       // Registration parameters
       registerOptions: {},
 
@@ -1143,6 +1145,12 @@ UA.prototype.getConfigurationCheck = function () {
           return SIP.C.supported.SUPPORTED;
         } else  {
           return SIP.C.supported.UNSUPPORTED;
+        }
+      },
+
+      register: function(register) {
+        if (typeof register === 'boolean') {
+          return register;
         }
       },
 
