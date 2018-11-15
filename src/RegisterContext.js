@@ -10,6 +10,12 @@ RegisterContext = function (ua, options = {}) {
 
   this.loadConfig(options);
 
+  if (this.options.regId && !this.options.instanceId) {
+    this.options.instanceId = SIP.Utils.newUUID();
+  } else if (!this.options.regId && this.options.instanceId) {
+    this.options.regId = 1;
+  }
+
   this.options.params.to_uri = this.options.params.to_uri || ua.configuration.uri;
   this.options.params.to_displayName = this.options.params.to_displayName || ua.configuration.displayName;
   this.options.params.call_id = this.options.params.call_id || SIP.Utils.createRandomToken(22);
@@ -193,8 +199,10 @@ RegisterContext.prototype = Object.create({}, {
     const extraHeaders = (this.options.extraHeaders || []).slice();
 
     let contact = this.contact;
-    contact += ';reg-id=' + this.options.regId;
-    contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
+    if (this.options.regId && this.options.instanceId) {
+      contact += ';reg-id=' + this.options.regId;
+      contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
+    }
 
     if (this.options.extraContactHeaderParams) {
       this.options.extraContactHeaderParams.forEach((header) => {
