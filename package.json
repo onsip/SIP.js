@@ -56,5 +56,6 @@
     "commandLineTest": "karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
     "buildAndBrowserTest": "npm run build && npm run browserTest"
-  }
+  },
+  "types": "./types"
 }
