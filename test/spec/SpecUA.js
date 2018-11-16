@@ -53,7 +53,7 @@ describe('UA', function() {
   it('can be created with just a String (object) URI', function () {
     var myUA;
     function oneParam() {
-      myUA = new SIP.UA(new String('will@example.com'));
+      myUA = new SIP.UA('will@example.com');
     }
 
     expect(oneParam).not.toThrow();
@@ -267,11 +267,7 @@ describe('UA', function() {
 
     it('sets the register configuration option to true, if register flag is passed', function() {
       UA.configuration.register = false;
-<<<<<<< HEAD
       UA.register({register: true});
-=======
-      UA.register({register: true})
->>>>>>> 66d8323... Make registration more transparent
       expect(UA.configuration.register).toBeTruthy();
     });
 
@@ -410,7 +406,7 @@ describe('UA', function() {
       // spyOn(UA, 'isConnected').and.returnValue(true);
 
       var options = {};
-      var modifiers = []
+      var modifiers = [];
       // UA.configuration.mediaHandlerFactory = function(){};
       UA.invite(target,options,modifiers);
       // invite() puts the mediaHandlerFactory into the options object
@@ -425,7 +421,7 @@ describe('UA', function() {
 
     beforeEach(function() {
       target = 'target';
-      event = 'event'
+      event = 'event';
       subscribeSpy = jasmine.createSpy('subscribe');
       jasmine.createSpyObj('transport', ['once']);
 
@@ -713,7 +709,7 @@ describe('UA', function() {
                       reply : replySpy };
       UA.receiveRequest(request);
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request, UA);
-      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array))
+      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array));
     });
 
     it('Accepts SIP MESSAGE requests', function() {
@@ -743,7 +739,6 @@ describe('UA', function() {
                       getHeader : function () {},
                       parseHeader: function () {}
                     };
-      var webrtc = SIP.Web.isSupported;
       spyOn(SIP.Web, 'isSupported').and.callFake(function () {
         return false;
       });
@@ -968,7 +963,7 @@ describe('UA', function() {
       expect(replySpy).toHaveBeenCalledWith(481,'Subscription does not exist');
     });
 
-    it ('replies with a 481 if an in dialog request is received that is not a NOTIFY OR ACK and no dialog is found', function() {
+    it('replies with a 481 if an in dialog request is received that is not a NOTIFY OR ACK and no dialog is found', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
@@ -1093,19 +1088,19 @@ describe('UA', function() {
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return;} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return;} }});
 
       expect(function(){UA.loadConfig({});}).toThrowError('Missing parameter: fake');
     });
 
     it('throws a configuration error if a mandatory parameter\'s passed-in value is invalid', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return;} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return;} }});
 
       expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
     });
 
     it('sets a mandatory value successfully in settings', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return 'fake';} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return 'fake';} }});
 
       UA.loadConfig({fake: 'fake'});
 
@@ -1113,13 +1108,13 @@ describe('UA', function() {
     });
 
     it('throws a ConfigurationError if an optional value is passed in which is invalid', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function (value) {return;} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function () {return;} }});
 
       expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
     });
 
     it('sets an optional value successfully in settings', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function (value) {return 'fake';} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function () {return 'fake';} }});
 
       UA.loadConfig({fake: 'fake'});
 
