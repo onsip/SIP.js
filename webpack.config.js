@@ -1,5 +1,5 @@
 var webpack = require('webpack');
-var UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+var TerserPlugin = require('terser-webpack-plugin');
 
 var pkg = require('./package.json');
 var year = new Date().getFullYear();
@@ -111,8 +111,8 @@ module.exports = function (env) {
     },
     optimization: {
       minimizer: [
-        new UglifyJsPlugin({
-          uglifyOptions: {
+        new TerserPlugin({
+          terserOptions: {
             output: {
               ascii_only: true
             }
