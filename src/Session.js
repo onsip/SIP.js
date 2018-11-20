@@ -888,8 +888,7 @@ InviteServerContext.prototype = Object.create({}, {
       this.receiveRequest = function(request) {
         if (request.method === SIP.C.ACK) {
           this.sendRequest(SIP.C.BYE, {
-            extraHeaders: extraHeaders,
-            body: body
+            extraHeaders: extraHeaders
           });
           dialog.terminate();
         }
@@ -1164,7 +1163,7 @@ InviteServerContext.prototype = Object.create({}, {
 
     // ISC RECEIVE REQUEST
 
-    function confirmSession() {
+    const confirmSession = () => {
       /* jshint validthis:true */
       var contentType, contentDisp;
 
@@ -1181,7 +1180,7 @@ InviteServerContext.prototype = Object.create({}, {
       }
 
       this.emit('confirmed', request);
-    }
+    };
 
     switch(request.method) {
     case SIP.C.CANCEL:
@@ -1228,7 +1227,7 @@ InviteServerContext.prototype = Object.create({}, {
             throw e;
           }).then(() => confirmSession());
         } else {
-          confirmSession.apply(this);
+          confirmSession();
         }
       }
       break;
