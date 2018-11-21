@@ -317,6 +317,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
+    this.logger.log(methodName);
+
     return pc[methodName](RTCOfferOptions)
       .catch((e) => {
         if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
@@ -467,7 +469,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       }
     };
 
-    this.peerConnection.oniceconnectionstatechange = function() {  //need e for commented out case
+    this.peerConnection.oniceconnectionstatechange = function() {
       var stateEvent;
 
       switch (this.iceConnectionState) {
@@ -496,6 +498,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         self.logger.warn('Unknown iceConnection state:', this.iceConnectionState);
         return;
       }
+      self.logger.log('ICE Connection State changed to ' + stateEvent);
       self.emit(stateEvent, this);
     };
   }},
@@ -528,7 +531,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       }
     }.bind(this))
     .catch((e) => {
-      // TODO: This propogates downwards
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
         throw e;
       }
@@ -603,6 +605,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   resetIceGatheringComplete: {writable: true, value: function resetIceGatheringComplete() {
     this.iceGatheringTimeout = false;
 
+    this.logger.log('resetIceGatheringComplete');
+
     if (this.iceGatheringTimer) {
       SIP.Timers.clearTimeout(this.iceGatheringTimer);
       this.iceGatheringTimer = null;
@@ -653,11 +657,14 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
   }},
 
   waitForIceGatheringComplete: {writable: true, value: function waitForIceGatheringComplete() {
+    this.logger.log('waitForIceGatheringComplete');
     if (this.isIceGatheringComplete()) {
+      this.logger.log('ICE is already complete. Return resolved.');
       return SIP.Utils.Promise.resolve();
     } else if (!this.isIceGatheringDeferred) {
       this.iceGatheringDeferred = SIP.Utils.defer();
     }
+    this.logger.log('ICE is not complete. Returning promise');
     return this.iceGatheringDeferred.promise;
   }}
 });
