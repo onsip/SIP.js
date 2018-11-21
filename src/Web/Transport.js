@@ -110,9 +110,13 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     options = options || {};
     options.code = options.code || 1000;
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      return this.connectionPromise
-        .then(() => Promise.reject('The websocket did not disconnect'))
-        .catch(() => Promise.resolve({overrideEvent: true}));
+      if (this.connectionPromise) {
+        return this.connectionPromise
+          .then(() => Promise.reject('The websocket did not disconnect'))
+          .catch(() => Promise.resolve({overrideEvent: true}));
+      } else {
+        return Promise.reject('The websocket did not disconnect');
+      }
     }
     this.emit('disconnecting');
     this.disconnectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
