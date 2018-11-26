@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "./lib",
+        "outDir": "./dist",
         "allowJs": true,
         "target": "es5"
     },

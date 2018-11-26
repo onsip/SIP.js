@@ -1,7 +1,7 @@
 var webpack = require('webpack');
 var TerserPlugin = require('terser-webpack-plugin');
 
-var pkg = require('../package.json');
+var pkg = require('./package.json');
 var year = new Date().getFullYear();
 var banner = '\
 \n\
@@ -37,18 +37,20 @@ var banner = '\
  ~~~ end JsSIP license ~~~\n\
 \n\n\n';
 
+
+
 module.exports = function (env) {
-  var mode = env.buildType === 'min' ? 'production' : 'none';
-  var mainDir = __dirname + '/../';
+  var mode = env.buildType === 'prod' ? 'production' : 'none';
 
   var entry = {};
-  entry['sip' + (env.buildType === 'min' ? '.min' : '')] = mainDir + '/src/index.js';
+  entry['sip' + (env.buildType === 'prod' ? '.min' : '')] = __dirname + '/src/index.js';
+
 
   return {
     mode: mode,
     entry: entry,
     output: {
-      path: mainDir + '/dist',
+      path: __dirname + '/dist',
       filename: '[name].js',
       library: 'SIP',
       libraryTarget: 'umd',
@@ -59,9 +61,50 @@ module.exports = function (env) {
         {
           test: /\.js$/,
           exclude: /node_modules/,
-          loader: "awesome-typescript-loader",
+          loader: "awesome-typescript-loader"
+        },
+        {
+          test: /\.pegjs$/,
+          loader: 'pegjs-loader',
           options: {
-            "outDir": mainDir + "/dist"
+            'optimize': 'size',
+            'allowedStartRules':
+            [
+              "Contact",
+              "Name_Addr_Header",
+              "Record_Route",
+              "Request_Response",
+              "SIP_URI",
+              "Subscription_State",
+              "Supported",
+              "Require",
+              "Via",
+              "absoluteURI",
+              "Call_ID",
+              "Content_Disposition",
+              "Content_Length",
+              "Content_Type",
+              "CSeq",
+              "displayName",
+              "Event",
+              "From",
+              "host",
+              "Max_Forwards",
+              "Min_SE",
+              "Proxy_Authenticate",
+              "quoted_string",
+              "Refer_To",
+              "Replaces",
+              "Session_Expires",
+              "stun_URI",
+              "To",
+              "turn_URI",
+              "uuid",
+              "WWW_Authenticate",
+              "challenge",
+              "sipfrag",
+              "Referred_By"
+            ]
           }
         }
       ]
