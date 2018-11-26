@@ -164,6 +164,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.connectDeferredResolve = resolve;
 
       this.status = C.STATUS_CONNECTING;
+      this.emit('connecting');
       this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
       this.disposeWs();
       try {
@@ -249,7 +250,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   onClose: {writable: true, value: function onClose (e) {
     this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-    this.emit('disconnected', {code: e.code, reason: e.reason});
 
     if (this.status !== C.STATUS_CLOSING) {
       this.logger.warn('WebSocket closed without SIP.js requesting it');
@@ -271,7 +271,9 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.disconnectDeferredResolve = null;
       return;
     }
+
     this.status = C.STATUS_CLOSED; // quietly force status to closed
+    this.emit('disconnected', {code: e.code, reason: e.reason});
     this.reconnect();
   }},
 
