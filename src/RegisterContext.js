@@ -193,11 +193,12 @@ RegisterContext.prototype = Object.create({}, {
     };
   }},
 
-  register: {writable: true, value: function register (options = {}) {
-    // Handle Options
-    this.options = SIP.Utils.defaultOptions(this.options, options);
-    const extraHeaders = (this.options.extraHeaders || []).slice();
-
+  /**
+   * Helper Function to generate Contact Header
+   * @private
+   * returns {String}
+   */
+  generateContactHeader: {writable: true, value: function generateContactHeader(expires) {
     let contact = this.contact;
     if (this.options.regId && this.options.instanceId) {
       contact += ';reg-id=' + this.options.regId;
@@ -210,7 +211,19 @@ RegisterContext.prototype = Object.create({}, {
       });
     }
 
-    extraHeaders.push('Contact: ' + contact + ';expires=' + this.expires);
+    if (expires) {
+      contact += ';expires=' + expires;
+    }
+
+    return contact;
+  }},
+
+  register: {writable: true, value: function register (options = {}) {
+    // Handle Options
+    this.options = SIP.Utils.defaultOptions(this.options, options);
+    const extraHeaders = (this.options.extraHeaders || []).slice();
+
+    extraHeaders.push('Contact: ' + this.generateContactHeader(this.expires));
     extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
     // Save original extraHeaders to be used in .close
@@ -387,7 +400,7 @@ RegisterContext.prototype = Object.create({}, {
       extraHeaders.push('Contact: *');
       extraHeaders.push('Expires: 0');
     } else {
-      extraHeaders.push('Contact: '+ this.contact + ';expires=0');
+      extraHeaders.push('Contact: '+ this.generateContactHeader(0));
     }
 
 
