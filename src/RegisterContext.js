@@ -74,7 +74,7 @@ RegisterContext.prototype = Object.create({}, {
 
       // Clear registration timer
       if (this.registrationTimer !== null) {
-        SIP.Timers.clearTimeout(this.registrationTimer);
+        clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
 
@@ -90,7 +90,7 @@ RegisterContext.prototype = Object.create({}, {
           }
 
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
 
@@ -121,11 +121,11 @@ RegisterContext.prototype = Object.create({}, {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
-          this.registrationTimer = SIP.Timers.setTimeout(() => {
+          this.registrationTimer = setTimeout(() => {
             this.registrationTimer = null;
             this.register(this.options);
           }, (expires * 1000) - 3000);
-          this.registrationExpiredTimer = SIP.Timers.setTimeout(() => {
+          this.registrationExpiredTimer = setTimeout(() => {
             this.logger.warn('registration expired');
             if (this.registered) {
               this.unregistered(null, SIP.C.causes.EXPIRES);
@@ -183,12 +183,12 @@ RegisterContext.prototype = Object.create({}, {
   onTransportDisconnected: {writable: true, value: function onTransportDisconnected () {
     this.registered_before = this.registered;
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
     if (this.registrationExpiredTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+      clearTimeout(this.registrationExpiredTimer);
       this.registrationExpiredTimer = null;
     }
 
@@ -228,7 +228,7 @@ RegisterContext.prototype = Object.create({}, {
 
     // Clear the registration timer.
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
@@ -250,7 +250,7 @@ RegisterContext.prototype = Object.create({}, {
         case /^2[0-9]{2}$/.test(response.status_code):
           this.emit('accepted', response);
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
           this.unregistered(response);

@@ -224,7 +224,7 @@ describe('RegisterContext', function() {
     });
 
     it('clears the registration timer if it is set', function() {
-      RegisterContext.registrationTimer = SIP.Timers.setTimeout(function() {return;},999999);
+      RegisterContext.registrationTimer = setTimeout(function() {return;},999999);
       expect(RegisterContext.registrationTimer).not.toEqual(null);
       RegisterContext.onTransportDisconnected();
     });
@@ -304,7 +304,7 @@ describe('RegisterContext', function() {
 
     it('clears the registration timer', function() {
       RegisterContext.registered = true;
-      RegisterContext.registrationTimer = SIP.Timers.setTimeout(function() { return; }, 999999);
+      RegisterContext.registrationTimer = setTimeout(function() { return; }, 999999);
       RegisterContext.unregister();
       expect(RegisterContext.registrationTimer).toBe(null);
     });

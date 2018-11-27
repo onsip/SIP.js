@@ -72,7 +72,7 @@ PublishContext.prototype.constructor = PublishContext;
 PublishContext.prototype.publish = function(body) {
     // Clean up before the run
     this.request = null;
-    SIP.Timers.clearTimeout(this.publish_refresh_timer);
+    clearTimeout(this.publish_refresh_timer);
 
     if (body !== undefined && body !== null && body !== '') {
       // is Inital or Modify request
@@ -114,7 +114,7 @@ PublishContext.prototype.publish = function(body) {
 PublishContext.prototype.unpublish = function() {
     // Clean up before the run
     this.request = null;
-    SIP.Timers.clearTimeout(this.publish_refresh_timer);
+    clearTimeout(this.publish_refresh_timer);
 
     this.pubRequestBody = null;
     this.pubRequestExpires = 0;
@@ -134,7 +134,7 @@ PublishContext.prototype.close = function() {
       this.unpublish();
     } else {
       this.request = null;
-      SIP.Timers.clearTimeout(this.publish_refresh_timer);
+      clearTimeout(this.publish_refresh_timer);
 
       this.pubRequestBody = null;
       this.pubRequestExpires = 0;
@@ -209,7 +209,7 @@ PublishContext.prototype.receiveResponse = function(response) {
 
         if (this.pubRequestExpires !== 0) {
           // Schedule refresh
-          this.publish_refresh_timer = SIP.Timers.setTimeout(this.publish.bind(this), this.pubRequestExpires * 900);
+          this.publish_refresh_timer = setTimeout(this.publish.bind(this), this.pubRequestExpires * 900);
           this.emit('published', response, cause);
         } else {
           this.emit('unpublished', response, cause);
@@ -269,7 +269,7 @@ PublishContext.prototype.receiveResponse = function(response) {
 
     // Do the cleanup
     if (this.pubRequestExpires === 0) {
-      SIP.Timers.clearTimeout(this.publish_refresh_timer);
+      clearTimeout(this.publish_refresh_timer);
 
       this.pubRequestBody = null;
       this.pubRequestEtag = null;

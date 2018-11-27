@@ -454,7 +454,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         self.emit('iceGathering', this);
         if (!self.iceGatheringTimer && options.iceCheckingTimeout) {
           self.iceGatheringTimeout = false;
-          self.iceGatheringTimer = SIP.Timers.setTimeout(function() {
+          self.iceGatheringTimer = setTimeout(function() {
             self.logger.log('RTCIceChecking Timeout Triggered after ' + options.iceCheckingTimeout + ' milliseconds');
             self.iceGatheringTimeout = true;
             self.triggerIceGatheringComplete();
@@ -604,7 +604,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.iceGatheringTimeout = false;
 
     if (this.iceGatheringTimer) {
-      SIP.Timers.clearTimeout(this.iceGatheringTimer);
+      clearTimeout(this.iceGatheringTimer);
       this.iceGatheringTimer = null;
     }
 
@@ -641,7 +641,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.emit('iceGatheringComplete', this);
 
       if (this.iceGatheringTimer) {
-        SIP.Timers.clearTimeout(this.iceGatheringTimer);
+        clearTimeout(this.iceGatheringTimer);
         this.iceGatheringTimer = null;
       }
 
