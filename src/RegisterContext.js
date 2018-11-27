@@ -211,9 +211,7 @@ RegisterContext.prototype = Object.create({}, {
       });
     }
 
-    if (expires) {
-      contact += ';expires=' + expires;
-    }
+    contact += ';expires=' + (expires || '0');
 
     return contact;
   }},
