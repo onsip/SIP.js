@@ -198,7 +198,7 @@ RegisterContext.prototype = Object.create({}, {
    * @private
    * returns {String}
    */
-  generateContactHeader: {writable: true, value: function generateContactHeader(expires) {
+  generateContactHeader: {writable: true, value: function generateContactHeader(expires = 0) {
     let contact = this.contact;
     if (this.options.regId && this.options.instanceId) {
       contact += ';reg-id=' + this.options.regId;
@@ -211,7 +211,7 @@ RegisterContext.prototype = Object.create({}, {
       });
     }
 
-    contact += ';expires=' + (expires || '0');
+    contact += ';expires=' + expires;
 
     return contact;
   }},
