@@ -1,5 +1,4 @@
 export * from "./event-emitter";
-export * from "./refer-server-context";
 export * from "./session";
 export * from "./session-description-handler";
 export * from "./session-description-handler-factory";
