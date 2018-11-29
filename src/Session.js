@@ -164,6 +164,8 @@ Session.prototype = {
     this.emit('referRequested', this.referContext);
 
     this.referContext.refer(options);
+
+    return this.referContext;
   },
 
   sendRequest: function(method,options) {
@@ -486,7 +488,7 @@ Session.prototype = {
   },
 
   receiveRequest: function (request) {
-    switch (request.method) {
+    switch (request.method) { // TODO: This needs a default case
       case SIP.C.BYE:
         request.reply(200);
         if(this.status === C.STATUS_CONFIRMED) {

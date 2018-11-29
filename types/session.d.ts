@@ -28,7 +28,7 @@ export class Session extends EventEmitter {
 
   reinvite(options?: any, modifiers?: SessionDescriptionHandlerModifiers);
 
-  refer(target: Session | String, options?: any): void; // TODO: This should take a URI
+  refer(target: Session | String, options?: any): any; // TODO: This should take a URI
 
   terminate(options?: any): Session;
 
