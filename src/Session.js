@@ -2081,21 +2081,23 @@ ReferServerContext.prototype = Object.create({}, {
 
       this.emit('referInviteSent', this);
 
-      this.targetSession.once('progress', function() {
-        this.sendNotify('SIP/2.0 100 Trying');
+      this.targetSession.once('progress', (response) => {
+        const statusCode = response.status_code || 100;
+        const reason_phrase = response.reason_phrase;
+        this.sendNotify(('SIP/2.0 ' + statusCode + ' ' + reason_phrase).trim());
         this.emit('referProgress', this);
         if (this.referredSession) {
           this.referredSession.emit('referProgress', this);
         }
-      }.bind(this));
-      this.targetSession.once('accepted', function() {
+      });
+      this.targetSession.once('accepted', () => {
         this.logger.log('Successfully followed the refer');
         this.sendNotify('SIP/2.0 200 OK');
         this.emit('referAccepted', this);
         if (this.referredSession) {
           this.referredSession.emit('referAccepted', this);
         }
-      }.bind(this));
+      });
 
       var referFailed = function(response) {
         if (this.status === C.STATUS_TERMINATED) {
