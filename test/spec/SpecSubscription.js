@@ -230,9 +230,12 @@ describe('Subscription', function() {
     });
 
     it('sets the state to terminated', function() {
+      spyOn(Subscription, 'emit');
+
       Subscription.unsubscribe();
 
       expect(Subscription.state).toBe('terminated');
+      expect(Subscription.emit).toHaveBeenCalledWith('terminated');
     });
 
     it('sends a request using the same dialog as the subscription', function() {

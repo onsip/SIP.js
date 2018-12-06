@@ -144,6 +144,8 @@ SIP.Subscription.prototype = {
     SIP.Timers.clearTimeout(this.timers.sub_duration);
     SIP.Timers.clearTimeout(this.timers.N);
     this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
+
+    this.emit('terminated');
   },
 
   /**
@@ -174,6 +176,8 @@ SIP.Subscription.prototype = {
       this.receiveResponse = function(){};
 
       delete this.ua.earlySubscriptions[this.request.call_id + this.request.from.parameters.tag + this.event];
+
+      this.emit('terminated');
     } else if (this.state !== 'terminated') {
       this.unsubscribe();
     }
