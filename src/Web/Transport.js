@@ -123,7 +123,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.disconnectDeferredResolve = resolve;
 
       if (this.reconnectTimer) {
-        SIP.Timers.clearTimeout(this.reconnectTimer);
+        clearTimeout(this.reconnectTimer);
         this.reconnectTimer = null;
       }
 
@@ -182,7 +182,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         return;
       }
 
-      this.connectionTimeout = SIP.Timers.setTimeout(() => {
+      this.connectionTimeout = setTimeout(() => {
         this.statusTransition(C.STATUS_CLOSED);
         this.logger.warn('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
         this.emit('disconnected', {code: 1000});
@@ -218,13 +218,13 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     }
     this.status = C.STATUS_OPEN; // quietly force status to open
     this.emit('connected');
-    SIP.Timers.clearTimeout(this.connectionTimeout);
+    clearTimeout(this.connectionTimeout);
 
     this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
 
     // Clear reconnectTimer since we are not disconnected
     if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
     // Reset reconnectionAttempts
@@ -259,7 +259,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     this.stopSendingKeepAlives();
 
     // Clean up connection variables so we can connect again from a fresh state
-    SIP.Timers.clearTimeout(this.connectionTimeout);
+    clearTimeout(this.connectionTimeout);
     this.connectionTimeout = null;
     this.connectionPromise = null;
     this.connectDeferredResolve = null;
@@ -393,7 +393,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.reconnect();
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
-      this.reconnectTimer = SIP.Timers.setTimeout(function() {
+      this.reconnectTimer = setTimeout(function() {
         this.connect();
         this.reconnectTimer = null;
       }.bind(this), (this.reconnectionAttempts === 1) ? 0 : this.configuration.reconnectionTimeout * 1000);
@@ -475,7 +475,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       return;
     }
 
-    this.keepAliveDebounceTimeout = SIP.Timers.setTimeout(function() {
+    this.keepAliveDebounceTimeout = setTimeout(function() {
       this.emit('keepAliveDebounceTimeout');
       this.clearKeepAliveTimeout();
     }.bind(this), this.configuration.keepAliveDebounce * 1000);
@@ -484,7 +484,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   }},
 
   clearKeepAliveTimeout: {writable: true, value: function clearKeepAliveTimeout () {
-    SIP.Timers.clearTimeout(this.keepAliveDebounceTimeout);
+    clearTimeout(this.keepAliveDebounceTimeout);
     this.keepAliveDebounceTimeout = null;
   }},
 
@@ -494,7 +494,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
    */
   startSendingKeepAlives: {writable: true, value: function startSendingKeepAlives () {
     if (this.configuration.keepAliveInterval && !this.keepAliveInterval) {
-      this.keepAliveInterval = SIP.Timers.setInterval(function() {
+      this.keepAliveInterval = setInterval(function() {
         this.sendKeepAlive();
         this.startSendingKeepAlives();
       }.bind(this), computeKeepAliveTimeout(this.configuration.keepAliveInterval));
@@ -506,8 +506,8 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
    * @private
    */
   stopSendingKeepAlives: {writable: true, value: function stopSendingKeepAlives () {
-    SIP.Timers.clearInterval(this.keepAliveInterval);
-    SIP.Timers.clearTimeout(this.keepAliveDebounceTimeout);
+    clearInterval(this.keepAliveInterval);
+    clearTimeout(this.keepAliveDebounceTimeout);
     this.keepAliveInterval = null;
     this.keepAliveDebounceTimeout = null;
   }},

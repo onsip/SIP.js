@@ -808,7 +808,7 @@ describe('InviteServerContext', function() {
     spyOn(SIP.Utils, 'augment').and.callThrough();
 
     var ISC = new SIP.InviteServerContext(ua, request);
-    SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
+    clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(SIP.Utils.augment.calls.argsFor(0)[1]).toBe(SIP.ServerContext);
     expect(SIP.Utils.augment.calls.argsFor(1)[1]).toBe(SIP.Session);
@@ -847,7 +847,7 @@ describe('InviteServerContext', function() {
     request.transport = ua.transport;
 
     var ISC = new SIP.InviteServerContext(ua, request);
-    SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
+    clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(ISC.rel100).toBe(SIP.C.supported.REQUIRED);
   });
@@ -873,7 +873,7 @@ describe('InviteServerContext', function() {
     request.transport = ua.transport;
 
     var ISC = new SIP.InviteServerContext(ua, request);
-    SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
+    clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(ISC.rel100).toBe(SIP.C.supported.SUPPORTED);
   });
@@ -902,7 +902,7 @@ describe('InviteServerContext', function() {
     spyOn(SIP.Session.prototype,'createDialog').and.returnValue(false);
 
     ISC = new SIP.InviteServerContext(ua, fakereq);
-    SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
+    clearTimeout(ISC.timers.userNoAnswerTimer);
 
     expect(fakereq.reply).toHaveBeenCalledWith(500, 'Missing Contact header field');
   });
@@ -1036,13 +1036,13 @@ describe('InviteServerContext', function() {
     });
 
     it('clears the userNoAnswerTimer', function() {
-      spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+      spyOn(window, 'clearTimeout').and.callThrough();
 
-      InviteServerContext.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {}, 200);
+      InviteServerContext.timers.userNoAnswerTimer = setTimeout(function() {}, 200);
 
       InviteServerContext.accept();
 
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.userNoAnswerTimer);
+      expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.userNoAnswerTimer);
     });
 
     // x'ing this since the code it tests currently breaks FF accept - JMF 2014-1-21
@@ -1093,18 +1093,18 @@ describe('InviteServerContext', function() {
         spyOn(InviteServerContext, 'canceled');
         spyOn(InviteServerContext, 'failed');
         spyOn(InviteServerContext, 'terminated').and.callThrough();
-        spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+        spyOn(window, 'clearTimeout').and.callThrough();
 
-        InviteServerContext.timers.prackTimer = SIP.Timers.setTimeout(function(){}, 100);
-        InviteServerContext.timers.rel1xxTimer = SIP.Timers.setTimeout(function(){}, 100);
+        InviteServerContext.timers.prackTimer = setTimeout(function(){}, 100);
+        InviteServerContext.timers.rel1xxTimer = setTimeout(function(){}, 100);
       });
 
       it('status is WAITING_FOR_ANSWER, timers cleared', function() {
         InviteServerContext.status = 4;
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       it('status is WAITING_FOR_PRACK, timers cleared', function() {
@@ -1112,8 +1112,8 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       it('status is ANSWERED_WAITING_FOR_PRACK, timers cleared', function() {
@@ -1121,8 +1121,8 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       it('status is EARLY_MEDIA, timers cleared', function() {
@@ -1130,8 +1130,8 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       it('status is ANSWERED, timers cleared', function() {
@@ -1139,8 +1139,8 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.prackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.rel1xxTimer);
       });
 
       afterEach(function() {
@@ -1210,7 +1210,7 @@ describe('InviteServerContext', function() {
 
       it('calls confirmSession if session.early_sdp is true and above is false', function() {
         InviteServerContext.early_sdp = true;
-        spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+        spyOn(window, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'accepted').and.callThrough();
         var catchSpy = jasmine.createSpy('catch');
         InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
@@ -1226,8 +1226,8 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
 
         expect(InviteServerContext.status).toBe(12);
         expect(InviteServerContext.accepted).not.toHaveBeenCalled();
@@ -1237,7 +1237,7 @@ describe('InviteServerContext', function() {
         InviteServerContext.hasOffer = true;
         InviteServerContext.hasAnswer = true;
 
-        spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+        spyOn(window, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'emit');
         InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
@@ -1253,8 +1253,8 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
 
         expect(InviteServerContext.status).toBe(12);
         expect(InviteServerContext.emit.calls.mostRecent().args[0]).toBe('confirmed');
@@ -1327,14 +1327,14 @@ describe('InviteServerContext', function() {
         InviteServerContext.hasOffer = true;
         InviteServerContext.hasAnswer = true;
 
-        spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+        spyOn(window, 'clearTimeout').and.callThrough();
         spyOn(req, 'reply');
         spyOn(InviteServerContext, 'accept');
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
         expect(InviteServerContext.accept).not.toHaveBeenCalled();
         expect(req.reply).toHaveBeenCalledWith(200);
       });
@@ -1343,15 +1343,15 @@ describe('InviteServerContext', function() {
         InviteServerContext.hasOffer = true;
         InviteServerContext.hasAnswer = true;
 
-        spyOn(SIP.Timers, 'clearTimeout').and.callThrough();
+        spyOn(window, 'clearTimeout').and.callThrough();
         spyOn(req, 'reply');
         spyOn(InviteServerContext, 'accept');
         InviteServerContext.status = 10;
 
         InviteServerContext.receiveRequest(req);
 
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
-        expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.ackTimer);
+        expect(clearTimeout).toHaveBeenCalledWith(InviteServerContext.timers.invite2xxTimer);
         expect(InviteServerContext.accept).toHaveBeenCalled();
         expect(req.reply).toHaveBeenCalledWith(200);
       });
@@ -2291,13 +2291,13 @@ describe('InviteClientContext', function() {
       InviteClientContext.status = 7;
       request.method = SIP.C.ACK;
 
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
 
       InviteClientContext.receiveRequest(request);
 
       expect(InviteClientContext.status).toBe(12);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteClientContext.timers.ackTimer);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(InviteClientContext.timers.invite2xxTimer);
+      expect(clearTimeout).toHaveBeenCalledWith(InviteClientContext.timers.ackTimer);
+      expect(clearTimeout).toHaveBeenCalledWith(InviteClientContext.timers.invite2xxTimer);
     });
 
     xit('DTMF case', function() {

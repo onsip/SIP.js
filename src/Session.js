@@ -102,7 +102,7 @@ Session.prototype = {
       }
 
       // Set timeout for the next tone
-      SIP.Timers.setTimeout(sendDTMF, timeout);
+      setTimeout(sendDTMF, timeout);
     };
 
     tones = tones.toString();
@@ -228,7 +228,7 @@ Session.prototype = {
 
     // Clear session timers
     for(idx in this.timers) {
-      SIP.Timers.clearTimeout(this.timers[idx]);
+      clearTimeout(this.timers[idx]);
     }
 
     // Terminate dialogs
@@ -403,15 +403,15 @@ Session.prototype = {
           this.hasAnswer = true;
           this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
           .then(function() {
-            SIP.Timers.clearTimeout(this.timers.ackTimer);
-            SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+            clearTimeout(this.timers.ackTimer);
+            clearTimeout(this.timers.invite2xxTimer);
             this.status = C.STATUS_CONFIRMED;
 
             this.emit('confirmed', request);
           }.bind(this));
         } else {
-          SIP.Timers.clearTimeout(this.timers.ackTimer);
-          SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+          clearTimeout(this.timers.ackTimer);
+          clearTimeout(this.timers.invite2xxTimer);
           this.status = C.STATUS_CONFIRMED;
 
           this.emit('confirmed', request);
@@ -591,7 +591,7 @@ Session.prototype = {
         this.emit("ack", response.transaction.sendACK());
         this.pendingReinvite = false;
         // TODO: All of these timers should move into the Transaction layer
-        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
+        clearTimeout(self.timers.invite2xxTimer);
         if (!this.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
           this.logger.error('2XX response received to re-invite but did not have a description');
           this.emit('reinviteFailed', self);
@@ -649,7 +649,7 @@ Session.prototype = {
     var self = this,
         timeout = SIP.Timers.T1;
 
-    this.timers.invite2xxTimer = SIP.Timers.setTimeout(function invite2xxRetransmission() {
+    this.timers.invite2xxTimer = setTimeout(function invite2xxRetransmission() {
       if (self.status !== C.STATUS_WAITING_FOR_ACK) {
         return;
       }
@@ -662,7 +662,7 @@ Session.prototype = {
 
       timeout = Math.min(timeout * 2, SIP.Timers.T2);
 
-      self.timers.invite2xxTimer = SIP.Timers.setTimeout(invite2xxRetransmission, timeout);
+      self.timers.invite2xxTimer = setTimeout(invite2xxRetransmission, timeout);
     }, timeout);
   },
 
@@ -674,10 +674,10 @@ Session.prototype = {
   setACKTimer: function() {
     var self = this;
 
-    this.timers.ackTimer = SIP.Timers.setTimeout(function() {
+    this.timers.ackTimer = setTimeout(function() {
       if(self.status === C.STATUS_WAITING_FOR_ACK) {
         self.logger.log('no ACK received for an extended period of time, terminating the call');
-        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
+        clearTimeout(self.timers.invite2xxTimer);
         self.sendRequest(SIP.C.BYE);
         self.terminated(null, SIP.C.causes.NO_ACK);
       }
@@ -838,7 +838,7 @@ InviteServerContext = function(ua, request) {
   self.status = C.STATUS_WAITING_FOR_ANSWER;
 
   // Set userNoAnswerTimer
-  self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
+  self.timers.userNoAnswerTimer = setTimeout(function() {
     request.reply(408);
     self.failed(request, SIP.C.causes.NO_ANSWER);
     self.terminated(request, SIP.C.causes.NO_ANSWER);
@@ -848,7 +848,7 @@ InviteServerContext = function(ua, request) {
    * RFC3261 13.3.1
    */
   if (expires) {
-    self.timers.expiresTimer = SIP.Timers.setTimeout(function() {
+    self.timers.expiresTimer = setTimeout(function() {
       if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
         request.reply(487);
         self.failed(request, SIP.C.causes.EXPIRES);
@@ -995,20 +995,20 @@ InviteServerContext.prototype = Object.create({}, {
 
           // Retransmit until we get a response or we time out (see prackTimer below)
           var timeout = SIP.Timers.T1;
-          this.timers.rel1xxTimer = SIP.Timers.setTimeout(function rel1xxRetransmission() {
+          this.timers.rel1xxTimer = setTimeout(function rel1xxRetransmission() {
             this.request.reply(statusCode, null, extraHeaders, description);
             timeout *= 2;
-            this.timers.rel1xxTimer = SIP.Timers.setTimeout(rel1xxRetransmission.bind(this), timeout);
+            this.timers.rel1xxTimer = setTimeout(rel1xxRetransmission.bind(this), timeout);
           }.bind(this), timeout);
 
           // Timeout and reject INVITE if no response
-          this.timers.prackTimer = SIP.Timers.setTimeout(function () {
+          this.timers.prackTimer = setTimeout(function () {
             if (this.status !== C.STATUS_WAITING_FOR_PRACK) {
               return;
             }
 
             this.logger.log('no PRACK received, rejecting the call');
-            SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
+            clearTimeout(this.timers.rel1xxTimer);
             this.request.reply(504);
             this.terminated(null, SIP.C.causes.NO_PRACK);
           }.bind(this), SIP.Timers.T1 * 64);
@@ -1132,7 +1132,7 @@ InviteServerContext.prototype = Object.create({}, {
       return this;
     }
 
-    SIP.Timers.clearTimeout(this.timers.userNoAnswerTimer);
+    clearTimeout(this.timers.userNoAnswerTimer);
 
     if (this.status === C.STATUS_EARLY_MEDIA) {
       descriptionCreationSucceeded({});
@@ -1169,8 +1169,8 @@ InviteServerContext.prototype = Object.create({}, {
       /* jshint validthis:true */
       var contentType, contentDisp;
 
-      SIP.Timers.clearTimeout(this.timers.ackTimer);
-      SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+      clearTimeout(this.timers.ackTimer);
+      clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
 
       contentType = request.getHeader('Content-Type');
@@ -1243,8 +1243,8 @@ InviteServerContext.prototype = Object.create({}, {
             this.sessionDescriptionHandler.setDescription(request.body, this.sessionDescriptionHandlerOptions, this.modifiers)
             .then(
               function onSuccess () {
-                SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
-                SIP.Timers.clearTimeout(this.timers.prackTimer);
+                clearTimeout(this.timers.rel1xxTimer);
+                clearTimeout(this.timers.prackTimer);
                 request.reply(200);
                 if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                   this.status = C.STATUS_EARLY_MEDIA;
@@ -1271,8 +1271,8 @@ InviteServerContext.prototype = Object.create({}, {
             this.terminated(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
-          SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
-          SIP.Timers.clearTimeout(this.timers.prackTimer);
+          clearTimeout(this.timers.rel1xxTimer);
+          clearTimeout(this.timers.prackTimer);
           request.reply(200);
 
           if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
@@ -1829,8 +1829,8 @@ InviteClientContext.prototype = Object.create({}, {
 
     if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
 
-      SIP.Timers.clearTimeout(this.timers.ackTimer);
-      SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+      clearTimeout(this.timers.ackTimer);
+      clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
 
       this.accepted();

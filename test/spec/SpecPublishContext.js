@@ -93,7 +93,7 @@ describe('PublishContext', function() {
 
   describe('.publish', function() {
     it('publish initial call after the object init', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.publish('ExampleBody');
@@ -108,13 +108,13 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish call with no body and no ETag', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.request = true;
@@ -131,13 +131,13 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBeUndefined();
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
 
     it('publish call with no body and Expire = 0', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.request = true;
@@ -156,13 +156,13 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBeUndefined();
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     })
 
     it('publish modify call, with both body and ETag set', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.body = 'ExampleBody';
@@ -182,13 +182,13 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBodyModify');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish refresh call, with no body but with ETag set', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -210,13 +210,13 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish call with body and no ETag set, with Expires = 0 after unpublish', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -238,7 +238,7 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBodyNew');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
@@ -247,7 +247,7 @@ describe('PublishContext', function() {
 
   describe('.unpublish', function() {
     it('unpublish call with ETag set', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -269,13 +269,13 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('unpublish call with no ETag set', function() {
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -297,7 +297,7 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
@@ -425,7 +425,7 @@ describe('PublishContext', function() {
 
     it('2xx response to PUBLISH non-removal request with ETag and Expires tags', function() {
       spyOn(Publish, 'emit');
-      spyOn(SIP.Timers, 'setTimeout');
+      spyOn(window, 'setTimeout');
 
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 3600;
@@ -452,14 +452,14 @@ describe('PublishContext', function() {
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = '2SiNlejw';
 
-      expect(SIP.Timers.setTimeout).toHaveBeenCalledWith(jasmine.any(Function), 180*900);
+      expect(setTimeout).toHaveBeenCalledWith(jasmine.any(Function), 180*900);
       expect(Publish.emit).toHaveBeenCalledWith('published', response, 'OK');
     });
 
     it('2xx response to PUBLISH non-removal request with Expires = 0', function() {
       spyOn(Publish, 'emit');
-      spyOn(SIP.Timers, 'clearTimeout');
-      spyOn(SIP.Timers, 'setTimeout');
+      spyOn(window, 'clearTimeout');
+      spyOn(window, 'setTimeout');
 
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 3600;
@@ -486,15 +486,15 @@ describe('PublishContext', function() {
       Publish.pubRequestExpires = 0;
       Publish.pubRequestEtag = null;
 
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
-      expect(SIP.Timers.setTimeout).not.toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
+      expect(setTimeout).not.toHaveBeenCalled();
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'OK');
     });
 
     it('2xx response to PUBLISH removal request', function() {
       spyOn(Publish, 'emit');
-      spyOn(SIP.Timers, 'clearTimeout');
-      spyOn(SIP.Timers, 'setTimeout');
+      spyOn(window, 'clearTimeout');
+      spyOn(window, 'setTimeout');
 
       Publish.pubRequestBody = null;
       Publish.pubRequestExpires = 0;
@@ -520,8 +520,8 @@ describe('PublishContext', function() {
       Publish.pubRequestExpires = 0;
       Publish.pubRequestEtag = null;
 
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
-      expect(SIP.Timers.setTimeout).not.toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
+      expect(setTimeout).not.toHaveBeenCalled();
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'OK');
     });
 
@@ -662,7 +662,7 @@ describe('PublishContext', function() {
 
     it('Default for 3xx, 4xx (except 412, 423), 6xx response to PUBLISH', function() {
       spyOn(Publish, 'emit');
-      spyOn(SIP.Timers, 'clearTimeout');
+      spyOn(window, 'clearTimeout');
 
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
@@ -691,7 +691,7 @@ describe('PublishContext', function() {
 
       expect(Publish.emit).toHaveBeenCalledWith('failed', response, 'Temporarily Unavailable');
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'Temporarily Unavailable');
-      expect(SIP.Timers.clearTimeout).toHaveBeenCalled();
+      expect(clearTimeout).toHaveBeenCalled();
 
     });
 
