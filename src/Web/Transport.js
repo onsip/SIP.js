@@ -108,9 +108,17 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       return this.disconnectionPromise;
     }
     options = options || {};
+    options.code = options.code || 1000;
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      return SIP.Utils.Promise.reject('Failed status transition - attempted to disconnect a socket that was not open');
+      if (this.connectionPromise) {
+        return this.connectionPromise
+          .then(() => Promise.reject('The websocket did not disconnect'))
+          .catch(() => Promise.resolve({overrideEvent: true}));
+      } else {
+        return Promise.reject('The websocket did not disconnect');
+      }
     }
+    this.emit('disconnecting');
     this.disconnectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
       this.disconnectDeferredResolve = resolve;
 
@@ -136,10 +144,13 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * Connect socket.
   */
   connectPromise: {writable: true, value: function connectPromise (options) {
+    options = options || {};
+    if (this.status === C.STATUS_CLOSING && !options.force) {
+      return Promise.reject('WebSocket ' + this.server.ws_uri + ' is closing');
+    }
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    options = options || {};
     this.server = this.server || this.getNextWsServer(options.force);
 
     this.connectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
@@ -153,6 +164,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.connectDeferredResolve = resolve;
 
       this.status = C.STATUS_CONNECTING;
+      this.emit('connecting');
       this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
       this.disposeWs();
       try {
@@ -170,14 +182,18 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         return;
       }
 
-      this.connectionTimeout = SIP.Timers.setTimeout(function() {
-        this.onError('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
-      }.bind(this), this.configuration.connectionTimeout * 1000);
+      this.connectionTimeout = SIP.Timers.setTimeout(() => {
+        this.statusTransition(C.STATUS_CLOSED);
+        this.logger.warn('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
+        this.emit('disconnected', {code: 1000});
+        this.connectionPromise = null;
+        reject('Connection timeout');
+      }, this.configuration.connectionTimeout * 1000);
 
       this.boundOnOpen = this.onOpen.bind(this);
       this.boundOnMessage = this.onMessage.bind(this);
       this.boundOnClose = this.onClose.bind(this);
-      this.boundOnError = this.onError.bind(this);
+      this.boundOnError = this.onWebsocketError.bind(this);
       this.ws.addEventListener('open', this.boundOnOpen);
       this.ws.addEventListener('message', this.boundOnMessage);
       this.ws.addEventListener('close', this.boundOnClose);
@@ -194,6 +210,12 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * @param {event} e
   */
   onOpen: {writable: true, value: function onOpen () {
+    if (this.status === C.STATUS_CLOSED) { // Indicated that the transport thinks the ws is dead already
+      const ws = this.ws;
+      this.disposeWs();
+      ws.close(1000);
+      return;
+    }
     this.status = C.STATUS_OPEN; // quietly force status to open
     this.emit('connected');
     SIP.Timers.clearTimeout(this.connectionTimeout);
@@ -228,10 +250,9 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   onClose: {writable: true, value: function onClose (e) {
     this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
-    this.emit('disconnected', {code: e.code, reason: e.reason});
 
     if (this.status !== C.STATUS_CLOSING) {
-      this.logger.warn('WebSocket abrupt disconnection');
+      this.logger.warn('WebSocket closed without SIP.js requesting it');
       this.emit('transportError');
     }
 
@@ -250,7 +271,9 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       this.disconnectDeferredResolve = null;
       return;
     }
+
     this.status = C.STATUS_CLOSED; // quietly force status to closed
+    this.emit('disconnected', {code: e.code, reason: e.reason});
     this.reconnect();
   }},
 
@@ -320,11 +343,20 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
 
   /**
   * @event
-  * @param {event} e
+  * @param {string} e
   */
   onError: {writable: true, value: function onError (e) {
     this.logger.warn('Transport error: ' + e);
     this.emit('transportError');
+  }},
+
+  /**
+   * @event
+   * @private
+   * @param {event} e
+   */
+  onWebsocketError: {writable: false, value: function onWebsocketError () {
+    this.onError('The Websocket had an error');
   }},
 
   /**
@@ -514,9 +546,10 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   statusTransition: {writable: true, value: function statusTransition (status, force) {
     this.logger.log('Attempting to transition status from ' + Object.keys(C)[this.status] + ' to ' + Object.keys(C)[status]);
-    if ((status === C.STATUS_OPEN && this.statusAssert(C.STATUS_CONNECTING, force)) ||
+    if ((status === C.STATUS_CONNECTING && this.statusAssert(C.STATUS_CLOSED)) ||
+        (status === C.STATUS_OPEN && this.statusAssert(C.STATUS_CONNECTING, force)) ||
         (status === C.STATUS_CLOSING && this.statusAssert(C.STATUS_OPEN, force))    ||
-        (status === C.STATUS_CLOSED && this.statusAssert(C.STATUS_CLOSING, force)))
+        (status === C.STATUS_CLOSED))
     {
       this.status = status;
       return true;
@@ -558,32 +591,10 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         traceSip: false,
       };
 
-    // Pre-Configuration
-    function aliasUnderscored (parameter, logger) {
-      var underscored = parameter.replace(/([a-z][A-Z])/g, function (m) {
-        return m[0] + '_' + m[1].toLowerCase();
-      });
-
-      if (parameter === underscored) {
-        return;
-      }
-
-      var hasParameter = configuration.hasOwnProperty(parameter);
-      if (configuration.hasOwnProperty(underscored)) {
-        logger.warn(underscored + ' is deprecated, please use ' + parameter);
-        if (hasParameter) {
-          logger.warn(parameter + ' overriding ' + underscored);
-        }
-      }
-
-      configuration[parameter] = hasParameter ? configuration[parameter] : configuration[underscored];
-    }
-
     var configCheck = this.getConfigurationCheck();
 
     // Check Mandatory parameters
     for(parameter in configCheck.mandatory) {
-      aliasUnderscored(parameter, this.logger);
       if(!configuration.hasOwnProperty(parameter)) {
         throw new SIP.Exceptions.ConfigurationError(parameter);
       } else {
@@ -599,7 +610,6 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
 
     // Check Optional parameters
     for(parameter in configCheck.optional) {
-      aliasUnderscored(parameter, this.logger);
       if(configuration.hasOwnProperty(parameter)) {
         value = configuration[parameter];
 

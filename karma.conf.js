@@ -10,7 +10,6 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/polyfills/*.js',
       'test/helpers/*.js',
       'dist/sip.js',
       'test/spec/**/*.js',
