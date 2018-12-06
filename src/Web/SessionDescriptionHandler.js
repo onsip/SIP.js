@@ -331,6 +331,8 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       })
       .then(function(sdp) {
         self.resetIceGatheringComplete();
+        self.logger.log('Setting local sdp.');
+        self.logger.log(sdp.sdp);
         return pc.setLocalDescription(sdp);
       })
       .catch((e) => {
