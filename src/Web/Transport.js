@@ -104,22 +104,25 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   * Disconnect socket.
   */
   disconnectPromise: {writable: true, value: function disconnectPromise (options) {
-    if (this.disconnectionPromise) {
+    if (this.disconnectionPromise) {  // Already disconnecting. Just return this.
       return this.disconnectionPromise;
     }
     options = options || {};
     options.code = options.code || 1000;
+
     if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      if (this.connectionPromise) {
+      if (this.status === C.STATUS_CLOSED) {  // Websocket is already closed
+        return Promise.resolve({overrideEvent: true});
+      } else if (this.connectionPromise) {    // Websocket is connecting, cannot move to disconneting yet
         return this.connectionPromise
           .then(() => Promise.reject('The websocket did not disconnect'))
           .catch(() => Promise.resolve({overrideEvent: true}));
       } else {
-        return Promise.reject('The websocket did not disconnect');
+        return Promise.reject('The websocket did not disconnect');  // Cannot move to disconnecting, but not in connecting state.
       }
     }
     this.emit('disconnecting');
-    this.disconnectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
+    this.disconnectionPromise = new Promise((resolve, reject) => {
       this.disconnectDeferredResolve = resolve;
 
       if (this.reconnectTimer) {
@@ -135,7 +138,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       } else {
         reject('Attempted to disconnect but the websocket doesn\'t exist');
       }
-    }.bind(this));
+    });
 
     return this.disconnectionPromise;
   }},
@@ -546,7 +549,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
   */
   statusTransition: {writable: true, value: function statusTransition (status, force) {
     this.logger.log('Attempting to transition status from ' + Object.keys(C)[this.status] + ' to ' + Object.keys(C)[status]);
-    if ((status === C.STATUS_CONNECTING && this.statusAssert(C.STATUS_CLOSED)) ||
+    if ((status === C.STATUS_CONNECTING && this.statusAssert(C.STATUS_CLOSED, force)) ||
         (status === C.STATUS_OPEN && this.statusAssert(C.STATUS_CONNECTING, force)) ||
         (status === C.STATUS_CLOSING && this.statusAssert(C.STATUS_OPEN, force))    ||
         (status === C.STATUS_CLOSED))
