@@ -80,29 +80,29 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     // have to check signalingState since this.close() gets called multiple times
     if(this.peerConnection && this.peerConnection.signalingState !== 'closed') {
       if (this.peerConnection.getSenders) {
-        this.peerConnection.getSenders().forEach(function(sender) {
+        this.peerConnection.getSenders().forEach((sender) => {
           if (sender.track) {
             sender.track.stop();
           }
         });
       } else {
         this.logger.warn('Using getLocalStreams which is deprecated');
-        this.peerConnection.getLocalStreams().forEach(function(stream) {
-          stream.getTracks().forEach(function(track) {
+        this.peerConnection.getLocalStreams().forEach((stream) => {
+          stream.getTracks().forEach((track) => {
             track.stop();
           });
         });
       }
       if (this.peerConnection.getReceivers) {
-        this.peerConnection.getReceivers().forEach(function(receiver) {
+        this.peerConnection.getReceivers().forEach((receiver) => {
           if (receiver.track) {
             receiver.track.stop();
           }
         });
       } else {
         this.logger.warn('Using getRemoteStreams which is deprecated');
-        this.peerConnection.getRemoteStreams().forEach(function(stream) {
-          stream.getTracks().forEach(function(track) {
+        this.peerConnection.getRemoteStreams().forEach((stream) => {
+          stream.getTracks().forEach((track) => {
             track.stop();
           });
         });
@@ -141,23 +141,21 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     modifiers = modifiers.concat(this.modifiers);
 
     return SIP.Utils.Promise.resolve()
-    .then(function() {
+    .then(() => {
       if (this.shouldAcquireMedia) {
-        return this.acquire(this.constraints).then(function() {
+        return this.acquire(this.constraints).then(() => {
           this.shouldAcquireMedia = false;
-        }.bind(this));
+        });
       }
-    }.bind(this))
-    .then(function() {
-      return this.createOfferOrAnswer(options.RTCOfferOptions, modifiers);
-    }.bind(this))
-    .then(function(description) {
+    })
+    .then(() => this.createOfferOrAnswer(options.RTCOfferOptions, modifiers))
+    .then((description) => {
       this.emit('getDescription', description);
       return {
         body: description.sdp,
         contentType: this.CONTENT_TYPE
       };
-    }.bind(this));
+    });
   }},
 
   /**
@@ -194,8 +192,6 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
    * @returns {Promise} Promise that resolves once the description is set
    */
   setDescription: {writable:true, value: function setDescription (sessionDescription, options, modifiers) {
-    var self = this;
-
     options = options || {};
     if (options.peerConnectionOptions) {
       this.initPeerConnection(options.peerConnectionOptions);
@@ -213,29 +209,27 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     };
 
     return SIP.Utils.Promise.resolve()
-    .then(function() {
+    .then(() => {
       // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
       if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
-        return this.acquire(this.constraints).then(function() {
+        return this.acquire(this.constraints).then(() => {
           this.shouldAcquireMedia = false;
-        }.bind(this));
+        });
       }
-    }.bind(this))
-    .then(function() {
-      return SIP.Utils.reducePromises(modifiers, description);
     })
+    .then(() => SIP.Utils.reducePromises(modifiers, description))
     .catch((e) => {
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
         throw e;
       }
       const error = new SIP.Exceptions.SessionDescriptionHandlerError("setDescription", e, "The modifiers did not resolve successfully");
       this.logger.error(error.message);
-      self.emit('peerConnection-setRemoteDescriptionFailed', error);
+      this.emit('peerConnection-setRemoteDescriptionFailed', error);
       throw error;
     })
-    .then(function(modifiedDescription) {
-      self.emit('setDescription', modifiedDescription);
-      return self.peerConnection.setRemoteDescription(modifiedDescription);
+    .then((modifiedDescription) => {
+      this.emit('setDescription', modifiedDescription);
+      return this.peerConnection.setRemoteDescription(modifiedDescription);
     })
     .catch((e) => {
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
@@ -253,13 +247,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.emit('peerConnection-setRemoteDescriptionFailed', error);
       throw error;
     })
-    .then(function setRemoteDescriptionSuccess() {
-      if (self.peerConnection.getReceivers) {
-        self.emit('setRemoteDescription', self.peerConnection.getReceivers());
+    .then(() => {
+      if (this.peerConnection.getReceivers) {
+        this.emit('setRemoteDescription', this.peerConnection.getReceivers());
       } else {
-        self.emit('setRemoteDescription', self.peerConnection.getRemoteStreams());
+        this.emit('setRemoteDescription', this.peerConnection.getRemoteStreams());
       }
-      self.emit('confirmed', self);
+      this.emit('confirmed', this);
     });
   }},
 
@@ -309,13 +303,12 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
   // Internal functions
   createOfferOrAnswer: {writable: true, value: function createOfferOrAnswer (RTCOfferOptions, modifiers) {
-    var self = this;
     var methodName;
     var pc = this.peerConnection;
 
     RTCOfferOptions = RTCOfferOptions || {};
 
-    methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
+    methodName = this.hasOffer('remote') ? 'createAnswer' : 'createOffer';
 
     this.logger.log(methodName);
 
@@ -328,13 +321,11 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         this.emit('peerConnection-' + methodName + 'Failed', error);
         throw error;
       })
-      .then(function(sdp) {
-        return SIP.Utils.reducePromises(modifiers, self.createRTCSessionDescriptionInit(sdp));
-      })
-      .then(function(sdp) {
-        self.resetIceGatheringComplete();
-        self.logger.log('Setting local sdp.');
-        self.logger.log(sdp.sdp);
+      .then((sdp) => SIP.Utils.reducePromises(modifiers, this.createRTCSessionDescriptionInit(sdp)))
+      .then((sdp) => {
+        this.resetIceGatheringComplete();
+        this.logger.log('Setting local sdp.');
+        this.logger.log(sdp.sdp);
         return pc.setLocalDescription(sdp);
       })
       .catch((e) => {
@@ -345,15 +336,13 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         this.emit('peerConnection-SetLocalDescriptionFailed', error);
         throw error;
       })
-      .then(function onSetLocalDescriptionSuccess() {
-        return self.waitForIceGatheringComplete();
-      })
-      .then(function readySuccess() {
-        var localDescription = self.createRTCSessionDescriptionInit(self.peerConnection.localDescription);
+      .then(() => this.waitForIceGatheringComplete())
+      .then(() => {
+        var localDescription = this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
         return SIP.Utils.reducePromises(modifiers, localDescription);
       })
-      .then(function(localDescription) {
-        self.setDirection(localDescription.sdp);
+      .then((localDescription) => {
+        this.setDirection(localDescription.sdp);
         return localDescription;
       })
       .catch((e) => {
@@ -458,7 +447,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         self.emit('iceGathering', this);
         if (!self.iceGatheringTimer && options.iceCheckingTimeout) {
           self.iceGatheringTimeout = false;
-          self.iceGatheringTimer = setTimeout(function() {
+          self.iceGatheringTimer = setTimeout(() => {
             self.logger.log('RTCIceChecking Timeout Triggered after ' + options.iceCheckingTimeout + ' milliseconds');
             self.iceGatheringTimeout = true;
             self.triggerIceGatheringComplete();
@@ -509,7 +498,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     // Default audio & video to true
     constraints = this.checkAndDefaultConstraints(constraints);
 
-    return new SIP.Utils.Promise(function(resolve, reject) {
+    return new SIP.Utils.Promise((resolve, reject) => {
       /*
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
@@ -519,19 +508,19 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
 
       if (constraints.audio || constraints.video) {
         this.WebRTC.getUserMedia(constraints)
-        .then(function(streams) {
+        .then((streams) => {
           this.observer.trackAdded();
           this.emit('userMedia', streams);
           resolve(streams);
-        }.bind(this)).catch(function(e) {
+        }).catch((e) => {
           this.emit('userMediaFailed', e);
           reject(e);
-        }.bind(this));
+        });
       } else {
         // Local streams were explicitly excluded.
         resolve([]);
       }
-    }.bind(this))
+    })
     .catch((e) => {
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
         throw e;
@@ -541,20 +530,20 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.logger.error(error.error);
       throw error;
     })
-    .then(function acquireSucceeded(streams) {
+    .then((streams) => {
       this.logger.log('acquired local media streams');
       try {
         // Remove old tracks
         if (this.peerConnection.removeTrack) {
-          this.peerConnection.getSenders().forEach(function (sender) {
+          this.peerConnection.getSenders().forEach((sender) => {
             this.peerConnection.removeTrack(sender);
-          }, this);
+          });
         }
         return streams;
       } catch(e) {
         return SIP.Utils.Promise.reject(e);
       }
-    }.bind(this))
+    })
     .catch((e) => {
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
         throw e;
@@ -564,24 +553,24 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       this.logger.error(error.error);
       throw error;
     })
-    .then(function addStreams(streams) {
+    .then((streams) => {
       try {
         streams = [].concat(streams);
-        streams.forEach(function (stream) {
+        streams.forEach((stream) => {
           if (this.peerConnection.addTrack) {
-            stream.getTracks().forEach(function (track) {
+            stream.getTracks().forEach((track) => {
               this.peerConnection.addTrack(track, stream);
-            }, this);
+            });
           } else {
             // Chrome 59 does not support addTrack
             this.peerConnection.addStream(stream);
           }
-        }, this);
+        });
       } catch(e) {
         return SIP.Utils.Promise.reject(e);
       }
       return SIP.Utils.Promise.resolve();
-    }.bind(this))
+    })
     .catch((e) => {
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
         throw e;
