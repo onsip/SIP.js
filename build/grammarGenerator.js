@@ -7,7 +7,7 @@ const fs = require("fs"),
 const thisFolder = "./src/Grammar",
     inputFile = thisFolder + "/src/Grammar.pegjs",
     outputFolder = thisFolder + "/dist",
-    outputFile = outputFolder + "/Grammar.js";
+    outputFile = outputFolder + "/Grammar.ts";
 
 const grammarContents = fs.readFileSync(inputFile, "utf8");
 
