@@ -140,7 +140,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     }
     modifiers = modifiers.concat(this.modifiers);
 
-    return SIP.Utils.Promise.resolve()
+    return Promise.resolve()
     .then(() => {
       if (this.shouldAcquireMedia) {
         return this.acquire(this.constraints).then(() => {
@@ -179,7 +179,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       description.sdp = description.sdp.replace(/a=sendrecv\r\n/g, 'a=sendonly\r\n');
       description.sdp = description.sdp.replace(/a=recvonly\r\n/g, 'a=inactive\r\n');
     }
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   }},
 
   /**
@@ -208,7 +208,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
       sdp: sessionDescription
     };
 
-    return SIP.Utils.Promise.resolve()
+    return Promise.resolve()
     .then(() => {
       // Media should be acquired in getDescription unless we need to do it sooner for some reason (FF61+)
       if (this.shouldAcquireMedia && this.options.alwaysAcquireMediaFirst) {
@@ -498,7 +498,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     // Default audio & video to true
     constraints = this.checkAndDefaultConstraints(constraints);
 
-    return new SIP.Utils.Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       /*
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
@@ -541,7 +541,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
         }
         return streams;
       } catch(e) {
-        return SIP.Utils.Promise.reject(e);
+        return Promise.reject(e);
       }
     })
     .catch((e) => {
@@ -567,9 +567,9 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
           }
         });
       } catch(e) {
-        return SIP.Utils.Promise.reject(e);
+        return Promise.reject(e);
       }
-      return SIP.Utils.Promise.resolve();
+      return Promise.resolve();
     })
     .catch((e) => {
       if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
@@ -651,7 +651,7 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     this.logger.log('waitForIceGatheringComplete');
     if (this.isIceGatheringComplete()) {
       this.logger.log('ICE is already complete. Return resolved.');
-      return SIP.Utils.Promise.resolve();
+      return Promise.resolve();
     } else if (!this.isIceGatheringDeferred) {
       this.iceGatheringDeferred = SIP.Utils.defer();
     }

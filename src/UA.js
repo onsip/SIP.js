@@ -781,7 +781,7 @@ function checkAuthenticationFactory (authenticationFactory) {
   }
   if (!authenticationFactory.initialize) {
     authenticationFactory.initialize = function initialize () {
-      return SIP.Utils.Promise.resolve();
+      return Promise.resolve();
     };
   }
   return authenticationFactory;

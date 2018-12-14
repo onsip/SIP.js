@@ -7,12 +7,9 @@ module.exports = function (SIP) {
 var Utils;
 
 Utils= {
-
-  Promise: global.Promise,
-
   defer: function defer () {
     var deferred = {};
-    deferred.promise = new Utils.Promise(function (resolve, reject) {
+    deferred.promise = new Promise(function (resolve, reject) {
       deferred.resolve = resolve;
       deferred.reject = reject;
     });
@@ -23,7 +20,7 @@ Utils= {
     return arr.reduce(function(acc, fn) {
       acc = acc.then(fn);
       return acc;
-    }, SIP.Utils.Promise.resolve(val));
+    }, Promise.resolve(val));
   },
 
   augment: function (object, constructor, args, override) {

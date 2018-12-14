@@ -1412,7 +1412,7 @@ InviteClientContext.prototype = Object.create({}, {
     this.ua.sessions[this.id] = this;
 
     // This should allow the function to return so that listeners can be set up for these events
-    SIP.Utils.Promise.resolve().then(function() {
+    Promise.resolve().then(function() {
       if (this.inviteWithoutSdp) {
         //just send an invite with no sdp...
         this.request.body = self.renderbody;

@@ -83,7 +83,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     options = options || {};
     if (!this.statusAssert(C.STATUS_OPEN, options.force)) {
       this.onError('unable to send message - WebSocket not open');
-      return SIP.Utils.Promise.reject();
+      return Promise.reject();
     }
 
     var message = msg.toString();
@@ -93,10 +93,10 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
         this.logger.log('sending WebSocket message:\n\n' + message + '\n');
       }
       this.ws.send(message);
-      return SIP.Utils.Promise.resolve({msg: message});
+      return Promise.resolve({msg: message});
     } else {
       this.onError('unable to send message - WebSocket does not exist');
-      return SIP.Utils.Promise.reject();
+      return Promise.reject();
     }
   }},
 
@@ -156,7 +156,7 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     }
     this.server = this.server || this.getNextWsServer(options.force);
 
-    this.connectionPromise = new SIP.Utils.Promise(function(resolve, reject) {
+    this.connectionPromise = new Promise(function(resolve, reject) {
 
       if ((this.status === C.STATUS_OPEN || this.status === C.STATUS_CLOSING) && !options.force) {
         this.logger.warn('WebSocket ' + this.server.ws_uri + ' is already connected');

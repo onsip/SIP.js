@@ -1,10 +1,9 @@
 /**
- * @name SIP
  * @namespace
  */
 "use strict";
 
-module.exports = function(SIP) {
+module.exports = function() {
 var Modifiers;
 
 function stripPayload(sdp, payload) {
@@ -82,34 +81,34 @@ function stripMediaDescription(sdp, description) {
 Modifiers = {
   stripTcpCandidates: function(description) {
     description.sdp = description.sdp.replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   },
 
   stripTelephoneEvent: function(description) {
     description.sdp = stripPayload(description.sdp, 'telephone-event');
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   },
 
   cleanJitsiSdpImageattr: function(description) {
     description.sdp = description.sdp.replace(/^(a=imageattr:.*?)(x|y)=\[0-/gm, "$1$2=[1:");
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   },
 
   stripG722: function(description) {
     description.sdp = stripPayload(description.sdp, 'G722');
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   },
 
   stripRtpPayload: function(payload) {
     return function(description) {
       description.sdp = stripPayload(description.sdp, payload);
-      return SIP.Utils.Promise.resolve(description);
+      return Promise.resolve(description);
     };
   },
 
   stripVideo: function(description) {
     description.sdp = stripMediaDescription(description.sdp, "video");
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   },
 
   addMidLines: function(description) {
@@ -128,7 +127,7 @@ Modifiers = {
       sdp = sdp.join('');
       description.sdp = sdp;
     }
-    return SIP.Utils.Promise.resolve(description);
+    return Promise.resolve(description);
   }
 };
 

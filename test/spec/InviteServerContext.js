@@ -17,11 +17,11 @@ describe('A UAS receiving an INVITE', function () {
         register: false,
         sessionDescriptionHandlerFactory: function () {
           return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            getDescription: function () { return Promise.resolve('foo'); },
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             },
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); }
           };
         }
       };
@@ -61,11 +61,11 @@ describe('A UAS receiving an INVITE', function () {
         register: false,
         sessionDescriptionHandlerFactory: function () {
           return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            getDescription: function () { return Promise.resolve('foo'); },
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             } ,
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); }
           };
         }
       };
@@ -115,11 +115,11 @@ describe('A UAS receiving an INVITE', function () {
         register: false,
         sessionDescriptionHandlerFactory: function () {
           return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            getDescription: function () { return Promise.resolve('foo'); },
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             },
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); }
           };
         }
       };
@@ -181,11 +181,11 @@ describe('A UAS receiving an INVITE', function () {
         register: false,
         sessionDescriptionHandlerFactory: function () {
           return {
-            getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+            getDescription: function () { return Promise.resolve('foo'); },
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             },
-            setDescription: function () { return SIP.Utils.Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); }
           };
         }
       };
@@ -244,11 +244,11 @@ describe('A UAS receiving an INVITE', function () {
             register: false,
             sessionDescriptionHandlerFactory: function() {
               return {
-                getDescription: function () { return SIP.Utils.Promise.resolve('foo'); },
+                getDescription: function () { return Promise.resolve('foo'); },
                 hasDescription: function (contentType) {
                   return contentType === 'application/sdp';
                 },
-                setDescription: function () { return SIP.Utils.Promise.resolve(); },
+                setDescription: function () { return Promise.resolve(); },
                 close: function() { return; }
               };
             }
