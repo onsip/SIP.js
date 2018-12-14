@@ -938,7 +938,11 @@ UA.prototype.loadConfig = function(configuration) {
   // Via Host
   if (settings.hackIpInContact) {
     if (typeof settings.hackIpInContact === 'boolean') {
-      settings.viaHost = SIP.Utils.getRandomTestNetIP();
+      var from = 1,
+          to = 254,
+          octet = Math.floor(Math.random()*(to-from+1)+from);
+      // random Test-Net IP (http://tools.ietf.org/html/rfc5735)
+      settings.viaHost = '192.0.2.' + octet;
     }
     else if (typeof settings.hackIpInContact === 'string') {
       settings.viaHost = settings.hackIpInContact;

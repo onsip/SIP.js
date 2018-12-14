@@ -1133,12 +1133,12 @@ describe('UA', function() {
       expect(UA.configuration.authorizationUser).toBe(UA.configuration.uri.user);
     });
 
-    it('uses getRandomTestNetIP for viaHost if hackIpInContact is set to true', function() {
-      spyOn(SIP.Utils, 'getRandomTestNetIP').and.callThrough();
+    it('uses Math.floor for viaHost if hackIpInContact is set to true', function() {
+      spyOn(Math, 'floor').and.callThrough();
 
       UA.loadConfig({hackIpInContact: true});
 
-      expect(SIP.Utils.getRandomTestNetIP).toHaveBeenCalled();
+      expect(Math.floor).toHaveBeenCalled();
     });
 
     it('creates the contact object', function() {

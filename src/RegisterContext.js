@@ -218,7 +218,7 @@ RegisterContext.prototype = Object.create({}, {
 
   register: {writable: true, value: function register (options = {}) {
     // Handle Options
-    this.options = SIP.Utils.defaultOptions(this.options, options);
+    this.options = Object.assign(this.options || {}, options);
     const extraHeaders = (this.options.extraHeaders || []).slice();
 
     extraHeaders.push('Contact: ' + this.generateContactHeader(this.expires));

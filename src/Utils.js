@@ -38,24 +38,6 @@ Utils= {
     constructor.apply(object, args);
   },
 
-  defaultOptions: function(defaultOptions, overridingOptions) {
-    defaultOptions = defaultOptions || {};
-    overridingOptions = overridingOptions || {};
-    return Object.assign({}, defaultOptions, overridingOptions);
-  },
-
-  optionsOverride: function (options, winner, loser, isDeprecated, logger, defaultValue) {
-    if (isDeprecated && options[loser]) {
-      logger.warn(loser + ' is deprecated, please use ' + winner + ' instead');
-    }
-
-    if (options[winner] && options[loser]) {
-      logger.warn(winner + ' overriding ' + loser);
-    }
-
-    options[winner] = options[winner] || options[loser] || defaultValue;
-  },
-
   str_utf8_length: function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
   },
@@ -69,14 +51,6 @@ Utils= {
     var end = body.indexOf('\r\n', start);
 
     return 'v=0\r\n' + body.slice(start, end) + '\r\ns=-\r\nt=0 0\r\nc=IN IP4 0.0.0.0';
-  },
-
-  isFunction: function(fn) {
-    if (fn !== undefined) {
-      return Object.prototype.toString.call(fn) === '[object Function]';
-    } else {
-      return false;
-    }
   },
 
   isDecimal: function (num) {
@@ -109,17 +83,6 @@ Utils= {
     });
 
     return UUID;
-  },
-
-  hostType: function(host) {
-    if (!host) {
-      return;
-    } else {
-      host = SIP.Grammar.parse(host,'host');
-      if (host !== -1) {
-        return host.host_type;
-      }
-    }
   },
 
   /**
@@ -262,17 +225,6 @@ Utils= {
     reason = Utils.getReasonPhrase(code, reason);
 
     return 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
-  },
-
-  /**
-  * Generate a random Test-Net IP (http://tools.ietf.org/html/rfc5735)
-  * @private
-  */
-  getRandomTestNetIP: function() {
-    function getOctet(from,to) {
-      return Math.floor(Math.random()*(to-from+1)+from);
-    }
-    return '192.0.2.' + getOctet(1, 254);
   }
 };
 

@@ -31,7 +31,7 @@ function computeKeepAliveTimeout(upperBound) {
 }
 
 Transport = function(logger, options) {
-  options = SIP.Utils.defaultOptions({}, options);
+  options = options || {};
   this.logger = logger;
 
   this.ws = null;
