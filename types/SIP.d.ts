@@ -20,11 +20,15 @@ export namespace C {
     SUPPORTED = 'supported',
     REQUIRED = 'required'
   }
+
+  export enum DtmfType {
+    INFO = 'info',
+    RTP = 'rtp'
+  }
 }
 
 export var Exceptions: any;
 export var Grammar: any;
-export var Timers: any;
 export var Utils: any;
 
 export class OutgoingRequest {}
