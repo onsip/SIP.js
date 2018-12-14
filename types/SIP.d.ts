@@ -29,6 +29,7 @@ export namespace C {
 
 export var Exceptions: any;
 export var Grammar: any;
+export var Timers: any;
 export var Utils: any;
 
 export class OutgoingRequest {}
