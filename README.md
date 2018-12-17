@@ -15,7 +15,6 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 ## Download
 
 * [sipjs.com/download](https://sipjs.com/download/)
-* Bower: `bower install sip.js`
 * npm: `npm install sip.js`
 
 ## Authors
