@@ -53,7 +53,7 @@ describe('UA', function() {
   it('can be created with just a String (object) URI', function () {
     var myUA;
     function oneParam() {
-      myUA = new SIP.UA(new String('will@example.com'));
+      myUA = new SIP.UA('will@example.com');
     }
 
     expect(oneParam).not.toThrow();
@@ -98,7 +98,7 @@ describe('UA', function() {
 
     UA = new SIP.UA(configuration);
 
-    expect(SIP.RegisterContext).toHaveBeenCalledWith(UA);
+    expect(SIP.RegisterContext).toHaveBeenCalled();
   });
 
   describe('.start', function() {
@@ -162,11 +162,11 @@ describe('UA', function() {
     });
 
     // it('clears the transportRecoveryTimer', function() {
-    //   spyOn(SIP.Timers, 'clearTimeout');
+    //   spyOn(window, 'clearTimeout');
     //
     //   UA.stop();
     //
-    //   expect(SIP.Timers.clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
+    //   expect(clearTimeout).toHaveBeenCalledWith(UA.transportRecoveryTimer);
     // });
 
     it('unregisters', function () {
@@ -265,9 +265,9 @@ describe('UA', function() {
       expect(UA.registerContext.register).toHaveBeenCalled();
     });
 
-    it('sets the register configuration option to true', function() {
+    it('sets the register configuration option to true, if register flag is passed', function() {
       UA.configuration.register = false;
-      UA.register(options)
+      UA.register({register: true});
       expect(UA.configuration.register).toBeTruthy();
     });
 
@@ -406,7 +406,7 @@ describe('UA', function() {
       // spyOn(UA, 'isConnected').and.returnValue(true);
 
       var options = {};
-      var modifiers = []
+      var modifiers = [];
       // UA.configuration.mediaHandlerFactory = function(){};
       UA.invite(target,options,modifiers);
       // invite() puts the mediaHandlerFactory into the options object
@@ -421,7 +421,7 @@ describe('UA', function() {
 
     beforeEach(function() {
       target = 'target';
-      event = 'event'
+      event = 'event';
       subscribeSpy = jasmine.createSpy('subscribe');
       jasmine.createSpyObj('transport', ['once']);
 
@@ -709,7 +709,7 @@ describe('UA', function() {
                       reply : replySpy };
       UA.receiveRequest(request);
       expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request, UA);
-      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array))
+      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array));
     });
 
     it('Accepts SIP MESSAGE requests', function() {
@@ -739,7 +739,6 @@ describe('UA', function() {
                       getHeader : function () {},
                       parseHeader: function () {}
                     };
-      var webrtc = SIP.Web.isSupported;
       spyOn(SIP.Web, 'isSupported').and.callFake(function () {
         return false;
       });
@@ -964,7 +963,7 @@ describe('UA', function() {
       expect(replySpy).toHaveBeenCalledWith(481,'Subscription does not exist');
     });
 
-    it ('replies with a 481 if an in dialog request is received that is not a NOTIFY OR ACK and no dialog is found', function() {
+    it('replies with a 481 if an in dialog request is received that is not a NOTIFY OR ACK and no dialog is found', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
@@ -1067,8 +1066,6 @@ describe('UA', function() {
 
       expect(UA.configuration.password).toBeNull();
 
-      expect(UA.configuration.registerExpires).toBe(600);
-      expect(UA.configuration.register).toBe(true);
       //registrarServer is set to null here, then switched later in the function if it wasn't passed in
 
       expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
@@ -1091,19 +1088,19 @@ describe('UA', function() {
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return;} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return;} }});
 
       expect(function(){UA.loadConfig({});}).toThrowError('Missing parameter: fake');
     });
 
     it('throws a configuration error if a mandatory parameter\'s passed-in value is invalid', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return;} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return;} }});
 
       expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
     });
 
     it('sets a mandatory value successfully in settings', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return 'fake';} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return 'fake';} }});
 
       UA.loadConfig({fake: 'fake'});
 
@@ -1111,13 +1108,13 @@ describe('UA', function() {
     });
 
     it('throws a ConfigurationError if an optional value is passed in which is invalid', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function (value) {return;} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function () {return;} }});
 
       expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
     });
 
     it('sets an optional value successfully in settings', function() {
-      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function (value) {return 'fake';} }});
+      spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function () {return 'fake';} }});
 
       UA.loadConfig({fake: 'fake'});
 
@@ -1130,36 +1127,18 @@ describe('UA', function() {
       expect(UA.configuration.displayName).toBe('0');
     });
 
-    it('sets an instanceId if one is not passed in also sets sipjsId', function() {
-      UA.loadConfig({});
-
-      expect(UA.configuration.instanceId).toBeDefined();
-
-      expect(UA.configuration.sipjsId).toBeDefined();
-      expect(UA.configuration.sipjsId.length).toBe(5);
-    });
-
     it('sets auth user to uri user if auth user is not passed in', function() {
       UA.loadConfig({uri: 'james@onsnip.onsip.com'});
 
       expect(UA.configuration.authorizationUser).toBe(UA.configuration.uri.user);
     });
 
-    it('sets the registrarServer to the uri (without user) if it is not passed in', function() {
-      UA.loadConfig({uri: 'james@onsnip.onsip.com'});
-
-      var reg = UA.configuration.uri.clone();
-      reg.user = null;
-
-      expect(UA.configuration.registrarServer).toEqual(reg);
-    });
-
-    it('uses getRandomTestNetIP for viaHost if hackIpInContact is set to true', function() {
-      spyOn(SIP.Utils, 'getRandomTestNetIP').and.callThrough();
+    it('uses Math.floor for viaHost if hackIpInContact is set to true', function() {
+      spyOn(Math, 'floor').and.callThrough();
 
       UA.loadConfig({hackIpInContact: true});
 
-      expect(SIP.Utils.getRandomTestNetIP).toHaveBeenCalled();
+      expect(Math.floor).toHaveBeenCalled();
     });
 
     it('creates the contact object', function() {
@@ -1286,22 +1265,6 @@ describe('UA', function() {
       });
     });
 
-    describe('.instanceId', function() {
-      it('fails for everything but string hex pattern (see below)', function() {
-        expect(configCheck.optional.instanceId()).toBeUndefined();
-        expect(configCheck.optional.instanceId(7)).toBeUndefined();
-        expect(configCheck.optional.instanceId({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.instanceId(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.instanceId(false)).toBeUndefined();
-        expect(configCheck.optional.instanceId(7)).toBeUndefined(7);
-      });
-
-      it('passes if passed (hex8)-(hex4)-(hex4)-(hex4)-(hex12) as a string (may have uuid: in front, but removes this)', function() {
-        expect(configCheck.optional.instanceId('8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
-        expect(configCheck.optional.instanceId('uuid:8f1fa16a-1165-4a96-8341-785b1ef24f02')).toBe('8f1fa16a-1165-4a96-8341-785b1ef24f02');
-      });
-    });
-
     describe('.noAnswerTimeout', function() {
       it('fails for anything but numbers', function() {
         expect(configCheck.optional.noAnswerTimeout(true)).toBeUndefined();
@@ -1377,61 +1340,6 @@ describe('UA', function() {
         expect(configCheck.optional.replaces(7)).toBe(SIP.C.supported.UNSUPPORTED);
         expect(configCheck.optional.replaces({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
         expect(configCheck.optional.replaces(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
-      });
-    });
-
-    describe('.register', function() {
-      it('fails for all types except boolean', function() {
-        expect(configCheck.optional.register()).toBeUndefined();
-        expect(configCheck.optional.register(7)).toBeUndefined();
-        expect(configCheck.optional.register('string')).toBeUndefined();
-        expect(configCheck.optional.register({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.register(['arrays'])).toBeUndefined();
-      });
-
-      it('passes for boolean parameters', function() {
-        expect(configCheck.optional.register(true)).toBe(true);
-        expect(configCheck.optional.register(false)).toBe(false);
-      });
-    });
-
-    describe('.registerExpires', function() {
-      it('fails for anything but numbers', function() {
-        expect(configCheck.optional.registerExpires(true)).toBeUndefined();
-        expect(configCheck.optional.registerExpires('string')).toBeUndefined();
-        expect(configCheck.optional.registerExpires(['arrays'])).toBeUndefined();
-        expect(configCheck.optional.registerExpires({even: 'objects'})).toBeUndefined();
-      });
-
-      it('fails for negative numbers and 0', function() {
-        expect(configCheck.optional.registerExpires(0)).toBeUndefined();
-        expect(configCheck.optional.registerExpires(-7)).toBeUndefined();
-      });
-
-      it('passes for positive numbers', function() {
-        expect(configCheck.optional.registerExpires(7)).toBe(7);
-      });
-    });
-
-    describe('.registrarServer', function() {
-      it('only accepts strings', function() {
-        expect(configCheck.optional.registrarServer()).toBeUndefined();
-        expect(configCheck.optional.registrarServer(7)).toBeUndefined();
-        expect(configCheck.optional.registrarServer(true)).toBeUndefined();
-        expect(configCheck.optional.registrarServer({even: 'objects'})).toBeUndefined();
-        expect(configCheck.optional.registrarServer(['arrays'])).toBeUndefined();
-      });
-
-      it('fails for a string that is not a valid uri (parse returns nothing)', function() {
-        expect(configCheck.optional.registrarServer('@example.com')).toBeUndefined();
-      });
-
-      it('fails for a string that is a valid uri, but has a user', function() {
-        expect(configCheck.optional.registrarServer('alice@example.com')).toBeUndefined();
-      });
-      it('passes for a string that is a valid uri without a user and returns a URI', function() {
-        expect(configCheck.optional.registrarServer('example.com')).toBeDefined();
-        expect(configCheck.optional.registrarServer('sip:example.com')).toBeDefined();
       });
     });
 

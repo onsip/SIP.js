@@ -65,9 +65,9 @@ SIP.Subscription.prototype = {
       return this;
     }
 
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-    SIP.Timers.clearTimeout(this.timers.N);
-    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
+    clearTimeout(this.timers.sub_duration);
+    clearTimeout(this.timers.N);
+    this.timers.N = setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
 
     this.ua.earlySubscriptions[this.request.call_id + this.request.from.parameters.tag + this.event] = this;
 
@@ -99,14 +99,14 @@ SIP.Subscription.prototype = {
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       this.emit('accepted', response, cause);
       //As we don't support RFC 5839 or other extensions where the NOTIFY is optional, timer N will not be cleared
-      //SIP.Timers.clearTimeout(this.timers.N);
+      //clearTimeout(this.timers.N);
 
       expires = response.getHeader('Expires');
 
       if (expires && expires <= this.requestedExpires) {
         // Preserve new expires value for subsequent requests
         this.expires = expires;
-        this.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub), expires * 900);
+        this.timers.sub_duration = setTimeout(sub.refresh.bind(sub), expires * 900);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
@@ -141,9 +141,10 @@ SIP.Subscription.prototype = {
       body: this.body
     });
 
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-    SIP.Timers.clearTimeout(this.timers.N);
-    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
+    clearTimeout(this.timers.sub_duration);
+    clearTimeout(this.timers.N);
+    this.timers.N = setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
+    this.emit('terminated');
   },
 
   /**
@@ -152,8 +153,8 @@ SIP.Subscription.prototype = {
   timer_fire: function(){
     if (this.state === 'terminated') {
       this.terminateDialog();
-      SIP.Timers.clearTimeout(this.timers.N);
-      SIP.Timers.clearTimeout(this.timers.sub_duration);
+      clearTimeout(this.timers.N);
+      clearTimeout(this.timers.sub_duration);
 
       delete this.ua.subscriptions[this.id];
     } else if (this.state === 'notify_wait' || this.state === 'pending') {
@@ -169,11 +170,13 @@ SIP.Subscription.prototype = {
   close: function() {
     if (this.state === 'notify_wait') {
       this.state = 'terminated';
-      SIP.Timers.clearTimeout(this.timers.N);
-      SIP.Timers.clearTimeout(this.timers.sub_duration);
+      clearTimeout(this.timers.N);
+      clearTimeout(this.timers.sub_duration);
       this.receiveResponse = function(){};
 
       delete this.ua.earlySubscriptions[this.request.call_id + this.request.from.parameters.tag + this.event];
+
+      this.emit('terminated');
     } else if (this.state !== 'terminated') {
       this.unsubscribe();
     }
@@ -219,10 +222,10 @@ SIP.Subscription.prototype = {
 
     function setExpiresTimeout() {
       if (sub_state.expires) {
-        SIP.Timers.clearTimeout(sub.timers.sub_duration);
+        clearTimeout(sub.timers.sub_duration);
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
-        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.refresh.bind(sub),
+        sub.timers.sub_duration = setTimeout(sub.refresh.bind(sub),
                                                     sub_state.expires * 900);
       }
     }
@@ -245,7 +248,7 @@ SIP.Subscription.prototype = {
 
     request.reply(200, SIP.C.REASON_200);
 
-    SIP.Timers.clearTimeout(this.timers.N);
+    clearTimeout(this.timers.N);
 
     this.emit('notify', {request: request});
 
@@ -254,8 +257,8 @@ SIP.Subscription.prototype = {
     if (this.state === 'terminated') {
       if (sub_state.state === 'terminated') {
         this.terminateDialog();
-        SIP.Timers.clearTimeout(this.timers.N);
-        SIP.Timers.clearTimeout(this.timers.sub_duration);
+        clearTimeout(this.timers.N);
+        clearTimeout(this.timers.sub_duration);
 
         delete this.ua.subscriptions[this.id];
       }
@@ -274,7 +277,7 @@ SIP.Subscription.prototype = {
         this.state = 'pending';
         break;
       case 'terminated':
-        SIP.Timers.clearTimeout(this.timers.sub_duration);
+        clearTimeout(this.timers.sub_duration);
         if (sub_state.reason) {
           this.logger.log('terminating subscription with reason '+ sub_state.reason);
           switch (sub_state.reason) {
@@ -285,7 +288,7 @@ SIP.Subscription.prototype = {
             case 'probation':
             case 'giveup':
               if(sub_state.params && sub_state.params['retry-after']) {
-                this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), sub_state.params['retry-after']);
+                this.timers.sub_duration = setTimeout(sub.subscribe.bind(sub), sub_state.params['retry-after']);
               } else {
                 this.subscribe();
               }

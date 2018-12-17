@@ -50,7 +50,7 @@ RPSMediaHandler.prototype = {
 
     // 'Initialize' your media session.
 
-    return new SIP.Utils.Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
       mediaHint || (mediaHint = {});
       if (['rock', 'paper', 'scissors'].indexOf(mediaHint.gesture) < 0) {
         self.timeout = setTimeout(function () {
@@ -90,7 +90,7 @@ RPSMediaHandler.prototype = {
      * String gesture indication the other end chose.
      */
     // Set their gesture based on the remote description
-    return new SIP.Utils.Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
       var description = sessionDescription;
       if (['rock', 'paper', 'scissors'].indexOf(description) < 0) {
         self.timeout = setTimeout(function () {

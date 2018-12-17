@@ -12,15 +12,6 @@ You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com
 
 * [Install Git](http://git-scm.com/book/en/Getting-Started-Installing-Git)
 
-
-### PhantomJS
-
-(optional, just for running unit tests)
-
-* [Install PhantomJS](http://phantomjs.org/download.html)
-* In modern Debian/Ubuntu systems PhantomJS can be installed via `apt-get install phantomjs`
-
-
 ## How to build SIP.js
 
 Clone a copy of the main SIP.js git repository by running:
@@ -35,15 +26,14 @@ $ cd SIP.js && npm install
 
 Build and test
 ```
-$ npm run build && npm run commandLineTest
+$ npm run buildAndTest
 ```
 
-The built version of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [ESLint](https://eslint.org/). There are copies of each file with the version number in the title in that subdirectory as well.
+The compiled version of SIP.js will be available in the `lib/` folder. The bundled versions of SIP.js will be available in the `dist/` subdirectory in both flavors: normal (uncompressed)  and minified, both linted with [ESLint](https://eslint.org/). There are copies of each file with the version number in the title in that subdirectory as well.
 
 ## Development version
 
-Run `npm run build` for just generating the `dist/sip.js` file. An uncompressed SIP.js source file named `sip.js` will be created in `dist` directory.
-
+Run `npm run build-lib` to regenerate the `lib` folder.
 
 ## Test units
 
@@ -53,7 +43,7 @@ $ npm run commandLineTest
 $ npm run browserTest
 
 Running "jasmine:components" (jasmine) task
-Testing jasmine specs via phantom
+Testing jasmine specs via chromeHeadless
 ...
 672 specs in 2.757s.
 >> 0 failures
@@ -63,5 +53,5 @@ Testing jasmine specs via phantom
 
 If you modify `src/Grammar/src/Grammar.pegjs` then you need to recompile SIP.js grammar files. For that run the following task:
 ```
-$ npm run build
+$ npm run generate-grammar
 ```

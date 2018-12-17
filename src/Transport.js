@@ -104,7 +104,7 @@ Transport.prototype = Object.create(SIP.EventEmitter.prototype, {
    */
   waitForConnected: {writable: true, value: function waitForConnected () {
     console.warn("DEPRECATION WARNING Transport.waitForConnected(): use afterConnected() instead");
-    return new SIP.Utils.Promise(function(resolve) {
+    return new Promise(function(resolve) {
       this.afterConnected(resolve);
     }.bind(this));
   }},

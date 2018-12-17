@@ -1,4 +1,7 @@
 "use strict";
+
+const environment = global.window || global;
+
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
@@ -6,9 +9,8 @@
  *        A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
  *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  *
- * @param {Object} [configuration.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
  */
-module.exports = function (SIP, environment) {
+module.exports = function (SIP) {
 var UA,
   C = {
     // UA status codes
@@ -163,7 +165,7 @@ UA = function(configuration) {
   }
 
   // Initialize registerContext
-  this.registerContext = new SIP.RegisterContext(this);
+  this.registerContext = new SIP.RegisterContext(this, configuration.registerOptions);
   this.registerContext.on('failed', selfEmit('registrationFailed'));
   this.registerContext.on('registered', selfEmit('registered'));
   this.registerContext.on('unregistered', selfEmit('unregistered'));
@@ -178,8 +180,10 @@ UA.prototype = Object.create(SIP.EventEmitter.prototype);
 //  High Level API
 //=================
 
-UA.prototype.register = function(options) {
-  this.configuration.register = true;
+UA.prototype.register = function(options = {}) {
+  if (options.register) {
+    this.configuration.register = true;
+  }
   this.registerContext.register(options);
 
   return this;
@@ -482,9 +486,8 @@ UA.prototype.setTransportListeners = function () {
  */
 UA.prototype.onTransportConnected = function() {
   if (this.configuration.register) {
-    this.configuration.authenticationFactory.initialize().then(function () {
-      this.registerContext.onTransportConnected();
-    }.bind(this));
+    // In an effor to maintain behavior from when we "initialized" an authentication factory, this is in a Promise.then
+    Promise.resolve().then(() => this.registerContext.register());
   }
 };
 
@@ -778,7 +781,7 @@ function checkAuthenticationFactory (authenticationFactory) {
   }
   if (!authenticationFactory.initialize) {
     authenticationFactory.initialize = function initialize () {
-      return SIP.Utils.Promise.resolve();
+      return Promise.resolve();
     };
   }
   return authenticationFactory;
@@ -791,7 +794,7 @@ function checkAuthenticationFactory (authenticationFactory) {
  */
 UA.prototype.loadConfig = function(configuration) {
   // Settings and default values
-  var parameter, value, checked_value, hostportParams, registrarServer,
+  var parameter, value, checked_value, hostportParams,
     settings = {
       /* Host address
       * Value to be set in Via sent_by and host part of Contact FQDN
@@ -809,10 +812,10 @@ UA.prototype.loadConfig = function(configuration) {
       // Password
       password: null,
 
-      // Registration parameters
-      registerExpires: 600,
       register: true,
-      registrarServer: null,
+
+      // Registration parameters
+      registerOptions: {},
 
       // Transport related parameters
       transportConstructor: require('./Web/Transport')(SIP),
@@ -867,32 +870,10 @@ UA.prototype.loadConfig = function(configuration) {
       allowOutOfDialogRefers: false,
     };
 
-  // Pre-Configuration
-  function aliasUnderscored (parameter, logger) {
-    var underscored = parameter.replace(/([a-z][A-Z])/g, function (m) {
-      return m[0] + '_' + m[1].toLowerCase();
-    });
-
-    if (parameter === underscored) {
-      return;
-    }
-
-    var hasParameter = configuration.hasOwnProperty(parameter);
-    if (configuration.hasOwnProperty(underscored)) {
-      logger.warn(underscored + ' is deprecated, please use ' + parameter);
-      if (hasParameter) {
-        logger.warn(parameter + ' overriding ' + underscored);
-      }
-    }
-
-    configuration[parameter] = hasParameter ? configuration[parameter] : configuration[underscored];
-  }
-
   var configCheck = this.getConfigurationCheck();
 
   // Check Mandatory parameters
   for(parameter in configCheck.mandatory) {
-    aliasUnderscored(parameter, this.logger);
     if(!configuration.hasOwnProperty(parameter)) {
       throw new SIP.Exceptions.ConfigurationError(parameter);
     } else {
@@ -908,7 +889,6 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Check Optional parameters
   for(parameter in configCheck.optional) {
-    aliasUnderscored(parameter, this.logger);
     if(configuration.hasOwnProperty(parameter)) {
       value = configuration[parameter];
 
@@ -937,11 +917,6 @@ UA.prototype.loadConfig = function(configuration) {
     settings.displayName = '0';
   }
 
-  // Instance-id for GRUU
-  if (!settings.instanceId) {
-    settings.instanceId = SIP.Utils.newUUID();
-  }
-
   // sipjsId instance parameter. Static random tag of length 5
   settings.sipjsId = SIP.Utils.createRandomToken(5);
 
@@ -957,20 +932,17 @@ UA.prototype.loadConfig = function(configuration) {
     settings.authorizationUser = settings.uri.user;
   }
 
-  /* If no 'registrarServer' is set use the 'uri' value without user portion. */
-  if (!settings.registrarServer) {
-    registrarServer = settings.uri.clone();
-    registrarServer.user = null;
-    settings.registrarServer = registrarServer;
-  }
-
   // User noAnswerTimeout
   settings.noAnswerTimeout = settings.noAnswerTimeout * 1000;
 
   // Via Host
   if (settings.hackIpInContact) {
     if (typeof settings.hackIpInContact === 'boolean') {
-      settings.viaHost = SIP.Utils.getRandomTestNetIP();
+      var from = 1,
+          to = 254,
+          octet = Math.floor(Math.random()*(to-from+1)+from);
+      // random Test-Net IP (http://tools.ietf.org/html/rfc5735)
+      settings.viaHost = '192.0.2.' + octet;
     }
     else if (typeof settings.hackIpInContact === 'string') {
       settings.viaHost = settings.hackIpInContact;
@@ -1023,7 +995,6 @@ UA.prototype.loadConfig = function(configuration) {
   for(parameter in settings) {
     switch(parameter) {
       case 'uri':
-      case 'registrarServer':
       case 'sessionDescriptionHandlerFactory':
         this.logger.log('· ' + parameter + ': ' + settings[parameter]);
         break;
@@ -1148,22 +1119,6 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      instanceId: function(instanceId) {
-        if(typeof instanceId !== 'string') {
-          return;
-        }
-
-        if ((/^uuid:/i.test(instanceId))) {
-          instanceId = instanceId.substr(5);
-        }
-
-        if(SIP.Grammar.parse(instanceId, 'uuid') === -1) {
-          return;
-        } else {
-          return instanceId;
-        }
-      },
-
       noAnswerTimeout: function(noAnswerTimeout) {
         var value;
         if (SIP.Utils.isDecimal(noAnswerTimeout)) {
@@ -1204,34 +1159,9 @@ UA.prototype.getConfigurationCheck = function () {
         }
       },
 
-      registerExpires: function(registerExpires) {
-        var value;
-        if (SIP.Utils.isDecimal(registerExpires)) {
-          value = Number(registerExpires);
-          if (value > 0) {
-            return value;
-          }
-        }
-      },
-
-      registrarServer: function(registrarServer) {
-        var parsed;
-
-        if(typeof registrarServer !== 'string') {
-          return;
-        }
-
-        if (!/^sip:/i.test(registrarServer)) {
-          registrarServer = SIP.C.SIP + ':' + registrarServer;
-        }
-        parsed = SIP.URI.parse(registrarServer);
-
-        if(!parsed) {
-          return;
-        } else if(parsed.user) {
-          return;
-        } else {
-          return parsed;
+      registerOptions: function(registerOptions) {
+        if (typeof registerOptions === 'object') {
+          return registerOptions;
         }
       },
 

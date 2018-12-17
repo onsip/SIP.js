@@ -45,29 +45,6 @@
     set +e
     ```
 
-* test bower:
-
-    ```shell
-    #!/usr/bin/env bash
-    set -e
-    SIPJS_DIR=`pwd`
-    SIPJS_HASH=`git rev-parse HEAD`
-
-    cd /tmp
-    rm -rf bower_components
-    bower install "$SIPJS_DIR/.git#$SIPJS_HASH"
-
-    SIPJS_TEST="var session = new SIP.UA({traceSip: true}).invite('welcome@onsip.com', new Audio());"
-    SIPJS_TEST+="session.on('accepted', setTimeout.bind(null, window.close, 5000))"
-    npm install -g smokestack
-    cat ./bower_components/sip.js/dist/sip.min.js <(echo $SIPJS_TEST) | smokestack
-
-    # more tests
-
-    cd $SIPJS_DIR
-    set +e
-    ```
-
 * push to local github
 * merge (this step and the above one can be skipped if you just do it on the the repo's release branch itself)
 * git tag (your version number)

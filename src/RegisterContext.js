@@ -3,35 +3,47 @@ module.exports = function (SIP) {
 
 var RegisterContext;
 
-RegisterContext = function (ua) {
-  var params = {},
-      regId = 1;
+RegisterContext = function (ua, options = {}) {
+  this.options = {};
 
-  this.registrar = ua.configuration.registrarServer;
-  this.expires = ua.configuration.registerExpires;
+  this.logger = ua.getLogger('sip.registercontext');
 
+  this.loadConfig(options);
+
+  if (this.options.regId && !this.options.instanceId) {
+    this.options.instanceId = SIP.Utils.newUUID();
+  } else if (!this.options.regId && this.options.instanceId) {
+    this.options.regId = 1;
+  }
+
+  this.options.params.to_uri = this.options.params.to_uri || ua.configuration.uri;
+  this.options.params.to_displayName = this.options.params.to_displayName || ua.configuration.displayName;
+  this.options.params.call_id = this.options.params.call_id || SIP.Utils.createRandomToken(22);
+  this.options.params.cseq = this.options.params.cseq || Math.floor(Math.random() * 10000);
+
+  /* If no 'registrarServer' is set use the 'uri' value without user portion. */
+  if (!this.options.registrar) {
+    let registrarServer = {};
+    if (typeof ua.configuration.uri === 'object') {
+      registrarServer = ua.configuration.uri.clone();
+      registrarServer.user = null;
+    } else {
+      registrarServer = ua.configuration.uri;
+    }
+    this.options.registrar = registrarServer;
+  }
+
+  // Registration expires
+  this.expires = this.options.expires;
+
+  // Cseq
+  this.cseq = this.options.params.cseq;
 
   // Contact header
   this.contact = ua.contact.toString();
 
-  if(regId) {
-    this.contact += ';reg-id='+ regId;
-    this.contact += ';+sip.instance="<urn:uuid:'+ ua.configuration.instanceId+'>"';
-  }
-
-  // Call-ID and CSeq values RFC3261 10.2
-  this.call_id = SIP.Utils.createRandomToken(22);
-  this.cseq = Math.floor(Math.random() * 10000);
-
-  this.to_uri = ua.configuration.uri;
-
-  params.to_uri = this.to_uri;
-  params.to_displayName = ua.configuration.displayName;
-  params.call_id = this.call_id;
-  params.cseq = this.cseq;
-
   // Extends ClientContext
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar, {params: params}]);
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.options.registrar, this.options]);
 
   this.registrationTimer = null;
   this.registrationExpiredTimer = null;
@@ -39,20 +51,177 @@ RegisterContext = function (ua) {
   // Set status
   this.registered = false;
 
-  this.logger = ua.getLogger('sip.registercontext');
   ua.on('transportCreated', function (transport) {
     transport.on('disconnected', this.onTransportDisconnected.bind(this));
   }.bind(this));
 };
 
 RegisterContext.prototype = Object.create({}, {
-  register: {writable: true, value: function register  (options) {
-    var self = this, extraHeaders;
+  /**
+   * Configuration load.
+   * @private
+   * returns {Boolean}
+   */
+  loadConfig: {writable: true, value: function loadConfig(configuration) {
+    let parameter, value, checkedValue;
+    const settings = {
+      expires: 600,
+      extraContactHeaderParams: [],
+      instanceId: null,
+      params: {},
+      regId: null,
+      registrar: null,
+    };
 
+    const configCheck = this.getConfigurationCheck();
+
+    // Check Mandatory parameters
+    for(parameter in configCheck.mandatory) {
+      if(!configuration.hasOwnProperty(parameter)) {
+        throw new SIP.Exceptions.ConfigurationError(parameter);
+      } else {
+        value = configuration[parameter];
+        checkedValue = configCheck.mandatory[parameter](value);
+        if (checkedValue !== undefined) {
+          settings[parameter] = checkedValue;
+        } else {
+          throw new SIP.Exceptions.ConfigurationError(parameter, value);
+        }
+      }
+    }
+
+    // Check Optional parameters
+    for(parameter in configCheck.optional) {
+      if(configuration.hasOwnProperty(parameter)) {
+        value = configuration[parameter];
+
+        // If the parameter value is an empty array, but shouldn't be, apply its default value.
+        if (value instanceof Array && value.length === 0) { continue; }
+
+        // If the parameter value is null, empty string, or undefined then apply its default value.
+        if(value === null || value === '' || value === undefined) { continue; }
+        // If it's a number with NaN value then also apply its default value.
+        // NOTE: JS does not allow "value === NaN", the following does the work:
+        else if(typeof(value) === 'number' && isNaN(value)) { continue; }
+
+        checkedValue = configCheck.optional[parameter](value);
+        if (checkedValue !== undefined) {
+          settings[parameter] = checkedValue;
+        } else {
+          throw new SIP.Exceptions.ConfigurationError(parameter, value);
+        }
+      }
+    }
+
+    Object.assign(this.options, settings);
+
+    this.logger.log('configuration parameters for RegisterContext after validation:');
+    for(parameter in settings) {
+      this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
+    }
+
+    return;
+
+  }},
+
+  getConfigurationCheck: {writable: true, value: function getConfigurationCheck () {
+    return {
+      mandatory: {
+      },
+
+      optional: {
+        expires: function(expires) {
+          if (SIP.Utils.isDecimal(expires)) {
+            const value = Number(expires);
+            if (value >= 0) {
+              return value;
+            }
+          }
+        },
+        extraContactHeaderParams: function(extraContactHeaderParams) {
+          if (extraContactHeaderParams instanceof Array) {
+            return extraContactHeaderParams.filter((contactHeaderParam) => (typeof contactHeaderParam === 'string'));
+          }
+        },
+        instanceId: function(instanceId) {
+          if (typeof instanceId !== 'string') {
+            return;
+          }
+
+          if ((/^uuid:/i.test(instanceId))) {
+            instanceId = instanceId.substr(5);
+          }
+
+          if (SIP.Grammar.parse(instanceId, 'uuid') === -1) {
+            return;
+          } else {
+            return instanceId;
+          }
+        },
+        params: function(params) {
+          if (typeof params === 'object') {
+            return params;
+          }
+        },
+        regId: function(regId) {
+          if (SIP.Utils.isDecimal(regId)) {
+            const value = Number(regId);
+            if (value >= 0) {
+              return value;
+            }
+          }
+        },
+        registrar: function(registrar) {
+          if(typeof registrar !== 'string') {
+            return;
+          }
+
+          if (!/^sip:/i.test(registrar)) {
+            registrar = SIP.C.SIP + ':' + registrar;
+          }
+          const parsed = SIP.URI.parse(registrar);
+
+          if(!parsed) {
+            return;
+          } else if(parsed.user) {
+            return;
+          } else {
+            return parsed;
+          }
+        }
+      }
+    };
+  }},
+
+  /**
+   * Helper Function to generate Contact Header
+   * @private
+   * returns {String}
+   */
+  generateContactHeader: {writable: true, value: function generateContactHeader(expires = 0) {
+    let contact = this.contact;
+    if (this.options.regId && this.options.instanceId) {
+      contact += ';reg-id=' + this.options.regId;
+      contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
+    }
+
+    if (this.options.extraContactHeaderParams) {
+      this.options.extraContactHeaderParams.forEach((header) => {
+        contact += ';' + header;
+      });
+    }
+
+    contact += ';expires=' + expires;
+
+    return contact;
+  }},
+
+  register: {writable: true, value: function register (options = {}) {
     // Handle Options
-    this.options = options || {};
-    extraHeaders = (this.options.extraHeaders || []).slice();
-    extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
+    this.options = Object.assign(this.options || {}, options);
+    const extraHeaders = (this.options.extraHeaders || []).slice();
+
+    extraHeaders.push('Contact: ' + this.generateContactHeader(this.expires));
     extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
 
     // Save original extraHeaders to be used in .close
@@ -71,7 +240,7 @@ RegisterContext.prototype = Object.create({}, {
 
       // Clear registration timer
       if (this.registrationTimer !== null) {
-        SIP.Timers.clearTimeout(this.registrationTimer);
+        clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
 
@@ -87,7 +256,7 @@ RegisterContext.prototype = Object.create({}, {
           }
 
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
 
@@ -118,14 +287,14 @@ RegisterContext.prototype = Object.create({}, {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
-          this.registrationTimer = SIP.Timers.setTimeout(function() {
-            self.registrationTimer = null;
-            self.register(self.options);
+          this.registrationTimer = setTimeout(() => {
+            this.registrationTimer = null;
+            this.register(this.options);
           }, (expires * 1000) - 3000);
-          this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
-            self.logger.warn('registration expired');
-            if (self.registered) {
-              self.unregistered(null, SIP.C.causes.EXPIRES);
+          this.registrationExpiredTimer = setTimeout(() => {
+            this.logger.warn('registration expired');
+            if (this.registered) {
+              this.unregistered(null, SIP.C.causes.EXPIRES);
             }
           }, expires * 1000);
 
@@ -180,22 +349,18 @@ RegisterContext.prototype = Object.create({}, {
   onTransportDisconnected: {writable: true, value: function onTransportDisconnected () {
     this.registered_before = this.registered;
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
     if (this.registrationExpiredTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+      clearTimeout(this.registrationExpiredTimer);
       this.registrationExpiredTimer = null;
     }
 
     if(this.registered) {
       this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
     }
-  }},
-
-  onTransportConnected: {writable: true, value: function onTransportConnected () {
-    this.register(this.options);
   }},
 
   close: {writable: true, value: function close () {
@@ -225,7 +390,7 @@ RegisterContext.prototype = Object.create({}, {
 
     // Clear the registration timer.
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
@@ -233,7 +398,7 @@ RegisterContext.prototype = Object.create({}, {
       extraHeaders.push('Contact: *');
       extraHeaders.push('Expires: 0');
     } else {
-      extraHeaders.push('Contact: '+ this.contact + ';expires=0');
+      extraHeaders.push('Contact: '+ this.generateContactHeader(0));
     }
 
 
@@ -247,7 +412,7 @@ RegisterContext.prototype = Object.create({}, {
         case /^2[0-9]{2}$/.test(response.status_code):
           this.emit('accepted', response);
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
           this.unregistered(response);
