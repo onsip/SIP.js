@@ -20,27 +20,14 @@ A JavaScript SIP stack for WebRTC, instant messaging, and more!
 
 ## Authors
 
-### James Criscuolo
+### James Criscuolo [@james-criscuolo](https://github.com/james-criscuolo)
 
-* <james@onsip.com>
-* GitHub [@james-criscuolo](https://github.com/james-criscuolo)
+### Eric Green [@egreenmachine](https://github.com/egreenmachine)
 
-### Eric Green
+## Previous Authors
 
-* <eric.green@onsip.com>
-* GitHub [@egreenmachine](https://github.com/egreenmachine)
-
-### Joseph Frazier
-
-* <1212jtraceur@gmail.com>
-* GitHub [@josephfrazier](https://github.com/josephfrazier)
-* Twitter [@josephfrazier_](https://twitter.com/josephfrazier_)
-
-### Will Mitchell
-
-* <wakamoleguy@gmail.com>
-* GitHub [@wakamoleguy](http://github.com/wakamoleguy)
-* Twitter [@wakamoleguy](http://twitter.com/wakamoleguy)
+* Joseph Frazier
+* Will Mitchell
 
 ### JsSIP Authors
 
