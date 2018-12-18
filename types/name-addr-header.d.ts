@@ -1,14 +1,20 @@
-import { URI } from "./uri";
+import { Parameters, URI } from "./uri";
 
-export class NameAddrHeader {
+/**
+ * @class Class creating a Name Address SIP header.
+ *
+ * @param {SIP.URI} uri
+ * @param {String} [displayName]
+ * @param {Object} [parameters]
+ *
+ */
+export declare class NameAddrHeader extends Parameters {
   uri: URI;
+  friendlyName: string;
   displayName: string;
 
   constructor(uri: URI, displayName: string, parameters: Array<{ key: string, value: string }>);
-  static parse(name_addr_header: string): NameAddrHeader;
 
-  setParam(key: string, value?: string): void;
-  getParam(key: string): string;
-  deleteParam(key: string): string;
-  clearParams(): void;
+  clone(): NameAddrHeader;
+  toString(): string;
 }

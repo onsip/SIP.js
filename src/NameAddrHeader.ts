@@ -1,10 +1,10 @@
-"use strict";
-/**
- * @fileoverview SIP NameAddrHeader
- */
+import { NameAddrHeader as NameAddrHeaderDefinition } from "../types/name-addr-header";
+import { URI } from "../types/uri";
+
+import { TypeStrings } from "./Enums";
+import { Parameters } from "./URI";
 
 /**
- * @augments SIP
  * @class Class creating a Name Address SIP header.
  *
  * @param {SIP.URI} uri
@@ -12,90 +12,54 @@
  * @param {Object} [parameters]
  *
  */
-module.exports = function (SIP) {
-var NameAddrHeader;
+export class NameAddrHeader extends Parameters implements NameAddrHeaderDefinition {
+  public type: TypeStrings;
+  public uri: URI;
+  // tslint:disable-next-line:variable-name
+  private _displayName: string;
 
-NameAddrHeader = function(uri, displayName, parameters) {
-  var param;
+  constructor(uri: URI, displayName: string, parameters: Array<{ key: string, value: string }>) {
+    super(parameters);
+    this.type = TypeStrings.NameAddrHeader;
+    // Checks
+    if (!uri || !(uri.type === TypeStrings.URI)) {
+      throw new TypeError('missing or invalid "uri" parameter');
+    }
 
-  // Checks
-  if(!uri || !(uri instanceof SIP.URI)) {
-    throw new TypeError('missing or invalid "uri" parameter');
+    this.uri = uri;
+    this._displayName = displayName;
   }
 
-  // Initialize parameters
-  this.uri = uri;
-  this.parameters = {};
-
-  for (param in parameters) {
-    this.setParam(param, parameters[param]);
+  get friendlyName(): string {
+    return this.displayName || this.uri.aor;
   }
 
-  Object.defineProperties(this, {
-    friendlyName: {
-      get: function() { return this.displayName || uri.aor; }
-    },
+  get displayName() { return this._displayName; }
+  set displayName(value: string) {
+    this._displayName = value;
+  }
 
-    displayName: {
-      get: function() { return displayName; },
-      set: function(value) {
-        displayName = (value === 0) ? '0' : value;
-      }
-    }
-  });
-};
-NameAddrHeader.prototype = {
-  setParam: function (key, value) {
-    if(key) {
-      this.parameters[key.toLowerCase()] = (typeof value === 'undefined' || value === null) ? null : value.toString();
-    }
-  },
-  getParam: SIP.URI.prototype.getParam,
-  hasParam: SIP.URI.prototype.hasParam,
-  deleteParam: SIP.URI.prototype.deleteParam,
-  clearParams: SIP.URI.prototype.clearParams,
-
-  clone: function() {
+  public clone(): NameAddrHeader {
     return new NameAddrHeader(
       this.uri.clone(),
-      this.displayName,
+      this._displayName,
       JSON.parse(JSON.stringify(this.parameters)));
-  },
+  }
 
-  toString: function() {
-    var body, parameter;
+  public toString(): string {
+    let body: string = (this.displayName || this.displayName === "0") ? '"' + this.displayName + '" ' : "";
+    body += "<" + this.uri.toString() + ">";
 
-    body  = (this.displayName || this.displayName === 0) ? '"' + this.displayName + '" ' : '';
-    body += '<' + this.uri.toString() + '>';
+    for (const parameter in this.parameters) {
+      if (this.parameters.hasOwnProperty(parameter)) {
+        body += ";" + parameter;
 
-    for (parameter in this.parameters) {
-      body += ';' + parameter;
-
-      if (this.parameters[parameter] !== null) {
-        body += '='+ this.parameters[parameter];
+        if (this.parameters[parameter] !== null) {
+          body += "=" + this.parameters[parameter];
+        }
       }
     }
 
     return body;
   }
-};
-
-
-/**
-  * Parse the given string and returns a SIP.NameAddrHeader instance or undefined if
-  * it is an invalid NameAddrHeader.
-  * @public
-  * @param {String} name_addr_header
-  */
-NameAddrHeader.parse = function(name_addr_header) {
-  name_addr_header = SIP.Grammar.parse(name_addr_header,'Name_Addr_Header');
-
-  if (name_addr_header !== -1) {
-    return name_addr_header;
-  } else {
-    return undefined;
-  }
-};
-
-SIP.NameAddrHeader = NameAddrHeader;
-};
+}
