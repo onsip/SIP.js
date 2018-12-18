@@ -1,115 +1,118 @@
-"use strict";
-var levels = {
-  'error': 0,
-  'warn': 1,
-  'log': 2,
-  'debug': 3
-};
+import {
+  Logger as LoggerDefinition,
+  LoggerFactory as LoggerFactoryDefinition
+} from "../types/logger-factory";
 
-module.exports = function () {
+import { TypeStrings } from "./Enums";
 
-var LoggerFactory = function () {
-  var logger,
-    level = 2,
-    builtinEnabled = true,
-    connector = null;
-
-    this.loggers = {};
-
-    logger = this.getLogger('sip.loggerfactory');
-
-
-  Object.defineProperties(this, {
-    builtinEnabled: {
-      get: function(){ return builtinEnabled; },
-      set: function(value){
-        if (typeof value === 'boolean') {
-          builtinEnabled = value;
-        } else {
-          logger.error('invalid "builtinEnabled" parameter value: '+ JSON.stringify(value));
-        }
-      }
-    },
-
-    level: {
-      get: function() {return level; },
-      set: function(value) {
-        if (value >= 0 && value <=3) {
-          level = value;
-        } else if (value > 3) {
-          level = 3;
-        } else if (levels.hasOwnProperty(value)) {
-          level = levels[value];
-        } else {
-          logger.error('invalid "level" parameter value: '+ JSON.stringify(value));
-        }
-      }
-    },
-
-    connector: {
-      get: function() {return connector; },
-      set: function(value){
-        if(value === null || value === "" || value === undefined) {
-          connector = null;
-        } else if (typeof value === 'function') {
-          connector = value;
-        } else {
-          logger.error('invalid "connector" parameter value: '+ JSON.stringify(value));
-        }
-      }
-    }
-  });
-};
-
-LoggerFactory.prototype.print = function(target, category, label, content) {
-  if (typeof content === 'string') {
-    var prefix = [new Date(), category];
-    if (label) {
-      prefix.push(label);
-    }
-    content = prefix.concat(content).join(' | ');
-  }
-  target.call(console, content);
-};
-
-function Logger (logger, category, label) {
-  this.logger = logger;
-  this.category = category;
-  this.label = label;
+export enum Levels {
+  error,
+  warn,
+  log,
+  debug
 }
 
-Object.keys(levels).forEach(function (targetName) {
-  Logger.prototype[targetName] = function (content) {
-    this.logger[targetName](this.category, this.label, content);
-  };
+export class LoggerFactory implements LoggerFactoryDefinition {
+  public type: TypeStrings;
+  public builtinEnabled: boolean = true;
 
-  LoggerFactory.prototype[targetName] = function (category, label, content) {
-    if (this.level >= levels[targetName]) {
+  // tslint:disable-next-line:variable-name
+  private _level: Levels = Levels.log;
+  // tslint:disable-next-line:variable-name
+  private _connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+
+  private loggers: any = {};
+  private logger: Logger;
+
+  constructor() {
+    this.type = TypeStrings.LoggerFactory;
+    this.logger = this.getLogger("sip:loggerfactory");
+  }
+
+  get level(): Levels { return this._level; }
+  set level(newLevel: Levels) {
+    if (newLevel >= 0 && newLevel <= 3) {
+      this._level = newLevel;
+    } else if (newLevel > 3) {
+      this._level = 3;
+    } else if (Levels.hasOwnProperty(newLevel)) {
+      this._level = newLevel;
+    } else {
+      this.logger.error("invalid 'level' parameter value: " + JSON.stringify(newLevel));
+    }
+  }
+
+  get connector(): ((level: string, category: string, label: string | undefined, content: any) => void) | undefined {
+    return this._connector;
+  }
+  set connector(value: (
+    (level: string, category: string, label: string | undefined, content: any) => void
+  ) | undefined) {
+    if (!value) {
+      this._connector = undefined;
+    } else if (typeof value === "function") {
+      this._connector = value;
+    } else {
+      this.logger.error("invalid 'connector' parameter value: " + JSON.stringify(value));
+    }
+  }
+
+  public getLogger(category: string, label?: string): Logger {
+    if (label && this.level === 3) {
+      return new Logger(this, category, label);
+    } else if (this.loggers[category]) {
+      return this.loggers[category];
+    } else {
+      const logger = new Logger(this, category);
+      this.loggers[category] = logger;
+      return logger;
+    }
+  }
+
+  public genericLog(levelToLog: Levels, category: string, label: string | undefined, content: any): void {
+    if (this.level >= levelToLog) {
       if (this.builtinEnabled) {
-        // eslint-disable-next-line no-console
-        this.print(console[targetName], category, label, content);
+        this.print(console[Levels[levelToLog]], category, label, content);
       }
 
       if (this.connector) {
-        this.connector(targetName, category, label, content);
+        this.connector(Levels[levelToLog], category, label, content);
       }
     }
-  };
-});
-
-LoggerFactory.prototype.getLogger = function(category, label) {
-  var logger;
-
-  if (label && this.level === 3) {
-    return new Logger(this, category, label);
-  } else if (this.loggers[category]) {
-    return this.loggers[category];
-  } else {
-    logger = new Logger(this, category);
-    this.loggers[category] = logger;
-    return logger;
   }
-};
 
-return LoggerFactory;
-};
+  private  print(target: ((content: string) => void), category: string, label: string | undefined, content: any): void {
+    if (typeof content === "string") {
+      const prefix: Array<any> = [new Date(), category];
+      if (label) {
+        prefix.push(label);
+      }
+      content = prefix.concat(content).join(" | ");
+    }
+    target.call(console, content);
+  }
+}
+
+// tslint:disable-next-line:max-classes-per-file
+export class Logger implements LoggerDefinition {
+  public type: TypeStrings;
+
+  private logger: LoggerFactory;
+  private category: string;
+  private label: string | undefined;
+  constructor(logger: LoggerFactory, category: string, label?: string) {
+    this.type = TypeStrings.Logger;
+    this.logger = logger;
+    this.category = category;
+    this.label = label;
+  }
+
+  public error(content: string): void { this.genericLog(Levels.error, content); }
+  public warn(content: string): void { this.genericLog(Levels.warn, content); }
+  public log(content: string): void { this.genericLog(Levels.log, content); }
+  public debug(content: string): void { this.genericLog(Levels.debug, content); }
+
+  private genericLog(level: Levels, content: string): void {
+    this.logger.genericLog(level, this.category, this.label, content);
+  }
+}
