@@ -1,10 +1,58 @@
-"use strict";
-/**
- * @fileoverview SIP URI
- */
+import {
+  Parameters as ParametersDefinition,
+  URI as URIDefinition
+} from "../types/uri";
+
+import { C } from "./Constants";
+import { TypeStrings } from "./Enums";
+
+export class Parameters implements ParametersDefinition {
+  public type: TypeStrings;
+  public parameters: {[name: string]: any} = {};
+
+  constructor(parameters: {[name: string]: any}) {
+    this.type = TypeStrings.Parameters;
+    for (const param in parameters) {
+      if (parameters.hasOwnProperty(param)) {
+        this.setParam(param, parameters[param]);
+      }
+    }
+  }
+
+  public setParam(key: string, value: any): void {
+    if (key) {
+      this.parameters[key.toLowerCase()] = (typeof value === "undefined" || value === null) ? null : value.toString();
+    }
+  }
+
+  public getParam(key: string) {
+    if (key) {
+      return this.parameters[key.toLowerCase()];
+    }
+  }
+
+  public hasParam(key: string): boolean {
+    if (key) {
+      return !!this.parameters.hasOwnProperty(key.toLowerCase());
+    }
+    return false;
+  }
+
+  public deleteParam(parameter: string): any {
+    parameter = parameter.toLowerCase();
+    if (this.parameters.hasOwnProperty(parameter)) {
+      const value = this.parameters[parameter];
+      delete this.parameters[parameter];
+      return value;
+    }
+  }
+
+  public clearParams(): void {
+    this.parameters = {};
+  }
+}
 
 /**
- * @augments SIP
  * @class Class creating a SIP URI.
  *
  * @param {String} [scheme]
@@ -15,226 +63,206 @@
  * @param {Object} [headers]
  *
  */
-module.exports = function (SIP) {
-var URI;
+// tslint:disable-next-line:max-classes-per-file
+export class URI extends Parameters implements URIDefinition {
+  public type: TypeStrings;
+  private headers: {[name: string]: any} = {};
+  private normal: URIDefinition.Object;
+  private raw: URIDefinition.Object;
 
-URI = function(scheme, user, host, port, parameters, headers) {
-  var param, header, raw, normal;
+  constructor(
+    scheme: string,
+    user: string,
+    host: string,
+    port: number | undefined,
+    parameters?: any,
+    headers?: any
+  ) {
+    super(parameters);
+    this.type = TypeStrings.URI;
+    // Checks
+    if (!host) {
+      throw new TypeError('missing or invalid "host" parameter');
+    }
 
-  // Checks
-  if(!host) {
-    throw new TypeError('missing or invalid "host" parameter');
+    // Initialize parameters
+    scheme = scheme || C.SIP;
+
+    for (const header in headers) {
+      if (headers.hasOwnProperty(header)) {
+        this.setHeader(header, headers[header]);
+      }
+    }
+
+    // Raw URI
+    this.raw = {
+      scheme,
+      user,
+      host,
+      port
+    };
+
+    // Normalized URI
+    this.normal = {
+      scheme: scheme.toLowerCase(),
+      user,
+      host: host.toLowerCase(),
+      port
+    };
   }
 
-  // Initialize parameters
-  scheme = scheme || SIP.C.SIP;
-  this.parameters = {};
-  this.headers = {};
+  get _normal(): URIDefinition.Object { return this.normal; }
+  get _raw(): URIDefinition.Object { return this.raw; }
 
-  for (param in parameters) {
-    this.setParam(param, parameters[param]);
+  get scheme(): string { return this.normal.scheme; }
+  set scheme(value: string) {
+    this.raw.scheme = value;
+    this.normal.scheme = value.toLowerCase();
   }
 
-  for (header in headers) {
-    this.setHeader(header, headers[header]);
+  get user(): string | undefined { return this.normal.user; }
+  set user(value: string | undefined) {
+    this.normal.user = this.raw.user = value;
   }
 
-  // Raw URI
-  raw = {
-    scheme: scheme,
-    user: user,
-    host: host,
-    port: port
-  };
+  get host(): string { return this.normal.host; }
+  set host(value: string) {
+    this.raw.host = value;
+    this.normal.host = value.toLowerCase();
+  }
 
-  // Normalized URI
-  normal = {
-    scheme: scheme.toLowerCase(),
-    user: user,
-    host: host.toLowerCase(),
-    port: port
-  };
+  get aor(): string { return this.normal.user + "@" + this.normal.host; }
 
-  Object.defineProperties(this, {
-    _normal: {
-      get: function() { return normal; }
-    },
+  get port(): number | undefined { return this.normal.port; }
+  set port(value: number | undefined) {
+    this.normal.port = this.raw.port = value === 0 ? value : value;
+  }
 
-    _raw: {
-      get: function() { return raw; }
-    },
+  public setHeader(name: string, value: any): void {
+    this.headers[this.headerize(name)] = (value instanceof Array) ? value : [value];
+  }
 
-    scheme: {
-      get: function() { return normal.scheme; },
-      set: function(value) {
-        raw.scheme = value;
-        normal.scheme = value.toLowerCase();
-      }
-    },
-
-    user: {
-      get: function() { return normal.user; },
-      set: function(value) {
-        normal.user = raw.user = value;
-      }
-    },
-
-    host: {
-      get: function() { return normal.host; },
-      set: function(value) {
-        raw.host = value;
-        normal.host = value.toLowerCase();
-      }
-    },
-
-    aor: {
-      get: function() { return normal.user + '@' + normal.host; }
-    },
-
-    port: {
-      get: function() { return normal.port; },
-      set: function(value) {
-        normal.port = raw.port = value === 0 ? value : (parseInt(value,10) || null);
-      }
+  public getHeader(name: string): string | undefined {
+    if (name) {
+      return this.headers[this.headerize(name)];
     }
-  });
-};
+  }
 
-URI.prototype = {
-  setParam: function(key, value) {
-    if(key) {
-      this.parameters[key.toLowerCase()] = (typeof value === 'undefined' || value === null) ? null : value.toString();
-    }
-  },
+  public hasHeader(name: string): boolean {
+    return !!name && !!this.headers.hasOwnProperty(this.headerize(name));
+  }
 
-  getParam: function(key) {
-    if(key) {
-      return this.parameters[key.toLowerCase()];
-    }
-  },
+  public deleteHeader(header: string): any {
+    header = this.headerize(header);
 
-  hasParam: function(key) {
-    if(key) {
-      return (this.parameters.hasOwnProperty(key.toLowerCase()) && true) || false;
-    }
-  },
-
-  deleteParam: function(parameter) {
-    var value;
-    parameter = parameter.toLowerCase();
-    if (this.parameters.hasOwnProperty(parameter)) {
-      value = this.parameters[parameter];
-      delete this.parameters[parameter];
-      return value;
-    }
-  },
-
-  clearParams: function() {
-    this.parameters = {};
-  },
-
-  setHeader: function(name, value) {
-    this.headers[SIP.Utils.headerize(name)] = (value instanceof Array) ? value : [value];
-  },
-
-  getHeader: function(name) {
-    if(name) {
-      return this.headers[SIP.Utils.headerize(name)];
-    }
-  },
-
-  hasHeader: function(name) {
-    if(name) {
-      return (this.headers.hasOwnProperty(SIP.Utils.headerize(name)) && true) || false;
-    }
-  },
-
-  deleteHeader: function(header) {
-    var value;
-    header = SIP.Utils.headerize(header);
-    if(this.headers.hasOwnProperty(header)) {
-      value = this.headers[header];
+    if (this.headers.hasOwnProperty(header)) {
+      const value: any = this.headers[header];
       delete this.headers[header];
       return value;
     }
-  },
+  }
 
-  clearHeaders: function() {
+  public clearHeaders(): void {
     this.headers = {};
-  },
+  }
 
-  clone: function() {
+  public clone(): URI {
     return new URI(
       this._raw.scheme,
-      this._raw.user,
+      this._raw.user || "",
       this._raw.host,
       this._raw.port,
       JSON.parse(JSON.stringify(this.parameters)),
       JSON.parse(JSON.stringify(this.headers)));
-  },
+  }
 
-  toRaw: function() {
+  public toRaw(): string {
     return this._toString(this._raw);
-  },
+  }
 
-  toString: function() {
+  public toString(): string {
     return this._toString(this._normal);
-  },
+  }
 
-  _toString: function(uri) {
-    var header, parameter, idx, uriString, headers = [];
-
-    uriString  = uri.scheme + ':';
+  private _toString(uri: any): string {
+    let uriString: string  = uri.scheme + ":";
     // add slashes if it's not a sip(s) URI
     if (!uri.scheme.toLowerCase().match("^sips?$")) {
       uriString += "//";
     }
     if (uri.user) {
-      uriString += SIP.Utils.escapeUser(uri.user) + '@';
+      uriString += this.escapeUser(uri.user) + "@";
     }
     uriString += uri.host;
     if (uri.port || uri.port === 0) {
-      uriString += ':' + uri.port;
+      uriString += ":" + uri.port;
     }
 
-    for (parameter in this.parameters) {
-      uriString += ';' + parameter;
+    for (const parameter in this.parameters) {
+      if (this.parameters.hasOwnProperty(parameter)) {
+        uriString += ";" + parameter;
 
-      if (this.parameters[parameter] !== null) {
-        uriString += '='+ this.parameters[parameter];
+        if (this.parameters[parameter] !== null) {
+          uriString += "=" + this.parameters[parameter];
+        }
       }
     }
 
-    for(header in this.headers) {
-      for(idx in this.headers[header]) {
-        headers.push(header + '=' + this.headers[header][idx]);
+    const headers: Array<string> = [];
+    for (const header in this.headers) {
+      if (this.headers.hasOwnProperty(header)) {
+        for (const idx in this.headers[header]) {
+          if (this.headers[header].hasOwnProperty(idx)) {
+            headers.push(header + "=" + this.headers[header][idx]);
+          }
+        }
       }
     }
 
     if (headers.length > 0) {
-      uriString += '?' + headers.join('&');
+      uriString += "?" + headers.join("&");
     }
 
     return uriString;
   }
-};
 
-
-/**
-  * Parse the given string and returns a SIP.URI instance or undefined if
-  * it is an invalid URI.
-  * @public
-  * @param {String} uri
-  */
-URI.parse = function(uri) {
-  uri = SIP.Grammar.parse(uri,'SIP_URI');
-
-  if (uri !== -1) {
-    return uri;
-  } else {
-    return undefined;
+  // The following two functions were copied from Utils to break a circular dependency
+  /*
+   * Hex-escape a SIP URI user.
+   * @private
+   * @param {String} user
+   */
+  private escapeUser(user: string): string {
+    // Don't hex-escape ':' (%3A), '+' (%2B), '?' (%3F"), '/' (%2F).
+    return encodeURIComponent(decodeURIComponent(user))
+      .replace(/%3A/ig, ":")
+      .replace(/%2B/ig, "+")
+      .replace(/%3F/ig, "?")
+      .replace(/%2F/ig, "/");
   }
-};
 
-SIP.URI = URI;
-};
+  private headerize(str: string): string {
+    const exceptions: any = {
+      "Call-Id": "Call-ID",
+      "Cseq": "CSeq",
+      "Min-Se": "Min-SE",
+      "Rack": "RAck",
+      "Rseq": "RSeq",
+      "Www-Authenticate": "WWW-Authenticate",
+    };
+    const name: Array<string> = str.toLowerCase().replace(/_/g, "-").split("-");
+    const parts: number = name.length;
+    let hname: string = "";
+
+    for (let part = 0; part < parts; part++) {
+      if (part !== 0) {
+        hname += "-";
+      }
+      hname += name[part].charAt(0).toUpperCase() + name[part].substring(1);
+    }
+    if (exceptions[hname]) {
+      hname = exceptions[hname];
+    }
+    return hname;
+  }
+}
