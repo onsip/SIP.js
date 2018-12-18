@@ -297,7 +297,7 @@ absoluteURI       = scheme ":" ( hier_part / opaque_part )
                       options = options || { data: {}};
                       // lots of tests fail if this isn't guarded...
                       if (options.startRule === 'Refer_To') {
-                        options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
+                        options.data.uri = new URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
                         delete options.data.scheme;
                         delete options.data.user;
                         delete options.data.host;
@@ -434,7 +434,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         options = options || { data: {}};
                         if(!options.data.multi_header) options.data.multi_header = [];
                         try {
-                          header = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                          header = new NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                           delete options.data.uri;
                           delete options.data.displayName;
                           delete options.data.params;
@@ -592,7 +592,7 @@ event_param       = generic_param
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                 options = options || { data: {}};
                 var tag = options.data.tag;
-                  options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                  options.data = new NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                   if (tag) {options.data.setParam('tag',tag)}
                 }
 
@@ -712,7 +712,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   options = options || { data: {}};
                   if(!options.data.multi_header) options.data.multi_header = [];
                   try {
-                    header = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                    header = new NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                     delete options.data.uri;
                     delete options.data.displayName;
                     delete options.data.params;
@@ -852,7 +852,7 @@ Supported  =  value:(
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
               options = options || { data: {}};
               var tag = options.data.tag;
-                options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                options.data = new NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                 if (tag) {options.data.setParam('tag',tag)}
               }
 
