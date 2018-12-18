@@ -1,104 +1,131 @@
-"use strict";
-module.exports = function (SIP) {
-var ClientContext;
+import { EventEmitter } from "events";
 
-ClientContext = function (ua, method, target, options) {
-  var originalTarget = target;
+import { ClientContext as ClientContextDefinition } from "../types/client-context";
+import { Logger } from "../types/logger-factory";
+import { NameAddrHeader } from "../types/name-addr-header";
+import { IncomingResponse, OutgoingRequest as OutgoingRequestType } from "../types/sip-message";
+import { UA } from "../types/ua";
+import { URI } from "../types/uri";
 
-  // Validate arguments
-  if (target === undefined) {
-    throw new TypeError('Not enough arguments');
-  }
+import { C } from "./Constants";
+import { TypeStrings } from "./Enums";
+import { RequestSender } from "./RequestSender";
+import { OutgoingRequest } from "./SIPMessage";
+import { Utils } from "./Utils";
 
-  this.ua = ua;
-  this.logger = ua.getLogger('sip.clientcontext');
-  this.method = method;
-  target = ua.normalizeTarget(target);
-  if (!target) {
-    throw new TypeError('Invalid target: ' + originalTarget);
-  }
+export class ClientContext extends EventEmitter implements ClientContextDefinition {
+  public static initializer(
+    objToConstruct: ClientContext,
+    ua: UA,
+    method: string,
+    originalTarget: string | URI,
+    options?: any
+  ): void {
+    objToConstruct.type = TypeStrings.ClientContext;
 
-  /* Options
-   * - extraHeaders
-   * - params
-   * - contentType
-   * - body
-   */
-  options = Object.create(options || Object.prototype);
-  options.extraHeaders = (options.extraHeaders || []).slice();
-
-  // Build the request
-  this.request = new SIP.OutgoingRequest(this.method,
-                                         target,
-                                         this.ua,
-                                         options.params,
-                                         options.extraHeaders);
-  if (options.body) {
-    this.body = {};
-    this.body.body = options.body;
-    if (options.contentType) {
-      this.body.contentType = options.contentType;
+    // Validate arguments
+    if (originalTarget === undefined) {
+      throw new TypeError("Not enough arguments");
     }
-    this.request.body = this.body;
+
+    objToConstruct.ua = ua;
+    objToConstruct.logger = ua.getLogger("sip.clientcontext");
+    objToConstruct.method = method;
+
+    const target: URI | undefined = ua.normalizeTarget(originalTarget);
+    if (!target) {
+      throw new TypeError("Invalid target: " + originalTarget);
+    }
+
+    /* Options
+    * - extraHeaders
+    * - params
+    * - contentType
+    * - body
+    */
+    options = Object.create(options || Object.prototype);
+    options.extraHeaders = (options.extraHeaders || []).slice();
+
+    // Build the request
+    objToConstruct.request = new OutgoingRequest(objToConstruct.method,
+                                        target,
+                                        objToConstruct.ua,
+                                        options.params,
+                                        options.extraHeaders);
+    if (options.body) {
+      objToConstruct.body = {};
+      objToConstruct.body.body = options.body;
+      if (options.contentType) {
+        objToConstruct.body.contentType = options.contentType;
+      }
+      objToConstruct.request.body = objToConstruct.body;
+    }
+
+    /* Set other properties from the request */
+    if (objToConstruct.request.from) {
+      objToConstruct.localIdentity = objToConstruct.request.from;
+    }
+    if (objToConstruct.request.to) {
+      objToConstruct.remoteIdentity = objToConstruct.request.to;
+    }
   }
 
-  /* Set other properties from the request */
-  this.localIdentity = this.request.from;
-  this.remoteIdentity = this.request.to;
+  public type!: TypeStrings;
+  public data: any = {};
 
-  this.data = {};
-};
-ClientContext.prototype = Object.create(SIP.EventEmitter.prototype);
+  // Typing note: these were all private, needed to switch to get around
+  // inheritance issue with InviteClientContext
+  public ua!: UA;
+  public logger!: Logger;
+  public request!: OutgoingRequestType;
+  public method!: string;
+  public body: any;
+  public localIdentity!: NameAddrHeader;
+  public remoteIdentity!: NameAddrHeader;
 
-ClientContext.prototype.send = function () {
-  (new SIP.RequestSender(this, this.ua)).send();
-  return this;
-};
+  constructor(ua: UA, method: string, target: string | URI, options?: any) {
+    super();
 
-ClientContext.prototype.cancel = function (options) {
-  options = options || {};
-
-  options.extraHeaders = (options.extraHeaders || []).slice();
-
-  var cancel_reason = SIP.Utils.getCancelReason(options.status_code, options.reason_phrase);
-  this.request.cancel(cancel_reason, options.extraHeaders);
-
-  this.emit('cancel');
-};
-
-ClientContext.prototype.receiveResponse = function (response) {
-  var cause = SIP.Utils.getReasonPhrase(response.status_code);
-
-  switch(true) {
-    case /^1[0-9]{2}$/.test(response.status_code):
-      this.emit('progress', response, cause);
-      break;
-
-    case /^2[0-9]{2}$/.test(response.status_code):
-      if(this.ua.applicants[this]) {
-        delete this.ua.applicants[this];
-      }
-      this.emit('accepted', response, cause);
-      break;
-
-    default:
-      if(this.ua.applicants[this]) {
-        delete this.ua.applicants[this];
-      }
-      this.emit('rejected', response, cause);
-      this.emit('failed', response, cause);
-      break;
+    ClientContext.initializer(this, ua, method, target, options);
   }
 
-};
+  public send(): this {
+    const sender: RequestSender = new RequestSender(this, this.ua);
+    sender.send();
+    return this;
+  }
 
-ClientContext.prototype.onRequestTimeout = function () {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
-};
+  public receiveResponse(response: IncomingResponse): void {
+    const statusCode: number = response.statusCode || 0;
+    const cause: string = Utils.getReasonPhrase(statusCode);
 
-ClientContext.prototype.onTransportError = function () {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
-};
+    switch (true) {
+      case /^1[0-9]{2}$/.test(statusCode.toString()):
+        this.emit("progress", response, cause);
+        break;
 
-SIP.ClientContext = ClientContext;
-};
+      case /^2[0-9]{2}$/.test(statusCode.toString()):
+        if (this.ua.applicants[this.toString()]) {
+          delete this.ua.applicants[this.toString()];
+        }
+        this.emit("accepted", response, cause);
+        break;
+
+      default:
+        if (this.ua.applicants[this.toString()]) {
+          delete this.ua.applicants[this.toString()];
+        }
+        this.emit("rejected", response, cause);
+        this.emit("failed", response, cause);
+        break;
+    }
+  }
+
+  public onRequestTimeout(): void {
+    this.emit("failed", undefined, C.causes.REQUEST_TIMEOUT);
+  }
+
+  public onTransportError(): void {
+    this.emit("failed", undefined, C.causes.CONNECTION_ERROR);
+  }
+}
