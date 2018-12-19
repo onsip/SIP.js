@@ -10,7 +10,6 @@ import { EventEmitter } from "events";
   */
 export class Session extends EventEmitter {
 
-  id: string;
   data?: any; // This is actually an any
   endTime?: Date;
   localIdentity?: NameAddrHeader;
@@ -36,25 +35,22 @@ export class Session extends EventEmitter {
 
   unhold(options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): void;
 
-  // Default EventEmitter on-Handler needs to be preserved
-  on(event: string | symbol, listener: (...args: any[]) => void): this;
-
-  on(name: 'referRequested', callback: (context: ReferServerContext) => void): void;
-  on(name: 'reinvite', callback: (session: Session) => void): void;
-  on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): void;
-  on(name: 'confirmed', callback: (request: any) => void): void; // TODO
-  on(name: 'renegotiationError', callback: (error: any) => void): void; //TODO
-  on(name: 'bye', callback: (request: any) => void): void; //TODO
-  on(name: 'notify', callback: (request: any) => void): void; //TODO
-  on(name: 'ack', callback: (request: any) => void): void; // TODO
-  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): void;
-  on(name: 'cancel', callback: () => void): void;
-  on(name: 'replaced', callback: (session: Session) => void): void;
-  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): void;
-  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): void;
-  on(name: 'connecting', callback: (request: any) => void): void;
-  on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): void;
-  on(name: 'dialog', callback: (dialog: any) => void): void;
+  on(name: 'referRequested', callback: (context: ReferServerContext) => void): this;
+  on(name: 'reinvite', callback: (session: Session) => void): this;
+  on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): this;
+  on(name: 'confirmed', callback: (request: any) => void): this; // TODO
+  on(name: 'renegotiationError', callback: (error: any) => void): this; // TODO
+  on(name: 'bye', callback: (request: any) => void): this; // TODO
+  on(name: 'notify', callback: (request: any) => void): this; // TODO
+  on(name: 'ack', callback: (request: any) => void): this //  TODO
+  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): this;
+  on(name: 'cancel', callback: () => void): this;
+  on(name: 'replaced', callback: (session: Session) => void): this;
+  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): this;
+  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): this;
+  on(name: 'connecting', callback: (request: any) => void): this;
+  on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
+  on(name: 'dialog', callback: (dialog: any) => void): this;
 }
 
 export namespace Session {
@@ -84,27 +80,23 @@ export namespace Session {
 export class InviteClientContext extends Session {
   cancel(options?: any): Session;
 
-  // Default EventEmitter on-Handler
-  on(event: string, callback: (event: Event) => void): this;
-
-  on(name: 'referRequested', callback: (context: ReferServerContext) => void): void;
-  on(name: 'reinvite', callback: (session: Session) => void): void;
-  on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): void;
-  on(name: 'confirmed', callback: (request: any) => void): void; // TODO
-  on(name: 'renegotiationError', callback: (error: any) => void): void; //TODO
-  on(name: 'bye', callback: (request: any) => void): void; //TODO
-  on(name: 'notify', callback: (request: any) => void): void; //TODO
-  on(name: 'ack', callback: (request: any) => void): void; // TODO
-  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): void;
-  on(name: 'cancel', callback: () => void): void;
-  on(name: 'replaced', callback: (session: Session) => void): void;
-  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): void;
-  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): void;
-  on(name: 'connecting', callback: (request: any) => void): void;
-  on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): void;
-  on(name: 'dialog', callback: (dialog: any) => void): void;
-
-  on(name: 'progress', callback: (response: any) => void): void;
+  on(name: 'referRequested', callback: (context: ReferServerContext) => void): this;
+  on(name: 'reinvite', callback: (session: Session) => void): this;
+  on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): this;
+  on(name: 'confirmed', callback: (request: any) => void): this; // TODO
+  on(name: 'renegotiationError', callback: (error: any) => void): this; // TODO
+  on(name: 'bye', callback: (request: any) => void): this; // TODO
+  on(name: 'notify', callback: (request: any) => void): this; // TODO
+  on(name: 'ack', callback: (request: any) => void): this; // TODO
+  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): this;
+  on(name: 'cancel', callback: () => void): this;
+  on(name: 'replaced', callback: (session: Session) => void): this;
+  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): this;
+  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): this;
+  on(name: 'connecting', callback: (request: any) => void): this;
+  on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
+  on(name: 'dialog', callback: (dialog: any) => void): this;
+  on(name: 'progress', callback: (response: any) => void): this;
 }
 
 export namespace InviteClientContext {
@@ -133,27 +125,24 @@ export class InviteServerContext extends Session {
 
   reply(options?: InviteServerContext.Options): InviteServerContext;
 
-  // Default EventEmitter on-Handler needs to be preserved
-  on(event: string, callback: (event: Event) => void): this;
+  on(name: 'referRequested', callback: (context: ReferServerContext) => void): this;
+  on(name: 'reinvite', callback: (session: Session) => void): this;
+  on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): this;
+  on(name: 'confirmed', callback: (request: any) => void): this; // TODO
+  on(name: 'renegotiationError', callback: (error: any) => void): this; // TODO
+  on(name: 'bye', callback: (request: any) => void): this; // TODO
+  on(name: 'notify', callback: (request: any) => void): this; // TODO
+  on(name: 'ack', callback: (request: any) => void): this; //  TODO
+  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): this;
+  on(name: 'cancel', callback: () => void): this;
+  on(name: 'replaced', callback: (session: Session) => void): this;
+  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): this;
+  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): this;
+  on(name: 'connecting', callback: (request: any) => void): this;
+  on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
+  on(name: 'dialog', callback: (dialog: any) => void): this;
 
-  on(name: 'referRequested', callback: (context: ReferServerContext) => void): void;
-  on(name: 'reinvite', callback: (session: Session) => void): void;
-  on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): void;
-  on(name: 'confirmed', callback: (request: any) => void): void; // TODO
-  on(name: 'renegotiationError', callback: (error: any) => void): void; //TODO
-  on(name: 'bye', callback: (request: any) => void): void; //TODO
-  on(name: 'notify', callback: (request: any) => void): void; //TODO
-  on(name: 'ack', callback: (request: any) => void): void; // TODO
-  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): void;
-  on(name: 'cancel', callback: () => void): void;
-  on(name: 'replaced', callback: (session: Session) => void): void;
-  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): void;
-  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): void;
-  on(name: 'connecting', callback: (request: any) => void): void;
-  on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): void;
-  on(name: 'dialog', callback: (dialog: any) => void): void;
-
-  on(name: 'progress', callback: (response: any, reasonPhrase?: any) => void): void;
+  on(name: 'progress', callback: (response: any, reasonPhrase?: any) => void): this;
 }
 
 export namespace InviteServerContext {
@@ -182,15 +171,12 @@ export class ReferServerContext extends EventEmitter {
   /** Reject the REFER request. */
   reject(options?: ReferServerContext.RejectOptions): ServerContext;
 
-  // Default EventEmitter on-Handler needs to be preserved
-  on(event: string, callback: (event: Event) => void): this;
-
-  on(name: 'referRequestRejected', callback: (referServerContext: ReferServerContext) => void): void;
-  on(name: 'referRequestAccepted', callback: (referServerContext: ReferServerContext) => void): void;
-  on(name: 'referInviteSent', callback: (referServerContext: ReferServerContext) => void): void;
-  on(name: 'referProgress', callback: (referServerContext: ReferServerContext) => void): void;
-  on(name: 'referAccepted', callback: (referServerContext: ReferServerContext) => void): void;
-  on(name: 'referRejected', callback: (referServerContext: ReferServerContext) => void): void;
+  on(name: 'referRequestRejected', callback: (referServerContext: ReferServerContext) => void): this;
+  on(name: 'referRequestAccepted', callback: (referServerContext: ReferServerContext) => void): this;
+  on(name: 'referInviteSent', callback: (referServerContext: ReferServerContext) => void): this;
+  on(name: 'referProgress', callback: (referServerContext: ReferServerContext) => void): this;
+  on(name: 'referAccepted', callback: (referServerContext: ReferServerContext) => void): this;
+  on(name: 'referRejected', callback: (referServerContext: ReferServerContext) => void): this;
 }
 
 export namespace ReferServerContext {
