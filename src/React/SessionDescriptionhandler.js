@@ -1,10 +1,11 @@
 "use strict";
 
-import {
+var WebRTC = require('react-native-webrtc');
+var {
   RTCPeerConnection,
   MediaStream,
   getUserMedia,
-} from 'react-native-webrtc';
+} = WebRTC;
 
 /**
  * @fileoverview SessionDescriptionHandler
