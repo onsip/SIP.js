@@ -1,448 +1,469 @@
-"use strict";
-module.exports = function (SIP) {
+import { RegisterContext as RegisterContextDefinition } from "../types/register-context";
+import { IncomingResponse } from "../types/sip-message";
+import { Transport } from "../types/transport";
+import { UA } from "../types/ua";
+import { URI } from "../types/uri";
 
-var RegisterContext;
+import { ClientContext } from "./ClientContext";
+import { C } from "./Constants";
+import { TypeStrings } from "./Enums";
+import { Exceptions } from "./Exceptions";
+import { Grammar } from "./Grammar";
+import { Utils } from "./Utils";
 
-RegisterContext = function (ua, options = {}) {
-  this.options = {};
+/**
+ * Configuration load.
+ * @private
+ * returns {any}
+ */
+function loadConfig(configuration: RegisterContextDefinition.RegistrationConfiguration): any {
+  const settings = {
+    expires: 600,
+    extraContactHeaderParams: [],
+    instanceId: undefined,
+    params: {},
+    regId: undefined,
+    registrar: undefined,
+  };
 
-  this.logger = ua.getLogger('sip.registercontext');
+  const configCheck = getConfigurationCheck();
 
-  this.loadConfig(options);
-
-  if (this.options.regId && !this.options.instanceId) {
-    this.options.instanceId = SIP.Utils.newUUID();
-  } else if (!this.options.regId && this.options.instanceId) {
-    this.options.regId = 1;
-  }
-
-  this.options.params.to_uri = this.options.params.to_uri || ua.configuration.uri;
-  this.options.params.to_displayName = this.options.params.to_displayName || ua.configuration.displayName;
-  this.options.params.call_id = this.options.params.call_id || SIP.Utils.createRandomToken(22);
-  this.options.params.cseq = this.options.params.cseq || Math.floor(Math.random() * 10000);
-
-  /* If no 'registrarServer' is set use the 'uri' value without user portion. */
-  if (!this.options.registrar) {
-    let registrarServer = {};
-    if (typeof ua.configuration.uri === 'object') {
-      registrarServer = ua.configuration.uri.clone();
-      registrarServer.user = null;
+  // Check Mandatory parameters
+  for (const parameter in configCheck.mandatory) {
+    if (!configuration.hasOwnProperty(parameter)) {
+      throw new Exceptions.ConfigurationError(parameter);
     } else {
-      registrarServer = ua.configuration.uri;
+      const value = (configuration as any)[parameter];
+      const checkedValue = configCheck.mandatory[parameter](value);
+      if (checkedValue !== undefined) {
+        (settings as any)[parameter] = checkedValue;
+      } else {
+        throw new Exceptions.ConfigurationError(parameter, value);
+      }
     }
-    this.options.registrar = registrarServer;
   }
 
-  // Registration expires
-  this.expires = this.options.expires;
+  // Check Optional parameters
+  for (const parameter in configCheck.optional) {
+    if (configuration.hasOwnProperty(parameter)) {
+      const value = (configuration as any)[parameter];
 
-  // Cseq
-  this.cseq = this.options.params.cseq;
+      // If the parameter value is an empty array, but shouldn't be, apply its default value.
+      if (value instanceof Array && value.length === 0) { continue; }
 
-  // Contact header
-  this.contact = ua.contact.toString();
+      // If the parameter value is null, empty string, or undefined then apply its default value.
+      // If it's a number with NaN value then also apply its default value.
+      // NOTE: JS does not allow "value === NaN", the following does the work:
+      if (value === null || value === "" || value === undefined ||
+        (typeof(value) === "number" && isNaN(value))) {
+        continue;
+      }
 
-  // Extends ClientContext
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.options.registrar, this.options]);
-
-  this.registrationTimer = null;
-  this.registrationExpiredTimer = null;
-
-  // Set status
-  this.registered = false;
-
-  ua.on('transportCreated', function (transport) {
-    transport.on('disconnected', this.onTransportDisconnected.bind(this));
-  }.bind(this));
-};
-
-RegisterContext.prototype = Object.create({}, {
-  /**
-   * Configuration load.
-   * @private
-   * returns {Boolean}
-   */
-  loadConfig: {writable: true, value: function loadConfig(configuration) {
-    let parameter, value, checkedValue;
-    const settings = {
-      expires: 600,
-      extraContactHeaderParams: [],
-      instanceId: null,
-      params: {},
-      regId: null,
-      registrar: null,
-    };
-
-    const configCheck = this.getConfigurationCheck();
-
-    // Check Mandatory parameters
-    for(parameter in configCheck.mandatory) {
-      if(!configuration.hasOwnProperty(parameter)) {
-        throw new SIP.Exceptions.ConfigurationError(parameter);
+      const checkedValue = configCheck.optional[parameter](value);
+      if (checkedValue !== undefined) {
+        (settings as any)[parameter] = checkedValue;
       } else {
-        value = configuration[parameter];
-        checkedValue = configCheck.mandatory[parameter](value);
-        if (checkedValue !== undefined) {
-          settings[parameter] = checkedValue;
-        } else {
-          throw new SIP.Exceptions.ConfigurationError(parameter, value);
-        }
+        throw new Exceptions.ConfigurationError(parameter, value);
       }
     }
+  }
 
-    // Check Optional parameters
-    for(parameter in configCheck.optional) {
-      if(configuration.hasOwnProperty(parameter)) {
-        value = configuration[parameter];
+  return settings;
+}
 
-        // If the parameter value is an empty array, but shouldn't be, apply its default value.
-        if (value instanceof Array && value.length === 0) { continue; }
+function getConfigurationCheck(): any {
+  return {
+    mandatory: {
+    },
 
-        // If the parameter value is null, empty string, or undefined then apply its default value.
-        if(value === null || value === '' || value === undefined) { continue; }
-        // If it's a number with NaN value then also apply its default value.
-        // NOTE: JS does not allow "value === NaN", the following does the work:
-        else if(typeof(value) === 'number' && isNaN(value)) { continue; }
-
-        checkedValue = configCheck.optional[parameter](value);
-        if (checkedValue !== undefined) {
-          settings[parameter] = checkedValue;
-        } else {
-          throw new SIP.Exceptions.ConfigurationError(parameter, value);
+    optional: {
+      expires: (expires: string): number | undefined => {
+        if (Utils.isDecimal(expires)) {
+          const value = Number(expires);
+          if (value >= 0) {
+            return value;
+          }
         }
-      }
-    }
-
-    Object.assign(this.options, settings);
-
-    this.logger.log('configuration parameters for RegisterContext after validation:');
-    for(parameter in settings) {
-      this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
-    }
-
-    return;
-
-  }},
-
-  getConfigurationCheck: {writable: true, value: function getConfigurationCheck () {
-    return {
-      mandatory: {
       },
+      extraContactHeaderParams: (extraContactHeaderParams: Array<string>): Array<string> | undefined => {
+        if (extraContactHeaderParams instanceof Array) {
+          return extraContactHeaderParams.filter((contactHeaderParam) => (typeof contactHeaderParam === "string"));
+        }
+      },
+      instanceId: (instanceId: string): string | undefined => {
+        if (typeof instanceId !== "string") {
+          return;
+        }
 
-      optional: {
-        expires: function(expires) {
-          if (SIP.Utils.isDecimal(expires)) {
-            const value = Number(expires);
-            if (value >= 0) {
-              return value;
-            }
-          }
-        },
-        extraContactHeaderParams: function(extraContactHeaderParams) {
-          if (extraContactHeaderParams instanceof Array) {
-            return extraContactHeaderParams.filter((contactHeaderParam) => (typeof contactHeaderParam === 'string'));
-          }
-        },
-        instanceId: function(instanceId) {
-          if (typeof instanceId !== 'string') {
-            return;
-          }
+        if ((/^uuid:/i.test(instanceId))) {
+          instanceId = instanceId.substr(5);
+        }
 
-          if ((/^uuid:/i.test(instanceId))) {
-            instanceId = instanceId.substr(5);
-          }
-
-          if (SIP.Grammar.parse(instanceId, 'uuid') === -1) {
-            return;
-          } else {
-            return instanceId;
-          }
-        },
-        params: function(params) {
-          if (typeof params === 'object') {
-            return params;
-          }
-        },
-        regId: function(regId) {
-          if (SIP.Utils.isDecimal(regId)) {
-            const value = Number(regId);
-            if (value >= 0) {
-              return value;
-            }
-          }
-        },
-        registrar: function(registrar) {
-          if(typeof registrar !== 'string') {
-            return;
-          }
-
-          if (!/^sip:/i.test(registrar)) {
-            registrar = SIP.C.SIP + ':' + registrar;
-          }
-          const parsed = SIP.URI.parse(registrar);
-
-          if(!parsed) {
-            return;
-          } else if(parsed.user) {
-            return;
-          } else {
-            return parsed;
+        if (Grammar.parse(instanceId, "uuid") === -1) {
+          return;
+        } else {
+          return instanceId;
+        }
+      },
+      params: (params: any): any | undefined => {
+        if (typeof params === "object") {
+          return params;
+        }
+      },
+      regId: (regId: string): number | undefined => {
+        if (Utils.isDecimal(regId)) {
+          const value = Number(regId);
+          if (value >= 0) {
+            return value;
           }
         }
+      },
+      registrar: (registrar: string): URI | undefined => {
+        if (typeof registrar !== "string") {
+          return;
+        }
+
+        if (!/^sip:/i.test(registrar)) {
+          registrar = C.SIP + ":" + registrar;
+        }
+        const parsed = Grammar.URIParse(registrar);
+
+        if (!parsed) {
+          return;
+        } else if (parsed.user) {
+          return;
+        } else {
+          return parsed;
+        }
       }
-    };
-  }},
+    }
+  };
+}
 
-  /**
-   * Helper Function to generate Contact Header
-   * @private
-   * returns {String}
-   */
-  generateContactHeader: {writable: true, value: function generateContactHeader(expires = 0) {
-    let contact = this.contact;
-    if (this.options.regId && this.options.instanceId) {
-      contact += ';reg-id=' + this.options.regId;
-      contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
+export class RegisterContext extends ClientContext implements RegisterContextDefinition {
+  public type: TypeStrings;
+  public registered: boolean;
+  public cseq: number;
+
+  private options: any;
+  private expires: number;
+  private contact: string;
+
+  private registrationTimer: any | undefined;
+  private registrationExpiredTimer: any | undefined;
+  private registeredBefore: boolean | undefined;
+
+  private closeHeaders: Array<string> | undefined;
+
+  constructor(ua: UA, options: any = {}) {
+    const settings: any = loadConfig(options);
+
+    if (settings.regId && !settings.instanceId) {
+      settings.instanceId = Utils.newUUID();
+    } else if (!settings.regId && settings.instanceId) {
+      settings.regId = 1;
     }
 
-    if (this.options.extraContactHeaderParams) {
-      this.options.extraContactHeaderParams.forEach((header) => {
-        contact += ';' + header;
-      });
+    settings.params.toUri = settings.params.toUri || ua.configuration.uri;
+    settings.params.toDisplayName = settings.params.toDisplayName || ua.configuration.displayName;
+    settings.params.callId = settings.params.callId || Utils.createRandomToken(22);
+    settings.params.cseq = settings.params.cseq || Math.floor(Math.random() * 10000);
+
+    /* If no 'registrarServer' is set use the 'uri' value without user portion. */
+    if (!settings.registrar) {
+      let registrarServer: any = {};
+      if (typeof ua.configuration.uri === "object") {
+        registrarServer = ua.configuration.uri.clone();
+        registrarServer.user = undefined;
+      } else {
+        registrarServer = ua.configuration.uri;
+      }
+      settings.registrar = registrarServer;
     }
 
-    contact += ';expires=' + expires;
+    super(ua, C.REGISTER, settings.registrar, settings);
+    this.type = TypeStrings.RegisterContext;
 
-    return contact;
-  }},
+    this.options = settings;
+    this.logger = ua.getLogger("sip.registercontext");
 
-  register: {writable: true, value: function register (options = {}) {
+    this.logger.log("configuration parameters for RegisterContext after validation:");
+    for (const parameter in settings) {
+      if (settings.hasOwnProperty(parameter)) {
+        this.logger.log("· " + parameter + ": " + JSON.stringify((settings as any)[parameter]));
+      }
+    }
+
+    // Registration expires
+    this.expires = settings.expires;
+
+    // Cseq
+    this.cseq = settings.params.cseq;
+
+    // Contact header
+    this.contact = ua.contact.toString();
+
+    // Set status
+    this.registered = false;
+
+    ua.on("transportCreated", (transport: Transport): void => {
+      transport.on("disconnected", this.onTransportDisconnected.bind(this));
+    });
+  }
+
+  public register(options: any = {}): void {
     // Handle Options
-    this.options = Object.assign(this.options || {}, options);
+    this.options = {...this.options, ...options};
     const extraHeaders = (this.options.extraHeaders || []).slice();
 
-    extraHeaders.push('Contact: ' + this.generateContactHeader(this.expires));
-    extraHeaders.push('Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString());
+    extraHeaders.push("Contact: " + this.generateContactHeader(this.expires));
+    // this is UA.C.ALLOWED_METHODS, removed to get around circular dependency
+    extraHeaders.push("Allow: " + [
+      "ACK",
+      "CANCEL",
+      "INVITE",
+      "MESSAGE",
+      "BYE",
+      "OPTIONS",
+      "INFO",
+      "NOTIFY",
+      "REFER"
+    ].toString());
 
     // Save original extraHeaders to be used in .close
     this.closeHeaders = this.options.closeWithHeaders ?
       (this.options.extraHeaders || []).slice() : [];
 
-    this.receiveResponse = function(response) {
-      var contact, expires,
-        contacts = response.getHeaders('contact').length,
-        cause;
-
+    this.receiveResponse = (response: IncomingResponse) => {
       // Discard responses to older REGISTER/un-REGISTER requests.
-      if(response.cseq !== this.cseq) {
+      if (response.cseq !== this.cseq) {
         return;
       }
 
       // Clear registration timer
-      if (this.registrationTimer !== null) {
+      if (this.registrationTimer !== undefined) {
         clearTimeout(this.registrationTimer);
-        this.registrationTimer = null;
+        this.registrationTimer = undefined;
       }
 
-      switch(true) {
-        case /^1[0-9]{2}$/.test(response.status_code):
-          this.emit('progress', response);
+      const statusCode: string = (response.statusCode || 0).toString();
+      switch (true) {
+        case /^1[0-9]{2}$/.test(statusCode):
+          this.emit("progress", response);
           break;
-        case /^2[0-9]{2}$/.test(response.status_code):
-          this.emit('accepted', response);
+        case /^2[0-9]{2}$/.test(statusCode):
+          this.emit("accepted", response);
 
-          if(response.hasHeader('expires')) {
-            expires = response.getHeader('expires');
+          let expires: number | undefined;
+          if (response.hasHeader("expires")) {
+            expires = Number(response.getHeader("expires"));
           }
 
-          if (this.registrationExpiredTimer !== null) {
+          if (this.registrationExpiredTimer !== undefined) {
             clearTimeout(this.registrationExpiredTimer);
-            this.registrationExpiredTimer = null;
+            this.registrationExpiredTimer = undefined;
           }
 
           // Search the Contact pointing to us and update the expires value accordingly.
+          let contacts: number = response.getHeaders("contact").length;
           if (!contacts) {
-            this.logger.warn('no Contact header in response to REGISTER, response ignored');
+            this.logger.warn("no Contact header in response to REGISTER, response ignored");
             break;
           }
 
-          while(contacts--) {
-            contact = response.parseHeader('contact', contacts);
-            if(contact.uri.user === this.ua.contact.uri.user) {
-              expires = contact.getParam('expires');
+          let contact: any;
+          while (contacts--) {
+            contact = response.parseHeader("contact", contacts);
+            if (contact.uri.user === this.ua.contact.uri.user) {
+              expires = contact.getParam("expires");
               break;
             } else {
-              contact = null;
+              contact = undefined;
             }
           }
 
           if (!contact) {
-            this.logger.warn('no Contact header pointing to us, response ignored');
+            this.logger.warn("no Contact header pointing to us, response ignored");
             break;
           }
 
-          if(!expires) {
+          if (expires === undefined) {
             expires = this.expires;
           }
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
           this.registrationTimer = setTimeout(() => {
-            this.registrationTimer = null;
+            this.registrationTimer = undefined;
             this.register(this.options);
           }, (expires * 1000) - 3000);
+
           this.registrationExpiredTimer = setTimeout(() => {
-            this.logger.warn('registration expired');
+            this.logger.warn("registration expired");
             if (this.registered) {
-              this.unregistered(null, SIP.C.causes.EXPIRES);
+              this.unregistered(undefined, C.causes.EXPIRES);
             }
           }, expires * 1000);
 
-          //Save gruu values
-          if (contact.hasParam('temp-gruu')) {
-            this.ua.contact.temp_gruu = SIP.URI.parse(contact.getParam('temp-gruu').replace(/"/g,''));
+          // Save gruu values
+          if (contact.hasParam("temp-gruu")) {
+            this.ua.contact.temp_gruu = Grammar.URIParse(contact.getParam("temp-gruu").replace(/"/g, ""));
           }
-          if (contact.hasParam('pub-gruu')) {
-            this.ua.contact.pub_gruu = SIP.URI.parse(contact.getParam('pub-gruu').replace(/"/g,''));
+          if (contact.hasParam("pub-gruu")) {
+            this.ua.contact.pub_gruu = Grammar.URIParse(contact.getParam("pub-gruu").replace(/"/g, ""));
           }
 
           this.registered = true;
-          this.emit('registered', response || null);
+          this.emit("registered", response || undefined);
           break;
         // Interval too brief RFC3261 10.2.8
-        case /^423$/.test(response.status_code):
-          if(response.hasHeader('min-expires')) {
+        case /^423$/.test(statusCode):
+          if (response.hasHeader("min-expires")) {
             // Increase our registration interval to the suggested minimum
-            this.expires = response.getHeader('min-expires');
+            this.expires = Number(response.getHeader("min-expires"));
             // Attempt the registration again immediately
             this.register(this.options);
-          } else { //This response MUST contain a Min-Expires header field
-            this.logger.warn('423 response received for REGISTER without Min-Expires');
-            this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
+          } else { // This response MUST contain a Min-Expires header field
+            this.logger.warn("423 response received for REGISTER without Min-Expires");
+            this.registrationFailure(response, C.causes.SIP_FAILURE_CODE);
           }
           break;
         default:
-          cause = SIP.Utils.sipErrorCause(response.status_code);
-          this.registrationFailure(response, cause);
+          this.registrationFailure(response, Utils.sipErrorCause(response.statusCode || 0));
       }
     };
 
-    this.onRequestTimeout = function() {
-      this.registrationFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
+    this.onRequestTimeout = (): void => {
+      this.registrationFailure(undefined, C.causes.REQUEST_TIMEOUT);
     };
 
-    this.onTransportError = function() {
-      this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
+    this.onTransportError = (): void => {
+      this.registrationFailure(undefined, C.causes.CONNECTION_ERROR);
     };
 
     this.cseq++;
-    this.request.cseq = this.cseq;
-    this.request.setHeader('cseq', this.cseq + ' REGISTER');
-    this.request.extraHeaders = extraHeaders;
+    if (this.request) {
+      this.request.cseq = this.cseq;
+      this.request.setHeader("cseq", this.cseq + " REGISTER");
+      this.request.extraHeaders = extraHeaders;
+    }
     this.send();
-  }},
+  }
 
-  registrationFailure: {writable: true, value: function registrationFailure  (response, cause) {
-    this.emit('failed', response || null, cause || null);
-  }},
-
-  onTransportDisconnected: {writable: true, value: function onTransportDisconnected () {
-    this.registered_before = this.registered;
-    if (this.registrationTimer !== null) {
-      clearTimeout(this.registrationTimer);
-      this.registrationTimer = null;
-    }
-
-    if (this.registrationExpiredTimer !== null) {
-      clearTimeout(this.registrationExpiredTimer);
-      this.registrationExpiredTimer = null;
-    }
-
-    if(this.registered) {
-      this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
-    }
-  }},
-
-  close: {writable: true, value: function close () {
-    var options = {
+  public close(): void {
+    const options: any = {
       all: false,
       extraHeaders: this.closeHeaders
     };
 
-    this.registered_before = this.registered;
+    this.registeredBefore = this.registered;
     if (this.registered) {
       this.unregister(options);
     }
-  }},
+  }
 
-  unregister: {writable: true, value: function unregister (options) {
-    var extraHeaders;
-
-    options = options || {};
-
-    if(!this.registered && !options.all) {
-      this.logger.warn('Already unregistered, but sending an unregister anyways.');
+  public unregister(options: any = {}): void {
+    if (!this.registered && !options.all) {
+      this.logger.warn("Already unregistered, but sending an unregister anyways.");
     }
 
-    extraHeaders = (options.extraHeaders || []).slice();
+    const extraHeaders = (options.extraHeaders || []).slice();
 
     this.registered = false;
 
     // Clear the registration timer.
-    if (this.registrationTimer !== null) {
+    if (this.registrationTimer !== undefined) {
       clearTimeout(this.registrationTimer);
-      this.registrationTimer = null;
+      this.registrationTimer = undefined;
     }
 
-    if(options.all) {
-      extraHeaders.push('Contact: *');
-      extraHeaders.push('Expires: 0');
+    if (options.all) {
+      extraHeaders.push("Contact: *");
+      extraHeaders.push("Expires: 0");
     } else {
-      extraHeaders.push('Contact: '+ this.generateContactHeader(0));
+      extraHeaders.push("Contact: " + this.generateContactHeader(0));
     }
 
-
-    this.receiveResponse = function(response) {
-      var cause;
-
-      switch(true) {
-        case /^1[0-9]{2}$/.test(response.status_code):
-          this.emit('progress', response);
+    this.receiveResponse = (response) => {
+      const statusCode: string = (response && response.statusCode) ? response.statusCode.toString() : "";
+      switch (true) {
+        case /^1[0-9]{2}$/.test(statusCode):
+          this.emit("progress", response);
           break;
-        case /^2[0-9]{2}$/.test(response.status_code):
-          this.emit('accepted', response);
-          if (this.registrationExpiredTimer !== null) {
+        case /^2[0-9]{2}$/.test(statusCode):
+          this.emit("accepted", response);
+          if (this.registrationExpiredTimer !== undefined) {
             clearTimeout(this.registrationExpiredTimer);
-            this.registrationExpiredTimer = null;
+            this.registrationExpiredTimer = undefined;
           }
           this.unregistered(response);
           break;
         default:
-          cause = SIP.Utils.sipErrorCause(response.status_code);
-          this.unregistered(response,cause);
+          this.unregistered(response, Utils.sipErrorCause(response.statusCode || 0));
       }
     };
 
-    this.onRequestTimeout = function() {
+    this.onRequestTimeout = () => {
       // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
+      // this.unregistered(undefined, SIP.C.causes.REQUEST_TIMEOUT);
     };
 
     this.cseq++;
-    this.request.cseq = this.cseq;
-    this.request.setHeader('cseq', this.cseq + ' REGISTER');
-    this.request.extraHeaders = extraHeaders;
+    if (this.request) {
+      this.request.cseq = this.cseq;
+      this.request.setHeader("cseq", this.cseq + " REGISTER");
+      this.request.extraHeaders = extraHeaders;
+    }
 
     this.send();
-  }},
+  }
 
-  unregistered: {writable: true, value: function unregistered (response, cause) {
+  public unregistered(response?: IncomingResponse, cause?: string): void {
     this.registered = false;
-    this.emit('unregistered', response || null, cause || null);
-  }}
+    this.emit("unregistered", response || undefined, cause || undefined);
+  }
 
-});
+  private registrationFailure(response: IncomingResponse | undefined, cause: string): void {
+    this.emit("failed", response || undefined, cause || undefined);
+  }
 
+  private onTransportDisconnected(): void {
+    this.registeredBefore = this.registered;
+    if (this.registrationTimer !== undefined) {
+      clearTimeout(this.registrationTimer);
+      this.registrationTimer = undefined;
+    }
 
-SIP.RegisterContext = RegisterContext;
-};
+    if (this.registrationExpiredTimer !== undefined) {
+      clearTimeout(this.registrationExpiredTimer);
+      this.registrationExpiredTimer = undefined;
+    }
+
+    if (this.registered) {
+      this.unregistered(undefined, C.causes.CONNECTION_ERROR);
+    }
+  }
+
+  /**
+   * Helper Function to generate Contact Header
+   * @private
+   * returns {String}
+   */
+  private generateContactHeader(expires: number = 0): string {
+    let contact: string = this.contact;
+    if (this.options.regId && this.options.instanceId) {
+      contact += ";reg-id=" + this.options.regId;
+      contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
+    }
+
+    if (this.options.extraContactHeaderParams) {
+      this.options.extraContactHeaderParams.forEach((header: string) => {
+        contact += ";" + header;
+      });
+    }
+
+    contact += ";expires=" + expires;
+
+    return contact;
+  }
+}
