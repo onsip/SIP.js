@@ -1,14 +1,16 @@
-import { EventEmitter } from "./event-emitter";
 import { SessionDescriptionHandler, SessionDescriptionHandlerOptions, SessionDescriptionHandlerModifiers } from "./session-description-handler";
 import { UA } from "./ua";
 import { NameAddrHeader } from "./name-addr-header";
 import { URI } from "./uri";
+import { ServerContext, C } from "./SIP";
+import { EventEmitter } from "events";
 
 /**
   * The Session interface SIP.js is providing.
   */
 export class Session extends EventEmitter {
 
+  id: string;
   data?: any; // This is actually an any
   endTime?: Date;
   localIdentity?: NameAddrHeader;
@@ -22,17 +24,20 @@ export class Session extends EventEmitter {
 
   bye(options?: any): Session;
 
-  dtmf(tone: string): Session;
+  dtmf(tone: string, options: Session.DtmfOptions): Session;
 
   hold(options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): void;
 
-  reinvite(options?: any, modifiers?: SessionDescriptionHandlerModifiers);
+  reinvite(options?: any, modifiers?: SessionDescriptionHandlerModifiers): void;
 
   refer(target: Session | String, options?: any): any; // TODO: This should take a URI
 
   terminate(options?: any): Session;
 
   unhold(options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): void;
+
+  // Default EventEmitter on-Handler needs to be preserved
+  on(event: string | symbol, listener: (...args: any[]) => void): this;
 
   on(name: 'referRequested', callback: (context: ReferServerContext) => void): void;
   on(name: 'reinvite', callback: (session: Session) => void): void;
@@ -42,16 +47,14 @@ export class Session extends EventEmitter {
   on(name: 'bye', callback: (request: any) => void): void; //TODO
   on(name: 'notify', callback: (request: any) => void): void; //TODO
   on(name: 'ack', callback: (request: any) => void): void; // TODO
-  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: any) => void): void;
+  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): void;
   on(name: 'cancel', callback: () => void): void;
   on(name: 'replaced', callback: (session: Session) => void): void;
-  on(name: 'accepted', callback: (response: any, cause: any) => void): void;
-  on(name: 'terminated', callback: (message?: any, cause?: any) => void): void;
+  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): void;
+  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): void;
   on(name: 'connecting', callback: (request: any) => void): void;
   on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): void;
   on(name: 'dialog', callback: (dialog: any) => void): void;
-
-
 }
 
 export namespace Session {
@@ -70,10 +73,19 @@ export namespace Session {
     STATUS_EARLY_MEDIA =                11,
     STATUS_CONFIRMED =                  12
   }
+
+  export interface DtmfOptions {
+    extraHeaders?: string[],
+    duration?: number;
+    interToneGap?: number;
+  }
 }
 
 export class InviteClientContext extends Session {
   cancel(options?: any): Session;
+
+  // Default EventEmitter on-Handler
+  on(event: string, callback: (event: Event) => void): this;
 
   on(name: 'referRequested', callback: (context: ReferServerContext) => void): void;
   on(name: 'reinvite', callback: (session: Session) => void): void;
@@ -83,11 +95,11 @@ export class InviteClientContext extends Session {
   on(name: 'bye', callback: (request: any) => void): void; //TODO
   on(name: 'notify', callback: (request: any) => void): void; //TODO
   on(name: 'ack', callback: (request: any) => void): void; // TODO
-  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: any) => void): void;
+  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): void;
   on(name: 'cancel', callback: () => void): void;
   on(name: 'replaced', callback: (session: Session) => void): void;
-  on(name: 'accepted', callback: (response: any, cause: any) => void): void;
-  on(name: 'terminated', callback: (message?: any, cause?: any) => void): void;
+  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): void;
+  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): void;
   on(name: 'connecting', callback: (request: any) => void): void;
   on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): void;
   on(name: 'dialog', callback: (dialog: any) => void): void;
@@ -121,6 +133,9 @@ export class InviteServerContext extends Session {
 
   reply(options?: InviteServerContext.Options): InviteServerContext;
 
+  // Default EventEmitter on-Handler needs to be preserved
+  on(event: string, callback: (event: Event) => void): this;
+
   on(name: 'referRequested', callback: (context: ReferServerContext) => void): void;
   on(name: 'reinvite', callback: (session: Session) => void): void;
   on(name: 'reinviteAccepted' | 'reinviteFailed', callback: (session: Session) => void): void;
@@ -129,11 +144,11 @@ export class InviteServerContext extends Session {
   on(name: 'bye', callback: (request: any) => void): void; //TODO
   on(name: 'notify', callback: (request: any) => void): void; //TODO
   on(name: 'ack', callback: (request: any) => void): void; // TODO
-  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: any) => void): void;
+  on(name: 'failed' | 'rejected', callback: (response?: any, cause?: C.causes) => void): void;
   on(name: 'cancel', callback: () => void): void;
   on(name: 'replaced', callback: (session: Session) => void): void;
-  on(name: 'accepted', callback: (response: any, cause: any) => void): void;
-  on(name: 'terminated', callback: (message?: any, cause?: any) => void): void;
+  on(name: 'accepted', callback: (response: any, cause: C.causes) => void): void;
+  on(name: 'terminated', callback: (message?: any, cause?: C.causes) => void): void;
   on(name: 'connecting', callback: (request: any) => void): void;
   on(name: 'SessionDescriptionHandler-created', callback: (sessionDescriptionHandler: SessionDescriptionHandler) => void): void;
   on(name: 'dialog', callback: (dialog: any) => void): void;
@@ -165,7 +180,10 @@ export class ReferServerContext extends EventEmitter {
   progress(): void;
 
   /** Reject the REFER request. */
-  reject(options?: ReferServerContext.RejectOptions)
+  reject(options?: ReferServerContext.RejectOptions): ServerContext;
+
+  // Default EventEmitter on-Handler needs to be preserved
+  on(event: string, callback: (event: Event) => void): this;
 
   on(name: 'referRequestRejected', callback: (referServerContext: ReferServerContext) => void): void;
   on(name: 'referRequestAccepted', callback: (referServerContext: ReferServerContext) => void): void;

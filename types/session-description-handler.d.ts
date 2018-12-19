@@ -3,6 +3,8 @@
  * The SessionDescriptionHandler interface SIP.js is expecting.
  */
 export interface SessionDescriptionHandler {
+  peerConnection?: RTCPeerConnection;
+
   /**
    * Destructor
    */
