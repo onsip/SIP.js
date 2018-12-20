@@ -1,9 +1,9 @@
 import { C, InviteServerContext, ReferServerContext } from ".";
-import { EventEmitter } from "./event-emitter";
 import { InviteClientContext, Session } from "./session";
 import { SessionDescriptionHandlerFactory, SessionDescriptionHandlerFactoryOptions} from "./session-description-handler-factory";
 import { SessionDescriptionHandlerOptions, SessionDescriptionHandlerModifiers } from "./session-description-handler";
 import { URI } from "./uri";
+import { EventEmitter } from "events";
 
 export class UA extends EventEmitter {
 
@@ -17,7 +17,7 @@ export class UA extends EventEmitter {
 
   isRegistered(): boolean;
 
-  message(target: URI, body: string, options?: any);
+  message(target: URI, body: string, options?: any): any;
 
   register(options?: any): UA;
 
@@ -31,15 +31,15 @@ export class UA extends EventEmitter {
 
   stop(): UA;
 
-  on(name: 'transportCreated', callback: (transport: any) => void): void;
-  on(name: 'newTransaction' | 'transactionDestroyed', callback: (transaction: any) => void): void;
-  on(name: 'message', callback: (message: any) => void): void;
-  on(name: 'invite', callback: (session: InviteServerContext) => void): void;
-  on(name: 'notify', callback: (request: any) => void): void;
-  on(name: 'outOfDialogReferRequested', callback: (context: ReferServerContext) => void): void;
-  on(name: 'registered', callback: (response?: any) => void): void;
-  on(name: 'unregistered' | 'registrationFailed', callback: (response?: any, cause?: any) => void): void;
-  on(name: 'inviteSent', callback: (session: InviteClientContext) => void): void;
+  on(name: 'transportCreated', callback: (transport: any) => void): this;
+  on(name: 'newTransaction' | 'transactionDestroyed', callback: (transaction: any) => void): this;
+  on(name: 'message', callback: (message: any) => void): this;
+  on(name: 'invite', callback: (session: InviteServerContext) => void): this;
+  on(name: 'notify', callback: (request: any) => void): this;
+  on(name: 'outOfDialogReferRequested', callback: (context: ReferServerContext) => void): this;
+  on(name: 'registered', callback: (response?: any) => void): this;
+  on(name: 'unregistered' | 'registrationFailed', callback: (response?: any, cause?: any) => void): this;
+  on(name: 'inviteSent', callback: (session: InviteClientContext) => void): this;
 
 }
 
