@@ -157,17 +157,20 @@ SessionDescriptionHandler.prototype = Object.create(SIP.SessionDescriptionHandle
     })
     .then(() => this.createOfferOrAnswer(options.RTCOfferOptions, modifiers))
     .then((description) => {
-      // Recreate offer contaning the ICE Candidates
+      // Recreate offer containing the ICE Candidates
       if (description.type === 'offer') {
         return this.peerConnection.createOffer()
-          .then((sdp) => {
-            return this.peerConnection.setLocalDescription(sdp)
-              .then(() => {
-                return this.createRTCSessionDescriptionInit(sdp);
-              })
-          });
+        .then((sdp) => this.createRTCSessionDescriptionInit(sdp));
       }
       return description;
+    })
+    .catch((e) => {
+      if (e instanceof SIP.Exceptions.SessionDescriptionHandlerError) {
+        throw e;
+      }
+      const error = new SIP.Exceptions.SessionDescriptionHandlerError("createOffer failed", e);
+      this.logger.error(error);
+      throw error;
     })
     .then((description) => {
       this.emit('getDescription', description);
