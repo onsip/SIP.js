@@ -612,7 +612,7 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           }
           this.transport.send(response).then(() => {
             this.stateChanged(C.STATUS_COMPLETED);
-            this.H = setTimeout(this.timer_H, SIP.Timers.TIMER_H);
+            this.H = setTimeout(this.timer_H.bind(this), SIP.Timers.TIMER_H);
             resolve();
           }).catch((error) => {
             this.logger.error(error);
