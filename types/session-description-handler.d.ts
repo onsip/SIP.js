@@ -71,6 +71,6 @@ export type SessionDescriptionHandlerOptions = {
 };
 
 export interface BodyObj {
-  body: string;
+  body: string | undefined;
   contentType: string;
 }
