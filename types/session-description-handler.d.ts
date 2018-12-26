@@ -1,8 +1,8 @@
-
+import { EventEmitter } from "events";
 /**
  * The SessionDescriptionHandler interface SIP.js is expecting.
  */
-export interface SessionDescriptionHandler {
+export interface SessionDescriptionHandler extends EventEmitter {
   /**
    * Destructor
    */
@@ -12,28 +12,46 @@ export interface SessionDescriptionHandler {
    * Gets the local description from the underlying media implementation.
    * @param options Options object to be used by getDescription.
    * @param modifiers Array with one time use description modifiers.
+   * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
-  getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<{ body: string; contentType: string }>;
+  getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<BodyObj>;
 
   /**
-   * True if the Session Description Handler can handle the Content-Type described by a SIP Message.
-   * @param contentType The content type that is in the SIP Message.
+   * Check if the Session Description Handler can handle the Content-Type described by a SIP Message
+   * @param {String} contentType The content type that is in the SIP Message
+   * @returns {boolean}
    */
   hasDescription(contentType: string): boolean;
 
   /**
-   * The modifier which should be used when the session would like to place the call on hold.
-   * @param sessionDescription The description that will be modified.
+   * The modifier that should be used when the session would like to place the call on hold
+   * @param {String} [sdp] The description that will be modified
+   * @returns {Promise} Promise that resolves with modified SDP
    */
   holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
 
   /**
-   * Set the remote description to the underlying media implementation.
-   * @param sdp The description provided by a SIP message to be set on the media implementation.
-   * @param options Options object to be used by setDescription.
-   * @param modifiers Array with one time use description modifiers.
+   * Set the remote description to the underlying media implementation
+   * @param {String} sessionDescription The description provided by a SIP message to be set on the media implementation
+   * @param {Object} [options] Options object to be used by setDescription
+   * @param {Array} [modifiers] Array with one time use description modifiers
+   * @returns {Promise} Promise that resolves once the description is set
    */
   setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<void>;
+
+  /**
+   * Send DTMF via RTP (RFC 4733)
+   * @param {String} tones A string containing DTMF digits
+   * @param {Object} [options] Options object to be used by sendDtmf
+   * @returns {boolean} true if DTMF send is successful, false otherwise
+   */
+  sendDtmf: (tones: string, options: any) => boolean;
+
+  /**
+   * Get the direction of the session description
+   * @returns {String} direction of the description
+   */
+  getDirection: () => string;
 }
 
 export interface SessionDescriptionHandlerModifier {
@@ -47,4 +65,12 @@ export type SessionDescriptionHandlerModifiers = Array<SessionDescriptionHandler
  * These options are provided to various UserAgent methods (invite() for example)
  * and passed through on calls to getDescription() and setDescription().
  */
-export type SessionDescriptionHandlerOptions = object;
+export type SessionDescriptionHandlerOptions = {
+  modifiers?: SessionDescriptionHandlerModifiers,
+  constraints?: { audio: boolean, video: boolean }
+};
+
+export interface BodyObj {
+  body: string;
+  contentType: string;
+}
