@@ -1,18 +1,69 @@
-"use strict";
+import { EventEmitter } from "events";
 
-const environment = global.window || global;
+import { Dialog } from "../types/dialogs";
+import { Logger } from "../types/logger-factory";
+import { PublishContext as PublishContextType } from "../types/publish-context";
+import {
+  InviteClientContext as InviteClientContextType,
+  InviteServerContext as InviteServerContextType
+} from "../types/session";
+import {
+  SessionDescriptionHandler,
+  SessionDescriptionHandlerModifiers
+} from "../types/session-description-handler";
+import {
+  IncomingRequest,
+  IncomingResponse,
+  OutgoingRequest
+} from "../types/sip-message";
+import { Subscription as SubscriptionType } from "../types/subscription";
+import {
+  InviteClientTransaction,
+  InviteServerTransaction as InviteServerTransactionType,
+  NonInviteClientTransaction,
+  NonInviteServerTransaction as NonInviteServerTransactionType
+} from "../types/transactions";
+import { Transport } from "../types/transport";
+import { UA as UADefinition } from "../types/ua";
+import { URI as URIType } from "../types/uri";
+
+import { ClientContext } from "./ClientContext";
+import { C as SIPConstants } from "./Constants";
+import { DigestAuthentication } from "./DigestAuthentication";
+import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
+import { Exceptions } from "./Exceptions";
+import { Grammar } from "./Grammar";
+import { LoggerFactory } from "./LoggerFactory";
+import { Parser } from "./Parser";
+import { PublishContext } from "./PublishContext";
+import { RegisterContext } from "./RegisterContext";
+import { SanityCheck } from "./SanityCheck";
+import { ServerContext } from "./ServerContext";
+import { InviteClientContext, InviteServerContext, ReferServerContext } from "./Session";
+import { Subscription } from "./Subscription";
+import {
+  checkTransaction,
+  InviteServerTransaction,
+  NonInviteServerTransaction
+} from "./Transactions";
+import { URI } from "./URI";
+import { Utils } from "./Utils";
+import {
+  SessionDescriptionHandler as WebSessionDescriptionHandler
+} from "./Web/SessionDescriptionHandler";
+import { Transport as WebTransport } from "./Web/Transport";
+
+const environment = (global as any).window || global;
 
 /**
- * @augments SIP
  * @class Class creating a SIP User Agent.
  * @param {function returning SIP.sessionDescriptionHandler} [configuration.sessionDescriptionHandlerFactory]
- *        A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
- *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
- *
+ *  A function will be invoked by each of the UA's Sessions to build the sessionDescriptionHandler for that Session.
+ *  If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  */
-module.exports = function (SIP) {
-var UA,
-  C = {
+
+export class UA extends EventEmitter implements UADefinition {
+  public static readonly C = {
     // UA status codes
     STATUS_INIT:                0,
     STATUS_STARTING:            1,
@@ -25,792 +76,810 @@ var UA,
     NETWORK_ERROR:        2,
 
     ALLOWED_METHODS: [
-      'ACK',
-      'CANCEL',
-      'INVITE',
-      'MESSAGE',
-      'BYE',
-      'OPTIONS',
-      'INFO',
-      'NOTIFY',
-      'REFER'
+      "ACK",
+      "CANCEL",
+      "INVITE",
+      "MESSAGE",
+      "BYE",
+      "OPTIONS",
+      "INFO",
+      "NOTIFY",
+      "REFER"
     ],
 
     ACCEPTED_BODY_TYPES: [
-      'application/sdp',
-      'application/dtmf-relay'
+      "application/sdp",
+      "application/dtmf-relay"
     ],
 
     MAX_FORWARDS: 70,
     TAG_LENGTH: 10
   };
 
-UA = function(configuration) {
-  var self = this;
-
-  // Helper function for forwarding events
-  function selfEmit(type) {
-    //registrationFailed handler is invoked with two arguments. Allow event handlers to be invoked with a variable no. of arguments
-    return self.emit.bind(self, type);
-  }
-
-  // Set Accepted Body Types
-  C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
-
-  this.log = new SIP.LoggerFactory();
-  this.logger = this.getLogger('sip.ua');
-
-  this.cache = {
-    credentials: {}
+  public type: TypeStrings;
+  public configuration: UADefinition.Options;
+  public applicants: {[id: string]: InviteClientContextType};
+  public publishers: {[id: string]: PublishContextType};
+  public contact: any | undefined;
+  public status: UAStatus;
+  public transport: Transport | undefined;
+  public transactions: {
+    nist: {[id: string]: NonInviteServerTransactionType}
+    nict: {[id: string]: NonInviteClientTransaction}
+    ist: {[id: string]: InviteServerTransactionType}
+    ict: {[id: string]: InviteClientTransaction}
   };
+  public sessions: {[id: string]: InviteClientContextType | InviteServerContextType};
+  public dialogs: {[id: string]: Dialog};
+  public data: any;
+  public logger: Logger;
+  public earlySubscriptions: {[id: string]: SubscriptionType};
+  public subscriptions: {[id: string]: SubscriptionType};
 
-  this.configuration = {};
-  this.dialogs = {};
+  private log: LoggerFactory;
+  private cache: any;
+  private error: number | undefined;
+  private registerContext: RegisterContext;
+  private environListener: any;
 
-  //User actions outside any session/dialog (MESSAGE)
-  this.applicants = {};
+  constructor(configuration?: UADefinition.Options) {
+    super();
+    this.type = TypeStrings.UA;
 
-  this.data = {};
-  this.sessions = {};
-  this.subscriptions = {};
-  this.earlySubscriptions = {};
-  this.publishers = {};
-  this.transport = null;
-  this.contact = null;
-  this.status = C.STATUS_INIT;
-  this.error = null;
-  this.transactions = {
-    nist: {},
-    nict: {},
-    ist: {},
-    ict: {}
-  };
+    this.log = new LoggerFactory();
+    this.logger = this.getLogger("sip.ua");
 
-  Object.defineProperties(this, {
-    transactionsCount: {
-      get: function() {
-        var type,
-          transactions = ['nist','nict','ist','ict'],
-          count = 0;
-
-        for (type in transactions) {
-          count += Object.keys(this.transactions[transactions[type]]).length;
-        }
-
-        return count;
-      }
-    },
-
-    nictTransactionsCount: {
-      get: function() {
-        return Object.keys(this.transactions['nict']).length;
-      }
-    },
-
-    nistTransactionsCount: {
-      get: function() {
-        return Object.keys(this.transactions['nist']).length;
-      }
-    },
-
-    ictTransactionsCount: {
-      get: function() {
-        return Object.keys(this.transactions['ict']).length;
-      }
-    },
-
-    istTransactionsCount: {
-      get: function() {
-        return Object.keys(this.transactions['ist']).length;
-      }
-    }
-  });
-
-  /**
-   * Load configuration
-   *
-   * @throws {SIP.Exceptions.ConfigurationError}
-   * @throws {TypeError}
-   */
-
-  if(configuration === undefined) {
-    configuration = {};
-  } else if (typeof configuration === 'string' || configuration instanceof String) {
-    configuration = {
-      uri: configuration
+    this.cache = {
+      credentials: {}
     };
-  }
 
-  // Apply log configuration if present
-  if (configuration.log) {
-    if (configuration.log.hasOwnProperty('builtinEnabled')) {
-      this.log.builtinEnabled = configuration.log.builtinEnabled;
+    this.configuration = {};
+    this.dialogs = {};
+
+    // User actions outside any session/dialog (MESSAGE)
+    this.applicants = {};
+
+    this.data = {};
+    this.sessions = {};
+    this.subscriptions = {};
+    this.earlySubscriptions = {};
+    this.publishers = {};
+    this.status = UAStatus.STATUS_INIT;
+    this.transactions = {
+      nist: {},
+      nict: {},
+      ist: {},
+      ict: {}
+    };
+
+    /**
+     * Load configuration
+     *
+     * @throws {SIP.Exceptions.ConfigurationError}
+     * @throws {TypeError}
+     */
+
+    if (configuration === undefined) {
+      configuration = {};
+    } else if (typeof configuration === "string" || configuration instanceof String) {
+      configuration = {
+        uri: (configuration as string)
+      };
     }
 
-    if (configuration.log.hasOwnProperty('level')) {
-      this.log.level = configuration.log.level;
+    // Apply log configuration if present
+    if (configuration.log) {
+      if (configuration.log.hasOwnProperty("builtinEnabled")) {
+        this.log.builtinEnabled = configuration.log.builtinEnabled;
+      }
+
+      if (configuration.log.hasOwnProperty("level")) {
+        this.log.level = configuration.log.level;
+      }
+
+      if (configuration.log.hasOwnProperty("connector")) {
+        this.log.connector = configuration.log.connector;
+      }
     }
 
-    if (configuration.log.hasOwnProperty('connector')) {
-      this.log.connector = configuration.log.connector;
+    try {
+      this.loadConfig(configuration);
+    } catch (e) {
+      this.status = UAStatus.STATUS_NOT_READY;
+      this.error = UA.C.CONFIGURATION_ERROR;
+      throw e;
     }
-  }
 
-  try {
-    this.loadConfig(configuration);
-  } catch(e) {
-    this.status = C.STATUS_NOT_READY;
-    this.error = C.CONFIGURATION_ERROR;
-    throw e;
-  }
+    // Initialize registerContext
+    this.registerContext = new RegisterContext(this, configuration.registerOptions);
+    this.registerContext.on("failed", this.emit.bind(this, "registrationFailed"));
+    this.registerContext.on("registered", this.emit.bind(this, "registered"));
+    this.registerContext.on("unregistered", this.emit.bind(this, "unregistered"));
 
-  // Initialize registerContext
-  this.registerContext = new SIP.RegisterContext(this, configuration.registerOptions);
-  this.registerContext.on('failed', selfEmit('registrationFailed'));
-  this.registerContext.on('registered', selfEmit('registered'));
-  this.registerContext.on('unregistered', selfEmit('unregistered'));
-
-  if(this.configuration.autostart) {
-    this.start();
-  }
-};
-UA.prototype = Object.create(SIP.EventEmitter.prototype);
-
-//=================
-//  High Level API
-//=================
-
-UA.prototype.register = function(options = {}) {
-  if (options.register) {
-    this.configuration.register = true;
-  }
-  this.registerContext.register(options);
-
-  return this;
-};
-
-/**
- * Unregister.
- *
- * @param {Boolean} [all] unregister all user bindings.
- *
- */
-UA.prototype.unregister = function(options) {
-  this.configuration.register = false;
-
-  var context = this.registerContext;
-  this.transport.afterConnected(context.unregister.bind(context, options));
-
-  return this;
-};
-
-UA.prototype.isRegistered = function() {
-  return this.registerContext.registered;
-};
-
-/**
- * Make an outgoing call.
- *
- * @param {String} target
- * @param {Object} views
- * @param {Object} [options.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
- *
- * @throws {TypeError}
- *
- */
-UA.prototype.invite = function(target, options, modifiers) {
-  var context = new SIP.InviteClientContext(this, target, options, modifiers);
-  // Delay sending actual invite until the next 'tick' if we are already
-  // connected, so that API consumers can register to events fired by the
-  // the session.
-  this.transport.afterConnected(function() {
-    context.invite();
-    this.emit('inviteSent', context);
-  }.bind(this));
-  return context;
-};
-
-UA.prototype.subscribe = function(target, event, options) {
-  var sub = new SIP.Subscription(this, target, event, options);
-
-  this.transport.afterConnected(sub.subscribe.bind(sub));
-  return sub;
-};
-
-/**
- * Send PUBLISH Event State Publication (RFC3903)
- *
- * @param {String} target
- * @param {String} event
- * @param {String} body
- * @param {Object} [options]
- *
- * @throws {SIP.Exceptions.MethodParameterError}
- *
- */
-UA.prototype.publish = function(target, event, body, options) {
-  var pub = new SIP.PublishContext(this, target, event, options);
-
-  this.transport.afterConnected(pub.publish.bind(pub, body));
-  return pub;
-};
-
-/**
- * Send a message.
- *
- * @param {String} target
- * @param {String} body
- * @param {Object} [options]
- *
- * @throws {TypeError}
- *
- */
-UA.prototype.message = function(target, body, options) {
-  if (body === undefined) {
-    throw new TypeError('Not enough arguments');
-  }
-
-  // There is no Message module, so it is okay that the UA handles defaults here.
-  options = Object.create(options || Object.prototype);
-  options.contentType || (options.contentType = 'text/plain');
-  options.body = body;
-
-  return this.request(SIP.C.MESSAGE, target, options);
-};
-
-UA.prototype.request = function (method, target, options) {
-  var req = new SIP.ClientContext(this, method, target, options);
-
-  this.transport.afterConnected(req.send.bind(req));
-  return req;
-};
-
-/**
- * Gracefully close.
- *
- */
-UA.prototype.stop = function() {
-  var session, subscription, applicant, publisher,
-    ua = this;
-
-  function transactionsListener() {
-    if (ua.nistTransactionsCount === 0 && ua.nictTransactionsCount === 0) {
-        ua.removeListener('transactionDestroyed', transactionsListener);
-        ua.transport.disconnect();
+    if (this.configuration.autostart) {
+      this.start();
     }
   }
 
-  this.logger.log('user requested closure...');
+  get transactionsCount(): number {
+    let count: number = 0;
 
-  if(this.status === C.STATUS_USER_CLOSED) {
-    this.logger.warn('UA already closed');
+    for (const type of ["nist", "nict" , "ist", "ict"]) {
+      count += Object.keys(this.transactions[type]).length;
+    }
+    return count;
+  }
+
+  get nictTransactionsCount(): number {
+    return Object.keys(this.transactions.nict).length;
+  }
+
+  get nistTransactionsCount(): number {
+    return Object.keys(this.transactions.nist).length;
+  }
+
+  get ictTransactionsCount(): number {
+    return Object.keys(this.transactions.ict).length;
+  }
+
+  get istTransactionsCount(): number {
+    return Object.keys(this.transactions.ist).length;
+  }
+
+  // =================
+  //  High Level API
+  // =================
+
+  public register(options: any = {}): this {
+    if (options.register) {
+      this.configuration.register = true;
+    }
+    this.registerContext.register(options);
+
     return this;
   }
 
-  // Close registerContext
-  this.logger.log('closing registerContext');
-  this.registerContext.close();
-
-  // Run  _terminate_ on every Session
-  for(session in this.sessions) {
-    this.logger.log('closing session ' + session);
-    this.sessions[session].terminate();
-  }
-
-  //Run _close_ on every confirmed Subscription
-  for(subscription in this.subscriptions) {
-    this.logger.log('unsubscribing from subscription ' + subscription);
-    this.subscriptions[subscription].close();
-  }
-
-  //Run _close_ on every early Subscription
-  for(subscription in this.earlySubscriptions) {
-    this.logger.log('unsubscribing from early subscription ' + subscription);
-    this.earlySubscriptions[subscription].close();
-  }
-
-  //Run _close_ on every Publisher
-  for(publisher in this.publishers) {
-    this.logger.log('unpublish ' + publisher);
-    this.publishers[publisher].close();
-  }
-
-  // Run  _close_ on every applicant
-  for(applicant in this.applicants) {
-    this.applicants[applicant].close();
-  }
-
-  this.status = C.STATUS_USER_CLOSED;
-
-  /*
-   * If the remaining transactions are all INVITE transactions, there is no need to
-   * wait anymore because every session has already been closed by this method.
-   * - locally originated sessions where terminated (CANCEL or BYE)
-   * - remotely originated sessions where rejected (4XX) or terminated (BYE)
-   * Remaining INVITE transactions belong tho sessions that where answered. This are in
-   * 'accepted' state due to timers 'L' and 'M' defined in [RFC 6026]
+  /**
+   * Unregister.
+   *
+   * @param {Boolean} [all] unregister all user bindings.
+   *
    */
-  if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0) {
-    this.transport.disconnect();
-  } else {
-    this.on('transactionDestroyed', transactionsListener);
-  }
+  public unregister(options?: any): this {
+    this.configuration.register = false;
 
-  if (typeof environment.removeEventListener === 'function') {
-    // Google Chrome Packaged Apps don't allow 'unload' listeners:
-    // unload is not available in packaged apps
-    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
-      environment.removeEventListener('unload', this.environListener);
+    if (this.transport) {
+      this.transport.afterConnected(() => {
+        this.registerContext.unregister(options);
+      });
     }
+
+    return this;
   }
 
-  return this;
-};
-
-/**
- * Connect to the WS server if status = STATUS_INIT.
- * Resume UA after being closed.
- *
- */
-UA.prototype.start = function() {
-  // var server;
-
-  this.logger.log('user requested startup...');
-  if (this.status === C.STATUS_INIT) {
-    this.status = C.STATUS_STARTING;
-    if (!this.configuration.transportConstructor) {
-      throw new SIP.Exceptions.TransportError("Transport constructor not set");
-    }
-    this.transport = new this.configuration.transportConstructor(this.getLogger('sip.transport'), this.configuration.transportOptions);
-    this.setTransportListeners();
-    this.emit('transportCreated', this.transport);
-    this.transport.connect();
-
-  } else if(this.status === C.STATUS_USER_CLOSED) {
-    this.logger.log('resuming');
-    this.status = C.STATUS_READY;
-    this.transport.connect();
-
-  } else if (this.status === C.STATUS_STARTING) {
-    this.logger.log('UA is in STARTING status, not opening new connection');
-  } else if (this.status === C.STATUS_READY) {
-    this.logger.log('UA is in READY status, not resuming');
-  } else {
-    this.logger.error('Connection is down. Auto-Recovery system is trying to connect');
+  public isRegistered(): boolean {
+    return this.registerContext.registered;
   }
 
-  if (this.configuration.autostop && typeof environment.addEventListener === 'function') {
-    // Google Chrome Packaged Apps don't allow 'unload' listeners:
-    // unload is not available in packaged apps
-    if (!(global.chrome && global.chrome.app && global.chrome.app.runtime)) {
-      this.environListener = this.stop.bind(this);
-      environment.addEventListener('unload', this.environListener);
-    }
-  }
-
-  return this;
-};
-
-/**
- * Normalize a string into a valid SIP request URI
- *
- * @param {String} target
- *
- * @returns {SIP.URI|undefined}
- */
-UA.prototype.normalizeTarget = function(target) {
-  return SIP.Utils.normalizeTarget(target, this.configuration.hostportParams);
-};
-
-
-//===============================
-//  Private (For internal use)
-//===============================
-
-UA.prototype.saveCredentials = function(credentials) {
-  this.cache.credentials[credentials.realm] = this.cache.credentials[credentials.realm] || {};
-  this.cache.credentials[credentials.realm][credentials.uri] = credentials;
-
-  return this;
-};
-
-UA.prototype.getCredentials = function(request) {
-  var realm, credentials;
-
-  realm = request.ruri.host;
-
-  if (this.cache.credentials[realm] && this.cache.credentials[realm][request.ruri]) {
-    credentials = this.cache.credentials[realm][request.ruri];
-    credentials.method = request.method;
-  }
-
-  return credentials;
-};
-
-UA.prototype.getLogger = function(category, label) {
-  return this.log.getLogger(category, label);
-};
-
-
-//==============================
-// Event Handlers
-//==============================
-
-
-UA.prototype.onTransportError = function() {
-  if(this.status === C.STATUS_USER_CLOSED) {
-    return;
-  }
-
-  if (!this.error || this.error !== C.NETWORK_ERROR) {
-    this.status = C.STATUS_NOT_READY;
-    this.error = C.NETWORK_ERROR;
-  }
-};
-
-/**
- * Helper function. Sets transport listeners
- * @private
- */
-UA.prototype.setTransportListeners = function () {
-  this.transport.on('connected', this.onTransportConnected.bind(this));
-  this.transport.on('message', this.onTransportReceiveMsg.bind(this));
-  this.transport.on('transportError', this.onTransportError.bind(this));
-};
-
-/**
- * Transport connection event.
- * @private
- * @event
- * @param {SIP.Transport} transport.
- */
-UA.prototype.onTransportConnected = function() {
-  if (this.configuration.register) {
-    // In an effor to maintain behavior from when we "initialized" an authentication factory, this is in a Promise.then
-    Promise.resolve().then(() => this.registerContext.register());
-  }
-};
-
-/**
- * Transport message receipt event.
- * @private
- * @event
- * @param {String} message
- */
-
- UA.prototype.onTransportReceiveMsg = function (message) {
-   var transaction;
-   message = SIP.Parser.parseMessage(message, this);
-
-   if(this.status === SIP.UA.C.STATUS_USER_CLOSED && message instanceof SIP.IncomingRequest) {
-     this.logger.warn('UA received message when status = USER_CLOSED - aborting');
-     return;
-   }
-   // Do some sanity check
-   if(SIP.sanityCheck(message, this, this.transport)) {
-     if(message instanceof SIP.IncomingRequest) {
-       message.transport = this.transport;
-       this.receiveRequest(message);
-     } else if(message instanceof SIP.IncomingResponse) {
-       /* Unike stated in 18.1.2, if a response does not match
-       * any transaction, it is discarded here and no passed to the core
-       * in order to be discarded there.
-       */
-       switch(message.method) {
-         case SIP.C.INVITE:
-           transaction = this.transactions.ict[message.via_branch];
-           if(transaction) {
-             transaction.receiveResponse(message);
-           }
-           break;
-         case SIP.C.ACK:
-           // Just in case ;-)
-           break;
-         default:
-           transaction = this.transactions.nict[message.via_branch];
-           if(transaction) {
-             transaction.receiveResponse(message);
-           }
-           break;
-       }
-     }
-   }
- };
-
-/**
- * new Transaction
- * @private
- * @param {SIP.Transaction} transaction.
- */
-UA.prototype.newTransaction = function(transaction) {
-  this.transactions[transaction.type][transaction.id] = transaction;
-  this.emit('newTransaction', {transaction: transaction});
-};
-
-
-/**
- * destroy Transaction
- * @private
- * @param {SIP.Transaction} transaction.
- */
-UA.prototype.destroyTransaction = function(transaction) {
-  delete this.transactions[transaction.type][transaction.id];
-  this.emit('transactionDestroyed', {
-    transaction: transaction
-  });
-};
-
-
-//=========================
-// receiveRequest
-//=========================
-
-/**
- * Request reception
- * @private
- * @param {SIP.IncomingRequest} request.
- */
-UA.prototype.receiveRequest = function(request) {
-  var dialog, session, message, earlySubscription,
-    method = request.method,
-    replaces,
-    replacedDialog,
-    self = this;
-
-  function ruriMatches (uri) {
-    return uri && uri.user === request.ruri.user;
-  }
-
-  // Check that request URI points to us
-  if(!(ruriMatches(this.configuration.uri) ||
-       ruriMatches(this.contact.uri) ||
-       ruriMatches(this.contact.pub_gruu) ||
-       ruriMatches(this.contact.temp_gruu))) {
-    this.logger.warn('Request-URI does not point to us');
-    if (request.method !== SIP.C.ACK) {
-      request.reply_sl(404);
-    }
-    return;
-  }
-
-  // Check request URI scheme
-  if(request.ruri.scheme === SIP.C.SIPS) {
-    request.reply_sl(416);
-    return;
-  }
-
-  // Check transaction
-  if(SIP.Transactions.checkTransaction(this, request)) {
-    return;
-  }
-
-  /* RFC3261 12.2.2
-   * Requests that do not change in any way the state of a dialog may be
-   * received within a dialog (for example, an OPTIONS request).
-   * They are processed as if they had been received outside the dialog.
+  /**
+   * Make an outgoing call.
+   *
+   * @param {String} target
+   * @param {Object} views
+   * @param {Object} [options.media] gets passed to SIP.sessionDescriptionHandler.getDescription as mediaHint
+   *
+   * @throws {TypeError}
+   *
    */
-  if(method === SIP.C.OPTIONS) {
-    new SIP.Transactions.NonInviteServerTransaction(request, this);
-    request.reply(200, null, [
-      'Allow: '+ SIP.UA.C.ALLOWED_METHODS.toString(),
-      'Accept: '+ C.ACCEPTED_BODY_TYPES
-    ]);
-  } else if (method === SIP.C.MESSAGE) {
-    message = new SIP.ServerContext(this, request);
-    message.body = request.body;
-    message.content_type = request.getHeader('Content-Type') || 'text/plain';
-
-    request.reply(200, null);
-    this.emit('message', message);
-  } else if (method !== SIP.C.INVITE &&
-             method !== SIP.C.ACK) {
-    // Let those methods pass through to normal processing for now.
-    new SIP.ServerContext(this, request);
+  public invite(
+    target: string | URIType,
+    options?: InviteClientContextType.Options,
+    modifiers?: SessionDescriptionHandlerModifiers
+  ): InviteClientContextType {
+    const context: InviteClientContextType = new InviteClientContext(this, target, options, modifiers);
+    // Delay sending actual invite until the next 'tick' if we are already
+    // connected, so that API consumers can register to events fired by the
+    // the session.
+    if (this.transport) {
+      this.transport.afterConnected(() => {
+        context.invite();
+        this.emit("inviteSent", context);
+      });
+    }
+    return context;
   }
 
-  // Initial Request
-  if(!request.to_tag) {
-    switch(method) {
-      case SIP.C.INVITE:
-        replaces =
-          this.configuration.replaces !== SIP.C.supported.UNSUPPORTED &&
-          request.parseHeader('replaces');
+  public subscribe(target: string | URI, event: string, options: any): SubscriptionType {
+    const sub: SubscriptionType = new Subscription(this, target, event, options);
 
-        if (replaces) {
-          replacedDialog = this.dialogs[replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag];
+    if (this.transport) {
+      this.transport.afterConnected(() => sub.subscribe());
+    }
+    return sub;
+  }
 
-          if (!replacedDialog) {
-            //Replaced header without a matching dialog, reject
-            request.reply_sl(481, null);
-            return;
-          } else if (replacedDialog.owner.status === SIP.Session.C.STATUS_TERMINATED) {
-            request.reply_sl(603, null);
-            return;
-          } else if (replacedDialog.state === SIP.Dialog.C.STATUS_CONFIRMED && replaces.early_only) {
-            request.reply_sl(486, null);
-            return;
-          }
+  /**
+   * Send PUBLISH Event State Publication (RFC3903)
+   *
+   * @param {String} target
+   * @param {String} event
+   * @param {String} body
+   * @param {Object} [options]
+   *
+   * @throws {SIP.Exceptions.MethodParameterError}
+   */
+  public publish(target: string | URI, event: string, body: string, options: any): PublishContextType {
+    const pub: PublishContextType = new PublishContext(this, target, event, options);
+
+    if (this.transport) {
+      this.transport.afterConnected(() => {
+        pub.publish(body);
+      });
+    }
+    return pub;
+  }
+
+  /**
+   * Send a message.
+   *
+   * @param {String} target
+   * @param {String} body
+   * @param {Object} [options]
+   *
+   * @throws {TypeError}
+   */
+  public message(target: string | URI, body: string, options: any = {}): ClientContext {
+    if (body === undefined) {
+      throw new TypeError("Not enough arguments");
+    }
+
+    // There is no Message module, so it is okay that the UA handles defaults here.
+    options.contentType = options.contentType || "text/plain";
+    options.body = body;
+
+    return this.request(SIPConstants.MESSAGE, target, options);
+  }
+
+  public request(method: string, target: string | URI, options?: any): ClientContext {
+    const req: ClientContext = new ClientContext(this, method, target, options);
+
+    if (this.transport) {
+      this.transport.afterConnected(() => req.send());
+    }
+    return req;
+  }
+
+  /**
+   * Gracefully close.
+   */
+  public stop(): this {
+    this.logger.log("user requested closure...");
+
+    if (this.status === UAStatus.STATUS_USER_CLOSED) {
+      this.logger.warn("UA already closed");
+      return this;
+    }
+
+    // Close registerContext
+    this.logger.log("closing registerContext");
+    this.registerContext.close();
+
+    // Run  _terminate_ on every Session
+    for (const session in this.sessions) {
+      if (this.sessions[session]) {
+        this.logger.log("closing session " + session);
+        this.sessions[session].terminate();
+      }
+    }
+
+    // Run _close_ on every confirmed Subscription
+    for (const subscription in this.subscriptions) {
+      if (this.subscriptions[subscription]) {
+        this.logger.log("unsubscribing from subscription " + subscription);
+        this.subscriptions[subscription].close();
+      }
+    }
+
+    // Run _close_ on every early Subscription
+    for (const earlySubscription in this.earlySubscriptions) {
+      if (this.earlySubscriptions[earlySubscription]) {
+        this.logger.log("unsubscribing from early subscription " + earlySubscription);
+        this.earlySubscriptions[earlySubscription].close();
+      }
+    }
+
+    // Run _close_ on every Publisher
+    for (const publisher in this.publishers) {
+      if (this.publishers[publisher]) {
+        this.logger.log("unpublish " + publisher);
+        this.publishers[publisher].close();
+      }
+    }
+
+    // Run  _close_ on every applicant
+    for (const applicant in this.applicants) {
+      if (this.applicants[applicant]) {
+        this.applicants[applicant].close();
+      }
+    }
+
+    this.status = UAStatus.STATUS_USER_CLOSED;
+
+    /*
+     * If the remaining transactions are all INVITE transactions, there is no need to
+     * wait anymore because every session has already been closed by this method.
+     * - locally originated sessions where terminated (CANCEL or BYE)
+     * - remotely originated sessions where rejected (4XX) or terminated (BYE)
+     * Remaining INVITE transactions belong tho sessions that where answered. This are in
+     * 'accepted' state due to timers 'L' and 'M' defined in [RFC 6026]
+     */
+    if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0 && this.transport) {
+      this.transport.disconnect();
+    } else {
+      const transactionsListener: (() => void) = () => {
+        if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0) {
+            this.removeListener("transactionDestroyed", transactionsListener);
+            if (this.transport) {
+              this.transport.disconnect();
+            }
         }
+      };
 
-        session = new SIP.InviteServerContext(this, request);
-        session.replacee = replacedDialog && replacedDialog.owner;
-        self.emit('invite', session);
-        break;
-      case SIP.C.BYE:
-        // Out of dialog BYE received
-        request.reply(481);
-        break;
-      case SIP.C.CANCEL:
-        session = this.findSession(request);
-        if(session) {
-          session.receiveRequest(request);
-        } else {
-          this.logger.warn('received CANCEL request for a non existent session');
-        }
-        break;
-      case SIP.C.ACK:
-        /* Absorb it.
-         * ACK request without a corresponding Invite Transaction
-         * and without To tag.
+      this.on("transactionDestroyed", transactionsListener.bind(this));
+    }
+
+    if (typeof environment.removeEventListener === "function") {
+      // Google Chrome Packaged Apps don't allow 'unload' listeners:
+      // unload is not available in packaged apps
+      if (!((global as any).chrome && (global as any).chrome.app && (global as any).chrome.app.runtime)) {
+        environment.removeEventListener("unload", this.environListener);
+      }
+    }
+
+    return this;
+  }
+
+  /**
+   * Connect to the WS server if status = STATUS_INIT.
+   * Resume UA after being closed.
+   *
+   */
+  public start(): this {
+    this.logger.log("user requested startup...");
+    if (this.status === UAStatus.STATUS_INIT) {
+      this.status = UAStatus.STATUS_STARTING;
+      if (!this.configuration.transportConstructor) {
+        throw new Exceptions.TransportError("Transport constructor not set");
+      }
+      this.transport = new this.configuration.transportConstructor(
+        this.getLogger("sip.transport"),
+        this.configuration.transportOptions
+      );
+      this.setTransportListeners();
+      this.emit("transportCreated", this.transport);
+      this.transport.connect();
+
+    } else if (this.status === UAStatus.STATUS_USER_CLOSED) {
+      this.logger.log("resuming");
+      this.status = UAStatus.STATUS_READY;
+      if (this.transport) {
+        this.transport.connect();
+      }
+
+    } else if (this.status === UAStatus.STATUS_STARTING) {
+      this.logger.log("UA is in STARTING status, not opening new connection");
+    } else if (this.status === UAStatus.STATUS_READY) {
+      this.logger.log("UA is in READY status, not resuming");
+    } else {
+      this.logger.error("Connection is down. Auto-Recovery system is trying to connect");
+    }
+
+    if (this.configuration.autostop && typeof environment.addEventListener === "function") {
+      // Google Chrome Packaged Apps don't allow 'unload' listeners:
+      // unload is not available in packaged apps
+      if (!((global as any).chrome && (global as any).chrome.app && (global as any).chrome.app.runtime)) {
+        this.environListener = this.stop;
+        environment.addEventListener("unload", this.environListener);
+      }
+    }
+
+    return this;
+  }
+
+  /**
+   * Normalize a string into a valid SIP request URI
+   *
+   * @param {String} target
+   *
+   * @returns {SIP.URI|undefined}
+   */
+  public normalizeTarget(target: string | URIType): URIType | undefined {
+    return Utils.normalizeTarget(target, this.configuration.hostportParams);
+  }
+
+  public getLogger(category: string, label?: string): Logger {
+    return this.log.getLogger(category, label);
+  }
+
+  /**
+   * new Transaction
+   * @private
+   * @param {SIP.Transaction} transaction.
+   */
+  public newTransaction(
+    transaction: NonInviteClientTransaction |
+      InviteClientTransaction |
+      InviteServerTransaction |
+      NonInviteServerTransaction
+  ): void {
+    this.transactions[transaction.kind][transaction.id] = transaction;
+    this.emit("newTransaction", { transaction });
+  }
+
+  /**
+   * destroy Transaction
+   * @param {SIP.Transaction} transaction.
+   */
+  public destroyTransaction(
+    transaction: NonInviteClientTransaction |
+      InviteClientTransaction |
+      InviteServerTransaction |
+      NonInviteServerTransaction): void {
+    delete this.transactions[transaction.kind][transaction.id];
+    this.emit("transactionDestroyed", { transaction });
+  }
+
+  /**
+   * Get the session to which the request belongs to, if any.
+   * @param {SIP.IncomingRequest} request.
+   * @returns {SIP.OutgoingSession|SIP.IncomingSession|undefined}
+   */
+  public findSession(request: IncomingRequest): InviteClientContextType | InviteServerContextType | undefined {
+    return this.sessions[request.callId + request.fromTag] ||
+      this.sessions[request.callId + request.toTag] ||
+      undefined;
+  }
+
+  // ===============================
+  //  Private (For internal use)
+  // ===============================
+
+  private saveCredentials(credentials: any): this {
+    this.cache.credentials[credentials.realm] = this.cache.credentials[credentials.realm] || {};
+    this.cache.credentials[credentials.realm][credentials.uri] = credentials;
+
+    return this;
+  }
+
+  private getCredentials(request: OutgoingRequest): any {
+    const realm: string | undefined =
+      (request.ruri as URIType).type === TypeStrings.URI ? (request.ruri as URIType).host : "";
+
+    if (realm && this.cache.credentials[realm] && this.cache.credentials[realm][request.ruri.toString()]) {
+      const credentials: any = this.cache.credentials[realm][request.ruri.toString()];
+      credentials.method = request.method;
+
+      return credentials;
+    }
+  }
+
+  // ==============================
+  // Event Handlers
+  // ==============================
+
+  private onTransportError(): void {
+    if (this.status === UAStatus.STATUS_USER_CLOSED) {
+      return;
+    }
+
+    if (!this.error || this.error !== UA.C.NETWORK_ERROR) {
+      this.status = UAStatus.STATUS_NOT_READY;
+      this.error = UA.C.NETWORK_ERROR;
+    }
+  }
+
+  /**
+   * Helper function. Sets transport listeners
+   */
+  private setTransportListeners(): void {
+    if (this.transport) {
+      this.transport.on("connected", this.onTransportConnected.bind(this));
+      this.transport.on("message", this.onTransportReceiveMsg.bind(this));
+      this.transport.on("transportError", this.onTransportError.bind(this));
+    }
+  }
+
+  /**
+   * Transport connection event.
+   * @event
+   * @param {SIP.Transport} transport.
+   */
+  private onTransportConnected(): void {
+    if (this.configuration.register) {
+      // In an effor to maintain behavior from when we "initialized" an
+      // authentication factory, this is in a Promise.then
+      Promise.resolve().then(this.registerContext.register);
+    }
+  }
+
+  /**
+   * Transport message receipt event.
+   * @event
+   * @param {String} message
+   */
+
+  private onTransportReceiveMsg(messageString: string): void {
+    const message: IncomingRequest | IncomingResponse | undefined = Parser.parseMessage(messageString, this);
+
+    if (this.status === UAStatus.STATUS_USER_CLOSED && message && message.type === TypeStrings.IncomingRequest) {
+      this.logger.warn("UA received message when status = USER_CLOSED - aborting");
+      return;
+    }
+    // Do some sanity check
+    if (message && this.transport && SanityCheck.sanityCheck(message, this, this.transport)) {
+      if (message.type === TypeStrings.IncomingRequest) {
+        (message as IncomingRequest).transport = this.transport;
+        this.receiveRequest(message as IncomingRequest);
+      } else if (message.type === TypeStrings.IncomingResponse) {
+        /* Unlike stated in 18.1.2, if a response does not match
+         * any transaction, it is discarded here and no passed to the core
+         * in order to be discarded there.
          */
-        break;
-      case SIP.C.NOTIFY:
-        if (this.configuration.allowLegacyNotifications && this.listeners('notify').length > 0) {
-          request.reply(200, null);
-          self.emit('notify', {request: request});
-        } else {
-          request.reply(481, 'Subscription does not exist');
+        switch (message.method) {
+          case SIPConstants.INVITE:
+            const icTransaction: InviteClientTransaction | undefined = this.transactions.ict[message.viaBranch];
+            if (icTransaction) {
+              icTransaction.receiveResponse(message as IncomingResponse);
+            }
+            break;
+          case SIPConstants.ACK:
+            // Just in case ;-)
+            break;
+          default:
+            const nicTransaction: NonInviteClientTransaction | undefined = this.transactions.nict[message.viaBranch];
+            if (nicTransaction) {
+              nicTransaction.receiveResponse(message as IncomingResponse);
+            }
+            break;
         }
-        break;
-      case SIP.C.REFER:
-        this.logger.log('Received an out of dialog refer');
-        if (this.configuration.allowOutOfDialogRefers) {
-          this.logger.log('Allow out of dialog refers is enabled on the UA');
-          var referContext = new SIP.ReferServerContext(this, request);
-          var hasReferListener = this.listeners('outOfDialogReferRequested').length;
-          if (hasReferListener) {
-            this.emit('outOfDialogReferRequested', referContext);
+      }
+    }
+  }
+
+  /**
+   * Request reception
+   * @private
+   * @param {SIP.IncomingRequest} request.
+   */
+  private receiveRequest(request: IncomingRequest): void {
+    const ruriMatches: ((uri: URIType | undefined) => boolean) = (uri: URIType | undefined) => {
+      return !!uri && !!request.ruri && uri.user === request.ruri.user;
+    };
+
+    // Check that request URI points to us
+    if ((this.configuration.uri as URIType).type === TypeStrings.URI &&
+      !(ruriMatches(this.configuration.uri as URIType) ||
+        (this.contact && (
+          ruriMatches(this.contact.uri) ||
+          ruriMatches(this.contact.pubGruu) ||
+          ruriMatches(this.contact.tempGruu))))) {
+      this.logger.warn("Request-URI does not point to us");
+      if (request.method !== SIPConstants.ACK) {
+        request.reply_sl(404);
+      }
+      return;
+    }
+
+    // Check request URI scheme
+    if (!!request.ruri && request.ruri.scheme === SIPConstants.SIPS) {
+      request.reply_sl(416);
+      return;
+    }
+
+    // Check transaction
+    if (this.checkTransaction(request)) {
+      return;
+    }
+
+    /* RFC3261 12.2.2
+    * Requests that do not change in any way the state of a dialog may be
+    * received within a dialog (for example, an OPTIONS request).
+    * They are processed as if they had been received outside the dialog.
+    */
+    const method: string = request.method;
+    let message: ServerContext;
+    if (method === SIPConstants.OPTIONS) {
+      const nonInviteTr: NonInviteServerTransaction = new NonInviteServerTransaction(request, this);
+      request.reply(200, undefined, [
+        "Allow: " + UA.C.ALLOWED_METHODS.toString(),
+        "Accept: " + UA.C.ACCEPTED_BODY_TYPES.toString()
+      ]);
+    } else if (method === SIPConstants.MESSAGE) {
+      message = new ServerContext(this, request);
+      message.body = request.body;
+      message.contentType = request.getHeader("Content-Type") || "text/plain";
+
+      request.reply(200, undefined);
+      this.emit("message", message);
+    } else if (method !== SIPConstants.INVITE &&
+               method !== SIPConstants.ACK) {
+      // Let those methods pass through to normal processing for now.
+      message = new ServerContext(this, request);
+    }
+
+    // Initial Request
+    if (!request.toTag) {
+      switch (method) {
+        case SIPConstants.INVITE:
+          const replaces: any = this.configuration.replaces !== SIPConstants.supported.UNSUPPORTED &&
+            request.parseHeader("replaces");
+
+          let replacedDialog: Dialog | undefined;
+          if (replaces) {
+            replacedDialog = this.dialogs[replaces.callId + replaces.replacesToTag + replaces.replacesFromTag];
+
+            if (!replacedDialog) {
+              // Replaced header without a matching dialog, reject
+              request.reply_sl(481, undefined);
+              return;
+            } else if (!(replacedDialog.owner.type === TypeStrings.Subscription) &&
+              (replacedDialog.owner as InviteClientContextType | InviteServerContextType).status
+                === SessionStatus.STATUS_TERMINATED) {
+              request.reply_sl(603, undefined);
+              return;
+            } else if (replacedDialog.state === DialogStatus.STATUS_CONFIRMED && replaces.earlyOnly) {
+              request.reply_sl(486, undefined);
+              return;
+            }
+          }
+
+          const newSession: InviteServerContextType = new InviteServerContext(this, request);
+          if (replacedDialog && !(replacedDialog.owner.type === TypeStrings.Subscription)) {
+            newSession.replacee = replacedDialog && (replacedDialog.owner as InviteClientContext | InviteServerContext);
+          }
+          this.emit("invite", newSession);
+          break;
+        case SIPConstants.BYE:
+          // Out of dialog BYE received
+          request.reply(481);
+          break;
+        case SIPConstants.CANCEL:
+          const session: InviteClientContextType | InviteServerContextType | undefined = this.findSession(request);
+          if (session) {
+            session.receiveRequest(request);
           } else {
-            this.logger.log('No outOfDialogReferRequest listeners, automatically accepting and following the out of dialog refer');
-            referContext.accept({followRefer: true});
+            this.logger.warn("received CANCEL request for a non existent session");
           }
           break;
+        case SIPConstants.ACK:
+          /* Absorb it.
+          * ACK request without a corresponding Invite Transaction
+          * and without To tag.
+          */
+          break;
+        case SIPConstants.NOTIFY:
+          if (this.configuration.allowLegacyNotifications && this.listeners("notify").length > 0) {
+            request.reply(200, undefined);
+            this.emit("notify", { request });
+          } else {
+            request.reply(481, "Subscription does not exist");
+          }
+          break;
+        case SIPConstants.REFER:
+          this.logger.log("Received an out of dialog refer");
+          if (this.configuration.allowOutOfDialogRefers) {
+            this.logger.log("Allow out of dialog refers is enabled on the UA");
+            const referContext: ReferServerContext = new ReferServerContext(this, request);
+            if (this.listeners("outOfDialogReferRequested").length) {
+              this.emit("outOfDialogReferRequested", referContext);
+            } else {
+              this.logger.log("No outOfDialogReferRequest listeners," +
+                " automatically accepting and following the out of dialog refer");
+              referContext.accept({followRefer: true});
+            }
+            break;
+          }
+          request.reply(405);
+          break;
+        default:
+          request.reply(405);
+          break;
+      }
+    } else { // In-dialog request
+      const dialog: Dialog | undefined = this.findDialog(request);
+
+      if (dialog) {
+        if (method === SIPConstants.INVITE) {
+          const unusedIST: InviteServerTransaction = new InviteServerTransaction(request, this);
         }
-        request.reply(405);
-        break;
-      default:
-        request.reply(405);
-        break;
-    }
-  }
-  // In-dialog request
-  else {
-    dialog = this.findDialog(request);
+        dialog.receiveRequest(request);
+      } else if (method === SIPConstants.NOTIFY) {
+        const session: InviteClientContextType | InviteServerContextType | undefined = this.findSession(request);
+        const earlySubscription: SubscriptionType | undefined = this.findEarlySubscription(request);
 
-    if(dialog) {
-      if (method === SIP.C.INVITE) {
-        new SIP.Transactions.InviteServerTransaction(request, this);
-      }
-      dialog.receiveRequest(request);
-    } else if (method === SIP.C.NOTIFY) {
-      session = this.findSession(request);
-      earlySubscription = this.findEarlySubscription(request);
-      if(session) {
-        session.receiveRequest(request);
-      } else if(earlySubscription) {
-        earlySubscription.receiveRequest(request);
+        if (session) {
+          session.receiveRequest(request);
+        } else if (earlySubscription) {
+          earlySubscription.receiveRequest(request);
+        } else {
+          this.logger.warn("received NOTIFY request for a non existent session or subscription");
+          request.reply(481, "Subscription does not exist");
+        }
       } else {
-        this.logger.warn('received NOTIFY request for a non existent session or subscription');
-        request.reply(481, 'Subscription does not exist');
-      }
-    }
-    /* RFC3261 12.2.2
-     * Request with to tag, but no matching dialog found.
-     * Exception: ACK for an Invite request for which a dialog has not
-     * been created.
-     */
-    else {
-      if(method !== SIP.C.ACK) {
-        request.reply(481);
+        /* RFC3261 12.2.2
+         * Request with to tag, but no matching dialog found.
+         * Exception: ACK for an Invite request for which a dialog has not
+         * been created.
+         */
+        if (method !== SIPConstants.ACK) {
+          request.reply(481);
+        }
       }
     }
   }
-};
 
-//=================
+// =================
 // Utils
-//=================
+// =================
 
-/**
- * Get the session to which the request belongs to, if any.
- * @private
- * @param {SIP.IncomingRequest} request.
- * @returns {SIP.OutgoingSession|SIP.IncomingSession|null}
- */
-UA.prototype.findSession = function(request) {
-  return this.sessions[request.call_id + request.from_tag] ||
-          this.sessions[request.call_id + request.to_tag] ||
-          null;
-};
-
-/**
- * Get the dialog to which the request belongs to, if any.
- * @private
- * @param {SIP.IncomingRequest}
- * @returns {SIP.Dialog|null}
- */
-UA.prototype.findDialog = function(request) {
-  return this.dialogs[request.call_id + request.from_tag + request.to_tag] ||
-          this.dialogs[request.call_id + request.to_tag + request.from_tag] ||
-          null;
-};
-
-/**
- * Get the subscription which has not been confirmed to which the request belongs to, if any
- * @private
- * @param {SIP.IncomingRequest}
- * @returns {SIP.Subscription|null}
- */
-UA.prototype.findEarlySubscription = function(request) {
-  return this.earlySubscriptions[request.call_id + request.to_tag + request.getHeader('event')] || null;
-};
-
-function checkAuthenticationFactory (authenticationFactory) {
-  if (!(authenticationFactory instanceof Function)) {
-    return;
-  }
-  if (!authenticationFactory.initialize) {
-    authenticationFactory.initialize = function initialize () {
-      return Promise.resolve();
-    };
-  }
-  return authenticationFactory;
+private checkTransaction(request: IncomingRequest): boolean {
+  return checkTransaction(this, request);
 }
 
 /**
- * Configuration load.
- * @private
- * returns {Boolean}
+ * Get the dialog to which the request belongs to, if any.
+ * @param {SIP.IncomingRequest}
+ * @returns {SIP.Dialog|undefined}
  */
-UA.prototype.loadConfig = function(configuration) {
-  // Settings and default values
-  var parameter, value, checked_value, hostportParams,
-    settings = {
+  private findDialog(request: IncomingRequest): Dialog | undefined {
+    return this.dialogs[request.callId + request.fromTag + request.toTag] ||
+      this.dialogs[request.callId + request.toTag + request.fromTag] ||
+      undefined;
+  }
+
+/**
+ * Get the subscription which has not been confirmed to which the request belongs to, if any
+ * @param {SIP.IncomingRequest}
+ * @returns {SIP.Subscription|undefined}
+ */
+  private findEarlySubscription(request: IncomingRequest): SubscriptionType | undefined {
+    return this.earlySubscriptions[request.callId + request.toTag + request.getHeader("event")] || undefined;
+  }
+
+  private checkAuthenticationFactory(authenticationFactory: any): any | undefined {
+    if (!(authenticationFactory instanceof Function)) {
+      return;
+    }
+    if (!authenticationFactory.initialize) {
+      authenticationFactory.initialize = () => {
+        return Promise.resolve();
+      };
+    }
+    return authenticationFactory;
+  }
+
+  /**
+   * Configuration load.
+   * returns {void}
+   */
+  private loadConfig(configuration: UADefinition.Options): void {
+    // Settings and default values
+    const settings: {[name: string]: any} = {
       /* Host address
-      * Value to be set in Via sent_by and host part of Contact FQDN
-      */
-      viaHost: SIP.Utils.createRandomToken(12) + '.invalid',
+       * Value to be set in Via sent_by and host part of Contact FQDN
+       */
+      viaHost: Utils.createRandomToken(12) + ".invalid",
 
-      uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
+      uri: new URI("sip", "anonymous." + Utils.createRandomToken(6), "anonymous.invalid", undefined, undefined),
 
-      //Custom Configuration Settings
+      // Custom Configuration Settings
       custom: {},
 
-      //Display name
-      displayName: '',
+      // Display name
+      displayName: "",
 
       // Password
-      password: null,
+      password: undefined,
 
       register: true,
 
@@ -818,11 +887,11 @@ UA.prototype.loadConfig = function(configuration) {
       registerOptions: {},
 
       // Transport related parameters
-      transportConstructor: require('./Web/Transport')(SIP),
+      transportConstructor: WebTransport,
       transportOptions: {},
 
-      //string to be inserted into User-Agent request header
-      userAgentString: SIP.C.USER_AGENT,
+      // string to be inserted into User-Agent request header
+      userAgentString: SIPConstants.USER_AGENT,
 
       // Session parameters
       noAnswerTimeout: 60,
@@ -841,30 +910,30 @@ UA.prototype.loadConfig = function(configuration) {
 
       extraSupported: [],
 
-      contactName: SIP.Utils.createRandomToken(8), // user name in user part
-      contactTransport: 'ws',
+      contactName: Utils.createRandomToken(8), // user name in user part
+      contactTransport: "ws",
       forceRport: false,
 
-      //autostarting
+      // autostarting
       autostart: true,
       autostop: true,
 
-      //Reliable Provisional Responses
-      rel100: SIP.C.supported.UNSUPPORTED,
+      // Reliable Provisional Responses
+      rel100: SIPConstants.supported.UNSUPPORTED,
 
       // DTMF type: 'info' or 'rtp' (RFC 4733)
       // RTP Payload Spec: https://tools.ietf.org/html/rfc4733
       // WebRTC Audio Spec: https://tools.ietf.org/html/rfc7874
-      dtmfType: SIP.C.dtmfType.INFO,
+      dtmfType: SIPConstants.dtmfType.INFO,
 
       // Replaces header (RFC 3891)
       // http://tools.ietf.org/html/rfc3891
-      replaces: SIP.C.supported.UNSUPPORTED,
+      replaces: SIPConstants.supported.UNSUPPORTED,
 
-      sessionDescriptionHandlerFactory: require('./Web/SessionDescriptionHandler')(SIP).defaultFactory,
+      sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
 
-      authenticationFactory: checkAuthenticationFactory(function authenticationFactory (ua) {
-        return new SIP.DigestAuthentication(ua);
+      authenticationFactory: this.checkAuthenticationFactory((ua: UA) => {
+        return new DigestAuthentication(ua);
       }),
 
       allowLegacyNotifications: false,
@@ -872,371 +941,362 @@ UA.prototype.loadConfig = function(configuration) {
       allowOutOfDialogRefers: false,
     };
 
-  var configCheck = this.getConfigurationCheck();
+    const configCheck: {mandatory: {[name: string]: any}, optional: {[name: string]: any}} =
+      this.getConfigurationCheck();
 
-  // Check Mandatory parameters
-  for(parameter in configCheck.mandatory) {
-    if(!configuration.hasOwnProperty(parameter)) {
-      throw new SIP.Exceptions.ConfigurationError(parameter);
-    } else {
-      value = configuration[parameter];
-      checked_value = configCheck.mandatory[parameter](value);
-      if (checked_value !== undefined) {
-        settings[parameter] = checked_value;
+    // Check Mandatory parameters
+    for (const parameter in configCheck.mandatory) {
+      if (!configuration.hasOwnProperty(parameter)) {
+        throw new Exceptions.ConfigurationError(parameter);
       } else {
-        throw new SIP.Exceptions.ConfigurationError(parameter, value);
-      }
-    }
-  }
-
-  // Check Optional parameters
-  for(parameter in configCheck.optional) {
-    if(configuration.hasOwnProperty(parameter)) {
-      value = configuration[parameter];
-
-      // If the parameter value is an empty array, but shouldn't be, apply its default value.
-      if (value instanceof Array && value.length === 0) { continue; }
-
-      // If the parameter value is null, empty string, or undefined then apply its default value.
-      if(value === null || value === "" || value === undefined) { continue; }
-      // If it's a number with NaN value then also apply its default value.
-      // NOTE: JS does not allow "value === NaN", the following does the work:
-      else if(typeof(value) === 'number' && isNaN(value)) { continue; }
-
-      checked_value = configCheck.optional[parameter](value);
-      if (checked_value !== undefined) {
-        settings[parameter] = checked_value;
-      } else {
-        throw new SIP.Exceptions.ConfigurationError(parameter, value);
-      }
-    }
-  }
-
-  // Post Configuration Process
-
-  // Allow passing 0 number as displayName.
-  if (settings.displayName === 0) {
-    settings.displayName = '0';
-  }
-
-  // sipjsId instance parameter. Static random tag of length 5
-  settings.sipjsId = SIP.Utils.createRandomToken(5);
-
-  // String containing settings.uri without scheme and user.
-  hostportParams = settings.uri.clone();
-  hostportParams.user = null;
-  settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, '');
-
-  /* Check whether authorizationUser is explicitly defined.
-   * Take 'settings.uri.user' value if not.
-   */
-  if (!settings.authorizationUser) {
-    settings.authorizationUser = settings.uri.user;
-  }
-
-  // User noAnswerTimeout
-  settings.noAnswerTimeout = settings.noAnswerTimeout * 1000;
-
-  // Via Host
-  if (settings.hackIpInContact) {
-    if (typeof settings.hackIpInContact === 'boolean') {
-      var from = 1,
-          to = 254,
-          octet = Math.floor(Math.random()*(to-from+1)+from);
-      // random Test-Net IP (http://tools.ietf.org/html/rfc5735)
-      settings.viaHost = '192.0.2.' + octet;
-    }
-    else if (typeof settings.hackIpInContact === 'string') {
-      settings.viaHost = settings.hackIpInContact;
-    }
-  }
-
-  // Contact transport parameter
-  if (settings.hackWssInTransport) {
-    settings.contactTransport = 'wss';
-  }
-
-  this.contact = {
-    pub_gruu: null,
-    temp_gruu: null,
-    uri: new SIP.URI('sip', settings.contactName, settings.viaHost, null, {transport: settings.contactTransport}),
-    toString: function(options){
-      options = options || {};
-
-      var
-        anonymous = options.anonymous || null,
-        outbound = options.outbound || null,
-        contact = '<';
-
-      if (anonymous) {
-        contact += (this.temp_gruu || ('sip:anonymous@anonymous.invalid;transport='+settings.contactTransport)).toString();
-      } else {
-        contact += (this.pub_gruu || this.uri).toString();
-      }
-
-      if (outbound) {
-        contact += ';ob';
-      }
-
-      contact += '>';
-
-      return contact;
-    }
-  };
-
-  var skeleton = {};
-  // Fill the value of the configuration_skeleton
-  for(parameter in settings) {
-    skeleton[parameter] = settings[parameter];
-  }
-
-  Object.assign(this.configuration, skeleton);
-
-
-  this.logger.log('configuration parameters after validation:');
-  for(parameter in settings) {
-    switch(parameter) {
-      case 'uri':
-      case 'sessionDescriptionHandlerFactory':
-        this.logger.log('· ' + parameter + ': ' + settings[parameter]);
-        break;
-      case 'password':
-        this.logger.log('· ' + parameter + ': ' + 'NOT SHOWN');
-        break;
-      case 'transportConstructor':
-          this.logger.log('· ' + parameter + ': ' + settings[parameter].name);
-        break;
-      default:
-        this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
-    }
-  }
-
-  return;
-};
-
-/**
- * Configuration checker.
- * @private
- * @return {Boolean}
- */
-UA.prototype.getConfigurationCheck = function () {
-  return {
-    mandatory: {
-    },
-
-    optional: {
-
-      uri: function(uri) {
-        var parsed;
-
-        if (!(/^sip:/i).test(uri)) {
-          uri = SIP.C.SIP + ':' + uri;
-        }
-        parsed = SIP.URI.parse(uri);
-
-        if(!parsed) {
-          return;
-        } else if(!parsed.user) {
-          return;
+        const value: any = (configuration as any)[parameter];
+        const checkedValue: any = configCheck.mandatory[parameter](value);
+        if (checkedValue !== undefined) {
+          settings[parameter] = checkedValue;
         } else {
-          return parsed;
+          throw new Exceptions.ConfigurationError(parameter, value);
         }
-      },
+      }
+    }
 
-      transportConstructor: function(transportConstructor) {
-        if (transportConstructor instanceof Function) {
-          return transportConstructor;
+    // Check Optional parameters
+    for (const parameter in configCheck.optional) {
+      if (configuration.hasOwnProperty(parameter)) {
+        const value: any = (configuration as any)[parameter];
+
+        // If the parameter value is an empty array, but shouldn't be, apply its default value.
+        // If the parameter value is null, empty string, or undefined then apply its default value.
+        // If it's a number with NaN value then also apply its default value.
+        // NOTE: JS does not allow "value === NaN", the following does the work:
+        if ((value instanceof Array && value.length === 0) ||
+            (value === null || value === "" || value === undefined) ||
+            (typeof(value) === "number" && isNaN(value))) {
+          continue;
         }
-      },
 
-      transportOptions: function(transportOptions) {
-        if (typeof transportOptions === 'object') {
-          return transportOptions;
-        }
-      },
-
-      authorizationUser: function(authorizationUser) {
-        if(SIP.Grammar.parse('"'+ authorizationUser +'"', 'quoted_string') === -1) {
-          return;
+        const checkedValue: any = configCheck.optional[parameter](value);
+        if (checkedValue !== undefined) {
+          settings[parameter] = checkedValue;
         } else {
-          return authorizationUser;
+          throw new Exceptions.ConfigurationError(parameter, value);
         }
-      },
+      }
+    }
 
-      displayName: function(displayName) {
-        if(SIP.Grammar.parse('"' + displayName + '"', 'displayName') === -1) {
-          return;
+    // Post Configuration Process
+
+    // Allow passing 0 number as displayName.
+    if (settings.displayName === 0) {
+      settings.displayName = "0";
+    }
+
+    // sipjsId instance parameter. Static random tag of length 5
+    settings.sipjsId = Utils.createRandomToken(5);
+
+    // String containing settings.uri without scheme and user.
+    const hostportParams: URIType = settings.uri.clone();
+    hostportParams.user = undefined;
+    settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, "");
+
+    /* Check whether authorizationUser is explicitly defined.
+     * Take 'settings.uri.user' value if not.
+     */
+    if (!settings.authorizationUser) {
+      settings.authorizationUser = settings.uri.user;
+    }
+
+    // User noAnswerTimeout
+    settings.noAnswerTimeout = settings.noAnswerTimeout * 1000;
+
+    // Via Host
+    if (settings.hackIpInContact) {
+      if (typeof settings.hackIpInContact === "boolean") {
+        const from: number = 1;
+        const to: number = 254;
+        const octet: number = Math.floor(Math.random() * (to - from + 1) + from);
+        // random Test-Net IP (http://tools.ietf.org/html/rfc5735)
+        settings.viaHost = "192.0.2." + octet;
+      } else if (typeof settings.hackIpInContact === "string") {
+        settings.viaHost = settings.hackIpInContact;
+      }
+    }
+
+    // Contact transport parameter
+    if (settings.hackWssInTransport) {
+      settings.contactTransport = "wss";
+    }
+
+    this.contact = {
+      pubGruu: undefined,
+      tempGruu: undefined,
+      uri: new URI("sip", settings.contactName, settings.viaHost, undefined, {transport: settings.contactTransport}),
+      toString: (options: any = {}) => {
+        const anonymous: boolean = options.anonymous || false;
+        const outbound: boolean = options.outbound || false;
+        let contact: string = "<";
+
+        if (anonymous) {
+          contact += (this.contact.tempGruu ||
+            ("sip:anonymous@anonymous.invalid;transport=" + settings.contactTransport)).toString();
         } else {
-          return displayName;
+          contact += (this.contact.pubGruu || this.contact.uri).toString();
         }
-      },
 
-      dtmfType: function(dtmfType) {
-        switch (dtmfType) {
-          case SIP.C.dtmfType.RTP:
-            return SIP.C.dtmfType.RTP;
-          case SIP.C.dtmfType.INFO:
-            // Fall through
+        if (outbound) {
+          contact += ";ob";
+        }
+
+        contact += ">";
+
+        return contact;
+      }
+    };
+
+    const skeleton: {[key: string]: any} = {};
+    // Fill the value of the configuration_skeleton
+    for (const parameter in settings) {
+      if (settings.hasOwnProperty(parameter)) {
+        skeleton[parameter] = settings[parameter];
+      }
+    }
+
+    Object.assign(this.configuration, skeleton);
+    this.logger.log("configuration parameters after validation:");
+
+    for (const parameter in settings) {
+      if (settings.hasOwnProperty(parameter)) {
+
+        switch (parameter) {
+          case "uri":
+          case "sessionDescriptionHandlerFactory":
+            this.logger.log("· " + parameter + ": " + settings[parameter]);
+            break;
+          case "password":
+            this.logger.log("· " + parameter + ": " + "NOT SHOWN");
+            break;
+          case "transportConstructor":
+            this.logger.log("· " + parameter + ": " + settings[parameter].name);
+            break;
           default:
-            return SIP.C.dtmfType.INFO;
+            this.logger.log("· " + parameter + ": " + JSON.stringify(settings[parameter]));
         }
+      }
+    }
+
+    return;
+  }
+
+  /**
+   * Configuration checker.
+   * @return {Boolean}
+   */
+  private getConfigurationCheck(): {mandatory: {[name: string]: any}, optional: {[name: string]: any}} {
+    return {
+      mandatory: {
       },
 
-      hackViaTcp: function(hackViaTcp) {
-        if (typeof hackViaTcp === 'boolean') {
-          return hackViaTcp;
-        }
-      },
+      optional: {
 
-      hackIpInContact: function(hackIpInContact) {
-        if (typeof hackIpInContact === 'boolean') {
-          return hackIpInContact;
-        }
-        else if (typeof hackIpInContact === 'string' && SIP.Grammar.parse(hackIpInContact, 'host') !== -1) {
-          return hackIpInContact;
-        }
-      },
+        uri: (uri: string): URIType | undefined => {
+          if (!(/^sip:/i).test(uri)) {
+            uri = SIPConstants.SIP + ":" + uri;
+          }
+          const parsed: URIType | undefined = Grammar.URIParse(uri);
 
-      hackWssInTransport: function(hackWssInTransport) {
-        if (typeof hackWssInTransport === 'boolean') {
-          return hackWssInTransport;
-        }
-      },
+          if (!parsed || !parsed.user) {
+            return;
+          } else {
+            return parsed;
+          }
+        },
 
-      hackAllowUnregisteredOptionTags: function(hackAllowUnregisteredOptionTags) {
-        if (typeof hackAllowUnregisteredOptionTags === 'boolean') {
-          return hackAllowUnregisteredOptionTags;
-        }
-      },
+        transportConstructor: (transportConstructor: () => Transport): (() => Transport) | undefined => {
+          if (transportConstructor instanceof Function) {
+            return transportConstructor;
+          }
+        },
 
-      contactTransport: function(contactTransport) {
-        if (typeof contactTransport === 'string') {
-          return contactTransport;
-        }
-      },
+        transportOptions: (transportOptions: any): any | undefined => {
+          if (typeof transportOptions === "object") {
+            return transportOptions;
+          }
+        },
 
-      extraSupported: function(optionTags) {
-        var idx, length;
+        authorizationUser: (authorizationUser: string): string | undefined => {
+          if (Grammar.parse('"' + authorizationUser + '"', "quoted_string") === -1) {
+            return;
+          } else {
+            return authorizationUser;
+          }
+        },
 
-        if (!(optionTags instanceof Array)) {
-          return;
-        }
+        displayName: (displayName: string): string | undefined => {
+          if (Grammar.parse('"' + displayName + '"', "displayName") === -1) {
+            return;
+          } else {
+            return displayName;
+          }
+        },
 
-        length = optionTags.length;
-        for (idx = 0; idx < length; idx++) {
-          if (typeof optionTags[idx] !== 'string') {
+        dtmfType: (dtmfType: string): string => {
+          switch (dtmfType) {
+            case SIPConstants.dtmfType.RTP:
+              return SIPConstants.dtmfType.RTP;
+            case SIPConstants.dtmfType.INFO:
+              // Fall through
+            default:
+              return SIPConstants.dtmfType.INFO;
+          }
+        },
+
+        hackViaTcp: (hackViaTcp: boolean): boolean | undefined => {
+          if (typeof hackViaTcp === "boolean") {
+            return hackViaTcp;
+          }
+        },
+
+        hackIpInContact: (hackIpInContact: boolean): boolean | string | undefined => {
+          if (typeof hackIpInContact === "boolean") {
+            return hackIpInContact;
+          } else if (typeof hackIpInContact === "string" && Grammar.parse(hackIpInContact, "host") !== -1) {
+            return hackIpInContact;
+          }
+        },
+
+        hackWssInTransport: (hackWssInTransport: boolean): boolean | undefined => {
+          if (typeof hackWssInTransport === "boolean") {
+            return hackWssInTransport;
+          }
+        },
+
+        hackAllowUnregisteredOptionTags: (hackAllowUnregisteredOptionTags: boolean): boolean | undefined => {
+          if (typeof hackAllowUnregisteredOptionTags === "boolean") {
+            return hackAllowUnregisteredOptionTags;
+          }
+        },
+
+        contactTransport: (contactTransport: string): string | undefined => {
+          if (typeof contactTransport === "string") {
+            return contactTransport;
+          }
+        },
+
+        extraSupported: (optionTags: Array<string>): Array<string> | undefined => {
+          if (!(optionTags instanceof Array)) {
             return;
           }
-        }
 
-        return optionTags;
-      },
-
-      forceRport: function(forceRport) {
-        if (typeof forceRport === 'boolean') {
-          return forceRport;
-        }
-      },
-
-      noAnswerTimeout: function(noAnswerTimeout) {
-        var value;
-        if (SIP.Utils.isDecimal(noAnswerTimeout)) {
-          value = Number(noAnswerTimeout);
-          if (value > 0) {
-            return value;
+          for (const tag of optionTags) {
+            if (typeof tag !== "string") {
+              return;
+            }
           }
-        }
-      },
 
-      password: function(password) {
-        return String(password);
-      },
+          return optionTags;
+        },
 
-      rel100: function(rel100) {
-        if(rel100 === SIP.C.supported.REQUIRED) {
-          return SIP.C.supported.REQUIRED;
-        } else if (rel100 === SIP.C.supported.SUPPORTED) {
-          return SIP.C.supported.SUPPORTED;
-        } else  {
-          return SIP.C.supported.UNSUPPORTED;
-        }
-      },
+        forceRport: (forceRport: boolean): boolean | undefined => {
+          if (typeof forceRport === "boolean") {
+            return forceRport;
+          }
+        },
 
-      replaces: function(replaces) {
-        if(replaces === SIP.C.supported.REQUIRED) {
-          return SIP.C.supported.REQUIRED;
-        } else if (replaces === SIP.C.supported.SUPPORTED) {
-          return SIP.C.supported.SUPPORTED;
-        } else  {
-          return SIP.C.supported.UNSUPPORTED;
-        }
-      },
+        noAnswerTimeout: (noAnswerTimeout: string): number | undefined => {
+          if (Utils.isDecimal(noAnswerTimeout)) {
+            const value: number = Number(noAnswerTimeout);
+            if (value > 0) {
+              return value;
+            }
+          }
+        },
 
-      register: function(register) {
-        if (typeof register === 'boolean') {
-          return register;
-        }
-      },
+        password: (password: string): string => {
+          return String(password);
+        },
 
-      registerOptions: function(registerOptions) {
-        if (typeof registerOptions === 'object') {
-          return registerOptions;
-        }
-      },
+        rel100: (rel100: string): string => {
+          if (rel100 === SIPConstants.supported.REQUIRED) {
+            return SIPConstants.supported.REQUIRED;
+          } else if (rel100 === SIPConstants.supported.SUPPORTED) {
+            return SIPConstants.supported.SUPPORTED;
+          } else  {
+            return SIPConstants.supported.UNSUPPORTED;
+          }
+        },
 
-      userAgentString: function(userAgentString) {
-        if (typeof userAgentString === 'string') {
-          return userAgentString;
-        }
-      },
+        replaces: (replaces: string): string => {
+          if (replaces === SIPConstants.supported.REQUIRED) {
+            return SIPConstants.supported.REQUIRED;
+          } else if (replaces === SIPConstants.supported.SUPPORTED) {
+            return SIPConstants.supported.SUPPORTED;
+          } else  {
+            return SIPConstants.supported.UNSUPPORTED;
+          }
+        },
 
-      autostart: function(autostart) {
-        if (typeof autostart === 'boolean') {
-          return autostart;
-        }
-      },
+        register: (register: boolean): boolean | undefined => {
+          if (typeof register === "boolean") {
+            return register;
+          }
+        },
 
-      autostop: function(autostop) {
-        if (typeof autostop === 'boolean') {
-          return autostop;
-        }
-      },
+        registerOptions: (registerOptions: any): any | undefined => {
+          if (typeof registerOptions === "object") {
+            return registerOptions;
+          }
+        },
 
-      sessionDescriptionHandlerFactory: function(sessionDescriptionHandlerFactory) {
-        if (sessionDescriptionHandlerFactory instanceof Function) {
-          return sessionDescriptionHandlerFactory;
-        }
-      },
+        userAgentString: (userAgentString: string): string | undefined => {
+          if (typeof userAgentString === "string") {
+            return userAgentString;
+          }
+        },
 
-      sessionDescriptionHandlerFactoryOptions: function(options) {
-        if (typeof options === 'object') {
-          return options;
-        }
-      },
+        autostart: (autostart: boolean): boolean | undefined => {
+          if (typeof autostart === "boolean") {
+            return autostart;
+          }
+        },
 
-      authenticationFactory: checkAuthenticationFactory,
+        autostop: (autostop: boolean): boolean | undefined => {
+          if (typeof autostop === "boolean") {
+            return autostop;
+          }
+        },
 
-      allowLegacyNotifications: function(allowLegacyNotifications) {
-        if (typeof allowLegacyNotifications === 'boolean') {
-          return allowLegacyNotifications;
-        }
-      },
+        sessionDescriptionHandlerFactory: (sessionDescriptionHandlerFactory: (() => SessionDescriptionHandler)):
+          (() => SessionDescriptionHandler) | undefined => {
+          if (sessionDescriptionHandlerFactory instanceof Function) {
+            return sessionDescriptionHandlerFactory;
+          }
+        },
 
-      custom: function(custom) {
-        if (typeof custom === 'object') {
-          return custom;
-        }
-      },
+        sessionDescriptionHandlerFactoryOptions: (options: any): any | undefined => {
+          if (typeof options === "object") {
+            return options;
+          }
+        },
 
-      contactName: function(contactName) {
-        if (typeof contactName === 'string') {
-          return contactName;
-        }
-      },
-    }
-  };
-};
+        authenticationFactory: this.checkAuthenticationFactory,
 
-UA.C = C;
-SIP.UA = UA;
-};
+        allowLegacyNotifications: (allowLegacyNotifications: boolean): boolean | undefined => {
+          if (typeof allowLegacyNotifications === "boolean") {
+            return allowLegacyNotifications;
+          }
+        },
+
+        custom: (custom: any): any | undefined => {
+          if (typeof custom === "object") {
+            return custom;
+          }
+        },
+
+        contactName: (contactName: string): string | undefined => {
+          if (typeof contactName === "string") {
+            return contactName;
+          }
+        },
+      }
+    };
+  }
+}
