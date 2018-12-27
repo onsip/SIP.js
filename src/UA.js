@@ -839,6 +839,8 @@ UA.prototype.loadConfig = function(configuration) {
         peerConnectionOptions: {}
       },
 
+      extraSupported: [],
+
       contactName: SIP.Utils.createRandomToken(8), // user name in user part
       contactTransport: 'ws',
       forceRport: false,
@@ -1111,6 +1113,23 @@ UA.prototype.getConfigurationCheck = function () {
         if (typeof contactTransport === 'string') {
           return contactTransport;
         }
+      },
+
+      extraSupported: function(optionTags) {
+        var idx, length;
+
+        if (!(optionTags instanceof Array)) {
+          return;
+        }
+
+        length = optionTags.length;
+        for (idx = 0; idx < length; idx++) {
+          if (typeof optionTags[idx] !== 'string') {
+            return;
+          }
+        }
+
+        return optionTags;
       },
 
       forceRport: function(forceRport) {
