@@ -95,7 +95,8 @@ quoted_pair = "\\" ( [\x00-\x09] / [\x0B-\x0C] / [\x0E-\x7F] )
 //=======================
 
 SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
-                        options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port);
+                        options = options || { data: {}};
+                        options.data.uri = new URI(options.data.scheme, options.data.user, options.data.host, options.data.port);
                         delete options.data.scheme;
                         delete options.data.user;
                         delete options.data.host;
@@ -104,7 +105,8 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                       }
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
-                        options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
+                        options = options || { data: {}};
+                        options.data.uri = new URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
                         delete options.data.scheme;
                         delete options.data.user;
                         delete options.data.host;
@@ -116,9 +118,11 @@ SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
                       }
 
 uri_scheme      = uri_scheme:  ( "sips"i / "sip"i ) {
+                    options = options || { data: {}};
                     options.data.scheme = uri_scheme; }
 
 userinfo        = user (":" password)? "@" {
+                    options = options || { data: {}};
                     options.data.user = decodeURIComponent(text().slice(0, -1));}
 
 user            = ( unreserved / escaped / user_unreserved )+
@@ -126,15 +130,18 @@ user            = ( unreserved / escaped / user_unreserved )+
 user_unreserved = "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
 
 password        = ( unreserved / escaped / "&" / "=" / "+" / "$" / "," )* {
+                    options = options || { data: {}};
                     options.data.password = text(); }
 
 hostport        = host ( ":" port )?
 
 host            = ( hostname / IPv4address / IPv6reference ) {
+                    options = options || { data: {}};
                     options.data.host = text();
                     return options.data.host; }
 
 hostname        = ( domainlabel "." )* toplabel  "." ? {
+                  options = options || { data: {}};
                   options.data.host_type = 'domain';
                   return text(); }
 
@@ -143,6 +150,7 @@ domainlabel     = domainlabel: ( [a-zA-Z0-9_-]+ )
 toplabel        = toplabel: ( [a-zA-Z][a-zA-Z0-9-]* )
 
 IPv6reference   = "[" IPv6address "]" {
+                    options = options || { data: {}};
                     options.data.host_type = 'IPv6';
                     return text(); }
 
@@ -162,6 +170,7 @@ IPv6address     = ( h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
                   / h16 (":" h16)? (":" h16)? (":" h16)? (":" h16)? (":" h16)? "::" h16
                   / h16 (":" h16)? (":" h16)? (":" h16)? (":" h16)? (":" h16)? (":" h16)? "::"
                   ) {
+                  options = options || { data: {}};
                   options.data.host_type = 'IPv6';
                   return text(); }
 
@@ -172,6 +181,7 @@ ls32            = ( h16 ":" h16 ) / IPv4address
 
 
 IPv4address     = dec_octet "." dec_octet "." dec_octet "." dec_octet {
+                    options = options || { data: {}};
                     options.data.host_type = 'IPv4';
                     return text(); }
 
@@ -182,6 +192,7 @@ dec_octet       = "25" [\x30-\x35]          // 250-255
                 / DIGIT                     // 0-9
 
 port            = port: (DIGIT ? DIGIT ? DIGIT ? DIGIT ? DIGIT ?) {
+                    options = options || { data: {}};
                     port = parseInt(port.join(''));
                     options.data.port = port;
                     return port; }
@@ -195,34 +206,41 @@ uri_parameter     = transport_param / user_param / method_param
 
 transport_param   = "transport="i transport: ( "udp"i / "tcp"i / "sctp"i
                     / "tls"i / other_transport) {
+                      options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params={};
                       options.data.uri_params['transport'] = transport.toLowerCase(); }
 
 other_transport   = token
 
 user_param        = "user="i user:( "phone"i / "ip"i / other_user) {
+                      options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params={};
                       options.data.uri_params['user'] = user.toLowerCase(); }
 
 other_user        = token
 
 method_param      = "method="i method: Method {
+                      options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params={};
                       options.data.uri_params['method'] = method; }
 
 ttl_param         = "ttl="i ttl: ttl {
+                      options = options || { data: {}};
                       if(!options.data.params) options.data.params={};
                       options.data.params['ttl'] = ttl; }
 
 maddr_param       = "maddr="i maddr: host {
+                      options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params={};
                       options.data.uri_params['maddr'] = maddr; }
 
 lr_param          = "lr"i ('=' token)? {
+                      options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params={};
                       options.data.uri_params['lr'] = undefined; }
 
 other_param       = param: pname value: ( "=" pvalue )? {
+                      options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params = {};
                       if (value === null){
                         value = undefined;
@@ -248,6 +266,7 @@ headers           = "?" header ( "&" header )*
 header            = hname: hname "=" hvalue: hvalue  {
                       hname = hname.join('').toLowerCase();
                       hvalue = hvalue.join('');
+                      options = options || { data: {}};
                       if(!options.data.uri_headers) options.data.uri_headers = {};
                       if (!options.data.uri_headers[hname]) {
                         options.data.uri_headers[hname] = [hvalue];
@@ -275,6 +294,7 @@ Request_URI       = SIP_URI / absoluteURI
 
 absoluteURI       = scheme ":" ( hier_part / opaque_part )
                     {
+                      options = options || { data: {}};
                       // lots of tests fail if this isn't guarded...
                       if (options.startRule === 'Refer_To') {
                         options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
@@ -310,6 +330,7 @@ pchar             = unreserved / escaped /
                     ":" / "@" / "&" / "=" / "+" / "$" / ","
 
 scheme            = ( ALPHA ( ALPHA / DIGIT / "+" / "-" / "." )* ){
+                    options = options || { data: {}};
                     options.data.scheme= text(); }
 
 authority         = srvr / reg_name
@@ -322,6 +343,7 @@ reg_name          = ( unreserved / escaped / "$" / ","
 query             = uric *
 
 SIP_Version       = "SIP"i "/" DIGIT + "." DIGIT + {
+                    options = options || { data: {}};
                     options.data.sip_version = text(); }
 
 // SIP METHODS
@@ -351,6 +373,7 @@ PUBLISHm          = "\x50\x55\x42\x4c\x49\x53\x48" // PUBLISH in caps
 Method            = ( INVITEm / ACKm / OPTIONSm / BYEm / CANCELm / REGISTERm
                     / SUBSCRIBEm / PUBLISHm / NOTIFYm / REFERm / extension_method ){
 
+                    options = options || { data: {}};
                     options.data.method = text();
                     return options.data.method; }
 
@@ -362,12 +385,14 @@ extension_method  = token
 Status_Line     = SIP_Version SP Status_Code SP Reason_Phrase
 
 Status_Code     = status_code: extension_code {
+                  options = options || { data: {}};
                   options.data.status_code = parseInt(status_code.join('')); }
 
 extension_code  = DIGIT DIGIT DIGIT
 
 Reason_Phrase   = (reserved / unreserved / escaped
                   / UTF8_NONASCII / UTF8_CONT / SP / HTAB)* {
+                  options = options || { data: {}};
                   options.data.reason_phrase = text(); }
 
 
@@ -383,12 +408,14 @@ Allow_Events = event_type (COMMA event_type)*
 // CALL-ID
 
 Call_ID  =  word ( "@" word )? {
+              options = options || { data: {}};
               options.data = text(); }
 
 // CONTACT
 
 Contact             = ( STAR / (contact_param (COMMA contact_param)*) ) {
                         var idx, length;
+                        options = options || { data: {}};
                         length = options.data.multi_header.length;
                         for (idx = 0; idx < length; idx++) {
                           if (options.data.multi_header[idx].parsed === null) {
@@ -404,6 +431,7 @@ Contact             = ( STAR / (contact_param (COMMA contact_param)*) ) {
 
 contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         var header;
+                        options = options || { data: {}};
                         if(!options.data.multi_header) options.data.multi_header = [];
                         try {
                           header = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
@@ -427,16 +455,19 @@ displayName        = displayName: (token ( LWS token )* / quoted_string) {
                         if (displayName[0] === '\"') {
                           displayName = displayName.substring(1, displayName.length-1);
                         }
+                        options = options || { data: {}};
                         options.data.displayName = displayName; }
                         // The previous rule is corrected from RFC3261
 
 contact_params      = c_p_q / c_p_expires / contact_extension
 
 c_p_q               = "q"i EQUAL q: qvalue {
+                        options = options || { data: {}};
                         if(!options.data.params) options.data.params = {};
                         options.data.params['q'] = q; }
 
 c_p_expires         = "expires"i EQUAL expires: delta_seconds {
+                        options = options || { data: {}};
                         if(!options.data.params) options.data.params = {};
                         options.data.params['expires'] = expires; }
 
@@ -449,6 +480,7 @@ qvalue              = "0" ( "." DIGIT? DIGIT? DIGIT? )? {
                         return parseFloat(text()); }
 
 generic_param       = param: token  value: ( EQUAL gen_value )? {
+                        options = options || { data: {}};
                         if(!options.data.params) options.data.params = {};
                         if (value === null){
                           value = undefined;
@@ -467,6 +499,7 @@ Content_Disposition     = disp_type ( SEMI disp_param )*
 
 disp_type               = ("render"i / "session"i / "icon"i / "alert"i / disp_extension_token)
                           {
+                            options = options || { data: {}};
                             if (options.startRule === 'Content_Disposition') {
                               options.data.type = text().toLowerCase();
                             }
@@ -491,11 +524,13 @@ content_coding      = token
 // CONTENT-LENGTH
 
 Content_Length      = length: (DIGIT +) {
+                        options = options || { data: {}};
                         options.data = parseInt(length.join('')); }
 
 // CONTENT-TYPE
 
 Content_Type        = media_type {
+                        options = options || { data: {}};
                         options.data = text(); }
 
 media_type          = m_type SLASH m_subtype (SEMI m_parameter)*
@@ -529,6 +564,7 @@ m_value             = token / quoted_string
 CSeq          = CSeq_value LWS CSeq_method
 
 CSeq_value    = cseq_value: DIGIT + {
+                  options = options || { data: {}};
                   options.data.value=parseInt(cseq_value.join('')); }
 
 CSeq_method   = Method
@@ -536,10 +572,11 @@ CSeq_method   = Method
 
 // EXPIRES
 
-Expires     = expires: delta_seconds {options.data = expires; }
+Expires     = expires: delta_seconds {options = options || { data: {}}; options.data = expires; }
 
 
 Event             = event_type: event_type ( SEMI event_param )* {
+                       options = options || { data: {}};
                        options.data.event = event_type.toLowerCase(); }
 
 event_type        = $( event_package ( "." event_template )* )
@@ -553,6 +590,7 @@ event_param       = generic_param
 // FROM
 
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
+                options = options || { data: {}};
                 var tag = options.data.tag;
                   options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                   if (tag) {options.data.setParam('tag',tag)}
@@ -560,23 +598,25 @@ From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
 
 from_param  = tag_param / generic_param
 
-tag_param   = "tag"i EQUAL tag: token {options.data.tag = tag; }
+tag_param   = "tag"i EQUAL tag: token {options = options || { data: {}};options.data.tag = tag; }
 
 
 //MAX-FORWARDS
 
 Max_Forwards  = forwards: DIGIT+ {
+                  options = options || { data: {}};
                   options.data = parseInt(forwards.join('')); }
 
 
 // MIN-EXPIRES
 
-Min_Expires  = min_expires: delta_seconds {options.data = min_expires; }
+Min_Expires  = min_expires: delta_seconds {options = options || { data: {}}; options.data = min_expires; }
 
 // Name_Addr
 
 Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
-                        options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                        options = options || { data: {}};
+                        options.data = new NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                       }
 
 // PROXY-AUTHENTICATE
@@ -599,7 +639,7 @@ digest_cln          = realm / domain / nonce / opaque / stale / algorithm
 
 realm               = "realm"i EQUAL realm_value
 
-realm_value         = realm: quoted_string_clean { options.data.realm = realm; }
+realm_value         = realm: quoted_string_clean { options = options || { data: {}}; options.data.realm = realm; }
 
 domain              = "domain"i EQUAL LDQUOT URI ( SP+ URI )* RDQUOT
 
@@ -607,19 +647,21 @@ URI                 = absoluteURI / abs_path
 
 nonce               = "nonce"i EQUAL nonce_value
 
-nonce_value         = nonce: quoted_string_clean { options.data.nonce=nonce; }
+nonce_value         = nonce: quoted_string_clean { options = options || { data: {}}; options.data.nonce=nonce; }
 
-opaque              = "opaque"i EQUAL opaque: quoted_string_clean { options.data.opaque=opaque; }
+opaque              = "opaque"i EQUAL opaque: quoted_string_clean { options = options || { data: {}}; options.data.opaque=opaque; }
 
-stale               = "stale"i EQUAL ( "true"i { options.data.stale=true; } / "false"i { options.data.stale=false; } )
+stale               = "stale"i EQUAL ( "true"i { options = options || { data: {}}; options.data.stale=true; } / "false"i { options = options || { data: {}}; options.data.stale=false; } )
 
 algorithm           = "algorithm"i EQUAL algorithm: ( "MD5"i / "MD5-sess"i
                       / token ) {
+                      options = options || { data: {}};
                       options.data.algorithm=algorithm.toUpperCase(); }
 
 qop_options         = "qop"i EQUAL LDQUOT (qop_value ("," qop_value)*) RDQUOT
 
 qop_value           = qop_value: ( "auth-int"i / "auth"i / token ) {
+                        options = options || { data: {}};
                         options.data.qop || (options.data.qop=[]);
                         options.data.qop.push(qop_value.toLowerCase()); }
 
@@ -641,6 +683,7 @@ option_tag     = token
 RAck          = RAck_value LWS RAck_value LWS RAck_method
 
 RAck_value    = rack_value: DIGIT + {
+                  options = options || { data: {}};
                   options.data.value=parseInt(rack_value.join('')); }
 
 RAck_method   = Method
@@ -650,6 +693,7 @@ RAck_method   = Method
 
 Record_Route  = rec_route (COMMA rec_route)* {
                   var idx, length;
+                  options = options || { data: {}};
                   length = options.data.multi_header.length;
                   for (idx = 0; idx < length; idx++) {
                     if (options.data.multi_header[idx].parsed === null) {
@@ -665,6 +709,7 @@ Record_Route  = rec_route (COMMA rec_route)* {
 
 rec_route     = name_addr ( SEMI rr_param )* {
                   var header;
+                  options = options || { data: {}};
                   if(!options.data.multi_header) options.data.multi_header = [];
                   try {
                     header = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
@@ -684,7 +729,8 @@ rr_param      = generic_param
 // REFER-TO
 
 Refer_To = ( addr_spec / name_addr / LAQUOT? absoluteURI RAQUOT? ) ( SEMI r_param )* {
-              options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+              options = options || { data: {}};
+              options.data = new NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
             }
 
 r_param = generic_param
@@ -692,24 +738,29 @@ r_param = generic_param
 // REPLACES
 
 Replaces          = replaces_call_id ( SEMI replaces_params )* {
+                      options = options || { data: {}};
                       if (!(options.data.replaces_from_tag && options.data.replaces_to_tag)) {
                         options.data = -1;
                       }
                     }
 
 replaces_call_id  = Call_ID {
+                      options = options || { data: {}};
                       options.data = {
                         call_id: options.data
                       };
                     }
 
 replaces_params   = "from-tag"i EQUAL from_tag: token {
+                      options = options || { data: {}};
                       options.data.replaces_from_tag = from_tag;
                     }
                   / "to-tag"i EQUAL to_tag: token {
+                      options = options || { data: {}};
                       options.data.replaces_to_tag = to_tag;
                     }
                   / "early-only"i {
+                      options = options || { data: {}};
                       options.data.early_only = true;
                     }
                   / generic_param
@@ -722,6 +773,7 @@ Require   =  value:(
                 { return list(head, tail); }
               )?
               {
+                options = options || { data: {}};
                 if (options.startRule === 'Require') {
                   options.data = value || [];
                 }
@@ -737,6 +789,7 @@ route_param  = name_addr ( SEMI rr_param )*
 // RSEQ
 
 RSeq    = rseq_value: DIGIT + {
+                  options = options || { data: {}};
                   options.data.value=parseInt(rseq_value.join('')); }
 
 
@@ -746,15 +799,19 @@ Subscription_State   = substate_value ( SEMI subexp_params )*
 
 substate_value       = ( "active"i / "pending"i / "terminated"i
                        / extension_substate ) {
+                        options = options || { data: {}};
                         options.data.state = text(); }
 
 extension_substate   = token
 
 subexp_params        = "reason"i EQUAL reason: event_reason_value {
+                        options = options || { data: {}};
                         if (typeof reason !== 'undefined') options.data.reason = reason; }
                        / "expires"i EQUAL expires: delta_seconds {
+                        options = options || { data: {}};
                         if (typeof expires !== 'undefined') options.data.expires = expires; }
                        / "retry_after"i EQUAL retry_after: delta_seconds {
+                        options = options || { data: {}};
                         if (typeof retry_after !== 'undefined') options.data.retry_after = retry_after; }
                        / generic_param
 
@@ -783,6 +840,7 @@ Supported  =  value:(
                 { return list(head, tail); }
               )?
               {
+                options = options || { data: {}};
                 if (options.startRule === 'Supported') {
                   options.data = value || [];
                 }
@@ -792,6 +850,7 @@ Supported  =  value:(
 // TO
 
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
+              options = options || { data: {}};
               var tag = options.data.tag;
                 options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                 if (tag) {options.data.setParam('tag',tag)}
@@ -808,18 +867,23 @@ via_parm          = sent_protocol LWS sent_by ( SEMI via_params )*
 via_params        = via_ttl / via_maddr / via_received / via_branch / response_port / via_extension
 
 via_ttl           = "ttl"i EQUAL via_ttl_value: ttl {
+                      options = options || { data: {}};
                       options.data.ttl = via_ttl_value; }
 
 via_maddr         = "maddr"i EQUAL via_maddr: host {
+                      options = options || { data: {}};
                       options.data.maddr = via_maddr; }
 
 via_received      = "received"i EQUAL via_received: (IPv4address / IPv6address / IPv6reference) {
+                      options = options || { data: {}};
                       options.data.received = via_received; }
 
 via_branch        = "branch"i EQUAL via_branch: token {
+                      options = options || { data: {}};
                       options.data.branch = via_branch; }
 
-response_port     = "rport"i (EQUAL response_port: (DIGIT*) )? {
+response_port     = "rport"i EQUAL response_port:(DIGIT*) {
+                      options = options || { data: {}};
                       if(typeof response_port !== 'undefined')
                         options.data.rport = response_port.join(''); }
 
@@ -828,19 +892,23 @@ via_extension     = generic_param
 sent_protocol     = protocol_name SLASH protocol_version SLASH transport
 
 protocol_name     = via_protocol: ( "SIP"i / token ) {
+                      options = options || { data: {}};
                       options.data.protocol = via_protocol; }
 
 protocol_version  = token
 
 transport         = via_transport: ("UDP"i / "TCP"i / "TLS"i / "SCTP"i / other_transport) {
+                      options = options || { data: {}};
                       options.data.transport = via_transport; }
 
 sent_by           = viaHost ( COLON via_port )?
 
 viaHost          = ( hostname / IPv4address / IPv6reference ) {
+                      options = options || { data: {}};
                       options.data.host = text(); }
 
 via_port          = via_sent_by_port: (DIGIT ? DIGIT ? DIGIT ? DIGIT ? DIGIT ?) {
+                      options = options || { data: {}};
                       options.data.port = parseInt(via_sent_by_port.join('')); }
 
 ttl               = ttl: (DIGIT DIGIT ? DIGIT ?) {
@@ -856,6 +924,7 @@ WWW_Authenticate  = www_authenticate: challenge
 
 Session_Expires   = deltaSeconds:delta_seconds (SEMI se_params)*
                     {
+                      options = options || { data: {}};
                       if (options.startRule === 'Session_Expires') {
                         options.data.deltaSeconds = deltaSeconds;
                       }
@@ -865,6 +934,7 @@ se_params         = refresher_param / generic_param
 
 refresher_param   = "refresher" EQUAL endpoint:("uas" / "uac")
                     {
+                      options = options || { data: {}};
                       if (options.startRule === 'Session_Expires') {
                         options.data.refresher = endpoint;
                       }
@@ -872,6 +942,7 @@ refresher_param   = "refresher" EQUAL endpoint:("uas" / "uac")
 
 Min_SE            = deltaSeconds:delta_seconds (SEMI generic_param)*
                     {
+                      options = options || { data: {}};
                       if (options.startRule === 'Min_SE') {
                         options.data = deltaSeconds;
                       }
@@ -893,11 +964,12 @@ message_body      = OCTET*
 stun_URI          = stun_scheme ":" stun_host_port
 
 stun_scheme       = scheme: ("stuns"i / "stun"i) {
-                      options.data.scheme = scheme; }
+                      options = options || { data: {}};options.data.scheme = scheme; }
 
 stun_host_port    = stun_host ( ":" port )?
 
 stun_host         = host: (IPv4address / IPv6reference / reg_name) {
+                      options = options || { data: {}};
                       options.data.host = host; }
 
 stun_unreserved   = ALPHA / DIGIT / "-" / "." / "_" / "~"
@@ -910,14 +982,14 @@ sub_delims        = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / 
 turn_URI          = turn_scheme ":" stun_host_port ( "?transport=" transport )?
 
 turn_scheme       = scheme: ("turns"i / "turn"i) {
-                      options.data.scheme = scheme; }
+                      options = options || { data: {}};options.data.scheme = scheme; }
 
-turn_transport    = transport ("udp"i / "tcp"i / unreserved*) {
-                      options.data.transport = transport; }
+turn_transport    = transport: ("udp"i / "tcp"i / unreserved*) {
+                      options = options || { data: {}};options.data.transport = transport; }
 
 // UUID URI
 uuid          = hex8 "-" hex4 "-" hex4 "-" hex4 "-" hex12 {
-                  options.data = text(); }
+                  options = options || { data: {}};options.data = text(); }
 hex4          = HEXDIG HEXDIG HEXDIG HEXDIG
 hex8          = hex4 hex4
 hex12         = hex4 hex4 hex4
