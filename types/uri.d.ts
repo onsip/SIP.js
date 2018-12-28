@@ -5,7 +5,7 @@ export class URI {
   host?: string;
   port?: number;
 
-  constructor(scheme?: string, user?: string, host?: string, port?: number, parameters?: string[], headers?: string[]);
+  constructor(scheme?: string, user?: string, host?: string, port?: number, parameters?: Array<string>, headers?: Array<string>);
   static parse(uri: string): URI;
 
   setParam(key: string, value?: string): void;
@@ -14,9 +14,9 @@ export class URI {
   deleteParam(key: string): string;
   clearParams(): void;
   setHeader(name: string, value: string): void;
-  getHeader(name: string): string[];
+  getHeader(name: string): Array<string>;
   hasHeader(name: string): boolean;
-  deleteHeader(name: string): string[];
+  deleteHeader(name: string): Array<string>;
   clearHeaders(): void;
   clone(): URI;
   toString(): string;
