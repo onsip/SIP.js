@@ -79,6 +79,9 @@ export namespace Session {
 }
 
 export class InviteClientContext extends Session {
+  constructor(ua: UA, target: URI | string, options?: any, modifiers?: any);
+  invite();
+
   cancel(options?: any): Session;
 
   on(name: 'referRequested', callback: (context: ReferServerContext) => void): this;
