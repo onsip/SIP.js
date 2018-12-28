@@ -1,6 +1,8 @@
 import {SessionDescriptionHandler, SessionDescriptionHandlerModifiers, SessionDescriptionHandlerOptions} from "../session-description-handler";
 
 export class WebSessionDescriptionHandler implements SessionDescriptionHandler {
+  peerConnection: RTCPeerConnection;  // peer connection is created in constructor, and never unset
+
   close(): void;
   getDescription(options?: WebSessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<{ body: string; contentType: string }>;
   hasDescription(contentType: string): boolean;

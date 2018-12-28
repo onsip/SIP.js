@@ -2,6 +2,7 @@ import { C, InviteServerContext, ReferServerContext } from ".";
 import { InviteClientContext, Session } from "./session";
 import { SessionDescriptionHandlerFactory, SessionDescriptionHandlerFactoryOptions} from "./session-description-handler-factory";
 import { SessionDescriptionHandlerOptions, SessionDescriptionHandlerModifiers } from "./session-description-handler";
+import { Subscription } from "./subscription";
 import { URI } from "./uri";
 import { EventEmitter } from "events";
 
@@ -23,7 +24,7 @@ export class UA extends EventEmitter {
 
   request(method: string, target: URI, options?: any): any; //Returns a SIP.ClientContext
 
-  subscribe(target: URI, eventPackage: string, options?: any): any;
+  subscribe(target: URI, eventPackage: string, options?: any): Subscription;
 
   unregister(options?: any): UA;
 

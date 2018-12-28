@@ -2,9 +2,11 @@ import { UA } from "./ua";
 import { IncomingMessage } from "http";
 import { NameAddrHeader } from "./name-addr-header";
 
+export * from "./name-addr-header";
 export * from "./session";
 export * from "./session-description-handler";
 export * from "./session-description-handler-factory";
+export * from "./subscription";
 export * from "./ua";
 export * from "./uri";
 export * from "./Web"
