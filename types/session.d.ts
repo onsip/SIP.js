@@ -12,6 +12,7 @@ export class Session extends EventEmitter {
 
   data?: any; // This is actually an any
   endTime?: Date;
+  assertedIdentity?: NameAddrHeader;
   localIdentity?: NameAddrHeader;
   remoteIdentity?: NameAddrHeader;
   method?: string;
