@@ -1,77 +1,80 @@
-"use strict";
-/**
- * @fileoverview Transport
- */
+import { Logger } from "../../types/logger-factory";
+import { OutgoingRequest } from "../../types/sip-message";
+import { Transport as TransportDefinition } from "../../types/Web/transport";
 
-/**
- * @augments SIP
- * @class Transport
- * @param {Object} options
- */
-module.exports = function (SIP) {
-var Transport,
-  C = {
-    // Transport status codes
-    STATUS_CONNECTING:  0,
-    STATUS_OPEN:        1,
-    STATUS_CLOSING:     2,
-    STATUS_CLOSED:      3,
-  };
+import { TypeStrings } from "../Enums";
+import { Exceptions } from "../Exceptions";
+import { Grammar } from "../Grammar";
+import { Transport as TransportBase } from "../Transport";
+import { Utils } from "../Utils";
 
-var WebSocket = (global.window || global).WebSocket;
+export enum TransportStatus {
+  STATUS_CONNECTING,
+  STATUS_OPEN,
+  STATUS_CLOSING,
+  STATUS_CLOSED
+}
 
 /**
  * Compute an amount of time in seconds to wait before sending another
  * keep-alive.
  * @returns {Number}
  */
-function computeKeepAliveTimeout(upperBound) {
-  var lowerBound = upperBound * 0.8;
+const computeKeepAliveTimeout = (upperBound: number): number => {
+  const lowerBound: number = upperBound * 0.8;
   return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
-}
-
-Transport = function(logger, options) {
-  options = options || {};
-  this.logger = logger;
-
-  this.ws = null;
-  this.server = null;
-
-  this.connectionPromise = null;
-  this.connectDeferredResolve = null;
-  this.connectionTimeout = null;
-
-  this.disconnectionPromise = null;
-  this.disconnectDeferredResolve = null;
-
-  this.boundOnOpen = null;
-  this.boundOnMessage = null;
-  this.boundOnClose = null;
-  this.boundOnError = null;
-
-  this.reconnectionAttempts = 0;
-  this.reconnectTimer = null;
-
-  // Keep alive
-  this.keepAliveInterval = null;
-  this.keepAliveDebounceTimeout = null;
-
-  this.status = C.STATUS_CONNECTING;
-
-  this.configuration = {};
-
-  this.loadConfig(options);
 };
 
-Transport.prototype = Object.create(SIP.Transport.prototype, {
+/**
+ * @class Transport
+ * @param {Object} options
+ */
+export class Transport extends TransportBase implements TransportDefinition {
+  public static readonly C = TransportStatus;
+  public type: TypeStrings;
+  public server: any;
+  public ws: any;
+
+  private WebSocket = ((global as any).window || global).WebSocket;
+
+  private connectionPromise: Promise<any> | undefined;
+  private connectDeferredResolve: ((obj: any) => void) | undefined;
+  private connectionTimeout: any | undefined;
+
+  private disconnectionPromise: Promise<any> | undefined;
+  private disconnectDeferredResolve: ((obj: any) => void) | undefined;
+
+  private reconnectionAttempts: number;
+  private reconnectTimer: any | undefined;
+
+  // Keep alive
+  private keepAliveInterval: any | undefined;
+  private keepAliveDebounceTimeout: any | undefined;
+
+  private status: TransportStatus;
+  private configuration: any;
+
+  private boundOnOpen: any;
+  private boundOnMessage: any;
+  private boundOnClose: any;
+  private boundOnError: any;
+
+  constructor(logger: Logger, options: any = {}) {
+    super(logger, options);
+    this.type = TypeStrings.Transport;
+
+    this.reconnectionAttempts = 0;
+    this.status = TransportStatus.STATUS_CONNECTING;
+    this.configuration = {};
+    this.loadConfig(options);
+  }
 
   /**
-  *
-  * @returns {Boolean}
-  */
-  isConnected: {writable: true, value: function isConnected () {
-    return this.status === C.STATUS_OPEN;
-  }},
+   * @returns {Boolean}
+   */
+  public isConnected(): boolean {
+    return this.status === TransportStatus.STATUS_OPEN;
+  }
 
   /**
    * Send a message.
@@ -79,163 +82,205 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
    * @param {Object} [options]
    * @returns {Promise}
    */
-  sendPromise: {writable: true, value: function sendPromise (msg, options) {
-    options = options || {};
-    if (!this.statusAssert(C.STATUS_OPEN, options.force)) {
-      this.onError('unable to send message - WebSocket not open');
+  protected sendPromise(msg: OutgoingRequest | string, options: any = {}): Promise<{msg: string}> {
+    if (!this.statusAssert(TransportStatus.STATUS_OPEN, options.force)) {
+      this.onError("unable to send message - WebSocket not open");
       return Promise.reject();
     }
 
-    var message = msg.toString();
+    const message: string = msg.toString();
 
     if (this.ws) {
       if (this.configuration.traceSip === true) {
-        this.logger.log('sending WebSocket message:\n\n' + message + '\n');
+        this.logger.log("sending WebSocket message:\n\n" + message + "\n");
       }
       this.ws.send(message);
       return Promise.resolve({msg: message});
     } else {
-      this.onError('unable to send message - WebSocket does not exist');
+      this.onError("unable to send message - WebSocket does not exist");
       return Promise.reject();
     }
-  }},
+  }
 
   /**
-  * Disconnect socket.
-  */
-  disconnectPromise: {writable: true, value: function disconnectPromise (options) {
-    if (this.disconnectionPromise) {  // Already disconnecting. Just return this.
+   * Disconnect socket.
+   */
+  protected disconnectPromise(options: any = {}): Promise<any> {
+    if (this.disconnectionPromise) { // Already disconnecting. Just return this.
       return this.disconnectionPromise;
     }
-    options = options || {};
     options.code = options.code || 1000;
 
-    if (!this.statusTransition(C.STATUS_CLOSING, options.force)) {
-      if (this.status === C.STATUS_CLOSED) {  // Websocket is already closed
+    if (!this.statusTransition(TransportStatus.STATUS_CLOSING, options.force)) {
+      if (this.status === TransportStatus.STATUS_CLOSED) { // Websocket is already closed
         return Promise.resolve({overrideEvent: true});
-      } else if (this.connectionPromise) {    // Websocket is connecting, cannot move to disconneting yet
-        return this.connectionPromise
-          .then(() => Promise.reject('The websocket did not disconnect'))
-          .catch(() => Promise.resolve({overrideEvent: true}));
+      } else if (this.connectionPromise) { // Websocket is connecting, cannot move to disconneting yet
+        return this.connectionPromise.then(() => Promise.reject("The websocket did not disconnect"))
+        .catch(() => Promise.resolve({overrideEvent: true}));
       } else {
-        return Promise.reject('The websocket did not disconnect');  // Cannot move to disconnecting, but not in connecting state.
+        // Cannot move to disconnecting, but not in connecting state.
+        return Promise.reject("The websocket did not disconnect");
       }
     }
-    this.emit('disconnecting');
+    this.emit("disconnecting");
     this.disconnectionPromise = new Promise((resolve, reject) => {
       this.disconnectDeferredResolve = resolve;
 
       if (this.reconnectTimer) {
         clearTimeout(this.reconnectTimer);
-        this.reconnectTimer = null;
+        this.reconnectTimer = undefined;
       }
 
       if (this.ws) {
         this.stopSendingKeepAlives();
 
-        this.logger.log('closing WebSocket ' + this.server.ws_uri);
+        this.logger.log("closing WebSocket " + this.server.wsUri);
         this.ws.close(options.code, options.reason);
       } else {
-        reject('Attempted to disconnect but the websocket doesn\'t exist');
+        reject("Attempted to disconnect but the websocket doesn't exist");
       }
     });
 
     return this.disconnectionPromise;
-  }},
+  }
 
   /**
-  * Connect socket.
-  */
-  connectPromise: {writable: true, value: function connectPromise (options) {
-    options = options || {};
-    if (this.status === C.STATUS_CLOSING && !options.force) {
-      return Promise.reject('WebSocket ' + this.server.ws_uri + ' is closing');
+   * Connect socket.
+   */
+  protected connectPromise(options: any = {}) {
+    if (this.status === TransportStatus.STATUS_CLOSING && !options.force) {
+      return Promise.reject("WebSocket " + this.server.wsUri + " is closing");
     }
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
     this.server = this.server || this.getNextWsServer(options.force);
 
-    this.connectionPromise = new Promise(function(resolve, reject) {
-
-      if ((this.status === C.STATUS_OPEN || this.status === C.STATUS_CLOSING) && !options.force) {
-        this.logger.warn('WebSocket ' + this.server.ws_uri + ' is already connected');
-        reject('Failed status check - attempted to open a connection but already open/closing');
+    this.connectionPromise = new Promise((resolve, reject) => {
+      if ((this.status === TransportStatus.STATUS_OPEN || this.status === TransportStatus.STATUS_CLOSING)
+        && !options.force) {
+        this.logger.warn("WebSocket " + this.server.wsUri + " is already connected");
+        reject("Failed status check - attempted to open a connection but already open/closing");
         return;
       }
 
       this.connectDeferredResolve = resolve;
 
-      this.status = C.STATUS_CONNECTING;
-      this.emit('connecting');
-      this.logger.log('connecting to WebSocket ' + this.server.ws_uri);
+      this.status = TransportStatus.STATUS_CONNECTING;
+      this.emit("connecting");
+      this.logger.log("connecting to WebSocket " + this.server.wsUri);
       this.disposeWs();
       try {
-        this.ws = new WebSocket(this.server.ws_uri, 'sip');
+        this.ws = new WebSocket(this.server.wsUri, "sip");
       } catch (e) {
         this.ws = null;
-        this.status = C.STATUS_CLOSED; // force status to closed in error case
-        this.onError('error connecting to WebSocket ' + this.server.ws_uri + ':' + e);
-        reject('Failed to create a websocket');
+        this.status = TransportStatus.STATUS_CLOSED; // force status to closed in error case
+        this.onError("error connecting to WebSocket " + this.server.wsUri + ":" + e);
+        reject("Failed to create a websocket");
         return;
       }
 
       if (!this.ws) {
-        reject('Unexpected instance websocket not set');
+        reject("Unexpected instance websocket not set");
         return;
       }
 
       this.connectionTimeout = setTimeout(() => {
-        this.statusTransition(C.STATUS_CLOSED);
-        this.logger.warn('took too long to connect - exceeded time set in configuration.connectionTimeout: ' + this.configuration.connectionTimeout + 's');
-        this.emit('disconnected', {code: 1000});
-        this.connectionPromise = null;
-        reject('Connection timeout');
+        this.statusTransition(TransportStatus.STATUS_CLOSED);
+        this.logger.warn("took too long to connect - exceeded time set in configuration.connectionTimeout: " +
+          this.configuration.connectionTimeout + "s");
+        this.emit("disconnected", {code: 1000});
+        this.connectionPromise = undefined;
+        reject("Connection timeout");
       }, this.configuration.connectionTimeout * 1000);
 
       this.boundOnOpen = this.onOpen.bind(this);
       this.boundOnMessage = this.onMessage.bind(this);
       this.boundOnClose = this.onClose.bind(this);
       this.boundOnError = this.onWebsocketError.bind(this);
-      this.ws.addEventListener('open', this.boundOnOpen);
-      this.ws.addEventListener('message', this.boundOnMessage);
-      this.ws.addEventListener('close', this.boundOnClose);
-      this.ws.addEventListener('error', this.boundOnError);
-    }.bind(this));
+
+      this.ws.addEventListener("open", this.boundOnOpen);
+      this.ws.addEventListener("message", this.boundOnMessage);
+      this.ws.addEventListener("close", this.boundOnClose);
+      this.ws.addEventListener("error", this.boundOnError);
+    });
 
     return this.connectionPromise;
-  }},
+  }
+
+  /**
+   * @event
+   * @param {event} e
+   */
+  protected onMessage(e: any): void {
+    const data: any  = e.data;
+    let finishedData: string;
+    // CRLF Keep Alive response from server. Clear our keep alive timeout.
+    if (/^(\r\n)+$/.test(data)) {
+      this.clearKeepAliveTimeout();
+
+      if (this.configuration.traceSip === true) {
+        this.logger.log("received WebSocket message with CRLF Keep Alive response");
+      }
+      return;
+    } else if (!data) {
+      this.logger.warn("received empty message, message discarded");
+      return;
+    } else if (typeof data !== "string") { // WebSocket binary message.
+      try {
+        // the UInt8Data was here prior to types, and doesn't check
+        finishedData = String.fromCharCode.apply(null, (new Uint8Array(data) as unknown as Array<number>));
+      } catch (err) {
+        this.logger.warn("received WebSocket binary message failed to be converted into string, message discarded");
+        return;
+      }
+
+      if (this.configuration.traceSip === true) {
+        this.logger.log("received WebSocket binary message:\n\n" + data + "\n");
+      }
+    } else { // WebSocket text message.
+      if (this.configuration.traceSip === true) {
+        this.logger.log("received WebSocket text message:\n\n" + data + "\n");
+      }
+      finishedData = data;
+    }
+
+    this.emit("message", finishedData);
+  }
 
   // Transport Event Handlers
 
   /**
-  * @event
-  * @param {event} e
-  */
-  onOpen: {writable: true, value: function onOpen () {
-    if (this.status === C.STATUS_CLOSED) { // Indicated that the transport thinks the ws is dead already
+   * @event
+   * @param {event} e
+   */
+  private onOpen(): void  {
+    if (this.status === TransportStatus.STATUS_CLOSED) { // Indicated that the transport thinks the ws is dead already
       const ws = this.ws;
       this.disposeWs();
       ws.close(1000);
       return;
     }
-    this.status = C.STATUS_OPEN; // quietly force status to open
-    this.emit('connected');
-    clearTimeout(this.connectionTimeout);
+    this.status = TransportStatus.STATUS_OPEN; // quietly force status to open
+    this.emit("connected");
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = undefined;
+    }
 
-    this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
+    this.logger.log("WebSocket " + this.server.wsUri + " connected");
 
     // Clear reconnectTimer since we are not disconnected
-    if (this.reconnectTimer !== null) {
+    if (this.reconnectTimer !== undefined) {
       clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+      this.reconnectTimer = undefined;
     }
     // Reset reconnectionAttempts
     this.reconnectionAttempts = 0;
 
     // Reset disconnection promise so we can disconnect from a fresh state
-    this.disconnectionPromise = null;
-    this.disconnectDeferredResolve = null;
+    this.disconnectionPromise = undefined;
+    this.disconnectDeferredResolve = undefined;
 
     // Start sending keep-alives
     this.startSendingKeepAlives();
@@ -243,195 +288,140 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
     if (this.connectDeferredResolve) {
       this.connectDeferredResolve({overrideEvent: true});
     } else {
-      this.logger.warn('Unexpected websocket.onOpen with no connectDeferredResolve');
+      this.logger.warn("Unexpected websocket.onOpen with no connectDeferredResolve");
     }
-  }},
+  }
 
   /**
-  * @event
-  * @param {event} e
-  */
-  onClose: {writable: true, value: function onClose (e) {
-    this.logger.log('WebSocket disconnected (code: ' + e.code + (e.reason? '| reason: ' + e.reason : '') +')');
+   * @event
+   * @param {event} e
+   */
+  private onClose(e: any): void {
+    this.logger.log("WebSocket disconnected (code: " + e.code + (e.reason ? "| reason: " + e.reason : "") + ")");
 
-    if (this.status !== C.STATUS_CLOSING) {
-      this.logger.warn('WebSocket closed without SIP.js requesting it');
-      this.emit('transportError');
+    if (this.status !== TransportStatus.STATUS_CLOSING) {
+      this.logger.warn("WebSocket closed without SIP.js requesting it");
+      this.emit("transportError");
     }
 
     this.stopSendingKeepAlives();
 
     // Clean up connection variables so we can connect again from a fresh state
-    clearTimeout(this.connectionTimeout);
-    this.connectionTimeout = null;
-    this.connectionPromise = null;
-    this.connectDeferredResolve = null;
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+    }
+    this.connectionTimeout = undefined;
+    this.connectionPromise = undefined;
+    this.connectDeferredResolve = undefined;
 
     // Check whether the user requested to close.
     if (this.disconnectDeferredResolve) {
       this.disconnectDeferredResolve({ overrideEvent: true });
-      this.statusTransition(C.STATUS_CLOSED);
-      this.disconnectDeferredResolve = null;
+      this.statusTransition(TransportStatus.STATUS_CLOSED);
+      this.disconnectDeferredResolve = undefined;
       return;
     }
 
-    this.status = C.STATUS_CLOSED; // quietly force status to closed
-    this.emit('disconnected', {code: e.code, reason: e.reason});
+    this.status = TransportStatus.STATUS_CLOSED; // quietly force status to closed
+    this.emit("disconnected", {code: e.code, reason: e.reason});
     this.reconnect();
-  }},
+  }
 
   /**
-  * Removes event listeners and clears the instance ws
-  * @private
-  * @param {event} e
-  */
-  disposeWs: {writable: true, value: function disposeWs () {
+   * Removes event listeners and clears the instance ws
+   */
+  private disposeWs(): void {
     if (this.ws) {
-      this.ws.removeEventListener('open', this.boundOnOpen);
-      this.ws.removeEventListener('message', this.boundOnMessage);
-      this.ws.removeEventListener('close', this.boundOnClose);
-      this.ws.removeEventListener('error', this.boundOnError);
-      this.boundOnOpen = null;
-      this.boundOnMessage = null;
-      this.boundOnClose = null;
-      this.boundOnError = null;
-      this.ws = null;
+      this.ws.removeEventListener("open", this.boundOnOpen);
+      this.ws.removeEventListener("message", this.boundOnMessage);
+      this.ws.removeEventListener("close", this.boundOnClose);
+      this.ws.removeEventListener("error", this.boundOnError);
+      this.ws = undefined;
     }
-  }},
+  }
 
   /**
-  * @event
-  * @param {event} e
-  */
-  onMessage: {writable: true, value: function onMessage (e) {
-    var data = e.data;
-    // CRLF Keep Alive response from server. Clear our keep alive timeout.
-    if (/^(\r\n)+$/.test(data)) {
-      this.clearKeepAliveTimeout();
-
-      if (this.configuration.traceSip === true) {
-        this.logger.log('received WebSocket message with CRLF Keep Alive response');
-      }
-      return;
-    }
-
-    else if (!data) {
-      this.logger.warn('received empty message, message discarded');
-      return;
-    }
-
-    // WebSocket binary message.
-    else if (typeof data !== 'string') {
-      try {
-        data = String.fromCharCode.apply(null, new Uint8Array(data));
-      } catch(err) {
-        this.logger.warn('received WebSocket binary message failed to be converted into string, message discarded');
-        return;
-      }
-
-      if (this.configuration.traceSip === true) {
-        this.logger.log('received WebSocket binary message:\n\n' + data + '\n');
-      }
-    }
-
-    // WebSocket text message.
-    else {
-      if (this.configuration.traceSip === true) {
-        this.logger.log('received WebSocket text message:\n\n' + data + '\n');
-      }
-    }
-
-    this.emit('message', data);
-  }},
-
-  /**
-  * @event
-  * @param {string} e
-  */
-  onError: {writable: true, value: function onError (e) {
-    this.logger.warn('Transport error: ' + e);
-    this.emit('transportError');
-  }},
+   * @event
+   * @param {string} e
+   */
+  private onError(e: any): void {
+    this.logger.warn("Transport error: " + e);
+    this.emit("transportError");
+  }
 
   /**
    * @event
    * @private
    * @param {event} e
    */
-  onWebsocketError: {writable: false, value: function onWebsocketError () {
-    this.onError('The Websocket had an error');
-  }},
+  private onWebsocketError(): void {
+    this.onError("The Websocket had an error");
+  }
 
   /**
-  * Reconnection attempt logic.
-  * @private
-  */
-  reconnect: {writable: true, value: function reconnect () {
+   * Reconnection attempt logic.
+   */
+  private reconnect(): void {
     if (this.reconnectionAttempts > 0) {
-      this.logger.log('Reconnection attempt ' + this.reconnectionAttempts + ' failed');
+      this.logger.log("Reconnection attempt " + this.reconnectionAttempts + " failed");
     }
 
     if (this.noAvailableServers()) {
-      this.logger.warn('no available ws servers left - going to closed state');
-      this.status = C.STATUS_CLOSED;
-      this.emit('closed');
+      this.logger.warn("no available ws servers left - going to closed state");
+      this.status = TransportStatus.STATUS_CLOSED;
+      this.emit("closed");
       this.resetServerErrorStatus();
       return;
     }
 
     if (this.isConnected()) {
-      this.logger.warn('attempted to reconnect while connected - forcing disconnect');
+      this.logger.warn("attempted to reconnect while connected - forcing disconnect");
       this.disconnect({force: true});
     }
 
     this.reconnectionAttempts += 1;
 
     if (this.reconnectionAttempts > this.configuration.maxReconnectionAttempts) {
-      this.logger.warn('maximum reconnection attempts for WebSocket ' + this.server.ws_uri);
-      this.logger.log('transport ' + this.server.ws_uri + ' failed | connection state set to \'error\'');
+      this.logger.warn("maximum reconnection attempts for WebSocket " + this.server.wsUri);
+      this.logger.log("transport " + this.server.wsUri + " failed | connection state set to 'error'");
       this.server.isError = true;
-      this.emit('transportError');
+      this.emit("transportError");
       this.server = this.getNextWsServer();
       this.reconnectionAttempts = 0;
       this.reconnect();
     } else {
-      this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnectionAttempts + ')');
-      this.reconnectTimer = setTimeout(function() {
+      this.logger.log("trying to reconnect to WebSocket " +
+        this.server.wsUri + " (reconnection attempt " + this.reconnectionAttempts + ")");
+      this.reconnectTimer = setTimeout(() => {
         this.connect();
-        this.reconnectTimer = null;
-      }.bind(this), (this.reconnectionAttempts === 1) ? 0 : this.configuration.reconnectionTimeout * 1000);
+        this.reconnectTimer = undefined;
+      }, (this.reconnectionAttempts === 1) ? 0 : this.configuration.reconnectionTimeout * 1000);
     }
-  }},
+  }
 
   /**
-  * Resets the error state of all servers in the configuration
-  */
-  resetServerErrorStatus: {writable: true, value: function resetServerErrorStatus () {
-    var idx, length = this.configuration.wsServers.length;
-    for(idx = 0; idx < length; idx++) {
-      this.configuration.wsServers[idx].isError = false;
+   * Resets the error state of all servers in the configuration
+   */
+  private resetServerErrorStatus(): void {
+    for (const websocket of this.configuration.wsServers) {
+      websocket.isError = false;
     }
-  }},
+  }
 
   /**
-  * Retrieve the next server to which connect.
-  * @private
-  * @param {Boolean} force allows bypass of server error status checking
-  * @returns {Object} wsServer
-  */
-  getNextWsServer: {writable: true, value: function getNextWsServer (force) {
+   * Retrieve the next server to which connect.
+   * @param {Boolean} force allows bypass of server error status checking
+   * @returns {Object} wsServer
+   */
+  private getNextWsServer(force: boolean = false): void {
     if (this.noAvailableServers()) {
-      this.logger.warn('attempted to get next ws server but there are no available ws servers left');
+      this.logger.warn("attempted to get next ws server but there are no available ws servers left");
       return;
     }
     // Order servers by weight
-    var idx, length, wsServer,
-    candidates = [];
+    let candidates: Array<any> = [];
 
-    length = this.configuration.wsServers.length;
-    for (idx = 0; idx < length; idx++) {
-      wsServer = this.configuration.wsServers[idx];
-
+    for (const wsServer of this.configuration.wsServers) {
       if (wsServer.isError && !force) {
         continue;
       } else if (candidates.length === 0) {
@@ -443,245 +433,245 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
       }
     }
 
-    idx = Math.floor(Math.random() * candidates.length);
-
+    const idx: number = Math.floor(Math.random() * candidates.length);
     return candidates[idx];
-  }},
+  }
 
   /**
-  * Checks all configuration servers, returns true if all of them have isError: true and false otherwise
-  * @private
-  * @returns {Boolean}
-  */
-  noAvailableServers: {writable: true, value: function noAvailableServers () {
-    var server;
-    for (server in this.configuration.wsServers) {
-      if (!this.configuration.wsServers[server].isError) {
+   * Checks all configuration servers, returns true if all of them have isError: true and false otherwise
+   * @returns {Boolean}
+   */
+  private noAvailableServers(): boolean {
+    for (const server of this.configuration.wsServers) {
+      if (!server.isError) {
         return false;
       }
     }
     return true;
-  }},
+  }
 
-  //==============================
+  // ==============================
   // KeepAlive Stuff
-  //==============================
+  // ==============================
 
   /**
    * Send a keep-alive (a double-CRLF sequence).
-   * @private
    * @returns {Boolean}
    */
-  sendKeepAlive: {writable: true, value: function sendKeepAlive () {
+  private sendKeepAlive(): Promise<any> | void {
     if (this.keepAliveDebounceTimeout) {
       // We already have an outstanding keep alive, do not send another.
       return;
     }
 
-    this.keepAliveDebounceTimeout = setTimeout(function() {
-      this.emit('keepAliveDebounceTimeout');
+    this.keepAliveDebounceTimeout = setTimeout(() => {
+      this.emit("keepAliveDebounceTimeout");
       this.clearKeepAliveTimeout();
-    }.bind(this), this.configuration.keepAliveDebounce * 1000);
+    }, this.configuration.keepAliveDebounce * 1000);
 
-    return this.send('\r\n\r\n');
-  }},
+    return this.send("\r\n\r\n");
+  }
 
-  clearKeepAliveTimeout: {writable: true, value: function clearKeepAliveTimeout () {
-    clearTimeout(this.keepAliveDebounceTimeout);
-    this.keepAliveDebounceTimeout = null;
-  }},
+  private clearKeepAliveTimeout(): void {
+    if (this.keepAliveDebounceTimeout) {
+      clearTimeout(this.keepAliveDebounceTimeout);
+    }
+    this.keepAliveDebounceTimeout = undefined;
+  }
 
   /**
    * Start sending keep-alives.
-   * @private
    */
-  startSendingKeepAlives: {writable: true, value: function startSendingKeepAlives () {
+  private startSendingKeepAlives(): void {
     if (this.configuration.keepAliveInterval && !this.keepAliveInterval) {
-      this.keepAliveInterval = setInterval(function() {
+      this.keepAliveInterval = setInterval(() => {
         this.sendKeepAlive();
         this.startSendingKeepAlives();
-      }.bind(this), computeKeepAliveTimeout(this.configuration.keepAliveInterval));
+      }, computeKeepAliveTimeout(this.configuration.keepAliveInterval));
     }
-  }},
+  }
 
   /**
    * Stop sending keep-alives.
-   * @private
    */
-  stopSendingKeepAlives: {writable: true, value: function stopSendingKeepAlives () {
-    clearInterval(this.keepAliveInterval);
-    clearTimeout(this.keepAliveDebounceTimeout);
-    this.keepAliveInterval = null;
-    this.keepAliveDebounceTimeout = null;
-  }},
+  private stopSendingKeepAlives(): void {
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+    }
+    if (this.keepAliveDebounceTimeout) {
+      clearTimeout(this.keepAliveDebounceTimeout);
+    }
+    this.keepAliveInterval = undefined;
+    this.keepAliveDebounceTimeout = undefined;
+  }
 
-  //==============================
+  // ==============================
   // Status Stuff
-  //==============================
+  // ==============================
 
   /**
-  * Checks given status against instance current status. Returns true if they match
-  * @private
-  * @param {Number} status
-  * @param {Boolean} [force]
-  * @returns {Boolean}
-  */
-  statusAssert: {writable: true, value: function statusAssert (status, force) {
+   * Checks given status against instance current status. Returns true if they match
+   * @param {Number} status
+   * @param {Boolean} [force]
+   * @returns {Boolean}
+   */
+  private statusAssert(status: TransportStatus, force: boolean): boolean {
     if (status === this.status) {
       return true;
     } else {
       if (force) {
-        this.logger.warn('Attempted to assert '+ Object.keys(C)[this.status] + ' as ' + Object.keys(C)[status] + '- continuing with option: \'force\'');
+        this.logger.warn("Attempted to assert " +
+          Object.keys(TransportStatus)[this.status] + " as " +
+          Object.keys(TransportStatus)[status] + "- continuing with option: 'force'");
         return true;
       } else {
-        this.logger.warn('Tried to assert ' + Object.keys(C)[status] + ' but is currently ' + Object.keys(C)[this.status]);
+        this.logger.warn("Tried to assert " +
+        Object.keys(TransportStatus)[status] + " but is currently " +
+        Object.keys(TransportStatus)[this.status]);
         return false;
       }
     }
-  }},
+  }
 
   /**
-  * Transitions the status. Checks for legal transition via assertion beforehand
-  * @private
-  * @param {Number} status
-  * @param {Boolean} [force]
-  * @returns {Boolean}
-  */
-  statusTransition: {writable: true, value: function statusTransition (status, force) {
-    this.logger.log('Attempting to transition status from ' + Object.keys(C)[this.status] + ' to ' + Object.keys(C)[status]);
-    if ((status === C.STATUS_CONNECTING && this.statusAssert(C.STATUS_CLOSED, force)) ||
-        (status === C.STATUS_OPEN && this.statusAssert(C.STATUS_CONNECTING, force)) ||
-        (status === C.STATUS_CLOSING && this.statusAssert(C.STATUS_OPEN, force))    ||
-        (status === C.STATUS_CLOSED))
-    {
+   * Transitions the status. Checks for legal transition via assertion beforehand
+   * @param {Number} status
+   * @param {Boolean} [force]
+   * @returns {Boolean}
+   */
+  private statusTransition(status: TransportStatus, force: boolean = false): boolean {
+    this.logger.log("Attempting to transition status from " +
+      Object.keys(TransportStatus)[this.status] + " to " +
+      Object.keys(TransportStatus)[status]);
+    if ((status === TransportStatus.STATUS_CONNECTING && this.statusAssert(TransportStatus.STATUS_CLOSED, force)) ||
+        (status === TransportStatus.STATUS_OPEN && this.statusAssert(TransportStatus.STATUS_CONNECTING, force)) ||
+        (status === TransportStatus.STATUS_CLOSING && this.statusAssert(TransportStatus.STATUS_OPEN, force))    ||
+        (status === TransportStatus.STATUS_CLOSED)) {
       this.status = status;
       return true;
     } else {
-      this.logger.warn('Status transition failed - result: no-op - reason: either gave an nonexistent status or attempted illegal transition');
+      this.logger.warn("Status transition failed - result: no-op - reason:" +
+        " either gave an nonexistent status or attempted illegal transition");
       return false;
     }
-  }},
+  }
 
-  //==============================
+  // ==============================
   // Configuration Handling
-  //==============================
+  // ==============================
 
   /**
    * Configuration load.
-   * @private
    * returns {Boolean}
    */
-  loadConfig: {writable: true, value: function loadConfig (configuration) {
-    var parameter, value, checked_value,
-      settings = {
-        wsServers: [{
-          scheme: 'WSS',
-          sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
-          weight: 0,
-          ws_uri: 'wss://edge.sip.onsip.com',
-          isError: false
-        }],
+  private loadConfig(configuration: any): void {
+    const settings: {[name: string]: any} = {
+      wsServers: [{
+        scheme: "WSS",
+        sipUri: "<sip:edge.sip.onsip.com;transport=ws;lr>",
+        weight: 0,
+        wsUri: "wss://edge.sip.onsip.com",
+        isError: false
+      }],
 
-        connectionTimeout: 5,
+      connectionTimeout: 5,
 
-        maxReconnectionAttempts: 3,
-        reconnectionTimeout: 4,
+      maxReconnectionAttempts: 3,
+      reconnectionTimeout: 4,
 
-        keepAliveInterval: 0,
-        keepAliveDebounce: 10,
+      keepAliveInterval: 0,
+      keepAliveDebounce: 10,
 
-        // Logging
-        traceSip: false,
-      };
+      // Logging
+      traceSip: false
+    };
 
-    var configCheck = this.getConfigurationCheck();
+    const configCheck: {mandatory: {[name: string]: any}, optional: {[name: string]: any}} =
+      this.getConfigurationCheck();
 
     // Check Mandatory parameters
-    for(parameter in configCheck.mandatory) {
-      if(!configuration.hasOwnProperty(parameter)) {
-        throw new SIP.Exceptions.ConfigurationError(parameter);
+    for (const parameter in configCheck.mandatory) {
+      if (!configuration.hasOwnProperty(parameter)) {
+        throw new Exceptions.ConfigurationError(parameter);
       } else {
-        value = configuration[parameter];
-        checked_value = configCheck.mandatory[parameter](value);
-        if (checked_value !== undefined) {
-          settings[parameter] = checked_value;
+        const value: any = configuration[parameter];
+        const checkedValue: any = configCheck.mandatory[parameter](value);
+        if (checkedValue !== undefined) {
+          settings[parameter] = checkedValue;
         } else {
-          throw new SIP.Exceptions.ConfigurationError(parameter, value);
+          throw new Exceptions.ConfigurationError(parameter, value);
         }
       }
     }
 
     // Check Optional parameters
-    for(parameter in configCheck.optional) {
-      if(configuration.hasOwnProperty(parameter)) {
-        value = configuration[parameter];
+    for (const parameter in configCheck.optional) {
+      if (configuration.hasOwnProperty(parameter)) {
+        const value = configuration[parameter];
 
         // If the parameter value is an empty array, but shouldn't be, apply its default value.
-        if (value instanceof Array && value.length === 0) { continue; }
-
         // If the parameter value is null, empty string, or undefined then apply its default value.
-        if(value === null || value === '' || value === undefined) { continue; }
         // If it's a number with NaN value then also apply its default value.
         // NOTE: JS does not allow "value === NaN", the following does the work:
-        else if(typeof(value) === 'number' && isNaN(value)) { continue; }
+        if ((value instanceof Array && value.length === 0) ||
+            (value === null || value === "" || value === undefined) ||
+            (typeof(value) === "number" && isNaN(value))) { continue; }
 
-        checked_value = configCheck.optional[parameter](value);
-        if (checked_value !== undefined) {
-          settings[parameter] = checked_value;
+        const checkedValue: any = configCheck.optional[parameter](value);
+        if (checkedValue !== undefined) {
+          settings[parameter] = checkedValue;
         } else {
-          throw new SIP.Exceptions.ConfigurationError(parameter, value);
+          throw new Exceptions.ConfigurationError(parameter, value);
         }
       }
     }
 
-    var skeleton = {};
-    // Fill the value of the configuration_skeleton
-    for(parameter in settings) {
-      skeleton[parameter] = {
-        value: settings[parameter],
-      };
+    const skeleton: any = {}; // Fill the value of the configuration_skeleton
+    for (const parameter in settings) {
+      if (settings.hasOwnProperty(parameter)) {
+        skeleton[parameter] = {
+          value: settings[parameter],
+        };
+      }
     }
 
     Object.defineProperties(this.configuration, skeleton);
 
-    this.logger.log('configuration parameters after validation:');
-    for(parameter in settings) {
-      this.logger.log('· ' + parameter + ': ' + JSON.stringify(settings[parameter]));
+    this.logger.log("configuration parameters after validation:");
+    for (const parameter in settings) {
+      if (settings.hasOwnProperty(parameter)) {
+        this.logger.log("· " + parameter + ": " + JSON.stringify(settings[parameter]));
+      }
     }
 
     return;
-  }},
-
+  }
 
   /**
    * Configuration checker.
-   * @private
    * @return {Boolean}
    */
-  getConfigurationCheck: {writable: true, value: function getConfigurationCheck () {
+  private getConfigurationCheck(): {mandatory: {[name: string]: any}, optional: {[name: string]: any}} {
     return {
       mandatory: {
       },
 
       optional: {
 
-        //Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
-        wsServers: function(wsServers) {
-          var idx, length, url;
-
+        // Note: this function used to call 'this.logger.error' but calling 'this' with anything here is invalid
+        wsServers: (wsServers: any): any => {
           /* Allow defining wsServers parameter as:
            *  String: "host"
            *  Array of Strings: ["host1", "host2"]
-           *  Array of Objects: [{ws_uri:"host1", weight:1}, {ws_uri:"host2", weight:0}]
-           *  Array of Objects and Strings: [{ws_uri:"host1"}, "host2"]
+           *  Array of Objects: [{wsUri:"host1", weight:1}, {wsUri:"host2", weight:0}]
+           *  Array of Objects and Strings: [{wsUri:"host1"}, "host2"]
            */
-          if (typeof wsServers === 'string') {
-            wsServers = [{ws_uri: wsServers}];
+          if (typeof wsServers === "string") {
+            wsServers = [{wsUri: wsServers}];
           } else if (wsServers instanceof Array) {
-            length = wsServers.length;
-            for (idx = 0; idx < length; idx++) {
-              if (typeof wsServers[idx] === 'string'){
-                wsServers[idx] = {ws_uri: wsServers[idx]};
+            for (let idx = 0; idx < wsServers.length; idx++) {
+              if (typeof wsServers[idx] === "string") {
+                wsServers[idx] = {wsUri: wsServers[idx]};
               }
             }
           } else {
@@ -692,85 +682,80 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
             return false;
           }
 
-          length = wsServers.length;
-          for (idx = 0; idx < length; idx++) {
-            if (!wsServers[idx].ws_uri) {
+          for (const wsServer of wsServers) {
+            if (!wsServer.wsUri) {
               return;
             }
-            if (wsServers[idx].weight && !Number(wsServers[idx].weight)) {
+            if (wsServer.weight && !Number(wsServer.weight)) {
               return;
             }
 
-            url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
+            const url: any | -1 = Grammar.parse(wsServer.wsUri, "absoluteURI");
 
-            if(url === -1) {
+            if (url === -1) {
               return;
-            } else if(['wss', 'ws', 'udp'].indexOf(url.scheme) < 0) {
+            } else if (["wss", "ws", "udp"].indexOf(url.scheme) < 0) {
               return;
             } else {
-              wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=' + url.scheme.replace(/^wss$/i, 'ws') + ';lr>';
+              wsServer.sipUri = "<sip:" + url.host +
+                (url.port ? ":" + url.port : "") + ";transport=" + url.scheme.replace(/^wss$/i, "ws") + ";lr>";
 
-              if (!wsServers[idx].weight) {
-                wsServers[idx].weight = 0;
+              if (!wsServer.weight) {
+                wsServer.weight = 0;
               }
 
-              wsServers[idx].isError = false;
-              wsServers[idx].scheme = url.scheme.toUpperCase();
+              wsServer.isError = false;
+              wsServer.scheme = url.scheme.toUpperCase();
             }
           }
           return wsServers;
         },
 
-        keepAliveInterval: function(keepAliveInterval) {
-          var value;
-          if (SIP.Utils.isDecimal(keepAliveInterval)) {
-            value = Number(keepAliveInterval);
+        keepAliveInterval: (keepAliveInterval: string): number | undefined => {
+          if (Utils.isDecimal(keepAliveInterval)) {
+            const value: number = Number(keepAliveInterval);
             if (value > 0) {
               return value;
             }
           }
         },
 
-        keepAliveDebounce: function(keepAliveDebounce) {
-          var value;
-          if (SIP.Utils.isDecimal(keepAliveDebounce)) {
-            value = Number(keepAliveDebounce);
+        keepAliveDebounce: (keepAliveDebounce: string): number | undefined => {
+          if (Utils.isDecimal(keepAliveDebounce)) {
+            const value = Number(keepAliveDebounce);
             if (value > 0) {
               return value;
             }
           }
         },
 
-        traceSip: function(traceSip) {
-          if (typeof traceSip === 'boolean') {
+        traceSip: (traceSip: boolean): boolean | undefined => {
+          if (typeof traceSip === "boolean") {
             return traceSip;
           }
         },
 
-        connectionTimeout: function(connectionTimeout) {
-          var value;
-          if (SIP.Utils.isDecimal(connectionTimeout)) {
-            value = Number(connectionTimeout);
+        connectionTimeout: (connectionTimeout: string): number | undefined => {
+          if (Utils.isDecimal(connectionTimeout)) {
+            const value = Number(connectionTimeout);
             if (value > 0) {
               return value;
             }
           }
         },
 
-        maxReconnectionAttempts: function(maxReconnectionAttempts) {
-          var value;
-          if (SIP.Utils.isDecimal(maxReconnectionAttempts)) {
-            value = Number(maxReconnectionAttempts);
+        maxReconnectionAttempts: (maxReconnectionAttempts: string): number | undefined => {
+          if (Utils.isDecimal(maxReconnectionAttempts)) {
+            const value: number = Number(maxReconnectionAttempts);
             if (value >= 0) {
               return value;
             }
           }
         },
 
-        reconnectionTimeout: function(reconnectionTimeout) {
-          var value;
-          if (SIP.Utils.isDecimal(reconnectionTimeout)) {
-            value = Number(reconnectionTimeout);
+        reconnectionTimeout: (reconnectionTimeout: string): number | undefined => {
+          if (Utils.isDecimal(reconnectionTimeout)) {
+            const value: number = Number(reconnectionTimeout);
             if (value > 0) {
               return value;
             }
@@ -779,10 +764,5 @@ Transport.prototype = Object.create(SIP.Transport.prototype, {
 
       }
     };
-  }}
-});
-
-Transport.C = C;
-SIP.Web.Transport = Transport;
-return Transport;
-};
+  }
+}
