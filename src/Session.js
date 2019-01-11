@@ -307,6 +307,54 @@ Session.prototype = {
       }
     }
   },
+ /**
+  * Mute
+  */
+  mute: function(options) {
+
+      var pc = this.sessionDescriptionHandler.peerConnection;
+      if (pc.getSenders) {
+          pc.getSenders().forEach(function (sender) {
+              if (sender.track) {
+                  sender.track.enabled = false;
+              }
+          });
+      }
+      else {
+          pc.getLocalStreams().forEach(function (stream) {
+              stream.getAudioTracks().forEach(function (track) {
+                  track.enabled = false;
+              });
+              stream.getVideoTracks().forEach(function (track) {
+                  track.enabled = false;
+              });
+          });
+      }
+  },
+
+ /**
+  * Unmute
+  */
+  unmute: function(options) {
+      var pc = this.sessionDescriptionHandler.peerConnection;
+      if (pc.getSenders) {
+          pc.getSenders().forEach(function (sender) {
+              if (sender.track) {
+                  sender.track.enabled = true;
+              }
+          });
+      }
+      else {
+          pc.getLocalStreams().forEach(function (stream) {
+              stream.getAudioTracks().forEach(function (track) {
+                  track.enabled = true;
+              });
+              stream.getVideoTracks().forEach(function (track) {
+                  track.enabled = true;
+              });
+          });
+      }
+  },
 
   /**
    * Hold
