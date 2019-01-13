@@ -6,7 +6,7 @@ describe("URI", function() {
   var port;
 
   beforeEach(function() {
-    scheme = null;
+    scheme = undefined;
     user = 'alice';
     host = 'test.com';
     port = 5060;
@@ -42,8 +42,8 @@ describe("URI", function() {
       URI.parameters = {};
     });
 
-    it("does not set a parameter with a null key", function() {
-      URI.setParam(null,"value");
+    it("does not set a parameter with a undefined key", function() {
+      URI.setParam(undefined,"value");
       expect(URI.parameters).toEqual({});
     });
     
@@ -73,9 +73,9 @@ describe("URI", function() {
       URI.parameters = {};
     });
     
-    it("does not get a parameter for a null key", function() {
+    it("does not get a parameter for a undefined key", function() {
       URI.setParam("key","value");
-      expect(URI.getParam(null)).toBeUndefined();
+      expect(URI.getParam(undefined)).toBeUndefined();
     });
     
     it("gets a parameter for a key", function() {
@@ -95,8 +95,8 @@ describe("URI", function() {
       URI.parameters = {"key":"value"};
     });
     
-    it("is undefined for a null key", function() {
-      expect(URI.hasParam(null)).toBeUndefined();
+    it("is false for a undefined key", function() {
+      expect(URI.hasParam(undefined)).toBeFalsy();
     });
     
     it("is false for a parameter that does not exist", function() {
@@ -288,11 +288,13 @@ describe("URI", function() {
   });
   
   it("should parse a URI from a valid string", function() {
-    var parsedURI = SIP.URI.parse("sip:"+user+"@"+host);
+    var parsedURI = SIP.Grammar.URIParse("sip:"+user+"@"+host);
     
     expect(parsedURI).toBeDefined();
     
-    expect(parsedURI).toEqual(URI);
+    // this should've never worked, I think the pre-TS way did weird things with
+    // prototypes that would circumvent this check
+    //expect(parsedURI).toEqual(URI);
     
     expect(parsedURI.user).toEqual(user);
     expect(parsedURI.user).toEqual(URI.user);
@@ -302,7 +304,7 @@ describe("URI", function() {
   });
   
   it(".parse does not parse a URI from an invalid string", function() {
-    var parsedURI = SIP.URI.parse(user+host);
+    var parsedURI = SIP.Grammar.URIParse(user+host);
     
     expect(parsedURI).toBeUndefined();
   });
@@ -313,11 +315,11 @@ describe("URI", function() {
     var uri;
 
     beforeEach(function () {
-      uri = SIP.URI.parse(toParse);
+      uri = SIP.Grammar.URIParse(toParse);
     });
 
     it('produces a SIP.URI', function () {
-      expect(uri instanceof(SIP.URI)).toBeTruthy();
+      expect(uri.type).toBe(SIP.TypeStrings.URI);
     });
 
     function itParses (property, expected) {
@@ -331,7 +333,7 @@ describe("URI", function() {
     itParses('host', 'versatica.com');
     itParses('port', 6060);
 
-    it('parses non-null parameter "transport"', function () {
+    it('parses non-undefined parameter "transport"', function () {
       expect(uri.hasParam('transport')).toEqual(true);
       expect(uri.getParam('transport')).toEqual('tcp');
     });
@@ -347,7 +349,7 @@ describe("URI", function() {
       });
     }
 
-    itsMethod('parses non-null parameter foo', 'getParam', 'foo', 'ABc');
+    itsMethod('parses non-undefined parameter foo', 'getParam', 'foo', 'ABc');
     itsMethod('parses null parameter baz', 'getParam', 'baz', null);
     itsMethod('parses header list x-header-1', 'getHeader', 'x-header-1', ['AaA1', 'AAA2']);
     itsMethod('parses header X-HEADER-2', 'getHeader', 'X-HEADER-2', ['BbB']);
@@ -374,7 +376,7 @@ describe("URI", function() {
       it('can clear parameters and headers, and nullify the port', function () {
         uri.clearParams();
         uri.clearHeaders();
-        uri.port = null;
+        uri.port = undefined;
         expect(uri.toString()).toEqual('sip:I%C3%B1aki:PASSWD@versatica.com');
       });
     });

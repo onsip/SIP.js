@@ -73,7 +73,7 @@ describe('An INVITE sent from a UAC', function () {
   });
 
   it('has no dialogs at first', function () {
-    expect(this.session.dialog).toBeNull();
+    expect(this.session.dialog).toBeUndefined();
     expect(this.session.earlyDialogs).toEqual({});
   });
 
@@ -338,10 +338,10 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('by a [3-6]xx response', function () {
 
-        function testWith(status_code) {
-          describe('(' + status_code + ')', function () {
+        function testWith(statusCode) {
+          describe('(' + statusCode + ')', function () {
             beforeEach(function () {
-              var response = SIPHelper.createResponse(this.session.request, status_code);
+              var response = SIPHelper.createResponse(this.session.request, statusCode);
               this.session.receiveResponse(response);
             });
             rejectResponseTests();

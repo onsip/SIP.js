@@ -1,4 +1,4 @@
-var Modifiers = require('../../../src/Web/Modifiers')(SIP);
+var Modifiers = require('../../../lib/Web/Modifiers');
 
 describe('Web/Modifiers', function () {
   var sdpWrapper;

@@ -44,7 +44,7 @@ describe('RegisterContext', function() {
     expect(RegisterContext.options).toBeDefined();
     expect(RegisterContext.options.registrar).toBeDefined();
     expect(RegisterContext.options.expires).toBe(ua.configuration.registerOptions.expires);
-    expect(RegisterContext.registrationTimer).toBeDefined();
+    expect(RegisterContext.registrationTimer).toBeUndefined();
     expect(RegisterContext.registered).toBeFalsy();
     expect(RegisterContext.contact).toBeDefined();
     expect(RegisterContext.logger).toBeDefined();
@@ -61,8 +61,8 @@ describe('RegisterContext', function() {
     expect(RegisterContext.options.extraContactHeaderParams).toBeDefined();
     expect(RegisterContext.options.instanceId).toBeDefined();
     expect(RegisterContext.options.params).toBeDefined();
-    expect(RegisterContext.options.params.to_uri).toBe(ua.configuration.uri);
-    expect(RegisterContext.options.params.to_displayName).toBe(ua.configuration.displayName);
+    expect(RegisterContext.options.params.toUri).toBe(ua.configuration.uri);
+    expect(RegisterContext.options.params.toDisplayName).toBe(ua.configuration.displayName);
     expect(RegisterContext.options.regId).toBe(1);
   });
 
@@ -97,7 +97,7 @@ describe('RegisterContext', function() {
       RegisterContext.register(options);
 
       var response = new SIP.IncomingResponse(ua);
-      response.status_code = 423;
+      response.statusCode = 423;
       response.cseq = RegisterContext.cseq;
       response.setHeader('min-expires', 555555);
 
@@ -112,7 +112,7 @@ describe('RegisterContext', function() {
       spyOn(RegisterContext, 'registrationFailure').and.returnValue('registrationFailure');
 
       var response = new SIP.IncomingResponse(ua);
-      response.status_code = 423;
+      response.statusCode = 423;
       response.cseq = RegisterContext.cseq;
       response.headers['min-expires'] = undefined;
 
@@ -145,13 +145,13 @@ describe('RegisterContext', function() {
       expect(callback).toHaveBeenCalledWith(response, cause);
     });
 
-    it('emits failed with null and the cause provided if no response is provided', function() {
+    it('emits failed with undefined and the cause provided if no response is provided', function() {
       RegisterContext.on('failed', callback);
 
       var cause = 'cause';
 
       RegisterContext.registrationFailure(undefined,cause);
-      expect(callback).toHaveBeenCalledWith(null, cause);
+      expect(callback).toHaveBeenCalledWith(undefined, cause);
     });
 
     it('does not unregister', function() {
@@ -169,15 +169,15 @@ describe('RegisterContext', function() {
   });
 
   describe('.onTransportDisconnected', function() {
-    it('takes the registered variable and move it to registered_before variable', function() {
-      expect(RegisterContext.registered_before).not.toEqual(RegisterContext.registered);
+    it('takes the registered variable and move it to registeredBefore variable', function() {
+      expect(RegisterContext.registeredBefore).not.toEqual(RegisterContext.registered);
       RegisterContext.onTransportDisconnected();
-      expect(RegisterContext.registered_before).toEqual(RegisterContext.registered);
+      expect(RegisterContext.registeredBefore).toEqual(RegisterContext.registered);
     });
 
     it('clears the registration timer if it is set', function() {
       RegisterContext.registrationTimer = setTimeout(function() {return;},999999);
-      expect(RegisterContext.registrationTimer).not.toEqual(null);
+      expect(RegisterContext.registrationTimer).not.toEqual(undefined);
       RegisterContext.onTransportDisconnected();
     });
 
@@ -186,7 +186,7 @@ describe('RegisterContext', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
       RegisterContext.onTransportDisconnected();
-      expect(RegisterContext.unregistered).toHaveBeenCalledWith(null, SIP.C.causes.CONNECTION_ERROR);
+      expect(RegisterContext.unregistered).toHaveBeenCalledWith(undefined, SIP.C.causes.CONNECTION_ERROR);
     });
   });
 
@@ -195,10 +195,10 @@ describe('RegisterContext', function() {
       spyOn(RegisterContext, 'unregister').and.returnValue('unregister');
     });
 
-    it('takes registered and move it to registered_before', function() {
-      expect(RegisterContext.registered).not.toBe(RegisterContext.registered_before);
+    it('takes registered and move it to registeredBefore', function() {
+      expect(RegisterContext.registered).not.toBe(RegisterContext.registeredBefore);
       RegisterContext.close();
-      expect(RegisterContext.registered).toBe(RegisterContext.registered_before);
+      expect(RegisterContext.registered).toBe(RegisterContext.registeredBefore);
     });
 
     it('calls unregister with closeHeaders', function() {
@@ -244,7 +244,7 @@ describe('RegisterContext', function() {
       RegisterContext.registered = true;
       RegisterContext.registrationTimer = setTimeout(function() { return; }, 999999);
       RegisterContext.unregister();
-      expect(RegisterContext.registrationTimer).toBe(null);
+      expect(RegisterContext.registrationTimer).toBe(undefined);
     });
 
     it('pushes extra headers Contact: *, Expires: 0 if options.all is truthy', function() {
@@ -274,19 +274,19 @@ describe('RegisterContext', function() {
       expect(RegisterContext.request.extraHeaders).toEqual([ 'Contact: '+RegisterContext.contact+';expires=0' ]);
     });
 
-    it('calls send with the params call_id, and cseq+=1', function() {
+    it('calls send with the params callId, and cseq+=1', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.send).not.toHaveBeenCalled();
       var cseqBefore = RegisterContext.cseq;
       RegisterContext.unregister();
       expect(RegisterContext.send).toHaveBeenCalledWith();
-      expect(RegisterContext.request.call_id).toBe(RegisterContext.options.params.call_id);
+      expect(RegisterContext.request.callId).toBe(RegisterContext.options.params.callId);
       expect(RegisterContext.request.cseq).toBe(cseqBefore + 1);
       expect(RegisterContext.cseq).toBe(cseqBefore+1);
     });
 
     it('defines receiveResponse', function() {
-      delete RegisterContext.receiveResponse;
+      RegisterContext.receiveResponse = undefined;
       RegisterContext.registered = true;
       expect(RegisterContext.receiveResponse).toBeUndefined();
       RegisterContext.unregister();
@@ -294,7 +294,7 @@ describe('RegisterContext', function() {
     });
 
     it('defines onRequestTimeout', function() {
-      delete RegisterContext.onRequestTimeout;
+      RegisterContext.onRequestTimeout = undefined;
       RegisterContext.registered = true;
       expect(RegisterContext.onRequestTimeout).toBeUndefined();
       RegisterContext.unregister();
@@ -302,7 +302,7 @@ describe('RegisterContext', function() {
     });
 
     xit('defines onTransportError', function() {
-      delete RegisterContext.onTransportError;
+      RegisterContext.onTransportError = undefined;
       RegisterContext.registered = true;
       expect(RegisterContext.onTransportError).toBeUndefined();
       RegisterContext.unregister();
@@ -335,11 +335,11 @@ describe('RegisterContext', function() {
       RegisterContext.unregistered(response,cause);
       expect(callback).toHaveBeenCalledWith(response, cause);
     });
-    it('emits unregistered with a null response and a null cause if one is not provided', function() {
+    it('emits unregistered with a undefined response and a undefined cause if one is not provided', function() {
       RegisterContext.on('unregistered', callback);
       expect(callback).not.toHaveBeenCalled();
       RegisterContext.unregistered();
-      expect(callback).toHaveBeenCalledWith(null, null);
+      expect(callback).toHaveBeenCalledWith(undefined, undefined);
     });
   });
 });

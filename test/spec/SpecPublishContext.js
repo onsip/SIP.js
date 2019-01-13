@@ -20,9 +20,9 @@ describe('PublishContext', function() {
     it('set defaults, no options provided', function() {
       Publish = new SIP.PublishContext(ua, 'alice@example.com', 'presence');
 
-      expect(Publish.pubRequestBody).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.publish_refresh_timer).toBeNull();
+      expect(Publish.pubRequestBody).toBeUndefined();
+      expect(Publish.pubRequestEtag).toBeUndefined();
+      expect(Publish.publish_refresh_timer).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(3600);
       expect(Publish.options.extraHeaders).toEqual([]);
       expect(Publish.options.contentType).toBe('text/plain');
@@ -47,9 +47,9 @@ describe('PublishContext', function() {
 
       Publish = new SIP.PublishContext(ua, 'alice@example.com', 'presence', testOptions);
 
-      expect(Publish.pubRequestBody).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.publish_refresh_timer).toBeNull();
+      expect(Publish.pubRequestBody).toBeUndefined();
+      expect(Publish.pubRequestEtag).toBeUndefined();
+      expect(Publish.publish_refresh_timer).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(180);
       expect(Publish.options.extraHeaders).toEqual(['X-Foo: foo','X-Bar: bar']);
       expect(Publish.options.contentType).toBe('application/json');
@@ -93,13 +93,11 @@ describe('PublishContext', function() {
 
   describe('.publish', function() {
     it('publish initial call after the object init', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.publish('ExampleBody');
 
-      expect(Publish.request).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
+      expect(Publish.pubRequestEtag).toBeUndefined();
       expect(Publish.pubRequestBody).toBe('ExampleBody');
       expect(Publish.pubRequestExpires).toBe(3600);
 
@@ -108,22 +106,19 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish call with no body and no ETag', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.request = true;
 
       expect(function() {Publish.publish();}).toThrowError('Missing parameter: Body');
 
-      expect(Publish.request).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestEtag).toBeUndefined();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(3600);
 
       expect(Publish.event).toBe('presence');
@@ -131,13 +126,11 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBeUndefined();
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
 
     it('publish call with no body and Expire = 0', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.request = true;
@@ -146,9 +139,8 @@ describe('PublishContext', function() {
 
       expect(function() {Publish.publish();}).toThrowError('Missing parameter: Expire');
 
-      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('SomeValue');
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.event).toBe('presence');
@@ -156,13 +148,11 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBeUndefined();
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     })
 
     it('publish modify call, with both body and ETag set', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.body = 'ExampleBody';
@@ -172,7 +162,6 @@ describe('PublishContext', function() {
 
       Publish.publish('ExampleBodyModify');
 
-      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('TestETag');
       expect(Publish.pubRequestBody).toBe('ExampleBodyModify');
       expect(Publish.pubRequestExpires).toBe(180);
@@ -182,13 +171,11 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBodyModify');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish refresh call, with no body but with ETag set', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -200,9 +187,8 @@ describe('PublishContext', function() {
 
       Publish.publish();
 
-      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('TestETag');
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(180);
 
       expect(Publish.event).toBe('presence');
@@ -210,26 +196,23 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('publish call with body and no ETag set, with Expires = 0 after unpublish', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 0;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
       Publish.request = true;
       ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.publish('ExampleBodyNew');
 
-      expect(Publish.request).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
+      expect(Publish.pubRequestEtag).toBeUndefined();
       expect(Publish.pubRequestBody).toBe('ExampleBodyNew');
       expect(Publish.pubRequestExpires).toBe(3600);
 
@@ -238,7 +221,6 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBodyNew');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
@@ -247,7 +229,6 @@ describe('PublishContext', function() {
 
   describe('.unpublish', function() {
     it('unpublish call with ETag set', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -259,9 +240,8 @@ describe('PublishContext', function() {
 
       Publish.unpublish();
 
-      expect(Publish.request).toBeNull();
       expect(Publish.pubRequestEtag).toBe('TestETag');
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.event).toBe('presence');
@@ -269,27 +249,24 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(1);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
     it('unpublish call with no ETag set', function() {
-      spyOn(window, 'clearTimeout');
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
       Publish.request = true;
       ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
       Publish.unpublish();
 
-      expect(Publish.request).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestEtag).toBeUndefined();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.event).toBe('presence');
@@ -297,7 +274,6 @@ describe('PublishContext', function() {
       expect(Publish.options.body).toBe('ExampleBody');
 
       expect(Publish.sendPublishRequest.calls.count()).toBe(0);
-      expect(clearTimeout).toHaveBeenCalled();
 
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
@@ -323,9 +299,8 @@ describe('PublishContext', function() {
 
       Publish.close();
 
-      expect(Publish.request).toBeNull();
-      expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestEtag).toBeUndefined();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.unpublish.calls.count()).toBe(0);
@@ -352,7 +327,7 @@ describe('PublishContext', function() {
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.request = null;
+      Publish.request = undefined;
 
       Publish.sendPublishRequest();
 
@@ -371,10 +346,10 @@ describe('PublishContext', function() {
     it('send publish request with no body', function() {
       spyOn(SIP.ClientContext.prototype, 'send');
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
-      Publish.request = null;
+      Publish.request = undefined;
 
       Publish.sendPublishRequest();
 
@@ -458,7 +433,6 @@ describe('PublishContext', function() {
 
     it('2xx response to PUBLISH non-removal request with Expires = 0', function() {
       spyOn(Publish, 'emit');
-      spyOn(window, 'clearTimeout');
       spyOn(window, 'setTimeout');
 
       Publish.pubRequestBody = 'ExampleBody';
@@ -482,21 +456,19 @@ describe('PublishContext', function() {
 
       Publish.receiveResponse(response);
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 0;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
 
-      expect(clearTimeout).toHaveBeenCalled();
       expect(setTimeout).not.toHaveBeenCalled();
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'OK');
     });
 
     it('2xx response to PUBLISH removal request', function() {
       spyOn(Publish, 'emit');
-      spyOn(window, 'clearTimeout');
       spyOn(window, 'setTimeout');
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 0;
       Publish.pubRequestEtag = 'TestETag';
 
@@ -516,11 +488,10 @@ describe('PublishContext', function() {
         ''].join('\r\n'), ua);
       Publish.receiveResponse(response);
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 0;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
 
-      expect(clearTimeout).toHaveBeenCalled();
       expect(setTimeout).not.toHaveBeenCalled();
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'OK');
     });
@@ -531,7 +502,7 @@ describe('PublishContext', function() {
       spyOn(Publish.logger, 'warn');
 
       Publish.options.body = 'ExampleBody';
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 180;
       Publish.pubRequestEtag = 'TestETag';
 
@@ -550,9 +521,9 @@ describe('PublishContext', function() {
 
       Publish.receiveResponse(response);
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 180;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
 
       expect(Publish.publish).toHaveBeenCalledWith('ExampleBody');
       expect(Publish.logger.warn).toHaveBeenCalledWith('412 response to PUBLISH, recovering');
@@ -582,9 +553,9 @@ describe('PublishContext', function() {
 
       Publish.receiveResponse(response);
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 0;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
 
       expect(Publish.logger.warn).toHaveBeenCalledWith('412 response to PUBLISH, recovery failed');
       expect(Publish.emit).toHaveBeenCalledWith('failed', response, 'Conditional Request Failed');
@@ -651,9 +622,9 @@ describe('PublishContext', function() {
 
       Publish.receiveResponse(response);
 
-      Publish.pubRequestBody = null;
+      Publish.pubRequestBody = undefined;
       Publish.pubRequestExpires = 0;
-      Publish.pubRequestEtag = null;
+      Publish.pubRequestEtag = undefined;
 
       expect(Publish.logger.warn).toHaveBeenCalledWith('423 response to PUBLISH, recovery failed');
       expect(Publish.emit).toHaveBeenCalledWith('failed', response, 'Interval Too Brief');
@@ -662,7 +633,6 @@ describe('PublishContext', function() {
 
     it('Default for 3xx, 4xx (except 412, 423), 6xx response to PUBLISH', function() {
       spyOn(Publish, 'emit');
-      spyOn(window, 'clearTimeout');
 
       Publish.pubRequestBody = 'ExampleBody';
       Publish.pubRequestExpires = 180;
@@ -685,14 +655,12 @@ describe('PublishContext', function() {
 
       Publish.receiveResponse(response);
 
-      expect(Publish.pubRequestEtag).toBeNull();
-      expect(Publish.pubRequestBody).toBeNull();
+      expect(Publish.pubRequestEtag).toBeUndefined();
+      expect(Publish.pubRequestBody).toBeUndefined();
       expect(Publish.pubRequestExpires).toBe(0);
 
       expect(Publish.emit).toHaveBeenCalledWith('failed', response, 'Temporarily Unavailable');
       expect(Publish.emit).toHaveBeenCalledWith('unpublished', response, 'Temporarily Unavailable');
-      expect(clearTimeout).toHaveBeenCalled();
-
     });
 
   });
@@ -705,7 +673,7 @@ describe('PublishContext', function() {
       Publish.onRequestTimeout();
 
       expect(SIP.ClientContext.prototype.onRequestTimeout.calls.count()).toBe(1);
-      expect(Publish.emit).toHaveBeenCalledWith('unpublished', null, SIP.C.causes.REQUEST_TIMEOUT);
+      expect(Publish.emit).toHaveBeenCalledWith('unpublished', undefined, SIP.C.causes.REQUEST_TIMEOUT);
     });
 
   });
@@ -718,7 +686,7 @@ describe('PublishContext', function() {
       Publish.onTransportError();
 
       expect(SIP.ClientContext.prototype.onTransportError.calls.count()).toBe(1);
-      expect(Publish.emit).toHaveBeenCalledWith('unpublished', null, SIP.C.causes.CONNECTION_ERROR);
+      expect(Publish.emit).toHaveBeenCalledWith('unpublished', undefined, SIP.C.causes.CONNECTION_ERROR);
     });
 
   });
