@@ -40,6 +40,7 @@ export declare class WebSessionDescriptionHandler extends EventEmitter implement
   on(event: 'peerConnection-createAnswerFailed' | 'peerConnection-createOfferFailed', listener: (error: any) => void): this; // TODO:
   on(event: 'peerConnection-SetLocalDescriptionFailed', listener: (error: any) => void): this;
   on(event: 'addTrack', listener: (track: MediaStreamTrack) => void): this;
+  on(event: 'addStream', listener: (track: MediaStream) => void): this;
   on(event: 'iceCandidate', listener: (candidate: RTCIceCandidate) => void): this;
   on(event: 'iceConnection' | 'iceConnectionChecking' | 'iceConnectionConnected' | 'iceConnectionCompleted' | 'iceConnectionFailed' | 'iceConnectionDisconnected' | 'iceConectionClosed', listener: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): this;
   on(event: 'iceGathering' | 'iceGatheringComplete', listener: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): this;

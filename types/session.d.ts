@@ -78,8 +78,11 @@ export declare abstract class Session extends EventEmitter {
   on(event: 'connecting', listener: (request: any) => void): this;
   on(event: 'dtmf', listener: (OutgoingRequest, DTMF) => void): this;
   on(event: 'SessionDescriptionHandler-created', listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
+  on(event: 'referRequestProgress' | 'referRequestAccepted' | 'referRequestRejected', listener: (session: this) => void): this;
+  on(event: 'referInviteSent' | 'referProgress' | 'referAccepted' | 'referRejected', listener: (session: this) => void): this;
   on(event: 'dialog', listener: (dialog: any) => void): this;
   on(event: 'progress', listener: (response: IncomingRequest, reasonPhrase?: any) => void): this;
+  on(event: 'trackAdded' | 'directionChanged', listener: () => void): this;
 }
 
 export declare namespace Session {
