@@ -1,4 +1,4 @@
-import MD5 from "crypto-js/md5";
+import * as MD5 from "crypto-js/md5";
 
 import { DigestAuthentication as DigestAuthenticationDefinition } from "../types/digest-authentication";
 import { Logger } from "../types/logger-factory";
