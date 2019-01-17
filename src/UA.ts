@@ -598,7 +598,7 @@ export class UA extends EventEmitter implements UADefinition {
     if (this.configuration.register) {
       // In an effor to maintain behavior from when we "initialized" an
       // authentication factory, this is in a Promise.then
-      Promise.resolve().then(this.registerContext.register);
+      Promise.resolve().then(() => this.registerContext.register());
     }
   }
 
