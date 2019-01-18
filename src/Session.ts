@@ -147,7 +147,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     }
 
     // Check tones
-    if ((typeof tones !== "string" && typeof tones !== "number") || !tones.toString().match(/^[0-9A-D#\*,]+$/i)) {
+    if (!tones || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
       throw new TypeError("Invalid tones: " + tones);
     }
 
