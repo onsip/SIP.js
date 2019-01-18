@@ -140,14 +140,14 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     this.originalReceiveRequest = this.receiveRequest;
   }
 
-  public dtmf(tones: any, options: SessionDefinition.DtmfOptions = {}): this {
+  public dtmf(tones: string | number, options: SessionDefinition.DtmfOptions = {}): this {
     // Check Session Status
     if (this.status !== SessionStatus.STATUS_CONFIRMED && this.status !== SessionStatus.STATUS_WAITING_FOR_ACK) {
       throw new Exceptions.InvalidStateError(this.status);
     }
 
     // Check tones
-    if ((typeof tones !== "string" && typeof tones !== "number") || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
+    if ((typeof tones !== "string" && typeof tones !== "number") || !tones.toString().match(/^[0-9A-D#\*,]+$/i)) {
       throw new TypeError("Invalid tones: " + tones);
     }
 
@@ -184,8 +184,8 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     }
     if (dtmfType === C.dtmfType.INFO) {
       const dtmfs: Array<DTMF> = [];
-      tones = tones.split("");
-      while (tones.length > 0) { dtmfs.push(new DTMF(this, tones.shift(), options)); }
+      const tonesArray: Array<string> = tones.split("");
+      while (tonesArray.length > 0) { dtmfs.push(new DTMF(this, tonesArray.shift() as string, options)); }
 
       if (this.tones) {
         // Tones are already queued, just add to the queue

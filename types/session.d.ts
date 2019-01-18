@@ -47,7 +47,7 @@ export declare abstract class Session extends EventEmitter {
   startTime: Date | undefined;
   endTime: Date | undefined;
 
-  dtmf(tones: any, options?: Session.DtmfOptions): this
+  dtmf(tones: string| number, options?: Session.DtmfOptions): this
   bye(options?: any): this
   refer(target: string | InviteClientContext | InviteServerContext, options?: any): ReferClientContext;
   sendRequest(method: string, options: any): this;
