@@ -418,12 +418,12 @@ export class Simple extends EventEmitter {
     this.setupLocalMedia();
     this.setupRemoteMedia();
     if (this.session.sessionDescriptionHandler) {
-      this.session.sessionDescriptionHandler.on("addTrack", () => {
+      (this.session.sessionDescriptionHandler as SessionDescriptionHandler).on("addTrack", () => {
         this.logger.log("A track has been added, triggering new remoteMedia setup");
         this.setupRemoteMedia();
       });
 
-      this.session.sessionDescriptionHandler.on("addStream", () => {
+      (this.session.sessionDescriptionHandler as SessionDescriptionHandler).on("addStream", () => {
         this.logger.log("A stream has been added, trigger new remoteMedia setup");
         this.setupRemoteMedia();
       });

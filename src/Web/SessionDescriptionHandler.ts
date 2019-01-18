@@ -339,6 +339,10 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
     return true;
   }
 
+  /**
+   * Get the direction of the session description
+   * @returns {String} direction of the description
+   */
   public getDirection(): string {
     return this.direction;
   }

@@ -1,8 +1,7 @@
-import { EventEmitter } from "events";
 /**
  * The SessionDescriptionHandler interface SIP.js is expecting.
  */
-export interface SessionDescriptionHandler extends EventEmitter {
+export interface SessionDescriptionHandler {
   /**
    * Destructor
    */
@@ -46,12 +45,6 @@ export interface SessionDescriptionHandler extends EventEmitter {
    * @returns {boolean} true if DTMF send is successful, false otherwise
    */
   sendDtmf: (tones: string, options: any) => boolean;
-
-  /**
-   * Get the direction of the session description
-   * @returns {String} direction of the description
-   */
-  getDirection: () => string;
 }
 
 export interface SessionDescriptionHandlerModifier {
