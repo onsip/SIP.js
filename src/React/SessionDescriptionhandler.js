@@ -4,7 +4,7 @@ var WebRTC = require('react-native-webrtc');
 var {
   RTCPeerConnection,
   MediaStream,
-  getUserMedia,
+  mediaDevices,
 } = WebRTC;
 
 /**
@@ -51,7 +51,7 @@ var SessionDescriptionHandler = function(logger, observer, options) {
 
   this.WebRTC = {
     MediaStream: MediaStream,
-    getUserMedia: getUserMedia,
+    getUserMedia: mediaDevices.getUserMedia,
     RTCPeerConnection: RTCPeerConnection
   };
 
