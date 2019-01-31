@@ -1,11 +1,12 @@
-import { Session } from "./session";
+import { InviteClientContext, InviteServerContext } from "./session";
 import { SessionDescriptionHandler } from "./session-description-handler";
 
 /**
  * The SessionDescriptionHandlerFactory interface SIP.js is expecting.
  */
 export interface SessionDescriptionHandlerFactory {
-  (session: Session, options?: SessionDescriptionHandlerFactoryOptions): SessionDescriptionHandler;
+  (session: InviteClientContext | InviteServerContext,
+  options?: SessionDescriptionHandlerFactoryOptions): SessionDescriptionHandler;
 }
 
 /**

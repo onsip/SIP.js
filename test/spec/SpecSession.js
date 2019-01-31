@@ -7,7 +7,6 @@ describe('Session', function() {
     ua = new SIP.UA({uri: 'alice@example.com'}).start();
     ua.transport.ws.onopen();
 
-    Session = new SIP.EventEmitter();
     var sessionDescriptionHandlerFactory = function() {
       return {
         getDescription: function () { return Promise.resolve('foo'); },
@@ -17,7 +16,7 @@ describe('Session', function() {
         setDescription: function () { return Promise.resolve(); }
       };
     };
-    SIP.Utils.augment(Session, SIP.Session, [sessionDescriptionHandlerFactory]);
+    Session = new SIP.Session(sessionDescriptionHandlerFactory);
 
     Session.logger = new SIP.LoggerFactory().getLogger('sip.session');
 
@@ -49,32 +48,32 @@ describe('Session', function() {
 
   it('initializes session objects', function() {
     expect(Session.status).toBe(0);
-    expect(Session.dialog).toBeNull();
+    expect(Session.dialog).toBeUndefined();
     expect(Session.earlyDialogs).toBeDefined();
     expect(Session.sessionDescriptionHandler).toBeUndefined();
   });
 
   it('initializes session timers', function() {
-    expect(Session.timers.ackTimer).toBeNull();
-    expect(Session.timers.expiresTimer).toBeNull();
-    expect(Session.timers.invite2xxTimer).toBeNull();
-    expect(Session.timers.userNoAnswerTimer).toBeNull();
-    expect(Session.timers.rel1xxTimer).toBeNull();
-    expect(Session.timers.prackTimer).toBeNull();
+    expect(Session.timers.ackTimer).toBeUndefined();
+    expect(Session.timers.expiresTimer).toBeUndefined();
+    expect(Session.timers.invite2xxTimer).toBeUndefined();
+    expect(Session.timers.userNoAnswerTimer).toBeUndefined();
+    expect(Session.timers.rel1xxTimer).toBeUndefined();
+    expect(Session.timers.prackTimer).toBeUndefined();
   });
 
   it('initializes session info', function() {
-    expect(Session.startTime).toBeNull();
-    expect(Session.endTime).toBeNull();
-    expect(Session.tones).toBeNull();
+    expect(Session.startTime).toBeUndefined();
+    expect(Session.endTime).toBeUndefined();
+    expect(Session.tones).toBeUndefined();
   });
 
   it('initializes local_hold state info', function() {
-    expect(Session.local_hold).toBe(false);
+    expect(Session.localHold).toBe(false);
   });
 
   it('initializes early_sdp, and rel100', function() {
-    expect(Session.early_sdp).toBeNull();
+    expect(Session.earlySdp).toBeUndefined();
     expect(Session.rel100).toBeDefined();
   });
 
@@ -91,7 +90,7 @@ describe('Session', function() {
     });
 
     it('throws an error if tones is undefined', function() {
-      expect(function(){Session.dtmf(undefined);}).toThrowError('Not enough arguments');
+      expect(function(){Session.dtmf(undefined);}).toThrowError('Invalid tones: undefined');
     });
 
     it('throws an error if the session status is incorrect', function() {
@@ -142,7 +141,7 @@ describe('Session', function() {
       expect(Session.tones.length).toBe(4);
     });
 
-    //DTMF sends first one, so this gets nulled before we can check it, and DTMF file is not accessible currently
+    //DTMF sends first one, so this gets undefined before we can check it, and DTMF file is not accessible currently
     xit('sets tones if no tones are queued', function() {
       Session.tones = '';
       Session.dtmf('4');
@@ -292,8 +291,8 @@ describe('Session', function() {
     var Cid, Sid;
 
     beforeEach(function() {
-      Sid = message.call_id + message.to_tag + message.from_tag;
-      Cid = message.call_id + message.from_tag + message.to_tag;
+      Sid = message.callId + message.toTag + message.fromTag;
+      Cid = message.callId + message.fromTag + message.toTag;
 
       Session.request = {};
       Session.mediaHandler = {};
@@ -309,28 +308,12 @@ describe('Session', function() {
       expect(Session.earlyDialogs[Cid]).toBeDefined();
     });
 
-    it('returns false if early_dialog.error is true when early = true', function(){
-      spyOn(Session, 'failed').and.returnValue(true);
-      spyOn(SIP, 'Dialog').and.returnValue({error:true});
-      SIP.Dialog.C = {STATUS_EARLY: 1, STATUS_CONFIRMED: 2};
-
-      expect(Session.createDialog(message, 'UAC', true)).toBe(false);
-    });
-
     it('creates an early dialog, then updates it; returns true, no longer in early dialog array', function() {
       expect(Session.createDialog(message, 'UAC', true)).toBe(true);
       expect(Session.earlyDialogs[Cid]).toBeDefined();
 
       expect(Session.createDialog(message, 'UAC', false)).toBe(true);
       expect(Session.earlyDialogs[Cid]).toBeUndefined();
-    });
-
-    it('returns false if dialog.error is true when early = false', function() {
-      spyOn(Session, 'failed').and.returnValue(true);
-      spyOn(SIP, 'Dialog').and.returnValue({error:true});
-      SIP.Dialog.C = {STATUS_EARLY: 1, STATUS_CONFIRMED: 2};
-
-      expect(Session.createDialog(message, 'UAC', false)).toBe(false);
     });
 
     it('returns true on a call where early = false', function() {
@@ -401,7 +384,7 @@ describe('Session', function() {
     });
 
     it('returns without calling sendRequest or emitting renegotiationFailed when response status code is 1xx', function() {
-      message.status_code = 111;
+      message.statusCode = 111;
 
       Session.receiveReinviteResponse(message);
 
@@ -413,9 +396,9 @@ describe('Session', function() {
     it('returns without emitting anything when the response status code is 2xx and there is no pending reinvite', function() {
       Session.pendingReinvite = false;
 
-      message.body = null;
+      message.body = undefined;
       message.headers['Content-Type'] = [];
-      message.status_code = 204;
+      message.statusCode = 204;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
       };
@@ -428,9 +411,9 @@ describe('Session', function() {
     it('emits renegotiationError when the response has no body with a 2xx status code', function() {
       Session.pendingReinvite = true;
 
-      message.body = null;
+      message.body = undefined;
       message.headers['Content-Type'] = [];
-      message.status_code = 222;
+      message.statusCode = 222;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
       };
@@ -447,7 +430,7 @@ describe('Session', function() {
       Session.pendingReinvite = true;
 
       spyOn(message, 'getHeader').and.returnValue('wrong');
-      message.status_code = 222;
+      message.statusCode = 222;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
       };
@@ -463,7 +446,7 @@ describe('Session', function() {
     it('calls sendRequest and setDescription when response has a 2xx status code, a body, and content-type of application/sdp', function() {
       Session.pendingReinvite = true;
 
-      message.status_code = 222;
+      message.statusCode = 222;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
       };
@@ -480,7 +463,7 @@ describe('Session', function() {
     it('returns without calling sendRequest and emits renegotiationError when response status code is neither 1xx or 2xx', function() {
       Session.pendingReinvite = true;
 
-      message.status_code = 333;
+      message.statusCode = 333;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
       };
@@ -511,8 +494,8 @@ describe('Session', function() {
       expect(Session.sendRequest.calls.count()).toBe(1);
     });
 
-    it('calls createDialog if this.dialog is null', function() {
-      Session.dialog = null;
+    it('calls createDialog if this.dialog is undefined', function() {
+      Session.dialog = undefined;
       message.transaction = {
         sendACK: jasmine.createSpy('sendACK').and.returnValue({})
       };
@@ -527,7 +510,7 @@ describe('Session', function() {
 
   describe('.setInvite2xxTimer', function() {
     it('defines timers.invite2xxTimer', function() {
-      Session.setInvite2xxTimer(null, null);
+      Session.setInvite2xxTimer(undefined, undefined);
 
       expect(Session.timers.invite2xxTimer).toBeDefined();
     });
@@ -535,7 +518,7 @@ describe('Session', function() {
 
   describe('.setACKTimer', function() {
     it('defines timers.ackTimer', function() {
-      Session.setACKTimer(null, null);
+      Session.setACKTimer(undefined, undefined);
 
       expect(Session.timers.ackTimer).toBeDefined();
     });
@@ -640,7 +623,7 @@ describe('Session', function() {
     it('emits and returns Session', function() {
       spyOn(Session, 'emit').and.callThrough();
       expect(Session.failed()).toBe(Session);
-      expect(Session.emit).toHaveBeenCalledWith('failed', null, null);
+      expect(Session.emit).toHaveBeenCalledWith('failed', undefined, undefined);
     });
   });
 
@@ -648,7 +631,7 @@ describe('Session', function() {
     it('emits and returns Session', function() {
       spyOn(Session, 'emit').and.callThrough();
       expect(Session.rejected()).toBe(Session);
-      expect(Session.emit).toHaveBeenCalledWith('rejected', null, null);
+      expect(Session.emit).toHaveBeenCalledWith('rejected', undefined, undefined);
     });
   });
 
@@ -804,25 +787,15 @@ describe('InviteServerContext', function() {
     expect(request.reply).toHaveBeenCalledWith(415);
   });
 
-  it('calls augment using ServerContext and Session', function() {
-    spyOn(SIP.Utils, 'augment').and.callThrough();
-
-    var ISC = new SIP.InviteServerContext(ua, request);
-    clearTimeout(ISC.timers.userNoAnswerTimer);
-
-    expect(SIP.Utils.augment.calls.argsFor(0)[1]).toBe(SIP.ServerContext);
-    expect(SIP.Utils.augment.calls.argsFor(1)[1]).toBe(SIP.Session);
-  });
-
-  it('sets status, from_tag, id, request, contact, logger, and sessions', function() {
+  it('sets status, fromTag, id, request, contact, logger, and sessions', function() {
     expect(InviteServerContext.status).toBe(4);
-    expect(InviteServerContext.from_tag).toBe(request.from_tag);
-    expect(InviteServerContext.id).toBe(request.call_id + request.from_tag);
+    expect(InviteServerContext.fromTag).toBe(request.fromTag);
+    expect(InviteServerContext.id).toBe(request.callId + request.fromTag);
     expect(InviteServerContext.request).toBe(request);
     expect(InviteServerContext.contact).toBe(InviteServerContext.ua.contact.toString());
 
-    expect(InviteServerContext.logger).toEqual(InviteServerContext.ua.getLogger('sip.inviteservercontext', request.call_id + request.from_tag));
-    expect(InviteServerContext.ua.sessions[request.call_id + request.from_tag]).toBe(InviteServerContext);
+    expect(InviteServerContext.logger).toEqual(InviteServerContext.ua.getLogger('sip.inviteservercontext', request.callId + request.fromTag));
+    expect(InviteServerContext.ua.sessions[request.callId + request.fromTag]).toBe(InviteServerContext);
   });
 
   it('sets 100rel, requires', function() {
@@ -1288,7 +1261,7 @@ describe('InviteServerContext', function() {
 
       it('calls sessionDescriptionHandler.setDescription when the invite had no body, but the request had sdp', function(){
         // spyOn(InviteServerContext.mediaHandler, 'setDescription').and.returnValue(Promise.resolve(true));
-        InviteServerContext.request.body = null;
+        InviteServerContext.request.body = undefined;
 
         InviteServerContext.receiveRequest(req);
 
@@ -1296,7 +1269,7 @@ describe('InviteServerContext', function() {
       });
 
       it('calls terminate and failed when invite has no body, but the request has a non-sdp body', function() {
-        InviteServerContext.request.body = null;
+        InviteServerContext.request.body = undefined;
         spyOn(InviteServerContext, 'terminate');
         spyOn(InviteServerContext, 'failed');
 
@@ -1385,7 +1358,7 @@ describe('InviteServerContext', function() {
 
         expect(req.reply).toHaveBeenCalledWith(200);
         expect(InviteServerContext.emit.calls.first().args[0]).toBe('bye');
-        expect(InviteServerContext.terminated).toHaveBeenCalledWith(req, SIP.C.causes.BYE);
+        expect(InviteServerContext.terminated).toHaveBeenCalledWith(req, SIP.C.BYE);
       });
     });
 
@@ -1482,7 +1455,7 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(req.reply).toHaveBeenCalledWith(415, null, ["Accept: application/dtmf-relay"]);
+        expect(req.reply).toHaveBeenCalledWith(415, undefined, ["Accept: application/dtmf-relay"]);
       });
 
       it('invokes onInfo if onInfo is set', function(done) {
@@ -1562,34 +1535,18 @@ describe('InviteClientContext', function() {
   });
 
   it('throws a type error if normalizeTarget fails with the given target', function() {
-    spyOn(ua, 'normalizeTarget').and.returnValue(null);
+    spyOn(ua, 'normalizeTarget').and.returnValue(undefined);
 
     expect(function() {new SIP.InviteClientContext(ua, target);}).toThrowError('Invalid target: bob@example.com');
   });
 
-  it('calls augment using ClientContext and Session', function() {
-    spyOn(SIP.Utils, 'augment').and.callThrough();
-
-    var ICC = new SIP.InviteClientContext(ua, target);
-
-    expect(SIP.Utils.augment.calls.argsFor(0)[1]).toBe(SIP.ClientContext);
-    expect(SIP.Utils.augment.calls.argsFor(1)[1]).toBe(SIP.Session);
-  });
-
-  it('throws an invalid state error if the status is null', function() {
-    spyOn(SIP.Utils, 'augment');
-
-    expect(function() {new SIP.InviteClientContext(ua, target);}).toThrowError('Invalid status: undefined');
-  });
-
   it('sets several parameters at the end of the constructor', function() {
-    expect(InviteClientContext.from_tag).toBeDefined();
+    expect(InviteClientContext.fromTag).toBeDefined();
 
     expect(InviteClientContext.isCanceled).toBe(false);
-    expect(InviteClientContext.received_100).toBe(false);
+    expect(InviteClientContext.received100).toBe(false);
 
     expect(InviteClientContext.method).toBe(SIP.C.INVITE);
-    expect(InviteClientContext.receiveResponse).toBe(InviteClientContext.receiveInviteResponse);
 
     expect(InviteClientContext.logger).toBe(ua.getLogger('sip.inviteclientcontext'));
   });
@@ -1609,7 +1566,7 @@ describe('InviteClientContext', function() {
 
     expect(InviteClientContext.localIdentity).toBe(InviteClientContext.request.from);
     expect(InviteClientContext.remoteIdentity).toBe(InviteClientContext.request.to);
-    expect(InviteClientContext.id).toBe(InviteClientContext.request.call_id + InviteClientContext.from_tag);
+    expect(InviteClientContext.id).toBe(InviteClientContext.request.callId + InviteClientContext.fromTag);
     expect(InviteClientContext.logger).toBe(InviteClientContext.ua.getLogger('sip.inviteclientcontext', InviteClientContext.id));
 
   });
@@ -1703,9 +1660,9 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveInviteResponse(resp);
 
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag]).toBeDefined();
+      expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag]).toBeDefined();
       expect(resp.transaction.sendACK).toHaveBeenCalled();
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.BYE);
+      expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.BYE);
     });
 
     it('emits failed if the branch on which early media was established is not the branch that picks up first (invite w/ sdp case)', function() {
@@ -1774,8 +1731,8 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveInviteResponse(resp);
 
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked).toContain('9060');
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.C.PRACK);
+      expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].pracked).toContain('9060');
+      expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.C.PRACK);
     });
 
     it('cancels the request if the call was canceled and the response is 1xx', function() {
@@ -1803,7 +1760,7 @@ describe('InviteClientContext', function() {
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.request.cancel).toHaveBeenCalledWith('TESTING', []);
-      expect(InviteClientContext.canceled).toHaveBeenCalledWith(null);
+      expect(InviteClientContext.canceled).toHaveBeenCalledWith();
     });
     it('accepts and terminates the response if the call was canceled and the response is 2xx', function() {
       InviteClientContext.isCanceled = true;
@@ -1815,22 +1772,22 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.acceptAndTerminate).toHaveBeenCalledWith(response);
     });
 
-    it('sets received_100 to true when the response is 100', function() {
-      expect(InviteClientContext.received_100).toBe(false);
+    it('sets received100 to true when the response is 100', function() {
+      expect(InviteClientContext.received100).toBe(false);
 
-      response.status_code = 100;
+      response.statusCode = 100;
 
       InviteClientContext.receiveInviteResponse(response);
 
-      expect(InviteClientContext.received_100).toBe(true);
+      expect(InviteClientContext.received100).toBe(true);
     });
 
     describe('the response status code is 101-199', function() {
       beforeEach(function() {
-        response.status_code = 183;
+        response.statusCode = 183;
       });
       it('logs a warning and breaks if the response does not have a to tag', function() {
-        response.to_tag = null;
+        response.toTag = undefined;
 
         spyOn(InviteClientContext.logger, 'warn');
 
@@ -1880,7 +1837,7 @@ describe('InviteClientContext', function() {
 
         InviteClientContext.receiveInviteResponse(resp);
 
-        expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).not.toHaveBeenCalled();
+        expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].sendRequest).not.toHaveBeenCalled();
       });
 
       it('does not PRACK a response with no body (and requires: 100rel) if there is an illegal rseq header', function() {
@@ -1901,13 +1858,13 @@ describe('InviteClientContext', function() {
           ''].join('\r\n'), ua);
 
         !InviteClientContext.createDialog(resp, 'UAC', true);
-        InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked.push(9060);
+        InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].pracked.push(9060);
 
         resp.setHeader('rseq', 9010);
 
         InviteClientContext.receiveInviteResponse(resp);
 
-        expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).not.toHaveBeenCalled();
+        expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].sendRequest).not.toHaveBeenCalled();
       });
 
       it('PRACKs (when require: 100rel is present) a response without a body', function() {
@@ -1929,7 +1886,7 @@ describe('InviteClientContext', function() {
 
         InviteClientContext.receiveInviteResponse(resp);
 
-        expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked).toContain('9060');
+        expect(InviteClientContext.earlyDialogs[resp.callId+resp.fromTag+resp.toTag].pracked).toContain('9060');
       });
 
       it('calls SessionDescriptionHandler.setDescription for a response with a body with require: 100rel and confirms the dialog', function() {
@@ -1954,7 +1911,7 @@ describe('InviteClientContext', function() {
 
         InviteClientContext.receiveInviteResponse(resp);
 
-        expect(InviteClientContext.dialog.id.toString()).toBe(resp.call_id+resp.from_tag+resp.to_tag);
+        expect(InviteClientContext.dialog.id.toString()).toBe(resp.callId+resp.fromTag+resp.toTag);
       });
 
       xit('calls MediaHandler.setDescription for a 100rel response with a body where the request had a non-sdp body', function() {
@@ -2027,7 +1984,7 @@ describe('InviteClientContext', function() {
       });
 
       it('returns after doing nothing because there is already a confirmed dialog (same conditions as below otherwise', function() {
-        response.body = null;
+        response.body = undefined;
         spyOn(InviteClientContext, 'acceptAndTerminate');
         spyOn(InviteClientContext, 'failed');
         InviteClientContext.createDialog(response, 'UAC', false);
@@ -2039,8 +1996,8 @@ describe('InviteClientContext', function() {
       });
 
       it('calls acceptAndTerminate and failed if the response has no body', function() {
-        response.body = null;
-        response.headers['Content-Type'] = null;
+        response.body = undefined;
+        response.headers['Content-Type'] = undefined;
         spyOn(InviteClientContext, 'acceptAndTerminate');
         spyOn(InviteClientContext, 'failed');
 
@@ -2051,9 +2008,9 @@ describe('InviteClientContext', function() {
       });
 
       xit('uses the dialog with pre-established media, changes the status to confirmed, ACKS, and calls accepted if that dialog exists for this response and the request had no body', function() {
-        InviteClientContext.request.body = null;
+        InviteClientContext.request.body = undefined;
         InviteClientContext.createDialog(response, 'UAC', true);
-        InviteClientContext.earlyDialogs[response.call_id+response.from_tag+response.to_tag].mediaHandler =
+        InviteClientContext.earlyDialogs[response.callId+response.fromTag+response.toTag].mediaHandler =
           {localMedia: {getAudioTracks: function() {return []},
                         getVideoTracks: function() {return []},
                         stop: function() {}},
@@ -2069,7 +2026,7 @@ describe('InviteClientContext', function() {
       });
 
       xit('calls mediaHandler.setDescription if the request had no body and the response had no early dialog with media connected to it', function() {
-        InviteClientContext.request.body = null;
+        InviteClientContext.request.body = undefined;
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['close', 'getDescription', 'hasDescription', 'setDescription']);
         InviteClientContext.mediaHandler.hasDescription.and.returnValue(true);
         InviteClientContext.mediaHandler.getDescription.and.returnValue(Promise.resolve(true));
@@ -2081,7 +2038,7 @@ describe('InviteClientContext', function() {
       });
 
       xit('same as above, but does not make the call if the createDialog fails', function() {
-        InviteClientContext.request.body = null;
+        InviteClientContext.request.body = undefined;
         InviteClientContext.mediaHandler = jasmine.createSpyObj('mediaHandler', ['close', 'hasDescription', 'setDescription']);
         InviteClientContext.mediaHandler.hasDescription.and.returnValue(true);
         InviteClientContext.mediaHandler.setDescription.and.returnValue(Promise.resolve(true));
@@ -2116,7 +2073,7 @@ describe('InviteClientContext', function() {
     });
 
     it('calls failed, rejected for any other response code', function() {
-      response.status_code = 300;
+      response.statusCode = 300;
       spyOn(InviteClientContext, 'failed');
       spyOn(InviteClientContext, 'rejected');
       spyOn(InviteClientContext, 'terminated');
@@ -2136,11 +2093,11 @@ describe('InviteClientContext', function() {
     });
 
     it('throws a type error if the status code is invalid', function() {
-      expect(function() {InviteClientContext.cancel({status_code: 700});}).toThrowError('Invalid status_code: 700');
+      expect(function() {InviteClientContext.cancel({statusCode: 700});}).toThrowError('Invalid statusCode: 700');
     });
 
     it('throws a type error if the status code is less than 200', function() {
-      expect(function() {InviteClientContext.cancel({status_code: 100});}).toThrowError('Invalid status_code: 100');
+      expect(function() {InviteClientContext.cancel({statusCode: 100});}).toThrowError('Invalid statusCode: 100');
     });
 
     it('sets isCanceled to true, calls canceled, and returns this if status is NULL', function() {
@@ -2157,7 +2114,7 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.canceled).toHaveBeenCalled();
     });
 
-    it('sets isCanceled to true, calls canceled, and returns this if status is INVITE_SENT and received_100 is false', function() {
+    it('sets isCanceled to true, calls canceled, and returns this if status is INVITE_SENT and received100 is false', function() {
       InviteClientContext.status = 1;
       spyOn(InviteClientContext, 'failed').and.callThrough();
       spyOn(InviteClientContext, 'canceled').and.callThrough();
@@ -2171,9 +2128,9 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.canceled).toHaveBeenCalled();
     });
 
-    it('calls request.cancel, canceled, and returns this if status is INVITE_SENT and received_100 is true', function() {
+    it('calls request.cancel, canceled, and returns this if status is INVITE_SENT and received100 is true', function() {
       InviteClientContext.status = 1;
-      InviteClientContext.received_100 = true;
+      InviteClientContext.received100 = true;
       InviteClientContext.request = {cancel: jasmine.createSpy('cancel')};
 
       spyOn(InviteClientContext, 'failed').and.callThrough();
@@ -2268,7 +2225,7 @@ describe('InviteClientContext', function() {
 
       expect(request.reply).toHaveBeenCalledWith(200);
       expect(InviteClientContext.emit.calls.mostRecent().args[0]).toBe('bye');
-      expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.C.causes.BYE);
+      expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.C.BYE);
     });
 
     it('logs and calls receiveReinvite if request method is INVITE', function() {

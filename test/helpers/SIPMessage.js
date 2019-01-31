@@ -1,13 +1,13 @@
 window.SIPHelper = {
-  createResponse: function createResponse(request, status_code, reason_phrase, body) {
+  createResponse: function createResponse(request, statusCode, reasonPhrase, body) {
     var response = new SIP.IncomingResponse(request.ua);
     var parsed, header, length, idx;
 
-    response.status_code = status_code;
-    response.reason_phrase = (reason_phrase || '').toString();
+    response.statusCode = statusCode;
+    response.reasonPhrase = (reasonPhrase || '').toString();
 
     // Let's hope we don't actually need a raw string of the response.
-    response.data = null;
+    response.data = undefined;
 
     response.body = (body || 'foo').toString();
     response.setHeader('Content-Type', 'rps');
@@ -19,10 +19,10 @@ window.SIPHelper = {
     response.method = request.method;
     response.from = request.from;
     response.to = request.to;
-    response.call_id = request.call_id;
+    response.callId = request.callId;
     response.cseq = request.cseq;
-    response.from_tag = request.from.getParam('tag');
-    response.to_tag = 'uas-to-tag';
+    response.fromTag = request.from.getParam('tag');
+    response.toTag = 'uas-to-tag';
 
     /*
      * In addition to properties, some other headers are

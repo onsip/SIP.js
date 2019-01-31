@@ -27,7 +27,6 @@ describe('A UAS receiving an INVITE', function () {
       };
 
       spyOn(ua_config, 'sessionDescriptionHandlerFactory').and.callThrough();
-      spyOn(SIP, 'InviteServerContext').and.callThrough();
       var callback = jasmine.createSpy('callback');
 
       jasmine.clock().install();
@@ -41,7 +40,6 @@ describe('A UAS receiving an INVITE', function () {
 
       jasmine.clock().tick(100);
 
-      expect(SIP.InviteServerContext).toHaveBeenCalled();
       expect(ua_config.sessionDescriptionHandlerFactory).not.toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
 
@@ -424,11 +422,11 @@ describe('A UAS receiving an INVITE', function () {
       }
 
       describe('by a [3-6]xx response', function () {
-        function testWith(status_code) {
-          describe('(' + status_code + ')', function () {
+        function testWith(statusCode) {
+          describe('(' + statusCode + ')', function () {
             beforeEach(function () {
               this.session.reject({
-                statusCode: status_code
+                statusCode: statusCode
               });
             });
             rejectResponseTests();
@@ -522,7 +520,7 @@ describe('A UAS receiving an INVITE', function () {
         var once = true;
         this.ua.transport.on('messageSent', function () {
           setTimeout(function () {
-            this.ua.transport.onMessage({data: Messages.Invite.rps.ack(this.session.request.to_tag)});
+            this.ua.transport.onMessage({data: Messages.Invite.rps.ack(this.session.request.toTag)});
             done();
           }.bind(this), 100);
         }.bind(this));
@@ -534,7 +532,7 @@ describe('A UAS receiving an INVITE', function () {
 
       describe('by a BYE request', function () {
         beforeEach(function () {
-          this.ua.transport.onMessage({data: Messages.Invite.rps.bye(this.session.request.to_tag)});
+          this.ua.transport.onMessage({data: Messages.Invite.rps.bye(this.session.request.toTag)});
         });
 
         it('fires a `bye` event', function () {

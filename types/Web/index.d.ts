@@ -1,9 +1,4 @@
-import { SessionDescriptionHandlerModifier } from "../session-description-handler";
-
-export * from "./session-description-handler";
-
-export namespace Web {
-  export namespace Modifiers {
-    export const addMidLines: SessionDescriptionHandlerModifier;
-  }
-}
+export { Modifiers } from "./modifiers";
+export { Simple } from "./simple";
+export { WebSessionDescriptionHandler as SessionDescriptionHandler } from "./session-description-handler";
+export { Transport } from "./transport";
