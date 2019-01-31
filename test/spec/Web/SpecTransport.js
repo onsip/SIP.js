@@ -5,10 +5,10 @@ describe('Transport', function() {
   onCloseOptions = {code: "1", reason: "test"};
 
   beforeEach(function(done) {
-    this.ua_config = {
+    this.uaConfig = {
       autostart: false
     };
-    this.ua = new SIP.UA(this.ua_config);
+    this.ua = new SIP.UA(this.uaConfig);
     this.ua.on('transportCreated', function (transport) {
       connectedSpy = jasmine.createSpy('connected');
       transport.on('connected', connectedSpy);
@@ -131,7 +131,7 @@ describe('Transport', function() {
     it('sets default settings for many parameters', function() {
       this.ua.transport.loadConfig({});
 
-      expect(this.ua.transport.configuration.wsServers).toEqual([{scheme: 'WSS', sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>', isError: false, weight: 0, ws_uri: 'wss://edge.sip.onsip.com'}]);
+      expect(this.ua.transport.configuration.wsServers).toEqual([{scheme: 'WSS', sipUri: '<sip:edge.sip.onsip.com;transport=ws;lr>', isError: false, weight: 0, wsUri: 'wss://edge.sip.onsip.com'}]);
 
       expect(this.ua.transport.configuration.maxReconnectionAttempts).toBe(3);
       expect(this.ua.transport.configuration.reconnectionTimeout).toBe(4);
@@ -150,7 +150,7 @@ describe('Transport', function() {
     it('throws a configuration error if a mandatory parameter\'s passed-in value is invalid', function() {
       spyOn(this.ua.transport, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function (value) {return;} }});
 
-      expect(function(){this.ua.transport.loadConfig({fake: 'fake'});}.bind(this)).toThrowError('Invalid value "fake" for parameter "fake"');
+      expect(function(){this.ua.transport.loadConfig({fake: 'fake'});}.bind(this)).toThrowError('Invalid value "fake" for parameter \'fake\'');
     });
 
     it('sets a mandatory value successfully in settings', function() {
@@ -165,7 +165,7 @@ describe('Transport', function() {
     it('throws a ConfigurationError if an optional value is passed in which is invalid', function() {
       spyOn(this.ua.transport, 'getConfigurationCheck').and.returnValue({optional: { fake: function (value) {return;} }});
 
-      expect(function(){this.ua.transport.loadConfig({fake: 'fake'});}.bind(this)).toThrowError('Invalid value "fake" for parameter "fake"');
+      expect(function(){this.ua.transport.loadConfig({fake: 'fake'});}.bind(this)).toThrowError('Invalid value "fake" for parameter \'fake\'');
     });
 
     it('sets an optional value successfully in settings', function() {
@@ -208,25 +208,25 @@ describe('Transport', function() {
         expect(configCheck.optional.wsServers([])).toBe(false);
       });
 
-      it('fails if ws_uri attribute is missing', function() {
+      it('fails if wsUri attribute is missing', function() {
         expect(configCheck.optional.wsServers([{sandwich: 'ham'}])).toBeUndefined();
       });
 
       it('fails if weight attribute is not a number', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ham', weight: 'scissors'}])).toBeUndefined()
+        expect(configCheck.optional.wsServers([{wsUri: 'ham', weight: 'scissors'}])).toBeUndefined()
       });
 
-      it('fails if the ws_uri is invalid', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ham'}])).toBeUndefined();
+      it('fails if the wsUri is invalid', function() {
+        expect(configCheck.optional.wsServers([{wsUri: 'ham'}])).toBeUndefined();
       });
 
       it('fails if the url scheme is not wss or ws', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
+        expect(configCheck.optional.wsServers([{wsUri: 'ithoughtthiswasright://alice@example.com'}])).toBeUndefined();
       });
 
       it('returns correctly if none of the above is wrong', function() {
-        expect(configCheck.optional.wsServers([{ws_uri: 'wss://edge.sip.onsip.com'}])).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, scheme: 'WSS', isError: false}]);
-        expect(configCheck.optional.wsServers("wss://edge.sip.onsip.com")).toEqual([{ws_uri: 'wss://edge.sip.onsip.com', sip_uri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, scheme: 'WSS', isError: false}]);
+        expect(configCheck.optional.wsServers([{wsUri: 'wss://edge.sip.onsip.com'}])).toEqual([{wsUri: 'wss://edge.sip.onsip.com', sipUri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, scheme: 'WSS', isError: false}]);
+        expect(configCheck.optional.wsServers("wss://edge.sip.onsip.com")).toEqual([{wsUri: 'wss://edge.sip.onsip.com', sipUri:'<sip:edge.sip.onsip.com;transport=ws;lr>', weight: 0, scheme: 'WSS', isError: false}]);
       });
     });
 

@@ -1,4 +1,6 @@
+build/
 node_modules/
-.grunt
-_SpecRunner.html
 test/
+src/
+karma.conf.js
+.travis.yml

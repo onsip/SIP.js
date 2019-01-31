@@ -2,5 +2,5 @@ node_modules/
 dist/sip*
 lib/*
 _SpecRunner.html
-src/Grammar/dist/Grammar.js
+src/Grammar/dist/*
 npm-debug.log

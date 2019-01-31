@@ -1,0 +1,18 @@
+{
+    "defaultSeverity": "error",
+    "extends": "tslint:recommended",
+    "linterOptions": {
+        "exclude": [
+            "package.json"
+        ]
+    },
+    "jsRules": {},
+    "rules": {
+        "no-namespace": false,
+        "trailing-comma": false,
+        "array-type": false,
+        "interface-name": [true, "never-prefix"],
+        "object-literal-sort-keys": false
+    },
+    "rulesDirectory": []
+}

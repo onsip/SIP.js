@@ -25,9 +25,6 @@ describe('ServerContext', function() {
       'a=sendrecv',
       ''].join('\r\n'), ua);
 
-    spyOn(SIP.Transactions, 'InviteServerTransaction');
-    spyOn(SIP.Transactions, 'NonInviteServerTransaction');
-
     ServerContext = new SIP.ServerContext(ua,request);
   });
 
@@ -60,11 +57,9 @@ describe('ServerContext', function() {
   });
 
   it('sets the transaction based on the request method', function() {
-    expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,ua);
     expect(ServerContext.transaction).toBeDefined();
     request.method = SIP.C.INVITE;
     ServerContext = new SIP.ServerContext(ua,request);
-    expect(SIP.Transactions.InviteServerTransaction).toHaveBeenCalledWith(request,ua);
     expect(ServerContext.transaction).toBeDefined();
   });
 
@@ -78,7 +73,7 @@ describe('ServerContext', function() {
     });
 
     it('defaults to status code 180 if none is provided', function() {
-      ServerContext.progress(null);
+      ServerContext.progress(undefined);
       expect(ServerContext.request.reply.calls.mostRecent().args[0]).toEqual(180);
     });
 
@@ -124,7 +119,7 @@ describe('ServerContext', function() {
     });
 
     it('defaults to status code 200 if none is provided', function() {
-      ServerContext.accept(null);
+      ServerContext.accept(undefined);
       expect(ServerContext.request.reply).toHaveBeenCalledWith(200, 'OK', [], undefined);
     });
 
@@ -150,7 +145,7 @@ describe('ServerContext', function() {
       }
     });
 
-    it('emits event accepted with a valid status code and null response', function() {
+    it('emits event accepted with a valid status code and undefined response', function() {
       spyOn(ServerContext, 'emit');
       for (var i = 200; i < 300; i++) {
         var options = {statusCode : i};
@@ -171,7 +166,7 @@ describe('ServerContext', function() {
     });
 
     it('defaults to status code 480 if none is provided', function() {
-      ServerContext.reject(null);
+      ServerContext.reject(undefined);
       expect(ServerContext.request.reply).toHaveBeenCalledWith(480, 'Temporarily Unavailable', [], undefined);
     });
 
@@ -193,7 +188,7 @@ describe('ServerContext', function() {
       }
     });
 
-    it('emits event rejected and event fails with a valid status code and null response and reasonPhrase for a cause', function() {
+    it('emits event rejected and event fails with a valid status code and undefined response and reasonPhrase for a cause', function() {
       var options = {statusCode: i, reasonPhrase: 'reason'};
       spyOn(ServerContext, 'emit');
       for (var i = 300; i < 700; i++) {
@@ -236,22 +231,22 @@ describe('ServerContext', function() {
 
 
   describe('.onRequestTimeout', function() {
-    it('emits failed with a status code 0, null response, and request timeout cause', function() {
+    it('emits failed with a status code 0, undefined response, and request timeout cause', function() {
       spyOn(ServerContext, 'emit');
 
       ServerContext.onRequestTimeout();
 
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+      expect(ServerContext.emit).toHaveBeenCalledWith('failed', undefined, SIP.C.causes.REQUEST_TIMEOUT);
     });
   });
 
   describe('.onTransportError', function() {
-    it('emits failed with a status code 0, null response, and connection error cause', function() {
+    it('emits failed with a status code 0, undefined response, and connection error cause', function() {
       spyOn(ServerContext, 'emit');
 
       ServerContext.onTransportError();
 
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.CONNECTION_ERROR);
+      expect(ServerContext.emit).toHaveBeenCalledWith('failed', undefined, SIP.C.causes.CONNECTION_ERROR);
     });
   });
 });

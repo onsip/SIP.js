@@ -10,23 +10,13 @@ describe('UA', function() {
     configuration = {uri : uri,
                      wsServers : wsServers };
 
-    spyOn(SIP, 'RegisterContext').and.returnValue({
-      on: jasmine.createSpy('on'),
-      register: jasmine.createSpy('register'),
-      unregister: jasmine.createSpy('unregister'),
-      registered: true,
-      close: jasmine.createSpy('close'),
-      onTransportClosed: jasmine.createSpy('onTransportClosed'),
-      onTransportConnected: jasmine.createSpy('onTransportConnected')
-    });
-
     UA = new SIP.UA(configuration);
 
     UA.logger = jasmine.createSpyObj('logger', ['log', 'error', 'warn']);
   });
 
   afterEach(function() {
-    UA.transport = jasmine.createSpyObj('transport', ['disconnect']);
+    UA.transport = jasmine.createSpyObj('transport', ['disconnect', 'removeListener']);
     UA.stop();
   });
 
@@ -80,7 +70,7 @@ describe('UA', function() {
     expect(UA.transport).toBeDefined();
     expect(UA.contact).toBeDefined();
     expect(UA.status).toBeDefined();
-    expect(UA.error).toBeDefined();
+    expect(UA.error).toBeUndefined();
     expect(UA.transactions).toBeDefined();
 
     // var mediaHandlerFactory = function(){};
@@ -94,11 +84,9 @@ describe('UA', function() {
   it('creates a new register context', function() {
     UA = undefined;
 
-    SIP.RegisterContext.calls.reset();
-
     UA = new SIP.UA(configuration);
 
-    expect(SIP.RegisterContext).toHaveBeenCalled();
+    expect(UA.registerContext).toBeDefined();
   });
 
   describe('.start', function() {
@@ -144,6 +132,7 @@ describe('UA', function() {
     });
 
     it('does not register if not configured', function () {
+      spyOn(UA.registerContext, "register");
       UA.start();
       expect(UA.registerContext.register).not.toHaveBeenCalled();
     });
@@ -162,7 +151,7 @@ describe('UA', function() {
     });
 
     // it('clears the transportRecoveryTimer', function() {
-    //   spyOn(window, 'clearTimeout');
+    //   spyOn('clearTimeout');
     //
     //   UA.stop();
     //
@@ -170,6 +159,7 @@ describe('UA', function() {
     // });
 
     it('unregisters', function () {
+      spyOn(UA.registerContext, 'close');
       UA.stop();
 
       expect(UA.registerContext.close).toHaveBeenCalled();
@@ -259,6 +249,7 @@ describe('UA', function() {
     });
 
     it('does not require any arguments', function () {
+      spyOn(UA.registerContext, 'register');
       expect(function () {
         UA.register();
       }).not.toThrow();
@@ -272,6 +263,7 @@ describe('UA', function() {
     });
 
     it('calls the Register Context register method with the options that were passed to the method', function() {
+      spyOn(UA.registerContext, 'register');
       UA.register(options);
       expect(UA.registerContext.register).toHaveBeenCalledWith(options);
     });
@@ -290,6 +282,7 @@ describe('UA', function() {
     });
 
     it('does not require any arguments', function () {
+      spyOn(UA.registerContext, 'unregister');
       expect(function () {
         UA.unregister();
       }).not.toThrow();
@@ -303,6 +296,7 @@ describe('UA', function() {
     });
 
     it('calls the Register Context unregister method with the options that were passed to the method', function() {
+      spyOn(UA.registerContext, 'unregister');
       UA.unregister(options);
       expect(UA.registerContext.unregister).toHaveBeenCalledWith(options);
     });
@@ -314,6 +308,7 @@ describe('UA', function() {
 
   describe('.isRegistered', function() {
     it('returns the value stored by register context registered', function() {
+      spyOn(UA.registerContext, 'unregister');
       expect(UA.isRegistered()).toBe(UA.registerContext.registered);
 
       UA.registerContext.registered = false;
@@ -334,13 +329,7 @@ describe('UA', function() {
       target = 'target';
       body = 'body';
 
-      messageSpy = jasmine.createSpy('message');
-
-      spyOn(SIP, 'ClientContext').and.returnValue({
-        send: messageSpy
-      });
       jasmine.createSpyObj('transport', ['once']);
-
     });
 
     it('throws an exception if body argument is missing', function() {
@@ -354,30 +343,6 @@ describe('UA', function() {
 
       expect(UA.transport.once).toHaveBeenCalled();
     });
-
-    it('passes no options to message.send', function () {
-      spyOn(UA.transport, 'isConnected').and.returnValue(true);
-
-      options = undefined;
-      UA.message(target, body, options);
-      expect(messageSpy).toHaveBeenCalledWith();
-    });
-
-    it('creates a ClientContext with itself, target, body, options.contentType and options as parameters', function() {
-      options = {contentType : 'mixedContent' };
-
-      UA.message(target, body, options);
-      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, withPrototype({contentType: 'mixedContent', body: body}));
-    });
-
-    it('calls ClientContext.send method with no options provided to it', function() {
-      spyOn(UA.transport, 'isConnected').and.returnValue(true);
-
-      options = { option : 'config' };
-
-      UA.message(target, body, options);
-      expect(messageSpy).toHaveBeenCalledWith();
-    });
   });
 
   describe('.invite', function() {
@@ -386,11 +351,6 @@ describe('UA', function() {
 
     beforeEach(function() {
       target = 'target';
-      inviteSpy = jasmine.createSpy('invite');
-
-      spyOn(SIP, 'InviteClientContext').and.returnValue({
-        invite: inviteSpy
-      });
 
       jasmine.createSpyObj('transport', ['once']);
     });
@@ -400,17 +360,6 @@ describe('UA', function() {
 
       UA.invite(target);
       expect(UA.transport.once).toHaveBeenCalled();
-    });
-
-    it('creates an Invite Client Context with itself, target, and options as parameters', function() {
-      // spyOn(UA, 'isConnected').and.returnValue(true);
-
-      var options = {};
-      var modifiers = [];
-      // UA.configuration.mediaHandlerFactory = function(){};
-      UA.invite(target,options,modifiers);
-      // invite() puts the mediaHandlerFactory into the options object
-      expect(SIP.InviteClientContext).toHaveBeenCalledWith(UA, target, options, modifiers);
     });
   });
 
@@ -422,13 +371,7 @@ describe('UA', function() {
     beforeEach(function() {
       target = 'target';
       event = 'event';
-      subscribeSpy = jasmine.createSpy('subscribe');
       jasmine.createSpyObj('transport', ['once']);
-
-      spyOn(SIP, 'Subscription').and.returnValue({
-        subscribe: subscribeSpy
-      });
-
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
@@ -437,19 +380,6 @@ describe('UA', function() {
       UA.subscribe(target, event);
 
       expect(UA.transport.once).toHaveBeenCalled();
-    });
-
-    it('creates a Subscription with itself, target, and options as parameters', function() {
-      var options = {};
-      UA.subscribe(target, event, options);
-      expect(SIP.Subscription).toHaveBeenCalledWith(UA,target, event, options);
-    });
-
-    it('calls the Subscription method with no arguments', function() {
-      spyOn(UA.transport, 'isConnected').and.returnValue(true);
-      var options = { option : 'things' };
-      UA.subscribe(target, event, options);
-      expect(subscribeSpy).toHaveBeenCalledWith();
     });
   });
 
@@ -463,12 +393,6 @@ describe('UA', function() {
       target = 'target';
       event = 'event';
       body = 'body';
-
-      publishSpy = jasmine.createSpy('publish');
-
-      spyOn(SIP, 'PublishContext').and.returnValue({
-        publish: publishSpy
-      });
     });
 
     it('sets up a listener for connected if the transport has not connected', function() {
@@ -478,16 +402,6 @@ describe('UA', function() {
 
       expect(UA.transport.once).toHaveBeenCalled();
     });
-
-    it('creates a Publish with itself, target, body and options as parameters', function() {
-      spyOn(UA.transport, 'isConnected').and.returnValue(true);
-
-      var options = {};
-      UA.publish(target, event, body, options);
-      expect(SIP.PublishContext).toHaveBeenCalledWith(UA,target, event, options);
-      expect(publishSpy).toHaveBeenCalledWith('body');
-    });
-
   });
 
   describe('.request', function() {
@@ -500,11 +414,6 @@ describe('UA', function() {
       target = 'target';
       options = { option : 'someField' };
 
-      requestSpy = jasmine.createSpy('send');
-
-      spyOn(SIP, 'ClientContext').and.returnValue({
-        send: requestSpy
-      });
       jasmine.createSpyObj('transport', ['once']);
     });
 
@@ -514,20 +423,6 @@ describe('UA', function() {
       UA.request(method, target, options);
 
       expect(UA.transport.once).toHaveBeenCalled();
-    });
-
-    it('creates a ClientContext with itself, the method, target and options provided', function() {
-      // spyOn(UA, 'isConnected').and.returnValue(true);
-
-      UA.request(method,target,options);
-      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, method, target, options);
-    });
-
-    it('calls ClientContext.send method with no parameters', function() {
-      spyOn(UA.transport, 'isConnected').and.returnValue(true);
-
-      UA.request(method,target,options);
-      expect(requestSpy).toHaveBeenCalledWith();
     });
   });
 
@@ -578,7 +473,7 @@ describe('UA', function() {
     });
 
     it('returns the credentials that are found', function() {
-      var request = { ruri : { host : 'ruri host' },
+      var request = { ruri : { host : 'ruri host', type: SIP.TypeStrings.URI },
                       method : 'request method' };
       var credentials = { realm : 'credential realm' ,
                           uri : 'credential uri' };
@@ -620,7 +515,7 @@ describe('UA', function() {
     beforeEach(function() {
       transaction = { type : 'transaction-type' ,
                       id : 'id' };
-      UA.transactions[transaction.type] = {};
+      UA.transactions[transaction.kind] = {};
     });
     it('emits a newTransaction event', function() {
       var callback = jasmine.createSpy('callback');
@@ -630,10 +525,10 @@ describe('UA', function() {
     });
 
     it('adds the trasaction to the transactions object', function() {
-      UA.transactions[transaction.type] = {};
-      expect(UA.transactions[transaction.type][transaction.id]).toBeUndefined();
+      UA.transactions[transaction.kind] = {};
+      expect(UA.transactions[transaction.kind][transaction.id]).toBeUndefined();
       UA.newTransaction(transaction);
-      expect(UA.transactions[transaction.type][transaction.id]).toBeDefined();
+      expect(UA.transactions[transaction.kind][transaction.id]).toBeDefined();
     });
   });
 
@@ -642,7 +537,7 @@ describe('UA', function() {
     beforeEach(function() {
       transaction = { type : 'transaction-type' ,
                       id : 'id'};
-      UA.transactions[transaction.type] = {};
+      UA.transactions[transaction.kind] = {};
     });
 
     it('emits a transactionDestroyed event', function() {
@@ -656,9 +551,9 @@ describe('UA', function() {
 
     it('deletes the transaction from the transactions object', function() {
       UA.newTransaction(transaction);
-      expect(UA.transactions[transaction.type][transaction.id]).toBeDefined();
+      expect(UA.transactions[transaction.kind][transaction.id]).toBeDefined();
       UA.destroyTransaction(transaction);
-      expect(UA.transactions[transaction.type][transaction.id]).toBeUndefined();
+      expect(UA.transactions[transaction.kind][transaction.id]).toBeUndefined();
     });
   });
 
@@ -666,14 +561,7 @@ describe('UA', function() {
     var replySpy;
     beforeEach(function() {
       replySpy = jasmine.createSpy('reply');
-
-      spyOn(SIP.Transactions, 'checkTransaction').and.returnValue(false);
-      spyOn(SIP.Transactions, 'NonInviteServerTransaction').and.returnValue(true);
-      spyOn(SIP, 'ServerContext').and.returnValue({
-        on: function() {return true;}
-      });
-      spyOn(SIP, 'InviteServerContext').and.returnValue(true);
-      spyOn(SIP.Transactions, 'InviteServerTransaction').and.returnValue(true);
+      spyOn(UA, 'checkTransaction').and.returnValue(false);
     });
 
     it('checks that the ruri points to us', function() {
@@ -700,7 +588,6 @@ describe('UA', function() {
       var request = { method : SIP.C.ACK ,
                       ruri : { user : UA.configuration.uri.user} };
       expect(UA.receiveRequest(request)).toBeUndefined();
-      expect(SIP.Transactions.checkTransaction).toHaveBeenCalledWith(UA, request);
     });
 
     it('creates a new NIST if the SIP method is options', function() {
@@ -708,20 +595,19 @@ describe('UA', function() {
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
       UA.receiveRequest(request);
-      expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request, UA);
-      expect(replySpy).toHaveBeenCalledWith(200,null,jasmine.any(Array));
+      expect(replySpy).toHaveBeenCalledWith(200,undefined,jasmine.any(Array));
     });
 
     it('Accepts SIP MESSAGE requests', function() {
       var request = { method : SIP.C.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
+                      hasHeader: jasmine.createSpy('hasHeader'),
                       getHeader: jasmine.createSpy('getHeader')};
 
       UA.receiveRequest(request);
 
-      expect(SIP.ServerContext).toHaveBeenCalledWith(UA, request);
-      expect(replySpy).toHaveBeenCalledWith(200,null);
+      expect(replySpy).toHaveBeenCalledWith(200,undefined);
       expect(request.getHeader).toHaveBeenCalled();
     });
 
@@ -749,7 +635,8 @@ describe('UA', function() {
 
     it('sends a 481 if a BYE is received', function() {
       var request = { method : SIP.C.BYE ,
-                    ruri : { user : UA.configuration.uri.user } ,
+                    ruri : { user : UA.configuration.uri.user },
+                    hasHeader: jasmine.createSpy('hasHeader'),
                     reply : replySpy };
       UA.receiveRequest(request);
       expect(replySpy).toHaveBeenCalledWith(481);
@@ -759,7 +646,8 @@ describe('UA', function() {
       var receiveRequestSpy = jasmine.createSpy('receiveRequest');
       spyOn(UA, 'findSession').and.returnValue({receiveRequest : receiveRequestSpy });
       var request = { method : SIP.C.CANCEL ,
-                    ruri : { user : UA.configuration.uri.user } ,
+                    ruri : { user : UA.configuration.uri.user },
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy };
       UA.receiveRequest(request);
       expect(UA.findSession).toHaveBeenCalledWith(request);
@@ -770,6 +658,7 @@ describe('UA', function() {
       spyOn(UA, 'findSession').and.returnValue(false);
       var request = { method : SIP.C.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy };
       UA.receiveRequest(request);
       expect(UA.findSession).toHaveBeenCalledWith(request);
@@ -788,6 +677,7 @@ describe('UA', function() {
     it('replies with a 481 if allowLegacyNotifications is false when a NOTIFY is received', function() {
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy };
       UA.receiveRequest(request);
       expect(replySpy).toHaveBeenCalledWith(481, 'Subscription does not exist');
@@ -799,6 +689,7 @@ describe('UA', function() {
 
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy };
       UA.receiveRequest(request);
       expect(replySpy).toHaveBeenCalledWith(481, 'Subscription does not exist');
@@ -813,15 +704,17 @@ describe('UA', function() {
 
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy };
       UA.receiveRequest(request);
-      expect(replySpy).toHaveBeenCalledWith(200, null);
+      expect(replySpy).toHaveBeenCalledWith(200, undefined);
       expect(callback).toHaveBeenCalled();
     });
 
     it('replies with a 405 if it cannot interpret the message', function() {
       var request = { method : 'unknown method' ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy };
       UA.receiveRequest(request);
       expect(replySpy).toHaveBeenCalledWith(405);
@@ -837,10 +730,9 @@ describe('UA', function() {
       var request = { method : SIP.C.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
-      expect(SIP.Transactions.InviteServerTransaction).toHaveBeenCalledWith(request,UA);
       expect(receiveRequest).toHaveBeenCalledWith(request);
     });
 
@@ -853,11 +745,11 @@ describe('UA', function() {
       });
       var request = { method : 'some method' ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
-      expect(SIP.Transactions.InviteServerTransaction).not.toHaveBeenCalled();
       expect(receiveRequest).toHaveBeenCalledWith(request);
     });
 
@@ -868,7 +760,7 @@ describe('UA', function() {
       var request = { method : SIP.C.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(replySpy).toHaveBeenCalledWith(481);
@@ -883,8 +775,9 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(receiveRequest).toHaveBeenCalledWith(request);
@@ -908,7 +801,7 @@ describe('UA', function() {
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(UA.findEarlySubscription).toHaveBeenCalledWith(request);
@@ -934,7 +827,7 @@ describe('UA', function() {
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     getHeader: function () { return 'event'; } ,
-                    from_tag : 'tag' };
+                    fromTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(UA.findEarlySubscription).toHaveBeenCalledWith(request);
@@ -954,8 +847,9 @@ describe('UA', function() {
       });
       var request = { method : SIP.C.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
+                    hasHeader: jasmine.createSpy("hasHeader"),
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(UA.findEarlySubscription).toHaveBeenCalledWith(request);
@@ -970,7 +864,7 @@ describe('UA', function() {
       var request = { method : SIP.C.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(replySpy).toHaveBeenCalledWith(481);
@@ -983,7 +877,7 @@ describe('UA', function() {
       var request = { method : SIP.C.ACK ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
-                    to_tag : 'tag' };
+                    toTag : 'tag' };
       UA.receiveRequest(request);
       expect(UA.findDialog).toHaveBeenCalledWith(request);
       expect(replySpy).not.toHaveBeenCalled();
@@ -994,22 +888,22 @@ describe('UA', function() {
     var request;
 
     beforeEach(function() {
-      request = { call_id : 'callId' ,
-                  from_tag : 'from' };
+      request = { callId : 'callId' ,
+                  fromTag : 'from' };
     });
 
-    it('returns the session based on the call_id and from_tag', function() {
-      UA.sessions[request.call_id + request.from_tag] = 'session';
-      expect(UA.findSession(request)).toBe(UA.sessions[request.call_id + request.from_tag]);
-      delete UA.sessions[request.call_id + request.from_tag];
+    it('returns the session based on the callId and fromTag', function() {
+      UA.sessions[request.callId + request.fromTag] = 'session';
+      expect(UA.findSession(request)).toBe(UA.sessions[request.callId + request.fromTag]);
+      delete UA.sessions[request.callId + request.fromTag];
     });
-    it('returns the session based on the call_id and to_tag', function() {
-      UA.sessions[request.call_id + request.to_tag] = 'session';
-      expect(UA.findSession(request)).toBe(UA.sessions[request.call_id + request.to_tag]);
-      delete UA.sessions[request.call_id + request.to_tag];
+    it('returns the session based on the callId and toTag', function() {
+      UA.sessions[request.callId + request.toTag] = 'session';
+      expect(UA.findSession(request)).toBe(UA.sessions[request.callId + request.toTag]);
+      delete UA.sessions[request.callId + request.toTag];
     });
-    it('returns null if the session is not found', function() {
-      expect(UA.findSession(request)).toBe(null);
+    it('returns undefined if the session is not found', function() {
+      expect(UA.findSession(request)).toBe(undefined);
     });
   });
 
@@ -1017,21 +911,21 @@ describe('UA', function() {
     var request;
 
     beforeEach(function() {
-      request = { call_id : 'callId' ,
-                  from_tag : 'from' ,
-                  to_tag : 'to' };
+      request = { callId : 'callId' ,
+                  fromTag : 'from' ,
+                  toTag : 'to' };
     });
 
-    it('returns the dialog based on the call_id and from_tag and to_tag', function() {
-      UA.dialogs[request.call_id + request.from_tag + request.to_tag] = 'dialog';
-      expect(UA.findDialog(request)).toBe(UA.dialogs[request.call_id + request.from_tag + request.to_tag]);
+    it('returns the dialog based on the callId and fromTag and toTag', function() {
+      UA.dialogs[request.callId + request.fromTag + request.toTag] = 'dialog';
+      expect(UA.findDialog(request)).toBe(UA.dialogs[request.callId + request.fromTag + request.toTag]);
     });
-    it('returns the dialog based on the call_id and to_tag and from_tag', function() {
-      UA.dialogs[request.call_id + request.to_tag + request.from_tag] = 'dialog';
-      expect(UA.findDialog(request)).toBe(UA.dialogs[request.call_id + request.to_tag + request.from_tag]);
+    it('returns the dialog based on the callId and toTag and fromTag', function() {
+      UA.dialogs[request.callId + request.toTag + request.fromTag] = 'dialog';
+      expect(UA.findDialog(request)).toBe(UA.dialogs[request.callId + request.toTag + request.fromTag]);
     });
-    it('returns null if the session is not found', function() {
-      expect(UA.findSession(request)).toBe(null);
+    it('returns undefined if the session is not found', function() {
+      expect(UA.findSession(request)).toBe(undefined);
     });
   });
 
@@ -1046,6 +940,7 @@ describe('UA', function() {
     });
 
     it('calls onTransportClosed on register context', function() {
+      spyOn(UA.registerContext, 'onTransportClosed');
       UA.closeSessionsOnTransportError();
 
       expect(UA.registerContext.onTransportClosed).toHaveBeenCalled();
@@ -1064,9 +959,9 @@ describe('UA', function() {
 
       expect(UA.configuration.uri).toBeDefined();
 
-      expect(UA.configuration.password).toBeNull();
+      expect(UA.configuration.password).toBeUndefined();
 
-      //registrarServer is set to null here, then switched later in the function if it wasn't passed in
+      //registrarServer is set to undefined here, then switched later in the function if it wasn't passed in
 
       expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
 
@@ -1096,7 +991,7 @@ describe('UA', function() {
     it('throws a configuration error if a mandatory parameter\'s passed-in value is invalid', function() {
       spyOn(UA, 'getConfigurationCheck').and.returnValue({mandatory: { fake: function () {return;} }});
 
-      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
+      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError("Invalid value \"fake\" for parameter 'fake'");
     });
 
     it('sets a mandatory value successfully in settings', function() {
@@ -1110,7 +1005,7 @@ describe('UA', function() {
     it('throws a ConfigurationError if an optional value is passed in which is invalid', function() {
       spyOn(UA, 'getConfigurationCheck').and.returnValue({optional: { fake: function () {return;} }});
 
-      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError('Invalid value "fake" for parameter "fake"');
+      expect(function(){UA.loadConfig({fake: 'fake'});}).toThrowError("Invalid value \"fake\" for parameter 'fake'");
     });
 
     it('sets an optional value successfully in settings', function() {
@@ -1144,8 +1039,8 @@ describe('UA', function() {
     it('creates the contact object', function() {
       UA.loadConfig({});
 
-      expect(UA.contact.temp_gruu).toBeNull();
-      expect(UA.contact.pub_gruu).toBeNull();
+      expect(UA.contact.temp_gruu).toBeUndefined();
+      expect(UA.contact.pub_gruu).toBeUndefined();
       expect(UA.contact.uri).toBeDefined();
       expect(UA.contact.toString).toBeDefined();
     });

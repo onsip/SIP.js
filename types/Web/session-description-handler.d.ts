@@ -1,36 +1,61 @@
-import {SessionDescriptionHandler, SessionDescriptionHandlerModifiers, SessionDescriptionHandlerOptions} from "../session-description-handler";
+import { EventEmitter } from "events";
 
-export class WebSessionDescriptionHandler implements SessionDescriptionHandler {
+import { Logger } from "../logger-factory";
+import { InviteClientContext, InviteServerContext } from "../session";
+import {
+  BodyObj,
+  SessionDescriptionHandler as BaseSessionDescriptionHandler,
+  SessionDescriptionHandlerModifiers,
+  SessionDescriptionHandlerOptions
+} from "../session-description-handler";
+import { SessionDescriptionHandlerObserver } from "../session-description-handler-observer";
+
+import { TypeStrings } from "../enums";
+
+export declare class WebSessionDescriptionHandler extends EventEmitter implements BaseSessionDescriptionHandler {
+  static defaultFactory(
+    session: InviteClientContext | InviteServerContext,
+    options: any
+  ): BaseSessionDescriptionHandler;
+
+  type: TypeStrings;
+  peerConnection: RTCPeerConnection;  // peer connection is created in constructor, and never unset
+
+  constructor(logger: Logger, observer: SessionDescriptionHandlerObserver, options: any);
+
   close(): void;
-  getDescription(options?: WebSessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<{ body: string; contentType: string }>;
+  getDescription(options?: WebSessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<BodyObj>;
   hasDescription(contentType: string): boolean;
   holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
   setDescription(sdp: string, options?: WebSessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<void>;
+  sendDtmf(tones: string, options: any): boolean;
+  getDirection(): string;
 
-  on(name: 'getDescription', callback: (description: RTCSessionDescriptionInit) => void): void;
-  on(name: 'peerConnection-setRemoteDescriptionFailed', callback: (error: any) => void): void; // TODO: SessionDescriptionHandlerException
-  on(name: 'setDescription', callback: (description: RTCSessionDescriptionInit) => void): void;
-  on(name: 'setRemoteDescription', callback: (receivers: Array<RTCRtpReceiver>) => void): void;
-  on(name: 'confirmed', callback: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): void;
+  on(event: 'getDescription', listener: (description: RTCSessionDescriptionInit) => void): this;
+  on(event: 'peerConnection-setRemoteDescriptionFailed', listener: (error: any) => void): this; // TODO: SessionDescriptionHandlerException
+  on(event: 'setDescription', listener: (description: RTCSessionDescriptionInit) => void): this;
+  on(event: 'setRemoteDescription', listener: (receivers: Array<RTCRtpReceiver>) => void): this;
+  on(event: 'confirmed', listener: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): this;
 
-  on(name: 'peerConnection-createAnswerFailed' | 'peerConnection-createOfferFailed', callback: (error: any) => void): void; // TODO:
-  on(name: 'peerConnection-SetLocalDescriptionFailed', callback: (error: any) => void): void;
-  on(name: 'addTrack', callback: (track: MediaStreamTrack) => void): void;
-  on(name: 'iceCandidate', callback: (candidate: RTCIceCandidate) => void): void;
-  on(name: 'iceConnection' | 'iceConnectionChecking' | 'iceConnectionConnected' | 'iceConnectionCompleted' | 'iceConnectionFailed' | 'iceConnectionDisconnected' | 'iceConectionClosed', callback: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): void;
-  on(name: 'iceGathering' | 'iceGatheringComplete', callback: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): void;
+  on(event: 'peerConnection-createAnswerFailed' | 'peerConnection-createOfferFailed', listener: (error: any) => void): this; // TODO:
+  on(event: 'peerConnection-SetLocalDescriptionFailed', listener: (error: any) => void): this;
+  on(event: 'addTrack', listener: (track: MediaStreamTrack) => void): this;
+  on(event: 'addStream', listener: (track: MediaStream) => void): this;
+  on(event: 'iceCandidate', listener: (candidate: RTCIceCandidate) => void): this;
+  on(event: 'iceConnection' | 'iceConnectionChecking' | 'iceConnectionConnected' | 'iceConnectionCompleted' | 'iceConnectionFailed' | 'iceConnectionDisconnected' | 'iceConectionClosed', listener: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): this;
+  on(event: 'iceGathering' | 'iceGatheringComplete', listener: (sessionDescriptionHandler: WebSessionDescriptionHandler) => void): this;
 
-  on(name: 'userMediaRequest', callback: (constraints: MediaStreamConstraints) => void): void;
-  on(name: 'userMedia', callback: (streams: MediaStream) => void): void;
-  on(name: 'userMediaFailed', callback: (error: any) => void): void;
-
+  on(event: 'userMediaRequest', listener: (constraints: MediaStreamConstraints) => void): this;
+  on(event: 'userMedia', listener: (streams: MediaStream) => void): this;
+  on(event: 'userMediaFailed', listener: (error: any) => void): this;
 }
 
 export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptions {
   peerConnectionOptions?: PeerConnectionOptions;
   alwaysAcquireMediaFirst?: boolean;
   disableAudioFallback?: boolean;
-  RTCOfferOptiobns?: any;
+  RTCOfferOptions?: any;
+  constraints?: any;
 }
 
 export interface PeerConnectionOptions {

@@ -24,13 +24,13 @@ describe('NameAddrHeader', function() {
     expect(name.toString()).toEqual(toStringAll);
   });
 
-  it('can set the display name to null', function () {
-    name.displayName = null;
+  it('can set the display name to undefined', function () {
+    name.displayName = undefined;
     expect(name.toString()).toEqual(toStringUri);
   });
 
   it('can set the display name to 0', function () {
-    name.displayName = 0;
+    name.displayName = "0";
     expect(name.toString()).toEqual('"0" ' + toStringUri);
   });
 
@@ -43,9 +43,9 @@ describe('NameAddrHeader', function() {
     expect(name.parameters).toEqual({});
   });
 
-  describe('when setting parameter Foo to null', function () {
+  describe('when setting parameter Foo to undefined', function () {
     beforeEach(function () {
-      name.setParam('Foo', null);
+      name.setParam('Foo', undefined);
     });
 
     it('has parameter FOO', function () {
@@ -102,7 +102,7 @@ describe('NameAddrHeader', function() {
     var header;
 
     beforeEach(function () {
-      header = SIP.NameAddrHeader.parse(toParse);
+      header = SIP.Grammar.nameAddrHeaderParse(toParse);
     });
 
     it('returns a SIP.NameAddrHeader', function () {
@@ -131,7 +131,7 @@ describe('NameAddrHeader', function() {
       expect(header.displayName).toEqual(newDispName);
     });
 
-    newDispName = null;
+    newDispName = undefined;
     it('can set the display name to ' + newDispName, function () {
       header.displayName = newDispName;
       expect(header.displayName).toEqual(newDispName);

@@ -155,7 +155,7 @@ describe('SanityCheck', function () {
 
           message = p('INVITE tel:eric@example.com SIP/2.0\r\n' +
                       h.from + h.to + h.call_id + h.via + h.cseq + '\r\n');
-          message.ruri = new SIP.URI('tel', 'eric', 'example.com', null, null);
+          message.ruri = new SIP.URI('tel', 'eric', 'example.com', undefined, undefined);
           expectReply(message, 416);
 
           message = p('INVITE mailto:eric@example.com SIP/2.0\r\n' +
@@ -223,7 +223,7 @@ describe('SanityCheck', function () {
         it('rejects merged INVITE requests', function () {
           message = p(h.request + h.f + h.t + h.i + h.v + h.cseq + '\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.via_branch] = new SIP.Transactions.InviteServerTransaction(message, ua);
+          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.InviteServerTransaction(message, ua);
           message = p(h.request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
@@ -236,7 +236,7 @@ describe('SanityCheck', function () {
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532302\r\n' +
                       h.i + 'CSeq: 128102 INVITE\r\n\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.via_branch] = new SIP.Transactions.InviteServerTransaction(message, ua);
+          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.InviteServerTransaction(message, ua);
           message = p(h.request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
@@ -246,7 +246,7 @@ describe('SanityCheck', function () {
         it('rejects merged non-INVITE requests', function () {
           message = p(h.ni_request + h.f + h.t + h.i + h.v + h.cseq + '\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.via_branch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
+          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
           message = p(h.ni_request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
@@ -259,7 +259,7 @@ describe('SanityCheck', function () {
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532302\r\n' +
                       h.i + 'CSeq: 128102 INVITE\r\n\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.via_branch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
+          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
           message = p(h.ni_request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
