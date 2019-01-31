@@ -2,6 +2,8 @@ import { EventEmitter } from "events";
 
 import { Logger } from "../../types/logger-factory";
 import { InviteClientContext, InviteServerContext } from "../../types/session";
+import { DTMF } from "../../types/Session/dtmf";
+import { IncomingRequest, OutgoingRequest } from "../../types/sip-message";
 import { WebSessionDescriptionHandler as SessionDescriptionHandler } from "../../types/Web/session-description-handler";
 
 import { UA } from "../UA";
@@ -429,8 +431,8 @@ export class Simple extends EventEmitter {
       });
     }
 
-    this.session.on("dtmf", (tone: string) => {
-      this.emit("dtmf", tone);
+    this.session.on("dtmf", (request: IncomingRequest | OutgoingRequest, dtmf: DTMF) => {
+      this.emit("dtmf", dtmf.tone);
     });
     this.session.on("bye", this.onEnded.bind(this));
   }

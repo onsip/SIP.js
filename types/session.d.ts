@@ -76,7 +76,7 @@ export declare abstract class Session extends EventEmitter {
   on(event: 'accepted', listener: (response: any, cause: C.causes) => void): this;
   on(event: 'terminated', listener: (message?: any, cause?: C.causes) => void): this;
   on(event: 'connecting', listener: (request: any) => void): this;
-  on(event: 'dtmf', listener: (OutgoingRequest, DTMF) => void): this;
+  on(event: 'dtmf', listener: (request: IncomingRequest | OutgoingRequest, dtmf: DTMF) => void): this;
   on(event: 'SessionDescriptionHandler-created', listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
   on(event: 'referRequestProgress' | 'referRequestAccepted' | 'referRequestRejected', listener: (session: this) => void): this;
   on(event: 'referInviteSent' | 'referProgress' | 'referAccepted' | 'referRejected', listener: (session: this) => void): this;
