@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import {
-  getUserMedia,
+  mediaDevices,
   MediaStream,
   RTCPeerConnection,
 } from "react-native-webrtc";
@@ -79,7 +79,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
 
     this.WebRTC = {
       MediaStream,
-      getUserMedia,
+      getUserMedia: mediaDevices.getUserMedia,
       RTCPeerConnection
     };
 
