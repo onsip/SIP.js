@@ -6,7 +6,7 @@ script:
   - npm run buildAndTest
 
 node_js:
-  - "6"
+  - "8"
   - "stable"
 
 cache:

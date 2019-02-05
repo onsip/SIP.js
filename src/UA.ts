@@ -479,7 +479,7 @@ export class UA extends EventEmitter implements UADefinition {
       // unload is not available in packaged apps
       if (!((global as any).chrome && (global as any).chrome.app && (global as any).chrome.app.runtime)) {
         this.environListener = this.stop;
-        environment.addEventListener("unload", this.environListener);
+        environment.addEventListener("unload", this.environListener.bind(this));
       }
     }
 
