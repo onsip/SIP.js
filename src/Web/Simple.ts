@@ -372,11 +372,11 @@ export class Simple extends EventEmitter {
     this.state = SimpleStatus.STATUS_NEW;
     this.emit("new", this.session);
 
-    this.session.on("progress", this.onProgress.bind(this));
-    this.session.on("accepted", this.onAccepted.bind(this));
-    this.session.on("rejected", this.onEnded.bind(this));
-    this.session.on("failed", this.onFailed.bind(this));
-    this.session.on("terminated", this.onEnded.bind(this));
+    this.session.on("progress", () => this.onProgress());
+    this.session.on("accepted", () => this.onAccepted());
+    this.session.on("rejected", () => this.onEnded());
+    this.session.on("failed", () => this.onFailed());
+    this.session.on("terminated", () => this.onEnded());
   }
 
   private destroyMedia(): void {
@@ -434,7 +434,7 @@ export class Simple extends EventEmitter {
     this.session.on("dtmf", (request: IncomingRequest | OutgoingRequest, dtmf: DTMF) => {
       this.emit("dtmf", dtmf.tone);
     });
-    this.session.on("bye", this.onEnded.bind(this));
+    this.session.on("bye", () => this.onEnded());
   }
 
   private onProgress(): void {

@@ -264,9 +264,10 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
 
     new RequestSender({
       request,
-      onRequestTimeout: () => this.onRequestTimeout,
-      onTransportError: this.onTransportError,
-      receiveResponse: (options.receiveResponse || this.receiveNonInviteResponse).bind(this)
+      onRequestTimeout: () => this.onRequestTimeout(),
+      onTransportError: () => this.onTransportError(),
+      receiveResponse: (response: IncomingResponse) =>
+        (options.receiveResponse || this.receiveNonInviteResponse)(response)
     }, this.ua).send();
 
     // Emit the request event
@@ -660,7 +661,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       this.sendRequest(C.INVITE, {
         extraHeaders,
         body: description,
-        receiveResponse: this.receiveReinviteResponse
+        receiveResponse: (response: IncomingResponse) => this.receiveReinviteResponse(response)
       });
     }).catch((e: any) => {
       if (e.type === TypeStrings.RenegotiationError) {
@@ -776,9 +777,9 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
 
       timeout = Math.min(timeout * 2, Timers.T2);
 
-      this.timers.invite2xxTimer = setTimeout(invite2xxRetransmission.bind(this), timeout);
+      this.timers.invite2xxTimer = setTimeout(invite2xxRetransmission, timeout);
     };
-    this.timers.invite2xxTimer = setTimeout(invite2xxRetransmission.bind(this), timeout);
+    this.timers.invite2xxTimer = setTimeout(invite2xxRetransmission, timeout);
   }
 
   /**
@@ -1062,10 +1063,10 @@ export class InviteServerContext extends Session implements ServerContext, Invit
         const rel1xxRetransmission: () => void = () => {
           this.request.reply(relStatusCode, undefined, extraHeaders, description);
           timeout *= 2;
-          this.timers.rel1xxTimer = setTimeout(rel1xxRetransmission.bind(this), timeout);
+          this.timers.rel1xxTimer = setTimeout(rel1xxRetransmission, timeout);
         };
 
-        this.timers.rel1xxTimer = setTimeout(rel1xxRetransmission.bind(this), timeout);
+        this.timers.rel1xxTimer = setTimeout(rel1xxRetransmission, timeout);
 
         // Timeout and reject INVITE if no response
         this.timers.prackTimer = setTimeout(() => {

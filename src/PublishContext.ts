@@ -69,7 +69,7 @@ export class PublishContext extends ClientContext implements PublishContextDefin
     this.pubRequestExpires = this.options.expires;
 
     ua.on("transportCreated", (transport: Transport) =>  {
-      transport.on("transportError", this.onTransportError.bind(this));
+      transport.on("transportError", () => this.onTransportError());
     });
   }
 
@@ -77,7 +77,7 @@ export class PublishContext extends ClientContext implements PublishContextDefin
    * Publish
    * @param {string} Event body to publish, optional
    */
-  public publish(body: string): void {
+  public publish(body?: string): void {
     // Clean up before the run
     if (this.publishRefreshTimer) {
       clearTimeout(this.publishRefreshTimer);
@@ -199,7 +199,7 @@ export class PublishContext extends ClientContext implements PublishContextDefin
 
         if (this.pubRequestExpires !== 0) {
           // Schedule refresh
-          this.publishRefreshTimer = setTimeout(this.publish.bind(this), this.pubRequestExpires * 900);
+          this.publishRefreshTimer = setTimeout(() => this.publish(), this.pubRequestExpires * 900);
           this.emit("published", response, cause);
         } else {
           this.emit("unpublished", response, cause);

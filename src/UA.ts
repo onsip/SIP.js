@@ -425,7 +425,7 @@ export class UA extends EventEmitter implements UADefinition {
         }
       };
 
-      this.on("transactionDestroyed", transactionsListener.bind(this));
+      this.on("transactionDestroyed", transactionsListener);
     }
 
     if (typeof environment.removeEventListener === "function") {
@@ -479,7 +479,7 @@ export class UA extends EventEmitter implements UADefinition {
       // unload is not available in packaged apps
       if (!((global as any).chrome && (global as any).chrome.app && (global as any).chrome.app.runtime)) {
         this.environListener = this.stop;
-        environment.addEventListener("unload", this.environListener.bind(this));
+        environment.addEventListener("unload", () => this.environListener());
       }
     }
 
@@ -583,9 +583,9 @@ export class UA extends EventEmitter implements UADefinition {
    */
   private setTransportListeners(): void {
     if (this.transport) {
-      this.transport.on("connected", this.onTransportConnected.bind(this));
-      this.transport.on("message", this.onTransportReceiveMsg.bind(this));
-      this.transport.on("transportError", this.onTransportError.bind(this));
+      this.transport.on("connected", () => this.onTransportConnected());
+      this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
+      this.transport.on("transportError", () => this.onTransportError());
     }
   }
 

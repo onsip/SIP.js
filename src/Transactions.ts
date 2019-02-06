@@ -94,9 +94,9 @@ export class NonInviteClientTransaction extends EventEmitter implements NonInvit
 
   public send(): void {
     this.stateChanged(TransactionStatus.STATUS_TRYING);
-    this.F = setTimeout(this.timer_F.bind(this), Timers.TIMER_F);
+    this.F = setTimeout(() => this.timer_F(), Timers.TIMER_F);
 
-    this.transport.send(this.request).catch(this.onTransportError);
+    this.transport.send(this.request).catch(() => this.onTransportError());
   }
 
   public receiveResponse(response: IncomingResponse): void {
@@ -125,7 +125,7 @@ export class NonInviteClientTransaction extends EventEmitter implements NonInvit
             this.requestSender.receiveResponse(response);
           }
 
-          this.K = setTimeout(this.timer_K.bind(this), Timers.TIMER_K);
+          this.K = setTimeout(() => this.timer_K(), Timers.TIMER_K);
           break;
         case TransactionStatus.STATUS_COMPLETED:
           break;
@@ -221,9 +221,9 @@ export class InviteClientTransaction extends EventEmitter implements InviteClien
 
   public send(): void {
     this.stateChanged(TransactionStatus.STATUS_CALLING);
-    this.B = setTimeout(this.timer_B.bind(this), Timers.TIMER_B);
+    this.B = setTimeout(() => this.timer_B(), Timers.TIMER_B);
 
-    this.transport.send(this.request).catch(this.onTransportError);
+    this.transport.send(this.request).catch(() => this.onTransportError());
   }
 
   public receiveResponse(response: IncomingResponse): void {
@@ -261,7 +261,7 @@ export class InviteClientTransaction extends EventEmitter implements InviteClien
         case TransactionStatus.STATUS_CALLING:
         case TransactionStatus.STATUS_PROCEEDING:
           this.stateChanged(TransactionStatus.STATUS_ACCEPTED);
-          this.M = setTimeout(this.timer_M.bind(this), Timers.TIMER_M);
+          this.M = setTimeout(() => this.timer_M(), Timers.TIMER_M);
           this.requestSender.receiveResponse(response);
           break;
         case C.STATUS_ACCEPTED:
@@ -315,7 +315,7 @@ export class InviteClientTransaction extends EventEmitter implements InviteClien
       }
       this.ackSender = new AckClientTransaction({
         onTransportError: this.requestSender.applicant ?
-        this.requestSender.applicant.onTransportError :
+        this.requestSender.applicant.onTransportError.bind(this.requestSender.applicant) :
         () => {
           this.logger.warn("ACK Request had a transport error");
         },
@@ -517,7 +517,7 @@ export class NonInviteServerTransaction extends EventEmitter implements NonInvit
           case TransactionStatus.STATUS_TRYING:
             this.stateChanged(C.STATUS_PROCEEDING);
             if (this.transport) {
-              this.transport.send(response).catch(this.onTransportError);
+              this.transport.send(response).catch(() => this.onTransportError());
             }
             break;
           case TransactionStatus.STATUS_PROCEEDING:
@@ -629,7 +629,7 @@ export class InviteServerTransaction extends EventEmitter implements InviteServe
       if (statusCode >= 100 && statusCode <= 199 && this.state === TransactionStatus.STATUS_PROCEEDING) {
         // PLEASE FIX: this condition leads to a hanging promise. I'm leaving it to preserve behavior as I clean up
         if (this.transport) {
-          this.transport.send(response).catch(this.onTransportError);
+          this.transport.send(response).catch(() => this.onTransportError());
         }
         this.lastResponse = response;
         // this 100 split is carry-over from old logic, I have no explanation
@@ -638,9 +638,7 @@ export class InviteServerTransaction extends EventEmitter implements InviteServe
           if (this.resendProvisionalTimer === undefined) {
             this.resendProvisionalTimer = setInterval(() => {
               if (this.transport) {
-                this.transport.send(response).catch(() => {
-                  this.onTransportError();
-                });
+                this.transport.send(response).catch(() => this.onTransportError());
               }
             }, Timers.PROVISIONAL_RESPONSE_INTERVAL);
           }
@@ -650,7 +648,7 @@ export class InviteServerTransaction extends EventEmitter implements InviteServe
           case TransactionStatus.STATUS_PROCEEDING:
             this.stateChanged(C.STATUS_ACCEPTED);
             this.lastResponse = response;
-            this.L = setTimeout(this.timer_L.bind(this), Timers.TIMER_L);
+            this.L = setTimeout(() => this.timer_L(), Timers.TIMER_L);
 
             if (this.resendProvisionalTimer !== undefined) {
               clearInterval(this.resendProvisionalTimer);
@@ -678,7 +676,7 @@ export class InviteServerTransaction extends EventEmitter implements InviteServe
             if (this.transport) {
               this.transport.send(response).then(() => {
                 this.stateChanged(TransactionStatus.STATUS_COMPLETED);
-                this.H = setTimeout(this.timer_H.bind(this), Timers.TIMER_H);
+                this.H = setTimeout(() => this.timer_H(), Timers.TIMER_H);
                 resolve();
               }).catch((error: any) => {
                 this.logger.error(error);
