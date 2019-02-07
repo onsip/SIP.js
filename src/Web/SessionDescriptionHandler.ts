@@ -156,7 +156,7 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
   public getDescription(
-    options: WebSessionDescriptionHandlerOptions,
+    options: WebSessionDescriptionHandlerOptions = {},
     modifiers: SessionDescriptionHandlerModifiers = []
   ): Promise<BodyObj> {
     if (options.peerConnectionOptions) {
