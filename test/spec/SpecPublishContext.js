@@ -110,12 +110,12 @@ describe('PublishContext', function() {
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
-    it('publish call with no body and no ETag', function() {
+    it('refreshRequest call with no body and no ETag', function() {
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.request = true;
 
-      expect(function() {Publish.publish();}).toThrowError('Missing parameter: Body');
+      expect(function() {Publish.refreshRequest();}).toThrowError('Missing parameter: Body');
 
       expect(Publish.pubRequestEtag).toBeUndefined();
       expect(Publish.pubRequestBody).toBeUndefined();
@@ -130,14 +130,14 @@ describe('PublishContext', function() {
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBeUndefined();;
     });
 
-    it('publish call with no body and Expire = 0', function() {
+    it('refreshRequest call with no body and Expire = 0', function() {
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.request = true;
       Publish.pubRequestEtag = 'SomeValue';
       Publish.pubRequestExpires = 0;
 
-      expect(function() {Publish.publish();}).toThrowError('Missing parameter: Expire');
+      expect(function() {Publish.refreshRequest();}).toThrowError('Missing parameter: Expire');
 
       expect(Publish.pubRequestEtag).toBe('SomeValue');
       expect(Publish.pubRequestBody).toBeUndefined();
@@ -175,7 +175,7 @@ describe('PublishContext', function() {
       expect(ua.publishers['sip:alice@example.com'+':'+'presence']).toBe(Publish);
     });
 
-    it('publish refresh call, with no body but with ETag set', function() {
+    it('refreshRequest call, with no body but with ETag set', function() {
       spyOn(Publish, 'sendPublishRequest');
 
       Publish.options.body = 'ExampleBody';
@@ -185,7 +185,7 @@ describe('PublishContext', function() {
       Publish.request = true;
       ua.publishers['sip:alice@example.com'+':'+'presence'] = Publish;
 
-      Publish.publish();
+      Publish.refreshRequest();
 
       expect(Publish.pubRequestEtag).toBe('TestETag');
       expect(Publish.pubRequestBody).toBeUndefined();

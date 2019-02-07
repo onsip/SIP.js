@@ -6,7 +6,7 @@ import { URI } from "./uri";
 export declare class PublishContext extends ClientContext {
   constructor(ua: UA, target: string | URI, event: string, options?: any);
 
-  public publish(body?: string): void;
+  public publish(body: string): void;
   public unpublish(): void;
   public close(): void;
   public onRequestTimeout(): void;
