@@ -69,7 +69,7 @@ export class PublishContext extends ClientContext implements PublishContextDefin
     this.pubRequestExpires = this.options.expires;
 
     ua.on("transportCreated", (transport: Transport) =>  {
-      transport.on("transportError", this.onTransportError.bind(this));
+      transport.on("transportError", () => this.onTransportError());
     });
   }
 
@@ -84,34 +84,18 @@ export class PublishContext extends ClientContext implements PublishContextDefin
       this.publishRefreshTimer = undefined;
     }
 
-    if (body !== undefined && body !== null && body !== "") {
-      // is Inital or Modify request
-      this.options.body = body;
-      this.pubRequestBody = this.options.body;
+    // is Inital or Modify request
+    this.options.body = body;
+    this.pubRequestBody = this.options.body;
 
-      if (this.pubRequestExpires === 0) {
-        // This is Initial request after unpublish
-        this.pubRequestExpires = this.options.expires;
-        this.pubRequestEtag = undefined;
-      }
+    if (this.pubRequestExpires === 0) {
+      // This is Initial request after unpublish
+      this.pubRequestExpires = this.options.expires;
+      this.pubRequestEtag = undefined;
+    }
 
-      if (!(this.ua.publishers[this.target.toString() + ":" + this.event])) {
-        this.ua.publishers[this.target.toString() + ":" + this.event] = this;
-      }
-
-    } else {
-      // This is Refresh request
-      this.pubRequestBody = undefined;
-
-      if (this.pubRequestEtag === undefined) {
-        // Request not valid
-        throw new Exceptions.MethodParameterError("Publish", "Body", body);
-      }
-
-      if (this.pubRequestExpires === 0) {
-        // Request not valid
-        throw new Exceptions.MethodParameterError("Publish", "Expire", this.pubRequestExpires);
-      }
+    if (!(this.ua.publishers[this.target.toString() + ":" + this.event])) {
+      this.ua.publishers[this.target.toString() + ":" + this.event] = this;
     }
 
     this.sendPublishRequest();
@@ -199,7 +183,7 @@ export class PublishContext extends ClientContext implements PublishContextDefin
 
         if (this.pubRequestExpires !== 0) {
           // Schedule refresh
-          this.publishRefreshTimer = setTimeout(this.publish.bind(this), this.pubRequestExpires * 900);
+          this.publishRefreshTimer = setTimeout(() => this.refreshRequest(), this.pubRequestExpires * 900);
           this.emit("published", response, cause);
         } else {
           this.emit("unpublished", response, cause);
@@ -267,6 +251,29 @@ export class PublishContext extends ClientContext implements PublishContextDefin
       this.pubRequestBody = undefined;
       this.pubRequestEtag = undefined;
     }
+  }
+
+  private refreshRequest(): void {
+    // Clean up before the run
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = undefined;
+    }
+
+    // This is Refresh request
+    this.pubRequestBody = undefined;
+
+    if (this.pubRequestEtag === undefined) {
+      // Request not valid
+      throw new Exceptions.MethodParameterError("Publish", "Body", undefined);
+    }
+
+    if (this.pubRequestExpires === 0) {
+      // Request not valid
+      throw new Exceptions.MethodParameterError("Publish", "Expire", this.pubRequestExpires);
+    }
+
+    this.sendPublishRequest();
   }
 
   private sendPublishRequest(): void {

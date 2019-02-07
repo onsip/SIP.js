@@ -89,7 +89,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
 
     clearTimeout(this.timers.subDuration);
     clearTimeout(this.timers.N);
-    this.timers.N = setTimeout(this.timer_fire.bind(this), Timers.TIMER_N);
+    this.timers.N = setTimeout(() => this.timer_fire(), Timers.TIMER_N);
 
     if (this.request && this.request.from) {
       this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag + this.event] = this;
@@ -130,7 +130,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
       if (expires && Number(expires) <= this.requestedExpires) {
         // Preserve new expires value for subsequent requests
         this.expires = Number(expires);
-        this.timers.subDuration = setTimeout(this.refresh.bind(this), Number(expires) * 900);
+        this.timers.subDuration = setTimeout(() => this.refresh(), Number(expires) * 900);
       } else {
         if (!expires) {
           this.logger.warn("Expires header missing in a 200-class response to SUBSCRIBE");
@@ -181,7 +181,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
 
     clearTimeout(this.timers.subDuration);
     clearTimeout(this.timers.N);
-    this.timers.N = setTimeout(this.timer_fire.bind(this), Timers.TIMER_N);
+    this.timers.N = setTimeout(() => this.timer_fire(), Timers.TIMER_N);
     this.emit("terminated");
   }
 
@@ -193,7 +193,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
         clearTimeout(this.timers.subDuration);
         subState.expires = Math.min(this.expires,
                                      Math.max(subState.expires, 0));
-        this.timers.subDuration = setTimeout(this.refresh.bind(this),
+        this.timers.subDuration = setTimeout(() => this.refresh(),
                                              subState.expires * 900);
       }
     };
@@ -260,7 +260,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
             case "probation":
             case "giveup":
               if (subState.params && subState.params["retry-after"]) {
-                this.timers.subDuration = setTimeout(this.subscribe.bind(this), subState.params["retry-after"]);
+                this.timers.subDuration = setTimeout(() => this.subscribe(), subState.params["retry-after"]);
               } else {
                 this.subscribe();
               }

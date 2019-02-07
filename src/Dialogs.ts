@@ -220,7 +220,7 @@ export class Dialog implements DialogDefinition {
             }
           };
           if (request.serverTransaction) {
-            request.serverTransaction.on("stateChanged", stateChanged.bind(this));
+            request.serverTransaction.on("stateChanged", stateChanged);
           }
         }
 
@@ -277,8 +277,8 @@ export class Dialog implements DialogDefinition {
     const dialogSend: ((reattempt: boolean) => void) = (reattempt: boolean) => {
       const  requestSender: RequestSender = new RequestSender({
         request,
-        onRequestTimeout: applicant.onRequestTimeout,
-        onTransportError: applicant.onTransportError,
+        onRequestTimeout: applicant.onRequestTimeout.bind(applicant),
+        onTransportError: applicant.onTransportError.bind(applicant),
         receiveResponse: (response: IncomingResponse): void => {
           // RFC3261 12.2.1.2 408 or 481 is received for a request within a dialog.
           if (response.statusCode === 408 || response.statusCode === 481) {
@@ -331,7 +331,7 @@ export class Dialog implements DialogDefinition {
             this.uacPendingReply = false;
           }
         };
-        requestSender.clientTransaction.on("stateChanged", stateChanged.bind(this));
+        requestSender.clientTransaction.on("stateChanged", stateChanged);
       }
     };
 

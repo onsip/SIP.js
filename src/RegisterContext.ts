@@ -207,7 +207,7 @@ export class RegisterContext extends ClientContext implements RegisterContextDef
     this.registered = false;
 
     ua.on("transportCreated", (transport: Transport): void => {
-      transport.on("disconnected", this.onTransportDisconnected.bind(this));
+      transport.on("disconnected", () => this.onTransportDisconnected());
     });
   }
 
