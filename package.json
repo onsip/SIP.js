@@ -42,7 +42,7 @@
     "ts-pegjs": "0.2.2",
     "tslint": "^5.12.1",
     "typescript": "^3.3.1",
-    "webpack": "^4.29.1",
+    "webpack": "^4.29.3",
     "webpack-cli": "^3.2.3"
   },
   "engines": {
