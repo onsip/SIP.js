@@ -44,7 +44,7 @@ export interface SessionDescriptionHandler {
    * @param {Object} [options] Options object to be used by sendDtmf
    * @returns {boolean} true if DTMF send is successful, false otherwise
    */
-  sendDtmf: (tones: string, options: any) => boolean;
+  sendDtmf: (tones: string, options?: any) => boolean;
 }
 
 export interface SessionDescriptionHandlerModifier {

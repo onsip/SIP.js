@@ -156,7 +156,7 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
   public getDescription(
-    options: WebSessionDescriptionHandlerOptions,
+    options: WebSessionDescriptionHandlerOptions = {},
     modifiers: SessionDescriptionHandlerModifiers = []
   ): Promise<BodyObj> {
     if (options.peerConnectionOptions) {
@@ -306,7 +306,7 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
    * @param {Object} [options] Options object to be used by sendDtmf
    * @returns {boolean} true if DTMF send is successful, false otherwise
    */
-  public sendDtmf(tones: string, options: any): boolean {
+  public sendDtmf(tones: string, options: any = {}): boolean {
     if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
       const senders = this.peerConnection.getSenders();
       if (senders.length > 0) {
