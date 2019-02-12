@@ -27,7 +27,6 @@ export class PublishContext extends ClientContext implements PublishContextDefin
   private publishRefreshTimer: any | undefined;
 
   constructor(ua: UA, target: string | URI, event: string, options: any = {}) {
-    options = options;
     options.extraHeaders = (options.extraHeaders || []).slice();
     options.contentType = (options.contentType || "text/plain");
 
@@ -39,8 +38,6 @@ export class PublishContext extends ClientContext implements PublishContextDefin
 
     if (typeof(options.unpublishOnClose) !== "boolean") {
       options.unpublishOnClose = true;
-    } else {
-      options.unpublishOnClose = options.unpublishOnClose;
     }
 
     if (target === undefined || target === null || target === "") {
