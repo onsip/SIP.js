@@ -267,7 +267,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       onRequestTimeout: () => this.onRequestTimeout(),
       onTransportError: () => this.onTransportError(),
       receiveResponse: (response: IncomingResponse) =>
-        (options.receiveResponse || this.receiveNonInviteResponse)(response)
+        (options.receiveResponse || this.receiveNonInviteResponse.bind(this))(response)
     }, this.ua).send();
 
     // Emit the request event

@@ -8,7 +8,7 @@ import {
   OutgoingRequest as OutgoingRequestType
 } from "../types/sip-message";
 import { Subscription } from "../types/subscription";
-import { AckClientTransaction, NonInviteClientTransaction } from "../types/transactions";
+import { NonInviteClientTransaction } from "../types/transactions";
 import { URI } from "../types/uri";
 
 import { C } from "./Constants";
