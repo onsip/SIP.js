@@ -2,6 +2,7 @@ import { Dialog as DialogDefinition } from "../types/dialogs";
 import { Logger } from "../types/logger-factory";
 import { InviteClientContext, InviteServerContext } from "../types/session";
 import { SessionDescriptionHandler } from "../types/session-description-handler";
+import { DTMF } from "../types/Session/dtmf";
 import {
   IncomingRequest,
   IncomingResponse,
@@ -253,7 +254,7 @@ export class Dialog implements DialogDefinition {
   }
 
   public sendRequest(
-    applicant: InviteClientContext | Subscription,
+    applicant: InviteClientContext | Subscription | DTMF,
     method: string,
     options: any = {}
   ): OutgoingRequestType {

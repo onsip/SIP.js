@@ -107,7 +107,7 @@ export class DTMF extends EventEmitter implements DTMFDefinition {
     };
 
     if (this.owner.dialog) {
-      const request: OutgoingRequest = this.owner.dialog.sendRequest(this.owner as InviteClientContext, C.INFO, {
+      const request: OutgoingRequest = this.owner.dialog.sendRequest(this, C.INFO, {
         extraHeaders,
         body
       });
@@ -126,7 +126,7 @@ export class DTMF extends EventEmitter implements DTMFDefinition {
     }
   }
 
-  private receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponse): void {
     const statusCode: number = response && response.statusCode ? response.statusCode : 0;
 
     switch (true) {
@@ -148,17 +148,17 @@ export class DTMF extends EventEmitter implements DTMFDefinition {
     }
   }
 
-  private onRequestTimeout(): void {
+  public onRequestTimeout(): void {
     this.emit("failed", undefined, C.causes.REQUEST_TIMEOUT);
     this.owner.onRequestTimeout();
   }
 
-  private onTransportError(): void {
+  public onTransportError(): void {
     this.emit("failed", undefined, C.causes.CONNECTION_ERROR);
     this.owner.onTransportError();
   }
 
-  private onDialogError(response: IncomingResponse): void {
+  public onDialogError(response: IncomingResponse): void {
     this.emit("failed", response, C.causes.DIALOG_ERROR);
     this.owner.onDialogError(response);
   }

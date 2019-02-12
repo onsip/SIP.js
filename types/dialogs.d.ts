@@ -1,5 +1,6 @@
 import { SessionDescriptionHandler } from "./session-description-handler";
 import { InviteClientContext, InviteServerContext } from "./session";
+import { DTMF } from "./Session/dtmf";
 import { Subscription } from "./subscription";
 import { URI } from "./uri";
 import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./sip-message";
@@ -37,7 +38,7 @@ export declare class Dialog {
   createRequest(method: string, extraHeaders: Array<string> | undefined, body: string): OutgoingRequest;
   checkInDialogRequest(request: IncomingRequest): boolean;
   sendRequest(
-    applicant: InviteClientContext | Subscription,
+    applicant: InviteClientContext | Subscription | DTMF,
     method: string,
     options?: any
   ): OutgoingRequest;
