@@ -23,7 +23,6 @@ export declare class URI extends Parameters {
   _raw: URI.Object;
 
   constructor(scheme: string, user: string, host: string, port: number | undefined, parameters?: any, headers?: any);
-  static parse(uri: string): URI;
 
   setHeader(name: string, value: any): void;
   getHeader(name: string): string | undefined;
