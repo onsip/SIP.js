@@ -716,7 +716,7 @@ export class UA extends EventEmitter implements UADefinition {
 
           let replacedDialog: Dialog | undefined;
           if (replaces) {
-            replacedDialog = this.dialogs[replaces.callId + replaces.replacesToTag + replaces.replacesFromTag];
+            replacedDialog = this.dialogs[replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag];
 
             if (!replacedDialog) {
               // Replaced header without a matching dialog, reject
