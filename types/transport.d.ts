@@ -1,8 +1,6 @@
 import { EventEmitter } from "events";
 
 import { Logger } from "./logger-factory";
-import { OutgoingRequest } from "./sip-message";
-
 import { TypeStrings } from "./enums";
 
 export declare abstract class Transport extends EventEmitter {
@@ -11,11 +9,10 @@ export declare abstract class Transport extends EventEmitter {
 
   constructor(logger: Logger, options: any);
 
-
-  connect(options?: any): Promise<any>;
+  connect(options?: any): Promise<void>;
   abstract isConnected(): boolean;
-  send(msg: OutgoingRequest | string, options?: any): Promise<any>;
-  disconnect(options?: any): Promise<any>;
+  send(msg: string, options?: any): Promise<void>;
+  disconnect(options?: any): Promise<void>;
   afterConnected(callback: () => void): void;
-  waitForConnected(): Promise<any>;
+  waitForConnected(): Promise<void>;
 }

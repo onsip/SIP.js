@@ -31,7 +31,7 @@ import { URI } from "../types/uri";
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import { Dialog } from "./Dialogs";
-import { SessionStatus, TransactionStatus, TypeStrings } from "./Enums";
+import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
 import { RequestSender } from "./RequestSender";
@@ -547,7 +547,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       this.assertedIdentity = Grammar.nameAddrHeaderParse(request.getHeader("P-Asserted-Identity") as string);
     }
 
-    let promise: Promise<BodyObj | void>;
+    let promise: Promise<BodyObj>;
     if (!this.sessionDescriptionHandler) {
       this.logger.warn("No SessionDescriptionHandler to reinvite");
       return;
@@ -620,12 +620,10 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       throw e;
     }).then((description) => {
       const extraHeaders: Array<string> = ["Contact: " + this.contact];
-      request.reply(200, undefined, extraHeaders, description, () => {
-        this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
-
-        this.setACKTimer();
-        this.emit("reinviteAccepted", this);
-      });
+      request.reply(200, undefined, extraHeaders, description);
+      this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
+      this.setACKTimer();
+      this.emit("reinviteAccepted", this);
     });
   }
 
@@ -700,7 +698,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
 
         // 17.1.1.1 - For each final response that is received at the client transaction,
         // the client transaction sends an ACK,
-        this.emit("ack", response.transaction.sendACK());
+        this.emit("ack", response.ack());
         this.pendingReinvite = false;
         // TODO: All of these timers should move into the Transaction layer
         clearTimeout(this.timers.invite2xxTimer);
@@ -750,7 +748,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
 
     // An error on dialog creation will fire 'failed' event
     if (this.dialog || this.createDialog(response, "UAC")) {
-      this.emit("ack", response.transaction.sendACK());
+      this.emit("ack", response.ack());
       this.sendRequest(C.BYE, { extraHeaders });
     }
 
@@ -981,8 +979,8 @@ export class InviteServerContext extends Session implements ServerContext, Invit
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
 
     if (this.status === SessionStatus.STATUS_WAITING_FOR_ACK &&
-        this.request.serverTransaction &&
-        this.request.serverTransaction.state !== TransactionStatus.STATUS_TERMINATED) {
+        this.request.transaction &&
+        this.request.transaction.state !== "terminated") {
       const dialog: Dialog | undefined = this.dialog;
 
       this.receiveRequest = (request: IncomingRequest): void =>  {
@@ -994,9 +992,9 @@ export class InviteServerContext extends Session implements ServerContext, Invit
         }
       };
 
-      this.request.serverTransaction.on("stateChanged", () => {
-        if (this.request.serverTransaction &&
-            this.request.serverTransaction.state === TransactionStatus.STATUS_TERMINATED &&
+      this.request.transaction.on("stateChanged", () => {
+        if (this.request.transaction &&
+            this.request.transaction.state === "terminated" &&
             this.dialog) {
           this.bye();
           this.dialog.terminate();
@@ -1131,19 +1129,6 @@ export class InviteServerContext extends Session implements ServerContext, Invit
 
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
     const descriptionCreationSucceeded: ((description: any) => void) = (description: any) => {
-      // run for reply success callback
-      const replySucceeded: (() => void) = () => {
-        this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
-
-        this.setInvite2xxTimer(this.request, description);
-        this.setACKTimer();
-      };
-      // run for reply failure callback
-      const replyFailed: (() => void) = () => {
-        this.failed(undefined, C.causes.CONNECTION_ERROR);
-        this.terminated(undefined, C.causes.CONNECTION_ERROR);
-      };
-
       extraHeaders.push("Contact: " + this.contact);
       // this is UA.C.ALLOWED_METHODS, removed to get around circular dependency
       extraHeaders.push("Allow: " + [
@@ -1162,14 +1147,11 @@ export class InviteServerContext extends Session implements ServerContext, Invit
       } else {
         this.hasAnswer = true;
       }
-      const response: string = this.request.reply(200, undefined, extraHeaders,
-                    description,
-                    replySucceeded,
-                    replyFailed
-                    );
-      if (this.status !== SessionStatus.STATUS_TERMINATED) { // Didn't fail
-        this.accepted(response, Utils.getReasonPhrase(200));
-      }
+      const response: string = this.request.reply(200, undefined, extraHeaders, description);
+      this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
+      this.setInvite2xxTimer(this.request, description);
+      this.setACKTimer();
+      this.accepted(response, Utils.getReasonPhrase(200));
     };
     const descriptionCreationFailed: ((err: any) => void) = (err: any) => {
       if (err.type === TypeStrings.SessionDescriptionHandlerError) {
@@ -1561,7 +1543,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
         if (!this.createDialog(response, "UAC", true)) {
           return;
         }
-        this.emit("ack", response.transaction.sendACK({body: Utils.generateFakeSDP(response.body)}));
+        this.emit("ack", response.ack({body: Utils.generateFakeSDP(response.body)}));
         this.earlyDialogs[id].sendRequest(this, C.BYE);
 
         /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
@@ -1574,7 +1556,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
         }
         return;
       } else if (this.status === SessionStatus.STATUS_CONFIRMED) {
-        this.emit("ack", response.transaction.sendACK());
+        this.emit("ack", response.ack(response));
         return;
       } else if (!this.hasAnswer) {
         // invite w/o sdp is waiting for callback
@@ -1763,6 +1745,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
                   this.logger.warn("invalid description");
                   this.logger.warn(e);
                 }
+                // FIXME: DON'T EAT UNHANDLED ERRORS!
               });
             }
           }
@@ -1788,7 +1771,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          this.emit("ack", response.transaction.sendACK(options));
+          this.emit("ack", response.ack(options));
           this.accepted(response);
           break;
         }
@@ -1808,7 +1791,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
               break;
             }
             this.status = SessionStatus.STATUS_CONFIRMED;
-            this.emit("ack", response.transaction.sendACK());
+            this.emit("ack", response.ack());
 
             this.accepted(response);
           } else {
@@ -1841,8 +1824,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
 
               this.status = SessionStatus.STATUS_CONFIRMED;
               this.hasAnswer = true;
-
-              this.emit("ack", response.transaction.sendACK({body: description}));
+              this.emit("ack", response.ack({body: description}));
               this.accepted(response);
             }).catch((e: any) => {
               if (e.type === TypeStrings.SessionDescriptionHandlerError) {
@@ -1851,6 +1833,8 @@ export class InviteClientContext extends Session implements ClientContext, Invit
                 // TODO: This message is inconsistent
                 this.acceptAndTerminate(response, 488, "Invalid session description");
                 this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+              } else {
+                throw e;
               }
             });
           }
@@ -1861,7 +1845,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          this.emit("ack", response.transaction.sendACK(options));
+          this.emit("ack", response.ack(options));
         } else {
           if (!this.sessionDescriptionHandler ||
             !this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || "")) {
@@ -1885,12 +1869,13 @@ export class InviteClientContext extends Session implements ClientContext, Invit
               options.extraHeaders = extraHeaders;
               options.body = this.renderbody;
             }
-            this.emit("ack", response.transaction.sendACK(options));
+            this.emit("ack", response.ack(options));
             this.accepted(response);
           }, (e: any) => {
             this.logger.warn(e);
             this.acceptAndTerminate(response, 488, "Not Acceptable Here");
             this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+            // FIME: DON'T EAT UNHANDLED ERRORS!
           });
         }
         break;

@@ -6,7 +6,8 @@ import { ServerContext as ServerContextDefinition } from "../types/server-contex
 import { IncomingRequest } from "../types/sip-message";
 import {
   InviteServerTransaction as InviteServerTransactionType,
-  NonInviteServerTransaction as NonInviteServerTransactionType
+  NonInviteServerTransaction as NonInviteServerTransactionType,
+  ServerTransactionUser
 } from "../types/transactions";
 import { UA } from "../types/ua";
 
@@ -23,11 +24,28 @@ export class ServerContext extends EventEmitter implements ServerContextDefiniti
     objectToConstruct.ua = ua;
     objectToConstruct.logger = ua.getLogger("sip.servercontext");
     objectToConstruct.request = request;
-    if (request.method === C.INVITE) {
-      objectToConstruct.transaction = new InviteServerTransaction(request, ua);
-    } else {
-      objectToConstruct.transaction = new NonInviteServerTransaction(request, ua);
+    const transport = ua.transport;
+    if (!transport) {
+      throw new Error("Transport undefined.");
     }
+    const user: ServerTransactionUser = {
+      loggerFactory: ua.getLoggerFactory(),
+      onStateChange: (newState) => {
+        if (newState === "terminated") {
+          ua.destroyTransaction(objectToConstruct.transaction);
+        }
+      },
+      onTransportError: (error) => {
+        objectToConstruct.logger.error(error.message);
+        objectToConstruct.onTransportError();
+      }
+    };
+    if (request.method === C.INVITE) {
+      objectToConstruct.transaction = new InviteServerTransaction(request, transport, user);
+    } else {
+      objectToConstruct.transaction = new NonInviteServerTransaction(request, transport, user);
+    }
+    ua.newTransaction(objectToConstruct.transaction);
 
     if (request.body) {
       objectToConstruct.body = request.body;

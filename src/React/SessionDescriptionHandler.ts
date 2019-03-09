@@ -192,6 +192,9 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       this.logger.error(error.toString());
       throw error;
     }).then((description: RTCSessionDescriptionInit) => {
+      if (description.sdp === undefined) {
+        throw new Exceptions.SessionDescriptionHandlerError("getDescription", undefined, "SDP undefined");
+      }
       this.emit("getDescription", description);
       return {
         body: description.sdp,

@@ -7,7 +7,11 @@ import {
   IncomingResponse as IncomingResponseDefinition,
   OutgoingRequest as OutgoingRequestDefinition
 } from "../types/sip-message";
-import { InviteClientTransaction, InviteServerTransaction, NonInviteServerTransaction } from "../types/transactions";
+import {
+  ClientTransaction,
+  ClientTransactionUser,
+  ServerTransaction
+} from "../types/transactions";
 import { Transport } from "../types/transport";
 import { UA } from "../types/ua";
 import { URI } from "../types/uri";
@@ -15,6 +19,10 @@ import { URI } from "../types/uri";
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
+import {
+  InviteClientTransaction,
+  NonInviteClientTransaction,
+} from "./Transactions";
 import { Utils } from "./Utils";
 
 const getSupportedHeader: ((request: OutgoingRequest | IncomingRequest) => string) =  (request) => {
@@ -68,14 +76,18 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
   public headers: {[name: string]: Array<string>};
   public method: string;
   public cseq: number;
-  public body: string | any;
+  public body: string | { body: string, contentType: string } | undefined;
   public to: NameAddrHeader | undefined;
   public from: NameAddrHeader | undefined;
   public extraHeaders: Array<string>;
   public callId: string;
 
-  // hack that is used because request is exposed and dialog is not
+  // FIXME: Hack that is used because request is exposed and dialog is not
   public dialog: Dialog | undefined;
+
+  // FIXME: This is a hack... set in ClientTransaction constructor.
+  public transaction: ClientTransaction | undefined;
+  public branch: string | undefined;
 
   private logger: Logger;
   private statusCode: number;
@@ -86,8 +98,8 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
     ruri: string | URI,
     ua: UA,
     params: any = {},
-    extraHeaders: Array<string>,
-    body?: string
+    extraHeaders?: Array<string>,
+    body?: string | { body: string, contentType: string }
   ) {
     this.type = TypeStrings.OutgoingRequest;
     this.logger = ua.getLogger("sip.sipmessage");
@@ -97,6 +109,7 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
     this.ruri = ruri;
     this.body = body;
     this.extraHeaders = (extraHeaders || []).slice();
+    // FIXME: Why are response properties on a Request class?
     this.statusCode = params.statusCode;
     this.reasonPhrase = params.reasonPhrase;
 
@@ -152,15 +165,6 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
   }
 
   /**
-   * Replace the the given header by the given value.
-   * @param {String} name header name
-   * @param {String | Array} value header value
-   */
-  public setHeader(name: string, value: string | Array<string>): void {
-    this.headers[Utils.headerize(name)] = (value instanceof Array) ? value : [value];
-  }
-
-  /**
    * Get the value of the given header name at the given position.
    * @param {String} name header name
    * @returns {String|undefined} Returns the specified header, undefined if header doesn't exist.
@@ -181,11 +185,6 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
     }
 
     return;
-  }
-
-  public cancel(reason: string | undefined, extraHeaders: Array<string>): void {
-    // this gets defined "correctly" in InviteClientTransaction constructor
-    // its a hack
   }
 
   /**
@@ -230,6 +229,158 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
     }
 
     return false;
+  }
+
+  /**
+   * Replace the the given header by the given value.
+   * @param {String} name header name
+   * @param {String | Array} value header value
+   */
+  public setHeader(name: string, value: string | Array<string>): void {
+    this.headers[Utils.headerize(name)] = (value instanceof Array) ? value : [value];
+  }
+
+  /**
+   * The Via header field indicates the transport used for the transaction
+   * and identifies the location where the response is to be sent.  A Via
+   * header field value is added only after the transport that will be
+   * used to reach the next hop has been selected (which may involve the
+   * usage of the procedures in [4]).
+   *
+   * When the UAC creates a request, it MUST insert a Via into that
+   * request.  The protocol name and protocol version in the header field
+   * MUST be SIP and 2.0, respectively.  The Via header field value MUST
+   * contain a branch parameter.  This parameter is used to identify the
+   * transaction created by that request.  This parameter is used by both
+   * the client and the server.
+   * https://tools.ietf.org/html/rfc3261#section-8.1.1.7
+   * @param branchParameter The branch parameter.
+   * @param transport The transport.
+   */
+  public setViaHeader(branch: string, transport: Transport): void {
+    // FIXME: Default scheme to "WSS"
+    // This should go away once transport is typed and we can be sure
+    // we are getting the something valid from there transport.
+    let scheme = "WSS";
+    // FIXME: Transport's server property is not typed (as of writing this).
+    if (transport.server && transport.server.scheme) {
+      scheme = transport.server.scheme;
+    }
+    // FIXME: Hack
+    if (this.ua.configuration.hackViaTcp) {
+      scheme = "TCP";
+    }
+    let via = "SIP/2.0/" + scheme;
+    via += " " + this.ua.configuration.viaHost + ";branch=" + branch;
+    if (this.ua.configuration.forceRport) {
+      via += ";rport";
+    }
+    this.setHeader("via", via);
+    this.branch = branch;
+  }
+
+  /**
+   * Cancel this request.
+   * If this is not an INVITE request, a no-op.
+   * @param reason Reason phrase.
+   * @param extraHeaders Extra headers.
+   */
+  public cancel(reason?: string, extraHeaders?: Array<string>): void {
+    if (!this.transaction) {
+      throw new Error("Transaction undefined.");
+    }
+
+    const sendCancel = () => {
+      if (!this.transaction) {
+        throw new Error("Transaction undefined.");
+      }
+      if (!this.to) {
+        throw new Error("To undefined.");
+      }
+      if (!this.from) {
+        throw new Error("From undefined.");
+      }
+      const toHeader = this.getHeader("To");
+      if (!toHeader) {
+        throw new Error("To header undefined.");
+      }
+      const fromHeader = this.getHeader("From");
+      if (!fromHeader) {
+        throw new Error("From header undefined.");
+      }
+      const cancel = new OutgoingRequest(
+        C.CANCEL,
+        this.ruri,
+        this.ua,
+        {
+          toUri: this.to.uri,
+          fromUri: this.from.uri,
+          callId: this.callId,
+          cseq: this.cseq
+        },
+        extraHeaders
+      );
+      this.setHeader("To", toHeader);
+      this.setHeader("From", fromHeader);
+      cancel.callId = this.callId;
+      this.setHeader("Call-ID", this.callId);
+      cancel.cseq = this.cseq;
+      this.setHeader("CSeq", this.cseq + " " + cancel.method);
+
+      // TODO: Revisit this.
+      // The CANCEL needs to use the same branch parameter so that
+      // it matches the INVITE transaction, but this is a hacky way to do this.
+      // Or at the very least not well documented. If the the branch parameter
+      // is set on the outgoing request, the transaction will use it. Otherwise
+      // the transaction will make a new one.
+      cancel.branch = this.branch;
+
+      if (this.headers.Route) {
+        cancel.headers.Route = this.headers.Route;
+      }
+
+      if (reason) {
+        cancel.setHeader("Reason", reason);
+      }
+
+      const transport = this.transaction.transport;
+      const user: ClientTransactionUser = {
+        loggerFactory: this.ua.getLoggerFactory(),
+        onStateChange: (newState) => {
+          if (newState === "terminated") {
+            this.ua.destroyTransaction(clientTransaction);
+          }
+        },
+        receiveResponse: (response) => { return; }
+      };
+      const clientTransaction = new NonInviteClientTransaction(cancel, transport, user);
+      this.ua.newTransaction(clientTransaction);
+    };
+
+    // A CANCEL request SHOULD NOT be sent to cancel a request other than INVITE.
+    // Since requests other than INVITE are responded to immediately, sending a
+    // CANCEL for a non-INVITE request would always create a race condition.
+    // https://tools.ietf.org/html/rfc3261#section-9.1
+    if (!(this.transaction instanceof InviteClientTransaction)) {
+      return;
+    }
+
+    // If no provisional response has been received, the CANCEL request MUST
+    // NOT be sent; rather, the client MUST wait for the arrival of a
+    // provisional response before sending the request. If the original
+    // request has generated a final response, the CANCEL SHOULD NOT be
+    // sent, as it is an effective no-op, since CANCEL has no effect on
+    // requests that have already generated a final response.
+    // https://tools.ietf.org/html/rfc3261#section-9.1
+    if (this.transaction.state === "proceeding") {
+      sendCancel();
+    } else {
+      this.transaction.once("stateChanged", () => {
+        if (this.transaction && this.transaction.state === "proceeding") {
+          sendCancel();
+        }
+      });
+    }
   }
 
   public toString(): string {
@@ -282,7 +433,7 @@ class IncomingMessage implements IncomingMessageDefinition {
   public type: TypeStrings = TypeStrings.IncomingMessage;
   public viaBranch!: string;
   public method!: string;
-  public body!: string | any;
+  public body!: string;
   public toTag!: string;
   public to!: NameAddrHeader;
   public fromTag!: string;
@@ -427,17 +578,20 @@ class IncomingMessage implements IncomingMessageDefinition {
 // tslint:disable-next-line:max-classes-per-file
 export class IncomingRequest extends IncomingMessage implements IncomingRequestDefinition {
   public type: TypeStrings;
-  public ua: UA;
-  public serverTransaction: NonInviteServerTransaction | InviteServerTransaction | undefined;
-  public transport: Transport | undefined;
   public ruri: URI | undefined;
+
+  // FIXME: Fix this a hack... set in ServerTransaction constructor.
+  public transaction: ServerTransaction | undefined;
+
+  // FIXME: Fix this a hack... set in UA.onTransportReceiveRequest()
+  public transport: Transport | undefined;
+
   private logger: Logger;
 
-  constructor(ua: UA) {
+  constructor(public ua: UA) {
     super();
     this.type = TypeStrings.IncomingRequest;
     this.logger = ua.getLogger("sip.sipmessage");
-    this.ua = ua;
   }
 
   /**
@@ -446,18 +600,17 @@ export class IncomingRequest extends IncomingMessage implements IncomingRequestD
    * @param {String} reason reason phrase
    * @param {Object} headers extra headers
    * @param {String} body body
-   * @param {Function} [onSuccess] onSuccess callback
-   * @param {Function} [onFailure] onFailure callback
    */
-// TODO: Get rid of callbacks and make promise based
   public reply(
     code: number,
     reason?: string,
     extraHeaders?: Array<string>,
-    body?: any,
-    onSuccess?: ((response: {msg: string}) => void),
-    onFailure?: (() => void)
+    body?: string | { body: string, contentType: string }
   ): string {
+    if (!this.transaction) {
+      throw new Error("Transaction undefined.");
+    }
+
     let response: string = Utils.buildStatusLine(code, reason);
     extraHeaders = (extraHeaders || []).slice();
 
@@ -508,9 +661,7 @@ export class IncomingRequest extends IncomingMessage implements IncomingRequestD
       response += "Content-Length: " + 0 + "\r\n\r\n";
     }
 
-    if (this.serverTransaction) {
-      this.serverTransaction.receiveResponse(code, response).then(onSuccess, onFailure);
-    }
+    this.transaction.receiveResponse(code, response);
 
     return response;
   }
@@ -520,7 +671,11 @@ export class IncomingRequest extends IncomingMessage implements IncomingRequestD
    * @param {Number} code status code
    * @param {String} reason reason phrase
    */
-  public reply_sl(code: number, reason?: string): void {
+  public reply_sl(code: number, reason?: string): string {
+    if (!this.transport) {
+      throw new Error("Transport undefined.");
+    }
+
     let response: string = Utils.buildStatusLine(code, reason);
 
     for (const via of this.getHeaders("via")) {
@@ -542,9 +697,8 @@ export class IncomingRequest extends IncomingMessage implements IncomingRequestD
     response += "User-Agent: " + this.ua.configuration.userAgentString + "\r\n";
     response += "Content-Length: " + 0 + "\r\n\r\n";
 
-    if (this.transport) {
-      this.transport.send(response);
-    }
+    this.transport.send(response);
+    return response;
   }
 }
 
@@ -556,15 +710,68 @@ export class IncomingResponse extends IncomingMessage implements IncomingRespons
   public type: TypeStrings;
   public statusCode: number | undefined;
   public reasonPhrase: string | undefined;
-  // set in the transaction file
-  public transaction!: InviteClientTransaction;
+
+  // FIXME: Fix this a hack... set in UA.onTransportReceiveResponse()
+  public transaction: ClientTransaction | undefined;
 
   private logger: Logger;
 
-  constructor(ua: UA) {
+  constructor(public ua: UA) {
     super();
     this.type = TypeStrings.IncomingResponse;
     this.logger = ua.getLogger("sip.sipmessage");
     this.headers = {};
+  }
+
+  /**
+   * Constructs and sends ACK to 2xx final response. Returns the sent ACK.
+   * @param response The 2xx final repsonse the ACK is acknowledging.
+   * @param options ACK options; extra headers, body.
+   */
+  public ack(
+    options?: {
+      extraHeaders?: Array<string>,
+      body?: string | { body: string, contentType: string }
+    }
+  ): OutgoingRequest {
+    if (!this.statusCode || this.statusCode < 200 || this.statusCode > 299) {
+      throw new Error("Response status code must be 2xx to ACK.");
+    }
+
+    if (this.method !== C.INVITE) {
+      throw new Error("Response must to be for an INVITE to ACK.");
+    }
+
+    if (!this.transaction) {
+      throw new Error("Transaction undefined.");
+    }
+
+    if (!(this.transaction instanceof InviteClientTransaction)) {
+      throw new Error("Transaction not instance of InviteServerTrasaction.");
+    }
+
+    const contact = this.parseHeader("contact");
+    if (!contact || !contact.uri) {
+      throw new Error("Failed to parse contact header.");
+    }
+    const ruri = contact.uri;
+    const request = new OutgoingRequest(
+      C.ACK,
+      ruri,
+      this.ua,
+      {
+        cseq: this.cseq,
+        callId: this.callId,
+        fromUri: this.from.uri,
+        fromTag: this.fromTag,
+        toUri: this.to.uri,
+        toTag: this.toTag,
+        routeSet: this.getHeaders("record-route").reverse()
+      },
+      options ? options.extraHeaders : undefined,
+      options ? options.body : undefined
+    );
+    this.transaction.ackResponse(this, request);
+    return request;
   }
 }

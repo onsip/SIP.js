@@ -11,17 +11,14 @@ import {
   SessionDescriptionHandler,
   SessionDescriptionHandlerModifiers
 } from "../types/session-description-handler";
-import {
-  IncomingRequest,
-  IncomingResponse,
-  OutgoingRequest
-} from "../types/sip-message";
 import { Subscription as SubscriptionType } from "../types/subscription";
 import {
+  ClientTransaction,
   InviteClientTransaction,
   InviteServerTransaction as InviteServerTransactionType,
   NonInviteClientTransaction,
-  NonInviteServerTransaction as NonInviteServerTransactionType
+  NonInviteServerTransaction as NonInviteServerTransactionType,
+  ServerTransactionUser
 } from "../types/transactions";
 import { Transport } from "../types/transport";
 import { UA as UADefinition } from "../types/ua";
@@ -40,9 +37,9 @@ import { RegisterContext } from "./RegisterContext";
 import { SanityCheck } from "./SanityCheck";
 import { ServerContext } from "./ServerContext";
 import { InviteClientContext, InviteServerContext, ReferServerContext } from "./Session";
+import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { Subscription } from "./Subscription";
 import {
-  checkTransaction,
   InviteServerTransaction,
   NonInviteServerTransaction
 } from "./Transactions";
@@ -100,14 +97,20 @@ export class UA extends EventEmitter implements UADefinition {
   public configuration: UADefinition.Options;
   public applicants: {[id: string]: InviteClientContextType};
   public publishers: {[id: string]: PublishContextType};
-  public contact: any | undefined;
+  public contact!: // assigned in loadConfig()
+    {
+      pubGruu: URI | undefined,
+      tempGruu: URI | undefined,
+      uri: URI,
+      toString: (options?: any) => string
+    };
   public status: UAStatus;
   public transport: Transport | undefined;
   public transactions: {
-    nist: {[id: string]: NonInviteServerTransactionType}
-    nict: {[id: string]: NonInviteClientTransaction}
-    ist: {[id: string]: InviteServerTransactionType}
-    ict: {[id: string]: InviteClientTransaction}
+    nist: {[id: string]: NonInviteServerTransactionType | undefined}
+    nict: {[id: string]: NonInviteClientTransaction | undefined}
+    ist: {[id: string]: InviteServerTransactionType | undefined}
+    ict: {[id: string]: InviteClientTransaction | undefined}
   };
   public sessions: {[id: string]: InviteClientContextType | InviteServerContextType};
   public dialogs: {[id: string]: Dialog};
@@ -501,6 +504,31 @@ export class UA extends EventEmitter implements UADefinition {
     return this.log.getLogger(category, label);
   }
 
+  public getLoggerFactory(): LoggerFactory {
+    return this.log;
+  }
+
+  // TODO: Transaction matching currently works circumstanially.
+  //
+  // 17.1.3 Matching Responses to Client Transactions
+  //
+  // When the transport layer in the client receives a response, it has to
+  // determine which client transaction will handle the response, so that
+  // the processing of Sections 17.1.1 and 17.1.2 can take place.  The
+  // branch parameter in the top Via header field is used for this
+  // purpose.  A response matches a client transaction under two
+  // conditions:
+  //
+  //    1.  If the response has the same value of the branch parameter in
+  //        the top Via header field as the branch parameter in the top
+  //        Via header field of the request that created the transaction.
+  //
+  //    2.  If the method parameter in the CSeq header field matches the
+  //        method of the request that created the transaction.  The
+  //        method is needed since a CANCEL request constitutes a
+  //        different transaction, but shares the same value of the branch
+  //        parameter.
+
   /**
    * new Transaction
    * @private
@@ -603,47 +631,252 @@ export class UA extends EventEmitter implements UADefinition {
   }
 
   /**
-   * Transport message receipt event.
-   * @event
-   * @param {String} message
+   * Handle SIP message received from the transport.
+   * @param messageString The message.
    */
-
   private onTransportReceiveMsg(messageString: string): void {
-    const message: IncomingRequest | IncomingResponse | undefined = Parser.parseMessage(messageString, this);
+    const message = Parser.parseMessage(messageString, this);
+    if (!message) {
+      this.logger.warn("UA failed to parse incoming SIP message - discarding.");
+      return;
+    }
 
-    if (this.status === UAStatus.STATUS_USER_CLOSED && message && message.type === TypeStrings.IncomingRequest) {
+    if (this.status === UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequest) {
       this.logger.warn("UA received message when status = USER_CLOSED - aborting");
       return;
     }
-    // Do some sanity check
-    if (message && this.transport && SanityCheck.sanityCheck(message, this, this.transport)) {
-      if (message.type === TypeStrings.IncomingRequest) {
-        (message as IncomingRequest).transport = this.transport;
-        this.receiveRequest(message as IncomingRequest);
-      } else if (message.type === TypeStrings.IncomingResponse) {
-        /* Unlike stated in 18.1.2, if a response does not match
-         * any transaction, it is discarded here and no passed to the core
-         * in order to be discarded there.
-         */
-        switch (message.method) {
-          case SIPConstants.INVITE:
-            const icTransaction: InviteClientTransaction | undefined = this.transactions.ict[message.viaBranch];
-            if (icTransaction) {
-              icTransaction.receiveResponse(message as IncomingResponse);
-            }
-            break;
-          case SIPConstants.ACK:
-            // Just in case ;-)
-            break;
-          default:
-            const nicTransaction: NonInviteClientTransaction | undefined = this.transactions.nict[message.viaBranch];
-            if (nicTransaction) {
-              nicTransaction.receiveResponse(message as IncomingResponse);
-            }
-            break;
+
+    if (!this.transport) {
+      this.logger.warn("UA received message without transport - aborting");
+      return;
+    }
+
+    if (!SanityCheck.sanityCheck(message, this, this.transport)) {
+      return;
+    }
+
+    if (message instanceof IncomingRequest) {
+      return this.receiveRequestFromTransport(message);
+    }
+
+    if (message instanceof IncomingResponse) {
+      return this.receiveResponseFromTransport(message);
+    }
+
+    throw new Error("Invalid message type.");
+  }
+
+  private receiveRequestFromTransport(request: IncomingRequest): void {
+
+    // FIXME: Bad hack. SIPMessage needs refactor.
+    request.transport = this.transport;
+
+    // FIXME: Configuration URI is a bad mix of tyes currently and needs to exist.
+    if (!(this.configuration.uri instanceof URI)) {
+      throw new Error("Configuration URI not instance of URI.");
+    }
+
+    // FIXME: A request should always have an ruri
+    if (!request.ruri) {
+      throw new Error("Request ruri undefined.");
+    }
+
+    // If the Request-URI uses a scheme not supported by the UAS, it SHOULD
+    // reject the request with a 416 (Unsupported URI Scheme) response.
+    // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
+    if (request.ruri.scheme !== SIPConstants.SIP) {
+      request.reply_sl(416);
+      return;
+    }
+
+    // If the Request-URI does not identify an address that the
+    // UAS is willing to accept requests for, it SHOULD reject
+    // the request with a 404 (Not Found) response.
+    // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
+    const ruri = request.ruri;
+    const ruriMatches = (uri: URI | undefined) => {
+      return !!uri && uri.user === ruri.user;
+    };
+    if (
+      !ruriMatches(this.configuration.uri) &&
+      !(ruriMatches(this.contact.uri) || ruriMatches(this.contact.pubGruu) || ruriMatches(this.contact.tempGruu))
+    ) {
+      this.logger.warn("Request-URI does not point to us");
+      if (request.method !== SIPConstants.ACK) {
+        request.reply_sl(404);
+      }
+      return;
+    }
+
+    // When a request is received from the network by the server, it has to
+    // be matched to an existing transaction.  This is accomplished in the
+    // following manner.
+    //
+    // The branch parameter in the topmost Via header field of the request
+    // is examined.  If it is present and begins with the magic cookie
+    // "z9hG4bK", the request was generated by a client transaction
+    // compliant to this specification.  Therefore, the branch parameter
+    // will be unique across all transactions sent by that client.  The
+    // request matches a transaction if:
+    //
+    //    1. the branch parameter in the request is equal to the one in the
+    //       top Via header field of the request that created the
+    //       transaction, and
+    //
+    //    2. the sent-by value in the top Via of the request is equal to the
+    //       one in the request that created the transaction, and
+    //
+    //    3. the method of the request matches the one that created the
+    //       transaction, except for ACK, where the method of the request
+    //       that created the transaction is INVITE.
+    //
+    // This matching rule applies to both INVITE and non-INVITE transactions
+    // alike.
+    //
+    //    The sent-by value is used as part of the matching process because
+    //    there could be accidental or malicious duplication of branch
+    //    parameters from different clients.
+    // https://tools.ietf.org/html/rfc3261#section-17.2.3
+
+    // FIXME: The current transaction layer curently only matches on branch parameter.
+
+    // Request matches branch parameter of an existing invite server transaction.
+    const ist = this.transactions.ist[request.viaBranch];
+
+    // Request matches branch parameter of an existing non-invite server transaction.
+    const nist = this.transactions.nist[request.viaBranch];
+
+    // The CANCEL method requests that the TU at the server side cancel a
+    // pending transaction.  The TU determines the transaction to be
+    // cancelled by taking the CANCEL request, and then assuming that the
+    // request method is anything but CANCEL or ACK and applying the
+    // transaction matching procedures of Section 17.2.3.  The matching
+    // transaction is the one to be cancelled.
+    // https://tools.ietf.org/html/rfc3261#section-9.2
+    if (request.method === SIPConstants.CANCEL) {
+      if (ist || nist) {
+        // Regardless of the method of the original request, as long as the
+        // CANCEL matched an existing transaction, the UAS answers the CANCEL
+        // request itself with a 200 (OK) response.
+        // https://tools.ietf.org/html/rfc3261#section-9.2
+        request.reply_sl(200);
+
+        // If the transaction for the original request still exists, the behavior
+        // of the UAS on receiving a CANCEL request depends on whether it has already
+        // sent a final response for the original request. If it has, the CANCEL
+        // request has no effect on the processing of the original request, no
+        // effect on any session state, and no effect on the responses generated
+        // for the original request. If the UAS has not issued a final response
+        // for the original request, its behavior depends on the method of the
+        // original request. If the original request was an INVITE, the UAS
+        // SHOULD immediately respond to the INVITE with a 487 (Request
+        // Terminated). A CANCEL request has no impact on the processing of
+        // transactions with any other method defined in this specification.
+        // https://tools.ietf.org/html/rfc3261#section-9.2
+        if (ist && ist.state === "proceeding") {
+          // TODO: Review this.
+          // The cancel request has been replied to, which is an exception.
+          this.receiveRequest(request);
         }
+      } else {
+        // If the UAS did not find a matching transaction for the CANCEL
+        // according to the procedure above, it SHOULD respond to the CANCEL
+        // with a 481 (Call Leg/Transaction Does Not Exist).
+        // https://tools.ietf.org/html/rfc3261#section-9.2
+        request.reply_sl(481);
+      }
+      return;
+    }
+
+    // When receiving an ACK that matches an existing INVITE server
+    // transaction and that does not contain a branch parameter containing
+    // the magic cookie defined in RFC 3261, the matching transaction MUST
+    // be checked to see if it is in the "Accepted" state.  If it is, then
+    // the ACK must be passed directly to the transaction user instead of
+    // being absorbed by the transaction state machine.  This is necessary
+    // as requests from RFC 2543 clients will not include a unique branch
+    // parameter, and the mechanisms for calculating the transaction ID from
+    // such a request will be the same for both INVITE and ACKs.
+    // https://tools.ietf.org/html/rfc6026#section-6
+
+    // Any ACKs received from the network while in the "Accepted" state MUST be
+    // passed directly to the TU and not absorbed.
+    // https://tools.ietf.org/html/rfc6026#section-7.1
+    if (request.method === SIPConstants.ACK) {
+      if (ist && ist.state === "accepted") {
+        this.receiveRequest(request);
+        return;
       }
     }
+
+    // If a matching server transaction is found, the request is passed to that
+    // transaction for processing.
+    // https://tools.ietf.org/html/rfc6026#section-8.10
+    if (ist) {
+      ist.receiveRequest(request);
+      return;
+    }
+    if (nist) {
+      nist.receiveRequest(request);
+      return;
+    }
+
+    // If no match is found, the request is passed to the core, which may decide to
+    // construct a new server transaction for that request.
+    // https://tools.ietf.org/html/rfc6026#section-8.10
+    this.receiveRequest(request);
+  }
+
+  private receiveResponseFromTransport(response: IncomingResponse): void {
+    // When the transport layer in the client receives a response, it has to
+    // determine which client transaction will handle the response, so that
+    // the processing of Sections 17.1.1 and 17.1.2 can take place.  The
+    // branch parameter in the top Via header field is used for this
+    // purpose.  A response matches a client transaction under two
+    // conditions:
+    //
+    //    1.  If the response has the same value of the branch parameter in
+    //        the top Via header field as the branch parameter in the top
+    //        Via header field of the request that created the transaction.
+    //
+    //    2.  If the method parameter in the CSeq header field matches the
+    //        method of the request that created the transaction.  The
+    //        method is needed since a CANCEL request constitutes a
+    //        different transaction, but shares the same value of the branch
+    //        parameter.
+    // https://tools.ietf.org/html/rfc3261#section-17.1.3
+
+    // The client transport uses the matching procedures of Section
+    // 17.1.3 to attempt to match the response to an existing
+    // transaction.  If there is a match, the response MUST be passed to
+    // that transaction.  Otherwise, any element other than a stateless
+    // proxy MUST silently discard the response.
+    // https://tools.ietf.org/html/rfc6026#section-8.9
+    let transaction: ClientTransaction | undefined;
+    switch (response.method) {
+      case SIPConstants.INVITE:
+        transaction = this.transactions.ict[response.viaBranch];
+        break;
+      case SIPConstants.ACK:
+        // Just in case ;-)
+        break;
+      default:
+        transaction = this.transactions.nict[response.viaBranch];
+        break;
+    }
+
+    if (!transaction) {
+      const message =
+        `Discarding unmatched ${response.statusCode} response to ${response.method} ${response.viaBranch}.`;
+      this.logger.warn(message);
+      return;
+    }
+
+    // FIXME: Bad hack. Potentially creating circular dependancy. SIPMessage needs refactor.
+    response.transaction = transaction;
+
+    // Pass incoming response to matching transaction.
+    transaction.receiveResponse(response);
   }
 
   /**
@@ -652,34 +885,6 @@ export class UA extends EventEmitter implements UADefinition {
    * @param {SIP.IncomingRequest} request.
    */
   private receiveRequest(request: IncomingRequest): void {
-    const ruriMatches: ((uri: URIType | undefined) => boolean) = (uri: URIType | undefined) => {
-      return !!uri && !!request.ruri && uri.user === request.ruri.user;
-    };
-
-    // Check that request URI points to us
-    if ((this.configuration.uri as URIType).type === TypeStrings.URI &&
-      !(ruriMatches(this.configuration.uri as URIType) ||
-        (this.contact && (
-          ruriMatches(this.contact.uri) ||
-          ruriMatches(this.contact.pubGruu) ||
-          ruriMatches(this.contact.tempGruu))))) {
-      this.logger.warn("Request-URI does not point to us");
-      if (request.method !== SIPConstants.ACK) {
-        request.reply_sl(404);
-      }
-      return;
-    }
-
-    // Check request URI scheme
-    if (!!request.ruri && request.ruri.scheme === SIPConstants.SIPS) {
-      request.reply_sl(416);
-      return;
-    }
-
-    // Check transaction
-    if (this.checkTransaction(request)) {
-      return;
-    }
 
     /* RFC3261 12.2.2
     * Requests that do not change in any way the state of a dialog may be
@@ -689,7 +894,23 @@ export class UA extends EventEmitter implements UADefinition {
     const method: string = request.method;
     let message: ServerContext;
     if (method === SIPConstants.OPTIONS) {
-      const nonInviteTr: NonInviteServerTransaction = new NonInviteServerTransaction(request, this);
+      const transport = this.transport;
+      if (!transport) {
+        throw new Error("Transport undefined.");
+      }
+      const user: ServerTransactionUser = {
+        loggerFactory: this.getLoggerFactory(),
+        onStateChange: (newState) => {
+          if (newState === "terminated") {
+            this.destroyTransaction(optionsTransaction);
+          }
+        },
+        onTransportError: (error) => {
+          this.logger.error(error.message);
+        }
+      };
+      const optionsTransaction = new NonInviteServerTransaction(request, transport, user);
+      this.newTransaction(optionsTransaction);
       request.reply(200, undefined, [
         "Allow: " + UA.C.ALLOWED_METHODS.toString(),
         "Accept: " + UA.C.ACCEPTED_BODY_TYPES.toString()
@@ -790,7 +1011,24 @@ export class UA extends EventEmitter implements UADefinition {
 
       if (dialog) {
         if (method === SIPConstants.INVITE) {
-          const unusedIST: InviteServerTransaction = new InviteServerTransaction(request, this);
+          const transport = this.transport;
+          if (!transport) {
+            throw new Error("Transport undefined.");
+          }
+          const user: ServerTransactionUser = {
+            loggerFactory: this.log,
+            onStateChange: (newState) => {
+              if (newState === "terminated") {
+                this.destroyTransaction(ist);
+              }
+            },
+            onTransportError: (error) => {
+              this.logger.error(error.message);
+              dialog.owner.onTransportError();
+            }
+          };
+          const ist: InviteServerTransaction = new InviteServerTransaction(request, transport, user);
+          this.newTransaction(ist);
         }
         dialog.receiveRequest(request);
       } else if (method === SIPConstants.NOTIFY) {
@@ -821,10 +1059,6 @@ export class UA extends EventEmitter implements UADefinition {
 // =================
 // Utils
 // =================
-
-private checkTransaction(request: IncomingRequest): boolean {
-  return checkTransaction(this, request);
-}
 
 /**
  * Get the dialog to which the request belongs to, if any.

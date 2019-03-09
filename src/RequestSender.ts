@@ -1,12 +1,13 @@
-import { Logger } from "../types/logger-factory";
+import { Logger, LoggerFactory } from "../types/logger-factory";
 import { RegisterContext } from "../types/register-context";
 import { RequestSender as RequestSenderDefinition } from "../types/request-sender";
 import { IncomingResponse, OutgoingRequest } from "../types/sip-message";
+import { ClientTransactionUser } from "../types/transactions";
 import { UA } from "../types/ua";
 
 import { C } from "./Constants";
 import { TypeStrings, UAStatus } from "./Enums";
-import { AckClientTransaction, InviteClientTransaction, NonInviteClientTransaction } from "./Transactions";
+import { InviteClientTransaction, NonInviteClientTransaction } from "./Transactions";
 
 /**
  * @class Class creating a request sender.
@@ -16,8 +17,9 @@ import { AckClientTransaction, InviteClientTransaction, NonInviteClientTransacti
 export class RequestSender implements RequestSenderDefinition {
   public type: TypeStrings;
   public ua: UA;
-  public clientTransaction: InviteClientTransaction | NonInviteClientTransaction | AckClientTransaction | undefined;
+  public clientTransaction: InviteClientTransaction | NonInviteClientTransaction | undefined;
   public applicant: RequestSenderDefinition.StreamlinedApplicant;
+  public loggerFactory: LoggerFactory;
   private logger: Logger;
   private method: string;
   private request: OutgoingRequest;
@@ -28,6 +30,7 @@ export class RequestSender implements RequestSenderDefinition {
   constructor(applicant: RequestSenderDefinition.StreamlinedApplicant, ua: UA) {
     this.type = TypeStrings.RequestSender;
     this.logger = ua.getLogger("sip.requestsender");
+    this.loggerFactory = ua.getLoggerFactory();
     this.ua = ua;
     this.applicant = applicant;
     this.method = applicant.request.method;
@@ -45,23 +48,35 @@ export class RequestSender implements RequestSenderDefinition {
   /**
    * Create the client transaction and send the message.
    */
-  public send(): InviteClientTransaction | NonInviteClientTransaction | AckClientTransaction {
-    if (!this.ua.transport) {
-      throw new Error("No transport to make transaction");
+  public send(): InviteClientTransaction | NonInviteClientTransaction {
+    const transport = this.ua.transport;
+    if (!transport) {
+      throw new Error("Transport undefined.");
     }
+    const user: ClientTransactionUser = {
+      loggerFactory: this.ua.getLoggerFactory(),
+      onRequestTimeout: () => this.onRequestTimeout(),
+      onStateChange: (newState) => {
+        if (newState === "terminated") {
+          this.ua.destroyTransaction(clientTransaction);
+        }
+      },
+      onTransportError: (error) => this.onTransportError(),
+      receiveResponse: (response) => this.receiveResponse(response)
+    };
+    let clientTransaction: InviteClientTransaction | NonInviteClientTransaction;
     switch (this.method) {
       case "INVITE":
-        this.clientTransaction = new InviteClientTransaction(this, this.request, this.ua.transport);
+        clientTransaction = new InviteClientTransaction(this.request, transport, user);
         break;
       case "ACK":
-        this.clientTransaction = new AckClientTransaction(this, this.request, this.ua.transport);
-        break;
+        throw new Error("Cannot make client transaction for ACK method.");
       default:
-        this.clientTransaction = new NonInviteClientTransaction(this, this.request, this.ua.transport);
+        clientTransaction = new NonInviteClientTransaction(this.request, transport, user);
     }
-    this.clientTransaction.send();
-
-    return this.clientTransaction;
+    this.clientTransaction = clientTransaction;
+    this.ua.newTransaction(clientTransaction);
+    return clientTransaction;
   }
 
   /**
@@ -141,7 +156,6 @@ export class RequestSender implements RequestSenderDefinition {
           this.request.cseq = cseq;
         }
         this.request.setHeader("cseq", cseq + " " + this.method);
-
         this.request.setHeader(authorizationHeaderName, this.credentials.toString());
         this.send();
       } else {

@@ -5,7 +5,6 @@ export { DigestAuthentication } from "./DigestAuthentication";
 export {
   DialogStatus,
   SessionStatus,
-  TransactionStatus,
   TypeStrings,
   UAStatus
 } from "./Enums";
@@ -29,16 +28,12 @@ export { Subscription } from "./Subscription";
 export { Timers } from "./Timers";
 
 import {
-  AckClientTransaction,
-  checkTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
   NonInviteClientTransaction,
   NonInviteServerTransaction
 } from "./Transactions";
 const Transactions = {
-  AckClientTransaction,
-  checkTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
   NonInviteClientTransaction,
