@@ -33,7 +33,7 @@ import { DigestAuthentication } from "./DigestAuthentication";
 import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
-import { LoggerFactory } from "./LoggerFactory";
+import { Levels, LoggerFactory } from "./LoggerFactory";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
 import { RegisterContext } from "./RegisterContext";
@@ -174,7 +174,9 @@ export class UA extends EventEmitter implements UADefinition {
       }
 
       if (configuration.log.hasOwnProperty("level")) {
-        this.log.level = configuration.log.level;
+        const level = configuration.log.level;
+        const normalized: Levels = typeof level === "string" ? Levels[level] : level;
+        this.log.level = normalized;
       }
 
       if (configuration.log.hasOwnProperty("connector")) {

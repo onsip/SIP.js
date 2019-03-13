@@ -115,7 +115,11 @@ export declare namespace UA {
     hackViaTcp?: boolean;
     hackWssInTransport?: boolean;
     hostportParams?: any;
-    log?: any; // TODO
+    log?: {
+      builtinEnabled: boolean,
+      level: string | number,
+      connector: (level: string, category: string, label: string | undefined, content: any) => void,
+    };
     noAnswerTimeout?: number;
     password?: string;
     register?: boolean;
