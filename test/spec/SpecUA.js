@@ -1039,8 +1039,8 @@ describe('UA', function() {
     it('creates the contact object', function() {
       UA.loadConfig({});
 
-      expect(UA.contact.temp_gruu).toBeUndefined();
-      expect(UA.contact.pub_gruu).toBeUndefined();
+      expect(UA.contact.tempGruu).toBeUndefined();
+      expect(UA.contact.pubGruu).toBeUndefined();
       expect(UA.contact.uri).toBeDefined();
       expect(UA.contact.toString).toBeDefined();
     });

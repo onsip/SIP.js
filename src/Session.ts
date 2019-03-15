@@ -1405,7 +1405,7 @@ export class InviteClientContext extends Session implements ClientContext, Invit
     */
     const contact = ua.contact.toString({
       anonymous,
-      outbound: anonymous ? !ua.contact.temp_gruu : !ua.contact.pub_gruu
+      outbound: anonymous ? !ua.contact.tempGruu : !ua.contact.pubGruu
     });
 
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
