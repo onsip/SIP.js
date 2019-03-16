@@ -4,7 +4,10 @@ describe('Subscription', function() {
 
   beforeEach(function() {
     ua = new SIP.UA({uri: 'james@onsnip.onsip.com'}).start();
-    ua.transport.ws.onopen();
+    ua.transport = jasmine.createSpyObj('transport', ['connect', 'disconnect', 'send', 'on', 'removeListener']);
+    ua.transport.connect.and.returnValue(Promise.resolve());
+    ua.transport.disconnect.and.returnValue(Promise.resolve());
+    ua.transport.send.and.returnValue(Promise.resolve());
 
     Subscription = new SIP.Subscription(ua, 'james@onsnip.onsip.com', 'dialog');
   });

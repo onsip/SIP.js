@@ -44,11 +44,7 @@ window.SIPHelper = {
     response.setHeader('to', request.getHeader('to'));
 
     // Transaction ACK
-    response.transaction = {
-      sendACK: function(options) {
-        return options
-      }
-    };
+    response.transaction = request.transaction;
 
     return response;
   }
