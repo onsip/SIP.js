@@ -18,15 +18,17 @@
   },
   "keywords": [
     "sip",
-    "websocket",
     "webrtc",
     "library",
-    "javascript"
+    "websocket",
+    "javascript",
+    "typescript"
   ],
   "dependencies": {
     "crypto-js": "^3.1.9-1"
   },
   "devDependencies": {
+    "@types/jasmine": "^3.3.10",
     "@types/node": "^11.9.6",
     "circular-dependency-plugin": "^5.0.2",
     "jasmine-core": "^3.3.0",
@@ -36,6 +38,7 @@
     "karma-jasmine": "^2.0.1",
     "karma-jasmine-html-reporter": "^1.4.0",
     "karma-mocha-reporter": "^2.2.5",
+    "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^3.0.5",
     "pegjs": "^0.10.0",
     "ts-loader": "^5.3.3",
@@ -49,16 +52,17 @@
     "node": ">=8.0"
   },
   "scripts": {
-    "prebuild": "tslint -p tsconfig.json -c tslint.json",
+    "prebuild": "tslint -p tsconfig-base.json -c tslint.json",
     "generate-grammar": "node build/grammarGenerator.js",
     "build-reg-bundle": "webpack --progress --config build/webpack.config.js --env.buildType reg",
     "build-min-bundle": "webpack --progress --config build/webpack.config.js --env.buildType min",
     "build-bundles": "npm run build-reg-bundle && npm run build-min-bundle",
-    "build-lib": "tsc",
-    "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js  dist/sip-$npm_package_version.min.js",
+    "build-lib": "tsc -p src",
+    "build-test": "tsc -p test",
+    "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js dist/sip-$npm_package_version.min.js",
     "build": "npm run generate-grammar && npm run build-lib && npm run build-reg-bundle && npm run build-min-bundle && npm run copy-dist-files",
-    "browserTest": "sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
-    "commandLineTest": "karma start --reporters mocha --browsers ChromeHeadless --single-run",
+    "browserTest": "npm run build-test && sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
+    "commandLineTest": "npm run build-test && karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
     "buildAndBrowserTest": "npm run build && npm run browserTest"
   },
