@@ -369,6 +369,7 @@ export class Transport extends TransportBase implements WebTransportDefinition {
     }
 
     if (this.noAvailableServers()) {
+      this.logger.warn("attempted to get next ws server but there are no available ws servers left");
       this.logger.warn("no available ws servers left - going to closed state");
       this.status = TransportStatus.STATUS_CLOSED;
       this.emit("closed");
@@ -388,7 +389,11 @@ export class Transport extends TransportBase implements WebTransportDefinition {
       this.logger.log("transport " + this.server.wsUri + " failed | connection state set to 'error'");
       this.server.isError = true;
       this.emit("transportError");
-      this.server = this.getNextWsServer();
+      if (!this.noAvailableServers()) {
+        this.server = this.getNextWsServer();
+      }
+      // When there are no available servers, the reconnect function ends on the next recursive call
+      // after checking for no available servers again.
       this.reconnectionAttempts = 0;
       this.reconnect();
     } else {
