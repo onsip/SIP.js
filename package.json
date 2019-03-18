@@ -28,8 +28,8 @@
     "crypto-js": "^3.1.9-1"
   },
   "devDependencies": {
-    "@types/jasmine": "^3.3.10",
-    "@types/node": "^11.9.6",
+    "@types/jasmine": "^3.3.11",
+    "@types/node": "^11.11.6",
     "circular-dependency-plugin": "^5.0.2",
     "jasmine-core": "^3.3.0",
     "karma": "^4.0.1",
@@ -43,10 +43,10 @@
     "pegjs": "^0.10.0",
     "ts-loader": "^5.3.3",
     "ts-pegjs": "0.2.2",
-    "tslint": "^5.13.1",
-    "typescript": "^3.3.3333",
+    "tslint": "^5.14.0",
+    "typescript": "^3.3.4000",
     "webpack": "^4.29.6",
-    "webpack-cli": "^3.2.3"
+    "webpack-cli": "^3.3.0"
   },
   "engines": {
     "node": ">=8.0"
