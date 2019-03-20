@@ -215,7 +215,7 @@ describe('An INVITE sent from a UAC', function () {
           done();
         }, 0);
 
-        return true;
+        return Promise.resolve();
       });
     });
 
@@ -314,7 +314,7 @@ describe('An INVITE sent from a UAC', function () {
 
       spyOn(this.ua.transport, 'send').and.callFake(function () {
         setTimeout(done, 0);
-        return true;
+        return Promise.resolve();
       });
     });
 

@@ -184,6 +184,9 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
       }
     }).then(() => this.createOfferOrAnswer(options.RTCOfferOptions, modifiers))
     .then((description: RTCSessionDescriptionInit) => {
+      if (description.sdp === undefined) {
+        throw new Exceptions.SessionDescriptionHandlerError("getDescription", undefined, "SDP undefined");
+      }
       this.emit("getDescription", description);
       return {
         body: description.sdp,

@@ -18,7 +18,10 @@ describe('Dialogs', function() {
         };
       }
     });
-    ua.transport = jasmine.createSpyObj('transport', ['disconnect', 'send', 'on', 'removeListener']);
+    ua.transport = jasmine.createSpyObj('transport', ['connect', 'disconnect', 'send', 'on', 'removeListener']);
+    ua.transport.connect.and.returnValue(Promise.resolve());
+    ua.transport.disconnect.and.returnValue(Promise.resolve());
+    ua.transport.send.and.returnValue(Promise.resolve());
     message = SIP.Parser.parseMessage([
       'INVITE sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',
       'Max-Forwards: 65',
@@ -102,7 +105,7 @@ describe('Dialogs', function() {
     expect(Dialog.state).toBe(2);
 
     resp.statusCode = 183;
-    resp.type = 8; // IncomingResponse
+    resp.type = 7; // IncomingResponse
     Dialog = new SIP.Dialog(owner, resp, 'UAS');
     expect(Dialog.state).toBe(1);
   });
@@ -250,7 +253,7 @@ describe('Dialogs', function() {
     beforeEach(function() {
       request = new SIP.OutgoingRequest('INVITE', 'bob@example.com', owner.ua, {from: 'abcdefg'}, ['Contact: ' + owner.contact, 'Allow: ' + SIP.UA.C.ALLOWED_METHODS.toString()]);
 
-      request.serverTransaction = {on: jasmine.createSpy('on')};
+      request.transaction = {on: jasmine.createSpy('on')};
       request.reply = jasmine.createSpy('reply');
 
       Dialog.remoteSeqnum = 5;
@@ -310,7 +313,7 @@ describe('Dialogs', function() {
       expect(request.reply.calls.mostRecent().args[0]).toBe(500);
     });
 
-    it('returns true and calls serverTransaction.on once if neither of the *PendingReply properties are true, the request method is INVITE, and the request does not have a contact header', function() {
+    it('returns true and calls transaction.on once if neither of the *PendingReply properties are true, the request method is INVITE, and the request does not have a contact header', function() {
       expect(Dialog.uacPendingReply).toBe(false);
       expect(Dialog.uasPendingReply).toBe(false);
 
@@ -318,27 +321,27 @@ describe('Dialogs', function() {
 
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
-      expect(request.serverTransaction.on).toHaveBeenCalled();
-      expect(request.serverTransaction.on.calls.count()).toBe(1);
+      expect(request.transaction.on).toHaveBeenCalled();
+      expect(request.transaction.on.calls.count()).toBe(1);
     });
 
-    it('returns true and calls serverTransaction.on twice if neither of the *PendingReply properties are true, the request method is INVITE, and the request has have a contact header', function() {
+    it('returns true and calls transaction.on twice if neither of the *PendingReply properties are true, the request method is INVITE, and the request has have a contact header', function() {
       expect(Dialog.uacPendingReply).toBe(false);
       expect(Dialog.uasPendingReply).toBe(false);
 
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
-      expect(request.serverTransaction.on).toHaveBeenCalled();
-      expect(request.serverTransaction.on.calls.count()).toBe(2);
+      expect(request.transaction.on).toHaveBeenCalled();
+      expect(request.transaction.on.calls.count()).toBe(2);
     });
 
-    it('returns true and calls server.transaction.on once if the request method is NOTIFY and the request has a contact header', function() {
+    it('returns true and calls transaction.on once if the request method is NOTIFY and the request has a contact header', function() {
       request.method = SIP.C.NOTIFY;
 
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
-      expect(request.serverTransaction.on).toHaveBeenCalled();
-      expect(request.serverTransaction.on.calls.count()).toBe(1);
+      expect(request.transaction.on).toHaveBeenCalled();
+      expect(request.transaction.on.calls.count()).toBe(1);
     });
   });
 

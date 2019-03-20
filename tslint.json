@@ -1,18 +1,26 @@
 {
-    "defaultSeverity": "error",
-    "extends": "tslint:recommended",
-    "linterOptions": {
-        "exclude": [
-            "package.json"
-        ]
-    },
-    "jsRules": {},
-    "rules": {
-        "no-namespace": false,
-        "trailing-comma": false,
-        "array-type": false,
-        "interface-name": [true, "never-prefix"],
-        "object-literal-sort-keys": false
-    },
-    "rulesDirectory": []
+  "defaultSeverity": "error",
+  "extends": "tslint:recommended",
+  "linterOptions": {
+    "exclude": [
+      "package.json"
+    ]
+  },
+  "jsRules": {},
+  "rules": {
+    "array-type": false,
+    "interface-name": [ true,
+      "never-prefix"
+    ],
+    "no-namespace": false,
+    "object-literal-sort-keys": false,
+    "trailing-comma": false,
+    "variable-name": [ true, 
+      "ban-keywords",
+      "check-format",
+      "allow-pascal-case",
+      "allow-leading-underscore"
+    ]
+  },
+  "rulesDirectory": []
 }

@@ -1,5 +1,4 @@
 import { IncomingRequest, IncomingResponse } from "../types/sip-message";
-import { InviteServerTransaction, NonInviteServerTransaction } from "../types/transactions";
 import { Transport } from "../types/transport";
 import { UA } from "../types/ua";
 
@@ -20,7 +19,7 @@ export namespace SanityCheck {
   // Reply
   export function reply(
     statusCode: number,
-    message: IncomingRequest | IncomingResponse,
+    message: IncomingRequest,
     transport: Transport
   ): void {
     let response: string = Utils.buildStatusLine(statusCode);
@@ -85,7 +84,7 @@ export namespace SanityCheck {
   }
 
   export function rfc3261_18_3_request(
-    message: IncomingRequest | IncomingResponse,
+    message: IncomingRequest,
     ua: UA,
     transport: Transport
   ): boolean {
@@ -99,6 +98,26 @@ export namespace SanityCheck {
     return true;
   }
 
+  /**
+   * 8.2.2.2 Merged Requests
+   *
+   * If the request has no tag in the To header field, the UAS core MUST
+   * check the request against ongoing transactions.  If the From tag,
+   * Call-ID, and CSeq exactly match those associated with an ongoing
+   * transaction, but the request does not match that transaction (based
+   * on the matching rules in Section 17.2.3), the UAS core SHOULD
+   * generate a 482 (Loop Detected) response and pass it to the server
+   * transaction.
+   *
+   *    The same request has arrived at the UAS more than once, following
+   *    different paths, most likely due to forking.  The UAS processes
+   *    the first such request received and responds with a 482 (Loop
+   *    Detected) to the rest of them.
+   *
+   * @param message Incoming request message.
+   * @param ua User agent.
+   * @param transport Transport.
+   */
   export function rfc3261_8_2_2_2(message: IncomingRequest, ua: UA, transport: Transport): boolean {
     const fromTag: string = message.fromTag;
     const callId: string = message.callId;
@@ -111,8 +130,8 @@ export namespace SanityCheck {
         } else {
           for (const idx in ua.transactions.ist) {
             if (ua.transactions.ist.hasOwnProperty(idx)) {
-              const tr: InviteServerTransaction = ua.transactions.ist[idx];
-              if (tr.request.fromTag === fromTag && tr.request.callId === callId && tr.request.cseq === cseq) {
+              const tr = ua.transactions.ist[idx];
+              if (tr && tr.request.fromTag === fromTag && tr.request.callId === callId && tr.request.cseq === cseq) {
                 reply(482, message, transport);
                 return false;
               }
@@ -125,8 +144,8 @@ export namespace SanityCheck {
         } else {
           for (const idx in ua.transactions.nist) {
             if (ua.transactions.nist.hasOwnProperty(idx)) {
-              const tr: NonInviteServerTransaction = ua.transactions.nist[idx];
-              if (tr.request.fromTag === fromTag && tr.request.callId === callId && tr.request.cseq === cseq) {
+              const tr = ua.transactions.nist[idx];
+              if (tr && tr.request.fromTag === fromTag && tr.request.callId === callId && tr.request.cseq === cseq) {
                 reply(482, message, transport);
                 return false;
               }

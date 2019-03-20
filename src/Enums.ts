@@ -23,19 +23,7 @@ export enum SessionStatus {
   STATUS_CONFIRMED
 }
 
-export enum TransactionStatus {
-  // Transaction states
-  STATUS_TRYING = 1,
-  STATUS_PROCEEDING = 2,
-  STATUS_CALLING = 3,
-  STATUS_ACCEPTED = 4,
-  STATUS_COMPLETED = 5,
-  STATUS_TERMINATED = 6,
-  STATUS_CONFIRMED = 7
-}
-
 export enum TypeStrings {
-  AckClientTransaction,
   ClientContext,
   ConfigurationError,
   Dialog,
@@ -46,15 +34,11 @@ export enum TypeStrings {
   IncomingResponse,
   InvalidStateError,
   InviteClientContext,
-  InviteClientTransaction,
   InviteServerContext,
-  InviteServerTransaction,
   Logger,
   LoggerFactory,
   MethodParameterError,
   NameAddrHeader,
-  NonInviteClientTransaction,
-  NonInviteServerTransaction,
   NotSupportedError,
   OutgoingRequest,
   Parameters,
@@ -71,7 +55,6 @@ export enum TypeStrings {
   SessionDescriptionHandlerObserver,
   Subscription,
   Transport,
-  TransportError,
   UA,
   URI
 }

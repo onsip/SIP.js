@@ -22,7 +22,12 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'test/spec/Web/SessionDescriptionHandler.spec.js': 'webpack',
-      'test/spec/Web/Modifiers.spec.js': 'webpack'
+      'test/spec/Web/Modifiers.spec.js': 'webpack',
+      'test/spec/*.spec.js': ['webpack', 'sourcemap']
+    },
+
+    webpack: {
+      devtool: 'inline-source-map'
     },
 
     // test results reporter to use
@@ -73,7 +78,8 @@ module.exports = function(config) {
       'karma-jasmine',
       'karma-jasmine-html-reporter',
       'karma-mocha-reporter',
-      'karma-webpack'
+      'karma-webpack',
+      'karma-sourcemap-loader'
     ]
   })
 }

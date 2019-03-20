@@ -25,14 +25,12 @@ export { IncomingRequest, IncomingResponse, OutgoingRequest };
 export { Subscription } from "./subscription";
 export { Timers } from "./timers";
 import  {
-  AckClientTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
   NonInviteClientTransaction,
   NonInviteServerTransaction
 } from "./transactions";
 export var Transactions: {
-  AckClientTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
   NonInviteClientTransaction,

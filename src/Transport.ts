@@ -1,7 +1,6 @@
 import { EventEmitter } from "events";
 
 import { Logger } from "../types/logger-factory";
-import { OutgoingRequest } from "../types/sip-message";
 import { Transport as TransportDefinition } from "../types/transport";
 
 import { TypeStrings } from "./Enums";
@@ -30,7 +29,7 @@ export abstract class Transport extends EventEmitter implements TransportDefinit
    * @param {Object} [options]
    * @returns {Promise}
    */
-  public connect(options: any = {}): Promise<any> {
+  public connect(options: any = {}): Promise<void> {
     return this.connectPromise(options).then((data: any) => {
       if (!data.overrideEvent) {
         this.emit("connected");
@@ -48,11 +47,11 @@ export abstract class Transport extends EventEmitter implements TransportDefinit
    * Sends a message then emits a 'messageSent' event. Automatically emits an
    * event upon resolution, unless data.overrideEvent is set. If you override
    * the event in this fashion, you should emit it in your implementation of sendPromise
-   * @param {SIP.OutgoingRequest|String} msg
+   * @param {String} msg
    * @param {Object} options
    * @returns {Promise}
    */
-  public send(msg: OutgoingRequest | string, options: any = {}): Promise<any> {
+  public send(msg: string, options: any = {}): Promise<void> {
     return this.sendPromise(msg).then((data: any) => {
       if (!data.overrideEvent) {
         this.emit("messageSent", data.msg);
@@ -68,7 +67,7 @@ export abstract class Transport extends EventEmitter implements TransportDefinit
    * @param {Object} [options]
    * @returns {Promise}
    */
-  public disconnect(options: any = {}): Promise<any> {
+  public disconnect(options: any = {}): Promise<void> {
     return this.disconnectPromise(options).then((data: any) => {
       if (!data.overrideEvent) {
         this.emit("disconnected");
@@ -88,7 +87,7 @@ export abstract class Transport extends EventEmitter implements TransportDefinit
    * Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected()
    * @returns {Promise}
    */
-  public waitForConnected(): Promise<any> {
+  public waitForConnected(): Promise<void> {
     // tslint:disable-next-line:no-console
     console.warn("DEPRECATION WARNING Transport.waitForConnected(): use afterConnected() instead");
     return new Promise((resolve) => {
@@ -111,11 +110,11 @@ export abstract class Transport extends EventEmitter implements TransportDefinit
    * and overrideEvent - Boolean (optional)
    * @abstract
    * @private
-   * @param {SIP.OutgoingRequest|String} msg
+   * @param {String} msg
    * @param {Object} [options]
    * @returns {Promise}
    */
-  protected abstract sendPromise(msg: OutgoingRequest | string, options?: any): Promise<any>;
+  protected abstract sendPromise(msg: string, options?: any): Promise<any>;
 
   /**
    * Called by disconnect, must return a promise

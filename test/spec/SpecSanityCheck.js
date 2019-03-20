@@ -1,6 +1,6 @@
 describe('SanityCheck', function () {
 
-  var transport, h, message, ua;
+  var transport, h, message, ua, tu;
 
   h = {
     request: 'INVITE sip:eric@example.com SIP/2.0\r\n',
@@ -20,11 +20,18 @@ describe('SanityCheck', function () {
     v: 'v: SIP/2.0/WSS MYHOST;branch=z9hG4bK7532297\r\n'
   };
 
+  tu = {
+    loggerFactory: undefined
+  }
+
   beforeAll(function () {
-    ua = new SIP.UA();
-    transport = jasmine.createSpyObj('transport', ['on', 'send', 'server', 'removeListener']);
-    transport.server.scheme = 'WSS';
+    transport = jasmine.createSpyObj('transport', ['connect', 'disconnect', 'send', 'on', 'removeListener']);
+    transport.connect.and.returnValue(Promise.resolve());
+    transport.disconnect.and.returnValue(Promise.resolve());
+    transport.send.and.returnValue(Promise.resolve());
+    ua = new SIP.UA({ register: false });
     ua.transport = transport;
+    tu.loggerFactory = ua.getLoggerFactory();
     h.via = h.via.replace('MYHOST', ua.configuration.viaHost);
     h.v = h.v.replace('MYHOST', ua.configuration.viaHost);
   });
@@ -223,7 +230,7 @@ describe('SanityCheck', function () {
         it('rejects merged INVITE requests', function () {
           message = p(h.request + h.f + h.t + h.i + h.v + h.cseq + '\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.InviteServerTransaction(message, ua);
+          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.InviteServerTransaction(message, transport, tu);
           message = p(h.request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
@@ -236,17 +243,16 @@ describe('SanityCheck', function () {
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532302\r\n' +
                       h.i + 'CSeq: 128102 INVITE\r\n\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.InviteServerTransaction(message, ua);
+          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.InviteServerTransaction(message, transport, tu);
           message = p(h.request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
         });
 
-
         it('rejects merged non-INVITE requests', function () {
           message = p(h.ni_request + h.f + h.t + h.i + h.v + h.cseq + '\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
+          ua.transactions.nist[message.viaBranch] = new SIP.Transactions.NonInviteServerTransaction(message, transport, tu);
           message = p(h.ni_request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);
@@ -259,7 +265,7 @@ describe('SanityCheck', function () {
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532302\r\n' +
                       h.i + 'CSeq: 128102 INVITE\r\n\r\n');
           spyOn(message, 'reply');
-          ua.transactions.ist[message.viaBranch] = new SIP.Transactions.NonInviteServerTransaction(message, ua);
+          ua.transactions.nist[message.viaBranch] = new SIP.Transactions.NonInviteServerTransaction(message, transport, tu);
           message = p(h.ni_request + h.f + h.t + h.i + h.cseq +
                       'Via: SIP/2.0/WSS ' + ua.configuration.viaHost + ';branch=z9hG4bK7532300\r\n\r\n');
           expectReply(message, 482);

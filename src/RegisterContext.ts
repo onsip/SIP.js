@@ -307,10 +307,10 @@ export class RegisterContext extends ClientContext implements RegisterContextDef
 
           // Save gruu values
           if (contact.hasParam("temp-gruu")) {
-            this.ua.contact.temp_gruu = Grammar.URIParse(contact.getParam("temp-gruu").replace(/"/g, ""));
+            this.ua.contact.tempGruu = Grammar.URIParse(contact.getParam("temp-gruu").replace(/"/g, ""));
           }
           if (contact.hasParam("pub-gruu")) {
-            this.ua.contact.pub_gruu = Grammar.URIParse(contact.getParam("pub-gruu").replace(/"/g, ""));
+            this.ua.contact.pubGruu = Grammar.URIParse(contact.getParam("pub-gruu").replace(/"/g, ""));
           }
 
           this.registered = true;

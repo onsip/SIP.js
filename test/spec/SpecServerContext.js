@@ -7,6 +7,7 @@ describe('ServerContext', function() {
   beforeEach(function(){
     ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['send', 'connect', 'disconnect', 'reConnect']);
+    ua.transport.send.and.returnValue(Promise.resolve());
 
     request = SIP.Parser.parseMessage([
       'REFER sip:gled5gsn@hk95bautgaa7.invalid;transport=ws;aor=james%40onsnip.onsip.com SIP/2.0',

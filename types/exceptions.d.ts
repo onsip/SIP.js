@@ -1,6 +1,26 @@
 import { SessionStatus, TypeStrings } from "./enums";
 
-export declare class Exception {
+/**
+ * An Exception is considered a condition that a resonable application may wish to catch.
+ * An Error indicates serious problems that a reasonable application should not try to catch.
+ */
+export declare class Exception extends Error {
+  constructor(message?: string);
+}
+
+export declare namespace Exceptions {
+  /**
+   * Transport error.
+   */
+  export class TransportError extends Exception {
+    constructor(message?: string);
+  }
+}
+
+/**
+ * DEPRECATED
+ */
+declare class LegacyException extends Exception {
   type: TypeStrings;
   name: string;
   message: string;
@@ -10,28 +30,28 @@ export declare class Exception {
 }
 
 export declare namespace Exceptions {
-  export class ConfigurationError extends Exception {
+  export class ConfigurationError extends LegacyException {
     parameter: string;
     value: any;
 
     constructor(parameter: string, value?: any)
   }
 
-  export class InvalidStateError extends Exception {
+  export class InvalidStateError extends LegacyException {
     status: SessionStatus;
 
     constructor(status: SessionStatus);
   }
 
-  export class NotSupportedError extends Exception {
+  export class NotSupportedError extends LegacyException {
     constructor(message: string);
   }
 
-  export class RenegotiationError extends Exception {
+  export class RenegotiationError extends LegacyException {
     constructor(message: string);
   }
 
-  export class MethodParameterError extends Exception {
+  export class MethodParameterError extends LegacyException {
     method: string;
     parameter: string;
     value: any;
@@ -39,11 +59,7 @@ export declare namespace Exceptions {
     constructor(method: string, parameter: string, value: any);
   }
 
-  export class TransportError extends Exception {
-    constructor(message: string);
-  }
-
-  export class SessionDescriptionHandlerError extends Exception {
+  export class SessionDescriptionHandlerError extends LegacyException {
     error: string | undefined;
     method: string;
 
