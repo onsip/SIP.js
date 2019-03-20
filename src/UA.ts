@@ -657,11 +657,13 @@ export class UA extends EventEmitter implements UADefinition {
     }
 
     if (message instanceof IncomingRequest) {
-      return this.receiveRequestFromTransport(message);
+      this.receiveRequestFromTransport(message);
+      return;
     }
 
     if (message instanceof IncomingResponse) {
-      return this.receiveResponseFromTransport(message);
+      this.receiveResponseFromTransport(message);
+      return;
     }
 
     throw new Error("Invalid message type.");
