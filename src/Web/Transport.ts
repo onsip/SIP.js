@@ -352,7 +352,6 @@ export class Transport extends TransportBase implements TransportDefinition {
   /**
    * @event
    * @private
-   * @param {event} e
    */
   private onWebsocketError(): void {
     this.onError("The Websocket had an error");
