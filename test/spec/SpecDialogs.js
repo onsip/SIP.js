@@ -105,7 +105,7 @@ describe('Dialogs', function() {
     expect(Dialog.state).toBe(2);
 
     resp.statusCode = 183;
-    resp.type = 8; // IncomingResponse
+    resp.type = 7; // IncomingResponse
     Dialog = new SIP.Dialog(owner, resp, 'UAS');
     expect(Dialog.state).toBe(1);
   });
