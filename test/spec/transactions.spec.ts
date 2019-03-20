@@ -6,10 +6,15 @@ import {
   NonInviteClientTransaction,
   NonInviteServerTransaction,
   ServerTransaction,
-  Transaction
+  Transaction,
+  TransactionState
 } from "../../src/Transactions";
 import { IncomingRequest, IncomingResponse, OutgoingRequest } from "../../types/sip-message";
-import { ClientTransactionUser, ServerTransactionUser, TransactionUser } from "../../types/transactions";
+import {
+  ClientTransactionUser,
+  ServerTransactionUser,
+  TransactionUser
+} from "../../types/transactions";
 import { Transport } from "../../types/transport";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use
@@ -295,7 +300,7 @@ describe("Transactions", () => {
       // https://tools.ietf.org/html/rfc3261#section-17.1.1.2
       describe("after construction", () => {
         it("is in 'calling' state and", () => {
-          expect(transaction.state).toBe("calling");
+          expect(transaction.state).toBe(TransactionState.Calling);
         });
 
         // https://tools.ietf.org/html/rfc3261#section-17.1.1.2
@@ -315,10 +320,10 @@ describe("Transactions", () => {
               });
 
               it("it MUST transition to the 'proceeding' state", () => {
-                expect(transaction.state).toBe("proceeding");
+                expect(transaction.state).toBe(TransactionState.Proceeding);
                 expect(transaction.emit).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
-                expect(user.onStateChange).toHaveBeenCalledWith("proceeding");
+                expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Proceeding);
               });
 
               // https://tools.ietf.org/html/rfc3261#section-17.1.1.2
@@ -338,7 +343,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST remain in 'proceeding' state", () => {
-                      expect(transaction.state).toBe("proceeding");
+                      expect(transaction.state).toBe(TransactionState.Proceeding);
                       expect(transaction.emit).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
@@ -367,7 +372,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST transition to the 'accepted' state", () => {
-                      expect(transaction.state).toBe("accepted");
+                      expect(transaction.state).toBe(TransactionState.Accepted);
                       expect(transaction.emit).toHaveBeenCalledTimes(2);
                       expect(user.onStateChange).toHaveBeenCalledTimes(2);
                     });
@@ -398,7 +403,7 @@ describe("Transactions", () => {
                       });
 
                       it("it MUST transition to the 'completed' state", () => {
-                        expect(transaction.state).toBe("completed");
+                        expect(transaction.state).toBe(TransactionState.Completed);
                       });
                     });
                   });
@@ -428,7 +433,7 @@ describe("Transactions", () => {
               });
 
               it("it MUST transition to the 'accepted' state", () => {
-                expect(transaction.state).toBe("accepted");
+                expect(transaction.state).toBe(TransactionState.Accepted);
                 expect(transaction.emit).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
               });
@@ -449,7 +454,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST remain in 'accepted' state", () => {
-                      expect(transaction.state).toBe("accepted");
+                      expect(transaction.state).toBe(TransactionState.Accepted);
                       expect(transaction.emit).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
@@ -478,7 +483,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST remain in 'accepted' state", () => {
-                      expect(transaction.state).toBe("accepted");
+                      expect(transaction.state).toBe(TransactionState.Accepted);
                       expect(transaction.emit).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
@@ -512,7 +517,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST remain in 'accepted' state", () => {
-                      expect(transaction.state).toBe("accepted");
+                      expect(transaction.state).toBe(TransactionState.Accepted);
                       expect(transaction.emit).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
@@ -540,7 +545,7 @@ describe("Transactions", () => {
                       });
 
                       it("it MUST remain in 'accepted' state", () => {
-                        expect(transaction.state).toBe("accepted");
+                        expect(transaction.state).toBe(TransactionState.Accepted);
                         expect(transaction.emit).toHaveBeenCalledTimes(1);
                         expect(user.onStateChange).toHaveBeenCalledTimes(1);
                       });
@@ -574,7 +579,7 @@ describe("Transactions", () => {
                 });
 
                 it("it MUST transition to the 'completed' state", () => {
-                  expect(transaction.state).toBe("completed");
+                  expect(transaction.state).toBe(TransactionState.Completed);
                   expect(transaction.emit).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
@@ -595,7 +600,7 @@ describe("Transactions", () => {
                       });
 
                       it("it MUST remain in 'completed' state", () => {
-                        expect(transaction.state).toBe("completed");
+                        expect(transaction.state).toBe(TransactionState.Completed);
                         expect(transaction.emit).toHaveBeenCalledTimes(1);
                         expect(user.onStateChange).toHaveBeenCalledTimes(1);
                       });
@@ -619,7 +624,7 @@ describe("Transactions", () => {
                       });
 
                       it("it MUST remain in 'completed' state", () => {
-                        expect(transaction.state).toBe("completed");
+                        expect(transaction.state).toBe(TransactionState.Completed);
                         expect(transaction.emit).toHaveBeenCalledTimes(1);
                         expect(user.onStateChange).toHaveBeenCalledTimes(1);
                       });
@@ -649,7 +654,7 @@ describe("Transactions", () => {
                         });
 
                         it("it MUST remain in 'completed' state", () => {
-                          expect(transaction.state).toBe("completed");
+                          expect(transaction.state).toBe(TransactionState.Completed);
                           expect(transaction.emit).toHaveBeenCalledTimes(1);
                           expect(user.onStateChange).toHaveBeenCalledTimes(1);
                         });
@@ -699,7 +704,7 @@ describe("Transactions", () => {
 
       describe("after construction", () => {
         it("is in state 'trying'", () => {
-          expect(transaction.state).toBe("trying");
+          expect(transaction.state).toBe(TransactionState.Trying);
         });
 
         // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
@@ -719,10 +724,10 @@ describe("Transactions", () => {
               });
 
               it("it MUST transition to the 'proceeding' state", () => {
-                expect(transaction.state).toBe("proceeding");
+                expect(transaction.state).toBe(TransactionState.Proceeding);
                 expect(transaction.emit).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
-                expect(user.onStateChange).toHaveBeenCalledWith("proceeding");
+                expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Proceeding);
               });
 
               // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
@@ -742,7 +747,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST remain in 'proceeding' state", () => {
-                      expect(transaction.state).toBe("proceeding");
+                      expect(transaction.state).toBe(TransactionState.Proceeding);
                       expect(transaction.emit).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
@@ -772,7 +777,7 @@ describe("Transactions", () => {
                       });
 
                       it("it MUST transition to the 'completed' state", () => {
-                        expect(transaction.state).toBe("completed");
+                        expect(transaction.state).toBe(TransactionState.Completed);
                       });
                     });
                   });
@@ -803,7 +808,7 @@ describe("Transactions", () => {
                 });
 
                 it("it MUST transition to the 'completed' state", () => {
-                  expect(transaction.state).toBe("completed");
+                  expect(transaction.state).toBe(TransactionState.Completed);
                   expect(transaction.emit).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
@@ -830,7 +835,7 @@ describe("Transactions", () => {
                         });
 
                         it("it MUST remain in 'completed' state", () => {
-                          expect(transaction.state).toBe("completed");
+                          expect(transaction.state).toBe(TransactionState.Completed);
                           expect(transaction.emit).toHaveBeenCalledTimes(1);
                           expect(user.onStateChange).toHaveBeenCalledTimes(1);
                         });
@@ -920,7 +925,7 @@ describe("Transactions", () => {
 
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         it("is in state 'proceeding'", () => {
-          expect(transaction.state).toBe("proceeding");
+          expect(transaction.state).toBe(TransactionState.Proceeding);
         });
 
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
@@ -949,7 +954,7 @@ describe("Transactions", () => {
               });
 
               it("it MUST remain in 'proceeding' state", () => {
-                expect(transaction.state).toBe("proceeding");
+                expect(transaction.state).toBe(TransactionState.Proceeding);
                 expect(transaction.emit).toHaveBeenCalledTimes(0);
                 expect(user.onStateChange).toHaveBeenCalledTimes(0);
               });
@@ -994,7 +999,7 @@ describe("Transactions", () => {
               });
 
               it("it MUST transition to the 'accepted' state", () => {
-                expect(transaction.state).toBe("accepted");
+                expect(transaction.state).toBe(TransactionState.Accepted);
                 expect(transaction.emit).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
               });
@@ -1035,7 +1040,7 @@ describe("Transactions", () => {
                     });
 
                     it("it MUST remain in 'accepted' state", () => {
-                      expect(transaction.state).toBe("accepted");
+                      expect(transaction.state).toBe(TransactionState.Accepted);
                       expect(transaction.emit).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
@@ -1077,7 +1082,7 @@ describe("Transactions", () => {
                 });
 
                 it("it MUST transition to the 'completed' state", () => {
-                  expect(transaction.state).toBe("completed");
+                  expect(transaction.state).toBe(TransactionState.Completed);
                   expect(transaction.emit).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
@@ -1106,7 +1111,7 @@ describe("Transactions", () => {
                   });
 
                   it("it MUST remain in 'completed' state", () => {
-                    expect(transaction.state).toBe("completed");
+                    expect(transaction.state).toBe(TransactionState.Completed);
                     expect(transaction.emit).toHaveBeenCalledTimes(1);
                     expect(user.onStateChange).toHaveBeenCalledTimes(1);
                   });
@@ -1126,7 +1131,7 @@ describe("Transactions", () => {
                   });
 
                   it("it MUST transition to the 'confirmed' state", () => {
-                    expect(transaction.state).toBe("confirmed");
+                    expect(transaction.state).toBe(TransactionState.Confirmed);
                     expect(transaction.emit).toHaveBeenCalledTimes(2);
                     expect(user.onStateChange).toHaveBeenCalledTimes(2);
                   });
@@ -1180,7 +1185,7 @@ describe("Transactions", () => {
 
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         it("is in state 'trying'", () => {
-          expect(transaction.state).toBe("trying");
+          expect(transaction.state).toBe(TransactionState.Trying);
         });
 
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
@@ -1225,10 +1230,10 @@ describe("Transactions", () => {
           });
 
           it("it MUST transition the 'proceeding' state", () => {
-            expect(transaction.state).toBe("proceeding");
+            expect(transaction.state).toBe(TransactionState.Proceeding);
             expect(transaction.emit).toHaveBeenCalledTimes(1);
             expect(user.onStateChange).toHaveBeenCalledTimes(1);
-            expect(user.onStateChange).toHaveBeenCalledWith("proceeding");
+            expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Proceeding);
           });
 
           // https://tools.ietf.org/html/rfc3261#section-17.2.2
@@ -1280,10 +1285,10 @@ describe("Transactions", () => {
                   });
 
                   it("it MUST transition the 'completed' state", () => {
-                    expect(transaction.state).toBe("completed");
+                    expect(transaction.state).toBe(TransactionState.Completed);
                     expect(transaction.emit).toHaveBeenCalledTimes(2);
                     expect(user.onStateChange).toHaveBeenCalledTimes(2);
-                    expect(user.onStateChange).toHaveBeenCalledWith("completed");
+                    expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Completed);
                   });
 
                   // https://tools.ietf.org/html/rfc3261#section-17.2.2
@@ -1332,10 +1337,10 @@ describe("Transactions", () => {
                 });
 
                 it("it MUST transition the 'completed' state", () => {
-                  expect(transaction.state).toBe("completed");
+                  expect(transaction.state).toBe(TransactionState.Completed);
                   expect(transaction.emit).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
-                  expect(user.onStateChange).toHaveBeenCalledWith("completed");
+                  expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Completed);
                 });
 
                 // https://tools.ietf.org/html/rfc3261#section-17.2.2

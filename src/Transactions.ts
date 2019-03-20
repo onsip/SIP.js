@@ -16,7 +16,6 @@ import {
   ServerTransaction as ServerTransactionDefinition,
   ServerTransactionUser,
   Transaction as TransactionDefinition,
-  TransactionState,
   TransactionUser
 } from "../types/transactions";
 import { Transport } from "../types/transport";
@@ -33,6 +32,17 @@ import { Timers } from "./Timers";
 // - 2xx response and ACK handling is not to spec. It works, but arguably should be handled by UAC.
 // - Transaction ID is currently the branch parameter value - not completely sufficient for transaction matching.
 // - Relationship between Request/Response/Message Classes and Transaction could be refactored/reworked.
+
+/** Transaction state. */
+export enum TransactionState {
+  Accepted = "Accepted",
+  Calling = "Calling",
+  Completed = "Completed",
+  Confirmed = "Confirmed",
+  Proceeding = "Proceeding",
+  Terminated = "Terminated",
+  Trying = "Trying"
+}
 
 /**
  * Transaction
@@ -258,7 +268,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
       request,
       transport,
       user,
-      "calling",
+      TransactionState.Calling,
       "sip.transaction.ict"
     );
     // FIXME: Timer A for unreliable transport not implemented
@@ -323,7 +333,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
     }
 
     switch (this.state) {
-      case "calling":
+      case TransactionState.Calling:
         // If the client transaction receives a provisional response while in
         // the "Calling" state, it transitions to the "Proceeding" state. In the
         // "Proceeding" state, the client transaction SHOULD NOT retransmit the
@@ -332,7 +342,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
         // up to the TU while in the "Proceeding" state.
         // https://tools.ietf.org/html/rfc3261#section-17.1.1.2
         if (statusCode >= 100 && statusCode <= 199) {
-          this.stateTransition("proceeding");
+          this.stateTransition(TransactionState.Proceeding);
           if (this.user.receiveResponse) {
             this.user.receiveResponse(response);
           }
@@ -347,7 +357,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
         // https://tools.ietf.org/html/rfc6026#section-8.4
         if (statusCode >= 200 && statusCode <= 299) {
           this.ackRetransmissionCache.set(response.toTag, undefined); // Prime the ACK cache
-          this.stateTransition("accepted");
+          this.stateTransition(TransactionState.Accepted);
           if (this.user.receiveResponse) {
             this.user.receiveResponse(response);
           }
@@ -364,7 +374,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
         // same address, port, and transport to which the original request was sent.
         // https://tools.ietf.org/html/rfc6026#section-8.4
         if (statusCode >= 300 && statusCode <= 699) {
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           this.ack(response);
           if (this.user.receiveResponse) {
             this.user.receiveResponse(response);
@@ -372,7 +382,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
           return;
         }
         break;
-      case "proceeding":
+      case TransactionState.Proceeding:
         // In the "Proceeding" state, the client transaction SHOULD NOT retransmit the
         // request any longer. Furthermore, the provisional response MUST be
         // passed to the TU.  Any further provisional responses MUST be passed
@@ -393,7 +403,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
         // https://tools.ietf.org/html/rfc6026#section-8.4
         if (statusCode >= 200 && statusCode <= 299) {
           this.ackRetransmissionCache.set(response.toTag, undefined); // Prime the ACK cache
-          this.stateTransition("accepted");
+          this.stateTransition(TransactionState.Accepted);
           if (this.user.receiveResponse) {
             this.user.receiveResponse(response);
           }
@@ -410,7 +420,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
         // same address, port, and transport to which the original request was sent.
         // https://tools.ietf.org/html/rfc6026#section-8.4
         if (statusCode >= 300 && statusCode <= 699) {
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           this.ack(response);
           if (this.user.receiveResponse) {
             this.user.receiveResponse(response);
@@ -418,7 +428,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
           return;
         }
         break;
-      case "accepted":
+      case TransactionState.Accepted:
         // The purpose of the "Accepted" state is to allow the client
         // transaction to continue to exist to receive, and pass to the TU,
         // any retransmissions of the 2xx response and any additional 2xx
@@ -462,7 +472,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
           return;
         }
         break;
-      case "completed":
+      case TransactionState.Completed:
         // Any retransmissions of a response with status code 300-699 that
         // are received while in the "Completed" state MUST cause the ACK to
         // be re-passed to the transport layer for retransmission, but the
@@ -473,7 +483,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
           return;
         }
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         break;
       default:
         throw new Error(`Invalid state ${this.state}`);
@@ -502,7 +512,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
     if (this.user.onTransportError) {
       this.user.onTransportError(error);
     }
-    this.stateTransition("terminated", true);
+    this.stateTransition(TransactionState.Terminated, true);
   }
 
   private ack(response: IncomingResponse): void {
@@ -572,28 +582,28 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
     };
 
     switch (newState) {
-      case "calling":
+      case TransactionState.Calling:
         invalidStateTransition();
         break;
-      case "proceeding":
-        if (this.state !== "calling") {
+      case TransactionState.Proceeding:
+        if (this.state !== TransactionState.Calling) {
           invalidStateTransition();
         }
         break;
-      case "accepted":
-      case "completed":
+      case TransactionState.Accepted:
+      case TransactionState.Completed:
         if (
-          this.state !== "calling" &&
-          this.state !== "proceeding"
+          this.state !== TransactionState.Calling &&
+          this.state !== TransactionState.Proceeding
         ) {
           invalidStateTransition();
         }
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         if (
-          this.state !== "calling" &&
-          this.state !== "accepted" &&
-          this.state !== "completed"
+          this.state !== TransactionState.Calling &&
+          this.state !== TransactionState.Accepted &&
+          this.state !== TransactionState.Completed
         ) {
           if (!dueToTransportError) {
             invalidStateTransition();
@@ -612,7 +622,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
       this.B = undefined;
     }
 
-    if (newState === "proceeding") {
+    if (newState === TransactionState.Proceeding) {
       // Timers have no effect on "Proceeding" state.
       // In the "Proceeding" state, the client transaction
       // SHOULD NOT retransmit the request any longer.
@@ -623,20 +633,20 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
     // for any reason, with a value of at least 32 seconds for unreliable transports,
     // and a value of zero seconds for reliable transports.
     // https://tools.ietf.org/html/rfc6026#section-8.4
-    if (newState === "completed") {
+    if (newState === TransactionState.Completed) {
       this.D = setTimeout(() => this.timer_D(), Timers.TIMER_D);
     }
 
     // The client transaction MUST transition to the "Accepted" state,
     // and Timer M MUST be started with a value of 64*T1.
     // https://tools.ietf.org/html/rfc6026#section-8.4
-    if (newState === "accepted") {
+    if (newState === TransactionState.Accepted) {
       this.M = setTimeout(() => this.timer_M(), Timers.TIMER_M);
     }
 
     // Once the transaction is in the "Terminated" state, it MUST be destroyed immediately.
     // https://tools.ietf.org/html/rfc6026#section-8.7
-    if (newState === "terminated") {
+    if (newState === TransactionState.Terminated) {
       this.dispose();
     }
 
@@ -653,7 +663,7 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
    * state). This process MUST continue so that the request is
    * retransmitted with intervals that double after each transmission.
    * These retransmissions SHOULD only be done while the client
-   * transaction is in the "calling" state.
+   * transaction is in the "Calling" state.
    * https://tools.ietf.org/html/rfc3261#section-17.1.1.2
    */
   private timer_A(): void {
@@ -668,9 +678,9 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
    */
   private timer_B(): void {
     this.logger.debug(`Timer B expired for INVITE client transaction ${this.id}.`);
-    if (this.state === "calling") {
+    if (this.state === TransactionState.Calling) {
       this.onRequestTimeout();
-      this.stateTransition("terminated");
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 
@@ -681,8 +691,8 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
    */
   private timer_D(): void {
     this.logger.debug(`Timer D expired for INVITE client transaction ${this.id}.`);
-    if (this.state === "completed") {
-      this.stateTransition("terminated");
+    if (this.state === TransactionState.Completed) {
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 
@@ -693,8 +703,8 @@ export class InviteClientTransaction extends ClientTransaction implements Invite
    */
   private timer_M(): void {
     this.logger.debug(`Timer M expired for INVITE client transaction ${this.id}.`);
-    if (this.state === "accepted") {
-      this.stateTransition("terminated");
+    if (this.state === TransactionState.Accepted) {
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 }
@@ -715,7 +725,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
       request,
       transport,
       user,
-      "trying",
+      TransactionState.Trying,
       "sip.transaction.nict"
     );
     // FIXME: Timer E for unreliable transports not implemented.
@@ -757,13 +767,13 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
     }
 
     switch (this.state) {
-      case "trying":
+      case TransactionState.Trying:
         // If a provisional response is received while in the "Trying" state, the
         // response MUST be passed to the TU, and then the client transaction
         // SHOULD move to the "Proceeding" state.
         // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
         if (statusCode >= 100 && statusCode <= 199) {
-          this.stateTransition("proceeding");
+          this.stateTransition(TransactionState.Proceeding);
           if (this.user.receiveResponse) {
             this.user.receiveResponse(response);
           }
@@ -774,7 +784,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
         // client transaction MUST transition to the "Completed" state.
         // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
         if (statusCode >= 200 && statusCode <= 699) {
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           if (statusCode === 408) {
             this.onRequestTimeout();
             return;
@@ -785,7 +795,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
           return;
         }
         break;
-      case "proceeding":
+      case TransactionState.Proceeding:
         // If a provisional response is received while in the "Proceeding" state,
         // the response MUST be passed to the TU. (From Figure 6)
         // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
@@ -799,7 +809,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
         // client transaction MUST transition to the "Completed" state.
         // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
         if (statusCode >= 200 && statusCode <= 699) {
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           if (statusCode === 408) {
             this.onRequestTimeout();
             return;
@@ -809,13 +819,13 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
           }
           return;
         }
-      case "completed":
+      case TransactionState.Completed:
         // The "Completed" state exists to buffer any additional response
         // retransmissions that may be received (which is why the client
         // transaction remains there only for unreliable transports).
         // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
         return;
-      case "terminated":
+      case TransactionState.Terminated:
         // For good measure just absorb additional response retransmissions.
         return;
       default:
@@ -839,7 +849,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
     if (this.user.onTransportError) {
       this.user.onTransportError(error);
     }
-    this.stateTransition("terminated", true);
+    this.stateTransition(TransactionState.Terminated, true);
   }
 
   /**
@@ -853,27 +863,27 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
     };
 
     switch (newState) {
-      case "trying":
+      case TransactionState.Trying:
         invalidStateTransition();
         break;
-      case "proceeding":
-        if (this.state !== "trying") {
+      case TransactionState.Proceeding:
+        if (this.state !== TransactionState.Trying) {
           invalidStateTransition();
         }
         break;
-      case "completed":
+      case TransactionState.Completed:
         if (
-          this.state !== "trying" &&
-          this.state !== "proceeding"
+          this.state !== TransactionState.Trying &&
+          this.state !== TransactionState.Proceeding
         ) {
           invalidStateTransition();
         }
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         if (
-          this.state !== "trying" &&
-          this.state !== "proceeding" &&
-          this.state !== "completed"
+          this.state !== TransactionState.Trying &&
+          this.state !== TransactionState.Proceeding &&
+          this.state !== TransactionState.Completed
         ) {
           if (!dueToTransportError) {
             invalidStateTransition();
@@ -890,7 +900,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
     // buffer any additional response retransmissions that may be received
     // (which is why the client transaction remains there only for unreliable transports).
     // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
-    if (newState === "completed") {
+    if (newState === TransactionState.Completed) {
       if (this.F) {
         clearTimeout(this.F);
         this.F = undefined;
@@ -900,7 +910,7 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
 
     // Once the transaction is in the terminated state, it MUST be destroyed immediately.
     // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
-    if (newState === "terminated") {
+    if (newState === TransactionState.Terminated) {
       this.dispose();
     }
 
@@ -918,9 +928,9 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
    */
   private timer_F(): void {
     this.logger.debug(`Timer F expired for non-INVITE client transaction ${this.id}.`);
-    if (this.state === "trying" || this.state === "proceeding") {
+    if (this.state === TransactionState.Trying || this.state === TransactionState.Proceeding) {
       this.onRequestTimeout();
-      this.stateTransition("terminated");
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 
@@ -930,8 +940,8 @@ export class NonInviteClientTransaction extends ClientTransaction implements Non
    * https://tools.ietf.org/html/rfc3261#section-17.1.2.2
    */
   private timer_K(): void {
-    if (this.state === "completed") {
-      this.stateTransition("terminated");
+    if (this.state === TransactionState.Completed) {
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 }
@@ -1015,7 +1025,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
       request,
       transport,
       user,
-      "proceeding",
+      TransactionState.Proceeding,
       "sip.transaction.ist"
     );
 
@@ -1052,7 +1062,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
    */
   public receiveRequest(request: IncomingRequest): void {
     switch (this.state) {
-      case "proceeding":
+      case TransactionState.Proceeding:
         // If a request retransmission is received while in the "Proceeding" state, the most
         // recent provisional response that was received from the TU MUST be passed to the
         // transport layer for retransmission.
@@ -1066,7 +1076,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
           return;
         }
         break;
-      case "accepted":
+      case TransactionState.Accepted:
         // While in the "Accepted" state, any retransmissions of the INVITE
         // received will match this transaction state machine and will be
         // absorbed by the machine without changing its state. These
@@ -1076,7 +1086,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
           return;
         }
         break;
-      case "completed":
+      case TransactionState.Completed:
         // Furthermore, while in the "Completed" state, if a request retransmission is
         // received, the server SHOULD pass the response to the transport for retransmission.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
@@ -1093,11 +1103,11 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
         // the server transaction MUST transition to the "Confirmed" state.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         if (request.method === SIPConstants.ACK) {
-          this.stateTransition("confirmed");
+          this.stateTransition(TransactionState.Confirmed);
           return;
         }
         break;
-      case "confirmed":
+      case TransactionState.Confirmed:
         // The purpose of the "Confirmed" state is to absorb any additional ACK messages that arrive,
         // triggered from retransmissions of the final response.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
@@ -1105,7 +1115,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
           return;
         }
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         // For good measure absorb any additional messages that arrive (should not happen).
         if (request.method === SIPConstants.INVITE || request.method === SIPConstants.ACK) {
           return;
@@ -1132,7 +1142,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
     }
 
     switch (this.state) {
-      case "proceeding":
+      case TransactionState.Proceeding:
         // The TU passes any number of provisional responses to the server
         // transaction. So long as the server transaction is in the
         // "Proceeding" state, each of these MUST be passed to the transport
@@ -1160,7 +1170,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
         // https://tools.ietf.org/html/rfc6026#section-8.5
         if (statusCode >= 200 && statusCode <= 299) {
           this.lastFinalResponse = response;
-          this.stateTransition("accepted");
+          this.stateTransition(TransactionState.Accepted);
           this.send(response).catch((error: Exceptions.TransportError) => {
             this.logTransportError(error, "Failed to send 2xx response.");
           });
@@ -1173,14 +1183,14 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         if (statusCode >= 300 && statusCode <= 699) {
           this.lastFinalResponse = response;
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           this.send(response).catch((error: Exceptions.TransportError) => {
             this.logTransportError(error, "Failed to send non-2xx final response.");
           });
           return;
         }
         break;
-      case "accepted":
+      case TransactionState.Accepted:
         // While in the "Accepted" state, if the TU passes a 2xx response,
         // the server transaction MUST pass the response to the transport layer for transmission.
         // https://tools.ietf.org/html/rfc6026#section-8.7
@@ -1191,11 +1201,11 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
           return;
         }
         break;
-      case "completed":
+      case TransactionState.Completed:
         break;
-      case "confirmed":
+      case TransactionState.Confirmed:
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         break;
       default:
         throw new Error(`Invalid state ${this.state}`);
@@ -1230,25 +1240,25 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
     };
 
     switch (newState) {
-      case "proceeding":
+      case TransactionState.Proceeding:
         invalidStateTransition();
         break;
-      case "accepted":
-      case "completed":
-        if (this.state !== "proceeding") {
+      case TransactionState.Accepted:
+      case TransactionState.Completed:
+        if (this.state !== TransactionState.Proceeding) {
           invalidStateTransition();
         }
         break;
-      case "confirmed":
-        if (this.state !== "completed") {
+      case TransactionState.Confirmed:
+        if (this.state !== TransactionState.Completed) {
           invalidStateTransition();
         }
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         if (
-          this.state !== "accepted" &&
-          this.state !== "completed" &&
-          this.state !== "confirmed"
+          this.state !== TransactionState.Accepted &&
+          this.state !== TransactionState.Completed &&
+          this.state !== TransactionState.Confirmed
         ) {
           invalidStateTransition();
         }
@@ -1265,7 +1275,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
     // They are not passed up to the TU since any downstream UAS cores that accepted the request have
     // taken responsibility for reliability and will already retransmit their 2xx responses if necessary.
     // https://tools.ietf.org/html/rfc6026#section-8.7
-    if (newState === "accepted") {
+    if (newState === TransactionState.Accepted) {
       this.L = setTimeout(() => this.timer_L(), Timers.TIMER_L);
     }
 
@@ -1274,7 +1284,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
     // If an ACK is received while the server transaction is in the "Completed" state,
     // the server transaction MUST transition to the "Confirmed" state.
     // https://tools.ietf.org/html/rfc3261#section-17.2.1
-    if (newState === "completed") {
+    if (newState === TransactionState.Completed) {
       // FIXME: Missing timer G for unreliable transports.
       this.H = setTimeout(() => this.timer_H(), Timers.TIMER_H);
     }
@@ -1284,14 +1294,14 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
     // is set to fire in T4 seconds for unreliable transports, and zero seconds for reliable
     // transports. Once timer I fires, the server MUST transition to the "Terminated" state.
     // https://tools.ietf.org/html/rfc3261#section-17.2.1
-    if (newState === "confirmed") {
+    if (newState === TransactionState.Confirmed) {
       // FIXME: This timer is not getting set correctly for unreliable transports.
       this.I = setTimeout(() => this.timer_I(), Timers.TIMER_I);
     }
 
     // Once the transaction is in the "Terminated" state, it MUST be destroyed immediately.
     // https://tools.ietf.org/html/rfc6026#section-8.7
-    if (newState === "terminated") {
+    if (newState === TransactionState.Terminated) {
       this.dispose();
     }
 
@@ -1353,9 +1363,9 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
    */
   private timer_H(): void {
     this.logger.debug(`Timer H expired for INVITE server transaction ${this.id}.`);
-    if (this.state === "completed") {
+    if (this.state === TransactionState.Completed) {
       this.logger.warn("ACK to negative final response was never received, terminating transaction.");
-      this.stateTransition("terminated");
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 
@@ -1365,7 +1375,7 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
    */
   private timer_I(): void {
     this.logger.debug(`Timer I expired for INVITE server transaction ${this.id}.`);
-    this.stateTransition("terminated");
+    this.stateTransition(TransactionState.Terminated);
   }
 
   /**
@@ -1379,8 +1389,8 @@ export class InviteServerTransaction extends ServerTransaction implements Invite
    */
   private timer_L(): void {
     this.logger.debug(`Timer L expired for INVITE server transaction ${this.id}.`);
-    if (this.state === "accepted") {
-      this.stateTransition("terminated");
+    if (this.state === TransactionState.Accepted) {
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 }
@@ -1403,7 +1413,7 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
       request,
       transport,
       user,
-      "trying",
+      TransactionState.Trying,
       "sip.transaction.nist"
     );
   }
@@ -1425,11 +1435,11 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
    */
   public receiveRequest(request: IncomingRequest): void {
     switch (this.state) {
-      case "trying":
+      case TransactionState.Trying:
         // Once in the "Trying" state, any further request retransmissions are discarded.
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         break;
-      case "proceeding":
+      case TransactionState.Proceeding:
         // If a retransmission of the request is received while in the "Proceeding" state,
         // the most recently sent provisional response MUST be passed to the transport layer for retransmission.
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
@@ -1440,7 +1450,7 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
           this.logTransportError(error, "Failed to send retransmission of provisional response.");
         });
         break;
-      case "completed":
+      case TransactionState.Completed:
         // While in the "Completed" state, the server transaction MUST pass the final response to the transport
         // layer for retransmission whenever a retransmission of the request is received. Any other final responses
         // passed by the TU to the server transaction MUST be discarded while in the "Completed" state.
@@ -1452,7 +1462,7 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
           this.logTransportError(error, "Failed to send retransmission of final response.");
         });
         break;
-      case "terminated":
+      case TransactionState.Terminated:
         break;
       default:
         throw new Error(`Invalid state ${this.state}`);
@@ -1482,28 +1492,28 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
     }
 
     switch (this.state) {
-      case "trying":
+      case TransactionState.Trying:
         // While in the "Trying" state, if the TU passes a provisional response
         // to the server transaction, the server transaction MUST enter the "Proceeding" state.
         // The response MUST be passed to the transport layer for transmission.
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         this.lastResponse = response;
         if (statusCode >= 100 && statusCode < 200) {
-          this.stateTransition("proceeding");
+          this.stateTransition(TransactionState.Proceeding);
           this.send(response).catch((error: Exceptions.TransportError) => {
             this.logTransportError(error, "Failed to send provisional response.");
           });
           return;
         }
         if (statusCode >= 200 && statusCode <= 699) {
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           this.send(response).catch((error: Exceptions.TransportError) => {
             this.logTransportError(error, "Failed to send final response.");
           });
           return;
         }
         break;
-      case "proceeding":
+      case TransactionState.Proceeding:
         // Any further provisional responses that are received from the TU while
         // in the "Proceeding" state MUST be passed to the transport layer for transmission.
         // If the TU passes a final response (status codes 200-699) to the server while in
@@ -1512,19 +1522,19 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         this.lastResponse = response;
         if (statusCode >= 200 && statusCode <= 699) {
-          this.stateTransition("completed");
+          this.stateTransition(TransactionState.Completed);
           this.send(response).catch((error: Exceptions.TransportError) => {
             this.logTransportError(error, "Failed to send final response.");
           });
           return;
         }
         break;
-      case "completed":
+      case TransactionState.Completed:
         // Any other final responses passed by the TU to the server
         // transaction MUST be discarded while in the "Completed" state.
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         return;
-      case "terminated":
+      case TransactionState.Terminated:
         break;
       default:
         throw new Error(`Invalid state ${this.state}`);
@@ -1546,7 +1556,7 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
     if (this.user.onTransportError) {
       this.user.onTransportError(error);
     }
-    this.stateTransition("terminated", true);
+    this.stateTransition(TransactionState.Terminated, true);
   }
 
   private stateTransition(newState: TransactionState, dueToTransportError = false): void {
@@ -1556,21 +1566,21 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
     };
 
     switch (newState) {
-      case "trying":
+      case TransactionState.Trying:
         invalidStateTransition();
         break;
-      case "proceeding":
-        if (this.state !== "trying") {
+      case TransactionState.Proceeding:
+        if (this.state !== TransactionState.Trying) {
           invalidStateTransition();
         }
         break;
-      case "completed":
-        if (this.state !== "trying" && this.state !== "proceeding") {
+      case TransactionState.Completed:
+        if (this.state !== TransactionState.Trying && this.state !== TransactionState.Proceeding) {
           invalidStateTransition();
         }
         break;
-      case "terminated":
-        if (this.state !== "proceeding" && this.state !== "completed") {
+      case TransactionState.Terminated:
+        if (this.state !== TransactionState.Proceeding && this.state !== TransactionState.Completed) {
           if (!dueToTransportError) {
             invalidStateTransition();
           }
@@ -1583,13 +1593,13 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
     // When the server transaction enters the "Completed" state, it MUST set Timer J to fire
     // in 64*T1 seconds for unreliable transports, and zero seconds for reliable transports.
     // https://tools.ietf.org/html/rfc3261#section-17.2.2
-    if (newState === "completed") {
+    if (newState === TransactionState.Completed) {
       this.J = setTimeout(() => this.timer_J(), Timers.TIMER_J);
     }
 
     // The server transaction MUST be destroyed the instant it enters the "Terminated" state.
     // https://tools.ietf.org/html/rfc3261#section-17.2.2
-    if (newState === "terminated") {
+    if (newState === TransactionState.Terminated) {
       this.dispose();
     }
 
@@ -1603,8 +1613,8 @@ export class NonInviteServerTransaction extends ServerTransaction implements Non
    */
   private timer_J(): void {
     this.logger.debug(`Timer J expired for NON-INVITE server transaction ${this.id}.`);
-    if (this.state === "completed") {
-      this.stateTransition("terminated");
+    if (this.state === TransactionState.Completed) {
+      this.stateTransition(TransactionState.Terminated);
     }
   }
 }

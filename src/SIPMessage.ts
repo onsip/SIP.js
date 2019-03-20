@@ -22,6 +22,7 @@ import { Grammar } from "./Grammar";
 import {
   InviteClientTransaction,
   NonInviteClientTransaction,
+  TransactionState
 } from "./Transactions";
 import { Utils } from "./Utils";
 
@@ -347,7 +348,7 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
       const user: ClientTransactionUser = {
         loggerFactory: this.ua.getLoggerFactory(),
         onStateChange: (newState) => {
-          if (newState === "terminated") {
+          if (newState === TransactionState.Terminated) {
             this.ua.destroyTransaction(clientTransaction);
           }
         },
@@ -372,11 +373,11 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
     // sent, as it is an effective no-op, since CANCEL has no effect on
     // requests that have already generated a final response.
     // https://tools.ietf.org/html/rfc3261#section-9.1
-    if (this.transaction.state === "proceeding") {
+    if (this.transaction.state === TransactionState.Proceeding) {
       sendCancel();
     } else {
       this.transaction.once("stateChanged", () => {
-        if (this.transaction && this.transaction.state === "proceeding") {
+        if (this.transaction && this.transaction.state === TransactionState.Proceeding) {
           sendCancel();
         }
       });

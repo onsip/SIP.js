@@ -16,7 +16,10 @@ import { C } from "./Constants";
 import { DialogStatus, SessionStatus, TypeStrings } from "./Enums";
 import { RequestSender } from "./RequestSender";
 import { OutgoingRequest } from "./SIPMessage";
-import { InviteClientTransaction } from "./Transactions";
+import {
+  InviteClientTransaction,
+  TransactionState
+} from "./Transactions";
 
 /*
  * @augments SIP
@@ -212,9 +215,9 @@ export class Dialog implements DialogDefinition {
           this.uasPendingReply = true;
           const stateChanged: () => void = () => {
             if (request.transaction &&
-                (request.transaction.state === "accepted" ||
-                request.transaction.state === "completed" ||
-                request.transaction.state === "terminated")) {
+                (request.transaction.state === TransactionState.Accepted ||
+                request.transaction.state === TransactionState.Completed ||
+                request.transaction.state === TransactionState.Terminated)) {
 
               request.transaction.removeListener("stateChanged", stateChanged);
               this.uasPendingReply = false;
@@ -228,7 +231,7 @@ export class Dialog implements DialogDefinition {
         // RFC3261 12.2.2 Replace the dialog`s remote target URI if the request is accepted
         if (request.hasHeader("contact") && request.transaction) {
           request.transaction.on("stateChanged", () => {
-            if (request.transaction && request.transaction.state === "accepted") {
+            if (request.transaction && request.transaction.state === TransactionState.Accepted) {
               this.remoteTarget = request.parseHeader("contact").uri;
             }
           });
@@ -238,7 +241,7 @@ export class Dialog implements DialogDefinition {
         // RFC6665 3.2 Replace the dialog`s remote target URI if the request is accepted
         if (request.hasHeader("contact") && request.transaction) {
           request.transaction.on("stateChanged", () => {
-            if (request.transaction && request.transaction.state === "completed") {
+            if (request.transaction && request.transaction.state === TransactionState.Completed) {
               this.remoteTarget = request.parseHeader("contact").uri;
             }
           });
@@ -313,7 +316,7 @@ export class Dialog implements DialogDefinition {
       } else if (request.method === C.INVITE &&
         requestSender.clientTransaction &&
         (requestSender.clientTransaction as InviteClientTransaction | NonInviteClientTransaction).state
-          !== "terminated") {
+          !== TransactionState.Terminated) {
         this.uacPendingReply = true;
 
         const stateChanged: () => void = () => {
@@ -322,9 +325,9 @@ export class Dialog implements DialogDefinition {
           if (!requestSender.clientTransaction) {
             return;
           } else if (requestSender.clientTransaction &&
-              (state === "accepted" ||
-              state === "completed" ||
-              state === "terminated")) {
+              (state === TransactionState.Accepted ||
+              state === TransactionState.Completed ||
+              state === TransactionState.Terminated)) {
 
             requestSender.clientTransaction.removeListener("stateChanged", stateChanged);
             this.uacPendingReply = false;

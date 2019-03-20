@@ -7,14 +7,15 @@ import { Transport } from "./transport";
 import { UA } from "./ua";
 
 /** Transaction state. */
-export type TransactionState =
-  "accepted" |
-  "calling" |
-  "completed" |
-  "confirmed" |
-  "proceeding" |
-  "terminated" |
-  "trying";
+export declare enum TransactionState {
+  Accepted = "Accepted",
+  Calling = "Calling",
+  Completed = "Completed",
+  Confirmed = "Confirmed",
+  Proceeding = "Proceeding",
+  Terminated = "Terminated",
+  Trying = "Trying"
+}
 
 /**
  * Transaction

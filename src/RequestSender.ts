@@ -7,7 +7,11 @@ import { UA } from "../types/ua";
 
 import { C } from "./Constants";
 import { TypeStrings, UAStatus } from "./Enums";
-import { InviteClientTransaction, NonInviteClientTransaction } from "./Transactions";
+import {
+  InviteClientTransaction,
+  NonInviteClientTransaction,
+  TransactionState
+} from "./Transactions";
 
 /**
  * @class Class creating a request sender.
@@ -57,7 +61,7 @@ export class RequestSender implements RequestSenderDefinition {
       loggerFactory: this.ua.getLoggerFactory(),
       onRequestTimeout: () => this.onRequestTimeout(),
       onStateChange: (newState) => {
-        if (newState === "terminated") {
+        if (newState === TransactionState.Terminated) {
           this.ua.destroyTransaction(clientTransaction);
         }
       },

@@ -14,7 +14,11 @@ import { UA } from "../types/ua";
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
-import { InviteServerTransaction, NonInviteServerTransaction } from "./Transactions";
+import {
+  InviteServerTransaction,
+  NonInviteServerTransaction,
+  TransactionState
+} from "./Transactions";
 import { Utils } from "./Utils";
 
 export class ServerContext extends EventEmitter implements ServerContextDefinition {
@@ -31,7 +35,7 @@ export class ServerContext extends EventEmitter implements ServerContextDefiniti
     const user: ServerTransactionUser = {
       loggerFactory: ua.getLoggerFactory(),
       onStateChange: (newState) => {
-        if (newState === "terminated") {
+        if (newState === TransactionState.Terminated) {
           ua.destroyTransaction(objectToConstruct.transaction);
         }
       },

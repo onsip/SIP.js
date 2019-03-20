@@ -41,7 +41,8 @@ import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage
 import { Subscription } from "./Subscription";
 import {
   InviteServerTransaction,
-  NonInviteServerTransaction
+  NonInviteServerTransaction,
+  TransactionState
 } from "./Transactions";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
@@ -773,7 +774,7 @@ export class UA extends EventEmitter implements UADefinition {
         // Terminated). A CANCEL request has no impact on the processing of
         // transactions with any other method defined in this specification.
         // https://tools.ietf.org/html/rfc3261#section-9.2
-        if (ist && ist.state === "proceeding") {
+        if (ist && ist.state === TransactionState.Proceeding) {
           // TODO: Review this.
           // The cancel request has been replied to, which is an exception.
           this.receiveRequest(request);
@@ -803,7 +804,7 @@ export class UA extends EventEmitter implements UADefinition {
     // passed directly to the TU and not absorbed.
     // https://tools.ietf.org/html/rfc6026#section-7.1
     if (request.method === SIPConstants.ACK) {
-      if (ist && ist.state === "accepted") {
+      if (ist && ist.state === TransactionState.Accepted) {
         this.receiveRequest(request);
         return;
       }
@@ -901,7 +902,7 @@ export class UA extends EventEmitter implements UADefinition {
       const user: ServerTransactionUser = {
         loggerFactory: this.getLoggerFactory(),
         onStateChange: (newState) => {
-          if (newState === "terminated") {
+          if (newState === TransactionState.Terminated) {
             this.destroyTransaction(optionsTransaction);
           }
         },
@@ -1018,7 +1019,7 @@ export class UA extends EventEmitter implements UADefinition {
           const user: ServerTransactionUser = {
             loggerFactory: this.log,
             onStateChange: (newState) => {
-              if (newState === "terminated") {
+              if (newState === TransactionState.Terminated) {
                 this.destroyTransaction(ist);
               }
             },

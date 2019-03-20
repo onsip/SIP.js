@@ -39,6 +39,7 @@ import { ServerContext } from "./ServerContext";
 import { DTMF } from "./Session/DTMF";
 import { OutgoingRequest } from "./SIPMessage";
 import { Timers } from "./Timers";
+import { TransactionState } from "./Transactions";
 import { Utils } from "./Utils";
 
 /*
@@ -980,7 +981,7 @@ export class InviteServerContext extends Session implements ServerContext, Invit
 
     if (this.status === SessionStatus.STATUS_WAITING_FOR_ACK &&
         this.request.transaction &&
-        this.request.transaction.state !== "terminated") {
+        this.request.transaction.state !== TransactionState.Terminated) {
       const dialog: Dialog | undefined = this.dialog;
 
       this.receiveRequest = (request: IncomingRequest): void =>  {
@@ -994,7 +995,7 @@ export class InviteServerContext extends Session implements ServerContext, Invit
 
       this.request.transaction.on("stateChanged", () => {
         if (this.request.transaction &&
-            this.request.transaction.state === "terminated" &&
+            this.request.transaction.state === TransactionState.Terminated &&
             this.dialog) {
           this.bye();
           this.dialog.terminate();
