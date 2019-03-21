@@ -173,6 +173,10 @@ export class UA extends EventEmitter implements UADefinition {
         this.log.builtinEnabled = configuration.log.builtinEnabled;
       }
 
+      if (configuration.log.hasOwnProperty("connector")) {
+        this.log.connector = configuration.log.connector;
+      }
+
       if (configuration.log.hasOwnProperty("level")) {
         const level = configuration.log.level;
         const normalized: Levels = typeof level === "string" ? Levels[level] : level;
@@ -183,10 +187,6 @@ export class UA extends EventEmitter implements UADefinition {
         } else {
           this.log.level = normalized;
         }
-      }
-
-      if (configuration.log.hasOwnProperty("connector")) {
-        this.log.connector = configuration.log.connector;
       }
     }
 
