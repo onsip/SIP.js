@@ -74,10 +74,10 @@ export class LoggerFactory implements LoggerFactoryDefinition {
       if (this.builtinEnabled) {
         this.print(console[Levels[levelToLog]], category, label, content);
       }
+    }
 
-      if (this.connector) {
-        this.connector(Levels[levelToLog], category, label, content);
-      }
+    if (this.connector) {
+      this.connector(Levels[levelToLog], category, label, content);
     }
   }
 

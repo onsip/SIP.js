@@ -176,7 +176,13 @@ export class UA extends EventEmitter implements UADefinition {
       if (configuration.log.hasOwnProperty("level")) {
         const level = configuration.log.level;
         const normalized: Levels = typeof level === "string" ? Levels[level] : level;
-        this.log.level = normalized;
+
+        // avoid setting level when invalid, use default level instead
+        if (!normalized) {
+          this.logger.error(`Invalid "level" parameter value: ${JSON.stringify(level)}`);
+        } else {
+          this.log.level = normalized;
+        }
       }
 
       if (configuration.log.hasOwnProperty("connector")) {
