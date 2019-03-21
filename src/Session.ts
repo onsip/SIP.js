@@ -2069,10 +2069,10 @@ export class ReferClientContext extends ClientContext implements ReferClientCont
         return;
       }
       switch (true) {
-        case (/^1[0-9]{2}$/.test(messageBody.statusCode)):
+        case (/^1[0-9]{2}$/.test(messageBody.status_code)):
           this.emit("referProgress", this);
           break;
-        case (/^2[0-9]{2}$/.test(messageBody.statusCode)):
+        case (/^2[0-9]{2}$/.test(messageBody.status_code)):
           this.emit("referAccepted", this);
           if (!this.options.activeAfterTransfer && this.applicant.terminate) {
             this.applicant.terminate();
