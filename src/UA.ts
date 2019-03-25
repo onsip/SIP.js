@@ -30,7 +30,7 @@ import { DigestAuthentication } from "./DigestAuthentication";
 import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
-import { LoggerFactory } from "./LoggerFactory";
+import { Levels, LoggerFactory } from "./LoggerFactory";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
 import { RegisterContext } from "./RegisterContext";
@@ -177,12 +177,20 @@ export class UA extends EventEmitter implements UADefinition {
         this.log.builtinEnabled = configuration.log.builtinEnabled;
       }
 
-      if (configuration.log.hasOwnProperty("level")) {
-        this.log.level = configuration.log.level;
-      }
-
       if (configuration.log.hasOwnProperty("connector")) {
         this.log.connector = configuration.log.connector;
+      }
+
+      if (configuration.log.hasOwnProperty("level")) {
+        const level = configuration.log.level;
+        const normalized: Levels = typeof level === "string" ? Levels[level] : level;
+
+        // avoid setting level when invalid, use default level instead
+        if (!normalized) {
+          this.logger.error(`Invalid "level" parameter value: ${JSON.stringify(level)}`);
+        } else {
+          this.log.level = normalized;
+        }
       }
     }
 
