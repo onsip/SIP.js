@@ -380,6 +380,7 @@ describe('SIPMessage', function() {
     describe('.reply', function() {
       beforeEach(function() {
         IncomingRequest.addHeader('To','alice@example.com');
+        IncomingRequest.transaction = true;
       });
       it('throws a TypeError if no code exists', function() {
         expect(function() {IncomingRequest.reply(undefined); }).toThrow(new TypeError('Invalid statusCode: undefined'));

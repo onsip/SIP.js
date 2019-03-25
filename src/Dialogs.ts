@@ -13,10 +13,13 @@ import { NonInviteClientTransaction } from "../types/transactions";
 import { URI } from "../types/uri";
 
 import { C } from "./Constants";
-import { DialogStatus, SessionStatus, TransactionStatus, TypeStrings } from "./Enums";
+import { DialogStatus, SessionStatus, TypeStrings } from "./Enums";
 import { RequestSender } from "./RequestSender";
 import { OutgoingRequest } from "./SIPMessage";
-import { InviteClientTransaction } from "./Transactions";
+import {
+  InviteClientTransaction,
+  TransactionState
+} from "./Transactions";
 
 /*
  * @augments SIP
@@ -211,24 +214,24 @@ export class Dialog implements DialogDefinition {
         } else {
           this.uasPendingReply = true;
           const stateChanged: () => void = () => {
-            if (request.serverTransaction &&
-                (request.serverTransaction.state === TransactionStatus.STATUS_ACCEPTED ||
-                request.serverTransaction.state === TransactionStatus.STATUS_COMPLETED ||
-                request.serverTransaction.state === TransactionStatus.STATUS_TERMINATED)) {
+            if (request.transaction &&
+                (request.transaction.state === TransactionState.Accepted ||
+                request.transaction.state === TransactionState.Completed ||
+                request.transaction.state === TransactionState.Terminated)) {
 
-              request.serverTransaction.removeListener("stateChanged", stateChanged);
+              request.transaction.removeListener("stateChanged", stateChanged);
               this.uasPendingReply = false;
             }
           };
-          if (request.serverTransaction) {
-            request.serverTransaction.on("stateChanged", stateChanged);
+          if (request.transaction) {
+            request.transaction.on("stateChanged", stateChanged);
           }
         }
 
         // RFC3261 12.2.2 Replace the dialog`s remote target URI if the request is accepted
-        if (request.hasHeader("contact") && request.serverTransaction) {
-          request.serverTransaction.on("stateChanged", () => {
-            if (request.serverTransaction && request.serverTransaction.state === TransactionStatus.STATUS_ACCEPTED) {
+        if (request.hasHeader("contact") && request.transaction) {
+          request.transaction.on("stateChanged", () => {
+            if (request.transaction && request.transaction.state === TransactionState.Accepted) {
               this.remoteTarget = request.parseHeader("contact").uri;
             }
           });
@@ -236,9 +239,9 @@ export class Dialog implements DialogDefinition {
         break;
       case C.NOTIFY:
         // RFC6665 3.2 Replace the dialog`s remote target URI if the request is accepted
-        if (request.hasHeader("contact") && request.serverTransaction) {
-          request.serverTransaction.on("stateChanged", () => {
-            if (request.serverTransaction && request.serverTransaction.state === TransactionStatus.STATUS_COMPLETED) {
+        if (request.hasHeader("contact") && request.transaction) {
+          request.transaction.on("stateChanged", () => {
+            if (request.transaction && request.transaction.state === TransactionState.Completed) {
               this.remoteTarget = request.parseHeader("contact").uri;
             }
           });
@@ -308,25 +311,23 @@ export class Dialog implements DialogDefinition {
       requestSender.send();
 
       // RFC3261 14.2 Modifying an Existing Session -UAC BEHAVIOR-
-      if (!requestSender.clientTransaction ||
-        requestSender.clientTransaction.type === TypeStrings.AckClientTransaction) {
+      if (!requestSender.clientTransaction) {
         return;
       } else if (request.method === C.INVITE &&
         requestSender.clientTransaction &&
         (requestSender.clientTransaction as InviteClientTransaction | NonInviteClientTransaction).state
-          !== TransactionStatus.STATUS_TERMINATED) {
+          !== TransactionState.Terminated) {
         this.uacPendingReply = true;
 
         const stateChanged: () => void = () => {
           const state = (requestSender.clientTransaction as InviteClientTransaction | NonInviteClientTransaction).state;
 
-          if (!requestSender.clientTransaction ||
-            requestSender.clientTransaction.type === TypeStrings.AckClientTransaction) {
+          if (!requestSender.clientTransaction) {
             return;
           } else if (requestSender.clientTransaction &&
-              (state === TransactionStatus.STATUS_ACCEPTED ||
-              state === TransactionStatus.STATUS_COMPLETED ||
-              state === TransactionStatus.STATUS_TERMINATED)) {
+              (state === TransactionState.Accepted ||
+              state === TransactionState.Completed ||
+              state === TransactionState.Terminated)) {
 
             requestSender.clientTransaction.removeListener("stateChanged", stateChanged);
             this.uacPendingReply = false;

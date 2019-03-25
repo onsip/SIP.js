@@ -287,9 +287,10 @@ export class PublishContext extends ClientContext implements PublishContextDefin
     this.request = new OutgoingRequest(C.PUBLISH, this.target, this.ua, this.options.params, reqOptions.extraHeaders);
 
     if (this.pubRequestBody !== undefined) {
-      this.request.body = {};
-      this.request.body.body = this.pubRequestBody;
-      this.request.body.contentType = this.options.contentType;
+      this.request.body = {
+        body: this.pubRequestBody,
+        contentType: this.options.contentType
+      };
     }
 
     this.send();

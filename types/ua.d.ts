@@ -4,7 +4,7 @@ import { ClientContext } from "./client-context";
 import { C } from "./constants";
 import { Dialog } from "./dialogs";
 import { DigestAuthentication } from "./digest-authentication";
-import { Logger } from "./logger-factory";
+import { Logger, LoggerFactory } from "./logger-factory";
 import { PublishContext } from "./publish-context";
 import { InviteClientContext, Session, InviteServerContext, ReferServerContext } from "./session";
 import { SessionDescriptionHandlerFactory, SessionDescriptionHandlerFactoryOptions} from "./session-description-handler-factory";
@@ -23,14 +23,19 @@ export declare class UA extends EventEmitter {
   configuration: UA.Options;
   applicants: {[id: string]: InviteClientContext};
   publishers: {[id: string]: PublishContext};
-  contact: any | undefined; //TODO fix this
+  contact: {
+    pubGruu: URI | undefined,
+    tempGruu: URI | undefined,
+    uri: URI,
+    toString: (options?: any) => string
+  };
   status: UAStatus;
   transport: Transport | undefined;
   transactions: {
-    nist: {[id: string]: NonInviteServerTransaction}
-    nict: {[id: string]: NonInviteClientTransaction}
-    ist: {[id: string]: InviteServerTransaction}
-    ict: {[id: string]: InviteClientTransaction}
+    nist: {[id: string]: NonInviteServerTransaction | undefined}
+    nict: {[id: string]: NonInviteClientTransaction | undefined}
+    ist: {[id: string]: InviteServerTransaction | undefined}
+    ict: {[id: string]: InviteClientTransaction | undefined}
   };;
   sessions: {[id: string]: InviteClientContext | InviteServerContext};
   dialogs: {[id: string]: Dialog};
@@ -70,6 +75,8 @@ export declare class UA extends EventEmitter {
   normalizeTarget(target: string | URI): URI | undefined;
 
   getLogger(category: string, label?: string): Logger;
+
+  getLoggerFactory(): LoggerFactory;
 
   newTransaction(
     transaction: NonInviteClientTransaction |
@@ -115,7 +122,11 @@ export declare namespace UA {
     hackViaTcp?: boolean;
     hackWssInTransport?: boolean;
     hostportParams?: any;
-    log?: any; // TODO
+    log?: {
+      builtinEnabled: boolean,
+      level: string | number,
+      connector: (level: string, category: string, label: string | undefined, content: any) => void,
+    };
     noAnswerTimeout?: number;
     password?: string;
     register?: boolean;

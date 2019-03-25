@@ -129,7 +129,7 @@ describe('Transport', function() {
     });
 
     it('sets default settings for many parameters', function() {
-      this.ua.transport.loadConfig({});
+      this.ua.transport.configuration = this.ua.transport.loadConfig({});
 
       expect(this.ua.transport.configuration.wsServers).toEqual([{scheme: 'WSS', sipUri: '<sip:edge.sip.onsip.com;transport=ws;lr>', isError: false, weight: 0, wsUri: 'wss://edge.sip.onsip.com'}]);
 
@@ -183,7 +183,7 @@ describe('Transport', function() {
 
     //the setting of the configuration was checked with the default test
     it('sets all parameters as writable/configurable false', function() {
-      this.ua.transport.loadConfig({});
+      this.ua.transport.configuration = this.ua.transport.loadConfig({});
 
       expect(this.ua.transport.configuration['keepAliveInterval']).toBeDefined();
       expect(Object.getOwnPropertyDescriptor(this.ua.transport.configuration, 'keepAliveInterval').writable).toBe(false);

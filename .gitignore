@@ -1,6 +1,8 @@
+_SpecRunner.html
+npm-debug.log
 node_modules/
 dist/sip*
 lib/*
-_SpecRunner.html
 src/Grammar/dist/*
-npm-debug.log
+src/**/*.js
+test/spec/*.spec.js

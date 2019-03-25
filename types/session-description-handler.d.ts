@@ -63,7 +63,10 @@ export type SessionDescriptionHandlerOptions = {
   constraints?: { audio: boolean, video: boolean }
 };
 
+/**
+ * SIP message body and content type.
+ */
 export interface BodyObj {
-  body: string | undefined;
+  body: string;
   contentType: string;
 }

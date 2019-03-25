@@ -1,7 +1,10 @@
 import { Logger } from "../../types/logger-factory";
 import { OutgoingRequest } from "../../types/sip-message";
-import { Transport as TransportDefinition } from "../../types/Web/transport";
-
+import {
+  Configuration,
+  WebTransport as WebTransportDefinition,
+  WsServer
+} from "../../types/Web/transport";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Grammar } from "../Grammar";
@@ -29,10 +32,10 @@ const computeKeepAliveTimeout = (upperBound: number): number => {
  * @class Transport
  * @param {Object} options
  */
-export class Transport extends TransportBase implements TransportDefinition {
+export class Transport extends TransportBase implements WebTransportDefinition {
   public static readonly C = TransportStatus;
   public type: TypeStrings;
-  public server: any;
+  public server: WsServer;
   public ws: any;
 
   private WebSocket = ((global as any).window || global).WebSocket;
@@ -52,8 +55,7 @@ export class Transport extends TransportBase implements TransportDefinition {
   private keepAliveDebounceTimeout: any | undefined;
 
   private status: TransportStatus;
-  private configuration: any;
-
+  private configuration: Configuration;
   private boundOnOpen: any;
   private boundOnMessage: any;
   private boundOnClose: any;
@@ -65,8 +67,8 @@ export class Transport extends TransportBase implements TransportDefinition {
 
     this.reconnectionAttempts = 0;
     this.status = TransportStatus.STATUS_CONNECTING;
-    this.configuration = {};
-    this.loadConfig(options);
+    this.configuration = this.loadConfig(options);
+    this.server = this.configuration.wsServers[0];
   }
 
   /**
@@ -352,7 +354,6 @@ export class Transport extends TransportBase implements TransportDefinition {
   /**
    * @event
    * @private
-   * @param {event} e
    */
   private onWebsocketError(): void {
     this.onError("The Websocket had an error");
@@ -367,6 +368,7 @@ export class Transport extends TransportBase implements TransportDefinition {
     }
 
     if (this.noAvailableServers()) {
+      this.logger.warn("attempted to get next ws server but there are no available ws servers left");
       this.logger.warn("no available ws servers left - going to closed state");
       this.status = TransportStatus.STATUS_CLOSED;
       this.emit("closed");
@@ -386,7 +388,11 @@ export class Transport extends TransportBase implements TransportDefinition {
       this.logger.log("transport " + this.server.wsUri + " failed | connection state set to 'error'");
       this.server.isError = true;
       this.emit("transportError");
-      this.server = this.getNextWsServer();
+      if (!this.noAvailableServers()) {
+        this.server = this.getNextWsServer();
+      }
+      // When there are no available servers, the reconnect function ends on the next recursive call
+      // after checking for no available servers again.
       this.reconnectionAttempts = 0;
       this.reconnect();
     } else {
@@ -411,15 +417,15 @@ export class Transport extends TransportBase implements TransportDefinition {
   /**
    * Retrieve the next server to which connect.
    * @param {Boolean} force allows bypass of server error status checking
-   * @returns {Object} wsServer
+   * @returns {Object} WsServer
    */
-  private getNextWsServer(force: boolean = false): void {
+  private getNextWsServer(force: boolean = false): WsServer {
     if (this.noAvailableServers()) {
       this.logger.warn("attempted to get next ws server but there are no available ws servers left");
-      return;
+      throw new Error("Attempted to get next ws server, but there are no available ws servers left.");
     }
     // Order servers by weight
-    let candidates: Array<any> = [];
+    let candidates: Array<WsServer> = [];
 
     for (const wsServer of this.configuration.wsServers) {
       if (wsServer.isError && !force) {
@@ -562,10 +568,10 @@ export class Transport extends TransportBase implements TransportDefinition {
 
   /**
    * Configuration load.
-   * returns {Boolean}
+   * returns {Configuration}
    */
-  private loadConfig(configuration: any): void {
-    const settings: {[name: string]: any} = {
+  private loadConfig(configuration: any): Configuration {
+    const settings: Configuration = {
       wsServers: [{
         scheme: "WSS",
         sipUri: "<sip:edge.sip.onsip.com;transport=ws;lr>",
@@ -634,8 +640,7 @@ export class Transport extends TransportBase implements TransportDefinition {
         };
       }
     }
-
-    Object.defineProperties(this.configuration, skeleton);
+    const returnConfiguration: Configuration = Object.defineProperties({}, skeleton);
 
     this.logger.log("configuration parameters after validation:");
     for (const parameter in settings) {
@@ -644,7 +649,7 @@ export class Transport extends TransportBase implements TransportDefinition {
       }
     }
 
-    return;
+    return returnConfiguration;
   }
 
   /**
