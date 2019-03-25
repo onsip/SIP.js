@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.13.6",
+  "version": "0.13.7",
   "license": "MIT",
   "main": "lib/index.js",
   "homepage": "https://sipjs.com",
