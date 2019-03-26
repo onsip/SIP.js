@@ -122,13 +122,15 @@ export namespace Parser {
           parsed = undefined;
           break;
         }
-
-        for (const header in parsed) {
-          if (parsed[header]) {
-            message.addHeader("contact", headerValue.substring(parsed[header].position, parsed[header].offset));
-            message.headers.Contact[message.getHeaders("contact").length - 1].parsed = parsed[header].parsed;
-          }
+        if (!(parsed instanceof Array)) {
+          parsed = undefined;
+          break;
         }
+
+        parsed.forEach((header) => {
+          message.addHeader("contact", headerValue.substring(header.position, header.offset));
+          message.headers.Contact[message.getHeaders("contact").length - 1].parsed = header.parsed;
+        });
         break;
       case "content-length":
       case "l":
