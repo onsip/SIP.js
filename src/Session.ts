@@ -1986,9 +1986,9 @@ export class ReferClientContext extends ClientContext implements ReferClientCont
       if (dialog) {
         this.target = '"' + target.remoteIdentity.friendlyName + '" ' +
             "<" + dialog.remoteTarget.toString() +
-            "?Replaces=" + dialog.id.callId +
-            "%3Bto-tag%3D" + dialog.id.remoteTag +
-            "%3Bfrom-tag%3D" + dialog.id.localTag + ">";
+            "?Replaces=" + encodeURIComponent(dialog.id.callId +
+            ";to-tag=" + dialog.id.remoteTag +
+            ";from-tag=" + dialog.id.localTag) + ">";
       } else {
         throw new TypeError("Invalid target due to no dialog: " + target);
       }
