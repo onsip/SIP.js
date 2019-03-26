@@ -1,21 +1,18 @@
-import { PublishContext as PublishContextDefinition } from "../types/publish-context";
-import { IncomingResponse } from "../types/sip-message";
-import { Transport } from "../types/transport";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { OutgoingRequest } from "./SIPMessage";
+import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
+import { Transport } from "./Transport";
+import { UA } from "./UA";
+import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 /**
  * SIP Publish (SIP Extension for Event State Publication RFC3903)
  * @class Class creating a SIP PublishContext.
  */
-export class PublishContext extends ClientContext implements PublishContextDefinition {
+export class PublishContext extends ClientContext {
   public type: TypeStrings;
 
   private options: any;

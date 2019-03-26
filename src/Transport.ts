@@ -1,16 +1,14 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../types/logger-factory";
-import { Transport as TransportDefinition } from "../types/transport";
-
 import { TypeStrings } from "./Enums";
+import { Logger } from "./LoggerFactory";
 
 /* Transport
  * @class Abstract transport layer parent class
  * @param {Logger} logger
  * @param {Object} [options]
  */
-export abstract class Transport extends EventEmitter implements TransportDefinition {
+export abstract class Transport extends EventEmitter {
   public type: TypeStrings;
   public server: any;
   protected logger: Logger;

@@ -1,12 +1,14 @@
-import {
-  Parameters as ParametersDefinition,
-  URI as URIDefinition
-} from "../types/uri";
-
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 
-export class Parameters implements ParametersDefinition {
+export interface URIObject {
+  scheme: string;
+  user: string | undefined;
+  host: string;
+  port: number | undefined;
+}
+
+export class Parameters {
   public type: TypeStrings;
   public parameters: {[name: string]: any} = {};
 
@@ -64,11 +66,11 @@ export class Parameters implements ParametersDefinition {
  *
  */
 // tslint:disable-next-line:max-classes-per-file
-export class URI extends Parameters implements URIDefinition {
+export class URI extends Parameters {
   public type: TypeStrings;
   private headers: {[name: string]: any} = {};
-  private normal: URIDefinition.Object;
-  private raw: URIDefinition.Object;
+  private normal: URIObject;
+  private raw: URIObject;
 
   constructor(
     scheme: string,
@@ -111,8 +113,8 @@ export class URI extends Parameters implements URIDefinition {
     };
   }
 
-  get _normal(): URIDefinition.Object { return this.normal; }
-  get _raw(): URIDefinition.Object { return this.raw; }
+  get _normal(): URIObject { return this.normal; }
+  get _raw(): URIObject { return this.raw; }
 
   get scheme(): string { return this.normal.scheme; }
   set scheme(value: string) {

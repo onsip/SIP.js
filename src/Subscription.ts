@@ -1,23 +1,18 @@
-import { Dialog as DialogType} from "../types/dialogs";
-import { IncomingRequest, IncomingResponse } from "../types/sip-message";
-import {
-  Subscription as SubscriptionDefinition
-} from "../types/subscription";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import { Dialog } from "./Dialogs";
 import { TypeStrings } from "./Enums";
+import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 import { Timers } from "./Timers";
+import { UA } from "./UA";
+import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 /**
  * SIP Subscriber (SIP-Specific Event Notifications RFC6665)
  * @class Class creating a SIP Subscription.
  */
-export class Subscription extends ClientContext implements SubscriptionDefinition {
+export class Subscription extends ClientContext {
   public type: TypeStrings;
   private event: string;
   private requestedExpires: number;
@@ -26,7 +21,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
   private state: string;
   private contact: string;
   private extraHeaders: Array<string>;
-  private dialog: DialogType | undefined;
+  private dialog: Dialog | undefined;
   private timers: any;
   private errorCodes: Array<number>;
 
@@ -206,7 +201,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
     if (!this.dialog) {
       if (this.createConfirmedDialog(request, "UAS")) {
         if (this.dialog) {
-          this.id = (this.dialog as DialogType).id.toString();
+          this.id = (this.dialog as Dialog).id.toString();
           if (this.request && this.request.from) {
             delete this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag  + this.event];
             this.ua.subscriptions[this.id || ""] = this;
@@ -297,6 +292,14 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
     this.failed(response, C.causes.DIALOG_ERROR);
   }
 
+  public on(name: "accepted", callback: (response: any, cause: C.causes) => void): this;
+  public on(name: "notify", callback: (notification: Notification) => void): this;
+  public on(
+    name: "failed" | "rejected" | "terminated",
+    callback: (messageOrResponse?: any, cause?: C.causes) => void
+  ): this;
+  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
+
   private timer_fire(): void {
     if (this.state === "terminated") {
       this.terminateDialog();
@@ -313,7 +316,7 @@ export class Subscription extends ClientContext implements SubscriptionDefinitio
 
   private createConfirmedDialog(message: IncomingRequest, type: "UAC" | "UAS"): boolean {
     this.terminateDialog();
-    const dialog: DialogType = new Dialog(this, message, type);
+    const dialog: Dialog = new Dialog(this, message, type);
     if (this.request) {
       dialog.inviteSeqnum = this.request.cseq;
       dialog.localSeqnum = this.request.cseq;

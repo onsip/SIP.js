@@ -1,19 +1,16 @@
 import { EventEmitter } from "events";
 
-import { ClientContext as ClientContextDefinition } from "../types/client-context";
-import { Logger } from "../types/logger-factory";
-import { NameAddrHeader } from "../types/name-addr-header";
-import { IncomingResponse, OutgoingRequest as OutgoingRequestType } from "../types/sip-message";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
 import { RequestSender } from "./RequestSender";
-import { OutgoingRequest } from "./SIPMessage";
+import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
+import { UA } from "./UA";
+import { URI } from "./URI";
 import { Utils } from "./Utils";
 
-export class ClientContext extends EventEmitter implements ClientContextDefinition {
+export class ClientContext extends EventEmitter {
   public static initializer(
     objToConstruct: ClientContext,
     ua: UA,
@@ -77,7 +74,7 @@ export class ClientContext extends EventEmitter implements ClientContextDefiniti
   // inheritance issue with InviteClientContext
   public ua!: UA;
   public logger!: Logger;
-  public request!: OutgoingRequestType;
+  public request!: OutgoingRequest;
   public method!: string;
   public body: any;
   public localIdentity!: NameAddrHeader;

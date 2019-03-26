@@ -1,9 +1,8 @@
-import { Logger } from "../types/logger-factory";
-import { UA } from "../types/ua";
-
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
+import { Logger } from "./LoggerFactory";
 import { IncomingRequest, IncomingResponse } from "./SIPMessage";
+import { UA } from "./UA";
 // SIP.Parser = Parser;
 
 /**

@@ -1,29 +1,20 @@
-import { Dialog } from "../types/dialogs";
-import { Logger } from "../types/logger-factory";
-import { NameAddrHeader } from "../types/name-addr-header";
-import {
-  IncomingMessage as IncomingMessageDefinition,
-  IncomingRequest as IncomingRequestDefinition,
-  IncomingResponse as IncomingResponseDefinition,
-  OutgoingRequest as OutgoingRequestDefinition
-} from "../types/sip-message";
+import { C } from "./Constants";
+import { Dialog } from "./Dialogs";
+import { TypeStrings } from "./Enums";
+import { Grammar } from "./Grammar";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
 import {
   ClientTransaction,
   ClientTransactionUser,
-  ServerTransaction
-} from "../types/transactions";
-import { Transport } from "../types/transport";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
-import { C } from "./Constants";
-import { TypeStrings } from "./Enums";
-import { Grammar } from "./Grammar";
-import {
   InviteClientTransaction,
   NonInviteClientTransaction,
+  ServerTransaction,
   TransactionState
 } from "./Transactions";
+import { Transport } from "./Transport";
+import { UA } from "./UA";
+import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 const getSupportedHeader: ((request: OutgoingRequest | IncomingRequest) => string) =  (request) => {
@@ -70,7 +61,7 @@ const getSupportedHeader: ((request: OutgoingRequest | IncomingRequest) => strin
  * @param {Object} [headers] extra headers
  * @param {String} [body]
  */
-export class OutgoingRequest implements OutgoingRequestDefinition {
+export class OutgoingRequest {
   public type: TypeStrings;
   public ruri: string | URI;
   public ua: UA;
@@ -430,7 +421,7 @@ export class OutgoingRequest implements OutgoingRequestDefinition {
  * @class Class for incoming SIP message.
  */
 // tslint:disable-next-line:max-classes-per-file
-class IncomingMessage implements IncomingMessageDefinition {
+class IncomingMessage {
   public type: TypeStrings = TypeStrings.IncomingMessage;
   public viaBranch!: string;
   public method!: string;
@@ -577,7 +568,7 @@ class IncomingMessage implements IncomingMessageDefinition {
  * @class Class for incoming SIP request.
  */
 // tslint:disable-next-line:max-classes-per-file
-export class IncomingRequest extends IncomingMessage implements IncomingRequestDefinition {
+export class IncomingRequest extends IncomingMessage {
   public type: TypeStrings;
   public ruri: URI | undefined;
 
@@ -707,7 +698,7 @@ export class IncomingRequest extends IncomingMessage implements IncomingRequestD
  * @class Class for incoming SIP response.
  */
 // tslint:disable-next-line:max-classes-per-file
-export class IncomingResponse extends IncomingMessage implements IncomingResponseDefinition {
+export class IncomingResponse extends IncomingMessage {
   public type: TypeStrings;
   public statusCode: number | undefined;
   public reasonPhrase: string | undefined;

@@ -1,4 +1,4 @@
-import { SessionDescriptionHandlerModifier } from "../../types/session-description-handler";
+import { SessionDescriptionHandlerModifier } from "../session-description-handler";
 
 const stripPayload = (sdp: string, payload: string): string => {
   const mediaDescs: Array<any> = [];

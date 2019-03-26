@@ -1,13 +1,13 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../../types/logger-factory";
-import { InviteClientContext, InviteServerContext } from "../../types/session";
-import { DTMF } from "../../types/Session/dtmf";
-import { IncomingRequest, OutgoingRequest } from "../../types/sip-message";
-import { WebSessionDescriptionHandler as SessionDescriptionHandler } from "../../types/Web/session-description-handler";
-
+import { Logger } from "../LoggerFactory";
+import { InviteClientContext, InviteServerContext } from "../Session";
+import { DTMF } from "../Session/DTMF";
+import { IncomingRequest, OutgoingRequest } from "../SIPMessage";
 import { UA } from "../UA";
+
 import * as Modifiers from "./Modifiers";
+import { SessionDescriptionHandler } from "./SessionDescriptionHandler";
 
 /* Simple
  * @class Simple
@@ -125,7 +125,7 @@ export class Simple extends EventEmitter {
       this.emit("unregistered", this.ua);
     });
 
-    this.ua.on("failed", () => {
+    this.ua.on("registrationFailed", () => {
       this.emit("unregistered", this.ua);
     });
 

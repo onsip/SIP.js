@@ -4,7 +4,8 @@
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
   "version": "0.13.7",
   "license": "MIT",
-  "main": "lib/index.js",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "homepage": "https://sipjs.com",
   "author": "OnSIP <developer@onsip.com> (https://sipjs.com/aboutus/)",
   "contributors": [
@@ -65,6 +66,5 @@
     "commandLineTest": "npm run build-test && karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
     "buildAndBrowserTest": "npm run build && npm run browserTest"
-  },
-  "types": "./types"
+  }
 }
