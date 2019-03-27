@@ -742,28 +742,111 @@ export class IncomingResponse extends IncomingMessage {
       throw new Error("Transaction not instance of InviteServerTrasaction.");
     }
 
-    const contact = this.parseHeader("contact");
-    if (!contact || !contact.uri) {
-      throw new Error("Failed to parse contact header.");
+    // FIXME: This should all be done by the dialog. The current dialog code
+    // structure is not currently setup to deal with ACKs to re-INVITEs, so
+    // what follows is duplicate code for specifially handling the ACK case.
+
+    // Dialog must exist after receipt of a 2xx response to an INVITE.
+    const dialog = this.ua.dialogs[this.callId + this.fromTag + this.toTag];
+    if (!dialog) {
+      throw new Error("Dialog undefined.");
     }
-    const ruri = contact.uri;
+
+    // The UAC core MUST generate an ACK request for each 2xx received from
+    // the transaction layer.  The header fields of the ACK are constructed
+    // in the same way as for any request sent within a dialog (see Section
+    // 12) with the exception of the CSeq and the header fields related to
+    // authentication.  The sequence number of the CSeq header field MUST be
+    // the same as the INVITE being acknowledged, but the CSeq method MUST
+    // be ACK.  The ACK MUST contain the same credentials as the INVITE.  If
+    // the 2xx contains an offer (based on the rules above), the ACK MUST
+    // carry an answer in its body.  If the offer in the 2xx response is not
+    // acceptable, the UAC core MUST generate a valid answer in the ACK and
+    // then send a BYE immediately.
+    // https://tools.ietf.org/html/rfc3261#section-13.2.2.4
+
+    // The URI in the To field of the request MUST be set to the remote URI
+    // from the dialog state.  The tag in the To header field of the request
+    // MUST be set to the remote tag of the dialog ID.  The From URI of the
+    // request MUST be set to the local URI from the dialog state.  The tag
+    // in the From header field of the request MUST be set to the local tag
+    // of the dialog ID.  If the value of the remote or local tags is null,
+    // the tag parameter MUST be omitted from the To or From header fields,
+    // respectively.
+    //
+    // The Call-ID of the request MUST be set to the Call-ID of the dialog.
+    // Requests within a dialog MUST contain strictly monotonically
+    // increasing and contiguous CSeq sequence numbers (increasing-by-one)
+    // in each direction (excepting ACK and CANCEL of course, whose numbers
+    // equal the requests being acknowledged or cancelled).
+    // https://tools.ietf.org/html/rfc3261#section-12.2.1.1
+    const callId = this.callId;
+    const cseq = this.cseq;
+    const fromUri = dialog.localUri;
+    const fromTag = this.fromTag;
+    const toUri = dialog.remoteUri;
+    const toTag = this.toTag;
+
+    // The UAC uses the remote target and route set to build the Request-URI
+    // and Route header field of the request.
+    //
+    // If the route set is empty, the UAC MUST place the remote target URI
+    // into the Request-URI.  The UAC MUST NOT add a Route header field to
+    // the request.
+    //
+    // If the route set is not empty, and the first URI in the route set
+    // contains the lr parameter (see Section 19.1.1), the UAC MUST place
+    // the remote target URI into the Request-URI and MUST include a Route
+    // header field containing the route set values in order, including all
+    // parameters.
+    //
+    // If the route set is not empty, and its first URI does not contain the
+    // lr parameter, the UAC MUST place the first URI from the route set
+    // into the Request-URI, stripping any parameters that are not allowed
+    // in a Request-URI.  The UAC MUST add a Route header field containing
+    // the remainder of the route set values in order, including all
+    // parameters.  The UAC MUST then place the remote target URI into the
+    // Route header field as the last value.
+    // https://tools.ietf.org/html/rfc3261#section-12.2.1.1
+
+    // The lr parameter, when present, indicates that the element
+    // responsible for this resource implements the routing mechanisms
+    // specified in this document.  This parameter will be used in the
+    // URIs proxies place into Record-Route header field values, and
+    // may appear in the URIs in a pre-existing route set.
+    //
+    // This parameter is used to achieve backwards compatibility with
+    // systems implementing the strict-routing mechanisms of RFC 2543
+    // and the rfc2543bis drafts up to bis-05.  An element preparing
+    // to send a request based on a URI not containing this parameter
+    // can assume the receiving element implements strict-routing and
+    // reformat the message to preserve the information in the
+    // Request-URI.
+    // https://tools.ietf.org/html/rfc3261#section-19.1.1
+
+    // NOTE: Not backwards compatibile with RFC 2543 (no support for strict-routing).
+    const ruri = dialog.remoteTarget;
+    const routeSet = dialog.routeSet;
+
     const request = new OutgoingRequest(
       C.ACK,
       ruri,
       this.ua,
       {
-        cseq: this.cseq,
-        callId: this.callId,
-        fromUri: this.from.uri,
-        fromTag: this.fromTag,
-        toUri: this.to.uri,
-        toTag: this.toTag,
-        routeSet: this.getHeaders("record-route").reverse()
+        callId,
+        cseq,
+        fromUri,
+        fromTag,
+        toUri,
+        toTag,
+        routeSet
       },
       options ? options.extraHeaders : undefined,
       options ? options.body : undefined
     );
+
     this.transaction.ackResponse(this, request);
+
     return request;
   }
 }
