@@ -1,20 +1,18 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../../types/logger-factory";
-import { InviteClientContext, Session } from "../../types/session";
-import { DTMF as DTMFDefinition } from "../../types/Session/dtmf";
-import { IncomingRequest, IncomingResponse, OutgoingRequest } from "../../types/sip-message";
-
 import { C } from "../Constants";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
+import { Logger } from "../LoggerFactory";
+import { Session } from "../Session";
+import { IncomingRequest, IncomingResponse, OutgoingRequest } from "../SIPMessage";
 import { Utils } from "../Utils";
 
 /**
  * @class DTMF
  * @param {SIP.Session} session
  */
-export class DTMF extends EventEmitter implements DTMFDefinition {
+export class DTMF extends EventEmitter {
   public type: TypeStrings;
   public tone: string;
   public duration: number;

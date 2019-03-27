@@ -1,28 +1,35 @@
-import { Logger, LoggerFactory } from "../types/logger-factory";
-import { RegisterContext } from "../types/register-context";
-import { RequestSender as RequestSenderDefinition } from "../types/request-sender";
-import { IncomingResponse, OutgoingRequest } from "../types/sip-message";
-import { ClientTransactionUser } from "../types/transactions";
-import { UA } from "../types/ua";
-
 import { C } from "./Constants";
 import { TypeStrings, UAStatus } from "./Enums";
+import { Logger, LoggerFactory } from "./LoggerFactory";
+import { RegisterContext } from "./RegisterContext";
+import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import {
+  ClientTransactionUser,
   InviteClientTransaction,
   NonInviteClientTransaction,
   TransactionState
 } from "./Transactions";
+import { UA } from "./UA";
+
+export namespace RequestSender {
+  export interface StreamlinedApplicant {
+    request: OutgoingRequest;
+    onRequestTimeout: () => void;
+    onTransportError: () => void;
+    receiveResponse: (response: IncomingResponse) => void;
+  }
+}
 
 /**
  * @class Class creating a request sender.
  * @param {Object} applicant
  * @param {SIP.UA} ua
  */
-export class RequestSender implements RequestSenderDefinition {
+export class RequestSender {
   public type: TypeStrings;
   public ua: UA;
   public clientTransaction: InviteClientTransaction | NonInviteClientTransaction | undefined;
-  public applicant: RequestSenderDefinition.StreamlinedApplicant;
+  public applicant: RequestSender.StreamlinedApplicant;
   public loggerFactory: LoggerFactory;
   private logger: Logger;
   private method: string;
@@ -31,7 +38,7 @@ export class RequestSender implements RequestSenderDefinition {
   private challenged: boolean;
   private staled: boolean;
 
-  constructor(applicant: RequestSenderDefinition.StreamlinedApplicant, ua: UA) {
+  constructor(applicant: RequestSender.StreamlinedApplicant, ua: UA) {
     this.type = TypeStrings.RequestSender;
     this.logger = ua.getLogger("sip.requestsender");
     this.loggerFactory = ua.getLoggerFactory();

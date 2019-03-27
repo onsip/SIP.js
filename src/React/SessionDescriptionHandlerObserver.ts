@@ -1,6 +1,8 @@
-import { InviteClientContext, InviteServerContext } from "../../types/session";
-
 import { TypeStrings } from "../Enums";
+import { InviteClientContext, InviteServerContext } from "../Session";
+import {
+  SessionDescriptionHandlerObserver as SessionDescriptionHandlerObserverDefinition
+} from "../session-description-handler-observer";
 
 /* SessionDescriptionHandlerObserver
  * @class SessionDescriptionHandler Observer Class.
@@ -8,7 +10,7 @@ import { TypeStrings } from "../Enums";
  * @param {Object} [options]
  */
 
-export class SessionDescriptionHandlerObserver {
+export class SessionDescriptionHandlerObserver implements SessionDescriptionHandlerObserverDefinition {
   public type: TypeStrings;
   private session: InviteClientContext | InviteServerContext;
   private options: any;

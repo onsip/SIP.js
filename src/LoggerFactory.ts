@@ -1,8 +1,3 @@
-import {
-  Logger as LoggerDefinition,
-  LoggerFactory as LoggerFactoryDefinition
-} from "../types/logger-factory";
-
 import { TypeStrings } from "./Enums";
 
 export enum Levels {
@@ -12,7 +7,7 @@ export enum Levels {
   debug
 }
 
-export class LoggerFactory implements LoggerFactoryDefinition {
+export class LoggerFactory {
   public type: TypeStrings;
   public builtinEnabled: boolean = true;
 
@@ -94,7 +89,7 @@ export class LoggerFactory implements LoggerFactoryDefinition {
 }
 
 // tslint:disable-next-line:max-classes-per-file
-export class Logger implements LoggerDefinition {
+export class Logger {
   public type: TypeStrings;
 
   private logger: LoggerFactory;

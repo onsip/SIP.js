@@ -62,6 +62,7 @@ module.exports = function (env) {
           loader: "ts-loader",
           options: {
             compilerOptions: {
+              "declaration": false,
               "outDir": mainDir + "/dist"
             }
           }

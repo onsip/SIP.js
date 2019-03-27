@@ -1,53 +1,54 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../types/logger-factory";
-import { NameAddrHeader } from "../types/name-addr-header";
-import {
-  InviteClientContext as InviteClientContextDefinition,
-  InviteServerContext as InviteServerContextDefinition,
-  ReferClientContext as ReferClientContextDefinition,
-  ReferServerContext as ReferServerContextDefinition,
-  Session as SessionDefinition
-} from "../types/session";
-import {
-  BodyObj,
-  SessionDescriptionHandler,
-  SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerModifiers,
-  SessionDescriptionHandlerOptions
-} from "../types/session-description-handler";
-import {
-  SessionDescriptionHandlerFactory
-} from "../types/session-description-handler-factory";
-import {
-  IncomingRequest,
-  IncomingResponse,
-  OutgoingRequest as OutgoingRequestType
-} from "../types/sip-message";
-import { InviteServerTransaction, NonInviteServerTransaction } from "../types/transactions";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import { Dialog } from "./Dialogs";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
 import { RequestSender } from "./RequestSender";
 import { ServerContext } from "./ServerContext";
+import {
+  BodyObj,
+  SessionDescriptionHandler,
+  SessionDescriptionHandlerModifier,
+  SessionDescriptionHandlerModifiers,
+  SessionDescriptionHandlerOptions
+} from "./session-description-handler";
+import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { DTMF } from "./Session/DTMF";
-import { OutgoingRequest } from "./SIPMessage";
+import {
+  IncomingRequest,
+  IncomingResponse,
+  OutgoingRequest
+} from "./SIPMessage";
 import { Timers } from "./Timers";
-import { TransactionState } from "./Transactions";
+import {
+  InviteServerTransaction,
+  NonInviteServerTransaction,
+  TransactionState
+} from "./Transactions";
+import { UA } from "./UA";
+import { URI } from "./URI";
+
 import { Utils } from "./Utils";
+
+export namespace Session {
+  export interface DtmfOptions {
+    extraHeaders?: string[];
+    duration?: number;
+    interToneGap?: number;
+  }
+}
 
 /*
  * @param {function returning SIP.sessionDescriptionHandler} [sessionDescriptionHandlerFactory]
  *        (See the documentation for the sessionDescriptionHandlerFactory argument of the UA constructor.)
  */
 
-export abstract class Session extends EventEmitter implements SessionDefinition {
+export abstract class Session extends EventEmitter {
   public static readonly C = SessionStatus;
 
   // inheritted from (Server/ClientContext)
@@ -141,7 +142,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     this.originalReceiveRequest = this.receiveRequest;
   }
 
-  public dtmf(tones: string | number, options: SessionDefinition.DtmfOptions = {}): this {
+  public dtmf(tones: string | number, options: Session.DtmfOptions = {}): this {
     // Check Session Status
     if (this.status !== SessionStatus.STATUS_CONFIRMED && this.status !== SessionStatus.STATUS_WAITING_FOR_ACK) {
       throw new Exceptions.InvalidStateError(this.status);
@@ -152,7 +153,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       throw new TypeError("Invalid tones: " + tones);
     }
 
-    const sendDTMF: (() => void) = (): void => {
+    const sendDTMF: () => void = (): void => {
       if (this.status === SessionStatus.STATUS_TERMINATED || !this.tones || this.tones.length === 0) {
         // Stop sending DTMF
         this.tones = undefined;
@@ -225,7 +226,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
 
     this.referContext = new ReferClientContext(
       this.ua,
-      this as unknown as InviteClientContext | InviteServerContext,
+      (this as unknown) as InviteClientContext | InviteServerContext,
       target,
       options
     );
@@ -264,12 +265,12 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     );
 
     new RequestSender({
-      request,
-      onRequestTimeout: () => this.onRequestTimeout(),
-      onTransportError: () => this.onTransportError(),
-      receiveResponse: (response: IncomingResponse) =>
-        (options.receiveResponse || this.receiveNonInviteResponse.bind(this))(response)
-    }, this.ua).send();
+        request,
+        onRequestTimeout: () => this.onRequestTimeout(),
+        onTransportError: () => this.onTransportError(),
+        receiveResponse: (response: IncomingResponse) =>
+          (options.receiveResponse || this.receiveNonInviteResponse.bind(this))(response)
+      }, this.ua).send();
 
     // Emit the request event
     this.emit(method.toLowerCase(), request);
@@ -337,7 +338,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
         return true;
       } else {
         const earlyDialog: Dialog = new Dialog(
-          this as unknown as InviteClientContext | InviteServerContext,
+          (this as unknown) as InviteClientContext | InviteServerContext,
           message, type, Dialog.C.STATUS_EARLY);
 
         // Dialog has been successfully created.
@@ -367,7 +368,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       }
 
       // Otherwise, create a _confirmed_ dialog
-      const dialog: Dialog = new Dialog(this as unknown as InviteClientContext | InviteServerContext, message, type);
+      const dialog: Dialog = new Dialog((this as unknown) as InviteClientContext | InviteServerContext, message, type);
 
       if (dialog.error) {
         this.logger.error(dialog.error);
@@ -499,7 +500,7 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
         break;
       case C.NOTIFY:
         if ((this.referContext && this.referContext.type === TypeStrings.ReferClientContext) &&
-            request.hasHeader("event") && /^refer(;.*)?$/.test(request.getHeader("event") as string)) {
+          request.hasHeader("event") && /^refer(;.*)?$/.test(request.getHeader("event") as string)) {
           (this.referContext as ReferClientContext).receiveNotify(request);
           return;
         }
@@ -538,6 +539,47 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     }
   }
 
+  public on(event: "dtmf", listener: (request: IncomingRequest | OutgoingRequest, dtmf: DTMF) => void): this;
+  public on(event: "progress", listener: (response: IncomingRequest, reasonPhrase?: any) => void): this;
+  public on(event: "referRequested", listener: (context: ReferServerContext) => void): this;
+  public on(
+    event:
+      "referInviteSent" |
+      "referProgress" |
+      "referAccepted" |
+      "referRejected" |
+      "referRequestProgress" |
+      "referRequestAccepted" |
+      "referRequestRejected" |
+      "reinvite" |
+      "reinviteAccepted" |
+      "reinviteFailed" |
+      "replaced",
+    listener: (session: Session) => void
+  ): this;
+  public on(
+    event: "SessionDescriptionHandler-created",
+    listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void
+  ): this;
+  public on(event: "accepted", listener: (response: any, cause: C.causes) => void): this;
+  public on(
+    event:
+      "ack" |
+      "bye" |
+      "confirmed" |
+      "connecting" |
+      "notify",
+    listener: (request: any) => void
+  ): this; //  TODO
+  public on(event: "dialog", listener: (dialog: any) => void): this;
+  public on(event: "renegotiationError", listener: (error: any) => void): this; // TODO
+  public on(event: "failed" | "rejected", listener: (response?: any, cause?: C.causes) => void): this;
+  public on(event: "terminated", listener: (message?: any, cause?: C.causes) => void): this;
+  public on(event: "cancel" | "trackAdded" | "directionChanged", listener: () => void): this;
+  public on(name: string, callback: (...args: any[]) => void): this {
+    return super.on(name, callback);
+  }
+
   // In dialog INVITE Reception
   protected receiveReinvite(request: IncomingRequest): void {
     // TODO: Should probably check state of the session
@@ -564,11 +606,11 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
         request.body,
         this.sessionDescriptionHandlerOptions,
         this.modifiers
-      ).then(this.sessionDescriptionHandler.getDescription.bind(
-        this.sessionDescriptionHandler,
-        this.sessionDescriptionHandlerOptions,
-        this.modifiers)
-      );
+        ).then(this.sessionDescriptionHandler.getDescription.bind(
+            this.sessionDescriptionHandler,
+            this.sessionDescriptionHandlerOptions,
+            this.modifiers)
+        );
     } else { // Bad Packet (should never get hit)
       request.reply(415);
       this.emit("reinviteFailed", this);
@@ -585,12 +627,12 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
             this.sessionDescriptionHandlerOptions,
             this.modifiers
           ).then(() => {
-            clearTimeout(this.timers.ackTimer);
-            clearTimeout(this.timers.invite2xxTimer);
-            this.status = SessionStatus.STATUS_CONFIRMED;
+              clearTimeout(this.timers.ackTimer);
+              clearTimeout(this.timers.invite2xxTimer);
+              this.status = SessionStatus.STATUS_CONFIRMED;
 
-            this.emit("confirmed", incRequest);
-          });
+              this.emit("confirmed", incRequest);
+            });
         } else {
           clearTimeout(this.timers.ackTimer);
           clearTimeout(this.timers.invite2xxTimer);
@@ -604,28 +646,28 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
     };
 
     promise.catch((e: any) => {
-      let statusCode: number;
-      if (e.type === TypeStrings.SessionDescriptionHandlerError) {
-        statusCode = 500;
-      } else if (e.type === TypeStrings.RenegotiationError) {
-        this.emit("renegotiationError", e);
-        this.logger.warn(e.toString());
-        statusCode = 488;
-      } else {
-        this.logger.error(e);
-        statusCode = 488;
-      }
-      request.reply(statusCode);
-      this.emit("reinviteFailed", this);
-      // TODO: This could be better
-      throw e;
-    }).then((description) => {
-      const extraHeaders: Array<string> = ["Contact: " + this.contact];
-      request.reply(200, undefined, extraHeaders, description);
-      this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
-      this.setACKTimer();
-      this.emit("reinviteAccepted", this);
-    });
+        let statusCode: number;
+        if (e.type === TypeStrings.SessionDescriptionHandlerError) {
+          statusCode = 500;
+        } else if (e.type === TypeStrings.RenegotiationError) {
+          this.emit("renegotiationError", e);
+          this.logger.warn(e.toString());
+          statusCode = 488;
+        } else {
+          this.logger.error(e);
+          statusCode = 488;
+        }
+        request.reply(statusCode);
+        this.emit("reinviteFailed", this);
+        // TODO: This could be better
+        throw e;
+      }).then((description) => {
+        const extraHeaders: Array<string> = ["Contact: " + this.contact];
+        request.reply(200, undefined, extraHeaders, description);
+        this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
+        this.setACKTimer();
+        this.emit("reinviteAccepted", this);
+      });
   }
 
   protected sendReinvite(options: any = {}): void {
@@ -656,24 +698,24 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
       "REFER"
     ].toString());
     this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-    .then((description: BodyObj) => {
-      this.sendRequest(C.INVITE, {
-        extraHeaders,
-        body: description,
-        receiveResponse: (response: IncomingResponse) => this.receiveReinviteResponse(response)
-      });
-    }).catch((e: any) => {
-      if (e.type === TypeStrings.RenegotiationError) {
-        this.pendingReinvite = false;
-        this.emit("renegotiationError", e);
-        this.logger.warn("Renegotiation Error");
-        this.logger.warn(e.toString());
+      .then((description: BodyObj) => {
+        this.sendRequest(C.INVITE, {
+          extraHeaders,
+          body: description,
+          receiveResponse: (response: IncomingResponse) => this.receiveReinviteResponse(response)
+        });
+      }).catch((e: any) => {
+        if (e.type === TypeStrings.RenegotiationError) {
+          this.pendingReinvite = false;
+          this.emit("renegotiationError", e);
+          this.logger.warn("Renegotiation Error");
+          this.logger.warn(e.toString());
+          throw e;
+        }
+        this.logger.error("sessionDescriptionHandler error");
+        this.logger.error(e);
         throw e;
-      }
-      this.logger.error("sessionDescriptionHandler error");
-      this.logger.error(e);
-      throw e;
-    });
+      });
   }
 
   // Reception of Response for in-dialog INVITE
@@ -703,8 +745,10 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
         this.pendingReinvite = false;
         // TODO: All of these timers should move into the Transaction layer
         clearTimeout(this.timers.invite2xxTimer);
-        if (!this.sessionDescriptionHandler ||
-          (!this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || ""))) {
+        if (
+          !this.sessionDescriptionHandler ||
+          !this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || "")
+        ) {
           this.logger.error("2XX response received to re-invite but did not have a description");
           this.emit("reinviteFailed", this);
           this.emit(
@@ -714,23 +758,22 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
           break;
         }
 
-        this.sessionDescriptionHandler.setDescription(
-          response.body,
-          this.sessionDescriptionHandlerOptions,
-          this.modifiers
-        ).catch((e: any) => {
-          this.logger.error("Could not set the description in 2XX response");
-          this.logger.error(e);
-          this.emit("reinviteFailed", this);
-          this.emit("renegotiationError", e);
-          this.sendRequest(C.BYE, {
-            extraHeaders: ["Reason: " + Utils.getReasonHeaderValue(488, "Not Acceptable Here")]
+        this.sessionDescriptionHandler
+          .setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+          .catch((e: any) => {
+            this.logger.error("Could not set the description in 2XX response");
+            this.logger.error(e);
+            this.emit("reinviteFailed", this);
+            this.emit("renegotiationError", e);
+            this.sendRequest(C.BYE, {
+              extraHeaders: ["Reason: " + Utils.getReasonHeaderValue(488, "Not Acceptable Here")]
+            });
+            this.terminated(undefined, C.causes.INCOMPATIBLE_SDP);
+            throw e;
+          })
+          .then(() => {
+            this.emit("reinviteAccepted", this);
           });
-          this.terminated(undefined, C.causes.INCOMPATIBLE_SDP);
-          throw e;
-        }).then(() => {
-          this.emit("reinviteAccepted", this);
-        });
         break;
       default:
         this.pendingReinvite = false;
@@ -855,8 +898,23 @@ export abstract class Session extends EventEmitter implements SessionDefinition 
   }
 }
 
+export namespace InviteServerContext {
+  export interface Options {  // TODO: This may be incorrect
+      /** Array of extra headers added to the INVITE. */
+      extraHeaders?: Array<string>;
+      /** Options to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
+      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+      modifiers?: SessionDescriptionHandlerModifiers;
+      onInfo?: ((request: IncomingRequest) => void);
+      statusCode?: number;
+      reasonPhrase?: string;
+      body?: any;
+      rel100?: boolean;
+  }
+}
+
 // tslint:disable-next-line:max-classes-per-file
-export class InviteServerContext extends Session implements ServerContext, InviteServerContextDefinition {
+export class InviteServerContext extends Session implements ServerContext {
   public type: TypeStrings;
   public transaction!: InviteServerTransaction | NonInviteServerTransaction;
   public request!: IncomingRequest;
@@ -946,7 +1004,7 @@ export class InviteServerContext extends Session implements ServerContext, Invit
 
   // typing note: this was the only function using its super in ServerContext
   // so the bottom half of this function is copied and paired down from that
-  public reject(options: InviteServerContextDefinition.Options = {}): this {
+  public reject(options: InviteServerContext.Options = {}): this {
     // Check Session Status
     if (this.status === SessionStatus.STATUS_TERMINATED) {
       throw new Exceptions.InvalidStateError(this.status);
@@ -1022,7 +1080,7 @@ export class InviteServerContext extends Session implements ServerContext, Invit
 
   // @param {Object} [options.sessionDescriptionHandlerOptions]
   // gets passed to SIP.SessionDescriptionHandler.getDescription as options
-  public progress(options: InviteServerContextDefinition.Options = {}): this {
+  public progress(options: InviteServerContext.Options = {}): this {
     const statusCode = options.statusCode || 180;
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
 
@@ -1125,7 +1183,7 @@ export class InviteServerContext extends Session implements ServerContext, Invit
 
   // @param {Object} [options.sessionDescriptionHandlerOptions] gets passed
   // to SIP.SessionDescriptionHandler.getDescription as options
-  public accept(options: InviteServerContextDefinition.Options = {}): this {
+  public accept(options: InviteServerContext.Options = {}): this {
     this.onInfo = options.onInfo;
 
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
@@ -1359,10 +1417,26 @@ export class InviteServerContext extends Session implements ServerContext, Invit
   }
 }
 
+export namespace InviteClientContext {
+  export interface Options {
+    /** Array of extra headers added to the INVITE. */
+    extraHeaders?: Array<string>;
+    /** If true, send INVITE without SDP. */
+    inviteWithoutSdp?: boolean;
+    /** Deprecated */
+    params?: {
+      toUri?: string;
+      toDisplayName: string;
+    };
+    /** Options to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
+    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+  }
+}
+
 // tslint:disable-next-line:max-classes-per-file
-export class InviteClientContext extends Session implements ClientContext, InviteClientContextDefinition {
+export class InviteClientContext extends Session implements ClientContext {
   public type: TypeStrings;
-  public request!: OutgoingRequestType;
+  public request!: OutgoingRequest;
 
   private anonymous: boolean;
   private inviteWithoutSdp: boolean;
@@ -1952,8 +2026,22 @@ export class InviteClientContext extends Session implements ClientContext, Invit
   }
 }
 
+export namespace ReferServerContext {
+
+  export interface AcceptOptions {
+    /** If true, accept REFER request and automatically attempt to follow it. */
+    followRefer?: boolean;
+    /** If followRefer is true, options to following INVITE request. */
+    inviteOptions?: InviteClientContext.Options;
+  }
+
+  // tslint:disable-next-line:no-empty-interface
+  export interface RejectOptions {
+  }
+}
+
 // tslint:disable-next-line:max-classes-per-file
-export class ReferClientContext extends ClientContext implements ReferClientContextDefinition {
+export class ReferClientContext extends ClientContext {
   public type: TypeStrings;
   private extraHeaders: Array<string>;
   private options: any;
@@ -2091,10 +2179,10 @@ export class ReferClientContext extends ClientContext implements ReferClientCont
 }
 
 // tslint:disable-next-line:max-classes-per-file
-export class ReferServerContext extends ServerContext implements ReferServerContextDefinition {
+export class ReferServerContext extends ServerContext {
   public type: TypeStrings;
   public referTo!: NameAddrHeader;
-  public targetSession: InviteClientContextDefinition | InviteServerContextDefinition | undefined;
+  public targetSession: InviteClientContext | InviteServerContext | undefined;
 
   private status: SessionStatus;
   private fromTag: string;
@@ -2108,7 +2196,7 @@ export class ReferServerContext extends ServerContext implements ReferServerCont
   private cseq: number;
   private contact: string;
   private referredBy: string | undefined;
-  private referredSession!: InviteClientContextDefinition | InviteServerContextDefinition | undefined;
+  private referredSession!: InviteClientContext | InviteServerContext | undefined;
   private replaces: string | undefined;
   private errorListener!: (() => void);
 
@@ -2173,7 +2261,7 @@ export class ReferServerContext extends ServerContext implements ReferServerCont
     this.request.reply(100);
   }
 
-  public reject(options: ReferServerContextDefinition.RejectOptions = {}): void {
+  public reject(options: ReferServerContext.RejectOptions = {}): void {
     if (this.status  === SessionStatus.STATUS_TERMINATED) {
       throw new Exceptions.InvalidStateError(this.status);
     }
@@ -2184,7 +2272,7 @@ export class ReferServerContext extends ServerContext implements ReferServerCont
   }
 
   public accept(
-    options: ReferServerContextDefinition.AcceptOptions = {},
+    options: ReferServerContext.AcceptOptions = {},
     modifiers?: SessionDescriptionHandlerModifiers
   ): void {
     if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
@@ -2285,7 +2373,7 @@ export class ReferServerContext extends ServerContext implements ReferServerCont
       throw new Error("sipfrag body is required to send notify for refer");
     }
 
-    const request: OutgoingRequestType = new OutgoingRequest(
+    const request: OutgoingRequest = new OutgoingRequest(
       C.NOTIFY,
       this.remoteTarget,
       this.ua,
@@ -2319,4 +2407,16 @@ export class ReferServerContext extends ServerContext implements ReferServerCont
       }
     }, this.ua).send();
   }
+
+  public on(
+    name:
+      "referAccepted" |
+      "referInviteSent" |
+      "referProgress" |
+      "referRejected" |
+      "referRequestAccepted" |
+      "referRequestRejected",
+    callback: (referServerContext: ReferServerContext) => void
+  ): this;
+  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 }

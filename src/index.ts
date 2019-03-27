@@ -22,8 +22,28 @@ const sanityCheck = SanityCheck.sanityCheck;
 export { sanityCheck };
 
 export { ServerContext } from "./ServerContext";
-export { InviteClientContext, InviteServerContext, ReferClientContext, ReferServerContext, Session } from "./Session";
-export { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage";
+export {
+  InviteClientContext,
+  InviteServerContext,
+  ReferClientContext,
+  ReferServerContext,
+  Session
+} from "./Session";
+export {
+  SessionDescriptionHandlerFactory,
+  SessionDescriptionHandlerFactoryOptions
+} from "./session-description-handler-factory";
+export {
+  SessionDescriptionHandler,
+  SessionDescriptionHandlerModifier,
+  SessionDescriptionHandlerModifiers,
+  SessionDescriptionHandlerOptions
+} from "./session-description-handler";
+export {
+  IncomingRequest,
+  IncomingResponse,
+  OutgoingRequest
+} from "./SIPMessage";
 export { Subscription } from "./Subscription";
 export { Timers } from "./Timers";
 

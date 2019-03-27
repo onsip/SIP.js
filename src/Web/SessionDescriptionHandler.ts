@@ -1,23 +1,32 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../../types/logger-factory";
-import { InviteClientContext, InviteServerContext } from "../../types/session";
-import {
-  BodyObj,
-  SessionDescriptionHandlerModifiers
-} from "../../types/session-description-handler";
-import { Utils as UtilsTypes } from "../../types/utils";
-import {
-  PeerConnectionOptions,
-  WebSessionDescriptionHandler,
-  WebSessionDescriptionHandlerOptions
-} from "../../types/Web/session-description-handler";
-
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
+import { Logger } from "../LoggerFactory";
+import { InviteClientContext, InviteServerContext } from "../Session";
+import {
+  BodyObj,
+  SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
+  SessionDescriptionHandlerModifiers,
+  SessionDescriptionHandlerOptions
+} from "../session-description-handler";
 import { Utils } from "../Utils";
+
 import * as Modifiers from "./Modifiers";
 import { SessionDescriptionHandlerObserver } from "./SessionDescriptionHandlerObserver";
+
+export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptions {
+  peerConnectionOptions?: PeerConnectionOptions;
+  alwaysAcquireMediaFirst?: boolean;
+  disableAudioFallback?: boolean;
+  RTCOfferOptions?: any;
+  constraints?: any;
+}
+
+export interface PeerConnectionOptions {
+  iceCheckingTimeout?: number;
+  rtcConfiguration?: any;
+}
 
 /* SessionDescriptionHandler
  * @class PeerConnection helper Class.
@@ -25,7 +34,7 @@ import { SessionDescriptionHandlerObserver } from "./SessionDescriptionHandlerOb
  * @param {Object} [options]
  */
 
-export class SessionDescriptionHandler extends EventEmitter implements WebSessionDescriptionHandler {
+export class SessionDescriptionHandler extends EventEmitter implements SessionDescriptionHandlerDefinition  {
   /**
    * @param {SIP.Session} session
    * @param {Object} [options]
@@ -51,7 +60,7 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
   private C: any;
   private modifiers: SessionDescriptionHandlerModifiers;
   private WebRTC: any;
-  private iceGatheringDeferred: UtilsTypes.Deferred<any> | undefined;
+  private iceGatheringDeferred: Utils.Deferred<any> | undefined;
   private iceGatheringTimeout: boolean;
   private iceGatheringTimer: any | undefined;
   private constraints: any;
@@ -349,6 +358,50 @@ export class SessionDescriptionHandler extends EventEmitter implements WebSessio
   public getDirection(): string {
     return this.direction;
   }
+
+  public on(
+    event: "getDescription" | "setDescription",
+    listener: (description: RTCSessionDescriptionInit) => void
+  ): this;
+  public on(
+    event: "peerConnection-setRemoteDescriptionFailed",
+    listener: (error: any) => void
+  ): this; // TODO: SessionDescriptionHandlerException
+  public on(event: "setRemoteDescription", listener: (receivers: Array<RTCRtpReceiver>) => void): this;
+  public on(event: "confirmed", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
+
+  public on(
+    // tslint:disable-next-line:unified-signatures
+    event: "peerConnection-createAnswerFailed" | "peerConnection-createOfferFailed",
+    listener: (error: any) => void
+  ): this; // TODO:
+  // tslint:disable-next-line:unified-signatures
+  public on(event: "peerConnection-SetLocalDescriptionFailed", listener: (error: any) => void): this;
+  public on(event: "addTrack", listener: (track: MediaStreamTrack) => void): this;
+  public on(event: "addStream", listener: (track: MediaStream) => void): this;
+  public on(event: "iceCandidate", listener: (candidate: RTCIceCandidate) => void): this;
+  public on(
+    // tslint:disable-next-line:unified-signatures
+    event:
+    "iceConnection" |
+    "iceConnectionChecking" |
+    "iceConnectionConnected" |
+    "iceConnectionCompleted" |
+    "iceConnectionFailed" |
+    "iceConnectionDisconnected" |
+    "iceConectionClosed",
+    listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void
+  ): this;
+  public on(
+    event: "iceGathering" | "iceGatheringComplete",
+    listener: (sessionDescriptionHandler: SessionDescriptionHandler
+  ) => void): this;
+
+  public on(event: "userMediaRequest", listener: (constraints: MediaStreamConstraints) => void): this;
+  public on(event: "userMedia", listener: (streams: MediaStream) => void): this;
+  // tslint:disable-next-line:unified-signatures
+  public on(event: "userMediaFailed", listener: (error: any) => void): this;
+  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
   // Internal functions
   private createOfferOrAnswer(

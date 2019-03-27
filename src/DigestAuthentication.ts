@@ -1,12 +1,10 @@
 import * as MD5 from "crypto-js/md5";
 
-import { DigestAuthentication as DigestAuthenticationDefinition } from "../types/digest-authentication";
-import { Logger } from "../types/logger-factory";
-import { OutgoingRequest } from "../types/sip-message";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
 import { TypeStrings } from "./Enums";
+import { Logger } from "./LoggerFactory";
+import { OutgoingRequest } from "./SIPMessage";
+import { UA } from "./UA";
+import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 /**
@@ -15,7 +13,7 @@ import { Utils } from "./Utils";
  * @param {SIP.UA} ua
  */
 
-export class DigestAuthentication implements DigestAuthenticationDefinition {
+export class DigestAuthentication {
   public type: TypeStrings;
   public stale: boolean | undefined;
 

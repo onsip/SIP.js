@@ -1,19 +1,23 @@
-import { SessionDescriptionHandlerModifier } from "../types/session-description-handler";
-import { URI } from "../types/uri";
-import { Utils as UtilsDefinition } from "../types/utils";
-
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
+import { SessionDescriptionHandlerModifier } from "./session-description-handler";
+import { URI } from "./URI";
 
 export namespace Utils {
-  export function defer(): UtilsDefinition.Deferred<any> {
+  export interface Deferred<T> {
+    promise: Promise<T>;
+    resolve: () => T;
+    reject: () => T;
+  }
+
+  export function defer(): Deferred<any> {
     const deferred: any = {};
     deferred.promise = new Promise((resolve, reject) => {
       deferred.resolve = resolve;
       deferred.reject = reject;
     });
-    return deferred as UtilsDefinition.Deferred<any>;
+    return deferred as Deferred<any>;
   }
 
   export function reducePromises(arr: Array<SessionDescriptionHandlerModifier>, val: any): Promise<any> {

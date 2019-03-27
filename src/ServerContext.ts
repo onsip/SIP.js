@@ -1,27 +1,21 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../types/logger-factory";
-import { NameAddrHeader } from "../types/name-addr-header";
-import { ServerContext as ServerContextDefinition } from "../types/server-context";
-import { IncomingRequest } from "../types/sip-message";
-import {
-  InviteServerTransaction as InviteServerTransactionType,
-  NonInviteServerTransaction as NonInviteServerTransactionType,
-  ServerTransactionUser
-} from "../types/transactions";
-import { UA } from "../types/ua";
-
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
+import { IncomingRequest } from "./SIPMessage";
 import {
   InviteServerTransaction,
   NonInviteServerTransaction,
+  ServerTransactionUser,
   TransactionState
 } from "./Transactions";
+import { UA } from "./UA";
 import { Utils } from "./Utils";
 
-export class ServerContext extends EventEmitter implements ServerContextDefinition {
+export class ServerContext extends EventEmitter {
   // hack to get around our multiple inheritance issues
   public static initializer(objectToConstruct: ServerContext, ua: UA, request: IncomingRequest): void {
     objectToConstruct.type = TypeStrings.ServerContext;
@@ -81,7 +75,7 @@ export class ServerContext extends EventEmitter implements ServerContextDefiniti
 
   // Typing note: these were all private, needed to switch to get around
   // inheritance issue with InviteServerContext
-  public transaction!: InviteServerTransactionType | NonInviteServerTransactionType;
+  public transaction!: InviteServerTransaction | NonInviteServerTransaction;
   public body: any;
   public contentType: string | undefined;
   public assertedIdentity: NameAddrHeader | undefined;

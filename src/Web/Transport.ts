@@ -1,13 +1,8 @@
-import { Logger } from "../../types/logger-factory";
-import { OutgoingRequest } from "../../types/sip-message";
-import {
-  Configuration,
-  WebTransport as WebTransportDefinition,
-  WsServer
-} from "../../types/Web/transport";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Grammar } from "../Grammar";
+import { Logger } from "../LoggerFactory";
+import { OutgoingRequest } from "../SIPMessage";
 import { Transport as TransportBase } from "../Transport";
 import { Utils } from "../Utils";
 
@@ -16,6 +11,24 @@ export enum TransportStatus {
   STATUS_OPEN,
   STATUS_CLOSING,
   STATUS_CLOSED
+}
+
+export interface WsServer {
+  scheme: string;
+  sipUri: string;
+  wsUri: string;
+  weight: number;
+  isError: boolean;
+}
+
+export interface Configuration {
+  wsServers: Array<WsServer>;
+  connectionTimeout: number;
+  maxReconnectionAttempts: number;
+  reconnectionTimeout: number;
+  keepAliveInterval: number;
+  keepAliveDebounce: number;
+  traceSip: boolean;
 }
 
 /**
@@ -32,7 +45,7 @@ const computeKeepAliveTimeout = (upperBound: number): number => {
  * @class Transport
  * @param {Object} options
  */
-export class Transport extends TransportBase implements WebTransportDefinition {
+export class Transport extends TransportBase {
   public static readonly C = TransportStatus;
   public type: TypeStrings;
   public server: WsServer;
