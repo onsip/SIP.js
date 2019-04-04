@@ -6,7 +6,6 @@
     "outDir": "../lib"
   },
   "include": [
-    "./",
-    "../types"
+    "./"
   ]
 }
