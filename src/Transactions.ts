@@ -339,13 +339,16 @@ export class InviteClientTransaction extends ClientTransaction {
    * the transport directly. Herein the transaction layer manages sending ACKs to 2xx responses
    * and any retransmissions of those ACKs as needed.
    *
-   * @param response The incoming 2xx final response.
    * @param ack The outgoing ACK request.
    */
-  public ackResponse(response: IncomingResponse, ack: OutgoingRequest): void {
+  public ackResponse(ack: OutgoingRequest): void {
+    const toTag = ack.toTag;
+    if (!toTag) {
+      throw new Error("To tag undefined.");
+    }
     const id = "z9hG4bK" + Math.floor(Math.random() * 10000000);
     ack.setViaHeader(id, this.transport);
-    this.ackRetransmissionCache.set(response.toTag, ack); // Add to ACK retransmission cache
+    this.ackRetransmissionCache.set(toTag, ack); // Add to ACK retransmission cache
     this.send(ack.toString()).catch((error: Exceptions.TransportError) => {
       this.logTransportError(error, "Failed to send ACK to 2xx response.");
     });

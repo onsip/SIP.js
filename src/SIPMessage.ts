@@ -17,7 +17,7 @@ import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
-const getSupportedHeader: ((request: OutgoingRequest | IncomingRequest) => string) =  (request) => {
+export const getSupportedHeader: ((request: OutgoingRequest | IncomingRequest) => string) =  (request) => {
   let optionTags: Array<string> = [];
 
   if (request.method === C.REGISTER) {
@@ -70,7 +70,9 @@ export class OutgoingRequest {
   public cseq: number;
   public body: string | { body: string, contentType: string } | undefined;
   public to: NameAddrHeader | undefined;
+  public toTag: string | undefined;
   public from: NameAddrHeader | undefined;
+  public fromTag: string;
   public extraHeaders: Array<string>;
   public callId: string;
 
@@ -124,15 +126,17 @@ export class OutgoingRequest {
 
     // To
     const toUri: URI | string = params.toUri || ruri;
+    this.toTag = params.toTag;
     let to: string = (params.toDisplayName || params.toDisplayName === 0) ? '"' + params.toDisplayName + '" ' : "";
     to += "<" + ((toUri as URI).type === TypeStrings.URI ? (toUri as URI).toRaw() : toUri) + ">";
-    to += params.toTag ? ";tag=" + params.toTag : "";
+    to += this.toTag ? ";tag=" + this.toTag : "";
 
     this.to = Grammar.nameAddrHeaderParse(to);
     this.setHeader("to", to);
 
     // From
     const fromUri: URI | string = params.fromUri || ua.configuration.uri || "";
+    this.fromTag = params.fromTag || Utils.newTag();
     let from: string;
     if (params.fromDisplayName || params.fromDisplayName === 0) {
       from = '"' + params.fromDisplayName + '" ';
@@ -142,7 +146,7 @@ export class OutgoingRequest {
       from = "";
     }
     from += "<" + ((fromUri as URI).type === TypeStrings.URI ? (fromUri as URI).toRaw() : fromUri) + ">;tag=";
-    from += params.fromTag || Utils.newTag();
+    from += this.fromTag;
 
     this.from = Grammar.nameAddrHeaderParse(from);
     this.setHeader("from", from);
@@ -152,6 +156,7 @@ export class OutgoingRequest {
     this.setHeader("call-id", this.callId);
 
     // CSeq
+    // Why not make this a "1" if not provided? See: https://tools.ietf.org/html/rfc3261#section-8.1.1.5
     this.cseq = params.cseq || Math.floor(Math.random() * 10000);
     this.setHeader("cseq", this.cseq + " " + method);
   }
@@ -421,7 +426,7 @@ export class OutgoingRequest {
  * @class Class for incoming SIP message.
  */
 // tslint:disable-next-line:max-classes-per-file
-class IncomingMessage {
+export class IncomingMessage {
   public type: TypeStrings = TypeStrings.IncomingMessage;
   public viaBranch!: string;
   public method!: string;
@@ -433,7 +438,7 @@ class IncomingMessage {
   public callId!: string;
   public cseq!: number;
   public via!: {host: string, port: number};
-  public headers: {[name: string]: any} = {};
+  public headers: {[name: string]: Array<{ parsed?: any, raw: string }>} = {};
   public referTo: string | undefined;
   public data!: string;
 
@@ -444,7 +449,7 @@ class IncomingMessage {
    * @param {String} value header value
    */
   public addHeader(name: string, value: string): void {
-    const header: any = { raw: value };
+    const header = { raw: value };
     name = Utils.headerize(name);
 
     if (this.headers[name]) {
@@ -460,7 +465,7 @@ class IncomingMessage {
    * @returns {String|undefined} Returns the specified header, undefined if header doesn't exist.
    */
   public getHeader(name: string): string | undefined {
-    const header: Array<any> = this.headers[Utils.headerize(name)];
+    const header = this.headers[Utils.headerize(name)];
 
     if (header) {
       if (header[0]) {
@@ -516,8 +521,8 @@ class IncomingMessage {
       return;
     }
 
-    const header: any = this.headers[name][idx];
-    const value: string = header.raw;
+    const header = this.headers[name][idx];
+    const value = header.raw;
 
     if (header.parsed) {
       return header.parsed;
@@ -677,6 +682,12 @@ export class IncomingRequest extends IncomingMessage {
     let to: string = this.getHeader("To") || "";
 
     if (!this.toTag && code > 100) {
+      // FIXME: This is a MUST, but we are generating a random tag each response
+      // o  To header tags MUST be generated for responses in a stateless
+      // manner - in a manner that will generate the same tag for the
+      // same request consistently.  For information on tag construction
+      // see Section 19.3.
+      // https://tools.ietf.org/html/rfc3261#section-8.2.7
       to += ";tag=" + Utils.newTag();
     } else if (this.toTag && !this.s("to").hasParam("tag")) {
       to += ";tag=" + this.toTag;
@@ -845,7 +856,7 @@ export class IncomingResponse extends IncomingMessage {
       options ? options.body : undefined
     );
 
-    this.transaction.ackResponse(this, request);
+    this.transaction.ackResponse(request);
 
     return request;
   }
