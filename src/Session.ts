@@ -540,7 +540,7 @@ export abstract class Session extends EventEmitter {
   }
 
   public on(event: "dtmf", listener: (request: IncomingRequest | OutgoingRequest, dtmf: DTMF) => void): this;
-  public on(event: "progress", listener: (response: IncomingRequest, reasonPhrase?: any) => void): this;
+  public on(event: "progress", listener: (response: string, reasonPhrase?: any) => void): this;
   public on(event: "referRequested", listener: (context: ReferServerContext) => void): this;
   public on(
     event:
@@ -804,7 +804,7 @@ export abstract class Session extends EventEmitter {
    * Response retransmissions cannot be accomplished by transaction layer
    *  since it is destroyed when receiving the first 2xx answer
    */
-  protected setInvite2xxTimer(request: IncomingRequest, description: string): void {
+  protected setInvite2xxTimer(request: IncomingRequest, description: { body: string; contentType: string }): void {
     let timeout: number = Timers.T1;
     const invite2xxRetransmission = () => {
       if (this.status !== SessionStatus.STATUS_WAITING_FOR_ACK) {
@@ -1438,11 +1438,11 @@ export class InviteClientContext extends Session implements ClientContext {
   public type: TypeStrings;
   public request!: OutgoingRequest;
 
-  private anonymous: boolean;
-  private inviteWithoutSdp: boolean;
-  private isCanceled: boolean;
-  private received100: boolean;
-  private cancelReason: string | undefined;
+  protected anonymous: boolean;
+  protected inviteWithoutSdp: boolean;
+  protected isCanceled: boolean;
+  protected received100: boolean;
+  protected cancelReason: string | undefined;
 
   constructor(ua: UA, target: string | URI, options: any = {}, modifiers: any = []) {
     if (!ua.configuration.sessionDescriptionHandlerFactory) {
@@ -1579,7 +1579,7 @@ export class InviteClientContext extends Session implements ClientContext {
         this.emit("SessionDescriptionHandler-created", this.sessionDescriptionHandler);
 
         this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
-        .then((description: any) => {
+        .then((description) => {
           if (this.isCanceled || this.status === SessionStatus.STATUS_TERMINATED) {
             return;
           }
@@ -1631,7 +1631,7 @@ export class InviteClientContext extends Session implements ClientContext {
         }
         return;
       } else if (this.status === SessionStatus.STATUS_CONFIRMED) {
-        this.emit("ack", response.ack(response));
+        this.emit("ack", response.ack());
         return;
       } else if (!this.hasAnswer) {
         // invite w/o sdp is waiting for callback
@@ -2190,7 +2190,7 @@ export class ReferServerContext extends ServerContext {
   private toUri: URI;
   private toTag: string;
   private routeSet: Array<string>;
-  private remoteTarget: string;
+  private remoteTarget: URI;
   private id: string;
   private callId: string;
   private cseq: number;
