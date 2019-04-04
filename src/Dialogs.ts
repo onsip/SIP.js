@@ -35,7 +35,7 @@ export class Dialog {
   public inviteSeqnum: number;
   public localUri: URI;
   public remoteUri: URI;
-  public remoteTarget: string;
+  public remoteTarget: URI;
   public id: {
     callId: string,
     localTag: string,
