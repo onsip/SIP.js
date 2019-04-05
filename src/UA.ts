@@ -10,10 +10,11 @@ import { Grammar } from "./Grammar";
 import { Levels, Logger, LoggerFactory } from "./LoggerFactory";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
+import { ReferServerContext } from "./ReferContext";
 import { RegisterContext } from "./RegisterContext";
 import { SanityCheck } from "./SanityCheck";
 import { ServerContext } from "./ServerContext";
-import { InviteClientContext, InviteServerContext, ReferServerContext } from "./Session";
+import { InviteClientContext, InviteServerContext } from "./Session";
 import {
   SessionDescriptionHandler,
   SessionDescriptionHandlerModifiers
