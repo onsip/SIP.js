@@ -178,21 +178,21 @@ export class ReferServerContext extends ServerContext {
   public referTo!: NameAddrHeader;
   public targetSession: InviteClientContext | InviteServerContext | undefined;
 
-  private status: SessionStatus;
-  private fromTag: string;
-  private fromUri: URI;
-  private toUri: URI;
-  private toTag: string;
-  private routeSet: Array<string>;
-  private remoteTarget: URI;
-  private id: string;
-  private callId: string;
-  private cseq: number;
-  private contact: string;
-  private referredBy: string | undefined;
-  private referredSession!: InviteClientContext | InviteServerContext | undefined;
-  private replaces: string | undefined;
-  private errorListener!: (() => void);
+  protected status: SessionStatus;
+  protected fromTag: string;
+  protected fromUri: URI;
+  protected toUri: URI;
+  protected toTag: string;
+  protected routeSet: Array<string>;
+  protected remoteTarget: URI;
+  protected id: string;
+  protected callId: string;
+  protected cseq: number;
+  protected contact: string;
+  protected referredBy: string | undefined;
+  protected referredSession!: InviteClientContext | InviteServerContext | undefined;
+  protected replaces: string | undefined;
+  protected errorListener!: (() => void);
 
   constructor(ua: UA, request: IncomingRequest) {
     super(ua, request);
