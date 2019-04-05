@@ -14,16 +14,16 @@ import { Utils } from "./Utils";
  */
 export class Subscription extends ClientContext {
   public type: TypeStrings;
-  private event: string;
-  private requestedExpires: number;
-  private expires: number;
-  private id: string | undefined;
-  private state: string;
-  private contact: string;
-  private extraHeaders: Array<string>;
-  private dialog: Dialog | undefined;
-  private timers: any;
-  private errorCodes: Array<number>;
+  protected event: string;
+  protected requestedExpires: number;
+  protected expires: number;
+  protected id: string | undefined;
+  protected state: string;
+  protected contact: string;
+  protected extraHeaders: Array<string>;
+  protected dialog: Dialog | undefined;
+  protected timers: any;
+  protected errorCodes: Array<number>;
 
   constructor(ua: UA, target: string | URI, event: string, options: any = {}) {
     if (!event) {
@@ -102,7 +102,7 @@ export class Subscription extends ClientContext {
       return;
     }
 
-    this.dialog.sendRequest(this, C.SUBSCRIBE, {
+    this.sendSubscribeRequest({
       extraHeaders: this.extraHeaders,
       body: this.body
     });
@@ -168,7 +168,7 @@ export class Subscription extends ClientContext {
     this.receiveResponse = () => { /* intentionally blank */ };
 
     if (this.dialog) {
-      this.dialog.sendRequest(this, C.SUBSCRIBE, {
+      this.sendSubscribeRequest({
         extraHeaders,
         body: this.body
       });
@@ -300,7 +300,13 @@ export class Subscription extends ClientContext {
   ): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
-  private timer_fire(): void {
+  protected sendSubscribeRequest(options: any = {}): void {
+    if (this.dialog) {
+      this.dialog.sendRequest(this, C.SUBSCRIBE, options);
+    }
+  }
+
+  protected timer_fire(): void {
     if (this.state === "terminated") {
       this.terminateDialog();
       clearTimeout(this.timers.N);
@@ -314,7 +320,7 @@ export class Subscription extends ClientContext {
     }
   }
 
-  private createConfirmedDialog(message: IncomingRequest, type: "UAC" | "UAS"): boolean {
+  protected createConfirmedDialog(message: IncomingRequest, type: "UAC" | "UAS"): boolean {
     this.terminateDialog();
     const dialog: Dialog = new Dialog(this, message, type);
     if (this.request) {
@@ -331,7 +337,7 @@ export class Subscription extends ClientContext {
     }
   }
 
-  private terminateDialog(): void {
+  protected terminateDialog(): void {
     if (this.dialog) {
       delete this.ua.subscriptions[this.id || ""];
       this.dialog.terminate();
@@ -339,14 +345,14 @@ export class Subscription extends ClientContext {
     }
   }
 
-  private failed(response: IncomingResponse, cause?: string): Subscription {
+  protected failed(response: IncomingResponse, cause?: string): Subscription {
     this.close();
     this.emit("failed", response, cause);
     this.emit("rejected", response, cause);
     return this;
   }
 
-  private matchEvent(request: IncomingRequest): boolean {
+  protected matchEvent(request: IncomingRequest): boolean {
     // Check mandatory header Event
     if (!request.hasHeader("Event")) {
       this.logger.warn("missing Event header");
