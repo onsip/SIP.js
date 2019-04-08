@@ -1664,14 +1664,17 @@ export class InviteClientContext extends Session implements ClientContext {
         return;
       }
 
-      extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
-      this.earlyDialogs[id].pracked.push(response.getHeader("rseq"));
+      if (response.getHeader("rseq") > 0) {
+        extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
+        this.earlyDialogs[id].pracked.push(response.getHeader("rseq"));
 
-      this.earlyDialogs[id].sendRequest(this, C.PRACK, {
-        extraHeaders,
-        body: Utils.generateFakeSDP(response.body)
-      });
-      return;
+        this.earlyDialogs[id].sendRequest(this, C.PRACK, {
+          extraHeaders,
+          body: Utils.generateFakeSDP(response.body)
+        });
+        return;
+      }
+
     }
 
     // Proceed to cancellation if the user requested.
