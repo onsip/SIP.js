@@ -1664,7 +1664,7 @@ export class InviteClientContext extends Session implements ClientContext {
         return;
       }
 
-      if (response.getHeader("rseq") > 0) {
+      if (response.getHeader("rseq")) {
         extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
         this.earlyDialogs[id].pracked.push(response.getHeader("rseq"));
 
