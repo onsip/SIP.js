@@ -1011,7 +1011,7 @@ export class UA extends EventEmitter {
                 === SessionStatus.STATUS_TERMINATED) {
               request.reply_sl(603, undefined);
               return;
-            } else if (replacedDialog.state === DialogStatus.STATUS_CONFIRMED && replaces.earlyOnly) {
+            } else if (replacedDialog.state === DialogStatus.STATUS_CONFIRMED && replaces.early_only) {
               request.reply_sl(486, undefined);
               return;
             }
