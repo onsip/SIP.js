@@ -1,5 +1,5 @@
 window.SIPHelper = {
-  createResponse: function createResponse(request, statusCode, reasonPhrase, body) {
+  createResponse: function createResponse(request, statusCode, reasonPhrase, body, contentDisposition) {
     var response = new SIP.IncomingResponse(request.ua);
     var parsed, header, length, idx;
 
@@ -10,7 +10,10 @@ window.SIPHelper = {
     response.data = undefined;
 
     response.body = (body || 'foo').toString();
-    response.setHeader('Content-Type', 'rps');
+    response.setHeader('Content-Type', 'text/plain');
+    if (contentDisposition) {
+      response.setHeader('Content-Disposition', contentDisposition);
+    }
 
     /*
      * We aren't going to parse a bunch of strings,
@@ -23,6 +26,7 @@ window.SIPHelper = {
     response.cseq = request.cseq;
     response.fromTag = request.from.getParam('tag');
     response.toTag = 'uas-to-tag';
+    response.viaBranch = request.branch
 
     /*
      * In addition to properties, some other headers are
