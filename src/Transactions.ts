@@ -1278,6 +1278,17 @@ export class InviteServerTransaction extends ServerTransaction {
   }
 
   /**
+   * Retransmit the last 2xx response. This is a noop if not in the "accepted" state.
+   */
+  public retransmitAcceptedResponse(): void {
+    if (this.state === TransactionState.Accepted && this.lastFinalResponse) {
+      this.send(this.lastFinalResponse).catch((error: Exceptions.TransportError) => {
+        this.logTransportError(error, "Failed to send 2xx response.");
+      });
+    }
+  }
+
+  /**
    * First, the procedures in [4] are followed, which attempt to deliver the response to a backup.
    * If those should all fail, based on the definition of failure in [4], the server transaction SHOULD
    * inform the TU that a failure has occurred, and MUST remain in the current state.
