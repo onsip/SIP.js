@@ -1413,7 +1413,7 @@ export class InviteServerContext extends Session implements ServerContext {
   }
 
   // Internal Function to setup the handler consistently
-  private setupSessionDescriptionHandler(): SessionDescriptionHandler {
+  protected setupSessionDescriptionHandler(): SessionDescriptionHandler {
     if (this.sessionDescriptionHandler) {
       return this.sessionDescriptionHandler;
     }
