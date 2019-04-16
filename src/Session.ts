@@ -1707,6 +1707,12 @@ export class InviteClientContext extends Session implements ClientContext {
         this.canceled();
       } else if (statusCode && statusCode >= 200 && statusCode < 299) {
         this.acceptAndTerminate(response);
+        // FIXME: Needs review.
+        // The call to acceptAndTerminate() on the line above will send
+        // a BYE request and emit a "bye" event with that BYE request attached.
+        // Why are we then emiting a second "bye" event with the INVITE request?
+        // Furthermore, everywhere else acceptAndTerminate() is called, it is
+        // followed by a called to failed(). Why not in this case??
         this.emit("bye", this.request);
       } else if (statusCode && statusCode >= 300) {
         const cause: string = (C.REASON_PHRASE as any)[response.statusCode || 0] || C.causes.CANCELED;
