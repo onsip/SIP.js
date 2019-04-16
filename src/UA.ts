@@ -1021,6 +1021,10 @@ export class UA extends EventEmitter {
           if (replacedDialog && !(replacedDialog.owner.type === TypeStrings.Subscription)) {
             newSession.replacee = replacedDialog && (replacedDialog.owner as InviteClientContext | InviteServerContext);
           }
+          if (newSession.autoSendAnInitialProvisionalResponse) {
+            const options: any = { extraHeaders: ["Contact: " + this.contact.toString()] };
+            newSession.progress(options);
+          }
           this.emit("invite", newSession);
           break;
         case SIPConstants.BYE:
