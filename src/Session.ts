@@ -81,7 +81,7 @@ export abstract class Session extends EventEmitter {
   protected sessionDescriptionHandlerOptions: any;
   protected rel100: string;
 
-  protected earlySdp: string | undefined;
+  protected earlySdp: string | undefined; // FIXME: Needs review. Appears to be unused.
   protected hasOffer: boolean;
   protected hasAnswer: boolean;
 
