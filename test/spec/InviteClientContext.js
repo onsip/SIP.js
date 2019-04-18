@@ -205,13 +205,18 @@ describe('An INVITE sent from a UAC', function () {
    */
   describe('when receiving a 1xx response', function () {
     beforeEach(function(done) {
+      var ua = this.ua;
       var session = this.session;
-      var response = SIPHelper.createResponse(session.request, 180);
 
       spyOn(session, 'emit').and.callThrough();
       spyOn(this.ua.transport, 'send').and.callFake(function () {
         setTimeout(function () {
-          session.receiveResponse(response);
+          var response = SIPHelper.createResponse(session.request, 180);
+          if (ua.userAgentCore) {
+            ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+          } else {
+            session.receiveResponse(response);
+          }
           done();
         }, 0);
 
@@ -341,8 +346,13 @@ describe('An INVITE sent from a UAC', function () {
         function testWith(statusCode) {
           describe('(' + statusCode + ')', function () {
             beforeEach(function () {
+              var ua = this.ua;
               var response = SIPHelper.createResponse(this.session.request, statusCode);
-              this.session.receiveResponse(response);
+              if (ua.userAgentCore) {
+                ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+              } else {
+                this.session.receiveResponse(response);
+              }
             });
             rejectResponseTests();
           });
@@ -410,8 +420,13 @@ describe('An INVITE sent from a UAC', function () {
 
         describe('after receiving a 487', function () {
           beforeEach(function () {
+            var ua = this.ua;
             var response = SIPHelper.createResponse(this.session.request, 487);
-            this.session.receiveResponse(response);
+            if (ua.userAgentCore) {
+              ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+            } else {
+              this.session.receiveResponse(response);
+            }
           });
           rejectResponseTests();
         });
@@ -437,10 +452,16 @@ describe('An INVITE sent from a UAC', function () {
     describe('after it has been accepted', function () {
 
       beforeEach(function (done) {
-        var response = SIPHelper.createResponse(this.session.request, 200, 'OK', 'paper');
+        var ua = this.ua;
+        var response = SIPHelper.createResponse(this.session.request, 200, 'OK', 'paper', 'session');
         this.session.on('accepted', function () {
           setTimeout(done, 0);
-        }).receiveResponse(response);
+        })
+        if (ua.userAgentCore) {
+          ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+        } else {
+          this.session.receiveResponse(response);
+        }
       });
 
       it('cannot be canceled', function () {
