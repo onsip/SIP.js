@@ -677,7 +677,7 @@ describe("UserAgentCore", () => {
               sessionBob.delegate = sessionBobDelegate;
             }
           };
-          delegate.onAccept.and.callFake((response) => {
+          delegate.onAccept.and.callFake((response: AckableIncomingResponseWithSession) => {
             sessionAlice = response.session;
             sessionAliceDelegate = makeMockSessionDelegate();
             sessionAlice.delegate = sessionAliceDelegate;
