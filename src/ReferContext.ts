@@ -37,10 +37,10 @@ export namespace ReferServerContext {
 // tslint:disable-next-line:max-classes-per-file
 export class ReferClientContext extends ClientContext {
   public type: TypeStrings;
-  private extraHeaders: Array<string>;
-  private options: any;
-  private applicant: InviteClientContext | InviteServerContext;
-  private target: URI | string;
+  protected extraHeaders: Array<string>;
+  protected options: any;
+  protected applicant: InviteClientContext | InviteServerContext;
+  protected target: URI | string;
   private errorListener: (() => void) | undefined;
 
   constructor(
@@ -60,34 +60,7 @@ export class ReferClientContext extends ClientContext {
     this.extraHeaders = (this.options.extraHeaders || []).slice();
     this.applicant = applicant;
 
-    if (!(typeof target === "string") &&
-      (target.type === TypeStrings.InviteServerContext || target.type === TypeStrings.InviteClientContext)) {
-      // Attended Transfer (with replaces)
-      // All of these fields should be defined based on the check above
-      const dialog: Dialog | undefined = (target as any).dialog;
-      if (dialog) {
-        this.target = '"' + target.remoteIdentity.friendlyName + '" ' +
-            "<" + dialog.remoteTarget.toString() +
-            "?Replaces=" + encodeURIComponent(dialog.id.callId +
-            ";to-tag=" + dialog.id.remoteTag +
-            ";from-tag=" + dialog.id.localTag) + ">";
-      } else {
-        throw new TypeError("Invalid target due to no dialog: " + target);
-      }
-    } else {
-      // Blind Transfer
-      // Refer-To: <sip:bob@example.com>
-
-      const targetString: any = Grammar.parse(target as string, "Refer_To");
-      this.target = targetString && targetString.uri ? targetString.uri : target;
-
-      // Check target validity
-      const targetUri: URI | undefined = this.ua.normalizeTarget(this.target as string);
-      if (!targetUri) {
-        throw new TypeError("Invalid target: " + target);
-      }
-      this.target = targetUri;
-    }
+    this.target = this.initReferTo(target);
 
     if (this.ua) {
       this.extraHeaders.push("Referred-By: <" + this.ua.configuration.uri + ">");
@@ -169,6 +142,40 @@ export class ReferClientContext extends ClientContext {
       return;
     }
     request.reply(489, "Bad Event");
+  }
+
+  protected initReferTo(target: InviteClientContext | InviteServerContext | string): string | URI {
+    let stringOrURI: string | URI;
+
+    if (!(typeof target === "string") &&
+      (target.type === TypeStrings.InviteServerContext || target.type === TypeStrings.InviteClientContext)) {
+      // Attended Transfer (with replaces)
+      // All of these fields should be defined based on the check above
+      const dialog: Dialog | undefined = (target as any).dialog;
+      if (dialog) {
+        stringOrURI = '"' + target.remoteIdentity.friendlyName + '" ' +
+          "<" + dialog.remoteTarget.toString() +
+          "?Replaces=" + encodeURIComponent(dialog.id.callId +
+            ";to-tag=" + dialog.id.remoteTag +
+            ";from-tag=" + dialog.id.localTag) + ">";
+      } else {
+        throw new TypeError("Invalid target due to no dialog: " + target);
+      }
+    } else {
+      // Blind Transfer
+      // Refer-To: <sip:bob@example.com>
+
+      const targetString: any = Grammar.parse(target as string, "Refer_To");
+      stringOrURI = targetString && targetString.uri ? targetString.uri : target;
+
+      // Check target validity
+      const targetUri: URI | undefined = this.ua.normalizeTarget(this.target as string);
+      if (!targetUri) {
+        throw new TypeError("Invalid target: " + target);
+      }
+      stringOrURI = targetUri;
+    }
+    return stringOrURI;
   }
 }
 
