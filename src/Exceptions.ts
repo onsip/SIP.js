@@ -15,6 +15,26 @@ export abstract class Exception extends Error {
 
 export namespace Exceptions {
   /**
+   * Indicates the session description handler has closed.
+   * Occurs when getDescription() or setDescription() are called after close() has been called.
+   * Occurs when close() is called while getDescription() or setDescription() are in progress.
+   */
+  export class ClosedSessionDescriptionHandlerError extends Exception {
+    constructor() {
+      super("The session description handler has closed.");
+    }
+  }
+
+  /**
+   * Indicates the session terminated before the action completed.
+   */
+  export class TerminatedSessionError extends Exception {
+    constructor() {
+      super("The session has terminated.");
+    }
+  }
+
+  /**
    * Transport error.
    */
   export class TransportError extends Exception {
