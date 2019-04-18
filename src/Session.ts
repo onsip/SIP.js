@@ -39,6 +39,10 @@ import { URI } from "./URI";
 
 import { Utils } from "./Utils";
 
+import { ReferClientContext as ReferClientContextExperimental } from "./Contexts/refer-client-context";
+import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
+import { Session as SessionExperimental } from "./Core/session";
+
 export namespace Session {
   export interface DtmfOptions {
     extraHeaders?: string[];
@@ -76,6 +80,8 @@ export abstract class Session extends EventEmitter {
   public sessionDescriptionHandler: SessionDescriptionHandler | undefined;
   public startTime: Date | undefined;
   public endTime: Date | undefined;
+
+  public session: SessionExperimental | undefined;
 
   protected sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
   protected sessionDescriptionHandlerOptions: any;
@@ -228,12 +234,21 @@ export abstract class Session extends EventEmitter {
       throw new Exceptions.InvalidStateError(this.status);
     }
 
-    this.referContext = new ReferClientContext(
-      this.ua,
-      (this as unknown) as InviteClientContext | InviteServerContext,
-      target,
-      options
-    );
+    if (this.session) {
+      this.referContext = new ReferClientContextExperimental(
+        this.ua,
+        (this as unknown) as InviteClientContext | InviteServerContext,
+        target,
+        options
+      );
+    } else {
+      this.referContext = new ReferClientContext(
+        this.ua,
+        (this as unknown) as InviteClientContext | InviteServerContext,
+        target,
+        options
+      );
+    }
 
     this.emit("referRequested", this.referContext);
 
@@ -489,7 +504,11 @@ export abstract class Session extends EventEmitter {
       case C.REFER:
         if (this.status ===  SessionStatus.STATUS_CONFIRMED) {
           this.logger.log("REFER received");
-          this.referContext = new ReferServerContext(this.ua, request);
+          if (this.session) {
+            this.referContext = new ReferServerContextExperimental(this.ua, request, this.session);
+          } else {
+            this.referContext = new ReferServerContext(this.ua, request);
+          }
           if (this.listeners("referRequested").length) {
             this.emit("referRequested", this.referContext);
           } else {
@@ -965,10 +984,12 @@ export class InviteServerContext extends Session implements ServerContext {
     */
     request.toTag = Utils.newTag();
 
-    // An error on dialog creation will fire 'failed' event
-    if (!this.createDialog(request, "UAS", true)) {
-      request.reply(500, "Missing Contact header field");
-      return;
+    if (!this.ua.userAgentCore) {
+        // An error on dialog creation will fire 'failed' event
+      if (!this.createDialog(request, "UAS", true)) {
+        request.reply(500, "Missing Contact header field");
+        return;
+      }
     }
 
     this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
@@ -1710,7 +1731,8 @@ export class InviteClientContext extends Session implements ClientContext {
         // FIXME: Needs review.
         // The call to acceptAndTerminate() on the line above will send
         // a BYE request and emit a "bye" event with that BYE request attached.
-        // Why are we then emiting a second "bye" event with the INVITE request?
+        // Why are we then emitting a second "bye" event with the INVITE request?
+        // Is it because terminate() send a "bye" event with the INVITE request?
         // Furthermore, everywhere else acceptAndTerminate() is called, it is
         // followed by a called to failed(). Why not in this case??
         this.emit("bye", this.request);
