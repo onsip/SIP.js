@@ -1,3 +1,4 @@
+import { URI } from "../../URI";
 import {
   Body,
   OutgoingByeRequest,
@@ -18,8 +19,20 @@ import { SessionDelegate } from "./session-delegate";
 export interface Session {
   /** Session delegate. */
   delegate: SessionDelegate | undefined;
-  /** The session id. */
+  /** The session id. Equal to callId + localTag + remoteTag. */
   readonly id: string;
+  /** Call Id. */
+  readonly callId: string;
+  /** Local Tag. */
+  readonly localTag: string;
+  /** Local URI. */
+  readonly localURI: URI;
+  /** Remote Tag. */
+  readonly remoteTag: string;
+  /** Remote Target. */
+  readonly remoteTarget: URI;
+  /** Remote URI. */
+  readonly remoteURI: URI;
   /** Session state. */
   readonly sessionState: SessionState;
   /** Current state of the offer/answer exchange. */

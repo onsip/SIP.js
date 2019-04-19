@@ -1,4 +1,3 @@
-import { InviteDialog } from "../Core/dialogs";
 import { Grammar } from "../Grammar";
 import { ReferClientContext as ReferClientContextBase } from "../ReferContext";
 import { InviteClientContext, InviteServerContext } from "../Session";
@@ -27,22 +26,7 @@ export class ReferClientContext extends ReferClientContextBase {
   protected initReferTo(target: InviteClientContext | InviteServerContext | string): string | URI {
     let stringOrURI: string | URI;
 
-    if (target instanceof InviteClientContext || target instanceof InviteServerContext) {
-      // REFER with Replaces (Attended Transfer)
-      if (!target.session) {
-        throw new Error("Session undefined.");
-      }
-      if (!(target.session instanceof InviteDialog)) {
-        throw new Error("Session not instance of InviteDialog.");
-      }
-      const displayName = target.remoteIdentity.friendlyName;
-      const uri = target.session.remoteTarget.toString();
-      const callId = target.session.callId;
-      const remoteTag = target.session.remoteTag;
-      const localTag = target.session.localTag;
-      const replaces = encodeURIComponent(`${callId};to-tag=${remoteTag};from-tag=${localTag}`);
-      stringOrURI = `"${displayName}" <${uri}?Replaces=${replaces}>`;
-    } else {
+    if (typeof target === "string") {
       // REFER without Replaces (Blind Transfer)
       const targetString: any = Grammar.parse(target as string, "Refer_To");
       stringOrURI = targetString && targetString.uri ? targetString.uri : target;
@@ -53,6 +37,18 @@ export class ReferClientContext extends ReferClientContextBase {
         throw new TypeError("Invalid target: " + target);
       }
       stringOrURI = targetUri;
+    } else {
+      // REFER with Replaces (Attended Transfer)
+      if (!target.session) {
+        throw new Error("Session undefined.");
+      }
+      const displayName = target.remoteIdentity.friendlyName;
+      const remoteTarget = target.session.remoteTarget.toString();
+      const callId = target.session.callId;
+      const remoteTag = target.session.remoteTag;
+      const localTag = target.session.localTag;
+      const replaces = encodeURIComponent(`${callId};to-tag=${remoteTag};from-tag=${localTag}`);
+      stringOrURI = `"${displayName}" <${remoteTarget}?Replaces=${replaces}>`;
     }
 
     return stringOrURI;
