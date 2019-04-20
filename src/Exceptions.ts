@@ -15,6 +15,15 @@ export abstract class Exception extends Error {
 
 export namespace Exceptions {
   /**
+   * Indicates that the operation could not be completed given the current transaction state.
+   */
+  export class TransactionStateError extends Exception {
+    constructor(message?: string) {
+      super(message ? message : "Transaction state error.");
+    }
+  }
+
+  /**
    * Indicates the session description handler has closed.
    * Occurs when getDescription() or setDescription() are called after close() has been called.
    * Occurs when close() is called while getDescription() or setDescription() are in progress.
@@ -40,6 +49,15 @@ export namespace Exceptions {
   export class TransportError extends Exception {
     constructor(message?: string) {
       super(message ? message : "Unspecified transport error.");
+    }
+  }
+
+  /**
+   * Unsupported session description content type.
+   */
+  export class UnsupportedSessionDescriptionContentTypeError extends Exception {
+    constructor(message?: string) {
+      super(message ? message : "Unsupported session description content type.");
     }
   }
 }

@@ -3,19 +3,21 @@ import {
   fromBodyLegacy,
   fromBodyObj,
   getBody,
-  IncomingAckRequest,
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingResponse,
   OutgoingRequest,
   OutgoingRequestDelegate,
-  RequestOptions
+  OutgoingResponse,
+  OutgoingResponseWithSession,
+  RequestOptions,
+  toBodyObj
 } from "../Core/messages";
 import { SessionState, SignalingState } from "../Core/session";
 
 import { C } from "../Constants";
 import { SessionStatus } from "../Enums";
-import { Exceptions } from "../Exceptions";
+import { Exception, Exceptions } from "../Exceptions";
 import { InviteServerContext as InviteServerContextBase } from "../Session";
 import {
   SessionDescriptionHandler,
@@ -34,6 +36,19 @@ type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
 export class InviteServerContext extends InviteServerContextBase {
+
+  /**
+   * FIXME: TODO:
+   * Used to squelch throwing of errors due to async race condition.
+   * We have an internal race between calling `accept()` and handling
+   * an incoming CANCEL request. As there is no good way currently to
+   * delegate the handling of this async errors to the caller of
+   * `accept()`, we are squelching the throwing ALL errors when
+   * they occur after receiving a CANCEL to catch the ONE we know
+   * is a "normal" exceptional condition. While this is a completely
+   * reasonable appraoch, the decision should be left up to the library user.
+   */
+  private _canceled = false;
 
   private waitingForPrackPromise: Promise<void> | undefined;
   private waitingForPrackResolve: ResolveFunction | undefined;
@@ -138,88 +153,30 @@ export class InviteServerContext extends InviteServerContextBase {
    * Accept the incoming INVITE request to start a Session.
    * Replies to the INVITE request with a 200 Ok response.
    * @param options Options bucket.
-   * @throws {Exceptions.SessionDescriptionHandlerError} On failure to get/set session description.
-   * @throws {Exceptions.TerminatedSessionError} The session terminated before being accepted (i.e. cancel arrived).
    */
   public accept(options: InviteServerContextBase.Options = {}): this {
-    // FIXME: Ported - callback for in dialog INFO requests.
-    // Turns out accept() can be called more than once if we are waiting
-    // for a PRACK in which case "options" get completely tossed away.
-    // So this is broken in that case (and potentially other uses of options).
-    // Tempted to just try to fix it now, but leaving it broken for the moment.
-    this.onInfo = options.onInfo;
-
-    // Helper function to send the 2xx response.
-    const reply = (body?: Body) => {
-      const statusCode = 200;
-      const { message, session } = this.incomingInviteRequest.accept({ statusCode, body });
-      session.delegate = {
-        onAck: (ackRequest): void => this.receiveRequest(ackRequest.message),
-        onAckTimeout: (): void => this.onAckTimeout(),
-        onBye: (byeRequest): void => this.receiveRequest(byeRequest.message),
-        onInfo: (infoRequest): void => this.receiveRequest(infoRequest.message),
-        onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest.message),
-        onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest.message),
-        onPrack: (prackRequest): void => this.receiveRequest(prackRequest.message),
-        onRefer: (referRequest): void => this.receiveRequest(referRequest.message)
-      };
-      this.session = session;
-      this.status = SessionStatus.STATUS_WAITING_FOR_ACK; // FIXME: This assumes correct state after async call.
-      this.accepted(message, Utils.getReasonPhrase(200));
-    };
-
-    // The UAS MAY send a final response to the initial request before
-    // having received PRACKs for all unacknowledged reliable provisional
-    // responses, unless the final response is 2xx and any of the
-    // unacknowledged reliable provisional responses contained a session
-    // description.  In that case, it MUST NOT send a final response until
-    // those provisional responses are acknowledged.  If the UAS does send a
-    // final response when reliable responses are still unacknowledged, it
-    // SHOULD NOT continue to retransmit the unacknowledged reliable
-    // provisional responses, but it MUST be prepared to process PRACK
-    // requests for those outstanding responses.  A UAS MUST NOT send new
-    // reliable provisional responses (as opposed to retransmissions of
-    // unacknowledged ones) after sending a final response to a request.
-    // https://tools.ietf.org/html/rfc3262#section-3
-    if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK) {
-      this.status = SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK;
-      this.waitForArrivalOfPrack()
-        .then(() => {
-          this.status = SessionStatus.STATUS_ANSWERED;
-          clearTimeout(this.timers.userNoAnswerTimer); // Ported
-          this.generateResponseOfferAnswer(options)
-            .then(reply)
-            .catch((error: Error) => {
-              // FIXME: TODO: Nothing to be done with exceptions until the library interface is modified.
-              // Hopefully this method will soon return a Promise instead of this.
-              throw error; // For now, throw uncatchable exceptions. :(
-            });
-        })
-        .catch((error: Error) => {
-          if (error instanceof Exceptions.TerminatedSessionError) {
-            // PRACK never arrived, so we timed out waiting for it.
-            this.logger.warn("Incoming session terminated while waiting for PRACK during accept.");
-          }
+    this._accept(options)
+      .then(({ message, session }) => {
+        session.delegate = {
+          onAck: (ackRequest): void => this.receiveRequest(ackRequest.message),
+          onAckTimeout: (): void => this.onAckTimeout(),
+          onBye: (byeRequest): void => this.receiveRequest(byeRequest.message),
+          onInfo: (infoRequest): void => this.receiveRequest(infoRequest.message),
+          onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest.message),
+          onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest.message),
+          onPrack: (prackRequest): void => this.receiveRequest(prackRequest.message),
+          onRefer: (referRequest): void => this.receiveRequest(referRequest.message)
+        };
+        this.session = session;
+        this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
+        this.accepted(message, Utils.getReasonPhrase(200));
+      })
+      .catch((error) => {
+        this.onContextError(error);
+        // FIXME: Assuming error due to async race on CANCEL and eating error.
+        if (!this._canceled) {
           throw error;
-        });
-      return this;
-    }
-
-    // Ported
-    if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-      this.status = SessionStatus.STATUS_ANSWERED;
-    } else {
-      throw new Exceptions.InvalidStateError(this.status);
-    }
-
-    this.status = SessionStatus.STATUS_ANSWERED;
-    clearTimeout(this.timers.userNoAnswerTimer); // Ported
-    this.generateResponseOfferAnswer(options)
-      .then(reply)
-      .catch((error: Error) => {
-        // FIXME: TODO: Nothing to be done with exceptions until the library interface is modified.
-        // Hopefully this method will soon return a Promise instead of this.
-        throw error; // For now, throw uncatchable exceptions. :(
+        }
       });
     return this;
   }
@@ -228,12 +185,10 @@ export class InviteServerContext extends InviteServerContextBase {
    * Report progress to the the caller.
    * Replies to the INVITE request with a 1xx provisional response.
    * @param options Options bucket.
-   * @throws {Exceptions.SessionDescriptionHandlerError} On failure to get/set session description.
-   * @throws {Exceptions.TerminatedSessionError} The session terminated before being accepted (i.e. cancel arrived).
    */
   public progress(options: InviteServerContextBase.Options = {}): this {
     // Ported
-    let statusCode = options.statusCode || 180;
+    const statusCode = options.statusCode || 180;
     if (statusCode < 100 || statusCode > 199) {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
@@ -252,27 +207,6 @@ export class InviteServerContext extends InviteServerContextBase {
       this.logger.warn("Unexpected call for progress while answered (waiting for prack), ignoring");
       return this;
     }
-    // Ported
-    if (options.statusCode === 100) {
-      this.incomingInviteRequest.trying();
-      return this;
-    }
-    // Ported
-    const reasonPhrase = options.reasonPhrase;
-    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
-
-    // Standard progress reply.
-    if (
-      !(this.rel100 === C.supported.REQUIRED) &&
-      !(this.rel100 === C.supported.SUPPORTED && options.rel100) &&
-      !(this.rel100 === C.supported.SUPPORTED && this.ua.configuration.rel100 === C.supported.REQUIRED)
-    ) {
-      const body = options.body ? fromBodyLegacy(options.body) : undefined;
-      const response = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
-      this.emit("progress", response.message, reasonPhrase);
-      return this;
-    }
-
     // After the first reliable provisional response for a request has been
     // acknowledged, the UAS MAY send additional reliable provisional
     // responses.  The UAS MUST NOT send a second reliable provisional
@@ -289,70 +223,45 @@ export class InviteServerContext extends InviteServerContextBase {
       return this;
     }
 
-    // Helper function to send a reliable 1xx response.
-    const reply = (body?: Body) => {
-      statusCode = options.statusCode || 183;
-      extraHeaders.push("Require: 100rel");
-      extraHeaders.push("RSeq: " + Math.floor(Math.random() * 10000));
-
-      // Ported - Retransmit until we get a response or we time out (see prackTimer below).
-      const rel1xxRetransmission = () => {
-        this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
-        rel1xxTimer = setTimeout(rel1xxRetransmission, timeout *= 2);
-      };
-      let timeout = Timers.T1;
-      let rel1xxTimer = setTimeout(rel1xxRetransmission, timeout);
-
-      // Ported - Timeout and reject INVITE if no response.
-      const prackTimer = setTimeout(() => {
-        if (this.status !== SessionStatus.STATUS_WAITING_FOR_PRACK) {
-          return;
+    // Ported
+    if (options.statusCode === 100) {
+      try {
+        this.incomingInviteRequest.trying();
+      } catch (error) {
+        this.onContextError(error);
+        // FIXME: Assuming error due to async race on CANCEL and eating error.
+        if (!this._canceled) {
+          throw error;
         }
-        this.logger.warn("No PRACK received, rejecting INVITE.");
-        clearTimeout(this.timers.rel1xxTimer);
-        this.incomingInviteRequest.reject({ statusCode: 504 });
-        this.terminated(undefined, C.causes.NO_PRACK);
-      }, Timers.T1 * 64);
+      }
+      return this;
+    }
 
-      const { message, session } = this.incomingInviteRequest.progress({
-        statusCode,
-        reasonPhrase,
-        extraHeaders,
-        body
-      });
-      session.delegate = {
-        onPrack: (prackRequest): void => {
-          this.handlePrackOfferAnswer(prackRequest, options)
-            .then((prackResponseBody) => {
-              prackRequest.accept({ statusCode: 200, body: prackResponseBody });
-              clearTimeout(rel1xxTimer);
-              clearTimeout(prackTimer);
-              if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK) {
-                this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
-              }
-              this.prackArrived();
-            })
-            .catch((error: Error) => {
-              // FIXME: TODO: Nothing to be done with exceptions until the library interface is modified.
-              // Hopefully this method will soon return a Promise instead of this.
-              throw error; // For now, throw uncatchable exceptions. :(
-            });
+    // Standard provisional response.
+    if (
+      !(this.rel100 === C.supported.REQUIRED) &&
+      !(this.rel100 === C.supported.SUPPORTED && options.rel100) &&
+      !(this.rel100 === C.supported.SUPPORTED && this.ua.configuration.rel100 === C.supported.REQUIRED)
+    ) {
+      this._progress(options)
+        .catch((error) => {
+          this.onContextError(error);
+          // FIXME: Assuming error due to async race on CANCEL and eating error.
+          if (!this._canceled) {
+            throw error;
+          }
+        });
+      return this;
+    }
+
+    // Reliable provisional response.
+    this._reliableProgressWaitForPrack(options)
+      .catch((error) => {
+        this.onContextError(error);
+        // FIXME: Assuming error due to async race on CANCEL and eating error.
+        if (!this._canceled) {
+          throw error;
         }
-      };
-      this.session = session;
-      this.emit("progress", message, reasonPhrase);
-    };
-
-    // Ported - set status.
-    this.status = SessionStatus.STATUS_WAITING_FOR_PRACK;
-
-    // Get an offer/answer and send a reply.
-    this.generateResponseOfferAnswer(options)
-      .then(reply)
-      .catch((error: Error) => {
-        // FIXME: TODO: Nothing to be done with exceptions until the library interface is modified.
-        // Hopefully this method will soon return a Promise instead of this.
-        throw error; // For now, throw uncatchable exceptions. :(
       });
 
     return this;
@@ -384,19 +293,18 @@ export class InviteServerContext extends InviteServerContextBase {
       return this;
     }
 
-    // We have a confirmed dialog and we're not waiting an ACK.
+    // We have a confirmed dialog and we're not waiting for an ACK.
     if (this.session.sessionState === SessionState.Confirmed) {
       this.bye(options);
       return this;
     }
 
-    // We have a confirmed dialog and we're not waiting an ACK.
+    // We have a confirmed dialog and we're waiting for an ACK.
     if (this.session.sessionState === SessionState.AckWait) {
       this.session.delegate = {
-        // When it shows up, say BYE.
-        onAck: (request: IncomingAckRequest): void => {
+        // When ACK shows up, say BYE.
+        onAck: (): void => {
           this.bye();
-
         },
         // Or the server transaction times out before the ACK arrives.
         onAckTimeout: (): void => {
@@ -499,12 +407,215 @@ export class InviteServerContext extends InviteServerContextBase {
   }
 
   /**
+   * Called when session canceled.
+   */
+  protected canceled(): this {
+    this._canceled = true;
+    return super.canceled();
+  }
+
+  /**
    * Called when session terminated.
    * Using it here just for the PRACK timeout.
    */
   protected terminated(message?: IncomingResponseMessage | IncomingRequestMessage, cause?: string): this {
     this.prackNeverArrived();
     return super.terminated(message, cause);
+  }
+
+  /**
+   * A version of `accept` which resolves a session when the 200 Ok response is sent.
+   * @param options Options bucket.
+   * @throws {ClosedSessionDescriptionHandlerError} The session description handler closed before method completed.
+   * @throws {TransactionStateError} The transaction state does not allow for `accept()` to be called.
+   *                                 Note that the transaction state can change while this call is in progress.
+   */
+  private _accept(options: InviteServerContextBase.Options = {}): Promise<OutgoingResponseWithSession> {
+    // FIXME: Ported - callback for in dialog INFO requests.
+    // Turns out accept() can be called more than once if we are waiting
+    // for a PRACK in which case "options" get completely tossed away.
+    // So this is broken in that case (and potentially other uses of options).
+    // Tempted to just try to fix it now, but leaving it broken for the moment.
+    this.onInfo = options.onInfo;
+
+    // The UAS MAY send a final response to the initial request before
+    // having received PRACKs for all unacknowledged reliable provisional
+    // responses, unless the final response is 2xx and any of the
+    // unacknowledged reliable provisional responses contained a session
+    // description.  In that case, it MUST NOT send a final response until
+    // those provisional responses are acknowledged.  If the UAS does send a
+    // final response when reliable responses are still unacknowledged, it
+    // SHOULD NOT continue to retransmit the unacknowledged reliable
+    // provisional responses, but it MUST be prepared to process PRACK
+    // requests for those outstanding responses.  A UAS MUST NOT send new
+    // reliable provisional responses (as opposed to retransmissions of
+    // unacknowledged ones) after sending a final response to a request.
+    // https://tools.ietf.org/html/rfc3262#section-3
+    if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK) {
+      this.status = SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK;
+      return this.waitForArrivalOfPrack()
+        .then(() => {
+          this.status = SessionStatus.STATUS_ANSWERED;
+          clearTimeout(this.timers.userNoAnswerTimer); // Ported
+        })
+        .then(() => this.generateResponseOfferAnswer(options))
+        .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
+    }
+
+    // Ported
+    if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
+      this.status = SessionStatus.STATUS_ANSWERED;
+    } else {
+      return Promise.reject(new Exceptions.InvalidStateError(this.status));
+    }
+
+    this.status = SessionStatus.STATUS_ANSWERED;
+    clearTimeout(this.timers.userNoAnswerTimer); // Ported
+    return this.generateResponseOfferAnswer(options)
+      .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
+  }
+
+  /**
+   * A version of `progress` which resolves when the provisional response is sent.
+   * @param options Options bucket.
+   * @throws {ClosedSessionDescriptionHandlerError} The session description handler closed before method completed.
+   * @throws {TransactionStateError} The transaction state does not allow for `progress()` to be called.
+   *                                 Note that the transaction state can change while this call is in progress.
+   */
+  private _progress(options: InviteServerContextBase.Options = {}): Promise<OutgoingResponseWithSession> {
+    // Ported
+    const statusCode = options.statusCode || 180;
+    const reasonPhrase = options.reasonPhrase;
+    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
+    const body = options.body ? fromBodyLegacy(options.body) : undefined;
+    try {
+      const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+      this.emit("progress", progressResponse.message, reasonPhrase); // Ported
+      this.session = progressResponse.session;
+      return Promise.resolve(progressResponse);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * A version of `progress` which resolves when the reliable provisional response is sent.
+   * @param options Options bucket.
+   * @throws {ClosedSessionDescriptionHandlerError} The session description handler closed before method completed.
+   * @throws {TransactionStateError} The transaction state does not allow for `progress()` to be called.
+   *                                 Note that the transaction state can change while this call is in progress.
+   */
+  private _reliableProgress(options: InviteServerContextBase.Options = {}): Promise<OutgoingResponseWithSession> {
+    const statusCode = options.statusCode || 183;
+    const reasonPhrase = options.reasonPhrase;
+    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
+    extraHeaders.push("Require: 100rel");
+    extraHeaders.push("RSeq: " + Math.floor(Math.random() * 10000));
+
+    // Get an offer/answer and send a reply.
+    return this.generateResponseOfferAnswer(options)
+      .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
+      .then((progressResponse) => {
+        this.emit("progress", progressResponse.message, reasonPhrase); // Ported
+        this.session = progressResponse.session;
+        return progressResponse;
+      });
+  }
+
+  /**
+   * A version of `progress` which resolves when the reliable provisional response is acknowledged.
+   * @param options Options bucket.
+   * @throws {ClosedSessionDescriptionHandlerError} The session description handler closed before method completed.
+   * @throws {TransactionStateError} The transaction state does not allow for `progress()` to be called.
+   *                                 Note that the transaction state can change while this call is in progress.
+   */
+  private _reliableProgressWaitForPrack(options: InviteServerContextBase.Options = {}): Promise<{
+    prackRequest: IncomingPrackRequest,
+    prackResponse: OutgoingResponse,
+    progressResponse: OutgoingResponseWithSession,
+  }> {
+    const statusCode = options.statusCode || 183;
+    const reasonPhrase = options.reasonPhrase;
+    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
+    extraHeaders.push("Require: 100rel");
+    extraHeaders.push("RSeq: " + Math.floor(Math.random() * 10000));
+    let body: Body | undefined;
+
+    // Ported - set status.
+    this.status = SessionStatus.STATUS_WAITING_FOR_PRACK;
+
+    return new Promise((resolve, reject) => {
+      let waitingForPrack = true;
+      return this.generateResponseOfferAnswer(options)
+        .then((offerAnswer) => {
+          body = offerAnswer;
+          return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+        })
+        .then((progressResponse) => {
+          this.emit("progress", progressResponse.message, reasonPhrase); // Ported
+          this.session = progressResponse.session;
+
+          let prackRequest: IncomingPrackRequest;
+          let prackResponse: OutgoingResponse;
+          progressResponse.session.delegate = {
+            onPrack: (request): void => {
+              prackRequest = request;
+              clearTimeout(prackWaitTimeoutTimer);
+              clearTimeout(rel1xxRetransmissionTimer);
+              if (!waitingForPrack) {
+                return;
+              }
+              waitingForPrack = false;
+              this.handlePrackOfferAnswer(prackRequest, options)
+                .then((prackResponseBody) => {
+                  try {
+                    prackResponse = prackRequest.accept({ statusCode: 200, body: prackResponseBody });
+                    // Ported - set status.
+                    if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK) {
+                      this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
+                    }
+                    this.prackArrived();
+                    resolve({ prackRequest, prackResponse, progressResponse });
+                  } catch (error) {
+                    reject(error);
+                  }
+                });
+            }
+          };
+
+          // https://tools.ietf.org/html/rfc3262#section-3
+          const prackWaitTimeout = () => {
+            if (!waitingForPrack) {
+              return;
+            }
+            waitingForPrack = false;
+            this.logger.warn("No PRACK received, rejecting INVITE.");
+            clearTimeout(rel1xxRetransmissionTimer);
+            try {
+              this.incomingInviteRequest.reject({ statusCode: 504 });
+              this.terminated(undefined, C.causes.NO_PRACK);
+              reject(new Exceptions.TerminatedSessionError());
+            } catch (error) {
+              reject(error);
+            }
+          };
+          const prackWaitTimeoutTimer = setTimeout(prackWaitTimeout, Timers.T1 * 64);
+
+          // https://tools.ietf.org/html/rfc3262#section-3
+          const rel1xxRetransmission = () => {
+            try {
+              this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+            } catch (error) {
+              waitingForPrack = false;
+              reject(error);
+              return;
+            }
+            rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, timeout *= 2);
+          };
+          let timeout = Timers.T1;
+          let rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, timeout);
+        });
+    });
   }
 
   /**
@@ -519,6 +630,42 @@ export class InviteServerContext extends InviteServerContextBase {
       }
       this.session.bye();
       this.terminated(undefined, C.causes.NO_ACK);
+    }
+  }
+
+  /**
+   * FIXME: TODO: The current library interface presents async methods without a
+   * proper async error handling mechanism. Arguably a promise based interface
+   * would be an improvement over the pattern of returning `this`. The approach has
+   * been generally along the lines of log a error and terminate.
+   */
+   private onContextError(error: Error): void {
+    if (error instanceof Exception) { // There might be interest in catching these Exceptions.
+      if (error instanceof Exceptions.SessionDescriptionHandlerError) {
+        this.logger.error(error.message);
+        if (error.error) {
+          this.logger.error(error.error);
+        }
+      } else if (error instanceof Exception) {
+        this.logger.error(error.message);
+      }
+    } else if (error instanceof Exceptions.TerminatedSessionError) {
+      // PRACK never arrived, so we timed out waiting for it.
+      this.logger.warn("Incoming session terminated while waiting for PRACK.");
+    } else if (error instanceof Error) { // Other Errors hould go uncaught.
+      this.logger.error(error.message);
+    } else {
+      // We don't actually know what a session description handler implementation might throw
+      // our way, so as a last resort, just assume we are getting an "any" and log it.
+      this.logger.error("An error occurred in the session description handler.");
+      this.logger.error(error as any);
+    }
+    try {
+      this.incomingInviteRequest.reject({ statusCode: 480 }); // "Temporarily Unavailable"
+      this.failed(this.incomingInviteRequest.message, error.message);
+      this.terminated(this.incomingInviteRequest.message, error.message);
+    } catch (error) {
+      return;
     }
   }
 
@@ -562,8 +709,7 @@ export class InviteServerContext extends InviteServerContextBase {
     const sdh = this.getSessionDescriptionHandler();
     return sdh
       .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-      .then((bodyObj) => fromBodyObj(bodyObj))
-      .catch((error) => { throw this.handleSessionDescriptionHandlerFailure(error); });
+      .then((bodyObj) => fromBodyObj(bodyObj));
   }
 
   private setAnswer(answer: Body, options: {
@@ -573,11 +719,10 @@ export class InviteServerContext extends InviteServerContextBase {
     this.hasAnswer = true;
     const sdh = this.getSessionDescriptionHandler();
     if (!sdh.hasDescription(answer.contentType)) {
-      // TODO: failure
+      return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
     }
     return sdh
-      .setDescription(answer.content, options.sessionDescriptionHandlerOptions, options.modifiers)
-      .catch((error) => { throw this.handleSessionDescriptionHandlerFailure(error); });
+      .setDescription(answer.content, options.sessionDescriptionHandlerOptions, options.modifiers);
   }
 
   private setOfferAndGetAnswer(offer: Body, options: {
@@ -588,13 +733,12 @@ export class InviteServerContext extends InviteServerContextBase {
     this.hasAnswer = true;
     const sdh = this.getSessionDescriptionHandler();
     if (!sdh.hasDescription(offer.contentType)) {
-      // TODO: failure
+      return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
     }
     return sdh
       .setDescription(offer.content, options.sessionDescriptionHandlerOptions, options.modifiers)
       .then(() => sdh.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers))
-      .then((bodyObj) => fromBodyObj(bodyObj))
-      .catch((error) => { throw this.handleSessionDescriptionHandlerFailure(error); });
+      .then((bodyObj) => fromBodyObj(bodyObj));
   }
 
   private getSessionDescriptionHandler(): SessionDescriptionHandler {
@@ -604,42 +748,5 @@ export class InviteServerContext extends InviteServerContextBase {
     this.emit("SessionDescriptionHandler-created", this.sessionDescriptionHandler);
     // Return.
     return sdh;
-  }
-
-  private handleSessionDescriptionHandlerFailure(error: Error): Error {
-    if (error instanceof Exceptions.ClosedSessionDescriptionHandlerError) {
-      if (this.status === SessionStatus.STATUS_TERMINATED) {
-        this.logger.warn("Incoming session terminated while getting description.");
-        error = new Exceptions.TerminatedSessionError();
-        return error;
-      }
-    }
-
-    // FIXME: Exceptions need review.
-    if (error instanceof Exceptions.SessionDescriptionHandlerError) {
-      this.logger.error(error.message);
-      if (error.error) {
-        this.logger.error(error.error);
-      }
-    } else {
-      // We don't actually know what a session description handler implementation might throw
-      // our way, so as a last resort, just assume we are getting an "any" and log it.
-      this.logger.error("An error occurred in the session description handler.");
-      this.logger.error(error as any);
-    }
-
-    // FIXME: It's not clear what state we are going to be in after the async calls,
-    // so this needs to be done as part of a proper state transition machine.
-    // As we could very well be terminated at this point, for now we are checking for
-    // at least that cass. Otherwise, while the underlying transaction will
-    // "do the right thing" dealing with this reply (perhaps throwing an error),
-    // we should be able to figure out "what the right thing to do" is, so...
-    if (this.status !== SessionStatus.STATUS_TERMINATED) {
-      // FIXME: Need a proper state machine. Session should state transition and emit events accordingly.
-      this.incomingInviteRequest.reject({ statusCode: 480 }); // "Temporarily Unavailable"
-      this.failed(undefined, C.causes.WEBRTC_ERROR);
-      this.terminated(undefined, C.causes.WEBRTC_ERROR);
-    }
-    return error;
   }
 }

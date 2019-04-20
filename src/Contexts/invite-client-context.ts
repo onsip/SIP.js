@@ -136,9 +136,6 @@ export class InviteClientContext extends InviteClientContextBase {
    * @param options Options bucket. FIXME: This options bucket needs to be typed.
    */
   public cancel(options: any = {}): this {
-    if (!this.outgoingInviteRequest) {
-      throw new Error("Outgoing invite request undefined. Did you call cancel() without calling invite() first?");
-    }
     return super.cancel(options);
   }
 

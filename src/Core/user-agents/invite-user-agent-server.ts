@@ -1,3 +1,4 @@
+import { Exceptions } from "../../Exceptions";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { InviteServerTransaction } from "../../Transactions";
 import { URI } from "../../URI";
@@ -52,6 +53,12 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * @param options Accept options bucket.
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponseWithSession {
+    if (!this.acceptable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not acceptable in state ${this.transaction.state}.`
+      );
+    }
+
     // This response establishes a dialog...
     // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
     if (!this.confirmedDialog) {
@@ -167,6 +174,12 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * @param options Progress options bucket.
    */
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponseWithSession {
+    if (!this.progressable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not progressable in state ${this.transaction.state}.`
+      );
+    }
+
     // This response establishes a dialog...
     // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
     if (!this.earlyDialog) {

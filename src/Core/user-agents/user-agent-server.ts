@@ -1,6 +1,13 @@
+import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { ServerTransaction, ServerTransactionUser, TransactionState } from "../../Transactions";
+import {
+  InviteServerTransaction,
+  NonInviteServerTransaction,
+  ServerTransaction,
+  ServerTransactionUser,
+  TransactionState
+} from "../../Transactions";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import { Utils } from "../../Utils";
@@ -65,6 +72,11 @@ export class UserAgentServer implements IncomingRequest {
   }
 
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponse {
+    if (!this.acceptable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not acceptable in state ${this.transaction.state}.`
+      );
+    }
     const statusCode = options.statusCode;
     if (statusCode < 200 || statusCode > 299) {
       throw new TypeError(`Invalid statusCode: ${statusCode}`);
@@ -74,6 +86,11 @@ export class UserAgentServer implements IncomingRequest {
   }
 
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponse {
+    if (!this.progressable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not progressable in state ${this.transaction.state}.`
+      );
+    }
     const statusCode = options.statusCode;
     if (statusCode < 101 || statusCode > 199) {
       throw new TypeError(`Invalid statusCode: ${statusCode}`);
@@ -83,6 +100,11 @@ export class UserAgentServer implements IncomingRequest {
   }
 
   public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
+    if (!this.redirectable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not redirectable in state ${this.transaction.state}.`
+      );
+    }
     const statusCode = options.statusCode;
     if (statusCode < 300 || statusCode > 399) {
       throw new TypeError(`Invalid statusCode: ${statusCode}`);
@@ -95,6 +117,11 @@ export class UserAgentServer implements IncomingRequest {
   }
 
   public reject(options: ResponseOptions = { statusCode: 480 }): OutgoingResponse {
+    if (!this.rejectable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not rejectable in state ${this.transaction.state}.`
+      );
+    }
     const statusCode = options.statusCode;
     if (statusCode < 400 || statusCode > 699) {
       throw new TypeError(`Invalid statusCode: ${statusCode}`);
@@ -104,6 +131,11 @@ export class UserAgentServer implements IncomingRequest {
   }
 
   public trying(options?: ResponseOptions): OutgoingResponse {
+    if (!this.tryingable) {
+      throw new Exceptions.TransactionStateError(
+        `${this.message.method} not tryingable in state ${this.transaction.state}.`
+      );
+    }
     const response = this.reply({ statusCode: 100 });
     return response;
   }
@@ -135,6 +167,68 @@ export class UserAgentServer implements IncomingRequest {
     if (this.delegate && this.delegate.onCancel) {
       this.delegate.onCancel(message);
     }
+  }
+
+  protected get acceptable(): boolean {
+    if (this.transaction instanceof InviteServerTransaction) {
+      return (
+        this.transaction.state === TransactionState.Proceeding ||
+        this.transaction.state === TransactionState.Accepted
+      );
+    }
+    if (this.transaction instanceof NonInviteServerTransaction) {
+      return (
+        this.transaction.state === TransactionState.Trying ||
+        this.transaction.state === TransactionState.Proceeding
+      );
+    }
+    throw new Error("Unknown transaction type.");
+  }
+
+  protected get progressable(): boolean {
+    if (this.transaction instanceof InviteServerTransaction) {
+      return this.transaction.state === TransactionState.Proceeding;
+    }
+    if (this.transaction instanceof NonInviteServerTransaction) {
+      return false; // https://tools.ietf.org/html/rfc4320#section-4.1
+    }
+    throw new Error("Unknown transaction type.");
+  }
+
+  protected get redirectable(): boolean {
+    if (this.transaction instanceof InviteServerTransaction) {
+      return this.transaction.state === TransactionState.Proceeding;
+    }
+    if (this.transaction instanceof NonInviteServerTransaction) {
+      return (
+        this.transaction.state === TransactionState.Trying ||
+        this.transaction.state === TransactionState.Proceeding
+      );
+    }
+    throw new Error("Unknown transaction type.");
+  }
+
+  protected get rejectable(): boolean {
+    if (this.transaction instanceof InviteServerTransaction) {
+      return this.transaction.state === TransactionState.Proceeding;
+    }
+    if (this.transaction instanceof NonInviteServerTransaction) {
+      return (
+        this.transaction.state === TransactionState.Trying ||
+        this.transaction.state === TransactionState.Proceeding
+      );
+    }
+    throw new Error("Unknown transaction type.");
+  }
+
+  protected get tryingable(): boolean {
+    if (this.transaction instanceof InviteServerTransaction) {
+      return this.transaction.state === TransactionState.Proceeding;
+    }
+    if (this.transaction instanceof NonInviteServerTransaction) {
+      return this.transaction.state === TransactionState.Trying;
+    }
+    throw new Error("Unknown transaction type.");
   }
 
   /**

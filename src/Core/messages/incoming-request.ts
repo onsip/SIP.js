@@ -22,6 +22,7 @@ export interface IncomingRequest {
 
   /**
    * Send a 1xx provisional response to this request. Defaults to 180. Excludes 100.
+   * Note that per RFC 4320, this method may only be used to respond to INVITE requests.
    * @param options Response options bucket.
    */
   progress(options?: ResponseOptions): OutgoingResponse;
