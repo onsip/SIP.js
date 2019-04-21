@@ -54,14 +54,6 @@ export type OutgoingResponseBody = Body;
 export class InviteDialog extends Dialog implements Session {
   public delegate: SessionDelegate | undefined;
 
-  /**
-   * FIXME: This is a hook to callback the InviteUserAgentServer and
-   * let it know when the in dialog ACK for a 2xx response arrives so
-   * it can stop retransmitting the 2xx response. Would like to just
-   * pass the UAC/UAS into the constructor (instead of their transactions),
-   * but that creates circular dependency.
-   */
-  public ackReceivedCallback: (() => void) | undefined;
   public reinviteUserAgentClient: ReInviteUserAgentClient | undefined;
   public reinviteUserAgentServer: ReInviteUserAgentServer | undefined;
 
@@ -439,9 +431,6 @@ export class InviteDialog extends Dialog implements Session {
         }
       }
       this.signalingStateTransition(message);
-      if (this.ackReceivedCallback) {
-        this.ackReceivedCallback();
-      }
       if (this.delegate && this.delegate.onAck) {
         this.delegate.onAck({ message });
       }
