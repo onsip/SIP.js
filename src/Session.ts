@@ -213,7 +213,9 @@ export abstract class Session extends EventEmitter {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
 
-    options.receiveResponse = () => { /* empty block */ };
+    options.receiveResponse = (response) => {
+      this.accepted(response);
+    };
 
     return this.sendRequest(C.BYE, options).terminated();
   }
