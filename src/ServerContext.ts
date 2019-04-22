@@ -1,17 +1,17 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { TypeStrings } from "./Enums";
-import { Grammar } from "./Grammar";
-import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
-import { IncomingRequest } from "./SIPMessage";
 import {
   InviteServerTransaction,
   NonInviteServerTransaction,
   ServerTransactionUser,
   TransactionState
-} from "./Transactions";
+} from "./Core/transactions";
+import { TypeStrings } from "./Enums";
+import { Grammar } from "./Grammar";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
+import { IncomingRequest } from "./SIPMessage";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 

@@ -1,5 +1,4 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { InviteServerTransaction } from "../../Transactions";
 import { InviteDialog } from "../dialogs";
 import {
   IncomingInviteRequest,
@@ -7,6 +6,7 @@ import {
   OutgoingResponseWithSession,
   ResponseOptions
 } from "../messages";
+import { InviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
 /**

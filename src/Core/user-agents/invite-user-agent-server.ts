@@ -1,6 +1,5 @@
 import { Exceptions } from "../../Exceptions";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { InviteServerTransaction } from "../../Transactions";
 import { URI } from "../../URI";
 import { Dialog, InviteDialog } from "../dialogs";
 import {
@@ -11,6 +10,7 @@ import {
   ResponseOptions
 } from "../messages";
 import { SignalingState } from "../session";
+import { InviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 

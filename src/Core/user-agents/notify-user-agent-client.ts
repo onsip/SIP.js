@@ -1,7 +1,7 @@
 import { C } from "../../Constants";
-import { NonInviteClientTransaction } from "../../Transactions";
 import { InviteDialog } from "../dialogs";
 import { OutgoingNotifyRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
+import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 export class NotifyUserAgentClient extends UserAgentClient implements OutgoingNotifyRequest {

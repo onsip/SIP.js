@@ -1,7 +1,7 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { NonInviteServerTransaction } from "../../Transactions";
 import { Dialog } from "../dialogs";
 import { IncomingNotifyRequest, IncomingRequestDelegate } from "../messages";
+import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 

@@ -1,9 +1,3 @@
-import { C } from "./Constants";
-import { Dialog } from "./Dialogs";
-import { TypeStrings } from "./Enums";
-import { Grammar } from "./Grammar";
-import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import {
   ClientTransaction,
   ClientTransactionUser,
@@ -11,7 +5,14 @@ import {
   NonInviteClientTransaction,
   ServerTransaction,
   TransactionState
-} from "./Transactions";
+} from "./Core/transactions";
+
+import { C } from "./Constants";
+import { Dialog } from "./Dialogs";
+import { TypeStrings } from "./Enums";
+import { Grammar } from "./Grammar";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
 import { Transport } from "./Transport";
 import { UA } from "./UA";
 import { URI } from "./URI";

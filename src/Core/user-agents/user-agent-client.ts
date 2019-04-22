@@ -5,18 +5,18 @@ import {
   IncomingResponse as IncomingResponseMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
-import {
-  ClientTransaction,
-  ClientTransactionUser,
-  NonInviteClientTransaction,
-  TransactionState
-} from "../../Transactions";
 import { Transport } from "../../Transport";
 import {
   OutgoingRequest,
   OutgoingRequestDelegate,
   RequestOptions
 } from "../messages";
+import {
+  ClientTransaction,
+  ClientTransactionUser,
+  NonInviteClientTransaction,
+  TransactionState
+} from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 
 type ClientTransactionConstructor = new (

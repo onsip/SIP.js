@@ -2,6 +2,16 @@ import { EventEmitter } from "events";
 
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
+import {
+  ClientTransaction,
+  InviteClientTransaction,
+  InviteServerTransaction,
+  NonInviteClientTransaction,
+  NonInviteServerTransaction,
+  ServerTransactionUser,
+  Transaction,
+  TransactionState
+} from "./Core/transactions";
 import { Dialog } from "./Dialogs";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
@@ -25,16 +35,6 @@ import {
 } from "./session-description-handler-factory";
 import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { Subscription } from "./Subscription";
-import {
-  ClientTransaction,
-  InviteClientTransaction,
-  InviteServerTransaction,
-  NonInviteClientTransaction,
-  NonInviteServerTransaction,
-  ServerTransactionUser,
-  Transaction,
-  TransactionState
-} from "./Transactions";
 import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";

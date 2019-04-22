@@ -1,7 +1,7 @@
 import { C } from "../../Constants";
-import { NonInviteClientTransaction } from "../../Transactions";
 import { SubscribeDialog } from "../dialogs";
 import { OutgoingRequestDelegate, OutgoingSubscribeRequest, RequestOptions } from "../messages";
+import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 export class ReSubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {

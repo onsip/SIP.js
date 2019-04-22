@@ -2,9 +2,9 @@ import {
   IncomingResponse as IncomingResponseMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
-import { NonInviteClientTransaction } from "../../Transactions";
 import { Dialog, SubscribeDialog } from "../dialogs";
 import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate } from "../messages";
+import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 

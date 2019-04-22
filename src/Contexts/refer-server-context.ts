@@ -1,4 +1,5 @@
 import { Session } from "../Core/session";
+import { NonInviteClientTransaction } from "../Core/transactions";
 
 import { C } from "../Constants";
 import { SessionStatus } from "../Enums";
@@ -10,7 +11,6 @@ import {
   IncomingRequest as IncomingRequestMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../SIPMessage";
-import { NonInviteClientTransaction } from "../Transactions";
 import { UA } from "../UA";
 
 export class ReferServerContext extends ReferServerContextBase {

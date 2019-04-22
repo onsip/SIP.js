@@ -2,6 +2,11 @@ import { EventEmitter } from "events";
 
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
+import {
+  InviteServerTransaction,
+  NonInviteServerTransaction,
+  TransactionState
+} from "./Core/transactions";
 import { Dialog } from "./Dialogs";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
@@ -29,11 +34,6 @@ import {
   OutgoingRequest
 } from "./SIPMessage";
 import { Timers } from "./Timers";
-import {
-  InviteServerTransaction,
-  NonInviteServerTransaction,
-  TransactionState
-} from "./Transactions";
 import { UA } from "./UA";
 import { URI } from "./URI";
 

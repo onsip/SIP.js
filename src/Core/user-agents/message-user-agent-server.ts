@@ -1,6 +1,6 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { NonInviteServerTransaction } from "../../Transactions";
 import { IncomingMessageRequest, IncomingRequestDelegate } from "../messages";
+import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 

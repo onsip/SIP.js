@@ -5,11 +5,6 @@ import {
   IncomingResponse as IncomingResponseMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
-import {
-  InviteServerTransaction,
-  NonInviteClientTransaction,
-  TransactionState
-} from "../../Transactions";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import { Dialog } from ".././dialogs";
@@ -26,6 +21,11 @@ import {
   OutgoingSubscribeRequestDelegate,
   ResponseOptions
 } from "../messages";
+import {
+  InviteServerTransaction,
+  NonInviteClientTransaction,
+  TransactionState
+} from "../transactions";
 import {
   InviteUserAgentClient,
   InviteUserAgentServer,

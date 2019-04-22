@@ -54,7 +54,7 @@ import {
   InviteServerTransaction,
   NonInviteClientTransaction,
   NonInviteServerTransaction
-} from "./Transactions";
+} from "./Core/transactions";
 const Transactions = {
   InviteClientTransaction,
   InviteServerTransaction,

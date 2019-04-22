@@ -1,13 +1,6 @@
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import {
-  InviteServerTransaction,
-  NonInviteServerTransaction,
-  ServerTransaction,
-  ServerTransactionUser,
-  TransactionState
-} from "../../Transactions";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import { Utils } from "../../Utils";
@@ -19,6 +12,13 @@ import {
   OutgoingResponse,
   ResponseOptions
 } from "../messages";
+import {
+  InviteServerTransaction,
+  NonInviteServerTransaction,
+  ServerTransaction,
+  ServerTransactionUser,
+  TransactionState
+} from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 
 type ServerTransactionConstructor = new (

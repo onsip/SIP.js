@@ -3,7 +3,6 @@ import {
   IncomingResponse as IncomingResponseMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
-import { InviteClientTransaction } from "../../Transactions";
 import { InviteDialog } from "../dialogs";
 import {
   Body,
@@ -13,6 +12,7 @@ import {
   OutgoingPrackRequest,
   RequestOptions
 } from "../messages";
+import { InviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 /**

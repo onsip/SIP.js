@@ -8,11 +8,6 @@ import {
 } from "../../SIPMessage";
 import { Timers } from "../../Timers";
 import {
-  InviteClientTransaction,
-  InviteServerTransaction,
-  TransactionState
-} from "../../Transactions";
-import {
   Body,
   getBody,
   isBody,
@@ -33,6 +28,11 @@ import {
   SessionState,
   SignalingState
 } from "../session";
+import {
+  InviteClientTransaction,
+  InviteServerTransaction,
+  TransactionState
+} from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { ByeUserAgentClient } from "../user-agents/bye-user-agent-client";
 import { ByeUserAgentServer } from "../user-agents/bye-user-agent-server";

@@ -1,7 +1,7 @@
 import { C } from "../../Constants";
-import { NonInviteClientTransaction } from "../../Transactions";
 import { InviteDialog } from "../dialogs";
 import { OutgoingPrackRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
+import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 export class PrackUserAgentClient extends UserAgentClient implements OutgoingPrackRequest {

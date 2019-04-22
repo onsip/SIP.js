@@ -1,7 +1,7 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { NonInviteServerTransaction } from "../../Transactions";
 import { InviteDialog } from "../dialogs";
 import { IncomingPrackRequest, IncomingRequestDelegate, OutgoingResponse, ResponseOptions} from "../messages";
+import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
 export class PrackUserAgentServer extends UserAgentServer implements IncomingPrackRequest {
