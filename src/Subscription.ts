@@ -293,7 +293,7 @@ export class Subscription extends ClientContext {
   }
 
   public on(name: "accepted", callback: (response: any, cause: C.causes) => void): this;
-  public on(name: "notify", callback: (notification: Notification) => void): this;
+  public on(name: "notify", callback: (notification: { request: IncomingRequest }) => void): this;
   public on(
     name: "failed" | "rejected" | "terminated",
     callback: (messageOrResponse?: any, cause?: C.causes) => void
