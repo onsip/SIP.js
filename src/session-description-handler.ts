@@ -1,3 +1,5 @@
+// tslint:disable:callable-types
+
 /**
  * The SessionDescriptionHandler interface SIP.js is expecting.
  */
@@ -13,7 +15,10 @@ export interface SessionDescriptionHandler {
    * @param modifiers Array with one time use description modifiers.
    * @returns {Promise} Promise that resolves with the local description to be used for the session
    */
-  getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<BodyObj>;
+  getDescription(
+    options?: SessionDescriptionHandlerOptions,
+    modifiers?: SessionDescriptionHandlerModifiers
+  ): Promise<BodyObj>;
 
   /**
    * Check if the Session Description Handler can handle the Content-Type described by a SIP Message
@@ -36,7 +41,11 @@ export interface SessionDescriptionHandler {
    * @param {Array} [modifiers] Array with one time use description modifiers
    * @returns {Promise} Promise that resolves once the description is set
    */
-  setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: SessionDescriptionHandlerModifiers): Promise<void>;
+  setDescription(
+    sdp: string,
+    options?: SessionDescriptionHandlerOptions,
+    modifiers?: SessionDescriptionHandlerModifiers
+  ): Promise<void>;
 
   /**
    * Send DTMF via RTP (RFC 4733)
@@ -44,7 +53,7 @@ export interface SessionDescriptionHandler {
    * @param {Object} [options] Options object to be used by sendDtmf
    * @returns {boolean} true if DTMF send is successful, false otherwise
    */
-  sendDtmf: (tones: string, options?: any) => boolean;
+  sendDtmf(tones: string, options?: any): boolean;
 }
 
 export interface SessionDescriptionHandlerModifier {
@@ -58,10 +67,10 @@ export type SessionDescriptionHandlerModifiers = Array<SessionDescriptionHandler
  * These options are provided to various UserAgent methods (invite() for example)
  * and passed through on calls to getDescription() and setDescription().
  */
-export type SessionDescriptionHandlerOptions = {
-  modifiers?: SessionDescriptionHandlerModifiers,
-  constraints?: { audio: boolean, video: boolean }
-};
+export interface SessionDescriptionHandlerOptions {
+  modifiers?: SessionDescriptionHandlerModifiers;
+  constraints?: { audio: boolean, video: boolean };
+}
 
 /**
  * SIP message body and content type.

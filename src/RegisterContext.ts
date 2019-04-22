@@ -1,22 +1,31 @@
-import { RegisterContext as RegisterContextDefinition } from "../types/register-context";
-import { IncomingResponse } from "../types/sip-message";
-import { Transport } from "../types/transport";
-import { UA } from "../types/ua";
-import { URI } from "../types/uri";
-
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
+import { IncomingResponse } from "./SIPMessage";
+import { Transport } from "./Transport";
+import { UA } from "./UA";
+import { URI } from "./URI";
 import { Utils } from "./Utils";
+
+export namespace RegisterContext {
+  export interface RegistrationConfiguration {
+    expires?: string;
+    extraContactHeaderParams?: Array<string>;
+    instanceId?: string;
+    params?: any;
+    regId?: number;
+    registrar?: string;
+  }
+}
 
 /**
  * Configuration load.
  * @private
  * returns {any}
  */
-function loadConfig(configuration: RegisterContextDefinition.RegistrationConfiguration): any {
+function loadConfig(configuration: RegisterContext.RegistrationConfiguration): any {
   const settings = {
     expires: 600,
     extraContactHeaderParams: [],
@@ -140,7 +149,7 @@ function getConfigurationCheck(): any {
   };
 }
 
-export class RegisterContext extends ClientContext implements RegisterContextDefinition {
+export class RegisterContext extends ClientContext {
   public type: TypeStrings;
   public registered: boolean;
   public cseq: number;

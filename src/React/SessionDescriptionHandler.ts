@@ -5,18 +5,17 @@ import {
   RTCPeerConnection,
 } from "react-native-webrtc";
 
-import { Logger } from "../../types/logger-factory";
-import { InviteClientContext, InviteServerContext } from "../../types/session";
+import { TypeStrings } from "../Enums";
+import { Exceptions } from "../Exceptions";
+import { Logger } from "../LoggerFactory";
+import { InviteClientContext, InviteServerContext } from "../Session";
 import {
   BodyObj,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifiers
-} from "../../types/session-description-handler";
-import { Utils as UtilsTypes } from "../../types/utils";
-
-import { TypeStrings } from "../Enums";
-import { Exceptions } from "../Exceptions";
+} from "../session-description-handler";
 import { Utils } from "../Utils";
+
 import * as Modifiers from "../Web/Modifiers";
 import { SessionDescriptionHandlerObserver } from "./SessionDescriptionHandlerObserver";
 
@@ -38,7 +37,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   private C: any;
   private modifiers: SessionDescriptionHandlerModifiers;
   private WebRTC: any;
-  private iceGatheringDeferred: UtilsTypes.Deferred<any> | undefined;
+  private iceGatheringDeferred: Utils.Deferred<any> | undefined;
   private iceGatheringTimeout: boolean;
   private iceGatheringTimer: any | undefined;
   private constraints: any;

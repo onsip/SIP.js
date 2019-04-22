@@ -1,8 +1,5 @@
-import { NameAddrHeader as NameAddrHeaderDefinition } from "../types/name-addr-header";
-import { URI } from "../types/uri";
-
 import { TypeStrings } from "./Enums";
-import { Parameters } from "./URI";
+import { Parameters, URI } from "./URI";
 
 /**
  * @class Class creating a Name Address SIP header.
@@ -12,7 +9,7 @@ import { Parameters } from "./URI";
  * @param {Object} [parameters]
  *
  */
-export class NameAddrHeader extends Parameters implements NameAddrHeaderDefinition {
+export class NameAddrHeader extends Parameters {
   public type: TypeStrings;
   public uri: URI;
   // tslint:disable-next-line:variable-name

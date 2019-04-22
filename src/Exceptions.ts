@@ -1,14 +1,12 @@
-import {
-  Exception as ExceptionDefinition,
-  Exceptions as ExceptionsDefinition,
-  LegacyException as LegacyExceptionDefinition
-} from "../types/exceptions";
-
 import { SessionStatus, TypeStrings } from "./Enums";
 
 // tslint:disable:max-classes-per-file
 
-export abstract class Exception extends Error implements ExceptionDefinition {
+/**
+ * An Exception is considered a condition that a reasonable application may wish to catch.
+ * An Error indicates serious problems that a reasonable application should not try to catch.
+ */
+export abstract class Exception extends Error {
   protected constructor(message?: string) {
     super(message); // 'Error' breaks prototype chain here
     Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
@@ -16,8 +14,10 @@ export abstract class Exception extends Error implements ExceptionDefinition {
 }
 
 export namespace Exceptions {
-  export class TransportError extends Exception
-    implements ExceptionsDefinition.TransportError {
+  /**
+   * Transport error.
+   */
+  export class TransportError extends Exception {
     constructor(message?: string) {
       super(message ? message : "Unspecified transport error.");
     }
@@ -31,7 +31,7 @@ export namespace Exceptions {
  * "code" numbers and constant "name" strings. All of that is unnecessary when using
  * TypeScript, inheriting from Error and properly setting up the prototype chain...
  */
-abstract class LegacyException extends Exception implements LegacyExceptionDefinition {
+abstract class LegacyException extends Exception {
   public type!: TypeStrings;
   public name: string;
   public message: string;
@@ -46,7 +46,7 @@ abstract class LegacyException extends Exception implements LegacyExceptionDefin
 }
 
 export namespace Exceptions {
-  export class ConfigurationError extends LegacyException implements ExceptionsDefinition.ConfigurationError {
+  export class ConfigurationError extends LegacyException {
     public parameter: string;
     public value: any;
 
@@ -59,7 +59,7 @@ export namespace Exceptions {
     }
   }
 
-  export class InvalidStateError extends LegacyException implements ExceptionsDefinition.InvalidStateError {
+  export class InvalidStateError extends LegacyException {
     public status: SessionStatus;
 
     constructor(status: SessionStatus) {
@@ -69,7 +69,7 @@ export namespace Exceptions {
     }
   }
 
-  export class NotSupportedError extends LegacyException implements ExceptionsDefinition.NotSupportedError {
+  export class NotSupportedError extends LegacyException {
     constructor(message: string) {
       super(3, "NOT_SUPPORTED_ERROR", message);
       this.type = TypeStrings.NotSupportedError;
@@ -78,14 +78,14 @@ export namespace Exceptions {
 
   // 4 was GetDescriptionError, which was deprecated and now removed
 
-  export class RenegotiationError extends LegacyException implements ExceptionsDefinition.RenegotiationError {
+  export class RenegotiationError extends LegacyException {
     constructor(message: string) {
       super(5, "RENEGOTIATION_ERROR", message);
       this.type = TypeStrings.RenegotiationError;
     }
   }
 
-  export class MethodParameterError extends LegacyException implements ExceptionsDefinition.MethodParameterError {
+  export class MethodParameterError extends LegacyException {
     public method: string;
     public parameter: string;
     public value: any;
@@ -103,8 +103,7 @@ export namespace Exceptions {
 
   // 7 was TransportError, which was replaced
 
-  export class SessionDescriptionHandlerError extends LegacyException
-    implements ExceptionsDefinition.SessionDescriptionHandlerError {
+  export class SessionDescriptionHandlerError extends LegacyException {
     public error: string | undefined;
     public method: string;
 

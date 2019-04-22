@@ -1,49 +1,40 @@
 import { EventEmitter } from "events";
 
-import { Dialog } from "../types/dialogs";
-import { Logger } from "../types/logger-factory";
-import { PublishContext as PublishContextType } from "../types/publish-context";
-import {
-  InviteClientContext as InviteClientContextType,
-  InviteServerContext as InviteServerContextType
-} from "../types/session";
-import {
-  SessionDescriptionHandler,
-  SessionDescriptionHandlerModifiers
-} from "../types/session-description-handler";
-import { Subscription as SubscriptionType } from "../types/subscription";
-import {
-  ClientTransaction,
-  InviteClientTransaction,
-  InviteServerTransaction as InviteServerTransactionType,
-  NonInviteClientTransaction,
-  NonInviteServerTransaction as NonInviteServerTransactionType,
-  ServerTransactionUser
-} from "../types/transactions";
-import { Transport } from "../types/transport";
-import { UA as UADefinition } from "../types/ua";
-import { URI as URIType } from "../types/uri";
-
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
+import { Dialog } from "./Dialogs";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
-import { Levels, LoggerFactory } from "./LoggerFactory";
+import { Levels, Logger, LoggerFactory } from "./LoggerFactory";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
 import { RegisterContext } from "./RegisterContext";
 import { SanityCheck } from "./SanityCheck";
 import { ServerContext } from "./ServerContext";
 import { InviteClientContext, InviteServerContext, ReferServerContext } from "./Session";
+import {
+  SessionDescriptionHandler,
+  SessionDescriptionHandlerModifiers
+} from "./session-description-handler";
+import {
+  SessionDescriptionHandlerFactory,
+  SessionDescriptionHandlerFactoryOptions
+} from "./session-description-handler-factory";
 import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { Subscription } from "./Subscription";
 import {
+  ClientTransaction,
+  InviteClientTransaction,
   InviteServerTransaction,
+  NonInviteClientTransaction,
   NonInviteServerTransaction,
+  ServerTransactionUser,
+  Transaction,
   TransactionState
 } from "./Transactions";
+import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 import {
@@ -53,6 +44,55 @@ import { Transport as WebTransport } from "./Web/Transport";
 
 const environment = (global as any).window || global;
 
+export namespace UA {
+  export interface Options {
+    uri?: string | URI;
+    allowLegacyNotifications?: boolean;
+    allowOutOfDialogRefers?: boolean;
+    authenticationFactory?: (ua: UA) => DigestAuthentication | any; // any for custom ones
+    authorizationUser?: string;
+    autostart?: boolean;
+    autostop?: boolean;
+    displayName?: string;
+    dtmfType?: DtmfType;
+    extraSupported?: Array<string>;
+    forceRport?: boolean;
+    hackIpInContact?: boolean;
+    hackAllowUnregisteredOptionTags?: boolean;
+    hackViaTcp?: boolean;
+    hackWssInTransport?: boolean;
+    hostportParams?: any;
+    log?: {
+      builtinEnabled: boolean,
+      level: string | number,
+      connector: (level: string, category: string, label: string | undefined, content: any) => void,
+    };
+    noAnswerTimeout?: number;
+    password?: string;
+    register?: boolean;
+    registerOptions?: RegisterOptions;
+    rel100?: SIPConstants.supported;
+    replaces?: SIPConstants.supported;
+    sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
+    sessionDescriptionHandlerFactoryOptions?: SessionDescriptionHandlerFactoryOptions;
+    sipjsId?: string;
+    transportConstructor?: new (logger: any, options: any) => Transport; // TODO
+    transportOptions?: any; // TODO
+    userAgentString?: string;
+    usePreloadedRoute?: boolean;
+    viaHost?: string;
+  }
+
+  export interface RegisterOptions {
+    expires?: number;
+    extraContactHeaderParams?: Array<string>;
+    instanceId?: string;
+    params?: any;
+    regId?: number;
+    registrar?: string;
+  }
+}
+
 /**
  * @class Class creating a SIP User Agent.
  * @param {function returning SIP.sessionDescriptionHandler} [configuration.sessionDescriptionHandlerFactory]
@@ -60,7 +100,7 @@ const environment = (global as any).window || global;
  *  If no (or a falsy) value is provided, each Session will use a default (WebRTC) sessionDescriptionHandler.
  */
 
-export class UA extends EventEmitter implements UADefinition {
+export class UA extends EventEmitter {
   public static readonly C = {
     // UA status codes
     STATUS_INIT:                0,
@@ -95,9 +135,9 @@ export class UA extends EventEmitter implements UADefinition {
   };
 
   public type: TypeStrings;
-  public configuration: UADefinition.Options;
-  public applicants: {[id: string]: InviteClientContextType};
-  public publishers: {[id: string]: PublishContextType};
+  public configuration: UA.Options;
+  public applicants: {[id: string]: InviteClientContext};
+  public publishers: {[id: string]: PublishContext};
   public contact!: // assigned in loadConfig()
     {
       pubGruu: URI | undefined,
@@ -108,17 +148,17 @@ export class UA extends EventEmitter implements UADefinition {
   public status: UAStatus;
   public transport: Transport | undefined;
   public transactions: {
-    nist: {[id: string]: NonInviteServerTransactionType | undefined}
+    nist: {[id: string]: NonInviteServerTransaction | undefined}
     nict: {[id: string]: NonInviteClientTransaction | undefined}
-    ist: {[id: string]: InviteServerTransactionType | undefined}
+    ist: {[id: string]: InviteServerTransaction | undefined}
     ict: {[id: string]: InviteClientTransaction | undefined}
   };
-  public sessions: {[id: string]: InviteClientContextType | InviteServerContextType};
+  public sessions: {[id: string]: InviteClientContext | InviteServerContext};
   public dialogs: {[id: string]: Dialog};
   public data: any;
   public logger: Logger;
-  public earlySubscriptions: {[id: string]: SubscriptionType};
-  public subscriptions: {[id: string]: SubscriptionType};
+  public earlySubscriptions: {[id: string]: Subscription};
+  public subscriptions: {[id: string]: Subscription};
 
   private log: LoggerFactory;
   private cache: any;
@@ -126,7 +166,7 @@ export class UA extends EventEmitter implements UADefinition {
   private registerContext: RegisterContext;
   private environListener: any;
 
-  constructor(configuration?: UADefinition.Options) {
+  constructor(configuration?: UA.Options) {
     super();
     this.type = TypeStrings.UA;
 
@@ -284,11 +324,11 @@ export class UA extends EventEmitter implements UADefinition {
    *
    */
   public invite(
-    target: string | URIType,
-    options?: InviteClientContextType.Options,
+    target: string | URI,
+    options?: InviteClientContext.Options,
     modifiers?: SessionDescriptionHandlerModifiers
-  ): InviteClientContextType {
-    const context: InviteClientContextType = new InviteClientContext(this, target, options, modifiers);
+  ): InviteClientContext {
+    const context: InviteClientContext = new InviteClientContext(this, target, options, modifiers);
     // Delay sending actual invite until the next 'tick' if we are already
     // connected, so that API consumers can register to events fired by the
     // the session.
@@ -301,8 +341,8 @@ export class UA extends EventEmitter implements UADefinition {
     return context;
   }
 
-  public subscribe(target: string | URI, event: string, options: any): SubscriptionType {
-    const sub: SubscriptionType = new Subscription(this, target, event, options);
+  public subscribe(target: string | URI, event: string, options: any): Subscription {
+    const sub: Subscription = new Subscription(this, target, event, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => sub.subscribe());
@@ -320,8 +360,8 @@ export class UA extends EventEmitter implements UADefinition {
    *
    * @throws {SIP.Exceptions.MethodParameterError}
    */
-  public publish(target: string | URI, event: string, body: string, options: any): PublishContextType {
-    const pub: PublishContextType = new PublishContext(this, target, event, options);
+  public publish(target: string | URI, event: string, body: string, options: any): PublishContext {
+    const pub: PublishContext = new PublishContext(this, target, event, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => {
@@ -505,7 +545,7 @@ export class UA extends EventEmitter implements UADefinition {
    *
    * @returns {SIP.URI|undefined}
    */
-  public normalizeTarget(target: string | URIType): URIType | undefined {
+  public normalizeTarget(target: string | URI): URI | undefined {
     return Utils.normalizeTarget(target, this.configuration.hostportParams);
   }
 
@@ -571,11 +611,22 @@ export class UA extends EventEmitter implements UADefinition {
    * @param {SIP.IncomingRequest} request.
    * @returns {SIP.OutgoingSession|SIP.IncomingSession|undefined}
    */
-  public findSession(request: IncomingRequest): InviteClientContextType | InviteServerContextType | undefined {
+  public findSession(request: IncomingRequest): InviteClientContext | InviteServerContext | undefined {
     return this.sessions[request.callId + request.fromTag] ||
       this.sessions[request.callId + request.toTag] ||
       undefined;
   }
+
+  public on(name: "invite", callback: (session: InviteServerContext) => void): this;
+  public on(name: "inviteSent", callback: (session: InviteClientContext) => void): this;
+  public on(name: "outOfDialogReferRequested", callback: (context: ReferServerContext) => void): this;
+  public on(name: "newTransaction" | "transactionDestroyed", callback: (transaction: Transaction) => void): this;
+  public on(name: "transportCreated", callback: (transport: Transport) => void): this;
+  public on(name: "message", callback: (message: any) => void): this;
+  public on(name: "notify", callback: (request: any) => void): this;
+  public on(name: "registered", callback: (response?: any) => void): this;
+  public on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
+  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
   // ===============================
   //  Private (For internal use)
@@ -590,7 +641,7 @@ export class UA extends EventEmitter implements UADefinition {
 
   private getCredentials(request: OutgoingRequest): any {
     const realm: string | undefined =
-      (request.ruri as URIType).type === TypeStrings.URI ? (request.ruri as URIType).host : "";
+      (request.ruri as URI).type === TypeStrings.URI ? (request.ruri as URI).host : "";
 
     if (realm && this.cache.credentials[realm] && this.cache.credentials[realm][request.ruri.toString()]) {
       const credentials: any = this.cache.credentials[realm][request.ruri.toString()];
@@ -955,7 +1006,7 @@ export class UA extends EventEmitter implements UADefinition {
               request.reply_sl(481, undefined);
               return;
             } else if (!(replacedDialog.owner.type === TypeStrings.Subscription) &&
-              (replacedDialog.owner as InviteClientContextType | InviteServerContextType).status
+              (replacedDialog.owner as InviteClientContext | InviteServerContext).status
                 === SessionStatus.STATUS_TERMINATED) {
               request.reply_sl(603, undefined);
               return;
@@ -965,7 +1016,7 @@ export class UA extends EventEmitter implements UADefinition {
             }
           }
 
-          const newSession: InviteServerContextType = new InviteServerContext(this, request);
+          const newSession: InviteServerContext = new InviteServerContext(this, request);
           if (replacedDialog && !(replacedDialog.owner.type === TypeStrings.Subscription)) {
             newSession.replacee = replacedDialog && (replacedDialog.owner as InviteClientContext | InviteServerContext);
           }
@@ -976,7 +1027,7 @@ export class UA extends EventEmitter implements UADefinition {
           request.reply(481);
           break;
         case SIPConstants.CANCEL:
-          const session: InviteClientContextType | InviteServerContextType | undefined = this.findSession(request);
+          const session: InviteClientContext | InviteServerContext | undefined = this.findSession(request);
           if (session) {
             session.receiveRequest(request);
           } else {
@@ -1043,8 +1094,8 @@ export class UA extends EventEmitter implements UADefinition {
         }
         dialog.receiveRequest(request);
       } else if (method === SIPConstants.NOTIFY) {
-        const session: InviteClientContextType | InviteServerContextType | undefined = this.findSession(request);
-        const earlySubscription: SubscriptionType | undefined = this.findEarlySubscription(request);
+        const session: InviteClientContext | InviteServerContext | undefined = this.findSession(request);
+        const earlySubscription: Subscription | undefined = this.findEarlySubscription(request);
 
         if (session) {
           session.receiveRequest(request);
@@ -1087,7 +1138,7 @@ export class UA extends EventEmitter implements UADefinition {
  * @param {SIP.IncomingRequest}
  * @returns {SIP.Subscription|undefined}
  */
-  private findEarlySubscription(request: IncomingRequest): SubscriptionType | undefined {
+  private findEarlySubscription(request: IncomingRequest): Subscription | undefined {
     return this.earlySubscriptions[request.callId + request.toTag + request.getHeader("event")] || undefined;
   }
 
@@ -1107,7 +1158,7 @@ export class UA extends EventEmitter implements UADefinition {
    * Configuration load.
    * returns {void}
    */
-  private loadConfig(configuration: UADefinition.Options): void {
+  private loadConfig(configuration: UA.Options): void {
     // Settings and default values
     const settings: {[name: string]: any} = {
       /* Host address
@@ -1239,7 +1290,7 @@ export class UA extends EventEmitter implements UADefinition {
     settings.sipjsId = Utils.createRandomToken(5);
 
     // String containing settings.uri without scheme and user.
-    const hostportParams: URIType = settings.uri.clone();
+    const hostportParams: URI = settings.uri.clone();
     hostportParams.user = undefined;
     settings.hostportParams = hostportParams.toRaw().replace(/^sip:/i, "");
 
@@ -1342,11 +1393,11 @@ export class UA extends EventEmitter implements UADefinition {
 
       optional: {
 
-        uri: (uri: string): URIType | undefined => {
+        uri: (uri: string): URI | undefined => {
           if (!(/^sip:/i).test(uri)) {
             uri = SIPConstants.SIP + ":" + uri;
           }
-          const parsed: URIType | undefined = Grammar.URIParse(uri);
+          const parsed: URI | undefined = Grammar.URIParse(uri);
 
           if (!parsed || !parsed.user) {
             return;
@@ -1543,5 +1594,12 @@ export class UA extends EventEmitter implements UADefinition {
         },
       }
     };
+  }
+}
+
+export namespace UA {
+  export enum DtmfType {
+    RTP = "rtp",
+    INFO = "info"
   }
 }

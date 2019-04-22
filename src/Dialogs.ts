@@ -1,25 +1,22 @@
-import { Dialog as DialogDefinition } from "../types/dialogs";
-import { Logger } from "../types/logger-factory";
-import { InviteClientContext, InviteServerContext } from "../types/session";
-import { SessionDescriptionHandler } from "../types/session-description-handler";
-import { DTMF } from "../types/Session/dtmf";
+import { C } from "./Constants";
+import { DialogStatus, SessionStatus, TypeStrings } from "./Enums";
+import { Logger } from "./LoggerFactory";
+import { RequestSender } from "./RequestSender";
+import { InviteClientContext, InviteServerContext } from "./Session";
+import { SessionDescriptionHandler } from "./session-description-handler";
+import { DTMF } from "./Session/DTMF";
 import {
   IncomingRequest,
   IncomingResponse,
-  OutgoingRequest as OutgoingRequestType
-} from "../types/sip-message";
-import { Subscription } from "../types/subscription";
-import { NonInviteClientTransaction } from "../types/transactions";
-import { URI } from "../types/uri";
-
-import { C } from "./Constants";
-import { DialogStatus, SessionStatus, TypeStrings } from "./Enums";
-import { RequestSender } from "./RequestSender";
-import { OutgoingRequest } from "./SIPMessage";
+  OutgoingRequest
+} from "./SIPMessage";
+import { Subscription } from "./Subscription";
 import {
   InviteClientTransaction,
+  NonInviteClientTransaction,
   TransactionState
 } from "./Transactions";
+import { URI } from "./URI";
 
 /*
  * @augments SIP
@@ -30,7 +27,7 @@ import {
  * @param {Enum} state SIP.Dialog.C.STATUS_EARLY / SIP.Dialog.C.STATUS_CONFIRMED
  */
 
-export class Dialog implements DialogDefinition {
+export class Dialog {
   public static readonly C = DialogStatus;
 
   public type: TypeStrings;
@@ -260,7 +257,7 @@ export class Dialog implements DialogDefinition {
     applicant: InviteClientContext | Subscription | DTMF,
     method: string,
     options: any = {}
-  ): OutgoingRequestType {
+  ): OutgoingRequest {
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
 
     let body: any;

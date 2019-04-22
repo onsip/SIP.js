@@ -1,9 +1,8 @@
-import { IncomingRequest, IncomingResponse } from "../types/sip-message";
-import { Transport } from "../types/transport";
-import { UA } from "../types/ua";
-
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
+import { IncomingRequest, IncomingResponse } from "./SIPMessage";
+import { Transport } from "./Transport";
+import { UA } from "./UA";
 import { Utils } from "./Utils";
 
 /**

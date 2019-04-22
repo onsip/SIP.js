@@ -1,4 +1,12 @@
-import { Levels, LoggerFactory } from "../../src/LoggerFactory";
+import {
+  Levels,
+  LoggerFactory
+} from "../../src/LoggerFactory";
+import {
+  IncomingRequest,
+  IncomingResponse,
+  OutgoingRequest
+} from "../../src/SIPMessage";
 import {
   ClientTransaction,
   InviteClientTransaction,
@@ -9,13 +17,12 @@ import {
   Transaction,
   TransactionState
 } from "../../src/Transactions";
-import { IncomingRequest, IncomingResponse, OutgoingRequest } from "../../types/sip-message";
 import {
   ClientTransactionUser,
   ServerTransactionUser,
   TransactionUser
-} from "../../types/transactions";
-import { Transport } from "../../types/transport";
+} from "../../src/Transactions";
+import { Transport } from "../../src/Transport";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use
 // the actual implementations, but the current implementations depend on UA
