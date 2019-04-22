@@ -297,32 +297,33 @@ export class OutgoingRequest {
       if (!this.from) {
         throw new Error("From undefined.");
       }
-      const toHeader = this.getHeader("To");
-      if (!toHeader) {
-        throw new Error("To header undefined.");
-      }
-      const fromHeader = this.getHeader("From");
-      if (!fromHeader) {
-        throw new Error("From header undefined.");
-      }
+
+      // The following procedures are used to construct a CANCEL request.  The
+      // Request-URI, Call-ID, To, the numeric part of CSeq, and From header
+      // fields in the CANCEL request MUST be identical to those in the
+      // request being cancelled, including tags.  A CANCEL constructed by a
+      // client MUST have only a single Via header field value matching the
+      // top Via value in the request being cancelled.  Using the same values
+      // for these header fields allows the CANCEL to be matched with the
+      // request it cancels (Section 9.2 indicates how such matching occurs).
+      // However, the method part of the CSeq header field MUST have a value
+      // of CANCEL.  This allows it to be identified and processed as a
+      // transaction in its own right (See Section 17).
+      // https://tools.ietf.org/html/rfc3261#section-9.1
       const cancel = new OutgoingRequest(
         C.CANCEL,
         this.ruri,
         this.ua,
         {
           toUri: this.to.uri,
+          toTag: this.toTag,
           fromUri: this.from.uri,
+          fromTag: this.fromTag,
           callId: this.callId,
           cseq: this.cseq
         },
         extraHeaders
       );
-      this.setHeader("To", toHeader);
-      this.setHeader("From", fromHeader);
-      cancel.callId = this.callId;
-      this.setHeader("Call-ID", this.callId);
-      cancel.cseq = this.cseq;
-      this.setHeader("CSeq", this.cseq + " " + cancel.method);
 
       // TODO: Revisit this.
       // The CANCEL needs to use the same branch parameter so that
@@ -332,6 +333,9 @@ export class OutgoingRequest {
       // the transaction will make a new one.
       cancel.branch = this.branch;
 
+      // If the request being cancelled contains a Route header field, the
+      // CANCEL request MUST include that Route header field's values.
+      // https://tools.ietf.org/html/rfc3261#section-9.1
       if (this.headers.Route) {
         cancel.headers.Route = this.headers.Route;
       }
