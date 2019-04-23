@@ -8,6 +8,8 @@ import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
+import { Subscription as SubscriptionCore } from "./Core/subscription";
+
 /**
  * SIP Subscriber (SIP-Specific Event Notifications RFC6665)
  * @class Class creating a SIP Subscription.
@@ -24,6 +26,8 @@ export class Subscription extends ClientContext {
   protected dialog: Dialog | undefined;
   protected timers: any;
   protected errorCodes: Array<number>;
+
+  private subscription: SubscriptionCore | undefined;
 
   constructor(ua: UA, target: string | URI, event: string, options: any = {}) {
     if (!event) {
@@ -167,7 +171,7 @@ export class Subscription extends ClientContext {
     // makes sure expires isn't set, and other typical resubscribe behavior
     this.receiveResponse = () => { /* intentionally blank */ };
 
-    if (this.dialog) {
+    if (this.subscription) {
       this.sendSubscribeRequest({
         extraHeaders,
         body: this.body
@@ -300,10 +304,28 @@ export class Subscription extends ClientContext {
   ): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
-  protected sendSubscribeRequest(options: any = {}): void {
-    if (this.dialog) {
-      this.dialog.sendRequest(this, C.SUBSCRIBE, options);
+  public send(): this {
+    if (!this.ua.userAgentCore) {
+      throw new Error("User agent core undefined.");
     }
+    this.ua.userAgentCore.subscribe(this.request, {
+      onAccept: (subscribeResponse): void => {
+        this.subscription = subscribeResponse.subscription;
+        return this.receiveResponse(subscribeResponse.message);
+      },
+      onProgress: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onRedirect: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onReject: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onTrying: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message)
+    });
+    return this;
+  }
+
+  protected sendSubscribeRequest(options: any = {}): void {
+    if (!this.subscription) {
+      throw new Error("Subscription undefined.");
+    }
+    this.subscription.subscribe(options);
   }
 
   protected timer_fire(): void {
@@ -321,20 +343,7 @@ export class Subscription extends ClientContext {
   }
 
   protected createConfirmedDialog(message: IncomingRequest, type: "UAC" | "UAS"): boolean {
-    this.terminateDialog();
-    const dialog: Dialog = new Dialog(this, message, type);
-    if (this.request) {
-      dialog.inviteSeqnum = this.request.cseq;
-      dialog.localSeqnum = this.request.cseq;
-    }
-
-    if (!dialog.error) {
-      this.dialog = dialog;
-      return true;
-    } else {
-      // Dialog not created due to an errora
-      return false;
-    }
+    return true;
   }
 
   protected terminateDialog(): void {

@@ -46,7 +46,6 @@ import { Transport as WebTransport } from "./Web/Transport";
 import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
 import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
 import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
-import { SubscribeClientContext as SubscribeClientContextExperimental } from "./Contexts/subscribe-client-context";
 import {
   IncomingInviteRequest,
   IncomingMessageRequest,
@@ -464,10 +463,7 @@ export class UA extends EventEmitter {
   }
 
   public subscribe(target: string | URI, event: string, options: any): Subscription {
-    const sub: Subscription =
-      this.userAgentCore ?
-        new SubscribeClientContextExperimental(this, target, event, options) :
-        new Subscription(this, target, event, options);
+    const sub: Subscription = new Subscription(this, target, event, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => sub.subscribe());
