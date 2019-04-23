@@ -159,7 +159,7 @@ export class RequestSender {
         let cseq: number;
 
         if (response.method === C.REGISTER) {
-          cseq = (this.applicant as RegisterContext).cseq += 1;
+          cseq = (this.applicant as RegisterContext).request.cseq += 1;
         } else if (this.request.dialog) {
           cseq = this.request.dialog.localSeqnum += 1;
         } else {

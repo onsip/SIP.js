@@ -152,7 +152,6 @@ function getConfigurationCheck(): any {
 export class RegisterContext extends ClientContext {
   public type: TypeStrings;
   public registered: boolean;
-  public cseq: number;
 
   private options: any;
   private expires: number;
@@ -206,9 +205,6 @@ export class RegisterContext extends ClientContext {
     // Registration expires
     this.expires = settings.expires;
 
-    // Cseq
-    this.cseq = settings.params.cseq;
-
     // Contact header
     this.contact = ua.contact.toString();
 
@@ -245,7 +241,7 @@ export class RegisterContext extends ClientContext {
 
     this.receiveResponse = (response: IncomingResponse) => {
       // Discard responses to older REGISTER/un-REGISTER requests.
-      if (response.cseq !== this.cseq) {
+      if (response.cseq !== this.request.cseq) {
         return;
       }
 
@@ -350,12 +346,10 @@ export class RegisterContext extends ClientContext {
       this.registrationFailure(undefined, C.causes.CONNECTION_ERROR);
     };
 
-    this.cseq++;
-    if (this.request) {
-      this.request.cseq = this.cseq;
-      this.request.setHeader("cseq", this.cseq + " REGISTER");
-      this.request.extraHeaders = extraHeaders;
-    }
+    this.request.cseq++;
+    this.request.setHeader("cseq", this.request.cseq + " REGISTER");
+    this.request.extraHeaders = extraHeaders;
+
     this.send();
   }
 
@@ -417,12 +411,9 @@ export class RegisterContext extends ClientContext {
       // this.unregistered(undefined, SIP.C.causes.REQUEST_TIMEOUT);
     };
 
-    this.cseq++;
-    if (this.request) {
-      this.request.cseq = this.cseq;
-      this.request.setHeader("cseq", this.cseq + " REGISTER");
-      this.request.extraHeaders = extraHeaders;
-    }
+    this.request.cseq++;
+    this.request.setHeader("cseq", this.request.cseq + " REGISTER");
+    this.request.extraHeaders = extraHeaders;
 
     this.send();
   }
