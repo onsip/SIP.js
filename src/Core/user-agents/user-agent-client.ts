@@ -88,21 +88,28 @@ export class UserAgentClient implements OutgoingRequest {
     if (!this.message.from) {
       throw new Error("From undefined.");
     }
-    const toHeader = this.message.getHeader("To");
-    if (!toHeader) {
-      throw new Error("To header undefined.");
-    }
-    const fromHeader = this.message.getHeader("From");
-    if (!fromHeader) {
-      throw new Error("From header undefined.");
-    }
+
+    // The following procedures are used to construct a CANCEL request.  The
+    // Request-URI, Call-ID, To, the numeric part of CSeq, and From header
+    // fields in the CANCEL request MUST be identical to those in the
+    // request being cancelled, including tags.  A CANCEL constructed by a
+    // client MUST have only a single Via header field value matching the
+    // top Via value in the request being cancelled.  Using the same values
+    // for these header fields allows the CANCEL to be matched with the
+    // request it cancels (Section 9.2 indicates how such matching occurs).
+    // However, the method part of the CSeq header field MUST have a value
+    // of CANCEL.  This allows it to be identified and processed as a
+    // transaction in its own right (See Section 17).
+    // https://tools.ietf.org/html/rfc3261#section-9.1
     const message = new OutgoingRequestMessage(
       C.CANCEL,
       this.message.ruri,
       this.message.ua,
       {
         toUri: this.message.to.uri,
+        toTag: this.message.toTag,
         fromUri: this.message.from.uri,
+        fromTag: this.message.fromTag,
         callId: this.message.callId,
         cseq: this.message.cseq
       },
