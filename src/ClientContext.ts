@@ -4,7 +4,6 @@ import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
-import { RequestSender } from "./RequestSender";
 import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
@@ -87,8 +86,13 @@ export class ClientContext extends EventEmitter {
   }
 
   public send(): this {
-    const sender: RequestSender = new RequestSender(this, this.ua);
-    sender.send();
+    this.ua.userAgentCore.request(this.request, {
+      onAccept: (response): void => this.receiveResponse(response.message),
+      onProgress: (response): void => this.receiveResponse(response.message),
+      onRedirect: (response): void => this.receiveResponse(response.message),
+      onReject: (response): void => this.receiveResponse(response.message),
+      onTrying: (response): void => this.receiveResponse(response.message)
+    });
     return this;
   }
 

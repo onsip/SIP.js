@@ -43,7 +43,6 @@ import {
 } from "./Web/SessionDescriptionHandler";
 import { Transport as WebTransport } from "./Web/Transport";
 
-import { ClientContext as ClientContextExperimental } from "./Contexts/client-context";
 import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
 import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
 import { PublishClientContext as PublishClientContextExperimental } from "./Contexts/publish-client-context";
@@ -527,10 +526,7 @@ export class UA extends EventEmitter {
   }
 
   public request(method: string, target: string | URI, options?: any): ClientContext {
-    const req: ClientContext =
-      this.userAgentCore ?
-        new ClientContextExperimental(this, method, target, options) :
-        new ClientContext(this, method, target, options);
+    const req: ClientContext = new ClientContext(this, method, target, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => req.send());
