@@ -32,7 +32,7 @@ export class ReferClientContext extends ReferClientContextBase {
       stringOrURI = targetString && targetString.uri ? targetString.uri : target;
 
       // Check target validity
-      const targetUri: URI | undefined = this.ua.normalizeTarget(this.target as string);
+      const targetUri: URI | undefined = this.ua.normalizeTarget(target);
       if (!targetUri) {
         throw new TypeError("Invalid target: " + target);
       }
