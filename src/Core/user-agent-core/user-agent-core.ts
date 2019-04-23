@@ -14,6 +14,7 @@ import {
   OutgoingInviteRequestDelegate,
   OutgoingMessageRequest,
   OutgoingPublishRequest,
+  OutgoingRegisterRequest,
   OutgoingRequest,
   OutgoingRequestDelegate,
   OutgoingResponse,
@@ -34,6 +35,7 @@ import {
   NotifyUserAgentServer,
   PublishUserAgentClient,
   ReferUserAgentServer,
+  RegisterUserAgentClient,
   SubscribeUserAgentClient,
   UserAgentClient,
   UserAgentServer
@@ -169,6 +171,18 @@ export class UserAgentCore {
     delegate?: OutgoingRequestDelegate
   ): OutgoingPublishRequest {
     return new PublishUserAgentClient(this, request, delegate);
+  }
+
+  /**
+   * Send REGISTER.
+   * @param request Outgoing request.
+   * @param delegate Request delegate.
+   */
+  public register(
+    request: OutgoingRequestMessage,
+    delegate?: OutgoingRequestDelegate
+  ): OutgoingRegisterRequest {
+    return new RegisterUserAgentClient(this, request, delegate);
   }
 
   /**

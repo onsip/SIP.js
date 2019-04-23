@@ -7,5 +7,6 @@ export * from "./message";
 export * from "./notify";
 export * from "./prack";
 export * from "./publish";
+export * from "./register";
 export * from "./refer";
 export * from "./subscribe";
