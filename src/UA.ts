@@ -45,7 +45,6 @@ import { Transport as WebTransport } from "./Web/Transport";
 
 import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
 import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
-import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
 import {
   IncomingInviteRequest,
   IncomingMessageRequest,
@@ -346,7 +345,7 @@ export class UA extends EventEmitter {
           incomingReferRequest.reject({ statusCode: 405 });
         }
         this.logger.log("Allow out of dialog refers is enabled on the UA");
-        const referContext = new ReferServerContextExperimental(this, incomingReferRequest.message);
+        const referContext = new ReferServerContext(this, incomingReferRequest.message);
         if (this.listeners("outOfDialogReferRequested").length) {
           this.emit("outOfDialogReferRequested", referContext);
         } else {

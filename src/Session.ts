@@ -39,8 +39,6 @@ import { URI } from "./URI";
 
 import { Utils } from "./Utils";
 
-import { ReferClientContext as ReferClientContextExperimental } from "./Contexts/refer-client-context";
-import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
 import { Session as SessionExperimental } from "./Core/session";
 
 export namespace Session {
@@ -234,21 +232,12 @@ export abstract class Session extends EventEmitter {
       throw new Exceptions.InvalidStateError(this.status);
     }
 
-    if (this.session) {
-      this.referContext = new ReferClientContextExperimental(
-        this.ua,
-        (this as unknown) as InviteClientContext | InviteServerContext,
-        target,
-        options
-      );
-    } else {
-      this.referContext = new ReferClientContext(
-        this.ua,
-        (this as unknown) as InviteClientContext | InviteServerContext,
-        target,
-        options
-      );
-    }
+    this.referContext = new ReferClientContext(
+      this.ua,
+      (this as unknown) as InviteClientContext | InviteServerContext,
+      target,
+      options
+    );
 
     this.emit("referRequested", this.referContext);
 
@@ -504,11 +493,7 @@ export abstract class Session extends EventEmitter {
       case C.REFER:
         if (this.status ===  SessionStatus.STATUS_CONFIRMED) {
           this.logger.log("REFER received");
-          if (this.session) {
-            this.referContext = new ReferServerContextExperimental(this.ua, request, this.session);
-          } else {
-            this.referContext = new ReferServerContext(this.ua, request);
-          }
+          this.referContext = new ReferServerContext(this.ua, request, this.session);
           if (this.listeners("referRequested").length) {
             this.emit("referRequested", this.referContext);
           } else {
