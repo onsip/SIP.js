@@ -12,8 +12,8 @@ import { Transport } from "../../../src/Transport";
 import { UA } from "../../../src/UA";
 import { URI } from "../../../src/URI";
 
-import { InviteClientContext } from "../../../src/Contexts/invite-client-context";
-import { InviteServerContext } from "../../../src/Contexts/invite-server-context";
+import { InviteClientContext } from "../../../src/Session";
+import { InviteServerContext } from "../../../src/Session";
 
 import {
   connectTransportToUA,

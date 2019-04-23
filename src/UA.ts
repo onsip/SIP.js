@@ -3,6 +3,12 @@ import { EventEmitter } from "events";
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
 import {
+  IncomingInviteRequest,
+  IncomingMessageRequest,
+  IncomingNotifyRequest,
+  IncomingReferRequest
+} from "./Core/messages";
+import {
   ClientTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
@@ -12,6 +18,11 @@ import {
   Transaction,
   TransactionState
 } from "./Core/transactions";
+import {
+  makeUserAgentCoreConfigurationFromUA,
+  UserAgentCore,
+  UserAgentCoreDelegate
+} from "./Core/user-agent-core";
 import { Dialog } from "./Dialogs";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
@@ -22,7 +33,6 @@ import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
 import { ReferServerContext } from "./ReferContext";
 import { RegisterContext } from "./RegisterContext";
-import { SanityCheck } from "./SanityCheck";
 import { ServerContext } from "./ServerContext";
 import { InviteClientContext, InviteServerContext } from "./Session";
 import {
@@ -42,20 +52,6 @@ import {
   SessionDescriptionHandler as WebSessionDescriptionHandler
 } from "./Web/SessionDescriptionHandler";
 import { Transport as WebTransport } from "./Web/Transport";
-
-import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
-import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
-import {
-  IncomingInviteRequest,
-  IncomingMessageRequest,
-  IncomingNotifyRequest,
-  IncomingReferRequest
-} from "./Core/messages";
-import {
-  makeUserAgentCoreConfigurationFromUA,
-  UserAgentCore,
-  UserAgentCoreDelegate
-} from "./Core/user-agent-core";
 
 const environment = (global as any).window || global;
 
@@ -268,7 +264,7 @@ export class UA extends EventEmitter {
     // information with a confirmed or early dialog.
     // https://tools.ietf.org/html/rfc3891#section-3
     const handleInviteWithReplacesHeader = (
-      context: InviteServerContextExperimental,
+      context: InviteServerContext,
       request: IncomingRequest
     ): void => {
       if (this.configuration.replaces !== SIPConstants.supported.UNSUPPORTED) {
@@ -311,7 +307,7 @@ export class UA extends EventEmitter {
             context.onTransportError();
           }
         };
-        const context = new InviteServerContextExperimental(this, incomingInviteRequest);
+        const context = new InviteServerContext(this, incomingInviteRequest);
         // Ported - handling of out of dialog INVITE with Replaces.
         handleInviteWithReplacesHeader(context, incomingInviteRequest.message);
         // Ported - make the first call to progress automatically.
@@ -445,10 +441,7 @@ export class UA extends EventEmitter {
     options?: InviteClientContext.Options,
     modifiers?: SessionDescriptionHandlerModifiers
   ): InviteClientContext {
-    const context: InviteClientContext =
-      this.userAgentCore ?
-        new InviteClientContextExperimental(this, target, options, modifiers) :
-        new InviteClientContext(this, target, options, modifiers);
+    const context: InviteClientContext = new InviteClientContext(this, target, options, modifiers);
     // Delay sending actual invite until the next 'tick' if we are already
     // connected, so that API consumers can register to events fired by the
     // the session.
@@ -1206,7 +1199,7 @@ export class UA extends EventEmitter {
             }
           }
 
-          const newSession: InviteServerContext = new InviteServerContext(this, request);
+          const newSession: InviteServerContext = new InviteServerContext(this, request as any);
           if (replacedDialog && !(replacedDialog.owner.type === TypeStrings.Subscription)) {
             newSession.replacee = replacedDialog && (replacedDialog.owner as InviteClientContext | InviteServerContext);
           }
