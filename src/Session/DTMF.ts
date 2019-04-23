@@ -104,6 +104,15 @@ export class DTMF extends EventEmitter {
       body: "Signal= " + this.tone + "\r\nDuration= " + this.duration
     };
 
+    if (this.owner.session) {
+      const request = this.owner.session.info(undefined, {
+        extraHeaders,
+        body
+      });
+      this.owner.emit("dtmf", request.message, this);
+      return;
+    }
+
     if (this.owner.dialog) {
       const request: OutgoingRequest = this.owner.dialog.sendRequest(this, C.INFO, {
         extraHeaders,
