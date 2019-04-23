@@ -23,6 +23,26 @@ export class ReferClientContext extends ReferClientContextBase {
     super(ua, context, target, options);
   }
 
+  // Override ClientContext
+  public onRequestTimeout(): void {
+    throw new Error("Method not utilized by user agent core.");
+  }
+
+  // Override ClientContext
+  public onTransportError(): void {
+    throw new Error("Method not utilized by user agent core.");
+  }
+
+  // Override ClientContext
+  public receiveResponse(): void {
+    throw new Error("Method not utilized by user agent core.");
+  }
+
+  // Override ClientContext
+  public send(): this {
+    throw new Error("Method not utilized by user agent core.");
+  }
+
   protected initReferTo(target: InviteClientContext | InviteServerContext | string): string | URI {
     let stringOrURI: string | URI;
 
