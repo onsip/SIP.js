@@ -45,7 +45,6 @@ import { Transport as WebTransport } from "./Web/Transport";
 
 import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
 import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
-import { PublishClientContext as PublishClientContextExperimental } from "./Contexts/publish-client-context";
 import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
 import { RegisterClientContext as RegisterClientContextExperimental } from "./Contexts/register-client-context";
 import { SubscribeClientContext as SubscribeClientContextExperimental } from "./Contexts/subscribe-client-context";
@@ -491,10 +490,7 @@ export class UA extends EventEmitter {
    * @throws {SIP.Exceptions.MethodParameterError}
    */
   public publish(target: string | URI, event: string, body: string, options: any): PublishContext {
-    const pub: PublishContext =
-      this.userAgentCore ?
-        new PublishClientContextExperimental(this, target, event, options) :
-        new PublishContext(this, target, event, options);
+    const pub: PublishContext = new PublishContext(this, target, event, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => {
