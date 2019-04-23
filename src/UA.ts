@@ -46,7 +46,6 @@ import { Transport as WebTransport } from "./Web/Transport";
 import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
 import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
 import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
-import { RegisterClientContext as RegisterClientContextExperimental } from "./Contexts/register-client-context";
 import { SubscribeClientContext as SubscribeClientContextExperimental } from "./Contexts/subscribe-client-context";
 import {
   IncomingInviteRequest,
@@ -363,10 +362,7 @@ export class UA extends EventEmitter {
     this.userAgentCore = new UserAgentCore(userAgentCoreConfiguration, userAgentCoreDelegate);
 
     // Initialize registerContext
-    this.registerContext =
-      this.userAgentCore ?
-      new RegisterClientContextExperimental(this, configuration.registerOptions) :
-      new RegisterContext(this, configuration.registerOptions);
+    this.registerContext = new RegisterContext(this, configuration.registerOptions);
     this.registerContext.on("failed", this.emit.bind(this, "registrationFailed"));
     this.registerContext.on("registered", this.emit.bind(this, "registered"));
     this.registerContext.on("unregistered", this.emit.bind(this, "unregistered"));

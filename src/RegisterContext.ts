@@ -423,6 +423,17 @@ export class RegisterContext extends ClientContext {
     this.emit("unregistered", response || undefined, cause || undefined);
   }
 
+  public send(): this {
+    this.ua.userAgentCore.register(this.request, {
+      onAccept: (response): void => this.receiveResponse(response.message),
+      onProgress: (response): void => this.receiveResponse(response.message),
+      onRedirect: (response): void => this.receiveResponse(response.message),
+      onReject: (response): void => this.receiveResponse(response.message),
+      onTrying: (response): void => this.receiveResponse(response.message)
+    });
+    return this;
+  }
+
   private registrationFailure(response: IncomingResponse | undefined, cause: string): void {
     this.emit("failed", response || undefined, cause || undefined);
   }
