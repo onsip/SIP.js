@@ -902,6 +902,13 @@ export class UA extends EventEmitter {
           return;
         }
 
+      // Custom SIP.js check to drop responses if multiple Via headers.
+      // This is port of SanityCheck.rfc3261_8_1_3_3().
+      if (message.getHeaders("via").length > 1) {
+        this.logger.warn("More than one Via header field present in the response. Dropping.");
+        return;
+      }
+
         // FIXME: This should be Transport check before we get here (Section 18).
         // Custom SIP.js check to drop responses if bad Via header.
         // This is port of SanityCheck.rfc3261_18_1_2().
