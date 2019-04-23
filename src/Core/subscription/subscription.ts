@@ -35,8 +35,8 @@ export interface Subscription {
  */
 export enum SubscriptionState {
   Initial = "Initial",
-  notifyWait = "notifyWait",
-  AckWait = "pending",
-  active = "active",
+  NotifyWait = "NotifyWait",
+  Pending = "Pending",
+  Active = "Active",
   Terminated = "Terminated"
 }
