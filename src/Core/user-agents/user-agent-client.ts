@@ -225,14 +225,6 @@ export class UserAgentClient implements OutgoingRequest {
       this.stale = true;
     }
 
-    // if (message.method === C.REGISTER) {
-    //   cseq = (this.applicant as RegisterContext).cseq += 1;
-    // } else if (this.message.dialog) {
-    //   cseq = this.message.dialog.localSeqnum += 1;
-    // } else {
-    //   cseq = (this.message.cseq || 0) + 1;
-    //   this.message.cseq = cseq;
-    // }
     const cseq = this.message.cseq += 1;
     this.message.setHeader("cseq", cseq + " " + this.message.method);
     this.message.setHeader(authorizationHeaderName, this.credentials.toString());
@@ -251,6 +243,10 @@ export class UserAgentClient implements OutgoingRequest {
    * @param message Incoming response message.
    */
   protected receiveResponse(message: IncomingResponseMessage): void {
+    if (!this.authenticationGuard(message)) {
+      return;
+    }
+
     const statusCode = message.statusCode ? message.statusCode.toString() : "";
     if (!statusCode) {
       throw new Error("Response status code undefined.");
