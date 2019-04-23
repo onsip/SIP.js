@@ -10,8 +10,7 @@ import {
   OutgoingRequestDelegate,
   OutgoingResponse,
   OutgoingResponseWithSession,
-  RequestOptions,
-  toBodyObj
+  RequestOptions
 } from "../Core/messages";
 import { SessionState, SignalingState } from "../Core/session";
 
@@ -287,37 +286,42 @@ export class InviteServerContext extends InviteServerContextBase {
     // response or until the server transaction times out.
     // https://tools.ietf.org/html/rfc3261#section-15
 
-    // We don't yet have a confirmed dialog, so reject request.
+    // We don't yet have a dialog, so reject request.
     if (!this.session) {
       this.reject(options);
       return this;
     }
 
-    // We have a confirmed dialog and we're not waiting for an ACK.
-    if (this.session.sessionState === SessionState.Confirmed) {
-      this.bye(options);
-      return this;
+    switch (this.session.sessionState) {
+      case SessionState.Initial:
+        this.reject(options);
+        return this;
+      case SessionState.Early:
+        this.reject(options);
+        return this;
+      case SessionState.AckWait:
+        this.session.delegate = {
+          // When ACK shows up, say BYE.
+          onAck: (): void => {
+            this.bye();
+          },
+          // Or the server transaction times out before the ACK arrives.
+          onAckTimeout: (): void => {
+            this.bye();
+          }
+        };
+        // Ported
+        this.emit("bye", this.request);
+        this.terminated();
+        return this;
+      case SessionState.Confirmed:
+        this.bye(options);
+        return this;
+      case SessionState.Terminated:
+        return this;
+      default:
+        return this;
     }
-
-    // We have a confirmed dialog and we're waiting for an ACK.
-    if (this.session.sessionState === SessionState.AckWait) {
-      this.session.delegate = {
-        // When ACK shows up, say BYE.
-        onAck: (): void => {
-          this.bye();
-        },
-        // Or the server transaction times out before the ACK arrives.
-        onAckTimeout: (): void => {
-          this.bye();
-        }
-      };
-    }
-
-    // Ported
-    this.emit("bye", this.request);
-    this.terminated();
-
-    return this;
   }
 
   protected generateResponseOfferAnswer(
