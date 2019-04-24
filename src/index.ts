@@ -18,11 +18,6 @@ export {
   ReferServerContext
 } from "./ReferContext";
 export { RegisterContext } from "./RegisterContext";
-
-import { SanityCheck } from "./SanityCheck";
-const sanityCheck = SanityCheck.sanityCheck;
-export { sanityCheck };
-
 export { ServerContext } from "./ServerContext";
 export {
   InviteClientContext,
