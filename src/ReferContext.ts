@@ -250,8 +250,6 @@ export class ReferServerContext extends ServerContext {
     this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
   }
 
-  public receiveNonInviteResponse(response: IncomingResponse): void { /* intentionally blank */}
-
   public progress(): void {
     if (this.status !== SessionStatus.STATUS_WAITING_FOR_ANSWER) {
       throw new Exceptions.InvalidStateError(this.status);
