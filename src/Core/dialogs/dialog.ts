@@ -331,6 +331,9 @@ export class Dialog {
    */
   public receiveRequest(message: IncomingRequestMessage): void {
     // ACK guard.
+    // By convention, the handling of ACKs is the responsibility
+    // the particular dialog implementation. For example, see InviteDialog.
+    // Furthermore, ACKs have same sequence number as the associated INVITE.
     if (message.method === C.ACK) {
       return;
     }
@@ -541,6 +544,9 @@ export class Dialog {
    */
   protected sequenceGuard(message: IncomingRequestMessage): boolean {
     // ACK guard.
+    // By convention, handling of unexpected ACKs is responsibility
+    // the particular dialog implementation. For example, see InviteDialog.
+    // Furthermore, we cannot reply to an "out of sequence" ACK.
     if (message.method === C.ACK) {
       return true;
     }

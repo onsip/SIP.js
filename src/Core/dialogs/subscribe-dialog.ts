@@ -65,6 +65,7 @@ export class SubscribeDialog extends Dialog implements Subscription {
     // Request within a dialog out of sequence guard.
     // https://tools.ietf.org/html/rfc3261#section-12.2.2
     if (!this.sequenceGuard(message)) {
+      this.logger.log(`SUBSCRIBE dialog ${this.id} rejected out of order ${message.method} request.`);
       return;
     }
 
