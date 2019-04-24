@@ -1,6 +1,5 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Dialog } from "./Dialogs";
 import { TypeStrings } from "./Enums";
 import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 import { Timers } from "./Timers";
@@ -23,7 +22,6 @@ export class Subscription extends ClientContext {
   protected state: string;
   protected contact: string;
   protected extraHeaders: Array<string>;
-  protected dialog: Dialog | undefined;
   protected timers: any;
   protected errorCodes: Array<number>;
 
@@ -102,7 +100,7 @@ export class Subscription extends ClientContext {
   }
 
   public refresh(): void {
-    if (this.state === "terminated" || this.state === "pending" || this.state === "notify_wait" || !this.dialog) {
+    if (this.state === "terminated" || this.state === "pending" || this.state === "notify_wait" || !this.subscription) {
       return;
     }
 
@@ -202,19 +200,6 @@ export class Subscription extends ClientContext {
       return;
     }
 
-    if (!this.dialog) {
-      if (this.createConfirmedDialog(request, "UAS")) {
-        if (this.dialog) {
-          this.id = (this.dialog as Dialog).id.toString();
-          if (this.request && this.request.from) {
-            delete this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag  + this.event];
-            this.ua.subscriptions[this.id || ""] = this;
-            // UPDATE ROUTE SET TO BE BACKWARDS COMPATIBLE?
-          }
-        }
-      }
-    }
-
     subState = request.parseHeader("Subscription-State");
 
     request.reply(200);
@@ -227,7 +212,6 @@ export class Subscription extends ClientContext {
     // and we are only interested in cleaning up after the appropriate NOTIFY
     if (this.state === "terminated") {
       if (subState.state === "terminated") {
-        this.terminateDialog();
         clearTimeout(this.timers.N);
         clearTimeout(this.timers.subDuration);
 
@@ -311,6 +295,11 @@ export class Subscription extends ClientContext {
     this.ua.userAgentCore.subscribe(this.request, {
       onAccept: (subscribeResponse): void => {
         this.subscription = subscribeResponse.subscription;
+        this.id = this.subscription.id;
+        if (this.request && this.request.from) {
+          delete this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag  + this.event];
+        }
+        this.ua.subscriptions[this.id] = this;
         return this.receiveResponse(subscribeResponse.message);
       },
       onProgress: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
@@ -330,7 +319,6 @@ export class Subscription extends ClientContext {
 
   protected timer_fire(): void {
     if (this.state === "terminated") {
-      this.terminateDialog();
       clearTimeout(this.timers.N);
       clearTimeout(this.timers.subDuration);
 
@@ -339,18 +327,6 @@ export class Subscription extends ClientContext {
       this.close();
     } else {
       this.refresh();
-    }
-  }
-
-  protected createConfirmedDialog(message: IncomingRequest, type: "UAC" | "UAS"): boolean {
-    return true;
-  }
-
-  protected terminateDialog(): void {
-    if (this.dialog) {
-      delete this.ua.subscriptions[this.id || ""];
-      this.dialog.terminate();
-      delete this.dialog;
     }
   }
 
