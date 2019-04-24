@@ -1633,7 +1633,7 @@ describe('InviteClientContext', function() {
     });
   });
 
-  describe('.receiveInviteResponse', function() {
+  xdescribe('.receiveInviteResponse', function() {
     var response;
     var resp;
 

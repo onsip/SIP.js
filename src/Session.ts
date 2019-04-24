@@ -923,10 +923,6 @@ export abstract class Session extends EventEmitter {
     this.emit("connecting", { request });
     return this;
   }
-
-  protected receiveNonInviteResponse(response: IncomingResponseMessage): void {
-    // blank, to be overridden
-  }
 }
 
 export namespace InviteServerContext {
@@ -997,8 +993,6 @@ export class InviteServerContext extends Session implements ServerContext {
     this.id = request.callId + this.fromTag;
     this.request = request;
     this.contact = this.ua.contact.toString();
-
-    this.receiveNonInviteResponse = () => { /* intentional no-op */ };
 
     this.logger = ua.getLogger("sip.inviteservercontext", this.id);
 
@@ -1087,6 +1081,11 @@ export class InviteServerContext extends Session implements ServerContext {
     return this.rel100 === C.supported.REQUIRED ? false : true;
   }
 
+  // type hack for servercontext interface
+  public reply(options: any = {}): this {
+    return this;
+  }
+
   // typing note: this was the only function using its super in ServerContext
   // so the bottom half of this function is copied and paired down from that
   public reject(options: InviteServerContext.Options = {}): this {
@@ -1111,11 +1110,6 @@ export class InviteServerContext extends Session implements ServerContext {
     });
 
     return this.terminated();
-  }
-
-  // type hack for servercontext interface
-  public reply(options: any = {}): this {
-    return this;
   }
 
   /**
@@ -1989,12 +1983,8 @@ export class InviteClientContext extends Session implements ClientContext {
     }
   }
 
-  public receiveNonInviteResponse(response: IncomingResponseMessage): void {
-    this.receiveInviteResponse(response);
-  }
-
   public receiveResponse(response: IncomingResponseMessage): void {
-    this.receiveInviteResponse(response);
+    throw new Error("Unimplemented.");
   }
 
   // hack for getting around ClientContext interface
@@ -2048,370 +2038,6 @@ export class InviteClientContext extends Session implements ClientContext {
       }
     });
     return this;
-  }
-
-  public receiveInviteResponse(response: IncomingResponseMessage): void {
-    if (this.status === SessionStatus.STATUS_TERMINATED || response.method !== C.INVITE) {
-      return;
-    }
-
-    const id: string = response.callId + response.fromTag + response.toTag;
-    const extraHeaders: Array<string> = [];
-
-    if (this.dialog && (response.statusCode && response.statusCode >= 200 && response.statusCode <= 299)) {
-      if (id !== this.dialog.id.toString() ) {
-        if (!this.createDialog(response, "UAC", true)) {
-          return;
-        }
-        this.emit("ack", response.ack({body: Utils.generateFakeSDP(response.body)}));
-        this.earlyDialogs[id].sendRequest(this, C.BYE);
-
-        /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
-         * leg (due to peerConnection limitations) has been answered first. If your forking
-         * proxy does not hang up all unanswered branches on the first branch answered, remove this.
-         */
-        if (this.status !== SessionStatus.STATUS_CONFIRMED) {
-          this.failed(response, C.causes.WEBRTC_ERROR);
-          this.terminated(response, C.causes.WEBRTC_ERROR);
-        }
-        return;
-      } else if (this.status === SessionStatus.STATUS_CONFIRMED) {
-        this.emit("ack", response.ack());
-        return;
-      } else if (!this.hasAnswer) {
-        // invite w/o sdp is waiting for callback
-        // an invite with sdp must go on, and hasAnswer is true
-        return;
-      }
-    }
-
-    const statusCode: number | undefined = response && response.statusCode;
-
-    if (this.dialog && statusCode && statusCode < 200) {
-      /*
-        Early media has been set up with at least one other different branch,
-        but a final 2xx response hasn't been received
-      */
-      const rseq: string | undefined = response.getHeader("rseq");
-      if (rseq && (this.dialog.pracked.indexOf(rseq) !== -1 ||
-          (Number(this.dialog.pracked[this.dialog.pracked.length - 1]) >= Number(rseq) &&
-          this.dialog.pracked.length > 0))) {
-        return;
-      }
-
-      if (!this.earlyDialogs[id] && !this.createDialog(response, "UAC", true)) {
-        return;
-      }
-
-      if (this.earlyDialogs[id].pracked.indexOf(response.getHeader("rseq")) !== -1 ||
-          (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length - 1] >= Number(rseq) &&
-          this.earlyDialogs[id].pracked.length > 0)) {
-        return;
-      }
-
-      extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
-      this.earlyDialogs[id].pracked.push(response.getHeader("rseq"));
-
-      this.earlyDialogs[id].sendRequest(this, C.PRACK, {
-        extraHeaders,
-        body: Utils.generateFakeSDP(response.body)
-      });
-      return;
-    }
-
-    // Proceed to cancellation if the user requested.
-    if (this.isCanceled) {
-      if (statusCode && statusCode >= 100 && statusCode < 200) {
-        this.request.cancel(this.cancelReason, extraHeaders);
-        this.canceled();
-      } else if (statusCode && statusCode >= 200 && statusCode < 299) {
-        this.acceptAndTerminate(response);
-        // FIXME: Needs review.
-        // The call to acceptAndTerminate() on the line above will send
-        // a BYE request and emit a "bye" event with that BYE request attached.
-        // Why are we then emitting a second "bye" event with the INVITE request?
-        // Is it because terminate() send a "bye" event with the INVITE request?
-        // Furthermore, everywhere else acceptAndTerminate() is called, it is
-        // followed by a called to failed(). Why not in this case??
-        this.emit("bye", this.request);
-      } else if (statusCode && statusCode >= 300) {
-        const cause: string = (C.REASON_PHRASE as any)[response.statusCode || 0] || C.causes.CANCELED;
-        this.rejected(response, cause);
-        this.failed(response, cause);
-        this.terminated(response, cause);
-      }
-      return;
-    }
-
-    const codeString = statusCode ? statusCode.toString() : "";
-
-    switch (true) {
-      case /^100$/.test(codeString):
-        this.received100 = true;
-        this.emit("progress", response);
-        break;
-      case (/^1[0-9]{2}$/.test(codeString)):
-        // Do nothing with 1xx responses without To tag.
-        if (!response.toTag) {
-          this.logger.warn("1xx response received without to tag");
-          break;
-        }
-
-        // Create Early Dialog if 1XX comes with contact
-        if (response.hasHeader("contact")) {
-          // An error on dialog creation will fire 'failed' event
-          if (!this.createDialog(response, "UAC", true)) {
-            break;
-          }
-        }
-
-        this.status = SessionStatus.STATUS_1XX_RECEIVED;
-
-        if (response.hasHeader("P-Asserted-Identity")) {
-          this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
-        }
-
-        if (response.hasHeader("require") &&
-            (response.getHeader("require") as string).indexOf("100rel") !== -1) {
-
-          // Do nothing if this.dialog is already confirmed
-          if (this.dialog || !this.earlyDialogs[id]) {
-            break;
-          }
-
-          const rseq: string | undefined = response.getHeader("rseq");
-          if (this.earlyDialogs[id].pracked.indexOf(rseq) !== -1 ||
-              (this.earlyDialogs[id].pracked[this.earlyDialogs[id].pracked.length - 1] >= Number(rseq) &&
-              this.earlyDialogs[id].pracked.length > 0)) {
-            return;
-          }
-          // TODO: This may be broken. It may have to be on the early dialog
-          this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(
-            this,
-            this.ua.configuration.sessionDescriptionHandlerFactoryOptions || {}
-          );
-          this.emit("SessionDescriptionHandler-created", this.sessionDescriptionHandler);
-          if (!this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || "")) {
-            extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
-            this.earlyDialogs[id].pracked.push(response.getHeader("rseq"));
-            this.earlyDialogs[id].sendRequest(this, C.PRACK, {
-              extraHeaders
-            });
-            this.emit("progress", response);
-
-          } else if (this.hasOffer) {
-            if (!this.createDialog(response, "UAC")) {
-              break;
-            }
-            this.hasAnswer = true;
-            if (this.dialog !== undefined && rseq) {
-              (this.dialog as Dialog).pracked.push(rseq);
-            }
-
-            this.sessionDescriptionHandler.setDescription(
-              response.body,
-              this.sessionDescriptionHandlerOptions,
-              this.modifiers
-            ).then(() => {
-              extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
-
-              this.sendRequest(C.PRACK, {
-                extraHeaders,
-                // tslint:disable-next-line:no-empty
-                receiveResponse: () => {}
-              });
-              this.status = SessionStatus.STATUS_EARLY_MEDIA;
-              this.emit("progress", response);
-            }, (e: any) => {
-              this.logger.warn(e);
-              this.acceptAndTerminate(response, 488, "Not Acceptable Here");
-              this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
-            });
-          } else {
-            const earlyDialog: Dialog = this.earlyDialogs[id];
-            earlyDialog.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(
-              this,
-              this.ua.configuration.sessionDescriptionHandlerFactoryOptions || {}
-            );
-            this.emit("SessionDescriptionHandler-created", earlyDialog.sessionDescriptionHandler);
-
-            if (rseq) {
-              earlyDialog.pracked.push(rseq);
-            }
-
-            if (earlyDialog.sessionDescriptionHandler) {
-              earlyDialog.sessionDescriptionHandler.setDescription(
-                response.body,
-                this.sessionDescriptionHandlerOptions,
-                this.modifiers
-              ).then(() => (earlyDialog.sessionDescriptionHandler as SessionDescriptionHandler).getDescription(
-                this.sessionDescriptionHandlerOptions,
-                this.modifiers)
-              ).then((description: BodyObj) => {
-                extraHeaders.push("RAck: " + rseq + " " + response.getHeader("cseq"));
-                earlyDialog.sendRequest(this, C.PRACK, {
-                  extraHeaders,
-                  body: description
-                });
-                this.status = SessionStatus.STATUS_EARLY_MEDIA;
-                this.emit("progress", response);
-              }).catch((e: any) => {
-                // TODO: This is a bit wonky
-                if (rseq && e.type === TypeStrings.SessionDescriptionHandlerError) {
-                  earlyDialog.pracked.push(rseq);
-                  if (this.status === SessionStatus.STATUS_TERMINATED) {
-                    return;
-                  }
-                  this.failed(undefined, C.causes.WEBRTC_ERROR);
-                  this.terminated(undefined, C.causes.WEBRTC_ERROR);
-                } else {
-                  if (rseq) {
-                    earlyDialog.pracked.splice(earlyDialog.pracked.indexOf(rseq), 1);
-                  }
-                  // Could not set remote description
-                  this.logger.warn("invalid description");
-                  this.logger.warn(e);
-                }
-                // FIXME: DON'T EAT UNHANDLED ERRORS!
-              });
-            }
-          }
-        } else {
-          this.emit("progress", response);
-        }
-        break;
-      case /^2[0-9]{2}$/.test(codeString):
-        const cseq: string = this.request.cseq + " " + this.request.method;
-        if (cseq !== response.getHeader("cseq")) {
-          break;
-        }
-
-        if (response.hasHeader("P-Asserted-Identity")) {
-          this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
-        }
-
-        if (this.status === SessionStatus.STATUS_EARLY_MEDIA && this.dialog) {
-          this.status = SessionStatus.STATUS_CONFIRMED;
-          const options: any = {};
-          if (this.renderbody) {
-            extraHeaders.push("Content-Type: " + this.rendertype);
-            options.extraHeaders = extraHeaders;
-            options.body = this.renderbody;
-          }
-          this.emit("ack", response.ack(options));
-          this.accepted(response);
-          break;
-        }
-        // Do nothing if this.dialog is already confirmed
-        if (this.dialog) {
-          break;
-        }
-
-        // This is an invite without sdp
-        if (!this.hasOffer) {
-          if (this.earlyDialogs[id] && this.earlyDialogs[id].sessionDescriptionHandler) {
-            // REVISIT
-            this.hasOffer = true;
-            this.hasAnswer = true;
-            this.sessionDescriptionHandler = this.earlyDialogs[id].sessionDescriptionHandler;
-            if (!this.createDialog(response, "UAC")) {
-              break;
-            }
-            this.status = SessionStatus.STATUS_CONFIRMED;
-            this.emit("ack", response.ack());
-
-            this.accepted(response);
-          } else {
-            this.sessionDescriptionHandler = this.sessionDescriptionHandlerFactory(
-              this,
-              this.ua.configuration.sessionDescriptionHandlerFactoryOptions || {}
-            );
-            this.emit("SessionDescriptionHandler-created", this.sessionDescriptionHandler);
-
-            if (!this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || "")) {
-              this.acceptAndTerminate(response, 400, "Missing session description");
-              this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
-              break;
-            }
-            if (!this.createDialog(response, "UAC")) {
-              break;
-            }
-            this.hasOffer = true;
-            this.sessionDescriptionHandler.setDescription(
-              response.body,
-              this.sessionDescriptionHandlerOptions,
-              this.modifiers
-            ).then(() => (this.sessionDescriptionHandler as SessionDescriptionHandler).getDescription(
-              this.sessionDescriptionHandlerOptions,
-              this.modifiers
-            )).then((description: BodyObj) => {
-              if (this.isCanceled || this.status === SessionStatus.STATUS_TERMINATED) {
-                return;
-              }
-
-              this.status = SessionStatus.STATUS_CONFIRMED;
-              this.hasAnswer = true;
-              this.emit("ack", response.ack({body: description}));
-              this.accepted(response);
-            }).catch((e: any) => {
-              if (e.type === TypeStrings.SessionDescriptionHandlerError) {
-                this.logger.warn("invalid description");
-                this.logger.warn(e.toString());
-                // TODO: This message is inconsistent
-                this.acceptAndTerminate(response, 488, "Invalid session description");
-                this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
-              } else {
-                throw e;
-              }
-            });
-          }
-        } else if (this.hasAnswer) {
-          const options: any = {};
-          if (this.renderbody) {
-            extraHeaders.push("Content-Type: " + this.rendertype);
-            options.extraHeaders = extraHeaders;
-            options.body = this.renderbody;
-          }
-          this.emit("ack", response.ack(options));
-        } else {
-          if (!this.sessionDescriptionHandler ||
-            !this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || "")) {
-            this.acceptAndTerminate(response, 400, "Missing session description");
-            this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
-            break;
-          }
-          if (!this.createDialog(response, "UAC")) {
-            break;
-          }
-          this.hasAnswer = true;
-          this.sessionDescriptionHandler.setDescription(
-            response.body,
-            this.sessionDescriptionHandlerOptions,
-            this.modifiers
-          ).then(() => {
-            const options: any = {};
-            this.status = SessionStatus.STATUS_CONFIRMED;
-            if (this.renderbody) {
-              extraHeaders.push("Content-Type: " + this.rendertype);
-              options.extraHeaders = extraHeaders;
-              options.body = this.renderbody;
-            }
-            this.emit("ack", response.ack(options));
-            this.accepted(response);
-          }, (e: any) => {
-            this.logger.warn(e);
-            this.acceptAndTerminate(response, 488, "Not Acceptable Here");
-            this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
-            // FIME: DON'T EAT UNHANDLED ERRORS!
-          });
-        }
-        break;
-      default:
-        const cause: string = Utils.sipErrorCause(statusCode || 0);
-        this.rejected(response, cause);
-        this.failed(response, cause);
-        this.terminated(response, cause);
-    }
   }
 
   public cancel(options: any = {}): this {
@@ -2744,9 +2370,6 @@ export class InviteClientContext extends Session implements ClientContext {
     // We should be able to get rid of all the hasOffer/hasAnswer tracking code and otherwise code
     // it up to the same interaction with the SDH Factory and SDH regardless of signaling scenario.
     ////
-    if (!this.ua.userAgentCore) {
-      throw new Error("User agent core undefined.");
-    }
 
     // Send the INVITE request.
     this.outgoingInviteRequest = this.ua.userAgentCore.invite(this.request, {
