@@ -431,7 +431,7 @@ describe('UA', function() {
     });
   });
 
-  describe('.saveCredentials', function() {
+  xdescribe('.saveCredentials', function() {
     it('should create the credentials realm object if it does not exist', function() {
       var credentials = { realm : 'credential realm' ,
                           uri : 'credential uri' };
@@ -454,7 +454,7 @@ describe('UA', function() {
     });
   });
 
-  describe('.getCredentials', function() {
+  xdescribe('.getCredentials', function() {
     it('returns undefined if the credentials are not found', function() {
       var request = { ruri : { host : 'ruri host' },
                       method : 'request method' };
@@ -546,7 +546,7 @@ describe('UA', function() {
     });
   });
 
-  describe('.receiveRequest', function() {
+  xdescribe('.receiveRequest', function() {
     var replySpy;
     beforeEach(function() {
       replySpy = jasmine.createSpy('reply');
@@ -895,7 +895,7 @@ describe('UA', function() {
     });
   });
 
-  describe('.findDialog', function() {
+  xdescribe('.findDialog', function() {
     var request;
 
     beforeEach(function() {
