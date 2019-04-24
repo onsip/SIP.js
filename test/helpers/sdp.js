@@ -221,7 +221,7 @@ Messages.Invite = {
 
     ack: function (tag) {
       return 'ACK sip:alice@example.com SIP/2.0\r\n' +
-        'Via: SIP/2.0/WSS nn6bh156cpod.invalid;branch=z9hG4bK4798355\r\n' +
+        'Via: SIP/2.0/WSS nn6bh156cpod.invalid;branch=z9hG4bK4798355.1\r\n' +
         'Max-Forwards: 66\r\n' +
         'To: <sip:alice@example.com>;tag=' + tag + '\r\n' +
         'From: <sip:bob@example.com>;tag=lug30cg783\r\n' +

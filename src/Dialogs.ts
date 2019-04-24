@@ -1,4 +1,9 @@
 import { C } from "./Constants";
+import {
+  InviteClientTransaction,
+  NonInviteClientTransaction,
+  TransactionState
+} from "./Core/transactions";
 import { DialogStatus, SessionStatus, TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { RequestSender } from "./RequestSender";
@@ -11,11 +16,6 @@ import {
   OutgoingRequest
 } from "./SIPMessage";
 import { Subscription } from "./Subscription";
-import {
-  InviteClientTransaction,
-  NonInviteClientTransaction,
-  TransactionState
-} from "./Transactions";
 import { URI } from "./URI";
 
 /*
@@ -35,7 +35,7 @@ export class Dialog {
   public inviteSeqnum: number;
   public localUri: URI;
   public remoteUri: URI;
-  public remoteTarget: string;
+  public remoteTarget: URI;
   public id: {
     callId: string,
     localTag: string,

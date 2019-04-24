@@ -76,7 +76,7 @@ export class URI extends Parameters {
     scheme: string,
     user: string,
     host: string,
-    port: number | undefined,
+    port?: number,
     parameters?: any,
     headers?: any
   ) {

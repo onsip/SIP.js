@@ -58,10 +58,18 @@ describe('ServerContext', function() {
   });
 
   it('sets the transaction based on the request method', function() {
-    expect(ServerContext.transaction).toBeDefined();
+    if (ua.userAgentCore) {
+      expect(ServerContext.transaction).not.toBeDefined();
+    } else {
+      expect(ServerContext.transaction).toBeDefined();
+    }
     request.method = SIP.C.INVITE;
     ServerContext = new SIP.ServerContext(ua,request);
-    expect(ServerContext.transaction).toBeDefined();
+    if (ua.userAgentCore) {
+      expect(ServerContext.transaction).not.toBeDefined();
+    } else {
+      expect(ServerContext.transaction).toBeDefined();
+    }
   });
 
   it('initializes data', function() {

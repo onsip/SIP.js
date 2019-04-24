@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 
 import { C } from "../Constants";
+import { fromBodyObj } from "../Core/messages";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Logger } from "../LoggerFactory";
@@ -99,10 +100,19 @@ export class DTMF extends EventEmitter {
     // Get DTMF options
     const extraHeaders: Array<string> = options.extraHeaders ? options.extraHeaders.slice() : [];
 
-    const body: any = {
+    const body = {
       contentType: "application/dtmf-relay",
       body: "Signal= " + this.tone + "\r\nDuration= " + this.duration
     };
+
+    if (this.owner.session) {
+      const request = this.owner.session.info(undefined, {
+        extraHeaders,
+        body: fromBodyObj(body)
+      });
+      this.owner.emit("dtmf", request.message, this);
+      return;
+    }
 
     if (this.owner.dialog) {
       const request: OutgoingRequest = this.owner.dialog.sendRequest(this, C.INFO, {

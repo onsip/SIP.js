@@ -1,14 +1,14 @@
 import { C } from "./Constants";
-import { TypeStrings, UAStatus } from "./Enums";
-import { Logger, LoggerFactory } from "./LoggerFactory";
-import { RegisterContext } from "./RegisterContext";
-import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import {
   ClientTransactionUser,
   InviteClientTransaction,
   NonInviteClientTransaction,
   TransactionState
-} from "./Transactions";
+} from "./Core/transactions";
+import { TypeStrings, UAStatus } from "./Enums";
+import { Logger, LoggerFactory } from "./LoggerFactory";
+import { RegisterContext } from "./RegisterContext";
+import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { UA } from "./UA";
 
 export namespace RequestSender {

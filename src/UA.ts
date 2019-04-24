@@ -2,6 +2,16 @@ import { EventEmitter } from "events";
 
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
+import {
+  ClientTransaction,
+  InviteClientTransaction,
+  InviteServerTransaction,
+  NonInviteClientTransaction,
+  NonInviteServerTransaction,
+  ServerTransactionUser,
+  Transaction,
+  TransactionState
+} from "./Core/transactions";
 import { Dialog } from "./Dialogs";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
@@ -10,10 +20,11 @@ import { Grammar } from "./Grammar";
 import { Levels, Logger, LoggerFactory } from "./LoggerFactory";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
+import { ReferServerContext } from "./ReferContext";
 import { RegisterContext } from "./RegisterContext";
 import { SanityCheck } from "./SanityCheck";
 import { ServerContext } from "./ServerContext";
-import { InviteClientContext, InviteServerContext, ReferServerContext } from "./Session";
+import { InviteClientContext, InviteServerContext } from "./Session";
 import {
   SessionDescriptionHandler,
   SessionDescriptionHandlerModifiers
@@ -24,16 +35,6 @@ import {
 } from "./session-description-handler-factory";
 import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { Subscription } from "./Subscription";
-import {
-  ClientTransaction,
-  InviteClientTransaction,
-  InviteServerTransaction,
-  NonInviteClientTransaction,
-  NonInviteServerTransaction,
-  ServerTransactionUser,
-  Transaction,
-  TransactionState
-} from "./Transactions";
 import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
@@ -41,6 +42,24 @@ import {
   SessionDescriptionHandler as WebSessionDescriptionHandler
 } from "./Web/SessionDescriptionHandler";
 import { Transport as WebTransport } from "./Web/Transport";
+
+import { ClientContext as ClientContextExperimental } from "./Contexts/client-context";
+import { InviteClientContext as InviteClientContextExperimental } from "./Contexts/invite-client-context";
+import { InviteServerContext as InviteServerContextExperimental } from "./Contexts/invite-server-context";
+import { PublishClientContext as PublishClientContextExperimental } from "./Contexts/publish-client-context";
+import { ReferServerContext as ReferServerContextExperimental } from "./Contexts/refer-server-context";
+import { SubscribeClientContext as SubscribeClientContextExperimental } from "./Contexts/subscribe-client-context";
+import {
+  IncomingInviteRequest,
+  IncomingMessageRequest,
+  IncomingNotifyRequest,
+  IncomingReferRequest
+} from "./Core/messages";
+import {
+  makeUserAgentCoreConfigurationFromUA,
+  UserAgentCore,
+  UserAgentCoreDelegate
+} from "./Core/user-agent-core";
 
 const environment = (global as any).window || global;
 
@@ -55,6 +74,7 @@ export namespace UA {
     autostop?: boolean;
     displayName?: string;
     dtmfType?: DtmfType;
+    experimentalFeatures?: boolean;
     extraSupported?: Array<string>;
     forceRport?: boolean;
     hackIpInContact?: boolean;
@@ -160,6 +180,8 @@ export class UA extends EventEmitter {
   public earlySubscriptions: {[id: string]: Subscription};
   public subscriptions: {[id: string]: Subscription};
 
+  public userAgentCore: UserAgentCore | undefined;
+
   private log: LoggerFactory;
   private cache: any;
   private error: number | undefined;
@@ -240,6 +262,111 @@ export class UA extends EventEmitter {
       this.status = UAStatus.STATUS_NOT_READY;
       this.error = UA.C.CONFIGURATION_ERROR;
       throw e;
+    }
+
+    if (this.configuration.experimentalFeatures) {
+
+      const userAgentCoreConfiguration = makeUserAgentCoreConfigurationFromUA(this);
+
+      // The Replaces header contains information used to match an existing
+      // SIP dialog (call-id, to-tag, and from-tag).  Upon receiving an INVITE
+      // with a Replaces header, the User Agent (UA) attempts to match this
+      // information with a confirmed or early dialog.
+      // https://tools.ietf.org/html/rfc3891#section-3
+      const handleInviteWithReplacesHeader = (
+        context: InviteServerContextExperimental,
+        request: IncomingRequest
+      ): void => {
+        if (this.configuration.replaces !== SIPConstants.supported.UNSUPPORTED) {
+          if (!this.userAgentCore) {
+            throw new Error("User agent core undefined");
+          }
+          const replaces = request.parseHeader("replaces");
+          if (replaces) {
+            const targetSession =
+              this.sessions[replaces.call_id + replaces.replaces_from_tag] ||
+              this.sessions[replaces.call_id + replaces.replaces_to_tag] ||
+              undefined;
+            if (!targetSession) {
+              this.userAgentCore.replyStateless(request, { statusCode: 481 });
+              return;
+            }
+            if (targetSession.status === SessionStatus.STATUS_TERMINATED) {
+              this.userAgentCore.replyStateless(request, { statusCode: 603 });
+              return;
+            }
+            const targetDialogId = replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag;
+            const targetDialog = this.userAgentCore.dialogs.get(targetDialogId);
+            if (!targetDialog) {
+              this.userAgentCore.replyStateless(request, { statusCode: 481 });
+              return;
+            }
+            if (!targetDialog.early && replaces.early_only) {
+              this.userAgentCore.replyStateless(request, { statusCode: 486 });
+              return;
+            }
+            context.replacee = targetSession;
+          }
+        }
+      };
+
+      const userAgentCoreDelegate: UserAgentCoreDelegate = {
+        onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+          incomingInviteRequest.delegate = {
+            onCancel: (cancel: IncomingRequest): void => {
+              context.receiveRequest(cancel);
+            },
+            onTransportError: (error: Exceptions.TransportError): void => {
+              context.onTransportError();
+            }
+          };
+          const context = new InviteServerContextExperimental(this, incomingInviteRequest);
+          // Ported - handling of out of dialog INVITE with Replaces.
+          handleInviteWithReplacesHeader(context, incomingInviteRequest.message);
+          // Ported - make the first call to progress automatically.
+          if (context.autoSendAnInitialProvisionalResponse) {
+            context.progress();
+          }
+          this.emit("invite", context);
+        },
+        onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
+          // Ported - handling of out of dialog MESSAGE.
+          const serverContext = new ServerContext(this, incomingMessageRequest.message);
+          serverContext.body = incomingMessageRequest.message.body;
+          serverContext.contentType = incomingMessageRequest.message.getHeader("Content-Type") || "text/plain";
+          incomingMessageRequest.accept();
+          this.emit("message", serverContext); // TODO: Review. Why is a "ServerContext" emitted? What use it is?
+        },
+        onNotify: (incomingNotifyRequest: IncomingNotifyRequest): void => {
+          // DEPRECATED: Out of dialog NOTIFY is an obsolete usage.
+          // Ported - handling of out of dialog NOTIFY.
+          if (this.configuration.allowLegacyNotifications && this.listeners("notify").length > 0) {
+            incomingNotifyRequest.accept();
+            this.emit("notify", { request: incomingNotifyRequest.message });
+          } else {
+            incomingNotifyRequest.reject({ statusCode: 481 });
+          }
+        },
+        onRefer: (incomingReferRequest: IncomingReferRequest): void => {
+          // Ported - handling of out of dialog REFER.
+          this.logger.log("Received an out of dialog refer");
+          if (!this.configuration.allowOutOfDialogRefers) {
+            incomingReferRequest.reject({ statusCode: 405 });
+          }
+          this.logger.log("Allow out of dialog refers is enabled on the UA");
+          const referContext = new ReferServerContextExperimental(this, incomingReferRequest.message);
+          if (this.listeners("outOfDialogReferRequested").length) {
+            this.emit("outOfDialogReferRequested", referContext);
+          } else {
+            this.logger.log(
+              "No outOfDialogReferRequest listeners, automatically accepting and following the out of dialog refer"
+            );
+            referContext.accept({ followRefer: true });
+          }
+        }
+      };
+
+      this.userAgentCore = new UserAgentCore(userAgentCoreConfiguration, userAgentCoreDelegate);
     }
 
     // Initialize registerContext
@@ -328,7 +455,10 @@ export class UA extends EventEmitter {
     options?: InviteClientContext.Options,
     modifiers?: SessionDescriptionHandlerModifiers
   ): InviteClientContext {
-    const context: InviteClientContext = new InviteClientContext(this, target, options, modifiers);
+    const context: InviteClientContext =
+      this.userAgentCore ?
+        new InviteClientContextExperimental(this, target, options, modifiers) :
+        new InviteClientContext(this, target, options, modifiers);
     // Delay sending actual invite until the next 'tick' if we are already
     // connected, so that API consumers can register to events fired by the
     // the session.
@@ -342,7 +472,10 @@ export class UA extends EventEmitter {
   }
 
   public subscribe(target: string | URI, event: string, options: any): Subscription {
-    const sub: Subscription = new Subscription(this, target, event, options);
+    const sub: Subscription =
+      this.userAgentCore ?
+        new SubscribeClientContextExperimental(this, target, event, options) :
+        new Subscription(this, target, event, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => sub.subscribe());
@@ -361,7 +494,10 @@ export class UA extends EventEmitter {
    * @throws {SIP.Exceptions.MethodParameterError}
    */
   public publish(target: string | URI, event: string, body: string, options: any): PublishContext {
-    const pub: PublishContext = new PublishContext(this, target, event, options);
+    const pub: PublishContext =
+      this.userAgentCore ?
+        new PublishClientContextExperimental(this, target, event, options) :
+        new PublishContext(this, target, event, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => {
@@ -393,7 +529,10 @@ export class UA extends EventEmitter {
   }
 
   public request(method: string, target: string | URI, options?: any): ClientContext {
-    const req: ClientContext = new ClientContext(this, method, target, options);
+    const req: ClientContext =
+      this.userAgentCore ?
+        new ClientContextExperimental(this, method, target, options) :
+        new ClientContext(this, method, target, options);
 
     if (this.transport) {
       this.transport.afterConnected(() => req.send());
@@ -706,6 +845,93 @@ export class UA extends EventEmitter {
       return;
     }
 
+    if (this.userAgentCore && message.method !== SIPConstants.REGISTER) {
+
+      // A valid SIP request formulated by a UAC MUST, at a minimum, contain
+      // the following header fields: To, From, CSeq, Call-ID, Max-Forwards,
+      // and Via; all of these header fields are mandatory in all SIP
+      // requests.
+      // https://tools.ietf.org/html/rfc3261#section-8.1.1
+      const hasMinimumHeaders = (): boolean => {
+        const mandatoryHeaders: Array<string> = ["from", "to", "call_id", "cseq", "via"];
+        for (const header of mandatoryHeaders) {
+          if (!message.hasHeader(header)) {
+            this.logger.warn(`Missing mandatory header field : ${header}.`);
+            return false;
+          }
+        }
+        return true;
+      };
+
+      // Request Checks
+      if (message instanceof IncomingRequest) {
+        // This is port of SanityCheck.minimumHeaders().
+        if (!hasMinimumHeaders()) {
+          this.logger.warn(`Request missing mandatory header field. Dropping.`);
+          return;
+        }
+
+        // FIXME: This is non-stanard and should be a configruable behavior (desirable regardless).
+        // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
+        // This is port of SanityCheck.rfc3261_16_3_4().
+        if (!message.toTag && message.callId.substr(0, 5) === this.configuration.sipjsId) {
+          this.userAgentCore.replyStateless(message, { statusCode: 482 });
+          return;
+        }
+
+        // FIXME: This should be Transport check before we get here (Section 18).
+        // Custom SIP.js check to reject requests if body length wrong.
+        // This is port of SanityCheck.rfc3261_18_3_request().
+        const len: number = Utils.str_utf8_length(message.body);
+        const contentLength: string | undefined = message.getHeader("content-length");
+        if (contentLength && len < Number(contentLength)) {
+          this.userAgentCore.replyStateless(message, { statusCode: 400 });
+          return;
+        }
+      }
+
+      // Reponse Checks
+      if (message instanceof IncomingResponse) {
+        // This is port of SanityCheck.minimumHeaders().
+        if (!hasMinimumHeaders()) {
+          this.logger.warn(`Response missing mandatory header field. Dropping.`);
+          return;
+        }
+
+        // FIXME: This should be Transport check before we get here (Section 18).
+        // Custom SIP.js check to drop responses if bad Via header.
+        // This is port of SanityCheck.rfc3261_18_1_2().
+        if (message.via.host !== this.configuration.viaHost || message.via.port !== undefined) {
+          this.logger.warn("Via sent-by in the response does not match UA Via host value. Dropping.");
+          return;
+        }
+
+        // FIXME: This should be Transport check before we get here (Section 18).
+        // Custom SIP.js check to reject requests if body length wrong.
+        // This is port of SanityCheck.rfc3261_18_3_response().
+        const len: number = Utils.str_utf8_length(message.body);
+        const contentLength: string | undefined = message.getHeader("content-length");
+        if (contentLength && len < Number(contentLength)) {
+          this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
+          return;
+        }
+      }
+
+      // Handle Request
+      if (message instanceof IncomingRequest) {
+        this.userAgentCore.receiveIncomingRequestFromTransport(message);
+        return;
+      }
+
+      // Handle Response
+      if (message instanceof IncomingResponse) {
+        this.userAgentCore.receiveIncomingResponseFromTransport(message);
+        return;
+      }
+
+      throw new Error("Invalid message type.");
+    }
+
     if (!this.transport) {
       this.logger.warn("UA received message without transport - aborting");
       return;
@@ -1010,7 +1236,7 @@ export class UA extends EventEmitter {
                 === SessionStatus.STATUS_TERMINATED) {
               request.reply_sl(603, undefined);
               return;
-            } else if (replacedDialog.state === DialogStatus.STATUS_CONFIRMED && replaces.earlyOnly) {
+            } else if (replacedDialog.state === DialogStatus.STATUS_CONFIRMED && replaces.early_only) {
               request.reply_sl(486, undefined);
               return;
             }
@@ -1019,6 +1245,10 @@ export class UA extends EventEmitter {
           const newSession: InviteServerContext = new InviteServerContext(this, request);
           if (replacedDialog && !(replacedDialog.owner.type === TypeStrings.Subscription)) {
             newSession.replacee = replacedDialog && (replacedDialog.owner as InviteClientContext | InviteServerContext);
+          }
+          if (newSession.autoSendAnInitialProvisionalResponse) {
+            const options: any = { extraHeaders: ["Contact: " + this.contact.toString()] };
+            newSession.progress(options);
           }
           this.emit("invite", newSession);
           break;
@@ -1235,6 +1465,8 @@ export class UA extends EventEmitter {
       allowLegacyNotifications: false,
 
       allowOutOfDialogRefers: false,
+
+      experimentalFeatures: false
     };
 
     const configCheck: {mandatory: {[name: string]: any}, optional: {[name: string]: any}} =
@@ -1590,6 +1822,12 @@ export class UA extends EventEmitter {
         contactName: (contactName: string): string | undefined => {
           if (typeof contactName === "string") {
             return contactName;
+          }
+        },
+
+        experimentalFeatures: (experimentalFeatures: boolean): boolean | undefined => {
+          if (typeof experimentalFeatures === "boolean") {
+            return experimentalFeatures;
           }
         },
       }
