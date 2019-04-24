@@ -24,7 +24,6 @@ import {
   InviteServerTransaction,
   NonInviteServerTransaction
 } from "./Core/transactions";
-import { Dialog } from "./Dialogs";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exception, Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
@@ -86,7 +85,6 @@ export abstract class Session extends EventEmitter {
 
   public contact: string | undefined;
   public replacee: InviteClientContext | InviteServerContext | undefined;
-  public dialog: Dialog | undefined;
   public localHold: boolean;
   public sessionDescriptionHandler: SessionDescriptionHandler | undefined;
   public startTime: Date | undefined;
@@ -110,7 +108,6 @@ export abstract class Session extends EventEmitter {
   protected renderbody: string | undefined;
   protected rendertype: string | undefined;
   protected modifiers: Array<SessionDescriptionHandlerModifier> | undefined;
-  protected earlyDialogs: {[name: string]: any};
   protected passedOptions: any;
   protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
 
@@ -119,7 +116,6 @@ export abstract class Session extends EventEmitter {
   private pendingReinvite: boolean;
   private referContext: ReferClientContext | ReferServerContext | undefined;
 
-  private toTag: string | undefined;
   private originalReceiveRequest: (request: IncomingRequestMessage) => void;
 
   protected constructor(sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory) {
@@ -131,9 +127,7 @@ export abstract class Session extends EventEmitter {
       );
     }
     this.status = Session.C.STATUS_NULL;
-    this.dialog = undefined;
     this.pendingReinvite = false;
-    this.earlyDialogs = {};
 
     this.sessionDescriptionHandlerFactory = sessionDescriptionHandlerFactory;
 
@@ -331,21 +325,6 @@ export abstract class Session extends EventEmitter {
       }
     }
 
-    // Terminate dialogs
-    // Terminate confirmed dialog
-    if (this.dialog) {
-      this.dialog.terminate();
-      delete this.dialog;
-    }
-
-    // Terminate early dialogs
-    for (const idx in this.earlyDialogs) {
-      if (this.earlyDialogs.hasOwnProperty(idx)) {
-        this.earlyDialogs[idx].terminate();
-        delete this.earlyDialogs[idx];
-      }
-    }
-
     this.status = SessionStatus.STATUS_TERMINATED;
     if (this.ua.transport) {
       this.ua.transport.removeListener("transportError", this.errorListener);
@@ -354,64 +333,6 @@ export abstract class Session extends EventEmitter {
     delete this.ua.sessions[this.id];
 
     return this;
-  }
-
-  public createDialog(
-    message: IncomingRequestMessage | IncomingResponseMessage,
-    type: "UAS" | "UAC",
-    early: boolean = false
-  ): boolean {
-    const localTag: string = message[(type === "UAS") ? "toTag" : "fromTag"];
-    const remoteTag: string = message[(type === "UAS") ? "fromTag" : "toTag"];
-    const id: string = message.callId + localTag + remoteTag;
-
-    if (early) { // Early Dialog
-      if (this.earlyDialogs[id]) {
-        return true;
-      } else {
-        const earlyDialog: Dialog = new Dialog(
-          (this as unknown) as InviteClientContext | InviteServerContext,
-          message, type, Dialog.C.STATUS_EARLY);
-
-        // Dialog has been successfully created.
-        if (earlyDialog.error) {
-          this.logger.error(earlyDialog.error);
-          this.failed(message, C.causes.INTERNAL_ERROR);
-          return false;
-        } else {
-          this.earlyDialogs[id] = earlyDialog;
-          return true;
-        }
-      }
-    } else { // Confirmed Dialog
-      // In case the dialog is in _early_ state, update it
-      const earlyDialog: Dialog | undefined = this.earlyDialogs[id];
-      if (earlyDialog) {
-        earlyDialog.update(message, type);
-        this.dialog = earlyDialog;
-        delete this.earlyDialogs[id];
-        for (const idx in this.earlyDialogs) {
-          if (this.earlyDialogs.hasOwnProperty(idx)) {
-            this.earlyDialogs[idx].terminate();
-            delete this.earlyDialogs[idx];
-          }
-        }
-        return true;
-      }
-
-      // Otherwise, create a _confirmed_ dialog
-      const dialog: Dialog = new Dialog((this as unknown) as InviteClientContext | InviteServerContext, message, type);
-
-      if (dialog.error) {
-        this.logger.error(dialog.error);
-        this.failed(message, C.causes.INTERNAL_ERROR);
-        return false;
-      } else {
-        this.toTag = message.toTag;
-        this.dialog = dialog;
-        return true;
-      }
-    }
   }
 
   public hold(
@@ -817,22 +738,6 @@ export abstract class Session extends EventEmitter {
     }
   }
 
-  protected acceptAndTerminate(response: IncomingResponseMessage, statusCode?: number, reasonPhrase?: string): Session {
-    const extraHeaders: Array<string> = [];
-
-    if (statusCode) {
-      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
-    }
-
-    // An error on dialog creation will fire 'failed' event
-    if (this.dialog || this.createDialog(response, "UAC")) {
-      this.emit("ack", response.ack());
-      this.sendRequest(C.BYE, { extraHeaders });
-    }
-
-    return this;
-  }
-
   /**
    * RFC3261 13.3.1.4
    * Response retransmissions cannot be accomplished by transaction layer
@@ -1015,14 +920,6 @@ export class InviteServerContext extends Session implements ServerContext {
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
     this.request.toTag = (incomingInviteRequest as any).toTag;
-
-    if (!this.ua.userAgentCore) {
-        // An error on dialog creation will fire 'failed' event
-      if (!this.createDialog(request, "UAS", true)) {
-        request.reply(500, "Missing Contact header field");
-        return;
-      }
-    }
 
     this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
 
@@ -2507,7 +2404,7 @@ export class InviteClientContext extends Session implements ClientContext {
               this.logger.warn("invalid description");
               this.logger.warn(e.toString());
               // TODO: This message is inconsistent
-              this.acceptAndTerminate(response, 488, "Invalid session description");
+              this.ackAndBye(inviteResponse, session, 488, "Invalid session description");
               this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
             } else {
               throw e;

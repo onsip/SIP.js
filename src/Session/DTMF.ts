@@ -113,15 +113,6 @@ export class DTMF extends EventEmitter {
       this.owner.emit("dtmf", request.message, this);
       return;
     }
-
-    if (this.owner.dialog) {
-      const request: OutgoingRequest = this.owner.dialog.sendRequest(this, C.INFO, {
-        extraHeaders,
-        body
-      });
-
-      this.owner.emit("dtmf", request, this);
-    }
   }
 
   public init_incoming(request: IncomingRequest): void {
