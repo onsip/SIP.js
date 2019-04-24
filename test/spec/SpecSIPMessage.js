@@ -32,8 +32,7 @@ describe('SIPMessage', function() {
 
       OutgoingRequest = new SIP.OutgoingRequest(method,ruri,ua,params,extraHeaders,body);
       expect(OutgoingRequest).toBeDefined();
-      expect(OutgoingRequest.logger).toBe(ua.getLogger());
-      expect(OutgoingRequest.ua).toBe(ua);
+       expect(OutgoingRequest.ua).toBe(ua);
       expect(OutgoingRequest.headers).toBeDefined(); //might want to revisit this
       expect(OutgoingRequest.ruri).toBe(ruri);
       expect(OutgoingRequest.body).toBeDefined(); // and this
@@ -197,7 +196,6 @@ describe('SIPMessage', function() {
       expect(IncomingRequest.to).toBeUndefined();
       expect(IncomingRequest.toTag).toBeUndefined();
       expect(IncomingRequest.body).toBeUndefined();
-      expect(IncomingRequest.logger).toBeDefined();
       expect(IncomingRequest.ua).toBeDefined();
       expect(IncomingRequest.ruri).toBeUndefined();
       expect(IncomingRequest.transport).toBeDefined();
@@ -377,7 +375,7 @@ describe('SIPMessage', function() {
       });
     });
 
-    describe('.reply', function() {
+    xdescribe('.reply', function() {
       beforeEach(function() {
         IncomingRequest.addHeader('To','alice@example.com');
         IncomingRequest.transaction = true;
@@ -402,7 +400,7 @@ describe('SIPMessage', function() {
       });
     });
 
-    describe('.reply_sl', function() {
+    xdescribe('.reply_sl', function() {
 
     })
   });
@@ -433,7 +431,6 @@ describe('SIPMessage', function() {
       expect(IncomingResponse.to).toBeUndefined();
       expect(IncomingResponse.toTag).toBeUndefined();
       expect(IncomingResponse.body).toBeUndefined();
-      expect(IncomingResponse.logger).toBeDefined();
       expect(IncomingResponse.statusCode).toBeUndefined();
       expect(IncomingResponse.reasonPhrase).toBeUndefined();
     });

@@ -57,12 +57,6 @@ export class InviteServerTransaction extends ServerTransaction {
       TransactionState.Proceeding,
       "sip.transaction.ist"
     );
-
-    // FIXME: This is in the wrong place - UAS should trigger it.
-    // Results in this this.receiveResponse() being called.
-    // FIXME: Should be configurable. Only required if TU will not respond in 200ms.
-    // https://tools.ietf.org/html/rfc3261#section-17.2.1
-    request.reply(100);
   }
 
   /**

@@ -3,9 +3,7 @@ import { EventEmitter } from "events";
 import { C } from "./Constants";
 import {
   InviteServerTransaction,
-  NonInviteServerTransaction,
-  ServerTransactionUser,
-  TransactionState
+  NonInviteServerTransaction
 } from "./Core/transactions";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
@@ -22,30 +20,6 @@ export class ServerContext extends EventEmitter {
     objectToConstruct.ua = ua;
     objectToConstruct.logger = ua.getLogger("sip.servercontext");
     objectToConstruct.request = request;
-    if (!ua.userAgentCore) {
-      const transport = ua.transport;
-      if (!transport) {
-        throw new Error("Transport undefined.");
-      }
-      const user: ServerTransactionUser = {
-        loggerFactory: ua.getLoggerFactory(),
-        onStateChange: (newState) => {
-          if (newState === TransactionState.Terminated) {
-            ua.destroyTransaction(objectToConstruct.transaction);
-          }
-        },
-        onTransportError: (error) => {
-          objectToConstruct.logger.error(error.message);
-          objectToConstruct.onTransportError();
-        }
-      };
-      if (request.method === C.INVITE) {
-        objectToConstruct.transaction = new InviteServerTransaction(request, transport, user);
-      } else {
-        objectToConstruct.transaction = new NonInviteServerTransaction(request, transport, user);
-      }
-      ua.newTransaction(objectToConstruct.transaction);
-    }
     if (request.body) {
       objectToConstruct.body = request.body;
     }

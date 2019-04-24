@@ -61,6 +61,8 @@ describe("Invite Contexts", () => {
     coreAlice = new UserAgentCore(configurationAlice, {});
     coreBob = new UserAgentCore(configurationBob, {
       onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+        // Automatically send 100 Trying to mirror current UA behavior
+        incomingInviteRequest.trying();
         incomingInviteRequest.delegate = {
           onCancel: (cancel: IncomingRequestMessage): void => {
             contextBob.receiveRequest(cancel);
@@ -1341,6 +1343,8 @@ describe("Invite Contexts", () => {
       configurationBob2 = makeUserAgentCoreConfigurationFromUA(uaBob2);
       coreBob2 = new UserAgentCore(configurationBob2, {
         onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+          // Automatically send 100 Trying to mirror current UA behavior
+          incomingInviteRequest.trying();
           incomingInviteRequest.delegate = {
             onCancel: (cancel: IncomingRequestMessage): void => {
               contextBob2.receiveRequest(cancel);

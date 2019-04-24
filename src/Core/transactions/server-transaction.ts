@@ -29,10 +29,6 @@ export abstract class ServerTransaction extends Transaction {
       state,
       loggerCategory
     );
-
-    // FIXME: Bad hack. Potentially creating circular dependency. SIPMessage needs refactor.
-    // Set IncomingRequest's transaction.
-    _request.transaction = this;
   }
 
   /** The incoming request the transaction handling. */

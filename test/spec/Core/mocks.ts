@@ -1,4 +1,4 @@
-import { OutgoingRequestDelegate } from "../../../src/Core/messages";
+import { IncomingInviteRequest, OutgoingRequestDelegate } from "../../../src/Core/messages";
 import { SessionDelegate } from "../../../src/Core/session";
 import { SubscriptionDelegate } from "../../../src/Core/subscription";
 import { UserAgentCoreDelegate } from "../../../src/Core/user-agent-core";
@@ -19,9 +19,6 @@ export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: U
     // console.log(message);
     const incomingMessage = Parser.parseMessage(message, ua);
     Promise.resolve().then(() => {
-      if (!ua.userAgentCore) {
-        throw new Error("User agent core undefined.");
-      }
       if (incomingMessage instanceof IncomingRequestMessage) {
         ua.userAgentCore.receiveIncomingRequestFromTransport(incomingMessage);
       }
@@ -157,6 +154,9 @@ export function makeMockUserAgentCoreDelegate(): jasmine.SpyObj<Required<UserAge
     "onNotify",
     "onRefer"
   ]);
+  delegate.onInvite.and.callFake((incomingRequest: IncomingInviteRequest) => {
+    incomingRequest.trying();
+  });
   return delegate;
 }
 

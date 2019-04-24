@@ -1,16 +1,6 @@
-import {
-  ClientTransaction,
-  ClientTransactionUser,
-  InviteClientTransaction,
-  NonInviteClientTransaction,
-  ServerTransaction,
-  TransactionState
-} from "./Core/transactions";
-
 import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
-import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
 import { Transport } from "./Transport";
 import { UA } from "./UA";
@@ -69,20 +59,13 @@ export class OutgoingRequest {
   public method: string;
   public cseq: number;
   public body: string | { body: string, contentType: string } | undefined;
+  public branch: string | undefined;
   public to: NameAddrHeader | undefined;
   public toTag: string | undefined;
   public from: NameAddrHeader | undefined;
   public fromTag: string;
   public extraHeaders: Array<string>;
   public callId: string;
-
-  // FIXME: This is a hack... set in ClientTransaction constructor.
-  public transaction: ClientTransaction | undefined;
-  public branch: string | undefined;
-
-  private logger: Logger;
-  private statusCode: number;
-  private reasonPhrase: string;
 
   constructor(
     method: string,
@@ -93,16 +76,12 @@ export class OutgoingRequest {
     body?: string | { body: string, contentType: string }
   ) {
     this.type = TypeStrings.OutgoingRequest;
-    this.logger = ua.getLogger("sip.sipmessage");
     this.ua = ua;
     this.headers = {};
     this.method = method;
     this.ruri = ruri;
     this.body = body;
     this.extraHeaders = (extraHeaders || []).slice();
-    // FIXME: Why are response properties on a Request class?
-    this.statusCode = params.statusCode;
-    this.reasonPhrase = params.reasonPhrase;
 
     // Fill the Common SIP Request Headers
 
@@ -280,105 +259,7 @@ export class OutgoingRequest {
    * @param extraHeaders Extra headers.
    */
   public cancel(reason?: string, extraHeaders?: Array<string>): void {
-    if (!this.transaction) {
-      throw new Error("Transaction undefined.");
-    }
-
-    const sendCancel = () => {
-      if (!this.transaction) {
-        throw new Error("Transaction undefined.");
-      }
-      if (!this.to) {
-        throw new Error("To undefined.");
-      }
-      if (!this.from) {
-        throw new Error("From undefined.");
-      }
-
-      // The following procedures are used to construct a CANCEL request.  The
-      // Request-URI, Call-ID, To, the numeric part of CSeq, and From header
-      // fields in the CANCEL request MUST be identical to those in the
-      // request being cancelled, including tags.  A CANCEL constructed by a
-      // client MUST have only a single Via header field value matching the
-      // top Via value in the request being cancelled.  Using the same values
-      // for these header fields allows the CANCEL to be matched with the
-      // request it cancels (Section 9.2 indicates how such matching occurs).
-      // However, the method part of the CSeq header field MUST have a value
-      // of CANCEL.  This allows it to be identified and processed as a
-      // transaction in its own right (See Section 17).
-      // https://tools.ietf.org/html/rfc3261#section-9.1
-      const cancel = new OutgoingRequest(
-        C.CANCEL,
-        this.ruri,
-        this.ua,
-        {
-          toUri: this.to.uri,
-          toTag: this.toTag,
-          fromUri: this.from.uri,
-          fromTag: this.fromTag,
-          callId: this.callId,
-          cseq: this.cseq
-        },
-        extraHeaders
-      );
-
-      // TODO: Revisit this.
-      // The CANCEL needs to use the same branch parameter so that
-      // it matches the INVITE transaction, but this is a hacky way to do this.
-      // Or at the very least not well documented. If the the branch parameter
-      // is set on the outgoing request, the transaction will use it. Otherwise
-      // the transaction will make a new one.
-      cancel.branch = this.branch;
-
-      // If the request being cancelled contains a Route header field, the
-      // CANCEL request MUST include that Route header field's values.
-      // https://tools.ietf.org/html/rfc3261#section-9.1
-      if (this.headers.Route) {
-        cancel.headers.Route = this.headers.Route;
-      }
-
-      if (reason) {
-        cancel.setHeader("Reason", reason);
-      }
-
-      const transport = this.transaction.transport;
-      const user: ClientTransactionUser = {
-        loggerFactory: this.ua.getLoggerFactory(),
-        onStateChange: (newState) => {
-          if (newState === TransactionState.Terminated) {
-            this.ua.destroyTransaction(clientTransaction);
-          }
-        },
-        receiveResponse: (response) => { return; }
-      };
-      const clientTransaction = new NonInviteClientTransaction(cancel, transport, user);
-      this.ua.newTransaction(clientTransaction);
-    };
-
-    // A CANCEL request SHOULD NOT be sent to cancel a request other than INVITE.
-    // Since requests other than INVITE are responded to immediately, sending a
-    // CANCEL for a non-INVITE request would always create a race condition.
-    // https://tools.ietf.org/html/rfc3261#section-9.1
-    if (!(this.transaction instanceof InviteClientTransaction)) {
-      return;
-    }
-
-    // If no provisional response has been received, the CANCEL request MUST
-    // NOT be sent; rather, the client MUST wait for the arrival of a
-    // provisional response before sending the request. If the original
-    // request has generated a final response, the CANCEL SHOULD NOT be
-    // sent, as it is an effective no-op, since CANCEL has no effect on
-    // requests that have already generated a final response.
-    // https://tools.ietf.org/html/rfc3261#section-9.1
-    if (this.transaction.state === TransactionState.Proceeding) {
-      sendCancel();
-    } else {
-      this.transaction.once("stateChanged", () => {
-        if (this.transaction && this.transaction.state === TransactionState.Proceeding) {
-          sendCancel();
-        }
-      });
-    }
+    throw new Error("Unimplemented.");
   }
 
   public toString(): string {
@@ -578,18 +459,9 @@ export class IncomingRequest extends IncomingMessage {
   public type: TypeStrings;
   public ruri: URI | undefined;
 
-  // FIXME: Fix this a hack... set in ServerTransaction constructor.
-  public transaction: ServerTransaction | undefined;
-
-  // FIXME: Fix this a hack... set in UA.onTransportReceiveRequest()
-  public transport: Transport | undefined;
-
-  private logger: Logger;
-
   constructor(public ua: UA) {
     super();
     this.type = TypeStrings.IncomingRequest;
-    this.logger = ua.getLogger("sip.sipmessage");
   }
 
   /**
@@ -605,104 +477,7 @@ export class IncomingRequest extends IncomingMessage {
     extraHeaders?: Array<string>,
     body?: string | { body: string, contentType: string }
   ): string {
-    if (!this.transaction) {
-      throw new Error("Transaction undefined.");
-    }
-
-    let response: string = Utils.buildStatusLine(code, reason);
-    extraHeaders = (extraHeaders || []).slice();
-
-    if (this.method === C.INVITE && code > 100 && code <= 200) {
-      for (const route of this.getHeaders("record-route")) {
-        response += "Record-Route: " + route + "\r\n";
-      }
-    }
-
-    for (const via of this.getHeaders("via")) {
-      response += "Via: " + via + "\r\n";
-    }
-
-    let to: string = this.getHeader("to") || "";
-    if (!this.toTag && code > 100) {
-      to += ";tag=" + Utils.newTag();
-    } else if (this.toTag && !this.s("to").hasParam("tag")) {
-      to += ";tag=" + this.toTag;
-    }
-
-    response += "To: " + to + "\r\n";
-    response += "From: " + this.getHeader("From") + "\r\n";
-    response += "Call-ID: " + this.callId + "\r\n";
-    response += "CSeq: " + this.cseq + " " + this.method + "\r\n";
-
-    for (const extraHeader of extraHeaders) {
-      response += extraHeader.trim() + "\r\n";
-    }
-
-    response += getSupportedHeader(this);
-    response += "User-Agent: " + this.ua.configuration.userAgentString + "\r\n";
-
-    if (body) {
-      if (typeof body === "string") {
-        response += "Content-Type: application/sdp\r\n";
-        response += "Content-Length: " + Utils.str_utf8_length(body) + "\r\n\r\n";
-        response += body;
-      } else {
-        if (body.body && body.contentType) {
-          response += "Content-Type: " + body.contentType + "\r\n";
-          response += "Content-Length: " + Utils.str_utf8_length(body.body) + "\r\n\r\n";
-          response += body.body;
-        } else {
-          response += "Content-Length: " + 0 + "\r\n\r\n";
-        }
-      }
-    } else {
-      response += "Content-Length: " + 0 + "\r\n\r\n";
-    }
-
-    this.transaction.receiveResponse(code, response);
-
-    return response;
-  }
-
-  /**
-   * Stateless reply.
-   * @param {Number} code status code
-   * @param {String} reason reason phrase
-   */
-  public reply_sl(code: number, reason?: string): string {
-    if (!this.transport) {
-      throw new Error("Transport undefined.");
-    }
-
-    let response: string = Utils.buildStatusLine(code, reason);
-
-    for (const via of this.getHeaders("via")) {
-      response += "Via: " + via + "\r\n";
-    }
-
-    let to: string = this.getHeader("To") || "";
-
-    if (!this.toTag && code > 100) {
-      // FIXME: This is a MUST, but we are generating a random tag each response
-      // o  To header tags MUST be generated for responses in a stateless
-      // manner - in a manner that will generate the same tag for the
-      // same request consistently.  For information on tag construction
-      // see Section 19.3.
-      // https://tools.ietf.org/html/rfc3261#section-8.2.7
-      to += ";tag=" + Utils.newTag();
-    } else if (this.toTag && !this.s("to").hasParam("tag")) {
-      to += ";tag=" + this.toTag;
-    }
-
-    response += "To: " + to + "\r\n";
-    response += "From: " + this.getHeader("From") + "\r\n";
-    response += "Call-ID: " + this.callId + "\r\n";
-    response += "CSeq: " + this.cseq + " " + this.method + "\r\n";
-    response += "User-Agent: " + this.ua.configuration.userAgentString + "\r\n";
-    response += "Content-Length: " + 0 + "\r\n\r\n";
-
-    this.transport.send(response);
-    return response;
+    throw new Error("Unimplemented");
   }
 }
 
@@ -715,15 +490,9 @@ export class IncomingResponse extends IncomingMessage {
   public statusCode: number | undefined;
   public reasonPhrase: string | undefined;
 
-  // FIXME: Fix this a hack... set in UA.onTransportReceiveResponse()
-  public transaction: ClientTransaction | undefined;
-
-  private logger: Logger;
-
   constructor(public ua: UA) {
     super();
     this.type = TypeStrings.IncomingResponse;
-    this.logger = ua.getLogger("sip.sipmessage");
     this.headers = {};
   }
 

@@ -134,6 +134,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.delegate = {
                 onCancel: () => {
                   incomingRequest.reject({ statusCode: 487 });
@@ -178,6 +180,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.redirect([new URI("sip", "carol", "example.com", undefined)]);
             }
           };
@@ -226,14 +230,12 @@ describe("UserAgentCore", () => {
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
           expect(delegate.onReject).toHaveBeenCalledTimes(1);
-          expect(delegate.onTrying).toHaveBeenCalledTimes(1);
+          expect(delegate.onTrying).toHaveBeenCalledTimes(0);
           expect((delegate.onReject.calls.mostRecent().args[0] as IncomingResponse).message.statusCode).toBe(486);
         });
 
         it("Bob's UAS sends 100 Trying then 486 Busy Here", () => {
-          expect(transportBob.send).toHaveBeenCalledTimes(2);
-          expect(transportBob.send.calls.first().args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send).toHaveBeenCalledTimes(1);
           expect(transportBob.send.calls.mostRecent().args[0])
             .toMatch(new RegExp(`^SIP/2.0 486 Busy Here`));
         });
@@ -243,6 +245,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress({ statusCode: 180 });
               incomingRequest.reject({ statusCode: 486 });
             }
@@ -281,6 +285,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress({ statusCode: 180 });
               incomingRequest.accept({
                 statusCode: 200,
@@ -341,6 +347,8 @@ describe("UserAgentCore", () => {
           Timers.TIMER_L = 2000; // Invite Server Transaction Accepted Timer
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress({ statusCode: 180 });
               incomingRequest.accept({
                 statusCode: 200,
@@ -396,6 +404,8 @@ describe("UserAgentCore", () => {
           sessionDelegate = makeMockSessionDelegate();
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress({ statusCode: 180 });
               incomingRequest.accept({
                 statusCode: 200,
@@ -470,6 +480,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress();
               const response = incomingRequest.accept({
                 statusCode: 200,
@@ -520,6 +532,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress({
                 statusCode: 183,
                 body: { contentDisposition: "session", contentType: "application/sdp", content: "Answer" }
@@ -573,6 +587,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               const response = incomingRequest.progress({
                 statusCode: 183,
                 extraHeaders: [`RSeq: 1`],
@@ -667,6 +683,8 @@ describe("UserAgentCore", () => {
         beforeEach((done) => {
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.progress();
               const response = incomingRequest.accept({
                 statusCode: 200,
@@ -810,6 +828,8 @@ describe("UserAgentCore", () => {
         describe("Alice sends an in dialog INVITE (re-INVITE)", () => {
           beforeEach((done) => {
             sessionBobDelegate.onInvite.and.callFake((incomingRequest: IncomingInviteRequest) => {
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
               incomingRequest.accept({
                 statusCode: 200,
                 body: { contentDisposition: "session", contentType: "application/sdp", content: "Answer" }
@@ -849,7 +869,9 @@ describe("UserAgentCore", () => {
         describe("Bob sends an in dialog INVITE (re-INVITE)", () => {
           beforeEach((done) => {
             sessionAliceDelegate.onInvite.and.callFake((incomingRequest: IncomingInviteRequest) => {
-              incomingRequest.accept({
+               // Automatically send 100 Trying to mirror current UA behavior
+               incomingRequest.trying();
+               incomingRequest.accept({
                 statusCode: 200,
                 body: { contentDisposition: "session", contentType: "application/sdp", content: "Answer" }
               });

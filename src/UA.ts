@@ -9,13 +9,6 @@ import {
   IncomingReferRequest
 } from "./Core/messages";
 import {
-  InviteClientTransaction,
-  InviteServerTransaction,
-  NonInviteClientTransaction,
-  NonInviteServerTransaction,
-  Transaction,
-} from "./Core/transactions";
-import {
   makeUserAgentCoreConfigurationFromUA,
   UserAgentCore,
   UserAgentCoreDelegate
@@ -155,12 +148,6 @@ export class UA extends EventEmitter {
     };
   public status: UAStatus;
   public transport: Transport | undefined;
-  public transactions: {
-    nist: {[id: string]: NonInviteServerTransaction | undefined}
-    nict: {[id: string]: NonInviteClientTransaction | undefined}
-    ist: {[id: string]: InviteServerTransaction | undefined}
-    ict: {[id: string]: InviteClientTransaction | undefined}
-  };
   public sessions: {[id: string]: InviteClientContext | InviteServerContext};
   public data: any;
   public logger: Logger;
@@ -192,12 +179,6 @@ export class UA extends EventEmitter {
     this.earlySubscriptions = {};
     this.publishers = {};
     this.status = UAStatus.STATUS_INIT;
-    this.transactions = {
-      nist: {},
-      nict: {},
-      ist: {},
-      ict: {}
-    };
 
     /**
      * Load configuration
@@ -288,6 +269,10 @@ export class UA extends EventEmitter {
 
     const userAgentCoreDelegate: UserAgentCoreDelegate = {
       onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+        // FIXME: Ported - 100 Trying send should be configurable.
+        // Only required if TU will not respond in 200ms.
+        // https://tools.ietf.org/html/rfc3261#section-17.2.1
+        incomingInviteRequest.trying();
         incomingInviteRequest.delegate = {
           onCancel: (cancel: IncomingRequest): void => {
             context.receiveRequest(cancel);
@@ -353,31 +338,6 @@ export class UA extends EventEmitter {
     if (this.configuration.autostart) {
       this.start();
     }
-  }
-
-  get transactionsCount(): number {
-    let count: number = 0;
-
-    for (const type of ["nist", "nict" , "ist", "ict"]) {
-      count += Object.keys(this.transactions[type]).length;
-    }
-    return count;
-  }
-
-  get nictTransactionsCount(): number {
-    return Object.keys(this.transactions.nict).length;
-  }
-
-  get nistTransactionsCount(): number {
-    return Object.keys(this.transactions.nist).length;
-  }
-
-  get ictTransactionsCount(): number {
-    return Object.keys(this.transactions.ict).length;
-  }
-
-  get istTransactionsCount(): number {
-    return Object.keys(this.transactions.ist).length;
   }
 
   // =================
@@ -559,29 +519,6 @@ export class UA extends EventEmitter {
 
     this.status = UAStatus.STATUS_USER_CLOSED;
 
-    /*
-     * If the remaining transactions are all INVITE transactions, there is no need to
-     * wait anymore because every session has already been closed by this method.
-     * - locally originated sessions where terminated (CANCEL or BYE)
-     * - remotely originated sessions where rejected (4XX) or terminated (BYE)
-     * Remaining INVITE transactions belong tho sessions that where answered. This are in
-     * 'accepted' state due to timers 'L' and 'M' defined in [RFC 6026]
-     */
-    if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0 && this.transport) {
-      this.transport.disconnect();
-    } else {
-      const transactionsListener: (() => void) = () => {
-        if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0) {
-            this.removeListener("transactionDestroyed", transactionsListener);
-            if (this.transport) {
-              this.transport.disconnect();
-            }
-        }
-      };
-
-      this.on("transactionDestroyed", transactionsListener);
-    }
-
     if (typeof environment.removeEventListener === "function") {
       // Google Chrome Packaged Apps don't allow 'unload' listeners:
       // unload is not available in packaged apps
@@ -659,55 +596,6 @@ export class UA extends EventEmitter {
     return this.log;
   }
 
-  // TODO: Transaction matching currently works circumstanially.
-  //
-  // 17.1.3 Matching Responses to Client Transactions
-  //
-  // When the transport layer in the client receives a response, it has to
-  // determine which client transaction will handle the response, so that
-  // the processing of Sections 17.1.1 and 17.1.2 can take place.  The
-  // branch parameter in the top Via header field is used for this
-  // purpose.  A response matches a client transaction under two
-  // conditions:
-  //
-  //    1.  If the response has the same value of the branch parameter in
-  //        the top Via header field as the branch parameter in the top
-  //        Via header field of the request that created the transaction.
-  //
-  //    2.  If the method parameter in the CSeq header field matches the
-  //        method of the request that created the transaction.  The
-  //        method is needed since a CANCEL request constitutes a
-  //        different transaction, but shares the same value of the branch
-  //        parameter.
-
-  /**
-   * new Transaction
-   * @private
-   * @param {SIP.Transaction} transaction.
-   */
-  public newTransaction(
-    transaction: NonInviteClientTransaction |
-      InviteClientTransaction |
-      InviteServerTransaction |
-      NonInviteServerTransaction
-  ): void {
-    this.transactions[transaction.kind][transaction.id] = transaction;
-    this.emit("newTransaction", { transaction });
-  }
-
-  /**
-   * destroy Transaction
-   * @param {SIP.Transaction} transaction.
-   */
-  public destroyTransaction(
-    transaction: NonInviteClientTransaction |
-      InviteClientTransaction |
-      InviteServerTransaction |
-      NonInviteServerTransaction): void {
-    delete this.transactions[transaction.kind][transaction.id];
-    this.emit("transactionDestroyed", { transaction });
-  }
-
   /**
    * Get the session to which the request belongs to, if any.
    * @param {SIP.IncomingRequest} request.
@@ -722,7 +610,6 @@ export class UA extends EventEmitter {
   public on(name: "invite", callback: (session: InviteServerContext) => void): this;
   public on(name: "inviteSent", callback: (session: InviteClientContext) => void): this;
   public on(name: "outOfDialogReferRequested", callback: (context: ReferServerContext) => void): this;
-  public on(name: "newTransaction" | "transactionDestroyed", callback: (transaction: Transaction) => void): this;
   public on(name: "transportCreated", callback: (transport: Transport) => void): this;
   public on(name: "message", callback: (message: any) => void): this;
   public on(name: "notify", callback: (request: any) => void): this;
@@ -809,7 +696,7 @@ export class UA extends EventEmitter {
         return;
       }
 
-      // FIXME: This is non-stanard and should be a configruable behavior (desirable regardless).
+      // FIXME: This is non-standard and should be a configruable behavior (desirable regardless).
       // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
       // This is port of SanityCheck.rfc3261_16_3_4().
       if (!message.toTag && message.callId.substr(0, 5) === this.configuration.sipjsId) {
@@ -877,9 +764,9 @@ export class UA extends EventEmitter {
     throw new Error("Invalid message type.");
   }
 
-// =================
-// Utils
-// =================
+  // =================
+  // Utils
+  // =================
   private checkAuthenticationFactory(authenticationFactory: any): any | undefined {
     if (!(authenticationFactory instanceof Function)) {
       return;

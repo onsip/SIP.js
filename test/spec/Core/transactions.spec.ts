@@ -923,14 +923,6 @@ describe("Transactions", () => {
 
       describe("after construction", () => {
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
-        it("has replied to its request with '100 Trying'", () => {
-          // FIXME: The following expectation is implementation dependent (see FIXME in Transactions.ts)
-          expect(request.reply).toHaveBeenCalledWith(100);
-          // FIXME: 0 is expected because request.reply is mocked currently (would otherwise expect 1)
-          expect(transport.send).toHaveBeenCalledTimes(0);
-        });
-
-        // https://tools.ietf.org/html/rfc3261#section-17.2.1
         it("is in state 'proceeding'", () => {
           expect(transaction.state).toBe(TransactionState.Proceeding);
         });
