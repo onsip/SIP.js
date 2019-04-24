@@ -20,7 +20,6 @@ import {
   UserAgentCore,
   UserAgentCoreDelegate
 } from "./Core/user-agent-core";
-import { Dialog } from "./Dialogs";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
@@ -163,7 +162,6 @@ export class UA extends EventEmitter {
     ict: {[id: string]: InviteClientTransaction | undefined}
   };
   public sessions: {[id: string]: InviteClientContext | InviteServerContext};
-  public dialogs: {[id: string]: Dialog};
   public data: any;
   public logger: Logger;
   public earlySubscriptions: {[id: string]: Subscription};
@@ -172,7 +170,6 @@ export class UA extends EventEmitter {
   public userAgentCore: UserAgentCore;
 
   private log: LoggerFactory;
-  private cache: any;
   private error: number | undefined;
   private registerContext: RegisterContext;
   private environListener: any;
@@ -184,12 +181,7 @@ export class UA extends EventEmitter {
     this.log = new LoggerFactory();
     this.logger = this.getLogger("sip.ua");
 
-    this.cache = {
-      credentials: {}
-    };
-
     this.configuration = {};
-    this.dialogs = {};
 
     // User actions outside any session/dialog (MESSAGE)
     this.applicants = {};

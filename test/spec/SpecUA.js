@@ -64,9 +64,7 @@ describe('UA', function() {
     // expect(UA.configuration.sessionDescriptionHandlerFactory).toBe(defaultFactory);
     expect(UA.log).toBeDefined();
     expect(UA.logger).toBeDefined();
-    expect(UA.cache).toBeDefined();
     expect(UA.configuration).toBeDefined();
-    expect(UA.dialogs).toBeDefined();
     expect(UA.applicants).toBeDefined();
     expect(UA.data).toBeDefined();
     expect(UA.sessions).toBeDefined();

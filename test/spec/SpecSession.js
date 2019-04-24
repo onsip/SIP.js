@@ -52,8 +52,6 @@ describe('Session', function() {
 
   it('initializes session objects', function() {
     expect(Session.status).toBe(0);
-    expect(Session.dialog).toBeUndefined();
-    expect(Session.earlyDialogs).toBeDefined();
     expect(Session.sessionDescriptionHandler).toBeUndefined();
   });
 
@@ -86,10 +84,6 @@ describe('Session', function() {
 
     beforeEach(function() {
       tones = 1;
-
-      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
-      //spyOn(Session.dialog, 'sendRequest').and.returnValue('sent');
-
       Session.status = 12;
     });
 
@@ -252,7 +246,6 @@ describe('Session', function() {
     });
 
     xit('returns Session on success', function() {
-      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
       expect(Session.refer(target)).toBe(Session);
     });
   });
@@ -422,7 +415,6 @@ describe('Session', function() {
       message.headers['Content-Type'] = [];
       message.statusCode = 222;
       message.ack = jasmine.createSpy('ack').and.returnValue({})
-      Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
@@ -437,7 +429,6 @@ describe('Session', function() {
       spyOn(message, 'getHeader').and.returnValue('wrong');
       message.statusCode = 222;
       message.ack = jasmine.createSpy('ack').and.returnValue({})
-      Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
@@ -451,7 +442,6 @@ describe('Session', function() {
 
       message.statusCode = 222;
       message.ack = jasmine.createSpy('ack').and.returnValue({})
-      Session.dialog = new SIP.Dialog(Session, message, 'UAS');
 
       Session.receiveReinviteResponse(message);
 
@@ -477,9 +467,6 @@ describe('Session', function() {
 
   xdescribe('.acceptAndTerminate', function() {
     beforeEach(function() {
-      Session.dialog = new SIP.Dialog(Session, message, 'UAC');
-
-      spyOn(Session, 'createDialog').and.returnValue(true);
       spyOn(Session, 'sendRequest');
     });
 
@@ -962,8 +949,6 @@ describe('InviteServerContext', function() {
       InviteServerContext.status = 7;
 
       spyOn(InviteServerContext, 'emit');
-
-      InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, request, 'UAS');
     });
 
     xit('emits bye and calls terminated if the status is WAITING_FOR_ACK', function() {
@@ -1214,8 +1199,6 @@ describe('InviteServerContext', function() {
         var catchSpy = jasmine.createSpy('catch');
         InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
 
-        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
-
         InviteServerContext.sessionDescriptionHandler = {
           hasDescription: function() {
             return false;
@@ -1238,7 +1221,6 @@ describe('InviteServerContext', function() {
 
         spyOn(window, 'clearTimeout').and.callThrough();
         spyOn(InviteServerContext, 'emit');
-        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         var catchSpy = jasmine.createSpy('catch');
         InviteServerContext.ua.transport.send = function () {return {catch: catchSpy};};
@@ -1413,8 +1395,6 @@ describe('InviteServerContext', function() {
 
         spyOn(InviteServerContext, 'receiveReinvite');
 
-       InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, InviteServerContext.request, 'UAS');
-
         InviteServerContext.receiveRequest(req);
 
         expect(InviteServerContext.receiveReinvite).toHaveBeenCalledWith(req);
@@ -1443,8 +1423,6 @@ describe('InviteServerContext', function() {
           'Signal= 6',
           'Duration= 100',
           ''].join('\r\n'), InviteServerContext.ua);
-
-        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         spyOn(req, 'reply');
 
@@ -1476,8 +1454,6 @@ describe('InviteServerContext', function() {
           'a=sendrecv',
           ''].join('\r\n'), InviteServerContext.ua);
 
-        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
-
         spyOn(req, 'reply');
 
         InviteServerContext.receiveRequest(req);
@@ -1506,8 +1482,6 @@ describe('InviteServerContext', function() {
           'Signal= 6',
           'Duration= 100',
           ''].join('\r\n'), InviteServerContext.ua);
-
-        InviteServerContext.dialog = new SIP.Dialog(InviteServerContext, req, 'UAS');
 
         InviteServerContext.onInfo = function onInfo(request) {
           try {
@@ -2282,8 +2256,6 @@ describe('InviteClientContext', function() {
       InviteClientContext.status = 12;
       request.method = SIP.C.REFER;
       request.parseHeader = jasmine.createSpy('parseHeader').and.returnValue({uri: SIP.URI.parse('sip:carol@example.com')});
-      InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
-/*       spyOn(InviteClientContext.dialog.sendRequest); */
 
       spyOn(InviteClientContext.logger, 'log');
       var referFollowed = jasmine.createSpy('referFollowed');
@@ -2301,7 +2273,6 @@ describe('InviteClientContext', function() {
 
       expect(InviteClientContext.logger.log).toHaveBeenCalledWith('REFER received');
       expect(request.reply).toHaveBeenCalledWith(202, 'Accepted');
-/*       expect(InviteClientContext.dialog.sendRequest).toHaveBeenCalled(); */
       expect(InviteClientContext.ua.invite).toHaveBeenCalled();
       expect(InviteClientContext.ua.invite.calls.mostRecent().args[1].media).toBe(referMedia);
       expect(referFollowed).toHaveBeenCalled();
@@ -2313,7 +2284,6 @@ describe('InviteClientContext', function() {
       InviteClientContext.status = 12;
       request.method = SIP.C.REFER;
       request.parseHeader = jasmine.createSpy('parseHeader').and.returnValue({uri: SIP.URI.parse('sip:carol@example.com')});
-      InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
 
       spyOn(InviteClientContext.logger, 'log');
 
