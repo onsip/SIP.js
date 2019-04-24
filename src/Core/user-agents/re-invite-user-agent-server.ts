@@ -57,6 +57,9 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
       this.dialog.signalingStateTransition(options.body);
     }
 
+    // Update dialog
+    this.dialog.reConfirm();
+
     return result;
   }
 

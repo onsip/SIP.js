@@ -117,6 +117,7 @@ export class InviteDialog extends Dialog implements Session {
     this.logger.log(`INVITE dialog ${this.id} destroyed`);
   }
 
+  // FIXME: Need real state machine
   get sessionState(): SessionState {
     if (this.early) {
       return SessionState.Early;
@@ -152,6 +153,15 @@ export class InviteDialog extends Dialog implements Session {
       this.start2xxRetransmissionTimer();
     }
     super.confirm();
+  }
+
+  /** Re-confirm the dialog. Only matters if handling re-INVITE request. */
+  public reConfirm(): void {
+    // When we're confirmed start the retransmitting whatever
+    // the 2xx final response that may have confirmed us.
+    if (this.reinviteUserAgentServer) {
+      this.startReInvite2xxRetransmissionTimer();
+    }
   }
 
   /**
@@ -774,6 +784,7 @@ export class InviteDialog extends Dialog implements Session {
       let timeout = Timers.T1;
       const retransmission = () => {
         if (!this.ackWait) {
+          this.invite2xxTimer = undefined;
           return;
         }
         this.logger.log("No ACK for 2xx response received, attempting retransmission");
@@ -800,6 +811,55 @@ export class InviteDialog extends Dialog implements Session {
             } else {
               this.bye();
             }
+          }
+        }
+      };
+      transaction.addListener("stateChanged", stateChanged);
+    }
+  }
+
+  // FIXME: Refactor
+  private startReInvite2xxRetransmissionTimer(): void {
+    if (this.reinviteUserAgentServer  && this.reinviteUserAgentServer.transaction instanceof InviteServerTransaction) {
+      const transaction = this.reinviteUserAgentServer.transaction;
+
+      // Once the response has been constructed, it is passed to the INVITE
+      // server transaction.  In order to ensure reliable end-to-end
+      // transport of the response, it is necessary to periodically pass
+      // the response directly to the transport until the ACK arrives.  The
+      // 2xx response is passed to the transport with an interval that
+      // starts at T1 seconds and doubles for each retransmission until it
+      // reaches T2 seconds (T1 and T2 are defined in Section 17).
+      // Response retransmissions cease when an ACK request for the
+      // response is received.  This is independent of whatever transport
+      // protocols are used to send the response.
+      // https://tools.ietf.org/html/rfc6026#section-8.1
+      let timeout = Timers.T1;
+      const retransmission = () => {
+        if (!this.reinviteUserAgentServer) {
+          this.invite2xxTimer = undefined;
+          return;
+        }
+        this.logger.log("No ACK for 2xx response received, attempting retransmission");
+        transaction.retransmitAcceptedResponse();
+        timeout = Math.min(timeout * 2, Timers.T2);
+        this.invite2xxTimer = setTimeout(retransmission, timeout);
+      };
+      this.invite2xxTimer = setTimeout(retransmission, timeout);
+
+      // If the server retransmits the 2xx response for 64*T1 seconds without
+      // receiving an ACK, the dialog is confirmed, but the session SHOULD be
+      // terminated.  This is accomplished with a BYE, as described in Section 15.
+      // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
+      const stateChanged = () => {
+        if (transaction.state === TransactionState.Terminated) {
+          transaction.removeListener("stateChanged", stateChanged);
+          if (this.invite2xxTimer) {
+            clearTimeout(this.invite2xxTimer);
+            this.invite2xxTimer = undefined;
+          }
+          if (this.reinviteUserAgentServer) {
+            // FIXME: TODO: What to do here
           }
         }
       };
