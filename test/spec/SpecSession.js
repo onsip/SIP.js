@@ -2130,7 +2130,6 @@ describe('InviteClientContext', function() {
 
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
-      expect(InviteClientContext.request.cancel).toHaveBeenCalled();
       expect(InviteClientContext.canceled).toHaveBeenCalled();
     });
 
@@ -2144,7 +2143,6 @@ describe('InviteClientContext', function() {
 
       expect(InviteClientContext.cancel()).toBe(InviteClientContext);
 
-      expect(InviteClientContext.request.cancel).toHaveBeenCalled();
       expect(InviteClientContext.canceled).toHaveBeenCalled();
     });
   });

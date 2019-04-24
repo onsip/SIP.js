@@ -56,7 +56,6 @@ const makeMockOutgoingRequest = (ruri: string = "sip:john@onsip.com"): jasmine.S
     "cseq",
     "method",
     "ruri",
-    "cancel",
     "getHeader",
     "setViaHeader",
     "toString"

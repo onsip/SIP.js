@@ -1773,7 +1773,6 @@ export class InviteClientContext extends Session implements ClientContext {
   protected inviteWithoutSdp: boolean;
   protected isCanceled: boolean;
   protected received100: boolean;
-  protected cancelReason: string | undefined;
 
   private earlyMediaSessionDescriptionHandlers: Map<string, SessionDescriptionHandler>;
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
@@ -1897,6 +1896,10 @@ export class InviteClientContext extends Session implements ClientContext {
 
     // This should allow the function to return so that listeners can be set up for these events
     Promise.resolve().then(() => {
+      // FIXME: There is a race condition where cancel (or terminate) can be called synchronously after invite.
+      if (this.isCanceled || this.status === SessionStatus.STATUS_TERMINATED) {
+        return;
+      }
       if (this.inviteWithoutSdp) {
         // just send an invite with no sdp...
         this.request.body = this.renderbody;
@@ -1912,6 +1915,7 @@ export class InviteClientContext extends Session implements ClientContext {
 
         this.sessionDescriptionHandler.getDescription(this.sessionDescriptionHandlerOptions, this.modifiers)
         .then((description) => {
+          // FIXME: There is a race condition where cancel (or terminate) can be called (a)synchronously after invite.
           if (this.isCanceled || this.status === SessionStatus.STATUS_TERMINATED) {
             return;
           }
@@ -1938,31 +1942,24 @@ export class InviteClientContext extends Session implements ClientContext {
   }
 
   public cancel(options: any = {}): this {
-    options.extraHeaders = (options.extraHeaders || []).slice();
-
-    if (this.isCanceled) {
-      throw new Exceptions.InvalidStateError(SessionStatus.STATUS_CANCELED);
-    }
-
     // Check Session Status
     if (this.status === SessionStatus.STATUS_TERMINATED || this.status === SessionStatus.STATUS_CONFIRMED) {
       throw new Exceptions.InvalidStateError(this.status);
     }
-
-    this.logger.log("canceling RTCSession");
-
+    if (this.isCanceled) {
+      throw new Exceptions.InvalidStateError(SessionStatus.STATUS_CANCELED);
+    }
     this.isCanceled = true;
+
+    this.logger.log("Canceling session");
 
     const cancelReason: string | undefined = Utils.getCancelReason(options.statusCode, options.reasonPhrase);
 
-    // Check Session Status
-    if (this.status === SessionStatus.STATUS_NULL ||
-        (this.status === SessionStatus.STATUS_INVITE_SENT && !this.received100)) {
-      this.cancelReason = cancelReason;
-    } else if (this.status === SessionStatus.STATUS_INVITE_SENT ||
-               this.status === SessionStatus.STATUS_1XX_RECEIVED ||
-               this.status === SessionStatus.STATUS_EARLY_MEDIA) {
-      this.request.cancel(cancelReason, options.extraHeaders);
+    options.extraHeaders = (options.extraHeaders || []).slice();
+
+    if (this.outgoingInviteRequest) {
+      this.logger.warn("Canceling session before it was created");
+      this.outgoingInviteRequest.cancel(cancelReason, options);
     }
 
     return this.canceled();
@@ -2471,6 +2468,11 @@ export class InviteClientContext extends Session implements ClientContext {
    * @param inviteResponse 1xx response.
    */
   private onProgress(inviteResponse: PrackableIncomingResponseWithSession): void {
+    // Ported - User requested cancellation.
+    if (this.isCanceled) {
+      return;
+    }
+
     if (!this.outgoingInviteRequest) {
       throw new Error("Outgoing INVITE request undefined.");
     }
@@ -2480,13 +2482,6 @@ export class InviteClientContext extends Session implements ClientContext {
 
     const response = inviteResponse.message;
     const session = inviteResponse.session;
-
-    // Ported - User requested cancellation.
-    if (this.isCanceled) {
-      this.outgoingInviteRequest.cancel(this.cancelReason);
-      this.canceled();
-      return;
-    }
 
     // Ported - Set status.
     this.status = SessionStatus.STATUS_1XX_RECEIVED;

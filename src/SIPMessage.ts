@@ -252,16 +252,6 @@ export class OutgoingRequest {
     this.branch = branch;
   }
 
-  /**
-   * Cancel this request.
-   * If this is not an INVITE request, a no-op.
-   * @param reason Reason phrase.
-   * @param extraHeaders Extra headers.
-   */
-  public cancel(reason?: string, extraHeaders?: Array<string>): void {
-    throw new Error("Unimplemented.");
-  }
-
   public toString(): string {
     let msg: string = "";
 

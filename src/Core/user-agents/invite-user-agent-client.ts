@@ -37,12 +37,6 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
   ) {
     super(InviteClientTransaction, core, message, delegate);
     this.delegate = delegate;
-    // FIXME: HACK: This is a hack to override OutgoingRequest.cancel().
-    // The plan is to remove OutgoingRequest.cancel() eventually, but for now
-    // it effectively short circuits calls to request.cancel() for this request.
-    this.message.cancel = (reason?: string, extraHeaders?: Array<string>): void => {
-      this.cancel(reason, { extraHeaders });
-    };
   }
 
   public dispose(): void {

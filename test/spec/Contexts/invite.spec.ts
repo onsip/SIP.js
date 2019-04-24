@@ -722,26 +722,8 @@ describe("Invite Contexts", () => {
         setTimeout(() => done(), 100); // transport calls are async, so give it some time
       });
 
-      it("Alice's UAC sends INVITE, CANCEL and ACK", () => {
-        expect(transportAlice.send).toHaveBeenCalledTimes(3);
-        expect(transportAlice.send.calls.all()[0].args[0])
-          .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-        expect(transportAlice.send.calls.all()[1].args[0])
-          .toMatch(new RegExp(`^CANCEL ${ruri} SIP/2.0`));
-        expect(transportAlice.send.calls.all()[2].args[0])
-          .toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
-      });
-
-      it("Bob's UAS sends 100, 180, 200 and 487", () => {
-        expect(transportBob.send).toHaveBeenCalledTimes(4);
-        expect(transportBob.send.calls.all()[0].args[0])
-          .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-        expect(transportBob.send.calls.all()[1].args[0])
-          .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-        expect(transportBob.send.calls.all()[2].args[0])
-          .toMatch(new RegExp(`^SIP/2.0 200 OK`)); // response to the CANCEL
-        expect(transportBob.send.calls.all()[3].args[0])
-          .toMatch(new RegExp(`^SIP/2.0 487 Request Terminated`));
+      it("Alice's UAC sends nothing", () => {
+        expect(transportAlice.send).toHaveBeenCalledTimes(0);
       });
     });
 
