@@ -429,6 +429,7 @@ export class InviteDialog extends Dialog implements Session {
           this.logger.warn(`INVITE dialog ${this.id} received unexpected ${message.method} request, dropping.`);
           return;
         }
+        this.reinviteUserAgentServer = undefined;
       }
       this.signalingStateTransition(message);
       if (this.delegate && this.delegate.onAck) {
