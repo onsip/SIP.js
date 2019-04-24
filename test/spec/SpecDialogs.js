@@ -1,4 +1,4 @@
-describe('Dialogs', function() {
+xdescribe('Dialogs', function() {
   var owner;
   var message;
   var Dialog;
