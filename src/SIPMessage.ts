@@ -485,18 +485,4 @@ export class IncomingResponse extends IncomingMessage {
     this.type = TypeStrings.IncomingResponse;
     this.headers = {};
   }
-
-  /**
-   * Constructs and sends ACK to 2xx final response. Returns the sent ACK.
-   * @param response The 2xx final repsonse the ACK is acknowledging.
-   * @param options ACK options; extra headers, body.
-   */
-  public ack(
-    options?: {
-      extraHeaders?: Array<string>,
-      body?: string | { body: string, contentType: string }
-    }
-  ): OutgoingRequest {
-    throw new Error("Unimplemented.");
-  }
 }

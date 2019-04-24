@@ -360,7 +360,7 @@ describe('Session', function() {
     });
   });
 
-  describe('.receiveReinviteResponse', function() {
+  xdescribe('.receiveReinviteResponse', function() {
     beforeEach(function() {
       Session.status = 12;
 

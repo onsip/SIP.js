@@ -64,37 +64,6 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
         }
         break;
       case /^2[0-9]{2}$/.test(statusCode):
-        // FIXME: HACK: This is a hack to override IncomingResponse.ack().
-        // The plan is to remove IncomingResponse.ack() eventually, but for now
-        // it effectively short circuits calls to response.ack() for this response.
-        if (this.delegate && this.delegate.onAccept) {
-          message.ack = (
-            options: {
-              extraHeaders?: Array<string>,
-              body?: string | { body: string, contentType: string }
-            } = {}
-          ): OutgoingRequestMessage => {
-            let body: Body | undefined;
-            if (options.body) {
-              if (typeof options.body === "string") {
-                body = {
-                  content: options.body,
-                  contentType: "application/sdp",
-                  contentDisposition: "session"
-                };
-              } else {
-                body = {
-                  content: options.body.body,
-                  contentType: options.body.contentType,
-                  contentDisposition: "session"
-                };
-              }
-            }
-            const outgoingAckRequest = this.dialog.ack({ extraHeaders: options.extraHeaders, body });
-            return outgoingAckRequest.message;
-          };
-        }
-
         // Update dialog signaling state with offer/answer in body
         this.dialog.signalingStateTransition(message);
 

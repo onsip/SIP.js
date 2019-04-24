@@ -212,38 +212,6 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
           // Session Initiated! :)
           const session = dialog;
 
-          // FIXME: HACK: This is a hack to override IncomingResponse.ack().
-          // The plan is to remove IncomingResponse.ack() eventually, but for now
-          // it effectively short circuits calls to response.ack() for this response.
-          if (this.delegate && this.delegate.onAccept) {
-            message.ack = (
-              options: {
-                extraHeaders?: Array<string>,
-                body?: string | { body: string, contentType: string }
-              } = {}
-            ): OutgoingRequestMessage => {
-              let body: Body | undefined;
-              if (options.body) {
-                if (typeof options.body === "string") {
-                  body = {
-                    content: options.body,
-                    contentType: "application/sdp",
-                    contentDisposition: "session"
-                  };
-                } else {
-                  body = {
-                    content: options.body.body,
-                    contentType: options.body.contentType,
-                    contentDisposition: "session"
-                  };
-                }
-              }
-              const outgoingAckRequest = session.ack({ extraHeaders: options.extraHeaders, body });
-              this.confirmedDialogAcks.set(session.id, outgoingAckRequest);
-              return outgoingAckRequest.message;
-            };
-          }
-
           // The UAC core MUST generate an ACK request for each 2xx received from
           // the transaction layer.  The header fields of the ACK are constructed
           // in the same way as for any request sent within a dialog (see Section

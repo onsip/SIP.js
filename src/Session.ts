@@ -12,6 +12,7 @@ import {
   IncomingPrackRequest,
   IncomingResponse,
   OutgoingInviteRequest,
+  OutgoingInviteRequestDelegate,
   OutgoingRequest,
   OutgoingRequestDelegate,
   OutgoingResponse,
@@ -652,13 +653,100 @@ export abstract class Session extends EventEmitter {
       "NOTIFY",
       "REFER"
     ].toString());
+
     this.sessionDescriptionHandler.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
       .then((description: BodyObj) => {
-        this.sendRequest(C.INVITE, {
+        if (!this.session) {
+          throw new Error("Session undefined.");
+        }
+
+        const delegate: OutgoingInviteRequestDelegate = {
+          onAccept: (response): void => {
+            if (this.status === SessionStatus.STATUS_TERMINATED) {
+              this.logger.error("Received reinvite response, but in STATUS_TERMINATED");
+              // TODO: Do we need to send a SIP response?
+              return;
+            }
+
+            if (!this.pendingReinvite) {
+              this.logger.error("Received reinvite response, but have no pending reinvite");
+              // TODO: Do we need to send a SIP response?
+              return;
+            }
+
+            // FIXME: Why is this set here?
+            this.status = SessionStatus.STATUS_CONFIRMED;
+
+            // 17.1.1.1 - For each final response that is received at the client transaction,
+            // the client transaction sends an ACK,
+            this.emit("ack", response.ack());
+            this.pendingReinvite = false;
+            // TODO: All of these timers should move into the Transaction layer
+            clearTimeout(this.timers.invite2xxTimer);
+            if (
+              !this.sessionDescriptionHandler ||
+              !this.sessionDescriptionHandler.hasDescription(response.message.getHeader("Content-Type") || "")
+            ) {
+              this.logger.error("2XX response received to re-invite but did not have a description");
+              this.emit("reinviteFailed", this);
+              this.emit(
+                "renegotiationError",
+                new Exceptions.RenegotiationError("2XX response received to re-invite but did not have a description")
+              );
+              return;
+            }
+            this.sessionDescriptionHandler
+              .setDescription(response.message.body, this.sessionDescriptionHandlerOptions, this.modifiers)
+              .catch((e: any) => {
+                this.logger.error("Could not set the description in 2XX response");
+                this.logger.error(e);
+                this.emit("reinviteFailed", this);
+                this.emit("renegotiationError", e);
+                this.sendRequest(C.BYE, {
+                  extraHeaders: ["Reason: " + Utils.getReasonHeaderValue(488, "Not Acceptable Here")]
+                });
+                this.terminated(undefined, C.causes.INCOMPATIBLE_SDP);
+                throw e;
+              })
+              .then(() => {
+                this.emit("reinviteAccepted", this);
+              });
+          },
+          onProgress: (response): void => {
+            return;
+          },
+          onRedirect: (response): void => {
+            // FIXME: Does ACK need to be sent?
+            this.pendingReinvite = false;
+            this.logger.log("Received a non 1XX or 2XX response to a re-invite");
+            this.emit("reinviteFailed", this);
+            this.emit(
+              "renegotiationError",
+              new Exceptions.RenegotiationError("Invalid response to a re-invite")
+            );
+          },
+          onReject: (response): void => {
+            // FIXME: Does ACK need to be sent?
+            this.pendingReinvite = false;
+            this.logger.log("Received a non 1XX or 2XX response to a re-invite");
+            this.emit("reinviteFailed", this);
+            this.emit(
+              "renegotiationError",
+              new Exceptions.RenegotiationError("Invalid response to a re-invite")
+            );
+          },
+          onTrying: (response): void => {
+            return;
+          }
+        };
+
+        const requestOptions: RequestOptions = {
           extraHeaders,
-          body: description,
-          receiveResponse: (response: IncomingResponseMessage) => this.receiveReinviteResponse(response)
-        });
+          body: fromBodyObj(description)
+        };
+
+        this.session.invite(delegate, requestOptions);
+
       }).catch((e: any) => {
         if (e.type === TypeStrings.RenegotiationError) {
           this.pendingReinvite = false;
@@ -671,71 +759,6 @@ export abstract class Session extends EventEmitter {
         this.logger.error(e);
         throw e;
       });
-  }
-
-  // Reception of Response for in-dialog INVITE
-  protected receiveReinviteResponse(response: IncomingResponseMessage): void {
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      this.logger.error("Received reinvite response, but in STATUS_TERMINATED");
-      // TODO: Do we need to send a SIP response?
-      return;
-    }
-
-    if (!this.pendingReinvite) {
-      this.logger.error("Received reinvite response, but have no pending reinvite");
-      // TODO: Do we need to send a SIP response?
-      return;
-    }
-    const statusCode: string = response && response.statusCode ? response.statusCode.toString() : "";
-
-    switch (true) {
-      case /^1[0-9]{2}$/.test(statusCode):
-        break;
-      case /^2[0-9]{2}$/.test(statusCode):
-        this.status = SessionStatus.STATUS_CONFIRMED;
-
-        // 17.1.1.1 - For each final response that is received at the client transaction,
-        // the client transaction sends an ACK,
-        this.emit("ack", response.ack());
-        this.pendingReinvite = false;
-        // TODO: All of these timers should move into the Transaction layer
-        clearTimeout(this.timers.invite2xxTimer);
-        if (
-          !this.sessionDescriptionHandler ||
-          !this.sessionDescriptionHandler.hasDescription(response.getHeader("Content-Type") || "")
-        ) {
-          this.logger.error("2XX response received to re-invite but did not have a description");
-          this.emit("reinviteFailed", this);
-          this.emit(
-            "renegotiationError",
-            new Exceptions.RenegotiationError("2XX response received to re-invite but did not have a description")
-          );
-          break;
-        }
-
-        this.sessionDescriptionHandler
-          .setDescription(response.body, this.sessionDescriptionHandlerOptions, this.modifiers)
-          .catch((e: any) => {
-            this.logger.error("Could not set the description in 2XX response");
-            this.logger.error(e);
-            this.emit("reinviteFailed", this);
-            this.emit("renegotiationError", e);
-            this.sendRequest(C.BYE, {
-              extraHeaders: ["Reason: " + Utils.getReasonHeaderValue(488, "Not Acceptable Here")]
-            });
-            this.terminated(undefined, C.causes.INCOMPATIBLE_SDP);
-            throw e;
-          })
-          .then(() => {
-            this.emit("reinviteAccepted", this);
-          });
-        break;
-      default:
-        this.pendingReinvite = false;
-        this.logger.log("Received a non 1XX or 2XX response to a re-invite");
-        this.emit("reinviteFailed", this);
-        this.emit("renegotiationError", new Exceptions.RenegotiationError("Invalid response to a re-invite"));
-    }
   }
 
   /**
