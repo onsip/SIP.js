@@ -4,6 +4,7 @@ import { C } from "./Constants";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
+import { BodyObj } from "./session-description-handler";
 import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
@@ -43,18 +44,23 @@ export class ClientContext extends EventEmitter {
     options.extraHeaders = (options.extraHeaders || []).slice();
 
     // Build the request
-    objToConstruct.request = new OutgoingRequest(objToConstruct.method,
-                                        target,
-                                        objToConstruct.ua,
-                                        options.params,
-                                        options.extraHeaders);
+    objToConstruct.request = new OutgoingRequest(
+      objToConstruct.method,
+      target,
+      objToConstruct.ua,
+      options.params,
+      options.extraHeaders,
+    );
+
     if (options.body) {
-      objToConstruct.body = {};
-      objToConstruct.body.body = options.body;
-      if (options.contentType) {
-        objToConstruct.body.contentType = options.contentType;
-      }
-      objToConstruct.request.body = objToConstruct.body;
+      const body = options.body;
+      const contentType = options.contentType ? options.contentType : "application/sdp";
+      const bodyObj: BodyObj = {
+        body,
+        contentType
+      };
+      objToConstruct.body = bodyObj;
+      objToConstruct.request.body = bodyObj;
     }
 
     /* Set other properties from the request */
@@ -75,7 +81,7 @@ export class ClientContext extends EventEmitter {
   public logger!: Logger;
   public request!: OutgoingRequest;
   public method!: string;
-  public body: any;
+  public body!: BodyObj | undefined;
   public localIdentity!: NameAddrHeader;
   public remoteIdentity!: NameAddrHeader;
 

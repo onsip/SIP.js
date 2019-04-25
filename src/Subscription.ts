@@ -1,6 +1,6 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { IncomingRequest } from "./Core/messages";
+import { fromBodyObj, IncomingRequest } from "./Core/messages";
 import { Subscription as SubscriptionCore } from "./Core/subscription";
 import { TypeStrings } from "./Enums";
 import {
@@ -107,9 +107,18 @@ export class Subscription extends ClientContext {
       return;
     }
 
-    this.sendSubscribeRequest({
-      extraHeaders: this.extraHeaders,
-      body: this.body
+    const extraHeaders = this.extraHeaders;
+    const body = this.body ? fromBodyObj(this.body) : undefined;
+
+    this.subscription.subscribe({
+      onAccept: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onProgress: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onRedirect: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onReject: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
+      onTrying: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message)
+    }, {
+      extraHeaders,
+      body
     });
   }
 
@@ -169,13 +178,18 @@ export class Subscription extends ClientContext {
       "REFER"
     ].toString());
 
-    // makes sure expires isn't set, and other typical resubscribe behavior
-    this.receiveResponse = () => { /* intentionally blank */ };
+    const body = this.body ? fromBodyObj(this.body) : undefined;
 
     if (this.subscription) {
-      this.sendSubscribeRequest({
+      this.subscription.subscribe({
+        onAccept: (subscribeResponse): void => { return; },
+        onProgress: (subscribeResponse): void => { return; },
+        onRedirect: (subscribeResponse): void => { return; },
+        onReject: (subscribeResponse): void => { return; },
+        onTrying: (subscribeResponse): void => { return; },
+      }, {
         extraHeaders,
-        body: this.body
+        body
       });
     }
 
@@ -314,13 +328,6 @@ export class Subscription extends ClientContext {
       onTrying: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message)
     });
     return this;
-  }
-
-  protected sendSubscribeRequest(options: any = {}): void {
-    if (!this.subscription) {
-      throw new Error("Subscription undefined.");
-    }
-    this.subscription.subscribe(options);
   }
 
   protected timer_fire(): void {
