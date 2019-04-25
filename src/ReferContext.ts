@@ -1,5 +1,6 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
+import { IncomingRequest } from "./Core/messages";
 import { Session } from "./Core/session";
 import { NonInviteClientTransaction } from "./Core/transactions";
 import { SessionStatus, TypeStrings } from "./Enums";
@@ -13,7 +14,6 @@ import {
 } from "./Session";
 import { SessionDescriptionHandlerModifiers } from "./session-description-handler";
 import {
-  IncomingRequest,
   IncomingResponse,
   OutgoingRequest
 } from "./SIPMessage";
@@ -115,12 +115,15 @@ export class ReferClientContext extends ClientContext {
 
   public receiveNotify(request: IncomingRequest): void {
     // If we can correctly handle this, then we need to send a 200 OK!
-    const contentType: string | undefined = request.hasHeader("Content-Type") ?
-      request.getHeader("Content-Type") : undefined;
+    const contentType = request.message.hasHeader("Content-Type") ?
+      request.message.getHeader("Content-Type") : undefined;
     if (contentType && contentType.search(/^message\/sipfrag/) !== -1) {
-      const messageBody: any = Grammar.parse(request.body, "sipfrag");
+      const messageBody = Grammar.parse(request.message.body, "sipfrag");
       if (messageBody === -1) {
-        request.reply(489, "Bad Event");
+        request.reject({
+          statusCode: 489,
+          reasonPhrase: "Bad Event"
+        });
         return;
       }
       switch (true) {
@@ -137,11 +140,14 @@ export class ReferClientContext extends ClientContext {
           this.emit("referRejected", this);
           break;
       }
-      request.reply(200);
-      this.emit("notify", request);
+      request.accept();
+      this.emit("notify", request.message);
       return;
     }
-    request.reply(489, "Bad Event");
+    request.reject({
+      statusCode: 489,
+      reasonPhrase: "Bad Event"
+    });
   }
 
   protected initReferTo(target: InviteClientContext | InviteServerContext | string): string | URI {
@@ -198,16 +204,15 @@ export class ReferServerContext extends ServerContext {
   protected replaces: string | undefined;
   protected errorListener!: (() => void);
 
-  constructor(ua: UA, request: IncomingRequest, private session?: Session) {
-    super(ua, request);
+  constructor(ua: UA, incomingRequest: IncomingRequest, private session?: Session) {
+    super(ua, incomingRequest);
     this.type = TypeStrings.ReferServerContext;
 
     this.ua = ua;
 
     this.status = SessionStatus.STATUS_INVITE_RECEIVED;
-    this.fromTag = request.fromTag;
-    this.id = request.callId + this.fromTag;
-    this.request = request;
+    this.fromTag = this.request.fromTag;
+    this.id = this.request.callId + this.fromTag;
     this.contact = this.ua.contact.toString();
 
     this.logger = ua.getLogger("sip.referservercontext", this.id);
@@ -232,7 +237,7 @@ export class ReferServerContext extends ServerContext {
     this.referTo = this.request.parseHeader("refer-to");
 
     // TODO: Must set expiration timer and send 202 if there is no response by then
-    this.referredSession = this.ua.findSession(request);
+    this.referredSession = this.ua.findSession(this.request);
 
     if (this.request.hasHeader("referred-by")) {
       this.referredBy = this.request.getHeader("referred-by");
@@ -254,7 +259,7 @@ export class ReferServerContext extends ServerContext {
     if (this.status !== SessionStatus.STATUS_WAITING_FOR_ANSWER) {
       throw new Exceptions.InvalidStateError(this.status);
     }
-    this.request.reply(100);
+    this.incomingRequest.trying();
   }
 
   public reject(options: ReferServerContext.RejectOptions = {}): void {
@@ -277,7 +282,10 @@ export class ReferServerContext extends ServerContext {
       throw new Exceptions.InvalidStateError(this.status);
     }
 
-    this.request.reply(202, "Accepted");
+    this.incomingRequest.accept({
+      statusCode: 202,
+      reasonPhrase: "Accepted"
+    });
     this.emit("referRequestAccepted", this);
 
     if (options.followRefer) {

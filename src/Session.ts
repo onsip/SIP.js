@@ -8,8 +8,10 @@ import {
   fromBodyLegacy,
   fromBodyObj,
   getBody,
+  IncomingAckRequest,
   IncomingInviteRequest,
   IncomingPrackRequest,
+  IncomingRequest,
   IncomingResponse,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
@@ -117,8 +119,6 @@ export abstract class Session extends EventEmitter {
   private pendingReinvite: boolean;
   private referContext: ReferClientContext | ReferServerContext | undefined;
 
-  private originalReceiveRequest: (request: IncomingRequestMessage) => void;
-
   protected constructor(sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory) {
     super();
     this.type = TypeStrings.Session;
@@ -155,7 +155,6 @@ export abstract class Session extends EventEmitter {
 
     this.earlySdp = undefined;
     this.rel100 = C.supported.UNSUPPORTED;
-    this.originalReceiveRequest = this.receiveRequest;
   }
 
   public dtmf(tones: string | number, options: Session.DtmfOptions = {}): this {
@@ -386,84 +385,6 @@ export abstract class Session extends EventEmitter {
     return this.sendReinvite(options);
   }
 
-  public receiveRequest(request: IncomingRequestMessage): void {
-    switch (request.method) { // TODO: This needs a default case
-      case C.BYE:
-        request.reply(200);
-        if (this.status === SessionStatus.STATUS_CONFIRMED) {
-          this.emit("bye", request);
-          this.terminated(request, C.BYE);
-        }
-        break;
-      case C.INVITE:
-        if (this.status === SessionStatus.STATUS_CONFIRMED) {
-          this.logger.log("re-INVITE received");
-          this.receiveReinvite(request);
-        }
-        break;
-      case C.INFO:
-        if (this.status === SessionStatus.STATUS_CONFIRMED || this.status === SessionStatus.STATUS_WAITING_FOR_ACK) {
-          if (this.onInfo) {
-            return this.onInfo(request);
-          }
-
-          const contentType: string | undefined = request.getHeader("content-type");
-          if (contentType) {
-            if (contentType.match(/^application\/dtmf-relay/i)) {
-              if (request.body) {
-                const body: Array<string> = request.body.split("\r\n", 2);
-                if (body.length === 2) {
-                  let tone: string | undefined;
-                  let duration: number | undefined;
-
-                  const regTone = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/;
-                  if (regTone.test(body[0])) {
-                    tone = body[0].replace(regTone, "$2");
-                  }
-                  const regDuration = /^(Duration\s?=\s?)([0-9]{1,4})(\s)?.*/;
-                  if (regDuration.test(body[1])) {
-                    duration = parseInt(body[1].replace(regDuration, "$2"), 10);
-                  }
-
-                  if (tone && duration) {
-                    new DTMF(this, tone, {duration }).init_incoming(request);
-                  }
-                }
-              }
-            } else {
-              request.reply(415, undefined, ["Accept: application/dtmf-relay"]);
-            }
-          }
-        }
-        break;
-      case C.REFER:
-        if (this.status ===  SessionStatus.STATUS_CONFIRMED) {
-          this.logger.log("REFER received");
-          this.referContext = new ReferServerContext(this.ua, request, this.session);
-          if (this.listeners("referRequested").length) {
-            this.emit("referRequested", this.referContext);
-          } else {
-            this.logger.log("No referRequested listeners, automatically accepting and following the refer");
-            const options: any = {followRefer: true};
-            if (this.passedOptions) {
-              options.inviteOptions = this.passedOptions;
-            }
-            this.referContext.accept(options, this.modifiers);
-          }
-        }
-        break;
-      case C.NOTIFY:
-        if ((this.referContext && this.referContext.type === TypeStrings.ReferClientContext) &&
-          request.hasHeader("event") && /^refer(;.*)?$/.test(request.getHeader("event") as string)) {
-          (this.referContext as ReferClientContext).receiveNotify(request);
-          return;
-        }
-        request.reply(200, "OK");
-        this.emit("notify", request);
-        break;
-    }
-  }
-
   public terminate(options?: any): this {
     // here for types and to be overridden
     return this;
@@ -536,14 +457,139 @@ export abstract class Session extends EventEmitter {
     return super.on(name, callback);
   }
 
+  protected onAck(incomingRequest: IncomingAckRequest): void {
+    const confirmSession = () => {
+      clearTimeout(this.timers.ackTimer);
+      clearTimeout(this.timers.invite2xxTimer);
+      this.status = SessionStatus.STATUS_CONFIRMED;
+
+      const contentDisp: any = incomingRequest.message.getHeader("Content-Disposition");
+      if (contentDisp && contentDisp.type === "render") {
+        this.renderbody = incomingRequest.message.body;
+        this.rendertype = incomingRequest.message.getHeader("Content-Type");
+      }
+
+      this.emit("confirmed", incomingRequest.message);
+    };
+
+    if (this.status === SessionStatus.STATUS_WAITING_FOR_ACK) {
+      if (this.sessionDescriptionHandler &&
+          this.sessionDescriptionHandler.hasDescription(incomingRequest.message.getHeader("Content-Type") || "")) {
+        this.hasAnswer = true;
+        this.sessionDescriptionHandler.setDescription(
+          incomingRequest.message.body,
+          this.sessionDescriptionHandlerOptions,
+          this.modifiers
+        ).catch((e: any) => {
+          this.logger.warn(e);
+          this.terminate({
+            statusCode: "488",
+            reasonPhrase: "Bad Media Description"
+          });
+          this.failed(incomingRequest.message, C.causes.BAD_MEDIA_DESCRIPTION);
+          this.terminated(incomingRequest.message, C.causes.BAD_MEDIA_DESCRIPTION);
+          throw e;
+        }).then(() => confirmSession());
+      } else {
+        confirmSession();
+      }
+    }
+  }
+
+  protected receiveRequest(incomingRequest: IncomingRequest): void {
+    switch (incomingRequest.message.method) { // TODO: This needs a default case
+      case C.BYE:
+        incomingRequest.accept();
+        if (this.status === SessionStatus.STATUS_CONFIRMED) {
+          this.emit("bye", incomingRequest.message);
+          this.terminated(incomingRequest.message, C.BYE);
+        }
+        break;
+      case C.INVITE:
+        if (this.status === SessionStatus.STATUS_CONFIRMED) {
+          this.logger.log("re-INVITE received");
+          this.receiveReinvite(incomingRequest);
+        }
+        break;
+      case C.INFO:
+        if (this.status === SessionStatus.STATUS_CONFIRMED || this.status === SessionStatus.STATUS_WAITING_FOR_ACK) {
+          if (this.onInfo) {
+            return this.onInfo(incomingRequest.message);
+          }
+
+          const contentType: string | undefined = incomingRequest.message.getHeader("content-type");
+          if (contentType) {
+            if (contentType.match(/^application\/dtmf-relay/i)) {
+              if (incomingRequest.message.body) {
+                const body: Array<string> = incomingRequest.message.body.split("\r\n", 2);
+                if (body.length === 2) {
+                  let tone: string | undefined;
+                  let duration: number | undefined;
+
+                  const regTone = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/;
+                  if (regTone.test(body[0])) {
+                    tone = body[0].replace(regTone, "$2");
+                  }
+                  const regDuration = /^(Duration\s?=\s?)([0-9]{1,4})(\s)?.*/;
+                  if (regDuration.test(body[1])) {
+                    duration = parseInt(body[1].replace(regDuration, "$2"), 10);
+                  }
+
+                  if (tone && duration) {
+                    new DTMF(this, tone, { duration }).init_incoming(incomingRequest);
+                  }
+                }
+              }
+            } else {
+              incomingRequest.reject({
+                statusCode: 415,
+                extraHeaders: ["Accept: application/dtmf-relay"]
+              });
+            }
+          }
+        }
+        break;
+      case C.REFER:
+        if (this.status === SessionStatus.STATUS_CONFIRMED) {
+          this.logger.log("REFER received");
+          this.referContext = new ReferServerContext(this.ua, incomingRequest, this.session);
+          if (this.listeners("referRequested").length) {
+            this.emit("referRequested", this.referContext);
+          } else {
+            this.logger.log("No referRequested listeners, automatically accepting and following the refer");
+            const options: any = { followRefer: true };
+            if (this.passedOptions) {
+              options.inviteOptions = this.passedOptions;
+            }
+            this.referContext.accept(options, this.modifiers);
+          }
+        }
+        break;
+      case C.NOTIFY:
+        if (
+          this.referContext &&
+          this.referContext.type === TypeStrings.ReferClientContext &&
+          incomingRequest.message.hasHeader("event") &&
+          /^refer(;.*)?$/.test(incomingRequest.message.getHeader("event") as string)
+        ) {
+          (this.referContext as ReferClientContext).receiveNotify(incomingRequest);
+          return;
+        }
+        incomingRequest.accept();
+        this.emit("notify", incomingRequest.message);
+        break;
+    }
+  }
+
   // In dialog INVITE Reception
-  protected receiveReinvite(request: IncomingRequestMessage): void {
+  protected receiveReinvite(incomingRequest: IncomingRequest): void {
     // TODO: Should probably check state of the session
 
-    this.emit("reinvite", this, request);
+    this.emit("reinvite", this, incomingRequest.message);
 
-    if (request.hasHeader("P-Asserted-Identity")) {
-      this.assertedIdentity = Grammar.nameAddrHeaderParse(request.getHeader("P-Asserted-Identity") as string);
+    if (incomingRequest.message.hasHeader("P-Asserted-Identity")) {
+      this.assertedIdentity =
+        Grammar.nameAddrHeaderParse(incomingRequest.message.getHeader("P-Asserted-Identity") as string);
     }
 
     let promise: Promise<BodyObj>;
@@ -551,15 +597,18 @@ export abstract class Session extends EventEmitter {
       this.logger.warn("No SessionDescriptionHandler to reinvite");
       return;
     }
-    if (request.getHeader("Content-Length") === "0" && !request.getHeader("Content-Type")) { // Invite w/o SDP
+    if (
+      incomingRequest.message.getHeader("Content-Length") === "0" &&
+      !incomingRequest.message.getHeader("Content-Type")
+    ) { // Invite w/o SDP
       promise = this.sessionDescriptionHandler.getDescription(
         this.sessionDescriptionHandlerOptions,
         this.modifiers
       );
-    } else if (this.sessionDescriptionHandler.hasDescription(request.getHeader("Content-Type") || "")) {
+    } else if (this.sessionDescriptionHandler.hasDescription(incomingRequest.message.getHeader("Content-Type") || "")) {
       // Invite w/ SDP
       promise = this.sessionDescriptionHandler.setDescription(
-        request.body,
+        incomingRequest.message.body,
         this.sessionDescriptionHandlerOptions,
         this.modifiers
         ).then(this.sessionDescriptionHandler.getDescription.bind(
@@ -568,38 +617,10 @@ export abstract class Session extends EventEmitter {
             this.modifiers)
         );
     } else { // Bad Packet (should never get hit)
-      request.reply(415);
+      incomingRequest.reject({ statusCode: 415 });
       this.emit("reinviteFailed", this);
       return;
     }
-
-    this.receiveRequest = (incRequest: IncomingRequestMessage): void => {
-      if (incRequest.method === C.ACK && this.status === SessionStatus.STATUS_WAITING_FOR_ACK) {
-        if (this.sessionDescriptionHandler &&
-            this.sessionDescriptionHandler.hasDescription(incRequest.getHeader("Content-Type") || "")) {
-          this.hasAnswer = true;
-          this.sessionDescriptionHandler.setDescription(
-            incRequest.body,
-            this.sessionDescriptionHandlerOptions,
-            this.modifiers
-          ).then(() => {
-              clearTimeout(this.timers.ackTimer);
-              clearTimeout(this.timers.invite2xxTimer);
-              this.status = SessionStatus.STATUS_CONFIRMED;
-
-              this.emit("confirmed", incRequest);
-            });
-        } else {
-          clearTimeout(this.timers.ackTimer);
-          clearTimeout(this.timers.invite2xxTimer);
-          this.status = SessionStatus.STATUS_CONFIRMED;
-
-          this.emit("confirmed", incRequest);
-        }
-      } else {
-        this.originalReceiveRequest(incRequest);
-      }
-    };
 
     promise.catch((e: any) => {
         let statusCode: number;
@@ -613,15 +634,18 @@ export abstract class Session extends EventEmitter {
           this.logger.error(e);
           statusCode = 488;
         }
-        request.reply(statusCode);
+        incomingRequest.reject({ statusCode });
         this.emit("reinviteFailed", this);
         // TODO: This could be better
         throw e;
       }).then((description) => {
         const extraHeaders: Array<string> = ["Contact: " + this.contact];
-        request.reply(200, undefined, extraHeaders, description);
+        incomingRequest.accept({
+          statusCode: 200,
+          extraHeaders,
+          body: fromBodyObj(description)
+        });
         this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
-        this.setACKTimer();
         this.emit("reinviteAccepted", this);
       });
   }
@@ -761,44 +785,6 @@ export abstract class Session extends EventEmitter {
       });
   }
 
-  /**
-   * RFC3261 13.3.1.4
-   * Response retransmissions cannot be accomplished by transaction layer
-   *  since it is destroyed when receiving the first 2xx answer
-   */
-  protected setInvite2xxTimer(
-    request: IncomingRequestMessage, description: { body: string; contentType: string }
-  ): void {
-    let timeout: number = Timers.T1;
-    const invite2xxRetransmission = () => {
-      if (this.status !== SessionStatus.STATUS_WAITING_FOR_ACK) {
-        return;
-      }
-
-      this.logger.log("no ACK received, attempting to retransmit OK");
-
-      const extraHeaders: Array<string> = ["Contact: " + this.contact];
-
-      request.reply(200, undefined, extraHeaders, description);
-
-      timeout = Math.min(timeout * 2, Timers.T2);
-
-      this.timers.invite2xxTimer = setTimeout(invite2xxRetransmission, timeout);
-    };
-    this.timers.invite2xxTimer = setTimeout(invite2xxRetransmission, timeout);
-  }
-
-  /**
-   * RFC3261 14.2
-   * If a UAS generates a 2xx response and never receives an ACK,
-   * it SHOULD generate a BYE to terminate the dialog.
-   */
-  protected setACKTimer(): void {
-    // FIXME: TODO: This gets called by receiveReinvite().
-    // Just prevent it from doing anything for now until we stop calling that.
-    return;
-  }
-
   protected failed(response: IncomingResponseMessage | IncomingRequestMessage | undefined, cause: string): this {
     if (this.status === SessionStatus.STATUS_TERMINATED) {
       return this;
@@ -876,6 +862,7 @@ export class InviteServerContext extends Session implements ServerContext {
   public type: TypeStrings;
   public transaction!: InviteServerTransaction | NonInviteServerTransaction;
   public request!: IncomingRequestMessage;
+  public incomingRequest!: IncomingInviteRequest;
 
   /**
    * FIXME: TODO:
@@ -890,8 +877,6 @@ export class InviteServerContext extends Session implements ServerContext {
    */
   private _canceled: boolean;
 
-  private incomingInviteRequest: IncomingInviteRequest;
-
   private waitingForPrackPromise: Promise<void> | undefined;
   private waitingForPrackResolve: ResolveFunction | undefined;
   private waitingForPrackReject: RejectFunction | undefined;
@@ -904,10 +889,10 @@ export class InviteServerContext extends Session implements ServerContext {
     super(ua.configuration.sessionDescriptionHandlerFactory);
 
     this._canceled = false;
-    this.incomingInviteRequest = incomingInviteRequest;
+    this.incomingRequest = incomingInviteRequest;
 
     const request = incomingInviteRequest.message;
-    ServerContext.initializer(this, ua, request);
+    ServerContext.initializer(this, ua, incomingInviteRequest);
     this.type = TypeStrings.InviteServerContext;
 
     const contentDisp: any = request.parseHeader("Content-Disposition");
@@ -948,7 +933,7 @@ export class InviteServerContext extends Session implements ServerContext {
 
     // Set userNoAnswerTimer
     this.timers.userNoAnswerTimer = setTimeout(() => {
-      request.reply(408);
+      incomingInviteRequest.reject({ statusCode: 408 });
       this.failed(request, C.causes.NO_ANSWER);
       this.terminated(request, C.causes.NO_ANSWER);
     }, this.ua.configuration.noAnswerTimeout || 60);
@@ -961,7 +946,7 @@ export class InviteServerContext extends Session implements ServerContext {
       const expires: number = Number(request.getHeader("expires") || 0) * 1000;
       this.timers.expiresTimer = setTimeout(() => {
         if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-          request.reply(487);
+          incomingInviteRequest.reject({ statusCode: 487 });
           this.failed(request, C.causes.EXPIRES);
           this.terminated(request, C.causes.EXPIRES);
         }
@@ -1024,9 +1009,16 @@ export class InviteServerContext extends Session implements ServerContext {
     if (statusCode < 300 || statusCode > 699) {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
-    const response = this.request.reply(statusCode, reasonPhrase, extraHeaders, options.body);
+
+    const body = options.body ? fromBodyLegacy(options.body) : undefined;
+
+    // FIXME: Need to redirect to someplae
+    const response = statusCode < 400 ?
+      this.incomingRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
+      this.incomingRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
+
     (["rejected", "failed"]).forEach((event) => {
-      this.emit(event, response, reasonPhrase);
+      this.emit(event, response.message, reasonPhrase);
     });
 
     return this.terminated();
@@ -1038,17 +1030,18 @@ export class InviteServerContext extends Session implements ServerContext {
    * @param options Options bucket.
    */
   public accept(options: InviteServerContext.Options = {}): this {
+    // FIXME: Need guard against calling more than once.
     this._accept(options)
       .then(({ message, session }) => {
         session.delegate = {
-          onAck: (ackRequest): void => this.receiveRequest(ackRequest.message),
+          onAck: (ackRequest): void => this.onAck(ackRequest),
           onAckTimeout: (): void => this.onAckTimeout(),
-          onBye: (byeRequest): void => this.receiveRequest(byeRequest.message),
-          onInfo: (infoRequest): void => this.receiveRequest(infoRequest.message),
-          onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest.message),
-          onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest.message),
-          onPrack: (prackRequest): void => this.receiveRequest(prackRequest.message),
-          onRefer: (referRequest): void => this.receiveRequest(referRequest.message)
+          onBye: (byeRequest): void => this.receiveRequest(byeRequest),
+          onInfo: (infoRequest): void => this.receiveRequest(infoRequest),
+          onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest),
+          onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest),
+          onPrack: (prackRequest): void => this.receiveRequest(prackRequest),
+          onRefer: (referRequest): void => this.receiveRequest(referRequest)
         };
         this.session = session;
         this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
@@ -1109,7 +1102,7 @@ export class InviteServerContext extends Session implements ServerContext {
     // Ported
     if (options.statusCode === 100) {
       try {
-        this.incomingInviteRequest.trying();
+        this.incomingRequest.trying();
       } catch (error) {
         this.onContextError(error);
         // FIXME: Assuming error due to async race on CANCEL and eating error.
@@ -1200,92 +1193,41 @@ export class InviteServerContext extends Session implements ServerContext {
     }
   }
 
-  // ISC RECEIVE REQUEST
-  public receiveRequest(request: IncomingRequestMessage): void {
-    const confirmSession = () => {
-      clearTimeout(this.timers.ackTimer);
-      clearTimeout(this.timers.invite2xxTimer);
-      this.status = SessionStatus.STATUS_CONFIRMED;
-
-      const contentDisp: any = request.getHeader("Content-Disposition");
-
-      if (contentDisp && contentDisp.type === "render") {
-        this.renderbody = request.body;
-        this.rendertype = request.getHeader("Content-Type");
-      }
-
-      this.emit("confirmed", request);
-    };
-
-    switch (request.method) {
-      case C.CANCEL:
-        /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
-        * was in progress and that the UAC MAY continue with the session established by
-        * any 2xx response, or MAY terminate with BYE. SIP does continue with the
-        * established session. So the CANCEL is processed only if the session is not yet
-        * established.
-        */
-
-        /*
-        * Terminate the whole session in case the user didn't accept (or yet to send the answer) nor reject the
-        *request opening the session.
-        */
+  public onCancel(message: IncomingRequestMessage): void {
         if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER ||
           this.status === SessionStatus.STATUS_WAITING_FOR_PRACK ||
           this.status === SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK ||
           this.status === SessionStatus.STATUS_EARLY_MEDIA ||
           this.status === SessionStatus.STATUS_ANSWERED) {
-
           this.status = SessionStatus.STATUS_CANCELED;
-          this.request.reply(487);
+          this.incomingRequest.reject({ statusCode: 487 });
           this.canceled();
-          this.rejected(request, C.causes.CANCELED);
-          this.failed(request, C.causes.CANCELED);
-          this.terminated(request, C.causes.CANCELED);
-        }
-        break;
-      case C.ACK:
-        if (this.status === SessionStatus.STATUS_WAITING_FOR_ACK) {
-          this.status = SessionStatus.STATUS_CONFIRMED;
-          if (this.sessionDescriptionHandler &&
-              this.sessionDescriptionHandler.hasDescription(request.getHeader("Content-Type") || "")) {
-            // ACK contains answer to an INVITE w/o SDP negotiation
-            this.hasAnswer = true;
-            this.sessionDescriptionHandler.setDescription(
-              request.body,
-              this.sessionDescriptionHandlerOptions,
-              this.modifiers
-            ).catch((e: any) => {
-              this.logger.warn(e);
-              this.terminate({  // TODO: This should be a BYE
-                statusCode: "488",
-                reasonPhrase: "Bad Media Description"
-              });
-              this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
-              this.terminated(request, C.causes.BAD_MEDIA_DESCRIPTION);
-              throw e;
-            }).then(() => confirmSession());
-          } else {
-            confirmSession();
+          this.rejected(message, C.causes.CANCELED);
+          this.failed(message, C.causes.CANCELED);
+          this.terminated(message, C.causes.CANCELED);
           }
         }
-        break;
+
+  protected receiveRequest(incomingRequest: IncomingRequest): void {
+    switch (incomingRequest.message.method) {
       case C.PRACK:
         if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK ||
             this.status === SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
           if (!this.hasAnswer) {
             this.sessionDescriptionHandler = this.setupSessionDescriptionHandler();
             this.emit("SessionDescriptionHandler-created", this.sessionDescriptionHandler);
-            if (this.sessionDescriptionHandler.hasDescription(request.getHeader("Content-Type") || "")) {
+            if (
+              this.sessionDescriptionHandler.hasDescription(incomingRequest.message.getHeader("Content-Type") || "")
+            ) {
               this.hasAnswer = true;
               this.sessionDescriptionHandler.setDescription(
-                request.body,
+                incomingRequest.message.body,
                 this.sessionDescriptionHandlerOptions,
                 this.modifiers
               ).then(() => {
                 clearTimeout(this.timers.rel1xxTimer);
                 clearTimeout(this.timers.prackTimer);
-                request.reply(200);
+                incomingRequest.accept();
                 if (this.status === SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                   this.status = SessionStatus.STATUS_EARLY_MEDIA;
                   this.accept();
@@ -1297,21 +1239,21 @@ export class InviteServerContext extends Session implements ServerContext {
                   statusCode: "488",
                   reasonPhrase: "Bad Media Description"
                 });
-                this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
-                this.terminated(request, C.causes.BAD_MEDIA_DESCRIPTION);
+                this.failed(incomingRequest.message, C.causes.BAD_MEDIA_DESCRIPTION);
+                this.terminated(incomingRequest.message, C.causes.BAD_MEDIA_DESCRIPTION);
               });
             } else {
               this.terminate({
                 statusCode: "488",
                 reasonPhrase: "Bad Media Description"
               });
-              this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
-              this.terminated(request, C.causes.BAD_MEDIA_DESCRIPTION);
+              this.failed(incomingRequest.message, C.causes.BAD_MEDIA_DESCRIPTION);
+              this.terminated(incomingRequest.message, C.causes.BAD_MEDIA_DESCRIPTION);
             }
           } else {
             clearTimeout(this.timers.rel1xxTimer);
             clearTimeout(this.timers.prackTimer);
-            request.reply(200);
+            incomingRequest.accept();
 
             if (this.status === SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
               this.status = SessionStatus.STATUS_EARLY_MEDIA;
@@ -1320,11 +1262,11 @@ export class InviteServerContext extends Session implements ServerContext {
             this.status = SessionStatus.STATUS_EARLY_MEDIA;
           }
         } else if (this.status === SessionStatus.STATUS_EARLY_MEDIA) {
-          request.reply(200);
+          incomingRequest.accept();
         }
         break;
       default:
-        Session.prototype.receiveRequest.apply(this, [request]);
+        super.receiveRequest(incomingRequest);
         break;
     }
   }
@@ -1344,7 +1286,7 @@ export class InviteServerContext extends Session implements ServerContext {
     }
   ): Promise<Body | undefined> {
     if (!this.session) {
-      const body = getBody(this.incomingInviteRequest.message);
+      const body = getBody(this.incomingRequest.message);
       if (!body || body.contentDisposition !== "session") {
         return this.getOffer(options);
       } else {
@@ -1476,7 +1418,7 @@ export class InviteServerContext extends Session implements ServerContext {
           clearTimeout(this.timers.userNoAnswerTimer); // Ported
         })
         .then(() => this.generateResponseOfferAnswer(options))
-        .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
+        .then((body) => this.incomingRequest.accept({ statusCode: 200, body }));
     }
 
     // Ported
@@ -1489,7 +1431,7 @@ export class InviteServerContext extends Session implements ServerContext {
     this.status = SessionStatus.STATUS_ANSWERED;
     clearTimeout(this.timers.userNoAnswerTimer); // Ported
     return this.generateResponseOfferAnswer(options)
-      .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
+      .then((body) => this.incomingRequest.accept({ statusCode: 200, body }));
   }
 
   /**
@@ -1506,7 +1448,7 @@ export class InviteServerContext extends Session implements ServerContext {
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
     const body = options.body ? fromBodyLegacy(options.body) : undefined;
     try {
-      const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+      const progressResponse = this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
       this.emit("progress", progressResponse.message, reasonPhrase); // Ported
       this.session = progressResponse.session;
       return Promise.resolve(progressResponse);
@@ -1531,7 +1473,7 @@ export class InviteServerContext extends Session implements ServerContext {
 
     // Get an offer/answer and send a reply.
     return this.generateResponseOfferAnswer(options)
-      .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
+      .then((body) => this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
         this.emit("progress", progressResponse.message, reasonPhrase); // Ported
         this.session = progressResponse.session;
@@ -1566,7 +1508,7 @@ export class InviteServerContext extends Session implements ServerContext {
       return this.generateResponseOfferAnswer(options)
         .then((offerAnswer) => {
           body = offerAnswer;
-          return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+          return this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
         })
         .then((progressResponse) => {
           this.emit("progress", progressResponse.message, reasonPhrase); // Ported
@@ -1609,7 +1551,7 @@ export class InviteServerContext extends Session implements ServerContext {
             this.logger.warn("No PRACK received, rejecting INVITE.");
             clearTimeout(rel1xxRetransmissionTimer);
             try {
-              this.incomingInviteRequest.reject({ statusCode: 504 });
+              this.incomingRequest.reject({ statusCode: 504 });
               this.terminated(undefined, C.causes.NO_PRACK);
               reject(new Exceptions.TerminatedSessionError());
             } catch (error) {
@@ -1621,7 +1563,7 @@ export class InviteServerContext extends Session implements ServerContext {
           // https://tools.ietf.org/html/rfc3262#section-3
           const rel1xxRetransmission = () => {
             try {
-              this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+              this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
             } catch (error) {
               waitingForPrack = false;
               reject(error);
@@ -1681,9 +1623,9 @@ export class InviteServerContext extends Session implements ServerContext {
       this.logger.error(error as any);
     }
     try {
-      this.incomingInviteRequest.reject({ statusCode }); // "Temporarily Unavailable"
-      this.failed(this.incomingInviteRequest.message, error.message);
-      this.terminated(this.incomingInviteRequest.message, error.message);
+      this.incomingRequest.reject({ statusCode }); // "Temporarily Unavailable"
+      this.failed(this.incomingRequest.message, error.message);
+      this.terminated(this.incomingRequest.message, error.message);
     } catch (error) {
       return;
     }
@@ -2000,24 +1942,6 @@ export class InviteClientContext extends Session implements ClientContext {
     }
 
     return this;
-  }
-
-  // ICC RECEIVE REQUEST
-  public receiveRequest(request: IncomingRequestMessage): void {
-    // Reject CANCELs
-    if (request.method === C.CANCEL) {
-      // TODO; make this a switch when it gets added
-    }
-
-    if (request.method === C.ACK && this.status === SessionStatus.STATUS_WAITING_FOR_ACK) {
-      clearTimeout(this.timers.ackTimer);
-      clearTimeout(this.timers.invite2xxTimer);
-      this.status = SessionStatus.STATUS_CONFIRMED;
-
-      this.accepted();
-    }
-
-    return super.receiveRequest(request);
   }
 
   /**
@@ -2369,13 +2293,13 @@ export class InviteClientContext extends Session implements ClientContext {
     // We have a confirmed dialog.
     this.session = session;
     this.session.delegate = {
-      onAck: (ackRequest): void => this.receiveRequest(ackRequest.message),
-      onBye: (byeRequest): void => this.receiveRequest(byeRequest.message),
-      onInfo: (infoRequest): void => this.receiveRequest(infoRequest.message),
-      onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest.message),
-      onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest.message),
-      onPrack: (prackRequest): void => this.receiveRequest(prackRequest.message),
-      onRefer: (referRequest): void => this.receiveRequest(referRequest.message)
+      onAck: (ackRequest): void => this.onAck(ackRequest),
+      onBye: (byeRequest): void => this.receiveRequest(byeRequest),
+      onInfo: (infoRequest): void => this.receiveRequest(infoRequest),
+      onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest),
+      onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest),
+      onPrack: (prackRequest): void => this.receiveRequest(prackRequest),
+      onRefer: (referRequest): void => this.receiveRequest(referRequest)
     };
 
     switch (session.signalingState) {

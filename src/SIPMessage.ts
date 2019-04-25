@@ -453,22 +453,6 @@ export class IncomingRequest extends IncomingMessage {
     super();
     this.type = TypeStrings.IncomingRequest;
   }
-
-  /**
-   * Stateful reply.
-   * @param {Number} code status code
-   * @param {String} reason reason phrase
-   * @param {Object} headers extra headers
-   * @param {String} body body
-   */
-  public reply(
-    code: number,
-    reason?: string,
-    extraHeaders?: Array<string>,
-    body?: string | { body: string, contentType: string }
-  ): string {
-    throw new Error("Unimplemented");
-  }
 }
 
 /**

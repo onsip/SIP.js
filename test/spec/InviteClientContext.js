@@ -473,10 +473,10 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('by a BYE request', function () {
         beforeEach(function () {
-          var byeRequest = new SIP.IncomingRequest(this.session.ua);
-          byeRequest.method = 'BYE';
-          spyOn(byeRequest, 'reply');
-          this.session.receiveRequest(byeRequest);
+          var message = new SIP.IncomingRequest(this.session.ua);
+          message.method = 'BYE';
+          var accept = jasmine.createSpy("accept");
+          this.session.receiveRequest({ message, accept });
         });
 
         it('fires a `bye` event', function () {

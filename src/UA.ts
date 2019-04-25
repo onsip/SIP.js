@@ -275,7 +275,7 @@ export class UA extends EventEmitter {
         incomingInviteRequest.trying();
         incomingInviteRequest.delegate = {
           onCancel: (cancel: IncomingRequest): void => {
-            context.receiveRequest(cancel);
+            context.onCancel(cancel);
           },
           onTransportError: (error: Exceptions.TransportError): void => {
             context.onTransportError();
@@ -292,7 +292,7 @@ export class UA extends EventEmitter {
       },
       onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
         // Ported - handling of out of dialog MESSAGE.
-        const serverContext = new ServerContext(this, incomingMessageRequest.message);
+        const serverContext = new ServerContext(this, incomingMessageRequest);
         serverContext.body = incomingMessageRequest.message.body;
         serverContext.contentType = incomingMessageRequest.message.getHeader("Content-Type") || "text/plain";
         incomingMessageRequest.accept();
@@ -315,7 +315,7 @@ export class UA extends EventEmitter {
           incomingReferRequest.reject({ statusCode: 405 });
         }
         this.logger.log("Allow out of dialog refers is enabled on the UA");
-        const referContext = new ReferServerContext(this, incomingReferRequest.message);
+        const referContext = new ReferServerContext(this, incomingReferRequest);
         if (this.listeners("outOfDialogReferRequested").length) {
           this.emit("outOfDialogReferRequested", referContext);
         } else {

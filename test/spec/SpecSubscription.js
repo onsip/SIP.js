@@ -420,6 +420,7 @@ describe('Subscription', function() {
 
   describe('.receiveRequest', function() {
     var request;
+    var incomingNotifyRequest;
 
     beforeEach(function() {
       request = SIP.Parser.parseMessage([
@@ -444,21 +445,27 @@ describe('Subscription', function() {
         '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
         'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
-      spyOn(request, 'reply'); //takes care of an error
+      incomingNotifyRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
+      incomingNotifyRequest.message = request;
+      incomingNotifyRequest.accept.and.returnValue({ message: "accept" });
+      incomingNotifyRequest.progress.and.returnValue({ message: "progress" });
+      incomingNotifyRequest.redirect.and.returnValue({ message: "redirect" });
+      incomingNotifyRequest.reject.and.returnValue({ message: "reject" });
+      incomingNotifyRequest.trying.and.returnValue({ message: "trying" });
     });
 
     it('replies 489 returns if matchEvent fails', function() {
       spyOn(Subscription, 'matchEvent').and.returnValue(false);
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
-      expect(request.reply).toHaveBeenCalledWith(489);
+      expect(incomingNotifyRequest.reject).toHaveBeenCalledWith({ statusCode: 489 });
     });
 
     it('replies 200 if match event passes', function() {
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
-      expect(request.reply).toHaveBeenCalledWith(200);
+      expect(incomingNotifyRequest.accept).toHaveBeenCalled();
     });
 
     xit('creates a dialog, sets the id and puts this subscription in the ua\'s subscriptions array', function() {
@@ -466,7 +473,7 @@ describe('Subscription', function() {
 
       expect(Subscription.dialog).toBeUndefined();
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(Subscription.createConfirmedDialog).toHaveBeenCalledWith(request, 'UAS');
       expect(Subscription.id).toBe(Subscription.dialog.id.toString());
@@ -476,7 +483,7 @@ describe('Subscription', function() {
     it('clear both timers', function() {
       spyOn(window, 'clearTimeout');
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(clearTimeout.calls.count()).toBe(2);
     });
@@ -484,16 +491,16 @@ describe('Subscription', function() {
     it('emits notify', function() {
       spyOn(Subscription, 'emit');
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
-      expect(Subscription.emit).toHaveBeenCalledWith('notify', {request: request});
+      expect(Subscription.emit).toHaveBeenCalledWith('notify', { request });
     });
 
     it('if sub_state.state is active, changes state to active and sets the duration timer if there is an expires as well', function() {
-      request.setHeader('Subscription-State', 'active;expires=3600');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'active;expires=3600');
       spyOn(window, 'setTimeout').and.callThrough();
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.subDuration).not.toBeUndefined();
@@ -501,10 +508,10 @@ describe('Subscription', function() {
     });
 
     it('expires is not reset if under 3600', function() {
-      request.setHeader('Subscription-State', 'active;expires=700');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'active;expires=700');
       spyOn(window, 'setTimeout').and.callThrough();
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(setTimeout.calls.argsFor(0)[1]).toBe(700000 * .9);
       expect(Subscription.timers.subDuration).not.toBeUndefined();
@@ -512,10 +519,10 @@ describe('Subscription', function() {
     });
 
     it('expires is reset correctly if too high', function() {
-      request.setHeader('Subscription-State', 'active;expires=77777777777777');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'active;expires=77777777777777');
       spyOn(window, 'setTimeout').and.callThrough();
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.subDuration).not.toBeUndefined();
@@ -523,11 +530,11 @@ describe('Subscription', function() {
     });
 
     it('if sub_state.state is pending and current state is notify_wait, set subDuration, otherwise just change state', function() {
-      request.setHeader('Subscription-State', 'pending;expires=3600');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'pending;expires=3600');
       spyOn(window, 'setTimeout').and.callThrough();
       Subscription.state = 'notify_wait';
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(setTimeout.calls.argsFor(0)[1]).toBe(3600000 * .9);
       expect(Subscription.timers.subDuration).not.toBeUndefined();
@@ -536,29 +543,29 @@ describe('Subscription', function() {
 
       Subscription.state = 'active';
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(setTimeout.calls.count()).toBe(1);
       expect(Subscription.state).toBe('pending');
     });
 
     it('if sub_state.state is terminated with reason deactivated or timeout and state is not terminated, subscribe will be called without close (always a log)', function() {
-      request.setHeader('Subscription-State', 'terminated;expires=3600;reason=deactivated');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;expires=3600;reason=deactivated');
       spyOn(Subscription, 'subscribe');
       spyOn(Subscription, 'close');
       spyOn(Subscription.logger, 'log');
 
       Subscription.state = 'pending';
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(Subscription.logger.log).toHaveBeenCalledWith('terminating subscription with reason deactivated');
       expect(Subscription.subscribe).toHaveBeenCalled();
 
       Subscription.subscribe.calls.reset();
-      request.setHeader('Subscription-State', 'terminated;expires=3600;reason=timeout');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;expires=3600;reason=timeout');
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(Subscription.subscribe).toHaveBeenCalled();
       expect(Subscription.close).not.toHaveBeenCalled();
@@ -578,16 +585,16 @@ describe('Subscription', function() {
     });
 
     it('if sub_state.state is terminated with reason probation or giveup, subscribe will be called or the subDuration timer will be set if retry-after is present, both without close', function() {
-      request.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=probation');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=probation');
       spyOn(Subscription, 'subscribe');
       spyOn(window, 'setTimeout').and.callThrough();
       spyOn(Subscription, 'close');
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
-      request.setHeader('Subscription-State', 'terminated;expires=3600;reason=giveup');
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;expires=3600;reason=giveup');
 
-      Subscription.receiveRequest(request);
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(setTimeout.calls.count()).toBe(1);
       expect(Subscription.subscribe.calls.count()).toBe(1);
@@ -597,14 +604,14 @@ describe('Subscription', function() {
     it('if sub_state.state is terminated with reason rejected, noresource, or invariant, close will be called', function() {
       spyOn(Subscription, 'close');
 
-      request.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=rejected');
-      Subscription.receiveRequest(request);
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=rejected');
+      Subscription.receiveRequest(incomingNotifyRequest);
 
-      request.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=noresource');
-      Subscription.receiveRequest(request);
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=noresource');
+      Subscription.receiveRequest(incomingNotifyRequest);
 
-      request.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=invariant');
-      Subscription.receiveRequest(request);
+      incomingNotifyRequest.message.setHeader('Subscription-State', 'terminated;retry-after=3600;reason=invariant');
+      Subscription.receiveRequest(incomingNotifyRequest);
 
       expect(Subscription.close.calls.count()).toBe(3);
     });
@@ -640,6 +647,7 @@ describe('Subscription', function() {
 
   describe('.matchEvent', function() {
     var request;
+    var incomingNotifyRequest;
 
     it('logs a warning and returns false if Event header is missing', function() {
       request = SIP.Parser.parseMessage([
@@ -663,9 +671,17 @@ describe('Subscription', function() {
         '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
         'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
+      incomingNotifyRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
+      incomingNotifyRequest.message = request;
+      incomingNotifyRequest.accept.and.returnValue({ message: "accept" });
+      incomingNotifyRequest.progress.and.returnValue({ message: "progress" });
+      incomingNotifyRequest.redirect.and.returnValue({ message: "redirect" });
+      incomingNotifyRequest.reject.and.returnValue({ message: "reject" });
+      incomingNotifyRequest.trying.and.returnValue({ message: "trying" });
+
       spyOn(Subscription.logger, 'warn');
 
-      expect(Subscription.matchEvent(request)).toBe(false);
+      expect(Subscription.matchEvent(incomingNotifyRequest)).toBe(false);
       expect(Subscription.logger.warn).toHaveBeenCalledWith('missing Event header');
     });
 
@@ -691,9 +707,17 @@ describe('Subscription', function() {
         '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
         'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
+      incomingNotifyRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
+      incomingNotifyRequest.message = request;
+      incomingNotifyRequest.accept.and.returnValue({ message: "accept" });
+      incomingNotifyRequest.progress.and.returnValue({ message: "progress" });
+      incomingNotifyRequest.redirect.and.returnValue({ message: "redirect" });
+      incomingNotifyRequest.reject.and.returnValue({ message: "reject" });
+      incomingNotifyRequest.trying.and.returnValue({ message: "trying" });
+
       spyOn(Subscription.logger, 'warn');
 
-      expect(Subscription.matchEvent(request)).toBe(false);
+      expect(Subscription.matchEvent(incomingNotifyRequest)).toBe(false);
       expect(Subscription.logger.warn).toHaveBeenCalledWith('missing Subscription-State header');
     });
 
@@ -720,12 +744,22 @@ describe('Subscription', function() {
         '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
         'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
-      spyOn(Subscription.logger, 'warn');
-      spyOn(request, 'reply');
+      incomingNotifyRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
+      incomingNotifyRequest.message = request;
+      incomingNotifyRequest.accept.and.returnValue({ message: "accept" });
+      incomingNotifyRequest.progress.and.returnValue({ message: "progress" });
+      incomingNotifyRequest.redirect.and.returnValue({ message: "redirect" });
+      incomingNotifyRequest.reject.and.returnValue({ message: "reject" });
+      incomingNotifyRequest.trying.and.returnValue({ message: "trying" });
 
-      expect(Subscription.matchEvent(request)).toBe(false);
+      spyOn(Subscription.logger, 'warn');
+
+      expect(Subscription.matchEvent(incomingNotifyRequest)).toBe(false);
       expect(Subscription.logger.warn).toHaveBeenCalledWith('event match failed');
-      expect(request.reply).toHaveBeenCalledWith(481, 'Event Match Failed');
+      expect(incomingNotifyRequest.reject).toHaveBeenCalledWith({
+        statusCode: 481,
+        reasonPhrase: 'Event Match Failed'
+      });
     });
 
     it('returns true if none of the above happens', function() {
@@ -751,7 +785,15 @@ describe('Subscription', function() {
         '<dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0"',
         'state="full" entity="sip:sip%3btest1@onsnip.onsip.com"/>'].join('\r\n'), ua);
 
-      expect(Subscription.matchEvent(request)).toBe(true);
+      incomingNotifyRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
+      incomingNotifyRequest.message = request;
+      incomingNotifyRequest.accept.and.returnValue({ message: "accept" });
+      incomingNotifyRequest.progress.and.returnValue({ message: "progress" });
+      incomingNotifyRequest.redirect.and.returnValue({ message: "redirect" });
+      incomingNotifyRequest.reject.and.returnValue({ message: "reject" });
+      incomingNotifyRequest.trying.and.returnValue({ message: "trying" });
+
+      expect(Subscription.matchEvent(incomingNotifyRequest)).toBe(true);
     });
   });
 });

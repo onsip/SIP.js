@@ -1,13 +1,16 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
+import { IncomingRequest } from "./Core/messages";
+import { Subscription as SubscriptionCore } from "./Core/subscription";
 import { TypeStrings } from "./Enums";
-import { IncomingRequest, IncomingResponse } from "./SIPMessage";
+import {
+  IncomingRequest as IncomingRequestMessage,
+  IncomingResponse as IncomingResponseMessage
+} from "./SIPMessage";
 import { Timers } from "./Timers";
 import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
-
-import { Subscription as SubscriptionCore } from "./Core/subscription";
 
 /**
  * SIP Subscriber (SIP-Specific Event Notifications RFC6665)
@@ -110,7 +113,7 @@ export class Subscription extends ClientContext {
     });
   }
 
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode ? response.statusCode : 0;
     const cause: string = Utils.getReasonPhrase(statusCode);
 
@@ -196,17 +199,17 @@ export class Subscription extends ClientContext {
     };
 
     if (!this.matchEvent(request)) { // checks event and subscription_state headers
-      request.reply(489);
+      request.reject({ statusCode: 489 });
       return;
     }
 
-    subState = request.parseHeader("Subscription-State");
+    subState = request.message.parseHeader("Subscription-State");
 
-    request.reply(200);
+    request.accept();
 
     clearTimeout(this.timers.N);
 
-    this.emit("notify", { request });
+    this.emit("notify", { request: request.message });
 
     // if we've set state to terminated, no further processing should take place
     // and we are only interested in cleaning up after the appropriate NOTIFY
@@ -276,12 +279,12 @@ export class Subscription extends ClientContext {
     }
   }
 
-  public onDialogError(response: IncomingResponse): void {
+  public onDialogError(response: IncomingResponseMessage): void {
     this.failed(response, C.causes.DIALOG_ERROR);
   }
 
   public on(name: "accepted", callback: (response: any, cause: C.causes) => void): this;
-  public on(name: "notify", callback: (notification: { request: IncomingRequest }) => void): this;
+  public on(name: "notify", callback: (notification: { request: IncomingRequestMessage }) => void): this;
   public on(
     name: "failed" | "rejected" | "terminated",
     callback: (messageOrResponse?: any, cause?: C.causes) => void
@@ -295,12 +298,15 @@ export class Subscription extends ClientContext {
     this.ua.userAgentCore.subscribe(this.request, {
       onAccept: (subscribeResponse): void => {
         this.subscription = subscribeResponse.subscription;
+        this.subscription.delegate = {
+          onNotify: (incomingNotifyRequest) => this.receiveRequest(incomingNotifyRequest)
+        };
         this.id = this.subscription.id;
         if (this.request && this.request.from) {
           delete this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag  + this.event];
         }
         this.ua.subscriptions[this.id] = this;
-        return this.receiveResponse(subscribeResponse.message);
+        this.receiveResponse(subscribeResponse.message);
       },
       onProgress: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
       onRedirect: (subscribeResponse): void => this.receiveResponse(subscribeResponse.message),
@@ -330,7 +336,7 @@ export class Subscription extends ClientContext {
     }
   }
 
-  protected failed(response: IncomingResponse, cause?: string): Subscription {
+  protected failed(response: IncomingResponseMessage, cause?: string): Subscription {
     this.close();
     this.emit("failed", response, cause);
     this.emit("rejected", response, cause);
@@ -339,22 +345,25 @@ export class Subscription extends ClientContext {
 
   protected matchEvent(request: IncomingRequest): boolean {
     // Check mandatory header Event
-    if (!request.hasHeader("Event")) {
+    if (!request.message.hasHeader("Event")) {
       this.logger.warn("missing Event header");
       return false;
     }
     // Check mandatory header Subscription-State
-    if (!request.hasHeader("Subscription-State")) {
+    if (!request.message.hasHeader("Subscription-State")) {
       this.logger.warn("missing Subscription-State header");
       return false;
     }
 
     // Check whether the event in NOTIFY matches the event in SUBSCRIBE
-    const event: string = request.parseHeader("event").event;
+    const event: string = request.message.parseHeader("event").event;
 
     if (this.event !== event) {
       this.logger.warn("event match failed");
-      request.reply(481, "Event Match Failed");
+      request.reject({
+        statusCode: 481,
+        reasonPhrase: "Event Match Failed"
+      });
       return false;
     } else {
       return true;

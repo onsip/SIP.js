@@ -280,36 +280,5 @@ export class UserAgentServer implements IncomingRequest {
     // Add the new transaction to the core.
     const userAgentServerId = transaction.id;
     this.core.userAgentServers.set(transaction.id, this);
-
-    // FIXME: HACK: This is a hack to override SIPMessage.IncomingRequest.reply().
-    // The plan is to remove IncomingRequest.reply() eventually, but for now...
-    this.message.reply = (
-      statusCode: number,
-      reasonPhrase?: string,
-      extraHeaders?: Array<string>,
-      bodyLegacy?: string | { body: string, contentType: string }
-    ): string => {
-      const statusCodeString = statusCode.toString();
-      const options: ResponseOptions = {
-        statusCode,
-        reasonPhrase,
-        extraHeaders,
-        body: bodyLegacy ? fromBodyLegacy(bodyLegacy) : undefined
-      };
-      switch (true) {
-        case /^100$/.test(statusCodeString):
-          return this.trying(options).message;
-        case /^1[0-9]{2}$/.test(statusCodeString):
-          return this.progress(options).message;
-        case /^2[0-9]{2}$/.test(statusCodeString):
-          return this.accept(options).message;
-        case /^3[0-9]{2}$/.test(statusCodeString):
-          return this.redirect([], options).message;
-        case /^[4-6][0-9]{2}$/.test(statusCodeString):
-          return this.reject(options).message;
-        default:
-          throw new Error(`Invalid status code ${statusCode}`);
-      }
-    };
   }
 }

@@ -65,7 +65,7 @@ describe("Invite Contexts", () => {
         incomingInviteRequest.trying();
         incomingInviteRequest.delegate = {
           onCancel: (cancel: IncomingRequestMessage): void => {
-            contextBob.receiveRequest(cancel);
+            contextBob.onCancel(cancel);
           },
           onTransportError: (error: Exceptions.TransportError): void => {
             contextBob.onTransportError();
@@ -1329,7 +1329,7 @@ describe("Invite Contexts", () => {
           incomingInviteRequest.trying();
           incomingInviteRequest.delegate = {
             onCancel: (cancel: IncomingRequestMessage): void => {
-              contextBob2.receiveRequest(cancel);
+              contextBob2.onCancel(cancel);
             },
             onTransportError: (error: Exceptions.TransportError): void => {
               contextBob2.onTransportError();

@@ -31,10 +31,9 @@ import { Transport } from "../../../src/Transport";
 
 /** Mocked incoming request factory function. */
 const makeMockIncomingRequest = (method: string): jasmine.SpyObj<IncomingRequest> => {
-  const request = jasmine.createSpyObj<IncomingRequest>("IncomingRequest", ["method", "viaBranch", "reply"]);
+  const request = jasmine.createSpyObj<IncomingRequest>("IncomingRequest", ["method", "viaBranch"]);
   request.method = method;
   request.viaBranch = "z9hG4bK" + Math.floor(Math.random() * 10000000);
-  request.reply.and.returnValue("reply");
   return request;
 };
 
@@ -1176,11 +1175,6 @@ describe("Transactions", () => {
       });
 
       describe("after construction", () => {
-        // https://tools.ietf.org/html/rfc3261#section-17.2.2
-        it("it has not replied to its request", () => {
-          expect(request.reply).not.toHaveBeenCalled();
-        });
-
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         it("is in state 'trying'", () => {
           expect(transaction.state).toBe(TransactionState.Trying);
