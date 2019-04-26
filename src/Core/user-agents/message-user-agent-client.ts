@@ -6,7 +6,7 @@ import { UserAgentClient } from "./user-agent-client";
 
 export class MessageUserAgentClient extends UserAgentClient implements OutgoingMessageRequest {
   constructor(
-    protected core: UserAgentCore,
+    core: UserAgentCore,
     message: OutgoingRequestMessage,
     delegate?: OutgoingRequestDelegate
   ) {
