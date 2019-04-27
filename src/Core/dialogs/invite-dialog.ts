@@ -380,7 +380,7 @@ export class InviteDialog extends Dialog implements Session {
    * https://tools.ietf.org/html/rfc3262#section-4
    * @param options Options bucket.
    */
-  public prack(delegate?: OutgoingRequestDelegate, options: RequestOptions = {}): OutgoingPrackRequest {
+  public prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest {
     this.logger.log(`INVITE dialog ${this.id} sending PRACK request`);
     return new PrackUserAgentClient(this, delegate, options);
   }
@@ -391,7 +391,7 @@ export class InviteDialog extends Dialog implements Session {
    * https://tools.ietf.org/html/rfc3515#section-2.4.1
    * @param options Options bucket.
    */
-  public refer(delegate?: OutgoingRequestDelegate, options: RequestOptions = {}): OutgoingReferRequest {
+  public refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest {
     this.logger.log(`INVITE dialog ${this.id} sending REFER request`);
     if (this.early) {
       // FIXME: TODO: This should throw a proper exception.
