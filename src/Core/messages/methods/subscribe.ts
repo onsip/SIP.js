@@ -1,8 +1,15 @@
 import { Subscription } from "../../subscription";
+import { IncomingRequest } from "../incoming-request";
 import { IncomingResponse } from "../incoming-response";
 import { OutgoingRequest, OutgoingRequestDelegate } from "../outgoing-request";
 
 // tslint:disable:no-empty-interface
+
+export interface IncomingSubscribeRequest extends IncomingRequest {
+}
+
+export interface IncomingSubscribeResponse extends IncomingResponse {
+}
 
 /** SUBSCRIBE message sent from local client to remote server. */
 export interface OutgoingSubscribeRequest extends OutgoingRequest {

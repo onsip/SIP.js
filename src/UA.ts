@@ -6,7 +6,8 @@ import {
   IncomingInviteRequest,
   IncomingMessageRequest,
   IncomingNotifyRequest,
-  IncomingReferRequest
+  IncomingReferRequest,
+  IncomingSubscribeRequest
 } from "./Core/messages";
 import {
   makeUserAgentCoreConfigurationFromUA,
@@ -324,7 +325,10 @@ export class UA extends EventEmitter {
           );
           referContext.accept({ followRefer: true });
         }
-      }
+      },
+      onSubscribe: (incomingSubscribeRequest: IncomingSubscribeRequest): void => {
+        this.emit("subscribe", incomingSubscribeRequest);
+      },
     };
 
     this.userAgentCore = new UserAgentCore(userAgentCoreConfiguration, userAgentCoreDelegate);
@@ -613,6 +617,7 @@ export class UA extends EventEmitter {
   public on(name: "transportCreated", callback: (transport: Transport) => void): this;
   public on(name: "message", callback: (message: any) => void): this;
   public on(name: "notify", callback: (request: any) => void): this;
+  public on(name: "subscribe", callback: (subscribe: IncomingSubscribeRequest) => void): this;
   public on(name: "registered", callback: (response?: any) => void): this;
   public on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
