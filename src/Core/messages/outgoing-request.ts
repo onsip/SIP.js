@@ -15,6 +15,11 @@ export interface OutgoingRequest {
   readonly message: OutgoingRequestMessage;
 
   /**
+   * Destroy request.
+   */
+  dispose(): void;
+
+  /**
    * Sends a CANCEL message targeting this request to the UAS.
    * @param reason Reason for canceling request.
    * @param options Request options bucket.
