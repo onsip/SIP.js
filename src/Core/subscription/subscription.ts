@@ -13,8 +13,17 @@ export interface Subscription {
   delegate: SubscriptionDelegate | undefined;
   /** The subscription id. */
   readonly id: string;
+  /** Subscription expires. Number of seconds until the subscription expires. */
+  readonly subscriptionExpires: number;
   /** Subscription state. */
   readonly subscriptionState: SubscriptionState;
+  /** If true, refresh subscription prior to expiration. Default is false. */
+  autoRefresh: boolean;
+
+  /**
+   * Destroy subscription.
+   */
+  dispose(): void;
 
   /**
    * Send re-SUBSCRIBE request.
@@ -22,11 +31,20 @@ export interface Subscription {
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
    * @param delegate Request delegate.
    * @param options Options bucket
-   * @returns A promise which resolves when a 2xx response to the SUBSCRIBE is received.
-   * @throws {PendingRequestError} If there is a re-subscribe "pending".
-   * @throws {RequestFailedReason} If a non-2xx final response to the SUBSCRIBE is received.
    */
   subscribe(delegate?: OutgoingSubscribeRequestDelegate, options?: RequestOptions): OutgoingSubscribeRequest;
+
+  /**
+   * 4.1.2.2.  Refreshing of Subscriptions
+   * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
+   */
+  refresh(): OutgoingSubscribeRequest;
+
+  /**
+   * 4.1.2.3.  Unsubscribing
+   * https://tools.ietf.org/html/rfc6665#section-4.1.2.3
+   */
+  unsubscribe(): OutgoingSubscribeRequest;
 }
 
 /**

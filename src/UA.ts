@@ -35,6 +35,7 @@ import {
 } from "./session-description-handler-factory";
 import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 import { Subscription } from "./Subscription";
+import { SubscriptionOriginal } from "./SubscriptionOriginal";
 import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
@@ -152,8 +153,11 @@ export class UA extends EventEmitter {
   public sessions: {[id: string]: InviteClientContext | InviteServerContext};
   public data: any;
   public logger: Logger;
-  public earlySubscriptions: {[id: string]: Subscription};
-  public subscriptions: {[id: string]: Subscription};
+
+  // Deprecated
+  public earlySubscriptions: {[id: string]: SubscriptionOriginal};
+  // Deprecated
+  public subscriptions: {[id: string]: SubscriptionOriginal};
 
   public userAgentCore: UserAgentCore;
 
