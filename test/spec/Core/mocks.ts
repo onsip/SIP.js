@@ -1,4 +1,8 @@
-import { IncomingInviteRequest, OutgoingRequestDelegate } from "../../../src/Core/messages";
+import {
+  IncomingInviteRequest,
+  OutgoingRequestDelegate,
+  OutgoingSubscribeRequestDelegate
+} from "../../../src/Core/messages";
 import { SessionDelegate } from "../../../src/Core/session";
 import { SubscriptionDelegate } from "../../../src/Core/subscription";
 import { UserAgentCoreDelegate } from "../../../src/Core/user-agent-core";
@@ -104,6 +108,21 @@ export function makeMockOutgoingRequestDelegate(): jasmine.SpyObj<Required<Outgo
     "onReject",
     "onTrying"
   ]);
+  return delegate;
+}
+
+/** Mocked user agent core delegate factory function. */
+export function makeMockOutgoingSubscribeRequestDelegate(): jasmine.SpyObj<Required<OutgoingSubscribeRequestDelegate>> {
+  const delegate =
+    jasmine.createSpyObj<Required<OutgoingSubscribeRequestDelegate>>("OutgoingSubscribeRequestDelegate", [
+      "onAccept",
+      "onProgress",
+      "onRedirect",
+      "onReject",
+      "onTrying",
+      "onNotify",
+      "onNotifyTimeout"
+    ]);
   return delegate;
 }
 

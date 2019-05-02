@@ -1,5 +1,5 @@
 import { C } from "../../../src/Constants";
-import { InviteDialog } from "../../../src/Core/dialogs";
+import { SessionDialog } from "../../../src/Core/dialogs";
 import {
   AckableIncomingResponseWithSession,
   constructOutgoingResponse,
@@ -9,13 +9,14 @@ import {
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
+  IncomingRequestWithSubscription,
   IncomingResponse,
   OutgoingInviteRequest,
   OutgoingPublishRequest,
   OutgoingRequestDelegate,
   OutgoingSubscribeRequest,
-  PrackableIncomingResponseWithSession,
-  SubscribeAcceptIncomingResponse,
+  OutgoingSubscribeRequestDelegate,
+  PrackableIncomingResponseWithSession
 } from "../../../src/Core/messages";
 import { Session, SessionDelegate, SignalingState } from "../../../src/Core/session";
 import { Subscription, SubscriptionDelegate } from "../../../src/Core/subscription";
@@ -41,6 +42,7 @@ import { URI } from "../../../src/URI";
 import {
   connectTransportToUA,
   makeMockOutgoingRequestDelegate,
+  makeMockOutgoingSubscribeRequestDelegate,
   makeMockSessionDelegate,
   makeMockSubscriptionDelegate,
   makeMockTransport,
@@ -83,7 +85,7 @@ describe("UserAgentCore", () => {
     coreBob.dispose();
   });
 
-  describe("Sessin Initiation", () => {
+  describe("Session Initiation", () => {
     describe("Alice sends Bob an INVITE and...", () => {
       let ruri: URI;
       let contact: string;
@@ -301,8 +303,8 @@ describe("UserAgentCore", () => {
             if (!(request.transaction instanceof InviteClientTransaction)) {
               throw new Error("Request transaction not InviteClientTransaction");
             }
-            if (!(response.session instanceof InviteDialog)) {
-              throw new Error("Response session not InviteDialog");
+            if (!(response.session instanceof SessionDialog)) {
+              throw new Error("Response session not SessionDialog");
             }
             const cseq = request.message.cseq + 1;
             const dialog = response.session;
@@ -964,7 +966,7 @@ describe("UserAgentCore", () => {
             sessionBobDelegate.onNotify.and.callFake((incomingRequest: IncomingNotifyRequest) => {
               incomingRequest.accept();
             });
-            sessionAlice.notify();
+            sessionAlice.notify(undefined, { extraHeaders: ["Event: foo"] });
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
 
@@ -987,7 +989,7 @@ describe("UserAgentCore", () => {
             sessionAliceDelegate.onNotify.and.callFake((incomingRequest: IncomingNotifyRequest) => {
               incomingRequest.accept();
             });
-            sessionBob.notify();
+            sessionBob.notify(undefined, { extraHeaders: ["Event: foo"] });
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
 
@@ -1194,13 +1196,17 @@ describe("UserAgentCore", () => {
       let ruri: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
-      let delegate: jasmine.SpyObj<Required<OutgoingRequestDelegate>>;
+      let delegate: jasmine.SpyObj<Required<OutgoingSubscribeRequestDelegate>>;
       let request: OutgoingSubscribeRequest;
 
       beforeEach(() => {
         ruri = new URI("sip", userBob, domainBob, undefined);
         contact = uaAlice.contact.toString();
-        const extraHeaders = [`Contact: ${contact}`];
+        const extraHeaders: Array<string> = [];
+        extraHeaders.push(`Event: foo`);
+        extraHeaders.push(`Expires: 420`);
+        extraHeaders.push(`Subscription-State: active`);
+        extraHeaders.push(`Contact: ${contact}`);
         message = new OutgoingRequestMessage(
           C.SUBSCRIBE,
           ruri,
@@ -1208,7 +1214,7 @@ describe("UserAgentCore", () => {
           undefined,
           extraHeaders
         );
-        delegate = makeMockOutgoingRequestDelegate();
+        delegate = makeMockOutgoingSubscribeRequestDelegate();
       });
 
       describe("to Bob", () => {
@@ -1227,14 +1233,14 @@ describe("UserAgentCore", () => {
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
           expect(delegate.onReject).toHaveBeenCalledTimes(1);
           expect(delegate.onTrying).toHaveBeenCalledTimes(0);
-          expect((delegate.onReject.calls.mostRecent().args[0] as IncomingResponse).message.statusCode).toBe(405);
+          expect((delegate.onReject.calls.mostRecent().args[0] as IncomingResponse).message.statusCode).toBe(480);
         });
       });
 
       describe("to a presence server mocked up by Bob", () => {
         let subscriptionAlice: Subscription;
         let subscriptionAliceDelegate: jasmine.SpyObj<Required<SubscriptionDelegate>>;
-        let subscriptionAliceMessage: IncomingResponseMessage;
+        let subscriptionAliceMessage: IncomingRequestMessage;
 
         beforeEach((done) => {
           transportAlice.send.and.callFake((msg: string) => {
@@ -1246,10 +1252,13 @@ describe("UserAgentCore", () => {
           subscriptionAliceDelegate.onNotify.and.callFake((notifyRequest) => {
             notifyRequest.accept();
           });
-          delegate.onAccept.and.callFake((incomingResponse: SubscribeAcceptIncomingResponse) => {
-            subscriptionAlice = incomingResponse.subscription;
-            subscriptionAlice.delegate = subscriptionAliceDelegate;
-            subscriptionAliceMessage = incomingResponse.message;
+          delegate.onNotify.and.callFake((incomingRequest: IncomingRequestWithSubscription) => {
+            if (incomingRequest.subscription) {
+              subscriptionAlice = incomingRequest.subscription;
+              subscriptionAlice.delegate = subscriptionAliceDelegate;
+            }
+            subscriptionAliceMessage = incomingRequest.request.message;
+            incomingRequest.request.accept();
           });
           request = coreAlice.subscribe(message);
           request.delegate = delegate;
@@ -1276,42 +1285,57 @@ describe("UserAgentCore", () => {
             throw new Error("Not instance of IncomingResponseMessage.");
           }
           coreAlice.receiveIncomingResponseFromTransport(incomingResponseMessage);
+
+          // Cobble together a NOTIFY and send it from Bob's core.
+          const ruriNotify = uaAlice.contact.uri;
+          const extraHeadersNotify: Array<string> = [];
+          extraHeadersNotify.push(`Event: foo`);
+          extraHeadersNotify.push(`Expires: 420`);
+          extraHeadersNotify.push(`Subscription-State: active`);
+          extraHeadersNotify.push(`Contact: ${uaBob.contact.toString()}`);
+
+          const outgoingRequestMessage1 = new OutgoingRequestMessage(
+            C.NOTIFY,
+            ruriNotify,
+            uaBob,
+            {
+              cseq: 1,
+              callId: incomingResponseMessage.callId,
+              toTag: incomingResponseMessage.fromTag,
+              fromTag: incomingResponseMessage.toTag
+            },
+            extraHeadersNotify,
+            undefined
+          );
+          coreBob.request(outgoingRequestMessage1);
+
           setTimeout(() => done(), 10); // transport calls are async, so give it some time
         });
 
-        it("Alice's UAC sends an SUBSCRIBE and receives a 200 OK", () => {
-          expect(transportAlice.send).toHaveBeenCalledTimes(1);
-          expect(transportAlice.send.calls.mostRecent().args[0])
+        it("Alice's UAC sends an SUBSCRIBE and receives a 200 OK and a NOTIFY", () => {
+          expect(transportAlice.send).toHaveBeenCalledTimes(2);
+          expect(transportAlice.send.calls.first().args[0])
             .toMatch(new RegExp(`^SUBSCRIBE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
           expect(delegate.onReject).toHaveBeenCalledTimes(0);
           expect(delegate.onTrying).toHaveBeenCalledTimes(0);
-          expect((delegate.onAccept.calls.mostRecent().args[0] as IncomingResponse).message.statusCode).toBe(200);
+          expect((delegate.onAccept.calls.first().args[0] as IncomingResponse).message.statusCode).toBe(200);
         });
 
         describe("which sends a couple of NOTIFY messages", () => {
-          let outgoingRequestMessage1: OutgoingRequestMessage;
           let outgoingRequestMessage2: OutgoingRequestMessage;
+          let outgoingRequestMessage3: OutgoingRequestMessage;
 
           beforeEach((done) => {
             // Cobble together a NOTIFY and send it from Bob's core.
             ruri = uaAlice.contact.uri;
-            const extraHeaders = [`Contact: ${uaBob.contact.toString()}`];
-            outgoingRequestMessage1 = new OutgoingRequestMessage(
-              C.NOTIFY,
-              ruri,
-              uaBob,
-              {
-                cseq: 1,
-                callId: subscriptionAliceMessage.callId,
-                toTag: subscriptionAliceMessage.fromTag,
-                fromTag: subscriptionAliceMessage.toTag
-              },
-              extraHeaders,
-              undefined
-            );
+            const extraHeaders: Array<string> = [];
+            extraHeaders.push(`Event: foo`);
+            extraHeaders.push(`Expires: 420`);
+            extraHeaders.push(`Subscription-State: active`);
+            extraHeaders.push(`Contact: ${uaBob.contact.toString()}`);
             outgoingRequestMessage2 = new OutgoingRequestMessage(
               C.NOTIFY,
               ruri,
@@ -1319,22 +1343,37 @@ describe("UserAgentCore", () => {
               {
                 cseq: 2,
                 callId: subscriptionAliceMessage.callId,
-                toTag: subscriptionAliceMessage.fromTag,
-                fromTag: subscriptionAliceMessage.toTag
+                toTag: subscriptionAliceMessage.toTag,
+                fromTag: subscriptionAliceMessage.fromTag
               },
               extraHeaders,
               undefined
             );
-            coreBob.request(outgoingRequestMessage1);
+            outgoingRequestMessage3 = new OutgoingRequestMessage(
+              C.NOTIFY,
+              ruri,
+              uaBob,
+              {
+                cseq: 3,
+                callId: subscriptionAliceMessage.callId,
+                toTag: subscriptionAliceMessage.toTag,
+                fromTag: subscriptionAliceMessage.fromTag
+              },
+              extraHeaders,
+              undefined
+            );
             coreBob.request(outgoingRequestMessage2);
+            coreBob.request(outgoingRequestMessage3);
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
 
           it("Alice's UAS receives the NOTIFY messages and accepts them", () => {
-            expect(transportAlice.send).toHaveBeenCalledTimes(3);
+            expect(transportAlice.send).toHaveBeenCalledTimes(4);
             expect(transportAlice.send.calls.all()[1].args[0])
               .toMatch(new RegExp(`^SIP/2.0 200 OK`));
             expect(transportAlice.send.calls.all()[2].args[0])
+              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.all()[3].args[0])
               .toMatch(new RegExp(`^SIP/2.0 200 OK`));
             expect(delegate.onAccept).toHaveBeenCalledTimes(1);
             expect(delegate.onProgress).toHaveBeenCalledTimes(0);
@@ -1347,16 +1386,16 @@ describe("UserAgentCore", () => {
 
           describe("followed by a couple of broken NOTIFY messages (bad sequence numbers)", () => {
             beforeEach((done) => {
-              coreBob.request(outgoingRequestMessage1);
               coreBob.request(outgoingRequestMessage2);
+              coreBob.request(outgoingRequestMessage3);
               setTimeout(() => done(), 10); // transport calls are async, so give it some time
             });
 
             it("Alice's UAS receives the NOTIFY messages and rejects them", () => {
-              expect(transportAlice.send).toHaveBeenCalledTimes(5);
-              expect(transportAlice.send.calls.all()[3].args[0])
-                .toMatch(new RegExp(`^SIP/2.0 500 Internal Server Error`));
+              expect(transportAlice.send).toHaveBeenCalledTimes(6);
               expect(transportAlice.send.calls.all()[4].args[0])
+                .toMatch(new RegExp(`^SIP/2.0 500 Internal Server Error`));
+              expect(transportAlice.send.calls.all()[5].args[0])
                 .toMatch(new RegExp(`^SIP/2.0 500 Internal Server Error`));
               expect(delegate.onAccept).toHaveBeenCalledTimes(1);
               expect(delegate.onProgress).toHaveBeenCalledTimes(0);
