@@ -8,3 +8,4 @@ src/**/*.js
 test/spec/*.spec.js
 test/spec/Contexts/*.js
 test/spec/Core/*.js
+test/support/**/*.js
