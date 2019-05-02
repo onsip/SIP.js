@@ -41,9 +41,9 @@ import {
   UserAgentClient,
   UserAgentServer
 } from "../user-agents";
+import { AllowedMethods } from "./allowed-methods";
 import { UserAgentCoreConfiguration } from "./user-agent-core-configuration";
 import { UserAgentCoreDelegate } from "./user-agent-core-delegate";
-
 /**
  * This is ported from UA.C.ACCEPTED_BODY_TYPES.
  * FIXME: TODO: Should be configurable/variable.
@@ -51,24 +51,6 @@ import { UserAgentCoreDelegate } from "./user-agent-core-delegate";
 const acceptedBodyTypes = [
   "application/sdp",
   "application/dtmf-relay"
-];
-
-/**
- * This is ported from UA.C.ALLOWED_METHODS.
- * FIXME: TODO: Should be configurable/variable.
- */
-export const AllowedMethods = [
-  C.ACK,
-  C.BYE,
-  C.CANCEL,
-  C.INFO,
-  C.INVITE,
-  C.MESSAGE,
-  C.NOTIFY,
-  C.OPTIONS,
-  C.PRACK, // FIXME: Only if 100rel Supported
-  C.REFER,
-  C.SUBSCRIBE
 ];
 
 /**

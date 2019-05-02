@@ -4,7 +4,6 @@ import {
 } from "../../SIPMessage";
 import { Dialog, InviteDialog } from "../dialogs";
 import {
-  Body,
   OutgoingAckRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,

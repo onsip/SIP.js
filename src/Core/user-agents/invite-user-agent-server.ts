@@ -12,6 +12,7 @@ import {
 import { SignalingState } from "../session";
 import { InviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
+import { AllowedMethods } from "../user-agent-core/allowed-methods";
 import { UserAgentServer } from "./user-agent-server";
 
 /**
@@ -110,8 +111,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
     // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
 
     // FIXME: TODO: This should not be hard coded.
-    const allowHeader =
-      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString();
+    const allowHeader = "Allow: " + AllowedMethods.toString();
 
     // FIXME: TODO: Supported header (see reply())
 
