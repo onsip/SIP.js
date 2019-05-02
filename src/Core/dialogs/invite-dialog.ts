@@ -618,33 +618,34 @@ export class InviteDialog extends Dialog implements Session {
       const requireHeader = message.getHeader("require");
       const rseqHeader = message.getHeader("rseq");
       const rseq = requireHeader && requireHeader.includes("100rel") && rseqHeader ? Number(rseqHeader) : undefined;
+      if (rseq) {
+        // Handling of subsequent reliable provisional responses for the same
+        // initial request follows the same rules as above, with the following
+        // difference: reliable provisional responses are guaranteed to be in
+        // order.  As a result, if the UAC receives another reliable provisional
+        // response to the same request, and its RSeq value is not one higher
+        // than the value of the sequence number, that response MUST NOT be
+        // acknowledged with a PRACK, and MUST NOT be processed further by the
+        // UAC.  An implementation MAY discard the response, or MAY cache the
+        // response in the hopes of receiving the missing responses.
+        // https://tools.ietf.org/html/rfc3262#section-4
+        if (this.rseq && this.rseq + 1 !== rseq) {
+          return false;
+        }
 
-      // Handling of subsequent reliable provisional responses for the same
-      // initial request follows the same rules as above, with the following
-      // difference: reliable provisional responses are guaranteed to be in
-      // order.  As a result, if the UAC receives another reliable provisional
-      // response to the same request, and its RSeq value is not one higher
-      // than the value of the sequence number, that response MUST NOT be
-      // acknowledged with a PRACK, and MUST NOT be processed further by the
-      // UAC.  An implementation MAY discard the response, or MAY cache the
-      // response in the hopes of receiving the missing responses.
-      // https://tools.ietf.org/html/rfc3262#section-4
-      if (this.rseq && this.rseq + 1 !== rseq) {
-        return false;
-      }
-
-      // Once a reliable provisional response is received, retransmissions of
-      // that response MUST be discarded.  A response is a retransmission when
-      // its dialog ID, CSeq, and RSeq match the original response.  The UAC
-      // MUST maintain a sequence number that indicates the most recently
-      // received in-order reliable provisional response for the initial
-      // request.  This sequence number MUST be maintained until a final
-      // response is received for the initial request.  Its value MUST be
-      // initialized to the RSeq header field in the first reliable
-      // provisional response received for the initial request.
-      // https://tools.ietf.org/html/rfc3262#section-4
-      if (!this.rseq) {
-        this.rseq = rseq;
+        // Once a reliable provisional response is received, retransmissions of
+        // that response MUST be discarded.  A response is a retransmission when
+        // its dialog ID, CSeq, and RSeq match the original response.  The UAC
+        // MUST maintain a sequence number that indicates the most recently
+        // received in-order reliable provisional response for the initial
+        // request.  This sequence number MUST be maintained until a final
+        // response is received for the initial request.  Its value MUST be
+        // initialized to the RSeq header field in the first reliable
+        // provisional response received for the initial request.
+        // https://tools.ietf.org/html/rfc3262#section-4
+        if (!this.rseq) {
+          this.rseq = rseq;
+        }
       }
     }
 

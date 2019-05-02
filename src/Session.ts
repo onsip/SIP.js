@@ -877,6 +877,8 @@ export class InviteServerContext extends Session implements ServerContext {
    */
   private _canceled: boolean;
 
+  private rseq: number;
+
   private waitingForPrackPromise: Promise<void> | undefined;
   private waitingForPrackResolve: ResolveFunction | undefined;
   private waitingForPrackReject: RejectFunction | undefined;
@@ -889,6 +891,7 @@ export class InviteServerContext extends Session implements ServerContext {
     super(ua.configuration.sessionDescriptionHandlerFactory);
 
     this._canceled = false;
+    this.rseq = Math.floor(Math.random() * 10000);
     this.incomingRequest = incomingInviteRequest;
 
     const request = incomingInviteRequest.message;
@@ -1497,7 +1500,7 @@ export class InviteServerContext extends Session implements ServerContext {
     const reasonPhrase = options.reasonPhrase;
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
     extraHeaders.push("Require: 100rel");
-    extraHeaders.push("RSeq: " + Math.floor(Math.random() * 10000));
+    extraHeaders.push("RSeq: " + this.rseq++);
     let body: Body | undefined;
 
     // Ported - set status.
