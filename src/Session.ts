@@ -1175,11 +1175,11 @@ export class InviteServerContext extends Session implements ServerContext {
         this.session.delegate = {
           // When ACK shows up, say BYE.
           onAck: (): void => {
-            this.bye();
+            this.sendRequest(C.BYE, options);
           },
           // Or the server transaction times out before the ACK arrives.
           onAckTimeout: (): void => {
-            this.bye();
+            this.sendRequest(C.BYE, options);
           }
         };
         // Ported
