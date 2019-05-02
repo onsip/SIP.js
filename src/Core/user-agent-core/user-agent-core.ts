@@ -556,12 +556,22 @@ export class UserAgentCore {
         this.replyStateless(message, { statusCode: 489 });
         return;
       }
+
       // FIXME: Subscriber id should also matching on event id.
       const subscriberId = message.callId + message.toTag + event.event;
       const subscriber = this.subscribers.get(subscriberId);
       if (subscriber) {
         const uas = new NotifyUserAgentServer(this, message);
         subscriber.onNotify(uas);
+        return;
+      }
+
+      // Deprecated
+      const earlySubscription =
+        message.ua.earlySubscriptions[message.callId + message.toTag + event.event] || undefined;
+      if (earlySubscription) {
+        const uas = new NotifyUserAgentServer(this, message);
+        earlySubscription.receiveRequest(uas);
         return;
       }
     }
