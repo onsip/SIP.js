@@ -51,7 +51,7 @@ import { DialogState } from "./dialog-state";
 
 export type OutgoingResponseBody = Body;
 
-export class InviteDialog extends Dialog implements Session {
+export class SessionDialog extends Dialog implements Session {
   public delegate: SessionDelegate | undefined;
 
   public reinviteUserAgentClient: ReInviteUserAgentClient | undefined;

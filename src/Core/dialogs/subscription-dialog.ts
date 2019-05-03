@@ -39,7 +39,7 @@ import { DialogState } from "./dialog-state";
  *
  *  https://tools.ietf.org/html/rfc6665
  */
-export class SubscribeDialog extends Dialog implements Subscription {
+export class SubscriptionDialog extends Dialog implements Subscription {
 
   /**
    * When a UAC receives a response that establishes a dialog, it

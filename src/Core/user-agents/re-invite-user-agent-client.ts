@@ -3,7 +3,7 @@ import {
   IncomingResponse as IncomingResponseMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
-import { InviteDialog } from "../dialogs";
+import { SessionDialog } from "../dialogs";
 import {
   Body,
   OutgoingAckRequest,
@@ -24,10 +24,10 @@ import { UserAgentClient } from "./user-agent-client";
 export class ReInviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest {
   public delegate: OutgoingInviteRequestDelegate | undefined;
 
-  private dialog: InviteDialog;
+  private dialog: SessionDialog;
 
   constructor(
-    dialog: InviteDialog,
+    dialog: SessionDialog,
     delegate?: OutgoingInviteRequestDelegate,
     options?: RequestOptions
   ) {

@@ -1,15 +1,15 @@
 import { C } from "../../Constants";
 import { IncomingResponse as IncomingResponseMessage } from "../../SIPMessage";
-import { SubscribeDialog } from "../dialogs";
+import { SubscriptionDialog } from "../dialogs";
 import { OutgoingRequestDelegate, OutgoingSubscribeRequest, RequestOptions } from "../messages";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 export class ReSubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
-  private dialog: SubscribeDialog;
+  private dialog: SubscriptionDialog;
 
   constructor(
-    dialog: SubscribeDialog,
+    dialog: SubscriptionDialog,
     delegate?: OutgoingRequestDelegate,
     options?: RequestOptions
   ) {

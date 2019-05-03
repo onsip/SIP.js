@@ -3,7 +3,7 @@ import {
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
 import { Timers } from "../../Timers";
-import { SubscribeDialog } from "../dialogs/subscribe-dialog";
+import { SubscriptionDialog } from "../dialogs/subscription-dialog";
 import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate } from "../messages";
 import { SubscriptionState } from "../subscription";
 import { NonInviteClientTransaction } from "../transactions";
@@ -22,7 +22,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
   public delegate: OutgoingSubscribeRequestDelegate | undefined;
 
   /** Dialog created upon receiving the first NOTIFY. */
-  private dialog: SubscribeDialog | undefined;
+  private dialog: SubscriptionDialog | undefined;
   /** Identifier of this user agent client. */
   private subscriberId: string;
   /** When the subscription expires. Starts as requested expires and updated on 200 and NOTIFY. */
@@ -221,10 +221,10 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
       // as opposed to the route set present in the 200-class response to the
       // SUBSCRIBE request.
       // https://tools.ietf.org/html/rfc6665#section-4.4.1
-      const dialogState = SubscribeDialog.initialDialogStateForSubscription(this.message, uas.message);
+      const dialogState = SubscriptionDialog.initialDialogStateForSubscription(this.message, uas.message);
 
       // Subscription Initiated! :)
-      this.dialog = new SubscribeDialog(
+      this.dialog = new SubscriptionDialog(
         this.subscriptionEvent,
         this.subscriptionExpires,
         this.subscriptionState,

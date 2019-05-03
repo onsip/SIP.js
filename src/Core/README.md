@@ -10,7 +10,7 @@ Start by taking a look at `UserAgentCore` & `UserAgentCoreDelegate` which provid
 
 ### `./dialogs`
 - `Dialog` implementation (https://tools.ietf.org/html/rfc3261#section-12)
-- `InviteDialog` extension (https://tools.ietf.org/html/rfc3261#section-13)
+- `SessionDialog` extension (https://tools.ietf.org/html/rfc3261#section-13)
 - `SubscriptionDialog` extension (https://tools.ietf.org/html/rfc6665)
 
 ### `./messages`

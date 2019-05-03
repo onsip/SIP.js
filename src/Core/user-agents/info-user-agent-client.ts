@@ -1,12 +1,12 @@
 import { C } from "../../Constants";
-import { InviteDialog } from "../dialogs";
+import { SessionDialog } from "../dialogs";
 import { OutgoingInfoRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 export class InfoUserAgentClient extends UserAgentClient implements OutgoingInfoRequest {
   constructor(
-    dialog: InviteDialog,
+    dialog: SessionDialog,
     delegate?: OutgoingRequestDelegate,
     options?: RequestOptions
   ) {

@@ -1,5 +1,5 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { InviteDialog } from "../dialogs";
+import { SessionDialog } from "../dialogs";
 import { IncomingReferRequest, IncomingRequestDelegate } from "../messages";
 import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
@@ -12,18 +12,18 @@ export class ReferUserAgentServer extends UserAgentServer implements IncomingRef
    * @param message Incoming REFER request message.
    */
   constructor(
-    dialogOrCore: InviteDialog | UserAgentCore,
+    dialogOrCore: SessionDialog | UserAgentCore,
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {
     const userAgentCore =
-      instanceOfInviteDialog(dialogOrCore) ?
+      instanceOfSessionDialog(dialogOrCore) ?
         dialogOrCore.userAgentCore :
         dialogOrCore;
     super(NonInviteServerTransaction, userAgentCore, message, delegate);
   }
 }
 
-function instanceOfInviteDialog(object: any): object is InviteDialog {
+function instanceOfSessionDialog(object: any): object is SessionDialog {
   return object.userAgentCore !== undefined;
 }
