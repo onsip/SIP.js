@@ -565,15 +565,6 @@ export class UserAgentCore {
         subscriber.onNotify(uas);
         return;
       }
-
-      // Deprecated
-      const earlySubscription =
-        message.ua.earlySubscriptions[message.callId + message.toTag + event.event] || undefined;
-      if (earlySubscription) {
-        const uas = new NotifyUserAgentServer(this, message);
-        earlySubscription.receiveRequest(uas);
-        return;
-      }
     }
 
     // Requests sent within a dialog, as any other requests, are atomic.  If

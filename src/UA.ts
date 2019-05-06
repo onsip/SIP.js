@@ -35,7 +35,6 @@ import {
 } from "./session-description-handler-factory";
 import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 import { Subscription } from "./Subscription";
-import { SubscriptionOriginal } from "./SubscriptionOriginal";
 import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
@@ -154,11 +153,6 @@ export class UA extends EventEmitter {
   public data: any;
   public logger: Logger;
 
-  // Deprecated
-  public earlySubscriptions: {[id: string]: SubscriptionOriginal};
-  // Deprecated
-  public subscriptions: {[id: string]: SubscriptionOriginal};
-
   public userAgentCore: UserAgentCore;
 
   private log: LoggerFactory;
@@ -180,8 +174,6 @@ export class UA extends EventEmitter {
 
     this.data = {};
     this.sessions = {};
-    this.subscriptions = {};
-    this.earlySubscriptions = {};
     this.publishers = {};
     this.status = UAStatus.STATUS_INIT;
 
@@ -491,22 +483,6 @@ export class UA extends EventEmitter {
       if (this.sessions[session]) {
         this.logger.log("closing session " + session);
         this.sessions[session].terminate();
-      }
-    }
-
-    // Run _close_ on every confirmed Subscription
-    for (const subscription in this.subscriptions) {
-      if (this.subscriptions[subscription]) {
-        this.logger.log("unsubscribing from subscription " + subscription);
-        this.subscriptions[subscription].close();
-      }
-    }
-
-    // Run _close_ on every early Subscription
-    for (const earlySubscription in this.earlySubscriptions) {
-      if (this.earlySubscriptions[earlySubscription]) {
-        this.logger.log("unsubscribing from early subscription " + earlySubscription);
-        this.earlySubscriptions[earlySubscription].close();
       }
     }
 

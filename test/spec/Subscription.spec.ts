@@ -5,7 +5,6 @@ import { UserAgentCore } from "../../src/Core/user-agent-core";
 import { ReSubscribeUserAgentServer, UserAgentClient } from "../../src/Core/user-agents";
 import { IncomingRequest as IncomingRequestMessage } from "../../src/SIPMessage";
 import { Subscription } from "../../src/Subscription";
-// import { SubscriptionOriginal as Subscription } from "../../src/SubscriptionOriginal";
 import { Timers } from "../../src/Timers";
 import { URI } from "../../src/URI";
 import { Utils } from "../../src/Utils";
