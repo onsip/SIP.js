@@ -50,9 +50,9 @@ export class Subscription extends EventEmitter implements ClientContext {
   public data: any = {};
   public method: string = C.SUBSCRIBE;
   public body: BodyObj | undefined = undefined;
-  public localIdentity!: NameAddrHeader; // undefined
-  public remoteIdentity!: NameAddrHeader; // undefined
-  public request!: OutgoingRequestMessage; // undefined
+  public localIdentity: NameAddrHeader;
+  public remoteIdentity: NameAddrHeader;
+  public request: OutgoingRequestMessage;
   public onRequestTimeout!: () => void; // not used
   public onTransportError!: () => void; // not used
   public receiveResponse!: () => void; // not used
@@ -116,6 +116,17 @@ export class Subscription extends EventEmitter implements ClientContext {
     this.context = this.initContext();
 
     this.disposed = false;
+
+    // ClientContext interface
+    this.request = this.context.message;
+    if (!this.request.from) {
+      throw new Error("From undefined.");
+    }
+    if (!this.request.to) {
+      throw new Error("From undefined.");
+    }
+    this.localIdentity = this.request.from;
+    this.remoteIdentity = this.request.to;
   }
 
   /**
@@ -255,26 +266,21 @@ export class Subscription extends EventEmitter implements ClientContext {
   public subscribe(): this {
     switch (this.context.state) {
       case SubscriptionState.Initial:
-        this.context
-          .subscribe({
-            extraHeaders: this.extraHeaders,
-            body: this.body ? fromBodyObj(this.body) : undefined
-          })
-          .then((result) => {
-            if (result.success) {
-              if (result.success.subscription) {
-                this.subscription = result.success.subscription;
-                this.subscription.delegate = {
-                  onNotify: (request) => this.onNotify(request),
-                  onRefresh: (request) => this.onRefresh(request),
-                  onTerminated: () => this.close()
-                };
-              }
-              this.onNotify(result.success.request);
-            } else if (result.failure) {
-              this.onFailed(result.failure.response);
+        this.context.subscribe().then((result) => {
+          if (result.success) {
+            if (result.success.subscription) {
+              this.subscription = result.success.subscription;
+              this.subscription.delegate = {
+                onNotify: (request) => this.onNotify(request),
+                onRefresh: (request) => this.onRefresh(request),
+                onTerminated: () => this.close()
+              };
             }
-          });
+            this.onNotify(result.success.request);
+          } else if (result.failure) {
+            this.onFailed(result.failure.response);
+          }
+        });
         break;
       case SubscriptionState.NotifyWait:
         break;
@@ -409,7 +415,11 @@ export class Subscription extends EventEmitter implements ClientContext {
   }
 
   private initContext(): SubscribeClientContext {
-    this.context = new SubscribeClientContext(this.ua.userAgentCore, this.uri, this.event, this.expires);
+    const options = {
+      extraHeaders: this.extraHeaders,
+      body: this.body ? fromBodyObj(this.body) : undefined
+    };
+    this.context = new SubscribeClientContext(this.ua.userAgentCore, this.uri, this.event, this.expires, options);
     this.context.delegate = {
       onAccept: ((response) => this.onAccepted(response))
     };
@@ -446,53 +456,24 @@ interface SubscribeResult {
 // tslint:disable-next-line:max-classes-per-file
 class SubscribeClientContext {
   public delegate: SubscribeClientContextDelegate | undefined;
+  public message: OutgoingRequestMessage;
 
   private logger: Logger;
-  private message: OutgoingRequestMessage | undefined;
   private request: OutgoingSubscribeRequest | undefined;
   private subscription: SubscriptionCore | undefined;
+
+  private subscribed = false;
 
   constructor(
     private core: UserAgentCore,
     private target: URI,
     private event: string,
     private expires: number,
+    options: RequestOptions,
     delegate?: SubscribeClientContextDelegate
   ) {
     this.logger = core.loggerFactory.getLogger("sip.subscription");
     this.delegate = delegate;
-  }
-
-  /** Destructor. */
-  public dispose(): void {
-    if (this.subscription) {
-      this.subscription.dispose();
-    }
-    if (this.request) {
-      this.request.waitNotifyStop();
-      this.request.dispose();
-    }
-  }
-
-  /** Subscription state. */
-  get state(): SubscriptionState {
-    if (this.subscription) {
-      return this.subscription.subscriptionState;
-    } else if (this.message) {
-      return SubscriptionState.NotifyWait;
-    } else {
-      return SubscriptionState.Initial;
-    }
-  }
-
-  /**
-   * Establish subscription.
-   * @param options Options bucket.
-   */
-  public subscribe(options?: RequestOptions): Promise<SubscribeResult> {
-    if (this.state !== SubscriptionState.Initial) {
-      return Promise.reject(new Error("Not in initial state. Did you call subscribe more than once?"));
-    }
 
     const allowHeader = "Allow: " + AllowedMethods.toString();
     const extraHeaders = (options && options.extraHeaders || []).slice();
@@ -510,6 +491,39 @@ class SubscribeClientContext {
       extraHeaders,
       body
     );
+  }
+
+  /** Destructor. */
+  public dispose(): void {
+    if (this.subscription) {
+      this.subscription.dispose();
+    }
+    if (this.request) {
+      this.request.waitNotifyStop();
+      this.request.dispose();
+    }
+  }
+
+  /** Subscription state. */
+  get state(): SubscriptionState {
+    if (this.subscription) {
+      return this.subscription.subscriptionState;
+    } else if (this.subscribed) {
+      return SubscriptionState.NotifyWait;
+    } else {
+      return SubscriptionState.Initial;
+    }
+  }
+
+  /**
+   * Establish subscription.
+   * @param options Options bucket.
+   */
+  public subscribe(): Promise<SubscribeResult> {
+    if (this.subscribed) {
+      return Promise.reject(new Error("Not in initial state. Did you call subscribe more than once?"));
+    }
+    this.subscribed = true;
 
     return new Promise((resolve, reject) => {
       if (!this.message) {

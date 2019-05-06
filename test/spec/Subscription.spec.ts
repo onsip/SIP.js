@@ -80,7 +80,7 @@ describe("Subscription Class", () => {
         expect(spy).toHaveBeenCalledTimes(0);
       });
 
-      it("the uac should send an SUBSCRIBE", () => {
+      it("the uac should send a SUBSCRIBE", () => {
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_SUBSCRIBE);

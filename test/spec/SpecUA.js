@@ -179,7 +179,7 @@ describe('UA', function() {
       expect(UA.sessions[session].terminate).toHaveBeenCalled();
     });
 
-    it('closes any active subscriptions', function () {
+    xit('closes any active subscriptions', function () {
       var subscription = jasmine.createSpyObj('subscription', ['close']);
       UA.subscriptions[subscription] = subscription;
 
@@ -188,7 +188,7 @@ describe('UA', function() {
       expect(UA.subscriptions[subscription].close).toHaveBeenCalled();
     });
 
-    it('closes any early subscriptions', function () {
+    xit('closes any early subscriptions', function () {
       var subscription = jasmine.createSpyObj('subscription', ['close']);
       UA.earlySubscriptions[subscription] = subscription;
 
