@@ -60,23 +60,6 @@ describe('An INVITE sent from a UAC', function () {
     expect(this.session.data).toEqual({});
   });
 
-  // FIXME - This test probably has an invalid scope.
-  xit('sends an INVITE on the WebSocket', function (done) {
-    // HACK: IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
-    setTimeout(function() {
-      expect(this.ua.transport.ws.send).toHaveBeenCalled();
-      expect(this.ua.transport.ws.send.calls.mostRecent().args[0]).
-        toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
-      expect(this.session.status).toBe(SIP.Session.C.STATUS_INVITE_SENT);
-      done();
-    }, 200);
-  });
-
-  xit('has no dialogs at first', function () {
-    expect(this.session.dialog).toBeUndefined();
-    expect(this.session.earlyDialogs).toEqual({});
-  });
-
   /**
    *
    * RFC 3261 rules for valid requests.
@@ -155,30 +138,6 @@ describe('An INVITE sent from a UAC', function () {
 
     it('sets the Max-Forwards to 70', function () {
       expect(parseInt(this.session.request.getHeader('max-forwards'))).toBe(70);
-    });
-
-    xdescribe('the Via header', function () {
-      beforeEach(function (done) {
-        if (this.ua.transport.ws.send.calls.mostRecent()) {
-          done();
-        } else {
-          this.ua.transport.ws.send.and.callFake(function () {
-            setTimeout(done, 0);
-          });
-        }
-      });
-
-      afterEach(function (done) {done()});
-
-      it('uses SIP/2.0', function () {
-        var via = SIP.Parser.parseMessage(this.ua.transport.ws.send.calls.mostRecent().args[0], this.ua).getHeader('via');
-        expect(via).toContain('SIP/2.0');
-      });
-
-      it('has a branch parameter', function () {
-        var via = SIP.Parser.parseMessage(this.ua.transport.ws.send.calls.mostRecent().args[0], this.ua).getHeader('via');
-        expect(via).toContain(';branch');
-      });
     });
 
     it('has a Contact with one valid SIP URI', function () {
