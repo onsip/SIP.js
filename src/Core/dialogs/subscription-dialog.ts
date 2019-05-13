@@ -148,6 +148,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
   private _subscriptionExpires: number;
   private _subscriptionExpiresInitial: number;
   private _subscriptionExpiresLastSet: number;
+  private _subscriptionRefresh: number | undefined;
+  private _subscriptionRefreshLastSet: number | undefined;
   private _subscriptionState: SubscriptionState;
 
   private logger: Logger;
@@ -169,6 +171,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     this._subscriptionExpires = subscriptionExpires;
     this._subscriptionExpiresInitial = subscriptionExpires;
     this._subscriptionExpiresLastSet = Math.floor(Date.now() / 1000);
+    this._subscriptionRefresh = undefined;
+    this._subscriptionRefreshLastSet = undefined;
     this._subscriptionState = subscriptionState;
     this.logger = core.loggerFactory.getLogger("sip.subscribe-dialog");
     this.logger.log(`SUBSCRIBE dialog ${this.id} constructed`);
@@ -210,11 +214,26 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     }
     this._subscriptionExpires = expires;
     this._subscriptionExpiresLastSet = Math.floor(Date.now() / 1000);
-    this.refreshTimerSet();
+    if (this.autoRefresh) {
+      const refresh = this.subscriptionRefresh;
+      if (refresh === undefined || refresh >= expires) {
+        this.refreshTimerSet();
+      }
+    }
   }
 
   get subscriptionExpiresInitial(): number {
     return this._subscriptionExpiresInitial;
+  }
+
+  /** Number of seconds until subscription auto refresh. */
+  get subscriptionRefresh(): number | undefined {
+    if (this._subscriptionRefresh === undefined || this._subscriptionRefreshLastSet === undefined) {
+      return undefined;
+    }
+    const secondsSinceLastSet = Math.floor(Date.now() / 1000) - this._subscriptionRefreshLastSet;
+    const secondsUntilExpires = this._subscriptionRefresh - secondsSinceLastSet;
+    return Math.max(secondsUntilExpires, 0);
   }
 
   get subscriptionState(): SubscriptionState {
@@ -353,10 +372,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
       return;
     }
     const state: "pending" | "active" | "terminated" = subscriptionState.state;
-    const expires =
-      subscriptionState.expires ?
-        Math.min(this.subscriptionExpires, Math.max(subscriptionState.expires, 0)) :
-        undefined;
+    const expires = subscriptionState.expires ? Math.max(subscriptionState.expires, 0) : undefined;
 
     // Update our state and expiration.
     switch (state) {
@@ -402,13 +418,18 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     }
   }
 
-  // FIXME: TODO: This "works" in most use cases. But not robustly or terribly well.
-  // This resets the refresh time to be 90% of whatever the latest expire delta is.
-  // So on every NOTIFY it moves the refresh closer to the actual expiration time.
   private refreshTimerSet(): void {
     this.refreshTimerClear();
     if (this.autoRefresh && this.subscriptionExpires > 0) {
-      this.refreshTimer = setTimeout(() => this.onRefresh(this.refresh()), this.subscriptionExpires * 900);
+      const refresh = this.subscriptionExpires * 900;
+      this._subscriptionRefresh = Math.floor(refresh / 1000);
+      this._subscriptionRefreshLastSet = Math.floor(Date.now() / 1000);
+      this.refreshTimer = setTimeout(() => {
+        this.refreshTimer = undefined;
+        this._subscriptionRefresh = undefined;
+        this._subscriptionRefreshLastSet = undefined;
+        this.onRefresh(this.refresh());
+      }, refresh);
     }
   }
 
@@ -442,9 +463,6 @@ export class SubscriptionDialog extends Dialog implements Subscription {
         ) {
           invalidStateTransition();
           return;
-        }
-        if (newExpires) {
-          this.subscriptionExpires = newExpires;
         }
         break;
       case SubscriptionState.Terminated:
