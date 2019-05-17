@@ -412,8 +412,9 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     const pc = this.peerConnection;
 
     this.logger.log(methodName);
+    const method = this.hasOffer("remote") ? pc.createAnswer : pc.createOffer;
 
-    return pc[methodName](RTCOfferOptions).catch((e: any) => {
+    return method(RTCOfferOptions).catch((e: any) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
       }

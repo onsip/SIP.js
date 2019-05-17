@@ -1,8 +1,5 @@
 {
   "extends": "../tsconfig-base.json",
-  "compilerOptions": {
-    "noImplicitAny": false,
-  },
   "include": [
     "**/*.ts"
   ]

@@ -1,7 +1,7 @@
 {
   options.data = {}; // Object to which header attributes will be assigned during parsing
 
-  function list (head, tail) {
+  function list(head: string, tail: Array<string>) {
     return [head].concat(tail);
   }
 }
