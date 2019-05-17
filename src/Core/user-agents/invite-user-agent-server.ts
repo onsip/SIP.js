@@ -1,7 +1,7 @@
 import { Exceptions } from "../../Exceptions";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { URI } from "../../URI";
-import { Dialog, InviteDialog } from "../dialogs";
+import { Dialog, SessionDialog } from "../dialogs";
 import {
   IncomingInviteRequest,
   IncomingRequestDelegate,
@@ -12,6 +12,7 @@ import {
 import { SignalingState } from "../session";
 import { InviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
+import { AllowedMethods } from "../user-agent-core/allowed-methods";
 import { UserAgentServer } from "./user-agent-server";
 
 /**
@@ -25,9 +26,9 @@ import { UserAgentServer } from "./user-agent-server";
 export class InviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
 
   /** The confirmed dialog, if any. */
-  private confirmedDialog: InviteDialog | undefined;
+  private confirmedDialog: SessionDialog | undefined;
   /** The early dialog, if any. */
-  private earlyDialog: InviteDialog | undefined;
+  private earlyDialog: SessionDialog | undefined;
 
   constructor(
     protected core: UserAgentCore,
@@ -72,7 +73,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
           throw new Error("Transaction not instance of InviteClientTransaction.");
         }
         const state = Dialog.initialDialogStateForUserAgentServer(this.message, this.toTag);
-        this.confirmedDialog = new InviteDialog(transaction, this.core, state);
+        this.confirmedDialog = new SessionDialog(transaction, this.core, state);
       }
     }
 
@@ -110,8 +111,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
     // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
 
     // FIXME: TODO: This should not be hard coded.
-    const allowHeader =
-      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString();
+    const allowHeader = "Allow: " + AllowedMethods.toString();
 
     // FIXME: TODO: Supported header (see reply())
 
@@ -188,7 +188,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
         throw new Error("Transaction not instance of InviteClientTransaction.");
       }
       const state = Dialog.initialDialogStateForUserAgentServer(this.message, this.toTag, true);
-      this.earlyDialog = new InviteDialog(transaction, this.core, state);
+      this.earlyDialog = new SessionDialog(transaction, this.core, state);
     }
 
     // When a UAS responds to a request with a response that establishes a

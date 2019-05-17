@@ -14,6 +14,7 @@ import {
   OutgoingInviteRequestDelegate,
   OutgoingMessageRequest,
   OutgoingPublishRequest,
+  OutgoingRegisterRequest,
   OutgoingRequest,
   OutgoingRequestDelegate,
   OutgoingResponse,
@@ -34,13 +35,15 @@ import {
   NotifyUserAgentServer,
   PublishUserAgentClient,
   ReferUserAgentServer,
+  RegisterUserAgentClient,
   SubscribeUserAgentClient,
+  SubscribeUserAgentServer,
   UserAgentClient,
   UserAgentServer
 } from "../user-agents";
+import { AllowedMethods } from "./allowed-methods";
 import { UserAgentCoreConfiguration } from "./user-agent-core-configuration";
 import { UserAgentCoreDelegate } from "./user-agent-core-delegate";
-
 /**
  * This is ported from UA.C.ACCEPTED_BODY_TYPES.
  * FIXME: TODO: Should be configurable/variable.
@@ -48,23 +51,6 @@ import { UserAgentCoreDelegate } from "./user-agent-core-delegate";
 const acceptedBodyTypes = [
   "application/sdp",
   "application/dtmf-relay"
-];
-
-/**
- * This is ported from UA.C.ALLOWED_METHODS.
- * FIXME: TODO: Should be configurable/variable.
- */
-const allowedMethods = [
-  C.ACK,
-  C.BYE,
-  C.CANCEL,
-  C.INFO,
-  C.INVITE,
-  C.MESSAGE,
-  C.NOTIFY,
-  C.OPTIONS,
-  C.PRACK, // FIXME: Only if 100rel Supported
-  C.REFER
 ];
 
 /**
@@ -89,6 +75,8 @@ export class UserAgentCore {
   public delegate: UserAgentCoreDelegate;
   /** Dialogs. */
   public dialogs: Map<string, Dialog>;
+  /** Subscribers. */
+  public subscribers: Map<string, SubscribeUserAgentClient>;
   /** UACs. */
   public userAgentClients = new Map<string, UserAgentClient>();
   /** UASs. */
@@ -108,6 +96,7 @@ export class UserAgentCore {
     this.configuration = configuration;
     this.delegate = delegate;
     this.dialogs = new Map<string, Dialog>();
+    this.subscribers = new Map<string, SubscribeUserAgentClient>();
     this.logger = configuration.loggerFactory.getLogger("sip.user-agent-core");
   }
 
@@ -115,6 +104,8 @@ export class UserAgentCore {
   public dispose(): void {
     this.dialogs.forEach((dialog) => dialog.dispose());
     this.dialogs.clear();
+    this.subscribers.forEach((subscriber) => subscriber.dispose());
+    this.subscribers.clear();
     this.userAgentClients.forEach((uac) => uac.dispose());
     this.userAgentClients.clear();
     this.userAgentServers.forEach((uac) => uac.dispose());
@@ -169,6 +160,18 @@ export class UserAgentCore {
     delegate?: OutgoingRequestDelegate
   ): OutgoingPublishRequest {
     return new PublishUserAgentClient(this, request, delegate);
+  }
+
+  /**
+   * Send REGISTER.
+   * @param request Outgoing request.
+   * @param delegate Request delegate.
+   */
+  public register(
+    request: OutgoingRequestMessage,
+    delegate?: OutgoingRequestDelegate
+  ): OutgoingRegisterRequest {
+    return new RegisterUserAgentClient(this, request, delegate);
   }
 
   /**
@@ -404,8 +407,8 @@ export class UserAgentCore {
     // header field MUST list the set of methods supported by the UAS
     // generating the message.
     // https://tools.ietf.org/html/rfc3261#section-8.2.1
-    if (!allowedMethods.includes(message.method)) {
-      const allowHeader = "Allow: " + allowedMethods.toString();
+    if (!AllowedMethods.includes(message.method)) {
+      const allowHeader = "Allow: " + AllowedMethods.toString();
       this.replyStateless(message, {
         statusCode: 405,
         extraHeaders: [allowHeader]
@@ -540,6 +543,30 @@ export class UserAgentCore {
    * @param message Incoming request message.
    */
   private receiveInsideDialogRequest(message: IncomingRequestMessage): void {
+
+    // NOTIFY requests are matched to such SUBSCRIBE requests if they
+    // contain the same "Call-ID", a "To" header field "tag" parameter that
+    // matches the "From" header field "tag" parameter of the SUBSCRIBE
+    // request, and the same "Event" header field.  Rules for comparisons of
+    // the "Event" header fields are described in Section 8.2.1.
+    // https://tools.ietf.org/html/rfc6665#section-4.4.1
+    if (message.method === C.NOTIFY) {
+      const event = message.parseHeader("Event");
+      if (!event || !event.event) {
+        this.replyStateless(message, { statusCode: 489 });
+        return;
+      }
+
+      // FIXME: Subscriber id should also matching on event id.
+      const subscriberId = message.callId + message.toTag + event.event;
+      const subscriber = this.subscribers.get(subscriberId);
+      if (subscriber) {
+        const uas = new NotifyUserAgentServer(this, message);
+        subscriber.onNotify(uas);
+        return;
+      }
+    }
+
     // Requests sent within a dialog, as any other requests, are atomic.  If
     // a particular request is accepted by the UAS, all the state changes
     // associated with it are performed.  If the request is rejected, none
@@ -596,7 +623,7 @@ export class UserAgentCore {
       // processed as if they had been received outside the dialog.
       // https://tools.ietf.org/html/rfc3261#section-12.2.2
       if (message.method === C.OPTIONS) {
-        const allowHeader = "Allow: " + allowedMethods.toString();
+        const allowHeader = "Allow: " + AllowedMethods.toString();
         const acceptHeader = "Accept: " + acceptedBodyTypes.toString();
         this.replyStateless(message, {
           statusCode: 200,
@@ -736,7 +763,7 @@ export class UserAgentCore {
       case C.OPTIONS:
         // https://tools.ietf.org/html/rfc3261#section-11.2
         {
-          const allowHeader = "Allow: " + allowedMethods.toString();
+          const allowHeader = "Allow: " + AllowedMethods.toString();
           const acceptHeader = "Accept: " + acceptedBodyTypes.toString();
           this.replyStateless(message, {
             statusCode: 200,
@@ -751,6 +778,15 @@ export class UserAgentCore {
           this.delegate.onRefer ?
             this.delegate.onRefer(uas) :
             this.replyStateless(message, { statusCode: 405 });
+        }
+        break;
+      case C.SUBSCRIBE:
+        // https://tools.ietf.org/html/rfc6665#section-4.2
+        {
+          const uas = new SubscribeUserAgentServer(this, message);
+          this.delegate.onSubscribe ?
+            this.delegate.onSubscribe(uas) :
+            uas.reject();
         }
         break;
       default:

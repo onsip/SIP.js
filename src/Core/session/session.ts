@@ -43,6 +43,11 @@ export interface Session {
   readonly offer: Body | undefined;
 
   /**
+   * Destroy session.
+   */
+  dispose(): void;
+
+  /**
    * Send a BYE request.
    * Terminating a session.
    * https://tools.ietf.org/html/rfc3261#section-15

@@ -1,12 +1,12 @@
 import { EventEmitter } from "events";
 
 import { C } from "../Constants";
-import { fromBodyObj } from "../Core/messages";
+import { fromBodyObj, IncomingRequest } from "../Core/messages";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Logger } from "../LoggerFactory";
 import { Session } from "../Session";
-import { IncomingRequest, IncomingResponse, OutgoingRequest } from "../SIPMessage";
+import { IncomingResponse } from "../SIPMessage";
 import { Utils } from "../Utils";
 
 /**
@@ -113,24 +113,15 @@ export class DTMF extends EventEmitter {
       this.owner.emit("dtmf", request.message, this);
       return;
     }
-
-    if (this.owner.dialog) {
-      const request: OutgoingRequest = this.owner.dialog.sendRequest(this, C.INFO, {
-        extraHeaders,
-        body
-      });
-
-      this.owner.emit("dtmf", request, this);
-    }
   }
 
   public init_incoming(request: IncomingRequest): void {
-    request.reply(200);
+    request.accept();
 
     if (!this.tone || !this.duration) {
       this.logger.warn("invalid INFO DTMF received, discarded");
     } else {
-      this.owner.emit("dtmf", request, this);
+      this.owner.emit("dtmf", request.message, this);
     }
   }
 

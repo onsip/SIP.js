@@ -1,12 +1,12 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { SessionDialog } from "../dialogs";
-import { IncomingByeRequest, IncomingRequestDelegate } from "../messages";
+import { Dialog } from "../dialogs";
+import { IncomingRequestDelegate, IncomingSubscribeRequest } from "../messages";
 import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
-export class ByeUserAgentServer extends UserAgentServer implements IncomingByeRequest {
-  constructor(
-    dialog: SessionDialog,
+export class ReSubscribeUserAgentServer extends UserAgentServer implements IncomingSubscribeRequest {
+    constructor(
+    dialog: Dialog,
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {

@@ -476,9 +476,6 @@ describe('A UAS receiving an INVITE', function () {
         });
 
         afterEach(function () {
-          for (var transaction in this.ua.transactions.nist) {
-            delete this.ua.transactions.nist[transaction]
-          }
         });
 
         it('fires a `cancel` event', function () {

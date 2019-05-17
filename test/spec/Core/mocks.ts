@@ -1,4 +1,8 @@
-import { OutgoingRequestDelegate } from "../../../src/Core/messages";
+import {
+  IncomingInviteRequest,
+  OutgoingRequestDelegate,
+  OutgoingSubscribeRequestDelegate
+} from "../../../src/Core/messages";
 import { SessionDelegate } from "../../../src/Core/session";
 import { SubscriptionDelegate } from "../../../src/Core/subscription";
 import { UserAgentCoreDelegate } from "../../../src/Core/user-agent-core";
@@ -19,9 +23,6 @@ export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: U
     // console.log(message);
     const incomingMessage = Parser.parseMessage(message, ua);
     Promise.resolve().then(() => {
-      if (!ua.userAgentCore) {
-        throw new Error("User agent core undefined.");
-      }
       if (incomingMessage instanceof IncomingRequestMessage) {
         ua.userAgentCore.receiveIncomingRequestFromTransport(incomingMessage);
       }
@@ -110,6 +111,21 @@ export function makeMockOutgoingRequestDelegate(): jasmine.SpyObj<Required<Outgo
   return delegate;
 }
 
+/** Mocked user agent core delegate factory function. */
+export function makeMockOutgoingSubscribeRequestDelegate(): jasmine.SpyObj<Required<OutgoingSubscribeRequestDelegate>> {
+  const delegate =
+    jasmine.createSpyObj<Required<OutgoingSubscribeRequestDelegate>>("OutgoingSubscribeRequestDelegate", [
+      "onAccept",
+      "onProgress",
+      "onRedirect",
+      "onReject",
+      "onTrying",
+      "onNotify",
+      "onNotifyTimeout"
+    ]);
+  return delegate;
+}
+
 /** Mocked session delegate factory function. */
 export function makeMockSessionDelegate(): jasmine.SpyObj<Required<SessionDelegate>> {
   const delegate = jasmine.createSpyObj<Required<SessionDelegate>>("SessionDelegate", [
@@ -157,6 +173,9 @@ export function makeMockUserAgentCoreDelegate(): jasmine.SpyObj<Required<UserAge
     "onNotify",
     "onRefer"
   ]);
+  delegate.onInvite.and.callFake((incomingRequest: IncomingInviteRequest) => {
+    incomingRequest.trying();
+  });
   return delegate;
 }
 

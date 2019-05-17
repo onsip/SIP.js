@@ -1,11 +1,12 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Dialog } from "./Dialogs";
+import { IncomingRequest } from "./Core/messages";
+import { Session } from "./Core/session";
+import { NonInviteClientTransaction } from "./Core/transactions";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
 import { NameAddrHeader } from "./NameAddrHeader";
-import { RequestSender } from "./RequestSender";
 import { ServerContext } from "./ServerContext";
 import {
   InviteClientContext,
@@ -13,7 +14,6 @@ import {
 } from "./Session";
 import { SessionDescriptionHandlerModifiers } from "./session-description-handler";
 import {
-  IncomingRequest,
   IncomingResponse,
   OutgoingRequest
 } from "./SIPMessage";
@@ -115,12 +115,15 @@ export class ReferClientContext extends ClientContext {
 
   public receiveNotify(request: IncomingRequest): void {
     // If we can correctly handle this, then we need to send a 200 OK!
-    const contentType: string | undefined = request.hasHeader("Content-Type") ?
-      request.getHeader("Content-Type") : undefined;
+    const contentType = request.message.hasHeader("Content-Type") ?
+      request.message.getHeader("Content-Type") : undefined;
     if (contentType && contentType.search(/^message\/sipfrag/) !== -1) {
-      const messageBody: any = Grammar.parse(request.body, "sipfrag");
+      const messageBody = Grammar.parse(request.message.body, "sipfrag");
       if (messageBody === -1) {
-        request.reply(489, "Bad Event");
+        request.reject({
+          statusCode: 489,
+          reasonPhrase: "Bad Event"
+        });
         return;
       }
       switch (true) {
@@ -137,44 +140,44 @@ export class ReferClientContext extends ClientContext {
           this.emit("referRejected", this);
           break;
       }
-      request.reply(200);
-      this.emit("notify", request);
+      request.accept();
+      this.emit("notify", request.message);
       return;
     }
-    request.reply(489, "Bad Event");
+    request.reject({
+      statusCode: 489,
+      reasonPhrase: "Bad Event"
+    });
   }
 
   protected initReferTo(target: InviteClientContext | InviteServerContext | string): string | URI {
     let stringOrURI: string | URI;
 
-    if (!(typeof target === "string") &&
-      (target.type === TypeStrings.InviteServerContext || target.type === TypeStrings.InviteClientContext)) {
-      // Attended Transfer (with replaces)
-      // All of these fields should be defined based on the check above
-      const dialog: Dialog | undefined = (target as any).dialog;
-      if (dialog) {
-        stringOrURI = '"' + target.remoteIdentity.friendlyName + '" ' +
-          "<" + dialog.remoteTarget.toString() +
-          "?Replaces=" + encodeURIComponent(dialog.id.callId +
-            ";to-tag=" + dialog.id.remoteTag +
-            ";from-tag=" + dialog.id.localTag) + ">";
-      } else {
-        throw new TypeError("Invalid target due to no dialog: " + target);
-      }
-    } else {
-      // Blind Transfer
-      // Refer-To: <sip:bob@example.com>
-
+    if (typeof target === "string") {
+      // REFER without Replaces (Blind Transfer)
       const targetString: any = Grammar.parse(target as string, "Refer_To");
       stringOrURI = targetString && targetString.uri ? targetString.uri : target;
 
       // Check target validity
-      const targetUri: URI | undefined = this.ua.normalizeTarget(this.target as string);
+      const targetUri: URI | undefined = this.ua.normalizeTarget(target);
       if (!targetUri) {
         throw new TypeError("Invalid target: " + target);
       }
       stringOrURI = targetUri;
+    } else {
+      // REFER with Replaces (Attended Transfer)
+      if (!target.session) {
+        throw new Error("Session undefined.");
+      }
+      const displayName = target.remoteIdentity.friendlyName;
+      const remoteTarget = target.session.remoteTarget.toString();
+      const callId = target.session.callId;
+      const remoteTag = target.session.remoteTag;
+      const localTag = target.session.localTag;
+      const replaces = encodeURIComponent(`${callId};to-tag=${remoteTag};from-tag=${localTag}`);
+      stringOrURI = `"${displayName}" <${remoteTarget}?Replaces=${replaces}>`;
     }
+
     return stringOrURI;
   }
 }
@@ -201,16 +204,15 @@ export class ReferServerContext extends ServerContext {
   protected replaces: string | undefined;
   protected errorListener!: (() => void);
 
-  constructor(ua: UA, request: IncomingRequest) {
-    super(ua, request);
+  constructor(ua: UA, incomingRequest: IncomingRequest, private session?: Session) {
+    super(ua, incomingRequest);
     this.type = TypeStrings.ReferServerContext;
 
     this.ua = ua;
 
     this.status = SessionStatus.STATUS_INVITE_RECEIVED;
-    this.fromTag = request.fromTag;
-    this.id = request.callId + this.fromTag;
-    this.request = request;
+    this.fromTag = this.request.fromTag;
+    this.id = this.request.callId + this.fromTag;
     this.contact = this.ua.contact.toString();
 
     this.logger = ua.getLogger("sip.referservercontext", this.id);
@@ -235,7 +237,7 @@ export class ReferServerContext extends ServerContext {
     this.referTo = this.request.parseHeader("refer-to");
 
     // TODO: Must set expiration timer and send 202 if there is no response by then
-    this.referredSession = this.ua.findSession(request);
+    this.referredSession = this.ua.findSession(this.request);
 
     if (this.request.hasHeader("referred-by")) {
       this.referredBy = this.request.getHeader("referred-by");
@@ -253,13 +255,11 @@ export class ReferServerContext extends ServerContext {
     this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
   }
 
-  public receiveNonInviteResponse(response: IncomingResponse): void { /* intentionally blank */}
-
   public progress(): void {
     if (this.status !== SessionStatus.STATUS_WAITING_FOR_ANSWER) {
       throw new Exceptions.InvalidStateError(this.status);
     }
-    this.request.reply(100);
+    this.incomingRequest.trying();
   }
 
   public reject(options: ReferServerContext.RejectOptions = {}): void {
@@ -282,7 +282,10 @@ export class ReferServerContext extends ServerContext {
       throw new Exceptions.InvalidStateError(this.status);
     }
 
-    this.request.reply(202, "Accepted");
+    this.incomingRequest.accept({
+      statusCode: 202,
+      reasonPhrase: "Accepted"
+    });
     this.emit("referRequestAccepted", this);
 
     if (options.followRefer) {
@@ -367,6 +370,7 @@ export class ReferServerContext extends ServerContext {
   }
 
   public sendNotify(body: string): void {
+    // FIXME: Ported this. Clean it up. Session knows its state.
     if (this.status !== SessionStatus.STATUS_ANSWERED) {
       throw new Exceptions.InvalidStateError(this.status);
     }
@@ -374,7 +378,34 @@ export class ReferServerContext extends ServerContext {
       throw new Error("sipfrag body is required to send notify for refer");
     }
 
-    const request: OutgoingRequest = new OutgoingRequest(
+    // NOTIFY requests sent in same dialog as in dialog REFER.
+    if (this.session) {
+      this.session.notify(undefined, {
+        extraHeaders: [
+          "Event: refer",
+          "Subscription-State: terminated",
+        ],
+        body: {
+          contentDisposition: "render",
+          contentType: "message/sipfrag",
+          content: body
+        }
+      });
+      return;
+    }
+
+    // The implicit subscription created by a REFER is the same as a
+    // subscription created with a SUBSCRIBE request.  The agent issuing the
+    // REFER can terminate this subscription prematurely by unsubscribing
+    // using the mechanisms described in [2].  Terminating a subscription,
+    // either by explicitly unsubscribing or rejecting NOTIFY, is not an
+    // indication that the referenced request should be withdrawn or
+    // abandoned.
+    // https://tools.ietf.org/html/rfc3515#section-2.4.4
+
+    // NOTIFY requests sent in new dialog for out of dialog REFER.
+    // FIXME: TODO: This should be done in a subscribe dialog to satisfy the above.
+    const request = new OutgoingRequest(
       C.NOTIFY,
       this.remoteTarget,
       this.ua,
@@ -394,19 +425,14 @@ export class ReferServerContext extends ServerContext {
       ],
       body
     );
-
-    new RequestSender({
-      request,
-      onRequestTimeout: () => {
-        return;
-      },
-      onTransportError: () => {
-        return;
-      },
-      receiveResponse: () => {
-        return;
-      }
-    }, this.ua).send();
+    const transport = this.ua.transport;
+    if (!transport) {
+      throw new Error("Transport undefined.");
+    }
+    const user = {
+      loggerFactory: this.ua.getLoggerFactory()
+    };
+    const nic = new NonInviteClientTransaction(request, transport, user);
   }
 
   public on(

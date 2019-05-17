@@ -98,7 +98,7 @@ describe('RegisterContext', function() {
 
       var response = new SIP.IncomingResponse(ua);
       response.statusCode = 423;
-      response.cseq = RegisterContext.cseq;
+      response.cseq = RegisterContext.request.cseq;
       response.setHeader('min-expires', 555555);
 
       RegisterContext.receiveResponse(response);
@@ -113,7 +113,7 @@ describe('RegisterContext', function() {
 
       var response = new SIP.IncomingResponse(ua);
       response.statusCode = 423;
-      response.cseq = RegisterContext.cseq;
+      response.cseq = RegisterContext.request.cseq;
       response.headers['min-expires'] = undefined;
 
       RegisterContext.receiveResponse(response);
@@ -277,12 +277,11 @@ describe('RegisterContext', function() {
     it('calls send with the params callId, and cseq+=1', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.send).not.toHaveBeenCalled();
-      var cseqBefore = RegisterContext.cseq;
+      var cseqBefore = RegisterContext.request.cseq;
       RegisterContext.unregister();
       expect(RegisterContext.send).toHaveBeenCalledWith();
       expect(RegisterContext.request.callId).toBe(RegisterContext.options.params.callId);
       expect(RegisterContext.request.cseq).toBe(cseqBefore + 1);
-      expect(RegisterContext.cseq).toBe(cseqBefore+1);
     });
 
     it('defines receiveResponse', function() {

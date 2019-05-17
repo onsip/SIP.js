@@ -1,5 +1,5 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { InviteDialog } from "../dialogs";
+import { SessionDialog } from "../dialogs";
 import {
   IncomingInviteRequest,
   IncomingRequestDelegate,
@@ -16,10 +16,10 @@ import { UserAgentServer } from "./user-agent-server";
  * https://tools.ietf.org/html/rfc3261#section-14.2
  */
 export class ReInviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
-  private dialog: InviteDialog;
+  private dialog: SessionDialog;
 
   constructor(
-    dialog: InviteDialog,
+    dialog: SessionDialog,
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {

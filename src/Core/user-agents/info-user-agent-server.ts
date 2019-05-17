@@ -1,12 +1,12 @@
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { InviteDialog } from "../dialogs";
+import { SessionDialog } from "../dialogs";
 import { IncomingInfoRequest, IncomingRequestDelegate } from "../messages";
 import { NonInviteServerTransaction,  } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
 export class InfoUserAgentServer extends UserAgentServer implements IncomingInfoRequest {
   constructor(
-    dialog: InviteDialog,
+    dialog: SessionDialog,
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {

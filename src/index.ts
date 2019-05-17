@@ -1,6 +1,5 @@
 export { ClientContext } from "./ClientContext";
 export { C } from "./Constants";
-export { Dialog } from "./Dialogs";
 export { DigestAuthentication } from "./DigestAuthentication";
 export {
   DialogStatus,
@@ -19,12 +18,6 @@ export {
   ReferServerContext
 } from "./ReferContext";
 export { RegisterContext } from "./RegisterContext";
-export { RequestSender } from "./RequestSender";
-
-import { SanityCheck } from "./SanityCheck";
-const sanityCheck = SanityCheck.sanityCheck;
-export { sanityCheck };
-
 export { ServerContext } from "./ServerContext";
 export {
   InviteClientContext,

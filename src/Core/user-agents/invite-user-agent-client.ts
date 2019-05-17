@@ -2,9 +2,8 @@ import {
   IncomingResponse as IncomingResponseMessage,
   OutgoingRequest as OutgoingRequestMessage
 } from "../../SIPMessage";
-import { Dialog, InviteDialog } from "../dialogs";
+import { Dialog, SessionDialog } from "../dialogs";
 import {
-  Body,
   OutgoingAckRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
@@ -27,22 +26,16 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
   public delegate: OutgoingInviteRequestDelegate | undefined;
 
   private confirmedDialogAcks = new Map<string, OutgoingAckRequest>();
-  private confirmedDialogs = new Map<string, InviteDialog>();
-  private earlyDialogs = new Map<string, InviteDialog>();
+  private confirmedDialogs = new Map<string, SessionDialog>();
+  private earlyDialogs = new Map<string, SessionDialog>();
 
   constructor(
-    protected core: UserAgentCore,
+    core: UserAgentCore,
     message: OutgoingRequestMessage,
     delegate?: OutgoingInviteRequestDelegate
   ) {
     super(InviteClientTransaction, core, message, delegate);
     this.delegate = delegate;
-    // FIXME: HACK: This is a hack to override OutgoingRequest.cancel().
-    // The plan is to remove OutgoingRequest.cancel() eventually, but for now
-    // it effectively short circuits calls to request.cancel() for this request.
-    this.message.cancel = (reason?: string, extraHeaders?: Array<string>): void => {
-      this.cancel(reason, { extraHeaders });
-    };
   }
 
   public dispose(): void {
@@ -116,7 +109,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
             if (!(transaction instanceof InviteClientTransaction)) {
               throw new Error("Transaction not instance of InviteClientTransaction.");
             }
-            earlyDialog = new InviteDialog(transaction, this.core, dialogState);
+            earlyDialog = new SessionDialog(transaction, this.core, dialogState);
             this.earlyDialogs.set(earlyDialog.id, earlyDialog);
           }
 
@@ -208,7 +201,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
             if (!(transaction instanceof InviteClientTransaction)) {
               throw new Error("Transaction not instance of InviteClientTransaction.");
             }
-            dialog = new InviteDialog(transaction, this.core, dialogState);
+            dialog = new SessionDialog(transaction, this.core, dialogState);
             this.confirmedDialogs.set(dialog.id, dialog);
           }
 
@@ -217,38 +210,6 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
 
           // Session Initiated! :)
           const session = dialog;
-
-          // FIXME: HACK: This is a hack to override IncomingResponse.ack().
-          // The plan is to remove IncomingResponse.ack() eventually, but for now
-          // it effectively short circuits calls to response.ack() for this response.
-          if (this.delegate && this.delegate.onAccept) {
-            message.ack = (
-              options: {
-                extraHeaders?: Array<string>,
-                body?: string | { body: string, contentType: string }
-              } = {}
-            ): OutgoingRequestMessage => {
-              let body: Body | undefined;
-              if (options.body) {
-                if (typeof options.body === "string") {
-                  body = {
-                    content: options.body,
-                    contentType: "application/sdp",
-                    contentDisposition: "session"
-                  };
-                } else {
-                  body = {
-                    content: options.body.body,
-                    contentType: options.body.contentType,
-                    contentDisposition: "session"
-                  };
-                }
-              }
-              const outgoingAckRequest = session.ack({ extraHeaders: options.extraHeaders, body });
-              this.confirmedDialogAcks.set(session.id, outgoingAckRequest);
-              return outgoingAckRequest.message;
-            };
-          }
 
           // The UAC core MUST generate an ACK request for each 2xx received from
           // the transaction layer.  The header fields of the ACK are constructed

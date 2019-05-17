@@ -1,9 +1,9 @@
-import { InviteClientContext, InviteServerContext } from "../../../src/Session";
-import { BodyObj, SessionDescriptionHandler } from "../../../src/session-description-handler";
+import { InviteClientContext, InviteServerContext } from "../../src/Session";
+import { BodyObj, SessionDescriptionHandler } from "../../src/session-description-handler";
 import {
   SessionDescriptionHandlerFactory,
   SessionDescriptionHandlerFactoryOptions
-} from "../../../src/session-description-handler-factory";
+} from "../../src/session-description-handler-factory";
 
 export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<SessionDescriptionHandler> {
   let state: "stable" | "has-local-offer" | "has-remote-offer" = "stable";

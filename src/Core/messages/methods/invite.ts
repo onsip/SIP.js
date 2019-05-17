@@ -57,13 +57,13 @@ export interface OutgoingInviteRequestDelegate extends OutgoingRequestDelegate {
    * Received a 2xx positive final response to this request.
    * @param response Incoming response (including a confirmed Session).
    */
-  onAccept?(incomingResponse: AckableIncomingResponseWithSession): void;
+  onAccept?(response: AckableIncomingResponseWithSession): void;
 
   /**
    * Received a 1xx provisional response to this request. Excluding 100 responses.
    * @param response Incoming response (including an early Session).
    */
-  onProgress?(incomingResponse: PrackableIncomingResponseWithSession): void;
+  onProgress?(response: PrackableIncomingResponseWithSession): void;
 }
 
 /** Response received when an outgoing INVITE request is accepted. */

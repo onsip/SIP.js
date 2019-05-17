@@ -31,10 +31,9 @@ import { Transport } from "../../../src/Transport";
 
 /** Mocked incoming request factory function. */
 const makeMockIncomingRequest = (method: string): jasmine.SpyObj<IncomingRequest> => {
-  const request = jasmine.createSpyObj<IncomingRequest>("IncomingRequest", ["method", "viaBranch", "reply"]);
+  const request = jasmine.createSpyObj<IncomingRequest>("IncomingRequest", ["method", "viaBranch"]);
   request.method = method;
   request.viaBranch = "z9hG4bK" + Math.floor(Math.random() * 10000000);
-  request.reply.and.returnValue("reply");
   return request;
 };
 
@@ -56,7 +55,6 @@ const makeMockOutgoingRequest = (ruri: string = "sip:john@onsip.com"): jasmine.S
     "cseq",
     "method",
     "ruri",
-    "cancel",
     "getHeader",
     "setViaHeader",
     "toString"
@@ -923,14 +921,6 @@ describe("Transactions", () => {
 
       describe("after construction", () => {
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
-        it("has replied to its request with '100 Trying'", () => {
-          // FIXME: The following expectation is implementation dependent (see FIXME in Transactions.ts)
-          expect(request.reply).toHaveBeenCalledWith(100);
-          // FIXME: 0 is expected because request.reply is mocked currently (would otherwise expect 1)
-          expect(transport.send).toHaveBeenCalledTimes(0);
-        });
-
-        // https://tools.ietf.org/html/rfc3261#section-17.2.1
         it("is in state 'proceeding'", () => {
           expect(transaction.state).toBe(TransactionState.Proceeding);
         });
@@ -1185,11 +1175,6 @@ describe("Transactions", () => {
       });
 
       describe("after construction", () => {
-        // https://tools.ietf.org/html/rfc3261#section-17.2.2
-        it("it has not replied to its request", () => {
-          expect(request.reply).not.toHaveBeenCalled();
-        });
-
         // https://tools.ietf.org/html/rfc3261#section-17.2.2
         it("is in state 'trying'", () => {
           expect(transaction.state).toBe(TransactionState.Trying);

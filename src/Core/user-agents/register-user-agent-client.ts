@@ -1,10 +1,10 @@
 import { OutgoingRequest as OutgoingRequestMessage } from "../../SIPMessage";
-import { OutgoingPublishRequest, OutgoingRequestDelegate } from "../messages";
+import { OutgoingRegisterRequest, OutgoingRequestDelegate } from "../messages";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 
-export class PublishUserAgentClient extends UserAgentClient implements OutgoingPublishRequest {
+export class RegisterUserAgentClient extends UserAgentClient implements OutgoingRegisterRequest {
   constructor(
     core: UserAgentCore,
     message: OutgoingRequestMessage,

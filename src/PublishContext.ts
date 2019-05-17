@@ -247,6 +247,17 @@ export class PublishContext extends ClientContext {
     }
   }
 
+  public send(): this {
+    this.ua.userAgentCore.publish(this.request, {
+      onAccept: (response): void => this.receiveResponse(response.message),
+      onProgress: (response): void => this.receiveResponse(response.message),
+      onRedirect: (response): void => this.receiveResponse(response.message),
+      onReject: (response): void => this.receiveResponse(response.message),
+      onTrying: (response): void => this.receiveResponse(response.message)
+    });
+    return this;
+  }
+
   private refreshRequest(): void {
     // Clean up before the run
     if (this.publishRefreshTimer) {

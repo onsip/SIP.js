@@ -55,10 +55,6 @@ export abstract class ClientTransaction extends Transaction {
     // usage of the procedures in [4]).
     // https://tools.ietf.org/html/rfc3261#section-8.1.1.7
     _request.setViaHeader(this.id, transport);
-
-    // FIXME: Bad hack. Potentially creating circular dependency. SIPMessage needs refactor.
-    // Set OutgoingRequest's transaction.
-    _request.transaction = this;
   }
 
   /** The outgoing request the transaction handling. */
