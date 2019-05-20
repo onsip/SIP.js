@@ -1,11 +1,12 @@
 import { EventEmitter } from "events";
 
 import { C } from "../Constants";
+import { fromBodyObj, IncomingRequest } from "../Core/messages";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Logger } from "../LoggerFactory";
 import { Session } from "../Session";
-import { IncomingRequest, IncomingResponse, OutgoingRequest } from "../SIPMessage";
+import { IncomingResponse } from "../SIPMessage";
 import { Utils } from "../Utils";
 
 /**
@@ -99,28 +100,28 @@ export class DTMF extends EventEmitter {
     // Get DTMF options
     const extraHeaders: Array<string> = options.extraHeaders ? options.extraHeaders.slice() : [];
 
-    const body: any = {
+    const body = {
       contentType: "application/dtmf-relay",
       body: "Signal= " + this.tone + "\r\nDuration= " + this.duration
     };
 
-    if (this.owner.dialog) {
-      const request: OutgoingRequest = this.owner.dialog.sendRequest(this, C.INFO, {
+    if (this.owner.session) {
+      const request = this.owner.session.info(undefined, {
         extraHeaders,
-        body
+        body: fromBodyObj(body)
       });
-
-      this.owner.emit("dtmf", request, this);
+      this.owner.emit("dtmf", request.message, this);
+      return;
     }
   }
 
   public init_incoming(request: IncomingRequest): void {
-    request.reply(200);
+    request.accept();
 
     if (!this.tone || !this.duration) {
       this.logger.warn("invalid INFO DTMF received, discarded");
     } else {
-      this.owner.emit("dtmf", request, this);
+      this.owner.emit("dtmf", request.message, this);
     }
   }
 

@@ -1,50 +1,27 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
+import { fromBodyLegacy, IncomingRequest, ResponseOptions } from "./Core/messages";
+import {
+  InviteServerTransaction,
+  NonInviteServerTransaction
+} from "./Core/transactions";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
-import { IncomingRequest } from "./SIPMessage";
-import {
-  InviteServerTransaction,
-  NonInviteServerTransaction,
-  ServerTransactionUser,
-  TransactionState
-} from "./Transactions";
+import { IncomingRequest as IncomingRequestMessage } from "./SIPMessage";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 
 export class ServerContext extends EventEmitter {
   // hack to get around our multiple inheritance issues
-  public static initializer(objectToConstruct: ServerContext, ua: UA, request: IncomingRequest): void {
+  public static initializer(objectToConstruct: ServerContext, ua: UA, incomingRequest: IncomingRequest): void {
+    const request = incomingRequest.message;
     objectToConstruct.type = TypeStrings.ServerContext;
     objectToConstruct.ua = ua;
     objectToConstruct.logger = ua.getLogger("sip.servercontext");
     objectToConstruct.request = request;
-    const transport = ua.transport;
-    if (!transport) {
-      throw new Error("Transport undefined.");
-    }
-    const user: ServerTransactionUser = {
-      loggerFactory: ua.getLoggerFactory(),
-      onStateChange: (newState) => {
-        if (newState === TransactionState.Terminated) {
-          ua.destroyTransaction(objectToConstruct.transaction);
-        }
-      },
-      onTransportError: (error) => {
-        objectToConstruct.logger.error(error.message);
-        objectToConstruct.onTransportError();
-      }
-    };
-    if (request.method === C.INVITE) {
-      objectToConstruct.transaction = new InviteServerTransaction(request, transport, user);
-    } else {
-      objectToConstruct.transaction = new NonInviteServerTransaction(request, transport, user);
-    }
-    ua.newTransaction(objectToConstruct.transaction);
-
     if (request.body) {
       objectToConstruct.body = request.body;
     }
@@ -70,7 +47,7 @@ export class ServerContext extends EventEmitter {
   public localIdentity!: NameAddrHeader;
   public remoteIdentity!: NameAddrHeader;
   public method!: string;
-  public request!: IncomingRequest;
+  public request!: IncomingRequestMessage;
   public data: any = {};
 
   // Typing note: these were all private, needed to switch to get around
@@ -80,10 +57,10 @@ export class ServerContext extends EventEmitter {
   public contentType: string | undefined;
   public assertedIdentity: NameAddrHeader | undefined;
 
-  constructor(ua: UA, request: IncomingRequest) {
+  constructor(ua: UA, public incomingRequest: IncomingRequest) {
     super();
 
-    ServerContext.initializer(this, ua, request);
+    ServerContext.initializer(this, ua, incomingRequest);
   }
 
   public progress(options: any = {}): any {
@@ -119,13 +96,42 @@ export class ServerContext extends EventEmitter {
     const maxCode = options.maxCode || 699;
     const reasonPhrase = Utils.getReasonPhrase(statusCode, options.reasonPhrase);
     const extraHeaders = options.extraHeaders || [];
-    const body = options.body;
+    const body = options.body ? fromBodyLegacy(options.body) : undefined;
     const events: Array<string> = options.events || [];
 
     if (statusCode < minCode || statusCode > maxCode) {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
-    const response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
+
+    const responseOptions: ResponseOptions = {
+      statusCode,
+      reasonPhrase,
+      extraHeaders,
+      body
+    };
+
+    let response: string;
+    const statusCodeString = statusCode.toString();
+    switch (true) {
+      case /^100$/.test(statusCodeString):
+        response = this.incomingRequest.trying(responseOptions).message;
+        break;
+      case /^1[0-9]{2}$/.test(statusCodeString):
+        response = this.incomingRequest.progress(responseOptions).message;
+        break;
+      case /^2[0-9]{2}$/.test(statusCodeString):
+        response = this.incomingRequest.accept(responseOptions).message;
+        break;
+      case /^3[0-9]{2}$/.test(statusCodeString):
+        response = this.incomingRequest.redirect([], responseOptions).message;
+        break;
+      case /^[4-6][0-9]{2}$/.test(statusCodeString):
+        response = this.incomingRequest.reject(responseOptions).message;
+        break;
+      default:
+        throw new Error(`Invalid status code ${statusCode}`);
+    }
+
     events.forEach((event) => {
       this.emit(event, response, reasonPhrase);
     });

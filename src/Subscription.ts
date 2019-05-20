@@ -1,372 +1,579 @@
+import { EventEmitter } from "events";
+
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Dialog } from "./Dialogs";
+import {
+  fromBodyObj,
+  IncomingNotifyRequest,
+  IncomingRequestWithSubscription,
+  IncomingResponse,
+  OutgoingSubscribeRequest,
+  RequestOptions,
+  toBodyObj
+} from "./Core/messages";
+import { Subscription as SubscriptionCore, SubscriptionState } from "./Core/subscription";
+import { UserAgentCore } from "./Core/user-agent-core";
+import { AllowedMethods } from "./Core/user-agent-core/allowed-methods";
 import { TypeStrings } from "./Enums";
-import { IncomingRequest, IncomingResponse } from "./SIPMessage";
-import { Timers } from "./Timers";
+import { Logger } from "./LoggerFactory";
+import { NameAddrHeader } from "./NameAddrHeader";
+import { BodyObj } from "./session-description-handler";
+import {
+  IncomingRequest as IncomingRequestMessage,
+  IncomingResponse as IncomingResponseMessage,
+  OutgoingRequest as OutgoingRequestMessage
+} from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
+interface SubscriptionOptions {
+  expires?: number;
+  extraHeaders?: Array<string>;
+  body?: string;
+  contentType?: string;
+}
+
 /**
- * SIP Subscriber (SIP-Specific Event Notifications RFC6665)
- * @class Class creating a SIP Subscription.
+ * While this class is named `Subscription`, it is closer to
+ * an implementation of a "subscriber" as defined in RFC 6665
+ * "SIP-Specific Event Notifications".
+ * https://tools.ietf.org/html/rfc6665
+ * @class Class creating a SIP Subscriber.
  */
-export class Subscription extends ClientContext {
+export class Subscription extends EventEmitter implements ClientContext {
+
+  // ClientContext interface
   public type: TypeStrings;
+  public ua: UA;
+  public logger: Logger;
+  public data: any = {};
+  public method: string = C.SUBSCRIBE;
+  public body: BodyObj | undefined = undefined;
+  public localIdentity: NameAddrHeader;
+  public remoteIdentity: NameAddrHeader;
+  public request: OutgoingRequestMessage;
+  public onRequestTimeout!: () => void; // not used
+  public onTransportError!: () => void; // not used
+  public receiveResponse!: () => void; // not used
+  public send!: () => this; // not used
+
+  // Internals
+  private context: SubscribeClientContext;
+  private disposed: boolean;
   private event: string;
-  private requestedExpires: number;
   private expires: number;
-  private id: string | undefined;
-  private state: string;
-  private contact: string;
   private extraHeaders: Array<string>;
-  private dialog: Dialog | undefined;
-  private timers: any;
-  private errorCodes: Array<number>;
+  private retryAfterTimer: any | undefined;
+  private subscription: SubscriptionCore | undefined;
+  private uri: URI;
 
-  constructor(ua: UA, target: string | URI, event: string, options: any = {}) {
-    if (!event) {
-      throw new TypeError("Event necessary to create a subscription.");
-    }
+  /**
+   * Constructor.
+   * @param ua User agent.
+   * @param target Subscription target.
+   * @param event Subscription event.
+   * @param options Options bucket.
+   */
+  constructor(ua: UA, target: string | URI, event: string, options: SubscriptionOptions = {}) {
+    super();
 
-    options.extraHeaders = (options.extraHeaders || []).slice();
-
-    let expires: number;
-    if (typeof options.expires !== "number") {
-      ua.logger.warn("expires must be a number. Using default of 3600.");
-      expires = 3600;
-    } else {
-      expires = options.expires;
-    }
-
-    options.extraHeaders.push("Event: " + event);
-    options.extraHeaders.push("Expires: " + expires);
-    options.extraHeaders.push("Contact: " + ua.contact.toString());
-    // was UA.C.ALLOWED_METHODS, removed due to circular dependency
-    options.extraHeaders.push("Allow: " + [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ].toString());
-
-    super(ua, C.SUBSCRIBE, target, options);
+    // ClientContext interface
     this.type = TypeStrings.Subscription;
-
-    // TODO: check for valid events here probably make a list in SIP.C; or leave it up to app to check?
-    // The check may need to/should probably occur on the other side,
-    this.event = event;
-    this.requestedExpires = expires;
-    this.state = "init";
-    this.contact = ua.contact.toString();
-    this.extraHeaders = options.extraHeaders;
+    this.ua = ua;
     this.logger = ua.getLogger("sip.subscription");
-    this.expires = expires;
+    if (options.body) {
+      this.body = {
+        body: options.body,
+        contentType: options.contentType ? options.contentType : "application/sdp"
+      };
+    }
 
-    this.timers = {N: undefined, subDuration: undefined};
-    this.errorCodes  = [404, 405, 410, 416, 480, 481, 482, 483, 484, 485, 489, 501, 604];
+    // Target URI
+    const uri: URI | undefined = ua.normalizeTarget(target);
+    if (!uri) {
+      throw new TypeError("Invalid target: " + target);
+    }
+    this.uri = uri;
+
+    // Subscription event
+    this.event = event;
+
+    // Subscription expires
+    if (options.expires === undefined) {
+      this.expires = 3600;
+    } else if (typeof options.expires !== "number") { // pre-typescript type guard
+      ua.logger.warn(`Option "expires" must be a number. Using default of 3600.`);
+      this.expires = 3600;
+    } else {
+      this.expires = options.expires;
+    }
+
+    // Subscription extra headers
+    this.extraHeaders = (options.extraHeaders || []).slice();
+
+    // Subscription context.
+    this.context = this.initContext();
+
+    this.disposed = false;
+
+    // ClientContext interface
+    this.request = this.context.message;
+    if (!this.request.from) {
+      throw new Error("From undefined.");
+    }
+    if (!this.request.to) {
+      throw new Error("From undefined.");
+    }
+    this.localIdentity = this.request.from;
+    this.remoteIdentity = this.request.to;
   }
 
-  public subscribe(): Subscription {
-     // these states point to an existing subscription, no subscribe is necessary
-    if (this.state === "active") {
-      this.refresh();
-      return this;
-    } else if (this.state === "notify_wait") {
-      return this;
+  /**
+   * Destructor.
+   */
+  public dispose(): void {
+    if (this.disposed) {
+      return;
     }
-
-    clearTimeout(this.timers.subDuration);
-    clearTimeout(this.timers.N);
-    this.timers.N = setTimeout(() => this.timer_fire(), Timers.TIMER_N);
-
-    if (this.request && this.request.from) {
-      this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag + this.event] = this;
+    if (this.retryAfterTimer) {
+      clearTimeout(this.retryAfterTimer);
+      this.retryAfterTimer = undefined;
     }
+    this.context.dispose();
+    this.disposed = true;
+  }
 
-    this.send();
+  /**
+   * Registration of event listeners.
+   *
+   * The following events are emitted...
+   *  - "accepted" A 200-class final response to a SUBSCRIBE request was received.
+   *  - "failed" A non-200-class final response to a SUBSCRIBE request was received.
+   *  - "rejected" Emitted immediately after a "failed" event (yes, it's redundant).
+   *  - "notify" A NOTIFY request was received.
+   *  - "terminated" The subscription is moving to or has moved to a terminated state.
+   *
+   * More than one SUBSCRIBE request may be sent, so "accepted", "failed" and "rejected"
+   * may be emitted multiple times. However these event will NOT be emitted for SUBSCRIBE
+   * requests with expires of zero (unsubscribe requests).
+   *
+   * Note that a "terminated" event does NOT indicate the subscription is in the "terminated"
+   * state as described in RFC 6665. Instead, a "terminated" event indicates that this class
+   * is no longer usable and/or is in the process of becoming no longer usable.
+   *
+   * The order the events are emitted in is not deterministic. Some examples...
+   *  - "accepted" may occur multiple times
+   *  - "accepted" may follow "notify" and "notify" may follow "accepted"
+   *  - "terminated" may follow "accepted" and "accepted" may follow "terminated"
+   *  - "terminated" may follow "notify" and "notify" may follow "terminated"
+   *
+   * Hint: Experience suggests one workable approach to utilizing these events
+   * is to make use of "notify" and "terminated" only. That is, call `subscribe()`
+   * and if a "notify" occurs then you have a subscription. If a "terminated"
+   * event occurs then either a new subscription failed to be established or an
+   * established subscription has terminated or is in the process of terminating.
+   * Note that "notify" events may follow a "terminated" event, but experience
+   * suggests it is reasonable to discontinue usage of this class after receipt
+   * of a "terminated" event. The other events are informational, but as they do not
+   * arrive in a deterministic manner it is difficult to make use of them otherwise.
+   *
+   * @param name Event name.
+   * @param callback Callback.
+   */
+  public on(
+    name: "accepted" | "failed" | "rejected",
+    callback: (message: IncomingResponseMessage, cause: string) => void
+  ): this;
+  public on(name: "notify", callback: (notification: { request: IncomingRequestMessage }) => void): this;
+  public on(name: "terminated", callback: () => void): this;
+  public on(name: string, callback: (...args: any[]) => void): this {
+    return super.on(name, callback);
+  }
 
-    this.state = "notify_wait";
+  public emit(
+    event: "accepted" | "failed" | "rejected",
+    message: IncomingResponseMessage, cause: string
+  ): boolean;
+  public emit(event: "notify", notification: { request: IncomingRequestMessage }): boolean;
+  public emit(event: "terminated"): boolean;
+  public emit(event: string | symbol, ...args: any[]): boolean {
+    return super.emit(event, ...args);
+  }
+
+  /**
+   * Gracefully terminate.
+   */
+  public close(): void {
+    if (this.disposed) {
+      return;
+    }
+    this.dispose();
+
+    switch (this.context.state) {
+      case SubscriptionState.Initial:
+        this.onTerminated();
+        break;
+      case SubscriptionState.NotifyWait:
+        this.onTerminated();
+        break;
+      case SubscriptionState.Pending:
+        this.unsubscribe();
+        break;
+      case SubscriptionState.Active:
+        this.unsubscribe();
+        break;
+      case SubscriptionState.Terminated:
+        this.onTerminated();
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Send a re-SUBSCRIBE request if there is an "active" subscription.
+   */
+  public refresh(): void {
+    switch (this.context.state) {
+      case SubscriptionState.Initial:
+        break;
+      case SubscriptionState.NotifyWait:
+        break;
+      case SubscriptionState.Pending:
+        break;
+      case SubscriptionState.Active:
+        if (this.subscription) {
+          const request = this.subscription.refresh();
+          request.delegate = {
+            onAccept: ((response) => this.onAccepted(response)),
+            onRedirect: ((response) => this.onFailed(response)),
+            onReject: ((response) => this.onFailed(response)),
+          };
+        }
+        break;
+      case SubscriptionState.Terminated:
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Send an initial SUBSCRIBE request if no subscription.
+   * Send a re-SUBSCRIBE request if there is an "active" subscription.
+   */
+  public subscribe(): this {
+    switch (this.context.state) {
+      case SubscriptionState.Initial:
+        this.context.subscribe().then((result) => {
+          if (result.success) {
+            if (result.success.subscription) {
+              this.subscription = result.success.subscription;
+              this.subscription.delegate = {
+                onNotify: (request) => this.onNotify(request),
+                onRefresh: (request) => this.onRefresh(request),
+                onTerminated: () => this.close()
+              };
+            }
+            this.onNotify(result.success.request);
+          } else if (result.failure) {
+            this.onFailed(result.failure.response);
+          }
+        });
+        break;
+      case SubscriptionState.NotifyWait:
+        break;
+      case SubscriptionState.Pending:
+        break;
+      case SubscriptionState.Active:
+        this.refresh();
+        break;
+      case SubscriptionState.Terminated:
+        break;
+      default:
+        break;
+    }
 
     return this;
   }
 
-  public refresh(): void {
-    if (this.state === "terminated" || this.state === "pending" || this.state === "notify_wait" || !this.dialog) {
+  /**
+   * Send a re-SUBSCRIBE request if there is a "pending" or "active" subscription.
+   */
+  public unsubscribe(): void {
+    this.dispose();
+
+    switch (this.context.state) {
+      case SubscriptionState.Initial:
+        break;
+      case SubscriptionState.NotifyWait:
+        break;
+      case SubscriptionState.Pending:
+        if (this.subscription) {
+          this.subscription.unsubscribe();
+          // responses intentionally ignored
+        }
+        break;
+      case SubscriptionState.Active:
+        if (this.subscription) {
+          this.subscription.unsubscribe();
+          // responses intentionally ignored
+        }
+        break;
+      case SubscriptionState.Terminated:
+        break;
+      default:
+        break;
+    }
+
+    this.onTerminated();
+  }
+
+  protected onAccepted(response: IncomingResponse): void {
+    const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
+    const cause: string = Utils.getReasonPhrase(statusCode);
+    this.emit("accepted", response.message, cause);
+  }
+
+  protected onFailed(response?: IncomingResponse): void {
+    this.close();
+    if (response) {
+      const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
+      const cause: string = Utils.getReasonPhrase(statusCode);
+      this.emit("failed", response.message, cause);
+      this.emit("rejected", response.message, cause);
+    }
+  }
+
+  protected onNotify(request: IncomingNotifyRequest): void {
+    request.accept(); // Send 200 response.
+    this.emit("notify", { request: request.message });
+
+    // If we've set state to done, no further processing should take place
+    // and we are only interested in cleaning up after the appropriate NOTIFY.
+    if (this.disposed) {
       return;
     }
 
-    this.dialog.sendRequest(this, C.SUBSCRIBE, {
-      extraHeaders: this.extraHeaders,
-      body: this.body
-    });
-  }
-
-  public receiveResponse(response: IncomingResponse): void {
-    const statusCode: number = response.statusCode ? response.statusCode : 0;
-    const cause: string = Utils.getReasonPhrase(statusCode);
-
-    if ((this.state === "notify_wait" && statusCode >= 300) ||
-        (this.state !== "notify_wait" && this.errorCodes.indexOf(statusCode) !== -1)) {
-      this.failed(response, undefined);
-    } else if (/^2[0-9]{2}$/.test(statusCode.toString())) {
-      this.emit("accepted", response, cause);
-      // As we don't support RFC 5839 or other extensions where the NOTIFY is optional, timer N will not be cleared
-      // clearTimeout(this.timers.N);
-
-      const expires: string | undefined = response.getHeader("Expires");
-
-      if (expires && Number(expires) <= this.requestedExpires) {
-        // Preserve new expires value for subsequent requests
-        this.expires = Number(expires);
-        this.timers.subDuration = setTimeout(() => this.refresh(), Number(expires) * 900);
-      } else {
-        if (!expires) {
-          this.logger.warn("Expires header missing in a 200-class response to SUBSCRIBE");
-          this.failed(response, "Expires Header Missing");
-        } else {
-          this.logger.warn("Expires header in a 200-class response to" +
-            " SUBSCRIBE with a higher value than the one in the request");
-          this.failed(response, "Invalid Expires Header");
-        }
+    //  If the "Subscription-State" value is "terminated", the subscriber
+    //  MUST consider the subscription terminated.  The "expires" parameter
+    //  has no semantics for "terminated" -- notifiers SHOULD NOT include an
+    //  "expires" parameter on a "Subscription-State" header field with a
+    //  value of "terminated", and subscribers MUST ignore any such
+    //  parameter, if present.  If a reason code is present, the client
+    //  should behave as described below.  If no reason code or an unknown
+    //  reason code is present, the client MAY attempt to re-subscribe at any
+    //  time (unless a "retry-after" parameter is present, in which case the
+    //  client SHOULD NOT attempt re-subscription until after the number of
+    //  seconds specified by the "retry-after" parameter).  The reason codes
+    //  defined by this document are:
+    // https://tools.ietf.org/html/rfc6665#section-4.1.3
+    const subscriptionState = request.message.parseHeader("Subscription-State");
+    if (subscriptionState && subscriptionState.state) {
+      switch (subscriptionState.state) {
+        case "terminated":
+          if (subscriptionState.reason) {
+            this.logger.log(`Terminated subscription with reason ${subscriptionState.reason}`);
+            switch (subscriptionState.reason) {
+              case "deactivated":
+              case "timeout":
+                this.initContext();
+                this.subscribe();
+                return;
+              case "probation":
+              case "giveup":
+                this.initContext();
+                if (subscriptionState.params && subscriptionState.params["retry-after"]) {
+                  this.retryAfterTimer = setTimeout(() => this.subscribe(), subscriptionState.params["retry-after"]);
+                } else {
+                  this.subscribe();
+                }
+                return;
+              case "rejected":
+              case "noresource":
+              case "invariant":
+                break;
+            }
+          }
+          this.close();
+          break;
+        default:
+          break;
       }
-    } else if (statusCode > 300) {
-      this.emit("failed", response, cause);
-      this.emit("rejected", response, cause);
     }
   }
 
-  public unsubscribe(): void {
-    const extraHeaders: Array<string> = [];
+  protected onRefresh(request: OutgoingSubscribeRequest): void {
+    request.delegate = {
+      onAccept: (response) => this.onAccepted(response)
+    };
+  }
 
-    this.state = "terminated";
-
-    extraHeaders.push("Event: " + this.event);
-    extraHeaders.push("Expires: 0");
-
-    extraHeaders.push("Contact: " + this.contact);
-    // was UA.C.ALLOWED_METHODS, removed due to circular dependency
-    extraHeaders.push("Allow: " + [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ].toString());
-
-    // makes sure expires isn't set, and other typical resubscribe behavior
-    this.receiveResponse = () => { /* intentionally blank */ };
-
-    if (this.dialog) {
-      this.dialog.sendRequest(this, C.SUBSCRIBE, {
-        extraHeaders,
-        body: this.body
-      });
-    }
-
-    clearTimeout(this.timers.subDuration);
-    clearTimeout(this.timers.N);
-    this.timers.N = setTimeout(() => this.timer_fire(), Timers.TIMER_N);
+  protected onTerminated(): void {
     this.emit("terminated");
   }
 
-  public receiveRequest(request: IncomingRequest): void {
-    let subState: any;
-
-    const setExpiresTimeout: (() => void) = () => {
-      if (subState.expires) {
-        clearTimeout(this.timers.subDuration);
-        subState.expires = Math.min(this.expires,
-                                     Math.max(subState.expires, 0));
-        this.timers.subDuration = setTimeout(() => this.refresh(),
-                                             subState.expires * 900);
-      }
+  private initContext(): SubscribeClientContext {
+    const options = {
+      extraHeaders: this.extraHeaders,
+      body: this.body ? fromBodyObj(this.body) : undefined
     };
+    this.context = new SubscribeClientContext(this.ua.userAgentCore, this.uri, this.event, this.expires, options);
+    this.context.delegate = {
+      onAccept: ((response) => this.onAccepted(response))
+    };
+    return this.context;
+  }
+}
 
-    if (!this.matchEvent(request)) { // checks event and subscription_state headers
-      request.reply(489);
-      return;
-    }
+interface SubscribeClientContextDelegate {
+  /**
+   * This SUBSCRIBE request will be confirmed with a final response.
+   * 200-class responses indicate that the subscription has been accepted
+   * and that a NOTIFY request will be sent immediately.
+   * https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+   *
+   * Called for initial SUBSCRIBE request only.
+   * @param response 200-class incoming response.
+   */
+  onAccept?(response: IncomingResponse): void;
+}
 
-    if (!this.dialog) {
-      if (this.createConfirmedDialog(request, "UAS")) {
-        if (this.dialog) {
-          this.id = (this.dialog as Dialog).id.toString();
-          if (this.request && this.request.from) {
-            delete this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag  + this.event];
-            this.ua.subscriptions[this.id || ""] = this;
-            // UPDATE ROUTE SET TO BE BACKWARDS COMPATIBLE?
-          }
-        }
-      }
-    }
+interface SubscribeResult {
+  /** Exists if successfully established a subscription, otherwise undefined. */
+  success?: IncomingRequestWithSubscription;
+  /** Exists if failed to establish a subscription, otherwise undefined. */
+  failure?: {
+    /**
+     * The negative final response to the SUBSCRIBE, if one was received.
+     * Otherwise a timeout occured waiting for the initial NOTIFY.
+     */
+    response?: IncomingResponse;
+  };
+}
 
-    subState = request.parseHeader("Subscription-State");
+// tslint:disable-next-line:max-classes-per-file
+class SubscribeClientContext {
+  public delegate: SubscribeClientContextDelegate | undefined;
+  public message: OutgoingRequestMessage;
 
-    request.reply(200);
+  private logger: Logger;
+  private request: OutgoingSubscribeRequest | undefined;
+  private subscription: SubscriptionCore | undefined;
 
-    clearTimeout(this.timers.N);
+  private subscribed = false;
 
-    this.emit("notify", { request });
+  constructor(
+    private core: UserAgentCore,
+    private target: URI,
+    private event: string,
+    private expires: number,
+    options: RequestOptions,
+    delegate?: SubscribeClientContextDelegate
+  ) {
+    this.logger = core.loggerFactory.getLogger("sip.subscription");
+    this.delegate = delegate;
 
-    // if we've set state to terminated, no further processing should take place
-    // and we are only interested in cleaning up after the appropriate NOTIFY
-    if (this.state === "terminated") {
-      if (subState.state === "terminated") {
-        this.terminateDialog();
-        clearTimeout(this.timers.N);
-        clearTimeout(this.timers.subDuration);
+    const allowHeader = "Allow: " + AllowedMethods.toString();
+    const extraHeaders = (options && options.extraHeaders || []).slice();
+    extraHeaders.push(allowHeader);
+    extraHeaders.push("Event: " + this.event);
+    extraHeaders.push("Expires: " + this.expires);
+    extraHeaders.push("Contact: " + this.core.configuration.contact.toString());
 
-        delete this.ua.subscriptions[this.id || ""];
-      }
-      return;
-    }
+    const body = options && options.body ? toBodyObj(options.body) : undefined;
 
-    switch (subState.state) {
-      case "active":
-        this.state = "active";
-        setExpiresTimeout();
-        break;
-      case "pending":
-        if (this.state === "notify_wait") {
-          setExpiresTimeout();
-        }
-        this.state = "pending";
-        break;
-      case "terminated":
-        clearTimeout(this.timers.subDuration);
-        if (subState.reason) {
-          this.logger.log("terminating subscription with reason " + subState.reason);
-          switch (subState.reason) {
-            case "deactivated":
-            case "timeout":
-              this.subscribe();
-              return;
-            case "probation":
-            case "giveup":
-              if (subState.params && subState.params["retry-after"]) {
-                this.timers.subDuration = setTimeout(() => this.subscribe(), subState.params["retry-after"]);
-              } else {
-                this.subscribe();
-              }
-              return;
-            case "rejected":
-            case "noresource":
-            case "invariant":
-              break;
-          }
-        }
-        this.close();
-        break;
-    }
+    this.message = this.core.configuration.outgoingRequestMessageFactory(
+      C.SUBSCRIBE,
+      this.target,
+      {},
+      extraHeaders,
+      body
+    );
   }
 
-  public close(): void {
-    if (this.state === "notify_wait") {
-      this.state = "terminated";
-      clearTimeout(this.timers.N);
-      clearTimeout(this.timers.subDuration);
-      this.receiveResponse = () => { /* intentionally blank */ };
-
-      if (this.request && this.request.from) {
-        delete this.ua.earlySubscriptions[this.request.callId + this.request.from.parameters.tag + this.event];
-      }
-
-      this.emit("terminated");
-    } else if (this.state !== "terminated") {
-      this.unsubscribe();
+  /** Destructor. */
+  public dispose(): void {
+    if (this.subscription) {
+      this.subscription.dispose();
     }
-  }
-
-  public onDialogError(response: IncomingResponse): void {
-    this.failed(response, C.causes.DIALOG_ERROR);
-  }
-
-  public on(name: "accepted", callback: (response: any, cause: C.causes) => void): this;
-  public on(name: "notify", callback: (notification: { request: IncomingRequest }) => void): this;
-  public on(
-    name: "failed" | "rejected" | "terminated",
-    callback: (messageOrResponse?: any, cause?: C.causes) => void
-  ): this;
-  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
-
-  private timer_fire(): void {
-    if (this.state === "terminated") {
-      this.terminateDialog();
-      clearTimeout(this.timers.N);
-      clearTimeout(this.timers.subDuration);
-
-      delete this.ua.subscriptions[this.id || ""];
-    } else if (this.state === "notify_wait" || this.state === "pending") {
-      this.close();
-    } else {
-      this.refresh();
-    }
-  }
-
-  private createConfirmedDialog(message: IncomingRequest, type: "UAC" | "UAS"): boolean {
-    this.terminateDialog();
-    const dialog: Dialog = new Dialog(this, message, type);
     if (this.request) {
-      dialog.inviteSeqnum = this.request.cseq;
-      dialog.localSeqnum = this.request.cseq;
+      this.request.waitNotifyStop();
+      this.request.dispose();
     }
+  }
 
-    if (!dialog.error) {
-      this.dialog = dialog;
-      return true;
+  /** Subscription state. */
+  get state(): SubscriptionState {
+    if (this.subscription) {
+      return this.subscription.subscriptionState;
+    } else if (this.subscribed) {
+      return SubscriptionState.NotifyWait;
     } else {
-      // Dialog not created due to an errora
-      return false;
+      return SubscriptionState.Initial;
     }
   }
 
-  private terminateDialog(): void {
-    if (this.dialog) {
-      delete this.ua.subscriptions[this.id || ""];
-      this.dialog.terminate();
-      delete this.dialog;
+  /**
+   * Establish subscription.
+   * @param options Options bucket.
+   */
+  public subscribe(): Promise<SubscribeResult> {
+    if (this.subscribed) {
+      return Promise.reject(new Error("Not in initial state. Did you call subscribe more than once?"));
     }
-  }
+    this.subscribed = true;
 
-  private failed(response: IncomingResponse, cause?: string): Subscription {
-    this.close();
-    this.emit("failed", response, cause);
-    this.emit("rejected", response, cause);
-    return this;
-  }
-
-  private matchEvent(request: IncomingRequest): boolean {
-    // Check mandatory header Event
-    if (!request.hasHeader("Event")) {
-      this.logger.warn("missing Event header");
-      return false;
-    }
-    // Check mandatory header Subscription-State
-    if (!request.hasHeader("Subscription-State")) {
-      this.logger.warn("missing Subscription-State header");
-      return false;
-    }
-
-    // Check whether the event in NOTIFY matches the event in SUBSCRIBE
-    const event: string = request.parseHeader("event").event;
-
-    if (this.event !== event) {
-      this.logger.warn("event match failed");
-      request.reply(481, "Event Match Failed");
-      return false;
-    } else {
-      return true;
-    }
+    return new Promise((resolve, reject) => {
+      if (!this.message) {
+        throw new Error("Message undefined.");
+      }
+      this.request = this.core.subscribe(this.message, {
+        // This SUBSCRIBE request will be confirmed with a final response.
+        // 200-class responses indicate that the subscription has been accepted
+        // and that a NOTIFY request will be sent immediately.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+        onAccept: (response) => {
+          if (this.delegate && this.delegate.onAccept) {
+            this.delegate.onAccept(response);
+          }
+        },
+        // Due to the potential for out-of-order messages, packet loss, and
+        // forking, the subscriber MUST be prepared to receive NOTIFY requests
+        // before the SUBSCRIBE transaction has completed.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.4
+        onNotify: (requestWithSubscription): void => {
+          this.subscription = requestWithSubscription.subscription;
+          if (this.subscription) {
+            this.subscription.autoRefresh = true;
+          }
+          resolve({ success: requestWithSubscription });
+        },
+        // If this Timer N expires prior to the receipt of a NOTIFY request,
+        // the subscriber considers the subscription failed, and cleans up
+        // any state associated with the subscription attempt.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.4
+        onNotifyTimeout: () => {
+          resolve({ failure: {} });
+        },
+        // This SUBSCRIBE request will be confirmed with a final response.
+        // Non-200-class final responses indicate that no subscription or new
+        // dialog usage has been created, and no subsequent NOTIFY request will
+        // be sent.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+        onRedirect: (response) => {
+          resolve({ failure: { response } });
+        },
+        // This SUBSCRIBE request will be confirmed with a final response.
+        // Non-200-class final responses indicate that no subscription or new
+        // dialog usage has been created, and no subsequent NOTIFY request will
+        // be sent.
+        // https://tools.ietf.org/html/rfc6665#section-4.1.2.1
+        onReject: (response) => {
+          resolve({ failure: { response } });
+        }
+      });
+    });
   }
 }

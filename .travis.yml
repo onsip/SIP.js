@@ -1,3 +1,8 @@
+dist: trusty
+
+addons:
+  chrome: stable
+
 sudo: required
 
 language: node_js
@@ -6,7 +11,7 @@ script:
   - npm run buildAndTest
 
 node_js:
-  - "8"
+  - "10"
   - "stable"
 
 cache:

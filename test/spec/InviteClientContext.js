@@ -60,23 +60,6 @@ describe('An INVITE sent from a UAC', function () {
     expect(this.session.data).toEqual({});
   });
 
-  // FIXME - This test probably has an invalid scope.
-  xit('sends an INVITE on the WebSocket', function (done) {
-    // HACK: IF THIS BREAKS, CHANGE THE NUMBER: this is sketchy
-    setTimeout(function() {
-      expect(this.ua.transport.ws.send).toHaveBeenCalled();
-      expect(this.ua.transport.ws.send.calls.mostRecent().args[0]).
-        toMatch('INVITE sip:alice@example.com SIP/2.0\r\n');
-      expect(this.session.status).toBe(SIP.Session.C.STATUS_INVITE_SENT);
-      done();
-    }, 200);
-  });
-
-  it('has no dialogs at first', function () {
-    expect(this.session.dialog).toBeUndefined();
-    expect(this.session.earlyDialogs).toEqual({});
-  });
-
   /**
    *
    * RFC 3261 rules for valid requests.
@@ -157,30 +140,6 @@ describe('An INVITE sent from a UAC', function () {
       expect(parseInt(this.session.request.getHeader('max-forwards'))).toBe(70);
     });
 
-    xdescribe('the Via header', function () {
-      beforeEach(function (done) {
-        if (this.ua.transport.ws.send.calls.mostRecent()) {
-          done();
-        } else {
-          this.ua.transport.ws.send.and.callFake(function () {
-            setTimeout(done, 0);
-          });
-        }
-      });
-
-      afterEach(function (done) {done()});
-
-      it('uses SIP/2.0', function () {
-        var via = SIP.Parser.parseMessage(this.ua.transport.ws.send.calls.mostRecent().args[0], this.ua).getHeader('via');
-        expect(via).toContain('SIP/2.0');
-      });
-
-      it('has a branch parameter', function () {
-        var via = SIP.Parser.parseMessage(this.ua.transport.ws.send.calls.mostRecent().args[0], this.ua).getHeader('via');
-        expect(via).toContain(';branch');
-      });
-    });
-
     it('has a Contact with one valid SIP URI', function () {
       var sip = this.session.request.getHeader('contact').indexOf('sip:') + 3;
       expect(sip).not.toBe(2);
@@ -205,13 +164,18 @@ describe('An INVITE sent from a UAC', function () {
    */
   describe('when receiving a 1xx response', function () {
     beforeEach(function(done) {
+      var ua = this.ua;
       var session = this.session;
-      var response = SIPHelper.createResponse(session.request, 180);
 
       spyOn(session, 'emit').and.callThrough();
       spyOn(this.ua.transport, 'send').and.callFake(function () {
         setTimeout(function () {
-          session.receiveResponse(response);
+          var response = SIPHelper.createResponse(session.request, 180);
+          if (ua.userAgentCore) {
+            ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+          } else {
+            session.receiveResponse(response);
+          }
           done();
         }, 0);
 
@@ -341,8 +305,13 @@ describe('An INVITE sent from a UAC', function () {
         function testWith(statusCode) {
           describe('(' + statusCode + ')', function () {
             beforeEach(function () {
+              var ua = this.ua;
               var response = SIPHelper.createResponse(this.session.request, statusCode);
-              this.session.receiveResponse(response);
+              if (ua.userAgentCore) {
+                ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+              } else {
+                this.session.receiveResponse(response);
+              }
             });
             rejectResponseTests();
           });
@@ -410,8 +379,13 @@ describe('An INVITE sent from a UAC', function () {
 
         describe('after receiving a 487', function () {
           beforeEach(function () {
+            var ua = this.ua;
             var response = SIPHelper.createResponse(this.session.request, 487);
-            this.session.receiveResponse(response);
+            if (ua.userAgentCore) {
+              ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+            } else {
+              this.session.receiveResponse(response);
+            }
           });
           rejectResponseTests();
         });
@@ -437,10 +411,16 @@ describe('An INVITE sent from a UAC', function () {
     describe('after it has been accepted', function () {
 
       beforeEach(function (done) {
-        var response = SIPHelper.createResponse(this.session.request, 200, 'OK', 'paper');
+        var ua = this.ua;
+        var response = SIPHelper.createResponse(this.session.request, 200, 'OK', 'paper', 'session');
         this.session.on('accepted', function () {
           setTimeout(done, 0);
-        }).receiveResponse(response);
+        })
+        if (ua.userAgentCore) {
+          ua.userAgentCore.receiveIncomingResponseFromTransport(response);
+        } else {
+          this.session.receiveResponse(response);
+        }
       });
 
       it('cannot be canceled', function () {
@@ -452,10 +432,10 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('by a BYE request', function () {
         beforeEach(function () {
-          var byeRequest = new SIP.IncomingRequest(this.session.ua);
-          byeRequest.method = 'BYE';
-          spyOn(byeRequest, 'reply');
-          this.session.receiveRequest(byeRequest);
+          var message = new SIP.IncomingRequest(this.session.ua);
+          message.method = 'BYE';
+          var accept = jasmine.createSpy("accept");
+          this.session.receiveRequest({ message, accept });
         });
 
         it('fires a `bye` event', function () {
@@ -474,7 +454,6 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('using the `bye` method', function () {
         beforeEach(function () {
-          spyOn(SIP.RequestSender.prototype, 'send');
           this.session.bye();
         });
 
@@ -514,7 +493,6 @@ describe('An INVITE sent from a UAC', function () {
 
       describe('using the `terminated` method', function () {
         beforeEach(function () {
-          spyOn(SIP.RequestSender.prototype, 'send');
           this.session.terminate();
         });
 

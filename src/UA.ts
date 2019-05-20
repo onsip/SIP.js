@@ -2,18 +2,29 @@ import { EventEmitter } from "events";
 
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
-import { Dialog } from "./Dialogs";
+import {
+  IncomingInviteRequest,
+  IncomingMessageRequest,
+  IncomingNotifyRequest,
+  IncomingReferRequest,
+  IncomingSubscribeRequest
+} from "./Core/messages";
+import {
+  makeUserAgentCoreConfigurationFromUA,
+  UserAgentCore,
+  UserAgentCoreDelegate
+} from "./Core/user-agent-core";
 import { DigestAuthentication } from "./DigestAuthentication";
-import { DialogStatus, SessionStatus, TypeStrings, UAStatus } from "./Enums";
+import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
 import { Levels, Logger, LoggerFactory } from "./LoggerFactory";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
+import { ReferServerContext } from "./ReferContext";
 import { RegisterContext } from "./RegisterContext";
-import { SanityCheck } from "./SanityCheck";
 import { ServerContext } from "./ServerContext";
-import { InviteClientContext, InviteServerContext, ReferServerContext } from "./Session";
+import { InviteClientContext, InviteServerContext } from "./Session";
 import {
   SessionDescriptionHandler,
   SessionDescriptionHandlerModifiers
@@ -22,18 +33,8 @@ import {
   SessionDescriptionHandlerFactory,
   SessionDescriptionHandlerFactoryOptions
 } from "./session-description-handler-factory";
-import { IncomingRequest, IncomingResponse, OutgoingRequest } from "./SIPMessage";
+import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 import { Subscription } from "./Subscription";
-import {
-  ClientTransaction,
-  InviteClientTransaction,
-  InviteServerTransaction,
-  NonInviteClientTransaction,
-  NonInviteServerTransaction,
-  ServerTransactionUser,
-  Transaction,
-  TransactionState
-} from "./Transactions";
 import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
@@ -55,6 +56,7 @@ export namespace UA {
     autostop?: boolean;
     displayName?: string;
     dtmfType?: DtmfType;
+    experimentalFeatures?: boolean;
     extraSupported?: Array<string>;
     forceRport?: boolean;
     hackIpInContact?: boolean;
@@ -147,21 +149,13 @@ export class UA extends EventEmitter {
     };
   public status: UAStatus;
   public transport: Transport | undefined;
-  public transactions: {
-    nist: {[id: string]: NonInviteServerTransaction | undefined}
-    nict: {[id: string]: NonInviteClientTransaction | undefined}
-    ist: {[id: string]: InviteServerTransaction | undefined}
-    ict: {[id: string]: InviteClientTransaction | undefined}
-  };
   public sessions: {[id: string]: InviteClientContext | InviteServerContext};
-  public dialogs: {[id: string]: Dialog};
   public data: any;
   public logger: Logger;
-  public earlySubscriptions: {[id: string]: Subscription};
-  public subscriptions: {[id: string]: Subscription};
+
+  public userAgentCore: UserAgentCore;
 
   private log: LoggerFactory;
-  private cache: any;
   private error: number | undefined;
   private registerContext: RegisterContext;
   private environListener: any;
@@ -173,28 +167,15 @@ export class UA extends EventEmitter {
     this.log = new LoggerFactory();
     this.logger = this.getLogger("sip.ua");
 
-    this.cache = {
-      credentials: {}
-    };
-
     this.configuration = {};
-    this.dialogs = {};
 
     // User actions outside any session/dialog (MESSAGE)
     this.applicants = {};
 
     this.data = {};
     this.sessions = {};
-    this.subscriptions = {};
-    this.earlySubscriptions = {};
     this.publishers = {};
     this.status = UAStatus.STATUS_INIT;
-    this.transactions = {
-      nist: {},
-      nict: {},
-      ist: {},
-      ict: {}
-    };
 
     /**
      * Load configuration
@@ -223,10 +204,27 @@ export class UA extends EventEmitter {
 
       if (configuration.log.hasOwnProperty("level")) {
         const level = configuration.log.level;
-        const normalized: Levels = typeof level === "string" ? Levels[level] : level;
+        // const normalized: Levels = typeof level === "string" ? Levels[level] : level;
+        let normalized: Levels | undefined;
+        switch (level) {
+          case "error":
+            normalized = Levels.error;
+            break;
+          case "warn":
+            normalized = Levels.warn;
+            break;
+          case "log":
+            normalized = Levels.log;
+            break;
+          case "debug":
+            normalized = Levels.debug;
+            break;
+          default:
+            break;
+        }
 
         // avoid setting level when invalid, use default level instead
-        if (!normalized) {
+        if (normalized === undefined) {
           this.logger.error(`Invalid "level" parameter value: ${JSON.stringify(level)}`);
         } else {
           this.log.level = normalized;
@@ -242,6 +240,112 @@ export class UA extends EventEmitter {
       throw e;
     }
 
+    const userAgentCoreConfiguration = makeUserAgentCoreConfigurationFromUA(this);
+
+    // The Replaces header contains information used to match an existing
+    // SIP dialog (call-id, to-tag, and from-tag).  Upon receiving an INVITE
+    // with a Replaces header, the User Agent (UA) attempts to match this
+    // information with a confirmed or early dialog.
+    // https://tools.ietf.org/html/rfc3891#section-3
+    const handleInviteWithReplacesHeader = (
+      context: InviteServerContext,
+      request: IncomingRequest
+    ): void => {
+      if (this.configuration.replaces !== SIPConstants.supported.UNSUPPORTED) {
+        const replaces = request.parseHeader("replaces");
+        if (replaces) {
+          const targetSession =
+            this.sessions[replaces.call_id + replaces.replaces_from_tag] ||
+            this.sessions[replaces.call_id + replaces.replaces_to_tag] ||
+            undefined;
+          if (!targetSession) {
+            this.userAgentCore.replyStateless(request, { statusCode: 481 });
+            return;
+          }
+          if (targetSession.status === SessionStatus.STATUS_TERMINATED) {
+            this.userAgentCore.replyStateless(request, { statusCode: 603 });
+            return;
+          }
+          const targetDialogId = replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag;
+          const targetDialog = this.userAgentCore.dialogs.get(targetDialogId);
+          if (!targetDialog) {
+            this.userAgentCore.replyStateless(request, { statusCode: 481 });
+            return;
+          }
+          if (!targetDialog.early && replaces.early_only) {
+            this.userAgentCore.replyStateless(request, { statusCode: 486 });
+            return;
+          }
+          context.replacee = targetSession;
+        }
+      }
+    };
+
+    const userAgentCoreDelegate: UserAgentCoreDelegate = {
+      onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+        // FIXME: Ported - 100 Trying send should be configurable.
+        // Only required if TU will not respond in 200ms.
+        // https://tools.ietf.org/html/rfc3261#section-17.2.1
+        incomingInviteRequest.trying();
+        incomingInviteRequest.delegate = {
+          onCancel: (cancel: IncomingRequest): void => {
+            context.onCancel(cancel);
+          },
+          onTransportError: (error: Exceptions.TransportError): void => {
+            context.onTransportError();
+          }
+        };
+        const context = new InviteServerContext(this, incomingInviteRequest);
+        // Ported - handling of out of dialog INVITE with Replaces.
+        handleInviteWithReplacesHeader(context, incomingInviteRequest.message);
+        // Ported - make the first call to progress automatically.
+        if (context.autoSendAnInitialProvisionalResponse) {
+          context.progress();
+        }
+        this.emit("invite", context);
+      },
+      onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
+        // Ported - handling of out of dialog MESSAGE.
+        const serverContext = new ServerContext(this, incomingMessageRequest);
+        serverContext.body = incomingMessageRequest.message.body;
+        serverContext.contentType = incomingMessageRequest.message.getHeader("Content-Type") || "text/plain";
+        incomingMessageRequest.accept();
+        this.emit("message", serverContext); // TODO: Review. Why is a "ServerContext" emitted? What use it is?
+      },
+      onNotify: (incomingNotifyRequest: IncomingNotifyRequest): void => {
+        // DEPRECATED: Out of dialog NOTIFY is an obsolete usage.
+        // Ported - handling of out of dialog NOTIFY.
+        if (this.configuration.allowLegacyNotifications && this.listeners("notify").length > 0) {
+          incomingNotifyRequest.accept();
+          this.emit("notify", { request: incomingNotifyRequest.message });
+        } else {
+          incomingNotifyRequest.reject({ statusCode: 481 });
+        }
+      },
+      onRefer: (incomingReferRequest: IncomingReferRequest): void => {
+        // Ported - handling of out of dialog REFER.
+        this.logger.log("Received an out of dialog refer");
+        if (!this.configuration.allowOutOfDialogRefers) {
+          incomingReferRequest.reject({ statusCode: 405 });
+        }
+        this.logger.log("Allow out of dialog refers is enabled on the UA");
+        const referContext = new ReferServerContext(this, incomingReferRequest);
+        if (this.listeners("outOfDialogReferRequested").length) {
+          this.emit("outOfDialogReferRequested", referContext);
+        } else {
+          this.logger.log(
+            "No outOfDialogReferRequest listeners, automatically accepting and following the out of dialog refer"
+          );
+          referContext.accept({ followRefer: true });
+        }
+      },
+      onSubscribe: (incomingSubscribeRequest: IncomingSubscribeRequest): void => {
+        this.emit("subscribe", incomingSubscribeRequest);
+      },
+    };
+
+    this.userAgentCore = new UserAgentCore(userAgentCoreConfiguration, userAgentCoreDelegate);
+
     // Initialize registerContext
     this.registerContext = new RegisterContext(this, configuration.registerOptions);
     this.registerContext.on("failed", this.emit.bind(this, "registrationFailed"));
@@ -251,31 +355,6 @@ export class UA extends EventEmitter {
     if (this.configuration.autostart) {
       this.start();
     }
-  }
-
-  get transactionsCount(): number {
-    let count: number = 0;
-
-    for (const type of ["nist", "nict" , "ist", "ict"]) {
-      count += Object.keys(this.transactions[type]).length;
-    }
-    return count;
-  }
-
-  get nictTransactionsCount(): number {
-    return Object.keys(this.transactions.nict).length;
-  }
-
-  get nistTransactionsCount(): number {
-    return Object.keys(this.transactions.nist).length;
-  }
-
-  get ictTransactionsCount(): number {
-    return Object.keys(this.transactions.ict).length;
-  }
-
-  get istTransactionsCount(): number {
-    return Object.keys(this.transactions.ist).length;
   }
 
   // =================
@@ -424,22 +503,6 @@ export class UA extends EventEmitter {
       }
     }
 
-    // Run _close_ on every confirmed Subscription
-    for (const subscription in this.subscriptions) {
-      if (this.subscriptions[subscription]) {
-        this.logger.log("unsubscribing from subscription " + subscription);
-        this.subscriptions[subscription].close();
-      }
-    }
-
-    // Run _close_ on every early Subscription
-    for (const earlySubscription in this.earlySubscriptions) {
-      if (this.earlySubscriptions[earlySubscription]) {
-        this.logger.log("unsubscribing from early subscription " + earlySubscription);
-        this.earlySubscriptions[earlySubscription].close();
-      }
-    }
-
     // Run _close_ on every Publisher
     for (const publisher in this.publishers) {
       if (this.publishers[publisher]) {
@@ -456,29 +519,6 @@ export class UA extends EventEmitter {
     }
 
     this.status = UAStatus.STATUS_USER_CLOSED;
-
-    /*
-     * If the remaining transactions are all INVITE transactions, there is no need to
-     * wait anymore because every session has already been closed by this method.
-     * - locally originated sessions where terminated (CANCEL or BYE)
-     * - remotely originated sessions where rejected (4XX) or terminated (BYE)
-     * Remaining INVITE transactions belong tho sessions that where answered. This are in
-     * 'accepted' state due to timers 'L' and 'M' defined in [RFC 6026]
-     */
-    if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0 && this.transport) {
-      this.transport.disconnect();
-    } else {
-      const transactionsListener: (() => void) = () => {
-        if (this.nistTransactionsCount === 0 && this.nictTransactionsCount === 0) {
-            this.removeListener("transactionDestroyed", transactionsListener);
-            if (this.transport) {
-              this.transport.disconnect();
-            }
-        }
-      };
-
-      this.on("transactionDestroyed", transactionsListener);
-    }
 
     if (typeof environment.removeEventListener === "function") {
       // Google Chrome Packaged Apps don't allow 'unload' listeners:
@@ -557,55 +597,6 @@ export class UA extends EventEmitter {
     return this.log;
   }
 
-  // TODO: Transaction matching currently works circumstanially.
-  //
-  // 17.1.3 Matching Responses to Client Transactions
-  //
-  // When the transport layer in the client receives a response, it has to
-  // determine which client transaction will handle the response, so that
-  // the processing of Sections 17.1.1 and 17.1.2 can take place.  The
-  // branch parameter in the top Via header field is used for this
-  // purpose.  A response matches a client transaction under two
-  // conditions:
-  //
-  //    1.  If the response has the same value of the branch parameter in
-  //        the top Via header field as the branch parameter in the top
-  //        Via header field of the request that created the transaction.
-  //
-  //    2.  If the method parameter in the CSeq header field matches the
-  //        method of the request that created the transaction.  The
-  //        method is needed since a CANCEL request constitutes a
-  //        different transaction, but shares the same value of the branch
-  //        parameter.
-
-  /**
-   * new Transaction
-   * @private
-   * @param {SIP.Transaction} transaction.
-   */
-  public newTransaction(
-    transaction: NonInviteClientTransaction |
-      InviteClientTransaction |
-      InviteServerTransaction |
-      NonInviteServerTransaction
-  ): void {
-    this.transactions[transaction.kind][transaction.id] = transaction;
-    this.emit("newTransaction", { transaction });
-  }
-
-  /**
-   * destroy Transaction
-   * @param {SIP.Transaction} transaction.
-   */
-  public destroyTransaction(
-    transaction: NonInviteClientTransaction |
-      InviteClientTransaction |
-      InviteServerTransaction |
-      NonInviteServerTransaction): void {
-    delete this.transactions[transaction.kind][transaction.id];
-    this.emit("transactionDestroyed", { transaction });
-  }
-
   /**
    * Get the session to which the request belongs to, if any.
    * @param {SIP.IncomingRequest} request.
@@ -620,36 +611,13 @@ export class UA extends EventEmitter {
   public on(name: "invite", callback: (session: InviteServerContext) => void): this;
   public on(name: "inviteSent", callback: (session: InviteClientContext) => void): this;
   public on(name: "outOfDialogReferRequested", callback: (context: ReferServerContext) => void): this;
-  public on(name: "newTransaction" | "transactionDestroyed", callback: (transaction: Transaction) => void): this;
   public on(name: "transportCreated", callback: (transport: Transport) => void): this;
   public on(name: "message", callback: (message: any) => void): this;
   public on(name: "notify", callback: (request: any) => void): this;
+  public on(name: "subscribe", callback: (subscribe: IncomingSubscribeRequest) => void): this;
   public on(name: "registered", callback: (response?: any) => void): this;
   public on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
-
-  // ===============================
-  //  Private (For internal use)
-  // ===============================
-
-  private saveCredentials(credentials: any): this {
-    this.cache.credentials[credentials.realm] = this.cache.credentials[credentials.realm] || {};
-    this.cache.credentials[credentials.realm][credentials.uri] = credentials;
-
-    return this;
-  }
-
-  private getCredentials(request: OutgoingRequest): any {
-    const realm: string | undefined =
-      (request.ruri as URI).type === TypeStrings.URI ? (request.ruri as URI).host : "";
-
-    if (realm && this.cache.credentials[realm] && this.cache.credentials[realm][request.ruri.toString()]) {
-      const credentials: any = this.cache.credentials[realm][request.ruri.toString()];
-      credentials.method = request.method;
-
-      return credentials;
-    }
-  }
 
   // ==============================
   // Event Handlers
@@ -706,442 +674,101 @@ export class UA extends EventEmitter {
       return;
     }
 
-    if (!this.transport) {
-      this.logger.warn("UA received message without transport - aborting");
-      return;
-    }
+    // A valid SIP request formulated by a UAC MUST, at a minimum, contain
+    // the following header fields: To, From, CSeq, Call-ID, Max-Forwards,
+    // and Via; all of these header fields are mandatory in all SIP
+    // requests.
+    // https://tools.ietf.org/html/rfc3261#section-8.1.1
+    const hasMinimumHeaders = (): boolean => {
+      const mandatoryHeaders: Array<string> = ["from", "to", "call_id", "cseq", "via"];
+      for (const header of mandatoryHeaders) {
+        if (!message.hasHeader(header)) {
+          this.logger.warn(`Missing mandatory header field : ${header}.`);
+          return false;
+        }
+      }
+      return true;
+    };
 
-    if (!SanityCheck.sanityCheck(message, this, this.transport)) {
-      return;
-    }
-
+    // Request Checks
     if (message instanceof IncomingRequest) {
-      this.receiveRequestFromTransport(message);
+      // This is port of SanityCheck.minimumHeaders().
+      if (!hasMinimumHeaders()) {
+        this.logger.warn(`Request missing mandatory header field. Dropping.`);
+        return;
+      }
+
+      // FIXME: This is non-standard and should be a configruable behavior (desirable regardless).
+      // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
+      // This is port of SanityCheck.rfc3261_16_3_4().
+      if (!message.toTag && message.callId.substr(0, 5) === this.configuration.sipjsId) {
+        this.userAgentCore.replyStateless(message, { statusCode: 482 });
+        return;
+      }
+
+      // FIXME: This should be Transport check before we get here (Section 18).
+      // Custom SIP.js check to reject requests if body length wrong.
+      // This is port of SanityCheck.rfc3261_18_3_request().
+      const len: number = Utils.str_utf8_length(message.body);
+      const contentLength: string | undefined = message.getHeader("content-length");
+      if (contentLength && len < Number(contentLength)) {
+        this.userAgentCore.replyStateless(message, { statusCode: 400 });
+        return;
+      }
+    }
+
+    // Reponse Checks
+    if (message instanceof IncomingResponse) {
+      // This is port of SanityCheck.minimumHeaders().
+      if (!hasMinimumHeaders()) {
+        this.logger.warn(`Response missing mandatory header field. Dropping.`);
+        return;
+      }
+
+      // Custom SIP.js check to drop responses if multiple Via headers.
+      // This is port of SanityCheck.rfc3261_8_1_3_3().
+      if (message.getHeaders("via").length > 1) {
+        this.logger.warn("More than one Via header field present in the response. Dropping.");
+        return;
+      }
+
+      // FIXME: This should be Transport check before we get here (Section 18).
+      // Custom SIP.js check to drop responses if bad Via header.
+      // This is port of SanityCheck.rfc3261_18_1_2().
+      if (message.via.host !== this.configuration.viaHost || message.via.port !== undefined) {
+        this.logger.warn("Via sent-by in the response does not match UA Via host value. Dropping.");
+        return;
+      }
+
+      // FIXME: This should be Transport check before we get here (Section 18).
+      // Custom SIP.js check to reject requests if body length wrong.
+      // This is port of SanityCheck.rfc3261_18_3_response().
+      const len: number = Utils.str_utf8_length(message.body);
+      const contentLength: string | undefined = message.getHeader("content-length");
+      if (contentLength && len < Number(contentLength)) {
+        this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
+        return;
+      }
+    }
+
+    // Handle Request
+    if (message instanceof IncomingRequest) {
+      this.userAgentCore.receiveIncomingRequestFromTransport(message);
       return;
     }
 
+    // Handle Response
     if (message instanceof IncomingResponse) {
-      this.receiveResponseFromTransport(message);
+      this.userAgentCore.receiveIncomingResponseFromTransport(message);
       return;
     }
 
     throw new Error("Invalid message type.");
   }
 
-  private receiveRequestFromTransport(request: IncomingRequest): void {
-
-    // FIXME: Bad hack. SIPMessage needs refactor.
-    request.transport = this.transport;
-
-    // FIXME: Configuration URI is a bad mix of tyes currently and needs to exist.
-    if (!(this.configuration.uri instanceof URI)) {
-      throw new Error("Configuration URI not instance of URI.");
-    }
-
-    // FIXME: A request should always have an ruri
-    if (!request.ruri) {
-      throw new Error("Request ruri undefined.");
-    }
-
-    // If the Request-URI uses a scheme not supported by the UAS, it SHOULD
-    // reject the request with a 416 (Unsupported URI Scheme) response.
-    // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
-    if (request.ruri.scheme !== SIPConstants.SIP) {
-      request.reply_sl(416);
-      return;
-    }
-
-    // If the Request-URI does not identify an address that the
-    // UAS is willing to accept requests for, it SHOULD reject
-    // the request with a 404 (Not Found) response.
-    // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
-    const ruri = request.ruri;
-    const ruriMatches = (uri: URI | undefined) => {
-      return !!uri && uri.user === ruri.user;
-    };
-    if (
-      !ruriMatches(this.configuration.uri) &&
-      !(ruriMatches(this.contact.uri) || ruriMatches(this.contact.pubGruu) || ruriMatches(this.contact.tempGruu))
-    ) {
-      this.logger.warn("Request-URI does not point to us");
-      if (request.method !== SIPConstants.ACK) {
-        request.reply_sl(404);
-      }
-      return;
-    }
-
-    // When a request is received from the network by the server, it has to
-    // be matched to an existing transaction.  This is accomplished in the
-    // following manner.
-    //
-    // The branch parameter in the topmost Via header field of the request
-    // is examined.  If it is present and begins with the magic cookie
-    // "z9hG4bK", the request was generated by a client transaction
-    // compliant to this specification.  Therefore, the branch parameter
-    // will be unique across all transactions sent by that client.  The
-    // request matches a transaction if:
-    //
-    //    1. the branch parameter in the request is equal to the one in the
-    //       top Via header field of the request that created the
-    //       transaction, and
-    //
-    //    2. the sent-by value in the top Via of the request is equal to the
-    //       one in the request that created the transaction, and
-    //
-    //    3. the method of the request matches the one that created the
-    //       transaction, except for ACK, where the method of the request
-    //       that created the transaction is INVITE.
-    //
-    // This matching rule applies to both INVITE and non-INVITE transactions
-    // alike.
-    //
-    //    The sent-by value is used as part of the matching process because
-    //    there could be accidental or malicious duplication of branch
-    //    parameters from different clients.
-    // https://tools.ietf.org/html/rfc3261#section-17.2.3
-
-    // FIXME: The current transaction layer curently only matches on branch parameter.
-
-    // Request matches branch parameter of an existing invite server transaction.
-    const ist = this.transactions.ist[request.viaBranch];
-
-    // Request matches branch parameter of an existing non-invite server transaction.
-    const nist = this.transactions.nist[request.viaBranch];
-
-    // The CANCEL method requests that the TU at the server side cancel a
-    // pending transaction.  The TU determines the transaction to be
-    // cancelled by taking the CANCEL request, and then assuming that the
-    // request method is anything but CANCEL or ACK and applying the
-    // transaction matching procedures of Section 17.2.3.  The matching
-    // transaction is the one to be cancelled.
-    // https://tools.ietf.org/html/rfc3261#section-9.2
-    if (request.method === SIPConstants.CANCEL) {
-      if (ist || nist) {
-        // Regardless of the method of the original request, as long as the
-        // CANCEL matched an existing transaction, the UAS answers the CANCEL
-        // request itself with a 200 (OK) response.
-        // https://tools.ietf.org/html/rfc3261#section-9.2
-        request.reply_sl(200);
-
-        // If the transaction for the original request still exists, the behavior
-        // of the UAS on receiving a CANCEL request depends on whether it has already
-        // sent a final response for the original request. If it has, the CANCEL
-        // request has no effect on the processing of the original request, no
-        // effect on any session state, and no effect on the responses generated
-        // for the original request. If the UAS has not issued a final response
-        // for the original request, its behavior depends on the method of the
-        // original request. If the original request was an INVITE, the UAS
-        // SHOULD immediately respond to the INVITE with a 487 (Request
-        // Terminated). A CANCEL request has no impact on the processing of
-        // transactions with any other method defined in this specification.
-        // https://tools.ietf.org/html/rfc3261#section-9.2
-        if (ist && ist.state === TransactionState.Proceeding) {
-          // TODO: Review this.
-          // The cancel request has been replied to, which is an exception.
-          this.receiveRequest(request);
-        }
-      } else {
-        // If the UAS did not find a matching transaction for the CANCEL
-        // according to the procedure above, it SHOULD respond to the CANCEL
-        // with a 481 (Call Leg/Transaction Does Not Exist).
-        // https://tools.ietf.org/html/rfc3261#section-9.2
-        request.reply_sl(481);
-      }
-      return;
-    }
-
-    // When receiving an ACK that matches an existing INVITE server
-    // transaction and that does not contain a branch parameter containing
-    // the magic cookie defined in RFC 3261, the matching transaction MUST
-    // be checked to see if it is in the "Accepted" state.  If it is, then
-    // the ACK must be passed directly to the transaction user instead of
-    // being absorbed by the transaction state machine.  This is necessary
-    // as requests from RFC 2543 clients will not include a unique branch
-    // parameter, and the mechanisms for calculating the transaction ID from
-    // such a request will be the same for both INVITE and ACKs.
-    // https://tools.ietf.org/html/rfc6026#section-6
-
-    // Any ACKs received from the network while in the "Accepted" state MUST be
-    // passed directly to the TU and not absorbed.
-    // https://tools.ietf.org/html/rfc6026#section-7.1
-    if (request.method === SIPConstants.ACK) {
-      if (ist && ist.state === TransactionState.Accepted) {
-        this.receiveRequest(request);
-        return;
-      }
-    }
-
-    // If a matching server transaction is found, the request is passed to that
-    // transaction for processing.
-    // https://tools.ietf.org/html/rfc6026#section-8.10
-    if (ist) {
-      ist.receiveRequest(request);
-      return;
-    }
-    if (nist) {
-      nist.receiveRequest(request);
-      return;
-    }
-
-    // If no match is found, the request is passed to the core, which may decide to
-    // construct a new server transaction for that request.
-    // https://tools.ietf.org/html/rfc6026#section-8.10
-    this.receiveRequest(request);
-  }
-
-  private receiveResponseFromTransport(response: IncomingResponse): void {
-    // When the transport layer in the client receives a response, it has to
-    // determine which client transaction will handle the response, so that
-    // the processing of Sections 17.1.1 and 17.1.2 can take place.  The
-    // branch parameter in the top Via header field is used for this
-    // purpose.  A response matches a client transaction under two
-    // conditions:
-    //
-    //    1.  If the response has the same value of the branch parameter in
-    //        the top Via header field as the branch parameter in the top
-    //        Via header field of the request that created the transaction.
-    //
-    //    2.  If the method parameter in the CSeq header field matches the
-    //        method of the request that created the transaction.  The
-    //        method is needed since a CANCEL request constitutes a
-    //        different transaction, but shares the same value of the branch
-    //        parameter.
-    // https://tools.ietf.org/html/rfc3261#section-17.1.3
-
-    // The client transport uses the matching procedures of Section
-    // 17.1.3 to attempt to match the response to an existing
-    // transaction.  If there is a match, the response MUST be passed to
-    // that transaction.  Otherwise, any element other than a stateless
-    // proxy MUST silently discard the response.
-    // https://tools.ietf.org/html/rfc6026#section-8.9
-    let transaction: ClientTransaction | undefined;
-    switch (response.method) {
-      case SIPConstants.INVITE:
-        transaction = this.transactions.ict[response.viaBranch];
-        break;
-      case SIPConstants.ACK:
-        // Just in case ;-)
-        break;
-      default:
-        transaction = this.transactions.nict[response.viaBranch];
-        break;
-    }
-
-    if (!transaction) {
-      const message =
-        `Discarding unmatched ${response.statusCode} response to ${response.method} ${response.viaBranch}.`;
-      this.logger.warn(message);
-      return;
-    }
-
-    // FIXME: Bad hack. Potentially creating circular dependancy. SIPMessage needs refactor.
-    response.transaction = transaction;
-
-    // Pass incoming response to matching transaction.
-    transaction.receiveResponse(response);
-  }
-
-  /**
-   * Request reception
-   * @private
-   * @param {SIP.IncomingRequest} request.
-   */
-  private receiveRequest(request: IncomingRequest): void {
-
-    /* RFC3261 12.2.2
-    * Requests that do not change in any way the state of a dialog may be
-    * received within a dialog (for example, an OPTIONS request).
-    * They are processed as if they had been received outside the dialog.
-    */
-    const method: string = request.method;
-    let message: ServerContext;
-    if (method === SIPConstants.OPTIONS) {
-      const transport = this.transport;
-      if (!transport) {
-        throw new Error("Transport undefined.");
-      }
-      const user: ServerTransactionUser = {
-        loggerFactory: this.getLoggerFactory(),
-        onStateChange: (newState) => {
-          if (newState === TransactionState.Terminated) {
-            this.destroyTransaction(optionsTransaction);
-          }
-        },
-        onTransportError: (error) => {
-          this.logger.error(error.message);
-        }
-      };
-      const optionsTransaction = new NonInviteServerTransaction(request, transport, user);
-      this.newTransaction(optionsTransaction);
-      request.reply(200, undefined, [
-        "Allow: " + UA.C.ALLOWED_METHODS.toString(),
-        "Accept: " + UA.C.ACCEPTED_BODY_TYPES.toString()
-      ]);
-    } else if (method === SIPConstants.MESSAGE) {
-      message = new ServerContext(this, request);
-      message.body = request.body;
-      message.contentType = request.getHeader("Content-Type") || "text/plain";
-
-      request.reply(200, undefined);
-      this.emit("message", message);
-    } else if (method !== SIPConstants.INVITE &&
-               method !== SIPConstants.ACK) {
-      // Let those methods pass through to normal processing for now.
-      message = new ServerContext(this, request);
-    }
-
-    // Initial Request
-    if (!request.toTag) {
-      switch (method) {
-        case SIPConstants.INVITE:
-          const replaces: any = this.configuration.replaces !== SIPConstants.supported.UNSUPPORTED &&
-            request.parseHeader("replaces");
-
-          let replacedDialog: Dialog | undefined;
-          if (replaces) {
-            replacedDialog = this.dialogs[replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag];
-
-            if (!replacedDialog) {
-              // Replaced header without a matching dialog, reject
-              request.reply_sl(481, undefined);
-              return;
-            } else if (!(replacedDialog.owner.type === TypeStrings.Subscription) &&
-              (replacedDialog.owner as InviteClientContext | InviteServerContext).status
-                === SessionStatus.STATUS_TERMINATED) {
-              request.reply_sl(603, undefined);
-              return;
-            } else if (replacedDialog.state === DialogStatus.STATUS_CONFIRMED && replaces.earlyOnly) {
-              request.reply_sl(486, undefined);
-              return;
-            }
-          }
-
-          const newSession: InviteServerContext = new InviteServerContext(this, request);
-          if (replacedDialog && !(replacedDialog.owner.type === TypeStrings.Subscription)) {
-            newSession.replacee = replacedDialog && (replacedDialog.owner as InviteClientContext | InviteServerContext);
-          }
-          this.emit("invite", newSession);
-          break;
-        case SIPConstants.BYE:
-          // Out of dialog BYE received
-          request.reply(481);
-          break;
-        case SIPConstants.CANCEL:
-          const session: InviteClientContext | InviteServerContext | undefined = this.findSession(request);
-          if (session) {
-            session.receiveRequest(request);
-          } else {
-            this.logger.warn("received CANCEL request for a non existent session");
-          }
-          break;
-        case SIPConstants.ACK:
-          /* Absorb it.
-          * ACK request without a corresponding Invite Transaction
-          * and without To tag.
-          */
-          break;
-        case SIPConstants.NOTIFY:
-          if (this.configuration.allowLegacyNotifications && this.listeners("notify").length > 0) {
-            request.reply(200, undefined);
-            this.emit("notify", { request });
-          } else {
-            request.reply(481, "Subscription does not exist");
-          }
-          break;
-        case SIPConstants.REFER:
-          this.logger.log("Received an out of dialog refer");
-          if (this.configuration.allowOutOfDialogRefers) {
-            this.logger.log("Allow out of dialog refers is enabled on the UA");
-            const referContext: ReferServerContext = new ReferServerContext(this, request);
-            if (this.listeners("outOfDialogReferRequested").length) {
-              this.emit("outOfDialogReferRequested", referContext);
-            } else {
-              this.logger.log("No outOfDialogReferRequest listeners," +
-                " automatically accepting and following the out of dialog refer");
-              referContext.accept({followRefer: true});
-            }
-            break;
-          }
-          request.reply(405);
-          break;
-        default:
-          request.reply(405);
-          break;
-      }
-    } else { // In-dialog request
-      const dialog: Dialog | undefined = this.findDialog(request);
-
-      if (dialog) {
-        if (method === SIPConstants.INVITE) {
-          const transport = this.transport;
-          if (!transport) {
-            throw new Error("Transport undefined.");
-          }
-          const user: ServerTransactionUser = {
-            loggerFactory: this.log,
-            onStateChange: (newState) => {
-              if (newState === TransactionState.Terminated) {
-                this.destroyTransaction(ist);
-              }
-            },
-            onTransportError: (error) => {
-              this.logger.error(error.message);
-              dialog.owner.onTransportError();
-            }
-          };
-          const ist: InviteServerTransaction = new InviteServerTransaction(request, transport, user);
-          this.newTransaction(ist);
-        }
-        dialog.receiveRequest(request);
-      } else if (method === SIPConstants.NOTIFY) {
-        const session: InviteClientContext | InviteServerContext | undefined = this.findSession(request);
-        const earlySubscription: Subscription | undefined = this.findEarlySubscription(request);
-
-        if (session) {
-          session.receiveRequest(request);
-        } else if (earlySubscription) {
-          earlySubscription.receiveRequest(request);
-        } else {
-          this.logger.warn("received NOTIFY request for a non existent session or subscription");
-          request.reply(481, "Subscription does not exist");
-        }
-      } else {
-        /* RFC3261 12.2.2
-         * Request with to tag, but no matching dialog found.
-         * Exception: ACK for an Invite request for which a dialog has not
-         * been created.
-         */
-        if (method !== SIPConstants.ACK) {
-          request.reply(481);
-        }
-      }
-    }
-  }
-
-// =================
-// Utils
-// =================
-
-/**
- * Get the dialog to which the request belongs to, if any.
- * @param {SIP.IncomingRequest}
- * @returns {SIP.Dialog|undefined}
- */
-  private findDialog(request: IncomingRequest): Dialog | undefined {
-    return this.dialogs[request.callId + request.fromTag + request.toTag] ||
-      this.dialogs[request.callId + request.toTag + request.fromTag] ||
-      undefined;
-  }
-
-/**
- * Get the subscription which has not been confirmed to which the request belongs to, if any
- * @param {SIP.IncomingRequest}
- * @returns {SIP.Subscription|undefined}
- */
-  private findEarlySubscription(request: IncomingRequest): Subscription | undefined {
-    return this.earlySubscriptions[request.callId + request.toTag + request.getHeader("event")] || undefined;
-  }
-
+  // =================
+  // Utils
+  // =================
   private checkAuthenticationFactory(authenticationFactory: any): any | undefined {
     if (!(authenticationFactory instanceof Function)) {
       return;
@@ -1235,6 +862,8 @@ export class UA extends EventEmitter {
       allowLegacyNotifications: false,
 
       allowOutOfDialogRefers: false,
+
+      experimentalFeatures: false
     };
 
     const configCheck: {mandatory: {[name: string]: any}, optional: {[name: string]: any}} =
@@ -1590,6 +1219,12 @@ export class UA extends EventEmitter {
         contactName: (contactName: string): string | undefined => {
           if (typeof contactName === "string") {
             return contactName;
+          }
+        },
+
+        experimentalFeatures: (experimentalFeatures: boolean): boolean | undefined => {
+          if (typeof experimentalFeatures === "boolean") {
+            return experimentalFeatures;
           }
         },
       }
