@@ -67,7 +67,7 @@ export class LoggerFactory {
   public genericLog(levelToLog: Levels, category: string, label: string | undefined, content: any): void {
     if (this.level >= levelToLog) {
       if (this.builtinEnabled) {
-        this.print(console[Levels[levelToLog]], category, label, content);
+        this.print(levelToLog, category, label, content);
       }
     }
 
@@ -76,7 +76,7 @@ export class LoggerFactory {
     }
   }
 
-  private  print(target: ((content: string) => void), category: string, label: string | undefined, content: any): void {
+  private print(levelToLog: Levels, category: string, label: string | undefined, content: any): void {
     if (typeof content === "string") {
       const prefix: Array<any> = [new Date(), category];
       if (label) {
@@ -84,7 +84,26 @@ export class LoggerFactory {
       }
       content = prefix.concat(content).join(" | ");
     }
-    target.call(console, content);
+    switch (levelToLog) {
+      case Levels.error:
+        // tslint:disable-next-line:no-console
+        console.error(content);
+        break;
+      case Levels.warn:
+        // tslint:disable-next-line:no-console
+        console.warn(content);
+        break;
+      case Levels.log:
+        // tslint:disable-next-line:no-console
+        console.log(content);
+        break;
+      case Levels.debug:
+        // tslint:disable-next-line:no-console
+        console.debug(content);
+        break;
+      default:
+        break;
+    }
   }
 }
 

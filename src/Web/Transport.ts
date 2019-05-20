@@ -616,7 +616,7 @@ export class Transport extends TransportBase {
         const value: any = configuration[parameter];
         const checkedValue: any = configCheck.mandatory[parameter](value);
         if (checkedValue !== undefined) {
-          settings[parameter] = checkedValue;
+          (settings as any)[parameter] = checkedValue;
         } else {
           throw new Exceptions.ConfigurationError(parameter, value);
         }
@@ -638,7 +638,7 @@ export class Transport extends TransportBase {
 
         const checkedValue: any = configCheck.optional[parameter](value);
         if (checkedValue !== undefined) {
-          settings[parameter] = checkedValue;
+          (settings as any)[parameter] = checkedValue;
         } else {
           throw new Exceptions.ConfigurationError(parameter, value);
         }
@@ -649,7 +649,7 @@ export class Transport extends TransportBase {
     for (const parameter in settings) {
       if (settings.hasOwnProperty(parameter)) {
         skeleton[parameter] = {
-          value: settings[parameter],
+          value: (settings as any)[parameter],
         };
       }
     }
@@ -658,7 +658,7 @@ export class Transport extends TransportBase {
     this.logger.log("configuration parameters after validation:");
     for (const parameter in settings) {
       if (settings.hasOwnProperty(parameter)) {
-        this.logger.log("· " + parameter + ": " + JSON.stringify(settings[parameter]));
+        this.logger.log("· " + parameter + ": " + JSON.stringify((settings as any)[parameter]));
       }
     }
 

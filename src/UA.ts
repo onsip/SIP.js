@@ -204,10 +204,27 @@ export class UA extends EventEmitter {
 
       if (configuration.log.hasOwnProperty("level")) {
         const level = configuration.log.level;
-        const normalized: Levels = typeof level === "string" ? Levels[level] : level;
+        // const normalized: Levels = typeof level === "string" ? Levels[level] : level;
+        let normalized: Levels | undefined;
+        switch (level) {
+          case "error":
+            normalized = Levels.error;
+            break;
+          case "warn":
+            normalized = Levels.warn;
+            break;
+          case "log":
+            normalized = Levels.log;
+            break;
+          case "debug":
+            normalized = Levels.debug;
+            break;
+          default:
+            break;
+        }
 
         // avoid setting level when invalid, use default level instead
-        if (!normalized) {
+        if (normalized === undefined) {
           this.logger.error(`Invalid "level" parameter value: ${JSON.stringify(level)}`);
         } else {
           this.log.level = normalized;
