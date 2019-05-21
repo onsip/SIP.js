@@ -170,7 +170,7 @@ describe('UA', function() {
       expect(UA.registerContext.close).toHaveBeenCalled();
     });
 
-    it('terminates any active sessions', function () {
+    it('terminates any sessions', function () {
       var session = jasmine.createSpyObj('session', ['terminate']);
       UA.sessions[session] = session;
 
@@ -179,22 +179,13 @@ describe('UA', function() {
       expect(UA.sessions[session].terminate).toHaveBeenCalled();
     });
 
-    xit('closes any active subscriptions', function () {
-      var subscription = jasmine.createSpyObj('subscription', ['close']);
+    it('unsubscribes any subscriptions', function () {
+      var subscription = jasmine.createSpyObj('subscription', ['unsubscribe']);
       UA.subscriptions[subscription] = subscription;
 
       UA.stop();
 
-      expect(UA.subscriptions[subscription].close).toHaveBeenCalled();
-    });
-
-    xit('closes any early subscriptions', function () {
-      var subscription = jasmine.createSpyObj('subscription', ['close']);
-      UA.earlySubscriptions[subscription] = subscription;
-
-      UA.stop();
-
-      expect(UA.earlySubscriptions[subscription].close).toHaveBeenCalled();
+      expect(UA.subscriptions[subscription].unsubscribe).toHaveBeenCalled();
     });
 
     it('closes any publishers', function () {
