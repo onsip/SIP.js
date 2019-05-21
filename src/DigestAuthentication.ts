@@ -1,4 +1,4 @@
-import { MD5 } from "crypto-js";
+import MD5 from "crypto-js/md5";
 
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
