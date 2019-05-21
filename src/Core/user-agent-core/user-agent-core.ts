@@ -102,6 +102,11 @@ export class UserAgentCore {
 
   /** Destructor. */
   public dispose(): void {
+    this.reset();
+  }
+
+  /** Reset. */
+  public reset(): void {
     this.dialogs.forEach((dialog) => dialog.dispose());
     this.dialogs.clear();
     this.subscribers.forEach((subscriber) => subscriber.dispose());

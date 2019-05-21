@@ -215,34 +215,10 @@ describe('UA', function() {
       expect(UA.applicants[applicant].close).toHaveBeenCalled();
     });
 
-    xit('disconnects from the Web Socket if there are no non-invite transactions left', function () {
-      UA.transactions['nist'] = [];
-      UA.transactions['nict'] = [];
+    it('disconnects the transport', function () {
       UA.stop();
 
       expect(UA.transport.disconnect).toHaveBeenCalled();
-    });
-
-    xit('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
-      spyOn(UA, 'removeListener');
-
-      //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
-
-      UA.transactions['nict'] = ['one'];
-      UA.transactions['nist'] = ['one'];
-
-      UA.stop();
-
-      expect(UA.transport.disconnect).not.toHaveBeenCalled();
-
-      UA.transactions['nist'] = [];
-      UA.emit('transactionDestroyed');
-      expect(UA.transport.disconnect).not.toHaveBeenCalled();
-
-      UA.transactions['nict'] = [];
-      UA.emit('transactionDestroyed');
-      expect(UA.transport.disconnect).toHaveBeenCalled();
-      expect(UA.removeListener).toHaveBeenCalled();
     });
   });
 

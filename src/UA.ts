@@ -520,6 +520,12 @@ export class UA extends EventEmitter {
 
     this.status = UAStatus.STATUS_USER_CLOSED;
 
+    // Disconnect the transport and reset user agent core
+    if (this.transport) {
+      this.transport.disconnect();
+    }
+    this.userAgentCore.reset();
+
     if (typeof environment.removeEventListener === "function") {
       // Google Chrome Packaged Apps don't allow 'unload' listeners:
       // unload is not available in packaged apps
