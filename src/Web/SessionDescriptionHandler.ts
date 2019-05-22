@@ -414,7 +414,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     this.logger.log(methodName);
     const method = this.hasOffer("remote") ? pc.createAnswer : pc.createOffer;
 
-    return method(RTCOfferOptions).catch((e: any) => {
+    return method.apply(pc, RTCOfferOptions).catch((e: any) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
       }

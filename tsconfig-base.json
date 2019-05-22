@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-      "target": "es5",
-      "strict": true,
-      "lib": ["es2017", "dom"]
+    "target": "es5",
+    "strict": true,
+    "esModuleInterop": true,
+    "importHelpers": true,
+    "lib": [
+      "es2017",
+      "dom"
+    ]
   },
   "include": [
     "**/*.ts"
