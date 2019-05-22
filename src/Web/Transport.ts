@@ -189,7 +189,7 @@ export class Transport extends TransportBase {
         this.ws = new WebSocket(this.server.wsUri, "sip");
       } catch (e) {
         this.ws = null;
-        this.status = TransportStatus.STATUS_CLOSED; // force status to closed in error case
+        this.statusTransition(TransportStatus.STATUS_CLOSED, true);
         this.onError("error connecting to WebSocket " + this.server.wsUri + ":" + e);
         reject("Failed to create a websocket");
         return;
@@ -276,7 +276,7 @@ export class Transport extends TransportBase {
       ws.close(1000);
       return;
     }
-    this.status = TransportStatus.STATUS_OPEN; // quietly force status to open
+    this.statusTransition(TransportStatus.STATUS_OPEN, true);
     this.emit("connected");
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
@@ -337,7 +337,7 @@ export class Transport extends TransportBase {
       return;
     }
 
-    this.status = TransportStatus.STATUS_CLOSED; // quietly force status to closed
+    this.statusTransition(TransportStatus.STATUS_CLOSED, true);
     this.emit("disconnected", {code: e.code, reason: e.reason});
     this.reconnect();
   }
@@ -383,7 +383,7 @@ export class Transport extends TransportBase {
     if (this.noAvailableServers()) {
       this.logger.warn("attempted to get next ws server but there are no available ws servers left");
       this.logger.warn("no available ws servers left - going to closed state");
-      this.status = TransportStatus.STATUS_CLOSED;
+      this.statusTransition(TransportStatus.STATUS_CLOSED, true);
       this.emit("closed");
       this.resetServerErrorStatus();
       return;
