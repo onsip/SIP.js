@@ -1,0 +1,13 @@
+import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
+import { SessionDialog } from "../dialogs";
+import { IncomingPrackRequest, IncomingRequestDelegate, OutgoingResponse, ResponseOptions } from "../messages";
+import { UserAgentServer } from "./user-agent-server";
+export declare class PrackUserAgentServer extends UserAgentServer implements IncomingPrackRequest {
+    private dialog;
+    constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
+    /**
+     * Update the dialog signaling state on a 2xx response.
+     * @param options Options bucket.
+     */
+    accept(options?: ResponseOptions): OutgoingResponse;
+}
