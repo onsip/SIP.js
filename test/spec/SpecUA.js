@@ -170,7 +170,7 @@ describe('UA', function() {
       expect(UA.registerContext.close).toHaveBeenCalled();
     });
 
-    it('terminates any active sessions', function () {
+    it('terminates any sessions', function () {
       var session = jasmine.createSpyObj('session', ['terminate']);
       UA.sessions[session] = session;
 
@@ -179,22 +179,13 @@ describe('UA', function() {
       expect(UA.sessions[session].terminate).toHaveBeenCalled();
     });
 
-    xit('closes any active subscriptions', function () {
-      var subscription = jasmine.createSpyObj('subscription', ['close']);
+    it('unsubscribes any subscriptions', function () {
+      var subscription = jasmine.createSpyObj('subscription', ['unsubscribe']);
       UA.subscriptions[subscription] = subscription;
 
       UA.stop();
 
-      expect(UA.subscriptions[subscription].close).toHaveBeenCalled();
-    });
-
-    xit('closes any early subscriptions', function () {
-      var subscription = jasmine.createSpyObj('subscription', ['close']);
-      UA.earlySubscriptions[subscription] = subscription;
-
-      UA.stop();
-
-      expect(UA.earlySubscriptions[subscription].close).toHaveBeenCalled();
+      expect(UA.subscriptions[subscription].unsubscribe).toHaveBeenCalled();
     });
 
     it('closes any publishers', function () {
@@ -215,34 +206,10 @@ describe('UA', function() {
       expect(UA.applicants[applicant].close).toHaveBeenCalled();
     });
 
-    xit('disconnects from the Web Socket if there are no non-invite transactions left', function () {
-      UA.transactions['nist'] = [];
-      UA.transactions['nict'] = [];
+    it('disconnects the transport', function () {
       UA.stop();
 
       expect(UA.transport.disconnect).toHaveBeenCalled();
-    });
-
-    xit('disconnects from the Web Socket if after transaction destroyed is emitted once there are no non-invite transactions left', function () {
-      spyOn(UA, 'removeListener');
-
-      //note: you can't explicitly set the *TransactionsCount properties of the UA, they are set by checking the length of the corresponding transactions array
-
-      UA.transactions['nict'] = ['one'];
-      UA.transactions['nist'] = ['one'];
-
-      UA.stop();
-
-      expect(UA.transport.disconnect).not.toHaveBeenCalled();
-
-      UA.transactions['nist'] = [];
-      UA.emit('transactionDestroyed');
-      expect(UA.transport.disconnect).not.toHaveBeenCalled();
-
-      UA.transactions['nict'] = [];
-      UA.emit('transactionDestroyed');
-      expect(UA.transport.disconnect).toHaveBeenCalled();
-      expect(UA.removeListener).toHaveBeenCalled();
     });
   });
 

@@ -150,6 +150,7 @@ export class UA extends EventEmitter {
   public status: UAStatus;
   public transport: Transport | undefined;
   public sessions: {[id: string]: InviteClientContext | InviteServerContext};
+  public subscriptions: {[id: string]: Subscription};
   public data: any;
   public logger: Logger;
 
@@ -174,6 +175,7 @@ export class UA extends EventEmitter {
 
     this.data = {};
     this.sessions = {};
+    this.subscriptions = {};
     this.publishers = {};
     this.status = UAStatus.STATUS_INIT;
 
@@ -204,25 +206,42 @@ export class UA extends EventEmitter {
 
       if (configuration.log.hasOwnProperty("level")) {
         const level = configuration.log.level;
-        // const normalized: Levels = typeof level === "string" ? Levels[level] : level;
         let normalized: Levels | undefined;
-        switch (level) {
-          case "error":
-            normalized = Levels.error;
-            break;
-          case "warn":
-            normalized = Levels.warn;
-            break;
-          case "log":
-            normalized = Levels.log;
-            break;
-          case "debug":
-            normalized = Levels.debug;
-            break;
-          default:
-            break;
+        if (typeof level === "string") {
+          switch (level) {
+            case "error":
+              normalized = Levels.error;
+              break;
+            case "warn":
+              normalized = Levels.warn;
+              break;
+            case "log":
+              normalized = Levels.log;
+              break;
+            case "debug":
+              normalized = Levels.debug;
+              break;
+            default:
+              break;
+          }
+        } else {
+          switch (level) {
+            case 0:
+              normalized = Levels.error;
+              break;
+            case 1:
+              normalized = Levels.warn;
+              break;
+            case 2:
+              normalized = Levels.log;
+              break;
+            case 3:
+              normalized = Levels.debug;
+              break;
+            default:
+              break;
+          }
         }
-
         // avoid setting level when invalid, use default level instead
         if (normalized === undefined) {
           this.logger.error(`Invalid "level" parameter value: ${JSON.stringify(level)}`);
@@ -422,7 +441,6 @@ export class UA extends EventEmitter {
 
   public subscribe(target: string | URI, event: string, options: any): Subscription {
     const sub: Subscription = new Subscription(this, target, event, options);
-
     if (this.transport) {
       this.transport.afterConnected(() => sub.subscribe());
     }
@@ -495,7 +513,7 @@ export class UA extends EventEmitter {
     this.logger.log("closing registerContext");
     this.registerContext.close();
 
-    // Run  _terminate_ on every Session
+    // Run terminate on every Session
     for (const session in this.sessions) {
       if (this.sessions[session]) {
         this.logger.log("closing session " + session);
@@ -503,7 +521,15 @@ export class UA extends EventEmitter {
       }
     }
 
-    // Run _close_ on every Publisher
+    // Run unsubscribe on every Subscription
+    for (const subscription in this.subscriptions) {
+      if (this.subscriptions[subscription]) {
+        this.logger.log("unsubscribe " + subscription);
+        this.subscriptions[subscription].unsubscribe();
+      }
+    }
+
+    // Run close on every Publisher
     for (const publisher in this.publishers) {
       if (this.publishers[publisher]) {
         this.logger.log("unpublish " + publisher);
@@ -511,7 +537,7 @@ export class UA extends EventEmitter {
       }
     }
 
-    // Run  _close_ on every applicant
+    // Run close on every applicant
     for (const applicant in this.applicants) {
       if (this.applicants[applicant]) {
         this.applicants[applicant].close();
@@ -519,6 +545,12 @@ export class UA extends EventEmitter {
     }
 
     this.status = UAStatus.STATUS_USER_CLOSED;
+
+    // Disconnect the transport and reset user agent core
+    if (this.transport) {
+      this.transport.disconnect();
+    }
+    this.userAgentCore.reset();
 
     if (typeof environment.removeEventListener === "function") {
       // Google Chrome Packaged Apps don't allow 'unload' listeners:

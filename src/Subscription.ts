@@ -59,6 +59,7 @@ export class Subscription extends EventEmitter implements ClientContext {
   public send!: () => this; // not used
 
   // Internals
+  private id: string;
   private context: SubscribeClientContext;
   private disposed: boolean;
   private event: string;
@@ -127,6 +128,10 @@ export class Subscription extends EventEmitter implements ClientContext {
     }
     this.localIdentity = this.request.from;
     this.remoteIdentity = this.request.to;
+
+    // Add to UA's collection
+    this.id = this.request.callId + this.request.from.parameters.tag + this.event;
+    this.ua.subscriptions[this.id] = this;
   }
 
   /**
@@ -142,6 +147,9 @@ export class Subscription extends EventEmitter implements ClientContext {
     }
     this.context.dispose();
     this.disposed = true;
+
+    // Remove from UA's collection
+    delete this.ua.subscriptions[this.id];
   }
 
   /**
