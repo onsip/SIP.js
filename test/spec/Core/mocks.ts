@@ -203,6 +203,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
     earlySubscriptions: {},
     getLogger: (category: string, label?: string) => log.getLogger(category, label),
     getLoggerFactory: () => log,
+    getSupportedResponseOptions: () => ["outbound"],
     logger: log.getLogger("sip.ua"),
     normalizeTarget: (target: string | URI): URI | undefined =>
       Utils.normalizeTarget(target, ua.configuration.hostportParams),

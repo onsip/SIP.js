@@ -1,7 +1,4 @@
-import {
-  getSupportedHeader,
-  IncomingRequest as IncomingRequestMessage
-} from "../../SIPMessage";
+import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { Utils } from "../../Utils";
 import { Body } from "./body";
 
@@ -26,6 +23,8 @@ export interface ResponseOptions {
   toTag?: string;
   /** User agent string for User-Agent header. */
   userAgent?: string;
+  /** Support options tags for Supported header. */
+  supported?: Array<string>;
   /** Extra headers to include in the message. */
   extraHeaders?: Array<string>;
   /** Body to include in the message. */
@@ -122,7 +121,10 @@ export function constructOutgoingResponse(
   // }
 
   // FIXME: TODO: needs review...
-  const supportedHeader = getSupportedHeader(message);
+  let supportedHeader = "";
+  if (options.supported) {
+    supportedHeader = "Supported: " + options.supported.join(", ") + CRLF;
+  }
 
   // FIXME: TODO: needs review...
   let userAgentHeader = "";

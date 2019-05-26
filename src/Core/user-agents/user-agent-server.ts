@@ -249,6 +249,7 @@ export class UserAgentServer implements IncomingRequest {
       options.toTag = this.toTag;
     }
     options.userAgent = options.userAgent || this.core.configuration.userAgentHeaderFieldValue;
+    options.supported = options.supported || this.core.configuration.supportedResponseOptions;
     const response = constructOutgoingResponse(this.message, options);
     this.transaction.receiveResponse(options.statusCode, response.message);
     return response;

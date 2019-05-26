@@ -240,7 +240,8 @@ export class UserAgentCore {
     options: ResponseOptions
   ): OutgoingResponse {
     const userAgent = this.configuration.userAgentHeaderFieldValue;
-    options = { ...options, userAgent };
+    const supported = this.configuration.supportedResponseOptions;
+    options = { ...options, userAgent, supported };
     const response = constructOutgoingResponse(message, options);
     this.transport.send(response.message);
     return response;

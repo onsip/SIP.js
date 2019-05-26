@@ -39,6 +39,10 @@ export interface UserAgentCoreConfiguration {
    */
   loggerFactory: LoggerFactory;
   /**
+   * Supported response options.
+   */
+  supportedResponseOptions: Array<string>;
+  /**
    * User-Agent header field value.
    * https://tools.ietf.org/html/rfc3261#section-20.41
    */
@@ -117,6 +121,7 @@ export function makeUserAgentCoreConfigurationFromUA(ua: UA): UserAgentCoreConfi
     aor: ua.configuration.uri,
     contact: ua.contact,
     loggerFactory: ua.getLoggerFactory(),
+    supportedResponseOptions: ua.getSupportedResponseOptions(),
     userAgentHeaderFieldValue: ua.configuration.userAgentString,
     authenticationFactory: () => {
       if (ua.configuration.authenticationFactory) {

@@ -7,39 +7,6 @@ import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
-export const getSupportedHeader: ((request: OutgoingRequest | IncomingRequest) => string) =  (request) => {
-  let optionTags: Array<string> = [];
-
-  if (request.method === C.REGISTER) {
-    optionTags.push("path", "gruu");
-  } else if (request.method === C.INVITE &&
-             (request.ua.contact.pubGruu || request.ua.contact.tempGruu)) {
-    optionTags.push("gruu");
-  }
-
-  if (request.ua.configuration.rel100 === C.supported.SUPPORTED) {
-    optionTags.push("100rel");
-  }
-  if (request.ua.configuration.replaces === C.supported.SUPPORTED) {
-    optionTags.push("replaces");
-  }
-
-  optionTags.push("outbound");
-
-  optionTags = optionTags.concat(request.ua.configuration.extraSupported || []);
-
-  const allowUnregistered: boolean = request.ua.configuration.hackAllowUnregisteredOptionTags || false;
-  const optionTagSet: {[name: string]: boolean} = {};
-  optionTags = optionTags.filter((optionTag: string) => {
-    const registered: string = (C.OPTION_TAGS as any)[optionTag];
-    const unique: boolean = !optionTagSet[optionTag];
-    optionTagSet[optionTag] = true;
-    return (registered || allowUnregistered) && unique;
-  });
-
-  return "Supported: " + optionTags.join(", ") + "\r\n";
-};
-
 /**
  * @class Class for outgoing SIP request.
  * @param {String} method request method
@@ -270,7 +237,7 @@ export class OutgoingRequest {
       msg += header.trim() + "\r\n";
     }
 
-    msg += getSupportedHeader(this);
+    msg += this.getSupportedHeader();
     msg += "User-Agent: " + this.ua.configuration.userAgentString + "\r\n";
 
     if (this.body) {
@@ -291,6 +258,39 @@ export class OutgoingRequest {
     }
 
     return msg;
+  }
+
+  private getSupportedHeader(): string {
+    let optionTags: Array<string> = [];
+
+    if (this.method === C.REGISTER) {
+      optionTags.push("path", "gruu");
+    } else if (this.method === C.INVITE &&
+               (this.ua.contact.pubGruu || this.ua.contact.tempGruu)) {
+      optionTags.push("gruu");
+    }
+
+    if (this.ua.configuration.rel100 === C.supported.SUPPORTED) {
+      optionTags.push("100rel");
+    }
+    if (this.ua.configuration.replaces === C.supported.SUPPORTED) {
+      optionTags.push("replaces");
+    }
+
+    optionTags.push("outbound");
+
+    optionTags = optionTags.concat(this.ua.configuration.extraSupported || []);
+
+    const allowUnregistered: boolean = this.ua.configuration.hackAllowUnregisteredOptionTags || false;
+    const optionTagSet: {[name: string]: boolean} = {};
+    optionTags = optionTags.filter((optionTag: string) => {
+      const registered: string = (C.OPTION_TAGS as any)[optionTag];
+      const unique: boolean = !optionTagSet[optionTag];
+      optionTagSet[optionTag] = true;
+      return (registered || allowUnregistered) && unique;
+    });
+
+    return "Supported: " + optionTags.join(", ") + "\r\n";
   }
 }
 

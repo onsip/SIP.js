@@ -629,6 +629,35 @@ export class UA extends EventEmitter {
     return this.log;
   }
 
+  public getSupportedResponseOptions(): Array<string> {
+    let optionTags: Array<string> = [];
+
+    if (this.contact.pubGruu || this.contact.tempGruu) {
+      optionTags.push("gruu");
+    }
+    if (this.configuration.rel100 === SIPConstants.supported.SUPPORTED) {
+      optionTags.push("100rel");
+    }
+    if (this.configuration.replaces === SIPConstants.supported.SUPPORTED) {
+      optionTags.push("replaces");
+    }
+
+    optionTags.push("outbound");
+
+    optionTags = optionTags.concat(this.configuration.extraSupported || []);
+
+    const allowUnregistered = this.configuration.hackAllowUnregisteredOptionTags || false;
+    const optionTagSet: {[name: string]: boolean} = {};
+    optionTags = optionTags.filter((optionTag: string) => {
+      const registered = SIPConstants.OPTION_TAGS[optionTag];
+      const unique = !optionTagSet[optionTag];
+      optionTagSet[optionTag] = true;
+      return (registered || allowUnregistered) && unique;
+    });
+
+    return optionTags;
+  }
+
   /**
    * Get the session to which the request belongs to, if any.
    * @param {SIP.IncomingRequest} request.
