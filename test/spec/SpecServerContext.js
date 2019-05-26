@@ -41,7 +41,7 @@ describe('ServerContext', function() {
       'Content-Length: 10',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), ua);
+      ''].join('\r\n'), ua.getLogger("sip.parser"));
 
     incomingRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
     incomingRequest.message = request;

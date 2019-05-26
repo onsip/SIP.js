@@ -1269,7 +1269,7 @@ describe("UserAgentCore", () => {
           //
 
           // convert outgoing request to incoming request message
-          const incomingRequestMessage = Parser.parseMessage(request.message.toString(), uaBob);
+          const incomingRequestMessage = Parser.parseMessage(request.message.toString(), uaBob.getLogger("sip.parser"));
           if (!(incomingRequestMessage instanceof IncomingRequestMessage)) {
             throw new Error("Not instance of IncomingRequestMessage.");
           }
@@ -1280,7 +1280,8 @@ describe("UserAgentCore", () => {
           const outgoingResponse = constructOutgoingResponse(incomingRequestMessage, { statusCode, extraHeaders });
 
           // convert 200 OK outgoing response to an incoming response message
-          const incomingResponseMessage = Parser.parseMessage(outgoingResponse.message, uaAlice);
+          const incomingResponseMessage =
+            Parser.parseMessage(outgoingResponse.message, uaAlice.getLogger("sip.parser"));
           if (!(incomingResponseMessage instanceof IncomingResponseMessage)) {
             throw new Error("Not instance of IncomingResponseMessage.");
           }
@@ -1411,7 +1412,7 @@ describe("UserAgentCore", () => {
 
   describe("Alice handling Bad Requests", () => {
     const makeBadMessage = (): IncomingRequestMessage => {
-      const message = new IncomingRequestMessage(uaAlice);
+      const message = new IncomingRequestMessage();
       message.method = "INVITE";
       message.callId = "callid";
       message.cseq = 1;

@@ -21,7 +21,7 @@ export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: U
   transport.send.and.callFake((message: string) => {
     // console.log(`Sending to ${ua.configuration.displayName}...`);
     // console.log(message);
-    const incomingMessage = Parser.parseMessage(message, ua);
+    const incomingMessage = Parser.parseMessage(message, ua.getLogger("sip.parser"));
     Promise.resolve().then(() => {
       if (incomingMessage instanceof IncomingRequestMessage) {
         ua.userAgentCore.receiveIncomingRequestFromTransport(incomingMessage);
@@ -39,8 +39,8 @@ export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, u
     // console.log(`Sending to ${ua1.configuration.displayName} and ${ua2.configuration.displayName}...`);
     // console.log(message);
     // Fork into two copies of the message.
-    const incomingMessage1 = Parser.parseMessage(message, ua1);
-    const incomingMessage2 = Parser.parseMessage(message, ua2);
+    const incomingMessage1 = Parser.parseMessage(message, ua1.getLogger("sip.parser"));
+    const incomingMessage2 = Parser.parseMessage(message, ua2.getLogger("sip.parser"));
 
     const requestMatches = (incomingMessage: IncomingRequestMessage, ua: UA): boolean => {
       // FIXME: Configuration URI is a bad mix of tyes currently. It also needs to exist.

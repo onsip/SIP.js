@@ -53,24 +53,6 @@ export interface UserAgentCoreConfiguration {
    */
   authenticationFactory(): DigestAuthentication | undefined;
   /**
-   * DEPRECATED: This is a hack to get around `IncomingResponseMessage`
-   * requiring a `UA` for construction. Hopefully that will go away soon.
-   * Meanwhile, this method is here to avoid leaking `UA` further than it
-   * needs to be. Please remove this when no longer needed here.
-   *
-   * Returns a "fake" 408 (Request Timeout) response.
-   */
-  onRequestTimeoutResponseMessageFactory(): IncomingResponseMessage;
-  /**
-   * DEPRECATED: This is a hack to get around `IncomingResponseMessage`
-   * requiring a `UA` for construction. Hopefully that will go away soon.
-   * Meanwhile, this method is here to avoid leaking `UA` further than it
-   * needs to be. Please remove this when no longer needed here.
-   *
-   * Returns a "fake" 503 (Service Unavailable) response.
-   */
-  onTransportErrorResponseMessageFactory(): IncomingResponseMessage;
-  /**
    * DEPRECATED: This is a hack to get around `OutgoingRequestMessage`
    * requiring a `UA` for construction. Hopefully that will go away soon.
    * Meanwhile, this method is here to avoid leaking `UA` further than it
@@ -128,18 +110,6 @@ export function makeUserAgentCoreConfigurationFromUA(ua: UA): UserAgentCoreConfi
         return ua.configuration.authenticationFactory(ua);
       }
       return undefined;
-    },
-    onRequestTimeoutResponseMessageFactory: () => {
-      const message = new IncomingResponseMessage(ua);
-      message.statusCode = 408;
-      message.reasonPhrase = "Request Timeout";
-      return message;
-    },
-    onTransportErrorResponseMessageFactory: () => {
-      const message = new IncomingResponseMessage(ua);
-      message.statusCode = 503;
-      message.reasonPhrase = "Service Unavailable";
-      return message;
     },
     outgoingRequestMessageFactory: (
       method: string,

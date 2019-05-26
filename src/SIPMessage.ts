@@ -449,7 +449,7 @@ export class IncomingRequest extends IncomingMessage {
   public type: TypeStrings;
   public ruri: URI | undefined;
 
-  constructor(public ua: UA) {
+  constructor() {
     super();
     this.type = TypeStrings.IncomingRequest;
   }
@@ -464,7 +464,7 @@ export class IncomingResponse extends IncomingMessage {
   public statusCode: number | undefined;
   public reasonPhrase: string | undefined;
 
-  constructor(public ua: UA) {
+  constructor() {
     super();
     this.type = TypeStrings.IncomingResponse;
     this.headers = {};

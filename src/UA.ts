@@ -724,7 +724,7 @@ export class UA extends EventEmitter {
    * @param messageString The message.
    */
   private onTransportReceiveMsg(messageString: string): void {
-    const message = Parser.parseMessage(messageString, this);
+    const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
     if (!message) {
       this.logger.warn("UA failed to parse incoming SIP message - discarding.");
       return;

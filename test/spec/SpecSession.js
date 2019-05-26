@@ -40,7 +40,7 @@ describe('Session', function() {
       'Content-Length: 11',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), Session.ua);
+      ''].join('\r\n'), Session.ua.getLogger("sip.parser"));
       message.reply = () => { return; };
   });
 
@@ -525,7 +525,7 @@ describe('InviteServerContext', function() {
       'Content-Length: 11',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), ua);
+      ''].join('\r\n'), ua.getLogger("sip.parser"));
 
     request.transport = ua.transport
 
@@ -576,7 +576,7 @@ describe('InviteServerContext', function() {
       'Content-Length: 11',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), ua);
+      ''].join('\r\n'), ua.getLogger("sip.parser"));
     incomingInviteRequest.message = request;
 
     var ISC = new SIP.InviteServerContext(ua, incomingInviteRequest);
@@ -613,7 +613,7 @@ describe('InviteServerContext', function() {
       'Content-Length: 11',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), ua);
+      ''].join('\r\n'), ua.getLogger("sip.parser"));
     request.transport = ua.transport;
     incomingInviteRequest.message = request;
 
@@ -639,7 +639,7 @@ describe('InviteServerContext', function() {
       'Content-Length: 11',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), ua);
+      ''].join('\r\n'), ua.getLogger("sip.parser"));
     request.transport = ua.transport;
     incomingInviteRequest.message = request;
 
@@ -666,7 +666,7 @@ describe('InviteServerContext', function() {
       'Content-Length: 11',
       '',
       'a=sendrecv',
-      ''].join('\r\n'), ua);
+      ''].join('\r\n'), ua.getLogger("sip.parser"));
     spyOn(fakereq, 'reply');
     fakereq.transport = ua.transport;
 
@@ -861,7 +861,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), ua);
+          ''].join('\r\n'), ua.getLogger("sip.parser"));
 
         spyOn(InviteServerContext, 'canceled');
         spyOn(InviteServerContext, 'failed');
@@ -939,7 +939,7 @@ describe('InviteServerContext', function() {
           'User-Agent: SIP.js 0.5.0-devel',
           'Content-Length: 0',
           '',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
 
         InviteServerContext.status = 7;
 
@@ -974,7 +974,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
 
         InviteServerContext.onAck({ message: req });
 
@@ -1051,7 +1051,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingPrackRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
         incomingPrackRequest.message = req;
         incomingPrackRequest.accept.and.returnValue({ message: "accept" });
@@ -1094,7 +1094,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingPrackRequest.message = req;
 
         InviteServerContext.receiveRequest(incomingPrackRequest);
@@ -1155,7 +1155,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingByeRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
         incomingByeRequest.message = req;
         incomingByeRequest.accept.and.returnValue({ message: "accept" });
@@ -1197,7 +1197,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingReInviteRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
         incomingReInviteRequest.message = req;
         incomingReInviteRequest.accept.and.returnValue({ message: "accept" });
@@ -1236,7 +1236,7 @@ describe('InviteServerContext', function() {
           '',
           'Signal= 6',
           'Duration= 100',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingInfoRequest = jasmine.createSpyObj("request", ["accept", "progress", "redirect", "reject", "trying"]);
         incomingInfoRequest.message = req;
         incomingInfoRequest.accept.and.returnValue({ message: "accept" });
@@ -1271,7 +1271,7 @@ describe('InviteServerContext', function() {
           'Content-Length: 11',
           '',
           'a=sendrecv',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingInfoRequest.message = req;
 
         InviteServerContext.receiveRequest(incomingInfoRequest);
@@ -1302,7 +1302,7 @@ describe('InviteServerContext', function() {
           '',
           'Signal= 6',
           'Duration= 100',
-          ''].join('\r\n'), InviteServerContext.ua);
+          ''].join('\r\n'), InviteServerContext.ua.getLogger("sip.parser"));
         incomingInfoRequest.message = req;
 
         InviteServerContext.onInfo = function onInfo(request) {

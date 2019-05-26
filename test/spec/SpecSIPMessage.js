@@ -196,7 +196,6 @@ describe('SIPMessage', function() {
       expect(IncomingRequest.to).toBeUndefined();
       expect(IncomingRequest.toTag).toBeUndefined();
       expect(IncomingRequest.body).toBeUndefined();
-      expect(IncomingRequest.ua).toBeDefined();
       expect(IncomingRequest.ruri).toBeUndefined();
       expect(IncomingRequest.transport).toBeDefined();
       expect(IncomingRequest.serverTransaction).toBeUndefined();

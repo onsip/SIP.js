@@ -332,7 +332,9 @@ export class UserAgentClient implements OutgoingRequest {
    */
   private onRequestTimeout(): void {
     this.logger.warn("User agent client request timed out. Generating internal 408 Request Timeout.");
-    const message = this.core.configuration.onRequestTimeoutResponseMessageFactory();
+    const message = new IncomingResponseMessage();
+    message.statusCode = 408;
+    message.reasonPhrase = "Request Timeout";
     this.receiveResponse(message);
     return;
   }
@@ -352,7 +354,9 @@ export class UserAgentClient implements OutgoingRequest {
   private onTransportError(error: Exceptions.TransportError): void {
     this.logger.error(error.message);
     this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
-    const message = this.core.configuration.onTransportErrorResponseMessageFactory();
+    const message = new IncomingResponseMessage();
+    message.statusCode = 503;
+    message.reasonPhrase = "Service Unavailable";
     this.receiveResponse(message);
   }
 }

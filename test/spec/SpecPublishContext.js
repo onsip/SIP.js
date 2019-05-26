@@ -387,7 +387,7 @@ describe('PublishContext', function() {
         'SIP-ETag: 2SiNlejw',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -419,7 +419,7 @@ describe('PublishContext', function() {
         'SIP-ETag: 2SiNlejw',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -452,7 +452,7 @@ describe('PublishContext', function() {
         'SIP-ETag: 2SiNlejw',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -485,7 +485,7 @@ describe('PublishContext', function() {
         'SIP-ETag: TestETag',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
       Publish.receiveResponse(response);
 
       Publish.pubRequestBody = undefined;
@@ -517,7 +517,7 @@ describe('PublishContext', function() {
         'Supported: outbound',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -549,7 +549,7 @@ describe('PublishContext', function() {
         'Supported: outbound',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -584,7 +584,7 @@ describe('PublishContext', function() {
         'Supported: outbound',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -618,7 +618,7 @@ describe('PublishContext', function() {
         'Supported: outbound',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
@@ -651,7 +651,7 @@ describe('PublishContext', function() {
         'SIP-ETag: TestETag',
         'Content-Length: 0',
         '',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
 
       Publish.receiveResponse(response);
 
