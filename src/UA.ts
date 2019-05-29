@@ -917,7 +917,9 @@ export class UA extends EventEmitter {
       sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
 
       authenticationFactory: this.checkAuthenticationFactory((ua: UA) => {
-        return new DigestAuthentication(ua);
+        return new DigestAuthentication(
+          ua.getLoggerFactory(), this.configuration.authorizationUser, this.configuration.password
+        );
       }),
 
       allowLegacyNotifications: false,

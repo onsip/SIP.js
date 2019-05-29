@@ -1,9 +1,8 @@
 import MD5 from "crypto-js/md5";
 
 import { TypeStrings } from "./Enums";
-import { Logger } from "./LoggerFactory";
+import { Logger, LoggerFactory } from "./LoggerFactory";
 import { OutgoingRequest } from "./SIPMessage";
-import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
@@ -32,11 +31,11 @@ export class DigestAuthentication {
   private method: string | undefined;
   private uri: string | URI | undefined;
 
-  constructor(ua: UA) {
+  constructor(loggerFactory: LoggerFactory, username: string | undefined, password: string | undefined) {
     this.type = TypeStrings.DigestAuthentication;
-    this.logger = ua.getLogger("sipjs.digestauthentication");
-    this.username = ua.configuration.authorizationUser;
-    this.password = ua.configuration.password;
+    this.logger = loggerFactory.getLogger("sipjs.digestauthentication");
+    this.username = username;
+    this.password = password;
     this.nc = 0;
     this.ncHex = "00000000";
   }
