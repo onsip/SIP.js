@@ -3,12 +3,11 @@ import { Logger, LoggerFactory } from "../../LoggerFactory";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
-import { Utils } from "../../Utils";
 import {
   constructOutgoingResponse,
-  fromBodyLegacy,
   IncomingRequest,
   IncomingRequestDelegate,
+  newTag,
   OutgoingResponse,
   ResponseOptions
 } from "../messages";
@@ -51,7 +50,7 @@ export class UserAgentServer implements IncomingRequest {
     public delegate?: IncomingRequestDelegate
   ) {
     this.logger = this.loggerFactory.getLogger("sip.user-agent-server");
-    this.toTag = message.toTag ? message.toTag : Utils.newTag();
+    this.toTag = message.toTag ? message.toTag : newTag();
     this.init();
   }
 

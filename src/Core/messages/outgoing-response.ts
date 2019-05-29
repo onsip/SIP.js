@@ -1,5 +1,5 @@
+import { C } from "../../Constants";
 import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
-import { Utils } from "../../Utils";
 import { Body } from "./body";
 
 /**
@@ -44,12 +44,17 @@ export function constructOutgoingResponse(
 ): OutgoingResponse {
   const CRLF = "\r\n";
 
+  if (options.statusCode < 100 || options.statusCode > 699) {
+    throw new TypeError("Invalid statusCode: " + options.statusCode);
+  }
+  const reasonPhrase = options.reasonPhrase ? options.reasonPhrase : C.REASON_PHRASE[options.statusCode];
+
   // SIP responses are distinguished from requests by having a Status-Line
   // as their start-line.  A Status-Line consists of the protocol version
   // followed by a numeric Status-Code and its associated textual phrase,
   // with each element separated by a single SP character.
   // https://tools.ietf.org/html/rfc3261#section-7.2
-  let response = Utils.buildStatusLine(options.statusCode, options.reasonPhrase);
+  let response = "SIP/2.0 " + options.statusCode + " " + reasonPhrase + CRLF;
 
   // One largely non-method-specific guideline for the generation of
   // responses is that UASs SHOULD NOT issue a provisional response for a
@@ -106,7 +111,7 @@ export function constructOutgoingResponse(
       //    same request consistently.  For information on tag construction
       //    see Section 19.3.
       // https://tools.ietf.org/html/rfc3261#section-8.2.7
-      toTag = Utils.newTag(); // FIXME: Utils.newTag() currently generates random tags
+      toTag = newTag(); // FIXME: newTag() currently generates random tags
     }
     toHeader += ";tag=" + toTag;
   }
@@ -157,11 +162,28 @@ export function constructOutgoingResponse(
 
   if (options.body) {
     response += "Content-Type: " + options.body.contentType + CRLF;
-    response += "Content-Length: " + Utils.str_utf8_length(options.body.content) + CRLF + CRLF;
+    response += "Content-Length: " + str_utf8_length(options.body.content) + CRLF + CRLF;
     response += options.body.content;
   } else {
     response += "Content-Length: " + 0 + CRLF + CRLF;
   }
 
   return { message: response };
+}
+
+function createRandomToken(size: number, base: number = 32): string {
+  let token: string = "";
+  for (let i = 0; i < size; i++ ) {
+    const r: number = Math.floor(Math.random() * base);
+    token += r.toString(base);
+  }
+  return token;
+}
+
+export function newTag(): string {
+  return createRandomToken(10);
+}
+
+function str_utf8_length(str: string): number {
+  return encodeURIComponent(str).replace(/%[A-F\d]{2}/g, "U").length;
 }
