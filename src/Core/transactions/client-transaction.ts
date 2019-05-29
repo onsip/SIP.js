@@ -54,7 +54,9 @@ export abstract class ClientTransaction extends Transaction {
     // used to reach the next hop has been selected (which may involve the
     // usage of the procedures in [4]).
     // https://tools.ietf.org/html/rfc3261#section-8.1.1.7
-    _request.setViaHeader(this.id, transport);
+    // FIXME: Transport's server property is not typed (as of writing this).
+    const scheme = transport.server && transport.server.scheme ? transport.server.scheme : undefined;
+    _request.setViaHeader(this.id, scheme);
   }
 
   /** The outgoing request the transaction handling. */

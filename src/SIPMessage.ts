@@ -2,7 +2,6 @@ import { Body } from "./Core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { NameAddrHeader } from "./NameAddrHeader";
-import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
@@ -240,17 +239,9 @@ export class OutgoingRequest {
    * the client and the server.
    * https://tools.ietf.org/html/rfc3261#section-8.1.1.7
    * @param branchParameter The branch parameter.
-   * @param transport The transport.
+   * @param scheme The scheme.
    */
-  public setViaHeader(branch: string, transport: Transport): void {
-    // FIXME: Default scheme to "WSS"
-    // This should go away once transport is typed and we can be sure
-    // we are getting the something valid from there transport.
-    let scheme = "WSS";
-    // FIXME: Transport's server property is not typed (as of writing this).
-    if (transport.server && transport.server.scheme) {
-      scheme = transport.server.scheme;
-    }
+  public setViaHeader(branch: string, scheme: string = "WSS"): void {
     // FIXME: Hack
     if (this.options.hackViaTcp) {
       scheme = "TCP";
