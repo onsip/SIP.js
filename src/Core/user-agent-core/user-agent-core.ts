@@ -3,12 +3,14 @@ import { Logger, LoggerFactory } from "../../LoggerFactory";
 import {
   IncomingRequest as IncomingRequestMessage,
   IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
+  OutgoingRequest as OutgoingRequestMessage,
+  OutgoingRequestMessageOptions
 } from "../../SIPMessage";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import { Dialog } from ".././dialogs";
 import {
+  Body,
   constructOutgoingResponse,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
@@ -201,6 +203,67 @@ export class UserAgentCore {
     delegate?: OutgoingRequestDelegate
   ): OutgoingRequest {
     return new UserAgentClient(NonInviteClientTransaction, this, request, delegate);
+  }
+
+  /**
+   * Outgoing request message factory function.
+   * @param method Method.
+   * @param requestURI Request-URI.
+   * @param fromURI From URI.
+   * @param toURI To URI.
+   * @param options Request options.
+   * @param extraHeaders Extra headers to add.
+   * @param body Message body.
+   */
+  public makeOutgoingRequestMessage(
+    method: string,
+    requestURI: URI,
+    fromURI: URI,
+    toURI: URI,
+    options: OutgoingRequestMessageOptions,
+    extraHeaders?: Array<string>,
+    body?: Body
+  ): OutgoingRequestMessage {
+
+    // default values from user agent configuration
+    const callIdPrefix = this.configuration.sipjsId;
+    const forceRport = this.configuration.forceRport;
+    const fromDisplayName = this.configuration.displayName;
+    const hackViaTcp = this.configuration.hackViaTcp;
+    const optionTags = this.configuration.supportedOptionTags.slice();
+    if (method === C.REGISTER) {
+      optionTags.push("path", "gruu");
+    }
+    if (method === C.INVITE && (this.configuration.contact.pubGruu || this.configuration.contact.tempGruu)) {
+      optionTags.push("gruu");
+    }
+    const routeSet = this.configuration.routeSet;
+    const userAgentString = this.configuration.userAgentHeaderFieldValue;
+    const viaHost = this.configuration.viaHost;
+
+    // merge provided options with defaults
+    const requestOptions: OutgoingRequestMessageOptions = {
+      ...{
+        callIdPrefix,
+        forceRport,
+        fromDisplayName,
+        hackViaTcp,
+        optionTags,
+        routeSet,
+        userAgentString,
+        viaHost,
+      },
+      ...options
+    };
+
+    return new OutgoingRequestMessage(
+      method,
+      requestURI,
+      fromURI,
+      toURI,
+      requestOptions,
+      extraHeaders,
+      body);
   }
 
   /**

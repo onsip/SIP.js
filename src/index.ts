@@ -73,3 +73,6 @@ export {
   name,
   version
 };
+
+import * as Core from "./Core/index";
+export { Core };

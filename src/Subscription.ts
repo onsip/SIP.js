@@ -490,10 +490,12 @@ class SubscribeClientContext {
     extraHeaders.push("Expires: " + this.expires);
     extraHeaders.push("Contact: " + this.core.configuration.contact.toString());
 
-    const body = options && options.body ? toBodyObj(options.body) : undefined;
+    const body = options && options.body;
 
-    this.message = this.core.configuration.outgoingRequestMessageFactory(
+    this.message = core.makeOutgoingRequestMessage(
       C.SUBSCRIBE,
+      this.target,
+      this.core.configuration.aor,
       this.target,
       {},
       extraHeaders,

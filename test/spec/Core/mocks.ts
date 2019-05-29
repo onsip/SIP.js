@@ -187,6 +187,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
   const ua = {
     applicants: {},
     configuration: {
+      aor: new URI("sip", user, domain, undefined),
       displayName,
       noAnswerTimeout: 60000, // ms
       sipjsId: Utils.createRandomToken(5),

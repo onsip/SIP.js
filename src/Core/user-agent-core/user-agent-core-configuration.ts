@@ -1,12 +1,10 @@
+import { C } from "../../Constants";
 import { DigestAuthentication } from "../../DigestAuthentication";
 import { LoggerFactory } from "../../LoggerFactory";
-import {
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { Transport } from "../../Transport";
 import { UA } from "../../UA";
 import { URI } from "../../URI";
+import { Utils } from "../../Utils";
 
 /**
  * This is ported from UA.contact.
@@ -47,41 +45,20 @@ export interface UserAgentCoreConfiguration {
    * https://tools.ietf.org/html/rfc3261#section-20.41
    */
   userAgentHeaderFieldValue: string | undefined;
+
+  displayName: string;
+  forceRport: boolean;
+  hackViaTcp: boolean;
+  supportedOptionTags: Array<string>;
+  routeSet: Array<string>;
+  sipjsId: string;
+  viaHost: string;
+
   /**
    * DEPRECATED
    * Authentication factory function.
    */
   authenticationFactory(): DigestAuthentication | undefined;
-  /**
-   * DEPRECATED: This is a hack to get around `OutgoingRequestMessage`
-   * requiring a `UA` for construction. Hopefully that will go away soon.
-   * Meanwhile, this method is here to avoid leaking `UA` further than it
-   * needs to be. Please remove this when no longer needed here.
-   * It's simply a cover function for OutgoingRequestMessage constructor
-   *
-   * Outgoing request message factory function.
-   * @param method Method.
-   * @param ruri Request-URI.
-   * @param params Various parameters.
-   * @param extraHeaders Extra headers to add.
-   * @param body Message body.
-   */
-  outgoingRequestMessageFactory(
-    method: string,
-    ruri: string | URI,
-    params: {
-      callId?: string,
-      cseq?: number,
-      toTag?: string,
-      toUri?: URI,
-      fromDisplayName?: string,
-      fromTag?: string,
-      fromUri?: URI,
-      routeSet?: string[]
-    },
-    extraHeaders?: Array<string>,
-    body?: string | { body: string, contentType: string }
-  ): OutgoingRequestMessage;
   /**
    * DEPRECATED: This is a hack to get around `Transport`
    * requiring the `UA` to start for construction.
@@ -98,35 +75,56 @@ export function makeUserAgentCoreConfigurationFromUA(ua: UA): UserAgentCoreConfi
   if (!(ua.configuration.uri instanceof URI)) {
     throw new Error("Configuration URI not instance of URI.");
   }
+  const aor = ua.configuration.uri;
+  const contact = ua.contact;
+  const displayName = ua.configuration.displayName ? ua.configuration.displayName : "";
+  const forceRport = ua.configuration.forceRport ? true : false;
+  const hackViaTcp = ua.configuration.hackViaTcp ? true : false;
+  const routeSet = ua.configuration.usePreloadedRoute && ua.transport ? [ua.transport.server.sipUri] : [];
+  const sipjsId = ua.configuration.sipjsId || Utils.createRandomToken(5);
+
+  let supportedOptionTags: Array<string> = [];
+  supportedOptionTags.push("outbound"); // TODO: is this really supported?
+  if (ua.configuration.rel100 === C.supported.SUPPORTED) {
+    supportedOptionTags.push("100rel");
+  }
+  if (ua.configuration.replaces === C.supported.SUPPORTED) {
+    supportedOptionTags.push("replaces");
+  }
+  if (ua.configuration.extraSupported) {
+    supportedOptionTags.push(...ua.configuration.extraSupported);
+  }
+  if (!ua.configuration.hackAllowUnregisteredOptionTags) {
+    supportedOptionTags = supportedOptionTags.filter((optionTag) => C.OPTION_TAGS[optionTag]);
+  }
+  supportedOptionTags = Array.from(new Set(supportedOptionTags)); // array of unique values
+
+  const userAgentHeaderFieldValue = ua.configuration.userAgentString || "sipjs";
+
+  if (!(ua.configuration.viaHost)) {
+    throw new Error("Configuration via host undefined");
+  }
+  const viaHost = ua.configuration.viaHost;
 
   const configuration: UserAgentCoreConfiguration = {
-    aor: ua.configuration.uri,
-    contact: ua.contact,
+    aor,
+    contact,
     loggerFactory: ua.getLoggerFactory(),
     supportedResponseOptions: ua.getSupportedResponseOptions(),
-    userAgentHeaderFieldValue: ua.configuration.userAgentString,
+    userAgentHeaderFieldValue,
+    displayName,
+    forceRport,
+    hackViaTcp,
+    supportedOptionTags,
+    routeSet,
+    sipjsId,
+    viaHost,
     authenticationFactory: () => {
       if (ua.configuration.authenticationFactory) {
         return ua.configuration.authenticationFactory(ua);
       }
       return undefined;
     },
-    outgoingRequestMessageFactory: (
-      method: string,
-      ruri: string | URI,
-      params: {
-        callId?: string,
-        cseq?: number,
-        toTag?: string,
-        toUri?: URI,
-        fromDisplayName?: string,
-        fromTag?: string,
-        fromUri?: URI,
-        routeSet?: string[]
-      },
-      extraHeaders?: Array<string>,
-      body?: string | { body: string, contentType: string }
-    ) => new OutgoingRequestMessage(method, ruri, ua, params, extraHeaders, body),
     transportAccessor: () => ua.transport
   };
 

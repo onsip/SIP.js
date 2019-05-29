@@ -101,22 +101,19 @@ export class UserAgentClient implements OutgoingRequest {
     // of CANCEL.  This allows it to be identified and processed as a
     // transaction in its own right (See Section 17).
     // https://tools.ietf.org/html/rfc3261#section-9.1
-    const message = new OutgoingRequestMessage(
+    const message = this.core.makeOutgoingRequestMessage(
       C.CANCEL,
       this.message.ruri,
-      this.message.ua,
+      this.message.from.uri,
+      this.message.to.uri,
       {
-        toUri: this.message.to.uri,
         toTag: this.message.toTag,
-        fromUri: this.message.from.uri,
         fromTag: this.message.fromTag,
         callId: this.message.callId,
         cseq: this.message.cseq
       },
       options.extraHeaders
     );
-    message.callId = this.message.callId;
-    message.cseq = this.message.cseq;
 
     // TODO: Revisit this.
     // The CANCEL needs to use the same branch parameter so that

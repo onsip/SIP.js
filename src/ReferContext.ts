@@ -13,10 +13,7 @@ import {
   InviteServerContext
 } from "./Session";
 import { SessionDescriptionHandlerModifiers } from "./session-description-handler";
-import {
-  IncomingResponse,
-  OutgoingRequest
-} from "./SIPMessage";
+import { IncomingResponse } from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
 
@@ -369,14 +366,20 @@ export class ReferServerContext extends ServerContext {
     }
   }
 
-  public sendNotify(body: string): void {
+  public sendNotify(bodyStr: string): void {
     // FIXME: Ported this. Clean it up. Session knows its state.
     if (this.status !== SessionStatus.STATUS_ANSWERED) {
       throw new Exceptions.InvalidStateError(this.status);
     }
-    if (Grammar.parse(body, "sipfrag") === -1) {
+    if (Grammar.parse(bodyStr, "sipfrag") === -1) {
       throw new Error("sipfrag body is required to send notify for refer");
     }
+
+    const body = {
+      contentDisposition: "render",
+      contentType: "message/sipfrag",
+      content: bodyStr
+    };
 
     // NOTIFY requests sent in same dialog as in dialog REFER.
     if (this.session) {
@@ -385,11 +388,7 @@ export class ReferServerContext extends ServerContext {
           "Event: refer",
           "Subscription-State: terminated",
         ],
-        body: {
-          contentDisposition: "render",
-          contentType: "message/sipfrag",
-          content: body
-        }
+        body
       });
       return;
     }
@@ -405,18 +404,17 @@ export class ReferServerContext extends ServerContext {
 
     // NOTIFY requests sent in new dialog for out of dialog REFER.
     // FIXME: TODO: This should be done in a subscribe dialog to satisfy the above.
-    const request = new OutgoingRequest(
+    const request = this.ua.userAgentCore.makeOutgoingRequestMessage(
       C.NOTIFY,
       this.remoteTarget,
-      this.ua,
+      this.fromUri,
+      this.toUri,
       {
-        cseq: this.cseq += 1,  // randomly generated then incremented on each additional notify
-        callId: this.callId, // refer callId
-        fromUri: this.fromUri,
-        fromTag: this.fromTag,
-        toUri: this.toUri,
-        toTag: this.toTag,
-        routeSet: this.routeSet
+      cseq: this.cseq += 1,  // randomly generated then incremented on each additional notify
+      callId: this.callId, // refer callId
+      fromTag: this.fromTag,
+      toTag: this.toTag,
+      routeSet: this.routeSet
       },
       [
         "Event: refer",

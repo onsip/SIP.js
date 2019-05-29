@@ -49,8 +49,6 @@ import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server";
 import { Dialog } from "./dialog";
 import { DialogState } from "./dialog-state";
 
-export type OutgoingResponseBody = Body;
-
 export class SessionDialog extends Dialog implements Session {
   public delegate: SessionDelegate | undefined;
 
@@ -657,7 +655,7 @@ export class SessionDialog extends Dialog implements Session {
    * @param message The message to base the update off of.
    */
   public signalingStateTransition(
-    message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | OutgoingResponseBody
+    message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body
   ) {
     const body = getBody(message);
 

@@ -49,7 +49,8 @@ import { DTMF } from "./Session/DTMF";
 import {
   IncomingRequest as IncomingRequestMessage,
   IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
+  OutgoingRequest as OutgoingRequestMessage,
+  OutgoingRequestMessageOptions
 } from "./SIPMessage";
 import { Timers } from "./Timers";
 import { UA } from "./UA";
@@ -1870,7 +1871,12 @@ export class InviteClientContext extends Session implements ClientContext {
       }
       if (this.inviteWithoutSdp) {
         // just send an invite with no sdp...
-        this.request.body = this.renderbody;
+        if (this.renderbody && this.rendertype) {
+          this.request.body = {
+            body: this.renderbody,
+            contentType: this.rendertype
+          };
+        }
         this.status = SessionStatus.STATUS_INVITE_SENT;
         this.send();
       } else {

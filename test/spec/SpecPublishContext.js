@@ -333,7 +333,6 @@ describe('PublishContext', function() {
 
       expect(Publish.request instanceof(SIP.OutgoingRequest)).toBeTruthy();
 
-      expect(Publish.request.ua).toBe(ua);
       expect(Publish.request.body.body).toBe('ExampleBody');
       expect(Publish.request.body.contentType).toBe('text/plain');
 
@@ -355,7 +354,6 @@ describe('PublishContext', function() {
 
       expect(Publish.request instanceof(SIP.OutgoingRequest)).toBeTruthy();
 
-      expect(Publish.request.ua).toBe(ua);
       expect(Publish.request.body).toBeUndefined();
 
       expect(Publish.request.extraHeaders).toEqual(jasmine.arrayContaining(['X-Foo: foo', 'X-Bar: bar', 'Event: presence', 'Expires: 180', 'SIP-If-Match: TestETag']));

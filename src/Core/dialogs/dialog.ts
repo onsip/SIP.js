@@ -502,10 +502,7 @@ export class Dialog {
     const routeSet = this.routeSet;
 
     const extraHeaders = options && options.extraHeaders;
-    const body =
-      options && options.body ?
-        { contentType: options.body.contentType, body: options.body.content } :
-        undefined;
+    const body = options && options.body;
 
     // The relative order of header fields with different field names is not
     // significant.  However, it is RECOMMENDED that header fields which are
@@ -513,15 +510,15 @@ export class Dialog {
     // Max-Forwards, and Proxy-Authorization, for example) appear towards
     // the top of the message to facilitate rapid parsing.
     // https://tools.ietf.org/html/rfc3261#section-7.3.1
-    const message = this.core.configuration.outgoingRequestMessageFactory(
+    const message = this.userAgentCore.makeOutgoingRequestMessage(
       method,
       ruri,
+      fromUri,
+      toUri,
       {
         callId,
         cseq,
-        fromUri,
         fromTag,
-        toUri,
         toTag,
         routeSet
       },

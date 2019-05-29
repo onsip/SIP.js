@@ -1,8 +1,10 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
+import { Body, fromBodyObj } from "./Core";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
+import { BodyObj } from "./session-description-handler";
+import { IncomingResponse } from "./SIPMessage";
 import { Transport } from "./Transport";
 import { UA } from "./UA";
 import { URI } from "./URI";
@@ -292,14 +294,32 @@ export class PublishContext extends ClientContext {
       reqOptions.extraHeaders.push("SIP-If-Match: " + this.pubRequestEtag);
     }
 
-    this.request = new OutgoingRequest(C.PUBLISH, this.target, this.ua, this.options.params, reqOptions.extraHeaders);
-
+    const ruri = this.target instanceof URI ? this.target : this.ua.normalizeTarget(this.target);
+    if (!ruri) {
+      throw new Error("ruri undefined.");
+    }
+    const params = this.options.params || {};
+    let bodyObj: BodyObj | undefined;
     if (this.pubRequestBody !== undefined) {
-      this.request.body = {
+      bodyObj = {
         body: this.pubRequestBody,
         contentType: this.options.contentType
       };
     }
+    let body: Body | undefined;
+    if (bodyObj) {
+      body = fromBodyObj(bodyObj);
+    }
+
+    this.request = this.ua.userAgentCore.makeOutgoingRequestMessage(
+      C.PUBLISH,
+      ruri,
+      params.fromUri ? params.fromUri : this.ua.userAgentCore.configuration.aor,
+      params.toUri ? params.toUri : this.target,
+      params,
+      reqOptions.extraHeaders,
+      body
+    );
 
     this.send();
   }

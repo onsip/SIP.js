@@ -23,6 +23,7 @@ import {
   OutgoingRequest
 } from "../../../src/SIPMessage";
 import { Transport } from "../../../src/Transport";
+import { URI } from "../../../src/URI";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use
 // the actual implementations, but the current implementations depend on UA
@@ -48,9 +49,12 @@ const makeMockIncomingResponse = (statusCode: number, toTag: string): jasmine.Sp
   return response;
 };
 
+type Mutable<T> = { -readonly [P in keyof T ]: T[P] };
+const defaultURI = new URI("sip", "john", "onsip.com");
+
 /** Mocked outgoing request factory function. */
-const makeMockOutgoingRequest = (ruri: string = "sip:john@onsip.com"): jasmine.SpyObj<OutgoingRequest> => {
-  const request = jasmine.createSpyObj<OutgoingRequest>("OutgoingRequest", [
+const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<OutgoingRequest> => {
+  const request = jasmine.createSpyObj<Mutable<OutgoingRequest>>("OutgoingRequest", [
     "callId",
     "cseq",
     "method",
@@ -74,7 +78,7 @@ const makeMockOutgoingRequest = (ruri: string = "sip:john@onsip.com"): jasmine.S
     request.headers.via = [branch];
   });
   request.headers = {};
-  return request;
+  return request as jasmine.SpyObj<OutgoingRequest>;
 };
 
 /** Mocked transaction user factory function. */
@@ -291,7 +295,7 @@ describe("Transactions", () => {
       };
 
       beforeEach(() => {
-        request = makeMockOutgoingRequest(ruri);
+        request = makeMockOutgoingRequest();
         transport = makeMockTransport();
         user = makeClientTransactionUser();
         transaction = new InviteClientTransaction(request, transport, user);

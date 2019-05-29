@@ -1,107 +1,152 @@
-import { C } from "./Constants";
+import { Body } from "./Core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { NameAddrHeader } from "./NameAddrHeader";
 import { Transport } from "./Transport";
-import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
+export interface OutgoingRequestMessageOptions {
+  callId?: string;
+  callIdPrefix?: string;
+  cseq?: number;
+  toDisplayName?: string;
+  toTag?: string;
+  fromDisplayName?: string;
+  fromTag?: string;
+  forceRport?: boolean;
+  hackViaTcp?: boolean;
+  optionTags?: Array<string>;
+  routeSet?: Array<string>;
+  userAgentString?: string;
+  viaHost?: string;
+}
+
 /**
- * @class Class for outgoing SIP request.
- * @param {String} method request method
- * @param {String} ruri request uri
- * @param {SIP.UA} ua
- * @param {Object} params parameters that will have priority over ua.configuration parameters:
- * <br>
- *  - cseq, callId, fromTag, fromUri, fromDisplayName, toUri, toTag, routeSet
- * @param {Object} [headers] extra headers
- * @param {String} [body]
+ * Outgoing SIP request.
  */
 export class OutgoingRequest {
-  public type: TypeStrings;
-  public ruri: string | URI;
-  public ua: UA;
-  public headers: {[name: string]: Array<string>};
-  public method: string;
-  public cseq: number;
-  public body: string | { body: string, contentType: string } | undefined;
+
+  /** Get a copy of the default options. */
+  private static getDefaultOptions(): Required<OutgoingRequestMessageOptions> {
+    return {
+      callId: "",
+      callIdPrefix: "",
+      cseq: 1,
+      toDisplayName: "",
+      toTag: "",
+      fromDisplayName: "",
+      fromTag: "",
+      forceRport: false,
+      hackViaTcp: false,
+      optionTags: ["outbound"],
+      routeSet: [],
+      userAgentString: "sip.js",
+      viaHost: ""
+    };
+  }
+
+  private static makeNameAddrHeader(uri: URI, displayName: string, tag: string): NameAddrHeader {
+    const parameters: {[name: string]: string} = {};
+    if (tag) {
+      parameters.tag = tag;
+    }
+    return new NameAddrHeader(uri, displayName, parameters);
+  }
+
+  // Deprecated
+  public type = TypeStrings.OutgoingRequest;
+  public readonly headers: {[name: string]: Array<string>} = {};
+
+  public readonly method: string;
+  public readonly ruri: URI;
+  public readonly from: NameAddrHeader;
+  public readonly fromTag: string;
+  public readonly fromURI: URI;
+  public readonly to: NameAddrHeader;
+  public readonly toTag: string | undefined;
+  public readonly toURI: URI;
   public branch: string | undefined;
-  public to: NameAddrHeader | undefined;
-  public toTag: string | undefined;
-  public from: NameAddrHeader | undefined;
-  public fromTag: string;
-  public extraHeaders: Array<string>;
-  public callId: string;
+  public readonly callId: string;
+  public cseq: number;
+  public extraHeaders: Array<string> = [];
+  public body: { body: string, contentType: string } | undefined;
+
+  private options: Required<OutgoingRequestMessageOptions> = OutgoingRequest.getDefaultOptions();
 
   constructor(
     method: string,
-    ruri: string | URI,
-    ua: UA,
-    params: any = {},
+    ruri: URI,
+    fromURI: URI,
+    toURI: URI,
+    options?: OutgoingRequestMessageOptions,
     extraHeaders?: Array<string>,
-    body?: string | { body: string, contentType: string }
+    body?: Body
   ) {
-    this.type = TypeStrings.OutgoingRequest;
-    this.ua = ua;
-    this.headers = {};
-    this.method = method;
-    this.ruri = ruri;
-    this.body = body;
-    this.extraHeaders = (extraHeaders || []).slice();
-
-    // Fill the Common SIP Request Headers
-
-    // Route
-    if (params.routeSet) {
-      this.setHeader("route", params.routeSet);
-    } else if (ua.configuration.usePreloadedRoute && ua.transport) {
-      this.setHeader("route", ua.transport.server.sipUri);
+    // Options - merge a deep copy
+    if (options) {
+      this.options = {
+        ...this.options,
+        ...options
+      };
+      if (this.options.optionTags && this.options.optionTags.length) {
+        this.options.optionTags = this.options.optionTags.slice();
+      }
+      if (this.options.routeSet && this.options.routeSet.length) {
+        this.options.routeSet = this.options.routeSet.slice();
+      }
     }
 
-    // Via
-    // Empty Via header. Will be filled by the client transaction.
-    this.setHeader("via", "");
+    // Extra headers - deep copy
+    if (extraHeaders && extraHeaders.length) {
+      this.extraHeaders = extraHeaders.slice();
+    }
 
-    // Max-Forwards
-    // is a constant on ua.c, removed for circular dependency
-    this.setHeader("max-forwards", "70");
+    // Body - deep copy
+    if (body) {
+      // TODO: internal representation should be Body
+      // this.body = { ...body };
+      this.body = {
+        body: body.content,
+        contentType: body.contentType
+      };
+    }
 
-    // To
-    const toUri: URI | string = params.toUri || ruri;
-    this.toTag = params.toTag;
-    let to: string = (params.toDisplayName || params.toDisplayName === 0) ? '"' + params.toDisplayName + '" ' : "";
-    to += "<" + ((toUri as URI).type === TypeStrings.URI ? (toUri as URI).toRaw() : toUri) + ">";
-    to += this.toTag ? ";tag=" + this.toTag : "";
+    // Method
+    this.method = method;
 
-    this.to = Grammar.nameAddrHeaderParse(to);
-    this.setHeader("to", to);
+    // RURI
+    this.ruri = ruri.clone();
 
     // From
-    const fromUri: URI | string = params.fromUri || ua.configuration.uri || "";
-    this.fromTag = params.fromTag || Utils.newTag();
-    let from: string;
-    if (params.fromDisplayName || params.fromDisplayName === 0) {
-      from = '"' + params.fromDisplayName + '" ';
-    } else if (ua.configuration.displayName) {
-      from = '"' + ua.configuration.displayName + '" ';
-    } else {
-      from = "";
-    }
-    from += "<" + ((fromUri as URI).type === TypeStrings.URI ? (fromUri as URI).toRaw() : fromUri) + ">;tag=";
-    from += this.fromTag;
+    this.fromURI = fromURI.clone();
+    this.fromTag = this.options.fromTag ? this.options.fromTag : Utils.newTag();
+    this.from = OutgoingRequest.makeNameAddrHeader(this.fromURI, this.options.fromDisplayName, this.fromTag);
 
-    this.from = Grammar.nameAddrHeaderParse(from);
-    this.setHeader("from", from);
+    // To
+    this.toURI = toURI.clone();
+    this.toTag = this.options.toTag;
+    this.to = OutgoingRequest.makeNameAddrHeader(this.toURI, this.options.toDisplayName, this.toTag);
 
     // Call-ID
-    this.callId = params.callId || (ua.configuration.sipjsId + Utils.createRandomToken(15));
-    this.setHeader("call-id", this.callId);
+    this.callId = this.options.callId ? this.options.callId : this.options.callIdPrefix + Utils.createRandomToken(15);
 
     // CSeq
-    // Why not make this a "1" if not provided? See: https://tools.ietf.org/html/rfc3261#section-8.1.1.5
-    this.cseq = params.cseq || Math.floor(Math.random() * 10000);
-    this.setHeader("cseq", this.cseq + " " + method);
+    this.cseq = this.options.cseq;
+
+    // The relative order of header fields with different field names is not
+    // significant.  However, it is RECOMMENDED that header fields which are
+    // needed for proxy processing (Via, Route, Record-Route, Proxy-Require,
+    // Max-Forwards, and Proxy-Authorization, for example) appear towards
+    // the top of the message to facilitate rapid parsing.
+    // https://tools.ietf.org/html/rfc3261#section-7.3.1
+    this.setHeader("route", this.options.routeSet);
+    this.setHeader("via", "");
+    this.setHeader("to", this.to.toString());
+    this.setHeader("from", this.from.toString());
+    this.setHeader("cseq", this.cseq + " " + this.method);
+    this.setHeader("call-id", this.callId);
+    this.setHeader("max-forwards", "70");
   }
 
   /**
@@ -207,12 +252,12 @@ export class OutgoingRequest {
       scheme = transport.server.scheme;
     }
     // FIXME: Hack
-    if (this.ua.configuration.hackViaTcp) {
+    if (this.options.hackViaTcp) {
       scheme = "TCP";
     }
     let via = "SIP/2.0/" + scheme;
-    via += " " + this.ua.configuration.viaHost + ";branch=" + branch;
-    if (this.ua.configuration.forceRport) {
+    via += " " + this.options.viaHost + ";branch=" + branch;
+    if (this.options.forceRport) {
       via += ";rport";
     }
     this.setHeader("via", via);
@@ -237,8 +282,8 @@ export class OutgoingRequest {
       msg += header.trim() + "\r\n";
     }
 
-    msg += this.getSupportedHeader();
-    msg += "User-Agent: " + this.ua.configuration.userAgentString + "\r\n";
+    msg += "Supported: " + this.options.optionTags.join(", ") + "\r\n";
+    msg += "User-Agent: " + this.options.userAgentString + "\r\n";
 
     if (this.body) {
       if (typeof this.body === "string") {
@@ -258,39 +303,6 @@ export class OutgoingRequest {
     }
 
     return msg;
-  }
-
-  private getSupportedHeader(): string {
-    let optionTags: Array<string> = [];
-
-    if (this.method === C.REGISTER) {
-      optionTags.push("path", "gruu");
-    } else if (this.method === C.INVITE &&
-               (this.ua.contact.pubGruu || this.ua.contact.tempGruu)) {
-      optionTags.push("gruu");
-    }
-
-    if (this.ua.configuration.rel100 === C.supported.SUPPORTED) {
-      optionTags.push("100rel");
-    }
-    if (this.ua.configuration.replaces === C.supported.SUPPORTED) {
-      optionTags.push("replaces");
-    }
-
-    optionTags.push("outbound");
-
-    optionTags = optionTags.concat(this.ua.configuration.extraSupported || []);
-
-    const allowUnregistered: boolean = this.ua.configuration.hackAllowUnregisteredOptionTags || false;
-    const optionTagSet: {[name: string]: boolean} = {};
-    optionTags = optionTags.filter((optionTag: string) => {
-      const registered: string = (C.OPTION_TAGS as any)[optionTag];
-      const unique: boolean = !optionTagSet[optionTag];
-      optionTagSet[optionTag] = true;
-      return (registered || allowUnregistered) && unique;
-    });
-
-    return "Supported: " + optionTags.join(", ") + "\r\n";
   }
 }
 

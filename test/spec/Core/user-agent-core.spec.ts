@@ -88,20 +88,28 @@ describe("UserAgentCore", () => {
   describe("Session Initiation", () => {
     describe("Alice sends Bob an INVITE and...", () => {
       let ruri: URI;
+      let from: URI;
+      let to: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
       let delegate: jasmine.SpyObj<Required<OutgoingRequestDelegate>>;
       let request: OutgoingInviteRequest;
 
       beforeEach(() => {
+        if (!(uaAlice.configuration.uri instanceof URI)) {
+          throw new Error("uri not instance of URI");
+        }
         ruri = new URI("sip", userBob, domainBob, undefined);
+        from = uaAlice.configuration.uri;
+        to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = new OutgoingRequestMessage(
+        message = coreAlice.makeOutgoingRequestMessage(
           C.INVITE,
           ruri,
-          uaAlice,
-          undefined,
+          from,
+          to,
+          {},
           extraHeaders
         );
         delegate = makeMockOutgoingRequestDelegate();
@@ -455,22 +463,30 @@ describe("UserAgentCore", () => {
 
     describe("Alice sends Bob an INVITE with Offer and...", () => {
       let ruri: URI;
+      let from: URI;
+      let to: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
       let delegate: jasmine.SpyObj<Required<OutgoingRequestDelegate>>;
       let request: OutgoingInviteRequest;
 
       beforeEach(() => {
+        if (!(uaAlice.configuration.uri instanceof URI)) {
+          throw new Error("uri not instance of URI");
+        }
         ruri = new URI("sip", userBob, domainBob, undefined);
+        from = uaAlice.configuration.uri;
+        to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = new OutgoingRequestMessage(
+        message = coreAlice.makeOutgoingRequestMessage(
           C.INVITE,
           ruri,
-          uaAlice,
-          undefined,
+          from,
+          to,
+          {},
           extraHeaders,
-          { body: "Offer", contentType: "application/sdp" }
+          { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
         );
         delegate = makeMockOutgoingRequestDelegate();
       });
@@ -657,20 +673,28 @@ describe("UserAgentCore", () => {
 
     describe("Alice sends Bob an INVITE without an Offer and...", () => {
       let ruri: URI;
+      let from: URI;
+      let to: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
       let delegate: jasmine.SpyObj<Required<OutgoingRequestDelegate>>;
       let request: OutgoingInviteRequest;
 
       beforeEach(() => {
+        if (!(uaAlice.configuration.uri instanceof URI)) {
+          throw new Error("uri not instance of URI");
+        }
         ruri = new URI("sip", userBob, domainBob, undefined);
+        from = uaAlice.configuration.uri;
+        to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = new OutgoingRequestMessage(
+        message = coreAlice.makeOutgoingRequestMessage(
           C.INVITE,
           ruri,
-          uaAlice,
-          undefined,
+          from,
+          to,
+          {},
           extraHeaders
         );
         delegate = makeMockOutgoingRequestDelegate();
@@ -1106,20 +1130,28 @@ describe("UserAgentCore", () => {
   describe("Sending a Message", () => {
     describe("Alice sends Bob an MESSAGE and...", () => {
       let ruri: URI;
+      let from: URI;
+      let to: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
       let delegate: jasmine.SpyObj<Required<OutgoingRequestDelegate>>;
       let request: OutgoingInviteRequest;
 
       beforeEach(() => {
+        if (!(uaAlice.configuration.uri instanceof URI)) {
+          throw new Error("uri not instance of URI");
+        }
         ruri = new URI("sip", userBob, domainBob, undefined);
+        from = uaAlice.configuration.uri;
+        to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = new OutgoingRequestMessage(
+        message = coreAlice.makeOutgoingRequestMessage(
           C.MESSAGE,
           ruri,
-          uaAlice,
-          undefined,
+          from,
+          to,
+          {},
           extraHeaders
         );
         delegate = makeMockOutgoingRequestDelegate();
@@ -1150,20 +1182,28 @@ describe("UserAgentCore", () => {
   describe("Sending a Publish", () => {
     describe("Alice sends Bob an PUBLISH and...", () => {
       let ruri: URI;
+      let from: URI;
+      let to: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
       let delegate: jasmine.SpyObj<Required<OutgoingRequestDelegate>>;
       let request: OutgoingPublishRequest;
 
       beforeEach(() => {
+        if (!(uaAlice.configuration.uri instanceof URI)) {
+          throw new Error("uri not instance of URI");
+        }
         ruri = new URI("sip", userBob, domainBob, undefined);
+        from = uaAlice.configuration.uri;
+        to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = new OutgoingRequestMessage(
+        message = coreAlice.makeOutgoingRequestMessage(
           C.PUBLISH,
           ruri,
-          uaAlice,
-          undefined,
+          from,
+          to,
+          {},
           extraHeaders
         );
         delegate = makeMockOutgoingRequestDelegate();
@@ -1194,24 +1234,32 @@ describe("UserAgentCore", () => {
   describe("Subscription Initiation", () => {
     describe("Alice sends a SUBSCRIBE", () => {
       let ruri: URI;
+      let from: URI;
+      let to: URI;
       let contact: string;
       let message: OutgoingRequestMessage;
       let delegate: jasmine.SpyObj<Required<OutgoingSubscribeRequestDelegate>>;
       let request: OutgoingSubscribeRequest;
 
       beforeEach(() => {
+        if (!(uaAlice.configuration.uri instanceof URI)) {
+          throw new Error("uri not instance of URI");
+        }
         ruri = new URI("sip", userBob, domainBob, undefined);
+        from = uaAlice.configuration.uri;
+        to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders: Array<string> = [];
         extraHeaders.push(`Event: foo`);
         extraHeaders.push(`Expires: 420`);
         extraHeaders.push(`Subscription-State: active`);
         extraHeaders.push(`Contact: ${contact}`);
-        message = new OutgoingRequestMessage(
+        message = coreAlice.makeOutgoingRequestMessage(
           C.SUBSCRIBE,
           ruri,
-          uaAlice,
-          undefined,
+          from,
+          to,
+          {},
           extraHeaders
         );
         delegate = makeMockOutgoingSubscribeRequestDelegate();
@@ -1288,17 +1336,23 @@ describe("UserAgentCore", () => {
           coreAlice.receiveIncomingResponseFromTransport(incomingResponseMessage);
 
           // Cobble together a NOTIFY and send it from Bob's core.
+          if (!(uaBob.configuration.uri instanceof URI)) {
+            throw new Error("uri not instance of URI");
+          }
           const ruriNotify = uaAlice.contact.uri;
+          const fromNotify = uaBob.configuration.uri;
+          const toNotify = ruriNotify;
           const extraHeadersNotify: Array<string> = [];
           extraHeadersNotify.push(`Event: foo`);
           extraHeadersNotify.push(`Expires: 420`);
           extraHeadersNotify.push(`Subscription-State: active`);
           extraHeadersNotify.push(`Contact: ${uaBob.contact.toString()}`);
 
-          const outgoingRequestMessage1 = new OutgoingRequestMessage(
+          const outgoingRequestMessage1 = coreBob.makeOutgoingRequestMessage(
             C.NOTIFY,
             ruriNotify,
-            uaBob,
+            fromNotify,
+            toNotify,
             {
               cseq: 1,
               callId: incomingResponseMessage.callId,
@@ -1331,16 +1385,22 @@ describe("UserAgentCore", () => {
 
           beforeEach((done) => {
             // Cobble together a NOTIFY and send it from Bob's core.
+            if (!(uaBob.configuration.uri instanceof URI)) {
+              throw new Error("uri not instance of URI");
+            }
             ruri = uaAlice.contact.uri;
+            const fromNotify = uaBob.configuration.uri;
+            const toNotify = ruri;
             const extraHeaders: Array<string> = [];
             extraHeaders.push(`Event: foo`);
             extraHeaders.push(`Expires: 420`);
             extraHeaders.push(`Subscription-State: active`);
             extraHeaders.push(`Contact: ${uaBob.contact.toString()}`);
-            outgoingRequestMessage2 = new OutgoingRequestMessage(
+            outgoingRequestMessage2 = coreBob.makeOutgoingRequestMessage(
               C.NOTIFY,
               ruri,
-              uaBob,
+              fromNotify,
+              toNotify,
               {
                 cseq: 2,
                 callId: subscriptionAliceMessage.callId,
@@ -1350,10 +1410,11 @@ describe("UserAgentCore", () => {
               extraHeaders,
               undefined
             );
-            outgoingRequestMessage3 = new OutgoingRequestMessage(
+            outgoingRequestMessage3 = coreBob.makeOutgoingRequestMessage(
               C.NOTIFY,
               ruri,
-              uaBob,
+              fromNotify,
+              toNotify,
               {
                 cseq: 3,
                 callId: subscriptionAliceMessage.callId,
