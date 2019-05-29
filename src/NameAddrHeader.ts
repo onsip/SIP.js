@@ -12,10 +12,10 @@ import { Parameters, URI } from "./URI";
 export class NameAddrHeader extends Parameters {
   public type: TypeStrings;
   public uri: URI;
-  // tslint:disable-next-line:variable-name
+
   private _displayName: string;
 
-  constructor(uri: URI, displayName: string, parameters: Array<{ key: string, value: string }>) {
+  constructor(uri: URI, displayName: string, parameters: {[name: string]: string}) {
     super(parameters);
     this.type = TypeStrings.NameAddrHeader;
     // Checks
