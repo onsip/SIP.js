@@ -227,8 +227,8 @@ export class UserAgentCore {
 
     // default values from user agent configuration
     const callIdPrefix = this.configuration.sipjsId;
-    const forceRport = this.configuration.forceRport;
     const fromDisplayName = this.configuration.displayName;
+    const forceRport = this.configuration.viaForceRport;
     const hackViaTcp = this.configuration.hackViaTcp;
     const optionTags = this.configuration.supportedOptionTags.slice();
     if (method === C.REGISTER) {
@@ -241,18 +241,20 @@ export class UserAgentCore {
     const userAgentString = this.configuration.userAgentHeaderFieldValue;
     const viaHost = this.configuration.viaHost;
 
-    // merge provided options with defaults
+    const defaultOptions: OutgoingRequestMessageOptions = {
+      callIdPrefix,
+      forceRport,
+      fromDisplayName,
+      hackViaTcp,
+      optionTags,
+      routeSet,
+      userAgentString,
+      viaHost,
+    };
+
+    // merge provided options with default options
     const requestOptions: OutgoingRequestMessageOptions = {
-      ...{
-        callIdPrefix,
-        forceRport,
-        fromDisplayName,
-        hackViaTcp,
-        optionTags,
-        routeSet,
-        userAgentString,
-        viaHost,
-      },
+      ...defaultOptions,
       ...options
     };
 
@@ -303,7 +305,7 @@ export class UserAgentCore {
     options: ResponseOptions
   ): OutgoingResponse {
     const userAgent = this.configuration.userAgentHeaderFieldValue;
-    const supported = this.configuration.supportedResponseOptions;
+    const supported = this.configuration.supportedOptionTagsResponse;
     options = { ...options, userAgent, supported };
     const response = constructOutgoingResponse(message, options);
     this.transport.send(response.message);

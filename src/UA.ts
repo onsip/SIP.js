@@ -10,8 +10,8 @@ import {
   IncomingSubscribeRequest
 } from "./Core/messages";
 import {
-  makeUserAgentCoreConfigurationFromUA,
   UserAgentCore,
+  UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "./Core/user-agent-core";
 import { DigestAuthentication } from "./DigestAuthentication";
@@ -1300,4 +1300,71 @@ export namespace UA {
     RTP = "rtp",
     INFO = "info"
   }
+}
+
+/**
+ * Factory function to generate configuration give a UA.
+ * @param ua UA
+ */
+export function makeUserAgentCoreConfigurationFromUA(ua: UA): UserAgentCoreConfiguration {
+  // FIXME: Configuration URI is a bad mix of types currently. It also needs to exist.
+  if (!(ua.configuration.uri instanceof URI)) {
+    throw new Error("Configuration URI not instance of URI.");
+  }
+  const aor = ua.configuration.uri;
+  const contact = ua.contact;
+  const displayName = ua.configuration.displayName ? ua.configuration.displayName : "";
+  const hackViaTcp = ua.configuration.hackViaTcp ? true : false;
+  const routeSet = ua.configuration.usePreloadedRoute && ua.transport ? [ua.transport.server.sipUri] : [];
+  const sipjsId = ua.configuration.sipjsId || Utils.createRandomToken(5);
+
+  let supportedOptionTags: Array<string> = [];
+  supportedOptionTags.push("outbound"); // TODO: is this really supported?
+  if (ua.configuration.rel100 === SIPConstants.supported.SUPPORTED) {
+    supportedOptionTags.push("100rel");
+  }
+  if (ua.configuration.replaces === SIPConstants.supported.SUPPORTED) {
+    supportedOptionTags.push("replaces");
+  }
+  if (ua.configuration.extraSupported) {
+    supportedOptionTags.push(...ua.configuration.extraSupported);
+  }
+  if (!ua.configuration.hackAllowUnregisteredOptionTags) {
+    supportedOptionTags = supportedOptionTags.filter((optionTag) => SIPConstants.OPTION_TAGS[optionTag]);
+  }
+  supportedOptionTags = Array.from(new Set(supportedOptionTags)); // array of unique values
+
+  const supportedOptionTagsResponse = ua.getSupportedResponseOptions();
+
+  const userAgentHeaderFieldValue = ua.configuration.userAgentString || "sipjs";
+
+  if (!(ua.configuration.viaHost)) {
+    throw new Error("Configuration via host undefined");
+  }
+  const viaForceRport = ua.configuration.forceRport ? true : false;
+  const viaHost = ua.configuration.viaHost;
+
+  const configuration: UserAgentCoreConfiguration = {
+    aor,
+    contact,
+    displayName,
+    hackViaTcp,
+    loggerFactory: ua.getLoggerFactory(),
+    routeSet,
+    sipjsId,
+    supportedOptionTags,
+    supportedOptionTagsResponse,
+    userAgentHeaderFieldValue,
+    viaForceRport,
+    viaHost,
+    authenticationFactory: () => {
+      if (ua.configuration.authenticationFactory) {
+        return ua.configuration.authenticationFactory(ua);
+      }
+      return undefined;
+    },
+    transportAccessor: () => ua.transport
+  };
+
+  return configuration;
 }

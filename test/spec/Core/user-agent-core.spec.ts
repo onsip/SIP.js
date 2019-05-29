@@ -22,7 +22,6 @@ import { Session, SessionDelegate, SignalingState } from "../../../src/Core/sess
 import { Subscription, SubscriptionDelegate } from "../../../src/Core/subscription";
 import { InviteClientTransaction } from "../../../src/Core/transactions";
 import {
-  makeUserAgentCoreConfigurationFromUA,
   UserAgentCore,
   UserAgentCoreConfiguration
 } from "../../../src/Core/user-agent-core";
@@ -36,7 +35,7 @@ import {
 } from "../../../src/SIPMessage";
 import { Timers } from "../../../src/Timers";
 import { Transport } from "../../../src/Transport";
-import { UA } from "../../../src/UA";
+import { makeUserAgentCoreConfigurationFromUA, UA } from "../../../src/UA";
 import { URI } from "../../../src/URI";
 
 import {

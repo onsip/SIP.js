@@ -57,7 +57,7 @@ const Transactions = {
 export { Transactions };
 
 export { Transport } from "./Transport";
-export { UA } from "./UA";
+export { makeUserAgentCoreConfigurationFromUA, UA } from "./UA";
 export { URI } from "./URI";
 export { Utils } from "./Utils";
 

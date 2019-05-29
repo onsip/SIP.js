@@ -29,7 +29,7 @@ describe('RegisterContext', function() {
       normalizeTarget: function (target) { return target; },
       listeners: function () { return [1]; }
     };
-    ua.userAgentCore = new SIP.Core.UserAgentCore(SIP.Core.makeUserAgentCoreConfigurationFromUA(ua));
+    ua.userAgentCore = new SIP.Core.UserAgentCore(SIP.makeUserAgentCoreConfigurationFromUA(ua));
     RegisterContext = new SIP.RegisterContext(ua, ua.configuration.registerOptions);
 
 
