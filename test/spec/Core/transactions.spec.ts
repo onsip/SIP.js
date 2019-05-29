@@ -74,7 +74,7 @@ const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<Outgoin
     }
     return `[${name}]`;
   });
-  request.setViaHeader.and.callFake((branch: string, transport: Transport) => {
+  request.setViaHeader.and.callFake((branch: string, scheme: string = "WSS") => {
     request.headers.via = [branch];
   });
   request.headers = {};
@@ -226,7 +226,7 @@ describe("Transactions", () => {
 
         it("has updated the Via header of its outgoing request with the branch parameter and transport", () => {
           expect(request.setViaHeader).toHaveBeenCalledTimes(1);
-          expect(request.setViaHeader).toHaveBeenCalledWith(transaction.id, transaction.transport);
+          expect(request.setViaHeader).toHaveBeenCalledWith(transaction.id, undefined);
         });
 
         it("has sent its outgoing request to the transport", () => {
