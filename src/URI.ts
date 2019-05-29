@@ -10,9 +10,9 @@ export interface URIObject {
 
 export class Parameters {
   public type: TypeStrings;
-  public parameters: {[name: string]: any} = {};
+  public parameters: {[name: string]: string} = {};
 
-  constructor(parameters: {[name: string]: any}) {
+  constructor(parameters: {[name: string]: string}) {
     this.type = TypeStrings.Parameters;
     for (const param in parameters) {
       if (parameters.hasOwnProperty(param)) {
