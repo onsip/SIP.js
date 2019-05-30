@@ -54,7 +54,7 @@ export interface Session {
    * @param delegate Request delegate.
    * @param options Options bucket.
    * @returns A promise which resolves when a 2xx response to the BYE is received.
-   * @throws {RequestFailedReason} If a non-2xx final response to the BYE is received.
+   * Throws `RequestFailedReason` if a non-2xx final response to the BYE is received.
    */
   bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingByeRequest;
 
@@ -65,7 +65,7 @@ export interface Session {
    * @param delegate Request delegate.
    * @param options Options bucket.
    * @returns A promise which resolves when a 2xx response to the BYE is received.
-   * @throws {RequestFailedReason} If a non-2xx final response to the BYE is received.
+   * Throws `RequestFailedReason` if a non-2xx final response to the BYE is received.
    */
   info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfoRequest;
 
@@ -76,8 +76,8 @@ export interface Session {
    * @param delegate Request delegate.
    * @param options Options bucket.
    * @returns A promise which resolves when a 2xx response to the INVITE is received.
-   * @throws {PendingRequestError} If there is a re-invite "pending".
-   * @throws {RequestFailedReason} If a non-2xx final response to the INVITE is received.
+   * Throws `PendingRequestError` if there is a re-invite "pending".
+   * Throws `RequestFailedReason` if a non-2xx final response to the INVITE is received.
    */
   invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
 
@@ -90,7 +90,7 @@ export interface Session {
    * @param delegate Request delegate.
    * @param options Options bucket.
    * @returns A promise which resolves when a 2xx response to the NOTIFY is received.
-   * @throws {RequestFailedReason} If a non-2xx final response to the NOTIFY is received.
+   * Throws `RequestFailedReason` if a non-2xx final response to the NOTIFY is received.
    */
   notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
 
@@ -101,7 +101,7 @@ export interface Session {
    * @param delegate Request delegate.
    * @param options Options bucket.
    * @returns A promise which resolves when a 2xx response to the PRACK is received.
-   * @throws {RequestFailedReason} If a non-2xx final response to the PRACK is received.
+   * Throws `RequestFailedReason` if a non-2xx final response to the PRACK is received.
    */
   prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
 
@@ -112,7 +112,7 @@ export interface Session {
    * @param delegate Request delegate.
    * @param options Options bucket.
    * @returns A promise which resolves when a 2xx response to the REFER is received.
-   * @throws {RequestFailedReason} If a non-2xx final response to the REFER is received.
+   * Throws `RequestFailedReason` if a non-2xx final response to the REFER is received.
    */
   refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest;
 }

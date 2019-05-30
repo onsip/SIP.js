@@ -84,7 +84,8 @@ export abstract class Transaction extends EventEmitter {
   /**
    * Pass message to transport for transmission. If transport fails,
    * the transaction user is notified by callback to onTransportError().
-   * @throws {TransportError} If transport fails.
+   * @returns
+   * Rejects with `TransportError` if transport fails.
    */
   protected send(message: string): Promise<void> {
     return this.transport.send(message).catch((error) => {

@@ -64,6 +64,7 @@ module.exports = function (env) {
           options: {
             compilerOptions: {
               "declaration": false,
+              "declarationMap": false,
               "outDir": mainDir + "/dist"
             }
           }

@@ -5,6 +5,8 @@ dist/sip*
 lib/*
 src/Grammar/dist/*
 src/**/*.js
+temp/
 test/spec/*.spec.js
+test/spec/api/*.js
 test/spec/core/*.js
 test/support/**/*.js

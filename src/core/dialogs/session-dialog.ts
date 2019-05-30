@@ -231,9 +231,10 @@ export class SessionDialog extends Dialog implements Session {
    * https://tools.ietf.org/html/rfc3261#section-15
    * FIXME: Make these proper Exceptions...
    * @param options BYE options bucket.
-   * @throws {Error} If callee's UA attempts a BYE on an early dialog.
-   * @throws {Error} If callee's UA attempts a BYE on a confirmed dialog
-   *                 while it's waiting on the ACK for its 2xx response.
+   * @returns
+   * Throws `Error` if callee's UA attempts a BYE on an early dialog.
+   * Throws `Error` if callee's UA attempts a BYE on a confirmed dialog
+   *                while it's waiting on the ACK for its 2xx response.
    */
   public bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingByeRequest {
     this.logger.log(`INVITE dialog ${this.id} sending BYE request`);

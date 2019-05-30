@@ -43,8 +43,8 @@ export interface Body {
 }
 
 /**
- * Create a Body given a BodyObj.
- * @param bodyObj Body Object
+ * Create a Body given a legacy body type.
+ * @param bodyLegacy Body Object
  */
 export function fromBodyLegacy(bodyLegacy: string | { body: string, contentType: string }): Body {
   const content = (typeof bodyLegacy === "string") ? bodyLegacy : bodyLegacy.body;
@@ -54,16 +54,13 @@ export function fromBodyLegacy(bodyLegacy: string | { body: string, contentType:
   return body;
 }
 
-/** Outgoing response body */
-export type OutgoingResponseBody = Body;
-
 /**
  * Given a message, get a normalized body.
  * The content disposition is inferred if not set.
  * @param message The message.
  */
 export function getBody(
-  message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | OutgoingResponseBody
+  message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body
 ): Body | undefined {
   let contentDisposition: string | undefined;
   let contentType: string | undefined;
