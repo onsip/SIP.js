@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { Body, fromBodyObj } from "./Core";
+import { Body } from "./Core";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
@@ -54,7 +54,7 @@ export class ClientContext extends EventEmitter {
     }
     let body: Body | undefined;
     if (bodyObj) {
-      body = fromBodyObj(bodyObj);
+      body = Utils.fromBodyObj(bodyObj);
     }
 
     // Build the request

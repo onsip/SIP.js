@@ -3,13 +3,11 @@ import { EventEmitter } from "events";
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import {
-  fromBodyObj,
   IncomingNotifyRequest,
   IncomingRequestWithSubscription,
   IncomingResponse,
   OutgoingSubscribeRequest,
-  RequestOptions,
-  toBodyObj
+  RequestOptions
 } from "./Core/messages";
 import { Subscription as SubscriptionCore, SubscriptionState } from "./Core/subscription";
 import { UserAgentCore } from "./Core/user-agent-core";
@@ -425,7 +423,7 @@ export class Subscription extends EventEmitter implements ClientContext {
   private initContext(): SubscribeClientContext {
     const options = {
       extraHeaders: this.extraHeaders,
-      body: this.body ? fromBodyObj(this.body) : undefined
+      body: this.body ? Utils.fromBodyObj(this.body) : undefined
     };
     this.context = new SubscribeClientContext(this.ua.userAgentCore, this.uri, this.event, this.expires, options);
     this.context.delegate = {

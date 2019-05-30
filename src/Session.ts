@@ -6,7 +6,6 @@ import {
   AckableIncomingResponseWithSession,
   Body,
   fromBodyLegacy,
-  fromBodyObj,
   getBody,
   IncomingAckRequest,
   IncomingInviteRequest,
@@ -266,7 +265,7 @@ export abstract class Session extends EventEmitter {
 
     // Convert any "body" option to a Body.
     if (options.body) {
-      options.body = fromBodyObj(options.body);
+      options.body = Utils.fromBodyObj(options.body);
     }
 
     // Convert any "receiveResponse" callback option passed to an OutgoingRequestDelegate.
@@ -644,7 +643,7 @@ export abstract class Session extends EventEmitter {
         incomingRequest.accept({
           statusCode: 200,
           extraHeaders,
-          body: fromBodyObj(description)
+          body: Utils.fromBodyObj(description)
         });
         this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
         this.emit("reinviteAccepted", this);
@@ -767,7 +766,7 @@ export abstract class Session extends EventEmitter {
 
         const requestOptions: RequestOptions = {
           extraHeaders,
-          body: fromBodyObj(description)
+          body: Utils.fromBodyObj(description)
         };
 
         this.session.invite(delegate, requestOptions);
@@ -1675,7 +1674,7 @@ export class InviteServerContext extends Session implements ServerContext {
     const sdh = this.getSessionDescriptionHandler();
     return sdh
       .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-      .then((bodyObj) => fromBodyObj(bodyObj));
+      .then((bodyObj) => Utils.fromBodyObj(bodyObj));
   }
 
   private setAnswer(answer: Body, options: {
@@ -1704,7 +1703,7 @@ export class InviteServerContext extends Session implements ServerContext {
     return sdh
       .setDescription(offer.content, options.sessionDescriptionHandlerOptions, options.modifiers)
       .then(() => sdh.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers))
-      .then((bodyObj) => fromBodyObj(bodyObj));
+      .then((bodyObj) => Utils.fromBodyObj(bodyObj));
   }
 
   private getSessionDescriptionHandler(): SessionDescriptionHandler {

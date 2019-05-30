@@ -1,6 +1,6 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Body, fromBodyObj } from "./Core";
+import { Body } from "./Core";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { BodyObj } from "./session-description-handler";
@@ -308,7 +308,7 @@ export class PublishContext extends ClientContext {
     }
     let body: Body | undefined;
     if (bodyObj) {
-      body = fromBodyObj(bodyObj);
+      body = Utils.fromBodyObj(bodyObj);
     }
 
     this.request = this.ua.userAgentCore.makeOutgoingRequestMessage(

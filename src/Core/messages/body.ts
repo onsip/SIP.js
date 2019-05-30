@@ -1,4 +1,3 @@
-import { BodyObj } from "../../session-description-handler";
 import {
   IncomingRequest as IncomingRequestMessage,
   IncomingResponse as IncomingResponseMessage,
@@ -43,18 +42,6 @@ export interface Body {
    * https://tools.ietf.org/html/rfc3261#section-7.4
    */
   content: string;
-}
-
-/**
- * Create a Body given a BodyObj.
- * @param bodyObj Body Object
- */
-export function fromBodyObj(bodyObj: BodyObj): Body {
-  const content = bodyObj.body;
-  const contentType = bodyObj.contentType;
-  const contentDisposition = contentTypeToContentDisposition(contentType);
-  const body: Body = { contentDisposition, contentType, content };
-  return body;
 }
 
 /**
@@ -166,18 +153,6 @@ export function isBody(body: any): body is Body {
     typeof body.content === "string" &&
     typeof body.contentType === "string" &&
     body.contentDisposition === undefined ? true : typeof body.contentDisposition === "string";
-}
-
-/**
- * Create a BodyObj given a Body.
- * @param bodyObj Body Object
- */
-export function toBodyObj(body: Body): BodyObj {
-  const bodyObj: BodyObj = {
-    body: body.content,
-    contentType: body.contentType
-  };
-  return bodyObj;
 }
 
 // If the Content-Disposition header field is missing, bodies of
