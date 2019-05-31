@@ -49,6 +49,8 @@ import {
   makeMockUserAgentCoreDelegate
 } from "./mocks";
 
+import { soon } from "../../support/Utils";
+
 describe("UserAgentCore", () => {
   const userAlice = "alice";
   const userBob = "bob";
@@ -79,6 +81,7 @@ describe("UserAgentCore", () => {
     uaAlice.userAgentCore = coreAlice;
     uaBob.userAgentCore = coreBob;
   });
+
   afterEach(() => {
     coreAlice.dispose();
     coreBob.dispose();
@@ -349,11 +352,9 @@ describe("UserAgentCore", () => {
       });
 
       describe("Bob progresses and accepts, but Alice never sends an ACK", () => {
-        let TIMER_L_ORIGINAL: number;
 
-        beforeEach((done) => {
-          TIMER_L_ORIGINAL = Timers.TIMER_L;
-          Timers.TIMER_L = 2000; // Invite Server Transaction Accepted Timer
+        beforeEach(async () => {
+          jasmine.clock().install();
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
               // Automatically send 100 Trying to mirror current UA behavior
@@ -367,11 +368,13 @@ describe("UserAgentCore", () => {
           };
           request = coreAlice.invite(message);
           request.delegate = delegate;
-          setTimeout(() => done(), 4000); // transport calls are async, so give it some time
+          await soon(Timers.TIMER_L - 2); // transaction timeout waiting for ACK
+          await soon(1); // a tick to let the retranmissions get processed after the clock jump
+          await soon(100000); // and then send the BYE upon transaction timout
         });
 
         afterEach(() => {
-          Timers.TIMER_L = TIMER_L_ORIGINAL;
+          jasmine.clock().uninstall();
         });
 
         it("Alice's UAC sends an INVITE, then...", () => {
@@ -386,8 +389,8 @@ describe("UserAgentCore", () => {
           expect((delegate.onAccept.calls.mostRecent().args[0] as IncomingResponse).message.statusCode).toBe(200);
         });
 
-        it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (3x), times out, and sends BYE", () => {
-          expect(transportBob.send).toHaveBeenCalledTimes(6);
+        it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (11x), times out, and sends BYE", () => {
+          expect(transportBob.send).toHaveBeenCalledTimes(14);
           expect(transportBob.send.calls.all()[0].args[0])
             .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
           expect(transportBob.send.calls.all()[1].args[0])
@@ -398,18 +401,16 @@ describe("UserAgentCore", () => {
             .toMatch(new RegExp(`^SIP/2.0 200 OK`));
           expect(transportBob.send.calls.all()[4].args[0])
             .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[5].args[0])
+          expect(transportBob.send.calls.all()[13].args[0])
             .toMatch(new RegExp(`^BYE ${uaAlice.contact.uri.toString()} SIP/2.0`));
         });
       });
 
       describe("Bob progresses and accepts, but Alice never sends an ACK, Bob withholds BYE", () => {
-        let TIMER_L_ORIGINAL: number;
         let sessionDelegate: jasmine.SpyObj<Required<SessionDelegate>>;
 
-        beforeEach((done) => {
-          TIMER_L_ORIGINAL = Timers.TIMER_L;
-          Timers.TIMER_L = 2000; // Invite Server Transaction Accepted Timer
+        beforeEach(async () => {
+          jasmine.clock().install();
           sessionDelegate = makeMockSessionDelegate();
           coreBob.delegate = {
             onInvite: (incomingRequest: IncomingInviteRequest): void => {
@@ -424,11 +425,13 @@ describe("UserAgentCore", () => {
           };
           request = coreAlice.invite(message);
           request.delegate = delegate;
-          setTimeout(() => done(), 4000); // transport calls are async, so give it some time
+          await soon(Timers.TIMER_L - 2); // transaction timeout waiting for ACK
+          await soon(1); // a tick to let the retranmissions get processed after the clock jump
+          await soon(100000); // and then send the BYE upon transaction timout
         });
 
         afterEach(() => {
-          Timers.TIMER_L = TIMER_L_ORIGINAL;
+          jasmine.clock().uninstall();
         });
 
         it("Alice's UAC sends an INVITE, then...", () => {
@@ -443,8 +446,8 @@ describe("UserAgentCore", () => {
           expect((delegate.onAccept.calls.mostRecent().args[0] as IncomingResponse).message.statusCode).toBe(200);
         });
 
-        it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (3x), and times out", () => {
-          expect(transportBob.send).toHaveBeenCalledTimes(5);
+        it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (11x), and times out", () => {
+          expect(transportBob.send).toHaveBeenCalledTimes(13);
           expect(transportBob.send.calls.all()[0].args[0])
             .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
           expect(transportBob.send.calls.all()[1].args[0])
@@ -453,7 +456,7 @@ describe("UserAgentCore", () => {
             .toMatch(new RegExp(`^SIP/2.0 200 OK`));
           expect(transportBob.send.calls.all()[3].args[0])
             .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[4].args[0])
+          expect(transportBob.send.calls.all()[12].args[0])
             .toMatch(new RegExp(`^SIP/2.0 200 OK`));
           expect(sessionDelegate.onAckTimeout).toHaveBeenCalledTimes(1);
         });
