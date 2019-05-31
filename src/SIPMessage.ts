@@ -1,4 +1,4 @@
-import { Body } from "./Core";
+import { Body } from "./core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { NameAddrHeader } from "./NameAddrHeader";

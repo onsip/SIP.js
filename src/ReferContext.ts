@@ -1,8 +1,8 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { IncomingRequest } from "./Core/messages";
-import { Session } from "./Core/session";
-import { NonInviteClientTransaction } from "./Core/transactions";
+import { IncomingRequest } from "./core/messages";
+import { Session } from "./core/session";
+import { NonInviteClientTransaction } from "./core/transactions";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";

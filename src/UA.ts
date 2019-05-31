@@ -8,12 +8,12 @@ import {
   IncomingNotifyRequest,
   IncomingReferRequest,
   IncomingSubscribeRequest
-} from "./Core/messages";
+} from "./core/messages";
 import {
   UserAgentCore,
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
-} from "./Core/user-agent-core";
+} from "./core/user-agent-core";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";

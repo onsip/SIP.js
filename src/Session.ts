@@ -20,12 +20,12 @@ import {
   OutgoingResponseWithSession,
   PrackableIncomingResponseWithSession,
   RequestOptions
-} from "./Core/messages";
-import { Session as SessionCore, SessionState, SignalingState } from "./Core/session";
+} from "./core/messages";
+import { Session as SessionCore, SessionState, SignalingState } from "./core/session";
 import {
   InviteServerTransaction,
   NonInviteServerTransaction
-} from "./Core/transactions";
+} from "./core/transactions";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exception, Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";

@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { Body } from "./Core";
+import { Body } from "./core";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";

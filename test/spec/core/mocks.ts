@@ -2,10 +2,10 @@ import {
   IncomingInviteRequest,
   OutgoingRequestDelegate,
   OutgoingSubscribeRequestDelegate
-} from "../../../src/Core/messages";
-import { SessionDelegate } from "../../../src/Core/session";
-import { SubscriptionDelegate } from "../../../src/Core/subscription";
-import { UserAgentCoreDelegate } from "../../../src/Core/user-agent-core";
+} from "../../../src/core/messages";
+import { SessionDelegate } from "../../../src/core/session";
+import { SubscriptionDelegate } from "../../../src/core/subscription";
+import { UserAgentCoreDelegate } from "../../../src/core/user-agent-core";
 import { LoggerFactory } from "../../../src/LoggerFactory";
 import { Parser } from "../../../src/Parser";
 import {

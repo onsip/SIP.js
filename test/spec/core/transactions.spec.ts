@@ -7,12 +7,12 @@ import {
   ServerTransaction,
   Transaction,
   TransactionState
-} from "../../../src/Core/transactions";
+} from "../../../src/core/transactions";
 import {
   ClientTransactionUser,
   ServerTransactionUser,
   TransactionUser
-} from "../../../src/Core/transactions";
+} from "../../../src/core/transactions";
 import {
   Levels,
   LoggerFactory

@@ -1,5 +1,5 @@
 import { C } from "./Constants";
-import { Body } from "./Core";
+import { Body } from "./core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { BodyObj, SessionDescriptionHandlerModifier } from "./session-description-handler";

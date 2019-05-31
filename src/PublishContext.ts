@@ -1,6 +1,6 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Body } from "./Core";
+import { Body } from "./core";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { BodyObj } from "./session-description-handler";

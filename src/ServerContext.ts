@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { fromBodyLegacy, IncomingRequest, ResponseOptions } from "./Core/messages";
+import { fromBodyLegacy, IncomingRequest, ResponseOptions } from "./core/messages";
 import {
   InviteServerTransaction,
   NonInviteServerTransaction
-} from "./Core/transactions";
+} from "./core/transactions";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { Logger } from "./LoggerFactory";

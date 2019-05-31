@@ -1,4 +1,4 @@
-import { SessionState, SignalingState } from "../../src/Core/session";
+import { SessionState, SignalingState } from "../../src/core/session";
 import { InviteClientContext, InviteServerContext } from "../../src/Session";
 import { Timers } from "../../src/Timers";
 import { URI } from "../../src/URI";

@@ -47,7 +47,7 @@ import {
   InviteServerTransaction,
   NonInviteClientTransaction,
   NonInviteServerTransaction
-} from "./Core/transactions";
+} from "./core/transactions";
 const Transactions = {
   InviteClientTransaction,
   InviteServerTransaction,
@@ -74,5 +74,5 @@ export {
   version
 };
 
-import * as Core from "./Core/index";
+import * as Core from "./core/index";
 export { Core };

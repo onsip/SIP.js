@@ -8,10 +8,10 @@ import {
   IncomingResponse,
   OutgoingSubscribeRequest,
   RequestOptions
-} from "./Core/messages";
-import { Subscription as SubscriptionCore, SubscriptionState } from "./Core/subscription";
-import { UserAgentCore } from "./Core/user-agent-core";
-import { AllowedMethods } from "./Core/user-agent-core/allowed-methods";
+} from "./core/messages";
+import { Subscription as SubscriptionCore, SubscriptionState } from "./core/subscription";
+import { UserAgentCore } from "./core/user-agent-core";
+import { AllowedMethods } from "./core/user-agent-core/allowed-methods";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
