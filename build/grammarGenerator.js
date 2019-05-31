@@ -49,7 +49,7 @@ const parser = pegjs.generate(grammarContents, {
     "Referred_By"
   ],
   output: "source",
-  // optimize: "size",
+  optimize: "size",
   plugins: [tspegjs],
   "tspegjs": {
     "tslintIgnores": "interface-name, trailing-comma, object-literal-sort-keys, max-line-length, only-arrow-functions, one-variable-per-declaration, no-consecutive-blank-lines, align, radix, quotemark, semicolon, object-literal-shorthand, variable-name, no-var-keyword, whitespace, curly, prefer-const, object-literal-key-quotes, no-string-literal, one-line, no-unused-expression, space-before-function-paren, arrow-return-shorthand",
