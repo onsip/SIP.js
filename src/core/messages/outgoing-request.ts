@@ -1,6 +1,6 @@
-import { OutgoingRequest as OutgoingRequestMessage } from "../../SIPMessage";
 import { Body } from "./body";
 import { IncomingResponse } from "./incoming-response";
+import { OutgoingRequestMessage } from "./outgoing-request-message";
 
 /**
  * A SIP message sent from a local client to a remote server,

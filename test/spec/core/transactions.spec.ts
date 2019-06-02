@@ -1,4 +1,9 @@
 import {
+  IncomingRequestMessage,
+  IncomingResponseMessage,
+  OutgoingRequestMessage
+} from "../../../src/core/messages";
+import {
   ClientTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
@@ -17,11 +22,6 @@ import {
   Levels,
   LoggerFactory
 } from "../../../src/LoggerFactory";
-import {
-  IncomingRequest,
-  IncomingResponse,
-  OutgoingRequest
-} from "../../../src/SIPMessage";
 import { Transport } from "../../../src/Transport";
 import { URI } from "../../../src/URI";
 
@@ -31,16 +31,17 @@ import { URI } from "../../../src/URI";
 // So perhaps in the future...
 
 /** Mocked incoming request factory function. */
-const makeMockIncomingRequest = (method: string): jasmine.SpyObj<IncomingRequest> => {
-  const request = jasmine.createSpyObj<IncomingRequest>("IncomingRequest", ["method", "viaBranch"]);
+const makeMockIncomingRequest = (method: string): jasmine.SpyObj<IncomingRequestMessage> => {
+  const request = jasmine.createSpyObj<IncomingRequestMessage>("IncomingRequest", ["method", "viaBranch"]);
   request.method = method;
   request.viaBranch = "z9hG4bK" + Math.floor(Math.random() * 10000000);
   return request;
 };
 
 /** Mocked incoming response factory function. */
-const makeMockIncomingResponse = (statusCode: number, toTag: string): jasmine.SpyObj<IncomingResponse> => {
-  const response = jasmine.createSpyObj<IncomingResponse>("IncomingResponse", ["statusCode", "toTag", "getHeader"]);
+const makeMockIncomingResponse = (statusCode: number, toTag: string): jasmine.SpyObj<IncomingResponseMessage> => {
+  const response =
+    jasmine.createSpyObj<IncomingResponseMessage>("IncomingResponse", ["statusCode", "toTag", "getHeader"]);
   response.statusCode = statusCode;
   response.toTag = toTag;
   response.getHeader.and.callFake((name: string) => {
@@ -53,8 +54,8 @@ type Mutable<T> = { -readonly [P in keyof T ]: T[P] };
 const defaultURI = new URI("sip", "john", "onsip.com");
 
 /** Mocked outgoing request factory function. */
-const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<OutgoingRequest> => {
-  const request = jasmine.createSpyObj<Mutable<OutgoingRequest>>("OutgoingRequest", [
+const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<OutgoingRequestMessage> => {
+  const request = jasmine.createSpyObj<Mutable<OutgoingRequestMessage>>("OutgoingRequest", [
     "callId",
     "cseq",
     "method",
@@ -78,7 +79,7 @@ const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<Outgoin
     request.headers.via = [branch];
   });
   request.headers = {};
-  return request as jasmine.SpyObj<OutgoingRequest>;
+  return request as jasmine.SpyObj<OutgoingRequestMessage>;
 };
 
 /** Mocked transaction user factory function. */
@@ -133,12 +134,12 @@ const makeMockTransport = (): jasmine.SpyObj<Transport> => {
 // Helper types for factory functions.
 type TransactionFactory = (transport: Transport, user: TransactionUser) => Transaction;
 type ClientTransactionFactory = (
-  request: OutgoingRequest,
+  request: OutgoingRequestMessage,
   transport: Transport,
   user: ClientTransactionUser
 ) => ClientTransaction;
 type ServerTransactionFactory = (
-  request: IncomingRequest,
+  request: IncomingRequestMessage,
   transport: Transport,
   user: ServerTransactionUser
 ) => ServerTransaction;
@@ -203,7 +204,7 @@ describe("Transactions", () => {
   describe("ClientTransactions", () => {
 
     const executeClientTransactionTests = (clientTransactionFactory: ClientTransactionFactory) => {
-      let request: jasmine.SpyObj<OutgoingRequest>;
+      let request: jasmine.SpyObj<OutgoingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ClientTransactionUser>>;
       let transaction: ClientTransaction;
@@ -259,7 +260,7 @@ describe("Transactions", () => {
 
     // https://tools.ietf.org/html/rfc3261#section-17.1.1
     describe("InviteClientTransaction", () => {
-      let request: jasmine.SpyObj<OutgoingRequest>;
+      let request: jasmine.SpyObj<OutgoingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ClientTransactionUser>>;
       let transaction: InviteClientTransaction;
@@ -270,7 +271,7 @@ describe("Transactions", () => {
       };
 
       const clientTransactionFactory: ClientTransactionFactory = (
-        r: OutgoingRequest,
+        r: OutgoingRequestMessage,
         t: Transport,
         u: ClientTransactionUser
       ) => {
@@ -316,7 +317,7 @@ describe("Transactions", () => {
         describe("upon a 1xx response in 'calling' state", () => {
           _1xxStatusCodesToTest.forEach((statusCode) => {
             describe(`a ${statusCode} for example`, () => {
-              let response: jasmine.SpyObj<IncomingResponse>;
+              let response: jasmine.SpyObj<IncomingResponseMessage>;
 
               beforeEach(() => {
                 response = makeMockIncomingResponse(statusCode, statusCode === 100 ? "" : "totag");
@@ -339,7 +340,7 @@ describe("Transactions", () => {
               describe("and then upon a 1xx while in 'proceeding' state", () => {
                 _1xxStatusCodesToTest.forEach((_statusCode) => {
                   describe(`a ${_statusCode} for example`, () => {
-                    let _response: jasmine.SpyObj<IncomingResponse>;
+                    let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                     beforeEach(() => {
                       _response = makeMockIncomingResponse(_statusCode, _statusCode === 100 ? "" : "totag");
@@ -364,7 +365,7 @@ describe("Transactions", () => {
               describe("and then upon a 2xx while in 'proceeding' state", () => {
                 _2xxStatusCodesToTest.forEach((_statusCode) => {
                   describe(`a ${_statusCode} for example`, () => {
-                    let _response: jasmine.SpyObj<IncomingResponse>;
+                    let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                     beforeEach(() => {
                       _response = makeMockIncomingResponse(_statusCode, "totag");
@@ -397,7 +398,7 @@ describe("Transactions", () => {
                   .concat(_6xxStatusCodesToTest)
                   .forEach((_statusCode) => {
                     describe(`a ${_statusCode} for example`, () => {
-                      let _response: jasmine.SpyObj<IncomingResponse>;
+                      let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                       beforeEach(() => {
                         _response = makeMockIncomingResponse(_statusCode, "");
@@ -425,7 +426,7 @@ describe("Transactions", () => {
         describe("upon receiving a 2xx response in 'calling' state", () => {
           _2xxStatusCodesToTest.forEach((statusCode) => {
             describe(`a ${statusCode} for example`, () => {
-              let response: jasmine.SpyObj<IncomingResponse>;
+              let response: jasmine.SpyObj<IncomingResponseMessage>;
 
               beforeEach(() => {
                 response = makeMockIncomingResponse(statusCode, "totag");
@@ -451,7 +452,7 @@ describe("Transactions", () => {
               describe("and then upon a 1xx while in 'accepted' state", () => {
                 _1xxStatusCodesToTest.forEach((_statusCode) => {
                   describe(`a ${_statusCode} for example`, () => {
-                    let _response: jasmine.SpyObj<IncomingResponse>;
+                    let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                     beforeEach(() => {
                       _response = makeMockIncomingResponse(_statusCode, _statusCode === 100 ? "" : "totag");
@@ -475,7 +476,7 @@ describe("Transactions", () => {
               describe("and then upon a 2xx while in 'accepted' state", () => {
                 _2xxStatusCodesToTest.forEach((_statusCode) => {
                   describe(`a ${_statusCode} for example`, () => {
-                    let _response: jasmine.SpyObj<IncomingResponse>;
+                    let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                     beforeEach(() => {
                       _response = makeMockIncomingResponse(_statusCode, "totag2");
@@ -504,7 +505,7 @@ describe("Transactions", () => {
               describe("and then upon a 2xx (retransmission) while in 'accepted' state", () => {
                 _2xxStatusCodesToTest.forEach((_statusCode) => {
                   describe(`a ${_statusCode} for example`, () => {
-                    let _response: jasmine.SpyObj<IncomingResponse>;
+                    let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                     beforeEach(() => {
                       _response = makeMockIncomingResponse(_statusCode, "totag");
@@ -542,7 +543,7 @@ describe("Transactions", () => {
                   .concat(_6xxStatusCodesToTest)
                   .forEach((_statusCode) => {
                     describe(`a ${_statusCode} for example`, () => {
-                      let _response: jasmine.SpyObj<IncomingResponse>;
+                      let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                       beforeEach(() => {
                         _response = makeMockIncomingResponse(_statusCode, "");
@@ -573,7 +574,7 @@ describe("Transactions", () => {
             .concat(_6xxStatusCodesToTest)
             .forEach((statusCode) => {
               describe(`a ${statusCode} for example`, () => {
-                let response: jasmine.SpyObj<IncomingResponse>;
+                let response: jasmine.SpyObj<IncomingResponseMessage>;
 
                 beforeEach(() => {
                   response = makeMockIncomingResponse(statusCode, "");
@@ -597,7 +598,7 @@ describe("Transactions", () => {
                 describe("and then upon a 1xx while in 'completed' state", () => {
                   _1xxStatusCodesToTest.forEach((_statusCode) => {
                     describe(`a ${_statusCode} for example`, () => {
-                      let _response: jasmine.SpyObj<IncomingResponse>;
+                      let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                       beforeEach(() => {
                         _response = makeMockIncomingResponse(_statusCode, _statusCode === 100 ? "" : "totag");
@@ -621,7 +622,7 @@ describe("Transactions", () => {
                 describe("and then upon a 2xx while in 'completed' state", () => {
                   _2xxStatusCodesToTest.forEach((_statusCode) => {
                     describe(`a ${_statusCode} for example`, () => {
-                      let _response: jasmine.SpyObj<IncomingResponse>;
+                      let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                       beforeEach(() => {
                         _response = makeMockIncomingResponse(_statusCode, "totag");
@@ -649,7 +650,7 @@ describe("Transactions", () => {
                     .concat(_6xxStatusCodesToTest)
                     .forEach((_statusCode) => {
                       describe(`a ${_statusCode} for example`, () => {
-                        let _response: jasmine.SpyObj<IncomingResponse>;
+                        let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                         beforeEach(() => {
                           _response = makeMockIncomingResponse(_statusCode, "");
@@ -678,7 +679,7 @@ describe("Transactions", () => {
 
     // https://tools.ietf.org/html/rfc3261#section-17.1.2
     describe("NonInviteClientTransaction", () => {
-      let request: jasmine.SpyObj<OutgoingRequest>;
+      let request: jasmine.SpyObj<OutgoingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ClientTransactionUser>>;
       let transaction: NonInviteClientTransaction;
@@ -689,7 +690,7 @@ describe("Transactions", () => {
       };
 
       const clientTransactionFactory: ClientTransactionFactory = (
-        r: OutgoingRequest,
+        r: OutgoingRequestMessage,
         t: Transport,
         u: ClientTransactionUser
       ) => {
@@ -720,7 +721,7 @@ describe("Transactions", () => {
         describe("upon a 1xx response in 'trying' state", () => {
           _1xxStatusCodesToTest.forEach((statusCode) => {
             describe(`a ${statusCode} for example`, () => {
-              let response: jasmine.SpyObj<IncomingResponse>;
+              let response: jasmine.SpyObj<IncomingResponseMessage>;
 
               beforeEach(() => {
                 response = makeMockIncomingResponse(statusCode, statusCode === 100 ? "" : "totag");
@@ -743,7 +744,7 @@ describe("Transactions", () => {
               describe("and then upon a 1xx while in 'proceeding' state", () => {
                 _1xxStatusCodesToTest.forEach((_statusCode) => {
                   describe(`a ${_statusCode} for example`, () => {
-                    let _response: jasmine.SpyObj<IncomingResponse>;
+                    let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                     beforeEach(() => {
                       _response = makeMockIncomingResponse(_statusCode, _statusCode === 100 ? "" : "totag");
@@ -773,7 +774,7 @@ describe("Transactions", () => {
                   .concat(_6xxStatusCodesToTest)
                   .forEach((_statusCode) => {
                     describe(`a ${_statusCode} for example`, () => {
-                      let _response: jasmine.SpyObj<IncomingResponse>;
+                      let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                       beforeEach(() => {
                         _response = makeMockIncomingResponse(_statusCode, "");
@@ -804,7 +805,7 @@ describe("Transactions", () => {
             .concat(_6xxStatusCodesToTest)
             .forEach((statusCode) => {
               describe(`a ${statusCode} for example`, () => {
-                let response: jasmine.SpyObj<IncomingResponse>;
+                let response: jasmine.SpyObj<IncomingResponseMessage>;
 
                 beforeEach(() => {
                   response = makeMockIncomingResponse(statusCode, "");
@@ -832,7 +833,7 @@ describe("Transactions", () => {
                     .concat(_6xxStatusCodesToTest)
                     .forEach((_statusCode) => {
                       describe(`a ${_statusCode} for example`, () => {
-                        let _response: jasmine.SpyObj<IncomingResponse>;
+                        let _response: jasmine.SpyObj<IncomingResponseMessage>;
 
                         beforeEach(() => {
                           _response = makeMockIncomingResponse(_statusCode, "");
@@ -861,7 +862,7 @@ describe("Transactions", () => {
   // https://tools.ietf.org/html/rfc3261#section-17.2
   describe("ServerTransactions", () => {
     const executeServerTransactionTests = (serverTransactionFactory: ServerTransactionFactory) => {
-      let request: jasmine.SpyObj<IncomingRequest>;
+      let request: jasmine.SpyObj<IncomingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ServerTransactionUser>>;
       let transaction: ServerTransaction;
@@ -890,7 +891,7 @@ describe("Transactions", () => {
 
     // https://tools.ietf.org/html/rfc3261#section-17.2.1
     describe("InviteServerTransaction", () => {
-      let request: jasmine.SpyObj<IncomingRequest>;
+      let request: jasmine.SpyObj<IncomingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ServerTransactionUser>>;
       let transaction: InviteServerTransaction;
@@ -901,7 +902,7 @@ describe("Transactions", () => {
       };
 
       const serverTransactionFactory: ServerTransactionFactory = (
-        r: IncomingRequest,
+        r: IncomingRequestMessage,
         t: Transport,
         u: ServerTransactionUser
       ) => {
@@ -1120,7 +1121,7 @@ describe("Transactions", () => {
 
                 // https://tools.ietf.org/html/rfc3261#section-17.2.1
                 describe("then receives an ACK from transport in 'completed' state", () => {
-                  let ack: jasmine.SpyObj<IncomingRequest>;
+                  let ack: jasmine.SpyObj<IncomingRequestMessage>;
 
                   beforeEach(() => {
                     ack = makeMockIncomingRequest("ACK");
@@ -1145,7 +1146,7 @@ describe("Transactions", () => {
 
     // https://tools.ietf.org/html/rfc3261#section-17.2.2
     describe("NonInviteServerTransaction", () => {
-      let request: jasmine.SpyObj<IncomingRequest>;
+      let request: jasmine.SpyObj<IncomingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ServerTransactionUser>>;
       let transaction: NonInviteServerTransaction;
@@ -1156,7 +1157,7 @@ describe("Transactions", () => {
       };
 
       const serverTransactionFactory: ServerTransactionFactory = (
-        r: IncomingRequest,
+        r: IncomingRequestMessage,
         t: Transport,
         u: ServerTransactionUser
       ) => {

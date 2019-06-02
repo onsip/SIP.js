@@ -1,12 +1,11 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { Body } from "./core";
+import { Body, IncomingResponseMessage, OutgoingRequestMessage } from "./core";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
 import { BodyObj } from "./session-description-handler";
-import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
@@ -84,7 +83,7 @@ export class ClientContext extends EventEmitter {
   // inheritance issue with InviteClientContext
   public ua!: UA;
   public logger!: Logger;
-  public request!: OutgoingRequest;
+  public request!: OutgoingRequestMessage;
   public method!: string;
   public body!: BodyObj | undefined;
   public localIdentity!: NameAddrHeader;
@@ -107,7 +106,7 @@ export class ClientContext extends EventEmitter {
     return this;
   }
 
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
     const cause: string = Utils.getReasonPhrase(statusCode);
 

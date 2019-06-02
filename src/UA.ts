@@ -7,6 +7,8 @@ import {
   IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingReferRequest,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
   IncomingSubscribeRequest
 } from "./core/messages";
 import {
@@ -33,7 +35,6 @@ import {
   SessionDescriptionHandlerFactory,
   SessionDescriptionHandlerFactoryOptions
 } from "./session-description-handler-factory";
-import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 import { Subscription } from "./Subscription";
 import { Transport } from "./Transport";
 import { URI } from "./URI";
@@ -268,7 +269,7 @@ export class UA extends EventEmitter {
     // https://tools.ietf.org/html/rfc3891#section-3
     const handleInviteWithReplacesHeader = (
       context: InviteServerContext,
-      request: IncomingRequest
+      request: IncomingRequestMessage
     ): void => {
       if (this.configuration.replaces !== SIPConstants.supported.UNSUPPORTED) {
         const replaces = request.parseHeader("replaces");
@@ -307,7 +308,7 @@ export class UA extends EventEmitter {
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         incomingInviteRequest.trying();
         incomingInviteRequest.delegate = {
-          onCancel: (cancel: IncomingRequest): void => {
+          onCancel: (cancel: IncomingRequestMessage): void => {
             context.onCancel(cancel);
           },
           onTransportError: (error: Exceptions.TransportError): void => {
@@ -663,7 +664,7 @@ export class UA extends EventEmitter {
    * @param {SIP.IncomingRequest} request.
    * @returns {SIP.OutgoingSession|SIP.IncomingSession|undefined}
    */
-  public findSession(request: IncomingRequest): InviteClientContext | InviteServerContext | undefined {
+  public findSession(request: IncomingRequestMessage): InviteClientContext | InviteServerContext | undefined {
     return this.sessions[request.callId + request.fromTag] ||
       this.sessions[request.callId + request.toTag] ||
       undefined;
@@ -730,7 +731,7 @@ export class UA extends EventEmitter {
       return;
     }
 
-    if (this.status === UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequest) {
+    if (this.status === UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
       this.logger.warn("UA received message when status = USER_CLOSED - aborting");
       return;
     }
@@ -752,7 +753,7 @@ export class UA extends EventEmitter {
     };
 
     // Request Checks
-    if (message instanceof IncomingRequest) {
+    if (message instanceof IncomingRequestMessage) {
       // This is port of SanityCheck.minimumHeaders().
       if (!hasMinimumHeaders()) {
         this.logger.warn(`Request missing mandatory header field. Dropping.`);
@@ -779,7 +780,7 @@ export class UA extends EventEmitter {
     }
 
     // Reponse Checks
-    if (message instanceof IncomingResponse) {
+    if (message instanceof IncomingResponseMessage) {
       // This is port of SanityCheck.minimumHeaders().
       if (!hasMinimumHeaders()) {
         this.logger.warn(`Response missing mandatory header field. Dropping.`);
@@ -813,13 +814,13 @@ export class UA extends EventEmitter {
     }
 
     // Handle Request
-    if (message instanceof IncomingRequest) {
+    if (message instanceof IncomingRequestMessage) {
       this.userAgentCore.receiveIncomingRequestFromTransport(message);
       return;
     }
 
     // Handle Response
-    if (message instanceof IncomingResponse) {
+    if (message instanceof IncomingResponseMessage) {
       this.userAgentCore.receiveIncomingResponseFromTransport(message);
       return;
     }

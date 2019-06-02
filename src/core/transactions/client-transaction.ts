@@ -1,9 +1,6 @@
-import {
-  IncomingResponse,
-  OutgoingRequest
-} from "../../SIPMessage";
 import { Transport } from "../../Transport";
 
+import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
 import { Transaction } from "./transaction";
 import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
@@ -23,7 +20,7 @@ import { ClientTransactionUser } from "./transaction-user";
  * https://tools.ietf.org/html/rfc3261#section-17.1
  */
 export abstract class ClientTransaction extends Transaction {
-  private static makeId(request: OutgoingRequest): string {
+  private static makeId(request: OutgoingRequestMessage): string {
     if (request.method === "CANCEL") {
       if (!request.branch) {
         throw new Error("Outgoing CANCEL request without a branch.");
@@ -35,7 +32,7 @@ export abstract class ClientTransaction extends Transaction {
   }
 
   protected constructor(
-    private _request: OutgoingRequest,
+    private _request: OutgoingRequestMessage,
     transport: Transport,
     protected user: ClientTransactionUser,
     state: TransactionState,
@@ -60,7 +57,7 @@ export abstract class ClientTransaction extends Transaction {
   }
 
   /** The outgoing request the transaction handling. */
-  get request(): OutgoingRequest {
+  get request(): OutgoingRequestMessage {
     return this._request;
   }
 
@@ -69,7 +66,7 @@ export abstract class ClientTransaction extends Transaction {
    * Responses will be delivered to the transaction user as necessary.
    * @param response The incoming response.
    */
-  public abstract receiveResponse(response: IncomingResponse): void;
+  public abstract receiveResponse(response: IncomingResponseMessage): void;
 
   /**
    * A 408 to non-INVITE will always arrive too late to be useful ([3]),

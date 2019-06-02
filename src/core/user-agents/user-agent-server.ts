@@ -1,12 +1,12 @@
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import {
   constructOutgoingResponse,
   IncomingRequest,
   IncomingRequestDelegate,
+  IncomingRequestMessage,
   newTag,
   OutgoingResponse,
   ResponseOptions

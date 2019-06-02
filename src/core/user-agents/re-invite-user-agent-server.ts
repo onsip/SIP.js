@@ -1,8 +1,8 @@
-import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { SessionDialog } from "../dialogs";
 import {
   IncomingInviteRequest,
   IncomingRequestDelegate,
+  IncomingRequestMessage,
   OutgoingResponseWithSession,
   ResponseOptions
 } from "../messages";

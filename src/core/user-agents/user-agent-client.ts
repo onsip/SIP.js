@@ -1,14 +1,12 @@
 import { C } from "../../Constants";
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import {
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { Transport } from "../../Transport";
 import {
+  IncomingResponseMessage,
   OutgoingRequest,
   OutgoingRequestDelegate,
+  OutgoingRequestMessage,
   RequestOptions
 } from "../messages";
 import {

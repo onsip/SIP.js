@@ -1,11 +1,7 @@
 import { C } from "../../Constants";
-import {
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { SessionDialog } from "../dialogs";
 import {
-  Body,
+  IncomingResponseMessage,
   OutgoingAckRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,

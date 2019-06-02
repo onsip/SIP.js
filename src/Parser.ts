@@ -1,7 +1,7 @@
+import { IncomingRequestMessage, IncomingResponseMessage } from "./core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { Logger } from "./LoggerFactory";
-import { IncomingRequest, IncomingResponse } from "./SIPMessage";
 
 /**
  * Extract and parse every header of a SIP message.
@@ -44,7 +44,7 @@ export namespace Parser {
   }
 
   export function parseHeader(
-    message: IncomingRequest | IncomingResponse,
+    message: IncomingRequestMessage | IncomingResponseMessage,
     data: any,
     headerStart: number,
     headerEnd: number
@@ -190,7 +190,10 @@ export namespace Parser {
    * @param {Object} logger object.
    * @returns {SIP.IncomingRequest|SIP.IncomingResponse|undefined}
    */
-  export function parseMessage(data: string, logger: Logger): IncomingRequest | IncomingResponse | undefined {
+  export function parseMessage(
+    data: string,
+    logger: Logger
+  ): IncomingRequestMessage | IncomingResponseMessage | undefined {
     let headerStart: number = 0;
     let headerEnd: number = data.indexOf("\r\n");
 
@@ -202,17 +205,17 @@ export namespace Parser {
     // Parse first line. Check if it is a Request or a Reply.
     const firstLine: string = data.substring(0, headerEnd);
     const parsed: any = Grammar.parse(firstLine, "Request_Response");
-    let message: IncomingRequest | IncomingResponse;
+    let message: IncomingRequestMessage | IncomingResponseMessage;
 
     if (parsed === -1) {
       logger.warn('error parsing first line of SIP message: "' + firstLine + '"');
       return;
     } else if (!parsed.status_code) {
-      message = new IncomingRequest();
+      message = new IncomingRequestMessage();
       message.method = parsed.method;
       message.ruri = parsed.uri;
     } else {
-      message = new IncomingResponse();
+      message = new IncomingResponseMessage();
       message.statusCode = parsed.status_code;
       message.reasonPhrase = parsed.reason_phrase;
     }

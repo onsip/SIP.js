@@ -1,11 +1,8 @@
 import { Exceptions } from "../../Exceptions";
-import {
-  IncomingResponse,
-  OutgoingRequest
-} from "../../SIPMessage";
 import { Timers } from "../../Timers";
 import { Transport } from "../../Transport";
 
+import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
 import { ClientTransaction } from "./client-transaction";
 import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
@@ -29,7 +26,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * If key exists but value is undefined, a 2xx was received but the ACK not yet sent.
    * Otherwise, a 2xx was not (yet) received for this transaction.
    */
-  private ackRetransmissionCache: Map<string, OutgoingRequest | undefined> = new Map();
+  private ackRetransmissionCache: Map<string, OutgoingRequestMessage | undefined> = new Map();
 
   /**
    * Constructor.
@@ -42,7 +39,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * @param transport The transport.
    * @param user The transaction user.
    */
-  constructor(request: OutgoingRequest, transport: Transport, user: ClientTransactionUser) {
+  constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser) {
     super(
       request,
       transport,
@@ -109,7 +106,7 @@ export class InviteClientTransaction extends ClientTransaction {
    *
    * @param ack The outgoing ACK request.
    */
-  public ackResponse(ack: OutgoingRequest): void {
+  public ackResponse(ack: OutgoingRequestMessage): void {
     const toTag = ack.toTag;
     if (!toTag) {
       throw new Error("To tag undefined.");
@@ -128,7 +125,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * Handler for incoming responses from the transport which match this transaction.
    * @param response The incoming response.
    */
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode = response.statusCode;
     if (!statusCode || statusCode < 100 || statusCode > 699) {
       throw new Error(`Invalid status code ${statusCode}`);
@@ -322,7 +319,7 @@ export class InviteClientTransaction extends ClientTransaction {
     return "INVITE client transaction";
   }
 
-  private ack(response: IncomingResponse): void {
+  private ack(response: IncomingResponseMessage): void {
     // The ACK request constructed by the client transaction MUST contain
     // values for the Call-ID, From, and Request-URI that are equal to the
     // values of those header fields in the request passed to the transport

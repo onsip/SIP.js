@@ -1,15 +1,12 @@
 import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
 import { NameAddrHeader } from "../../NameAddrHeader";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { Timers } from "../../Timers";
 import {
   Body,
   getBody,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
   isBody,
   OutgoingAckRequest,
   OutgoingByeRequest,
@@ -20,6 +17,7 @@ import {
   OutgoingPrackRequest,
   OutgoingReferRequest,
   OutgoingRequestDelegate,
+  OutgoingRequestMessage,
   RequestOptions
 } from "../messages";
 import {

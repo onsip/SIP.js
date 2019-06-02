@@ -1,6 +1,6 @@
 import { C } from "../../Constants";
-import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { Body } from "./body";
+import { IncomingRequestMessage } from "./incoming-request-message";
 
 /**
  * A SIP message sent from a local server to a remote client,

@@ -1,5 +1,4 @@
-import { OutgoingRequest as OutgoingRequestMessage } from "../../SIPMessage";
-import { OutgoingCancelRequest, OutgoingRequestDelegate } from "../messages";
+import { OutgoingCancelRequest, OutgoingRequestDelegate, OutgoingRequestMessage } from "../messages";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";

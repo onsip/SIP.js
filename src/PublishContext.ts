@@ -1,10 +1,9 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Body } from "./core";
+import { Body, IncomingResponseMessage } from "./core";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { BodyObj } from "./session-description-handler";
-import { IncomingResponse } from "./SIPMessage";
 import { Transport } from "./Transport";
 import { UA } from "./UA";
 import { URI } from "./URI";
@@ -148,7 +147,7 @@ export class PublishContext extends ClientContext {
     this.emit("unpublished", undefined, C.causes.CONNECTION_ERROR);
   }
 
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
     const cause: string = Utils.getReasonPhrase(statusCode);
 

@@ -1,5 +1,7 @@
 import {
   IncomingInviteRequest,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
   OutgoingRequestDelegate,
   OutgoingSubscribeRequestDelegate
 } from "../../../src/core/messages";
@@ -8,10 +10,6 @@ import { SubscriptionDelegate } from "../../../src/core/subscription";
 import { UserAgentCoreDelegate } from "../../../src/core/user-agent-core";
 import { LoggerFactory } from "../../../src/LoggerFactory";
 import { Parser } from "../../../src/Parser";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-} from "../../../src/SIPMessage";
 import { Transport } from "../../../src/Transport";
 import { UA } from "../../../src/UA";
 import { URI } from "../../../src/URI";

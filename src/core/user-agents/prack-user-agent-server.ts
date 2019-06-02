@@ -1,6 +1,11 @@
-import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { SessionDialog } from "../dialogs";
-import { IncomingPrackRequest, IncomingRequestDelegate, OutgoingResponse, ResponseOptions} from "../messages";
+import {
+  IncomingPrackRequest,
+  IncomingRequestDelegate,
+  IncomingRequestMessage,
+  OutgoingResponse,
+  ResponseOptions
+} from "../messages";
 import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 

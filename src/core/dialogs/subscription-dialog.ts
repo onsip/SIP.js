@@ -1,12 +1,14 @@
 import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
 import { NameAddrHeader } from "../../NameAddrHeader";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { Timers } from "../../Timers";
-import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate, RequestOptions } from "../messages";
+import {
+  IncomingRequestMessage,
+  OutgoingRequestMessage,
+  OutgoingSubscribeRequest,
+  OutgoingSubscribeRequestDelegate,
+  RequestOptions
+} from "../messages";
 import { Subscription, SubscriptionDelegate, SubscriptionState } from "../subscription";
 import { AllowedMethods } from "../user-agent-core/allowed-methods";
 import { UserAgentCore } from "../user-agent-core/user-agent-core";

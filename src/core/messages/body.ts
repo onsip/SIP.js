@@ -1,8 +1,6 @@
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
+import { IncomingRequestMessage } from "./incoming-request-message";
+import { IncomingResponseMessage } from "./incoming-response-message";
+import { OutgoingRequestMessage } from "./outgoing-request-message";
 
 /**
  * SIP Message Body.

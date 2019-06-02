@@ -11,11 +11,14 @@ import {
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequest,
+  IncomingRequestMessage,
   IncomingResponse,
+  IncomingResponseMessage,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingRequest,
   OutgoingRequestDelegate,
+  OutgoingRequestMessage,
   OutgoingResponse,
   OutgoingResponseWithSession,
   PrackableIncomingResponseWithSession,
@@ -45,12 +48,6 @@ import {
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { DTMF } from "./Session/DTMF";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage,
-  OutgoingRequestMessageOptions
-} from "./SIPMessage";
 import { Timers } from "./Timers";
 import { UA } from "./UA";
 import { URI } from "./URI";

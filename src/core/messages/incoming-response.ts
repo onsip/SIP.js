@@ -1,4 +1,4 @@
-import { IncomingResponse as IncomingResponseMessage } from "../../SIPMessage";
+import {IncomingResponseMessage } from "./incoming-response-message";
 
 /**
  * A SIP message sent from a remote server to a local client,

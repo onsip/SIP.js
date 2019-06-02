@@ -1,6 +1,6 @@
 import { Exceptions } from "../../Exceptions";
 import { LoggerFactory } from "../../LoggerFactory";
-import { IncomingResponse } from "../../SIPMessage";
+import { IncomingResponseMessage } from "../messages";
 import { TransactionState } from "./transaction-state";
 
 // tslint:disable:no-empty-interface
@@ -66,7 +66,7 @@ export interface ClientTransactionUser extends TransactionUser {
    * Valid responses are passed up to the TU from the client transaction.
    * https://tools.ietf.org/html/rfc3261#section-17.1
    */
-  receiveResponse?: (response: IncomingResponse) => void;
+  receiveResponse?: (response: IncomingResponseMessage) => void;
 }
 
 /**

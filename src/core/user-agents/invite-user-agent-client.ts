@@ -1,13 +1,11 @@
-import {
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { Dialog, SessionDialog } from "../dialogs";
 import {
+  IncomingResponseMessage,
   OutgoingAckRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingPrackRequest,
+  OutgoingRequestMessage,
   RequestOptions
 } from "../messages";
 import { InviteClientTransaction } from "../transactions";

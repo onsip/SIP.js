@@ -1,11 +1,8 @@
 import { Exceptions } from "../../Exceptions";
-import {
-  IncomingResponse,
-  OutgoingRequest
-} from "../../SIPMessage";
 import { Timers } from "../../Timers";
 import { Transport } from "../../Transport";
 
+import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
 import { ClientTransaction } from "./client-transaction";
 import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
@@ -32,7 +29,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * @param transport The transport.
    * @param user The transaction user.
    */
-  constructor(request: OutgoingRequest, transport: Transport, user: ClientTransactionUser) {
+  constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser) {
     super(
       request,
       transport,
@@ -77,7 +74,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * Handler for incoming responses from the transport which match this transaction.
    * @param response The incoming response.
    */
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode = response.statusCode;
     if (!statusCode || statusCode < 100 || statusCode > 699) {
       throw new Error(`Invalid status code ${statusCode}`);

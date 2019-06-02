@@ -1,10 +1,11 @@
-import {
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { Timers } from "../../Timers";
 import { SubscriptionDialog } from "../dialogs/subscription-dialog";
-import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate } from "../messages";
+import {
+  IncomingResponseMessage,
+  OutgoingRequestMessage,
+  OutgoingSubscribeRequest,
+  OutgoingSubscribeRequestDelegate
+} from "../messages";
 import { SubscriptionState } from "../subscription";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";

@@ -1,8 +1,8 @@
 import MD5 from "crypto-js/md5";
 
+import { OutgoingRequestMessage } from "./core";
 import { TypeStrings } from "./Enums";
 import { Logger, LoggerFactory } from "./LoggerFactory";
-import { OutgoingRequest } from "./SIPMessage";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 
@@ -48,7 +48,7 @@ export class DigestAuthentication {
    * @param {SIP.OutgoingRequest} request
    * @param {Object} challenge
    */
-  public authenticate(request: OutgoingRequest, challenge: any, body?: string): boolean {
+  public authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean {
     // Inspect and validate the challenge.
 
     this.algorithm = challenge.algorithm;

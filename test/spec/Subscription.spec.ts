@@ -1,9 +1,9 @@
 import { C } from "../../src/Constants";
 import { Dialog, DialogState } from "../../src/core/dialogs";
+import { IncomingRequestMessage } from "../../src/core/messages";
 import { NonInviteClientTransaction } from "../../src/core/transactions";
 import { UserAgentCore } from "../../src/core/user-agent-core";
 import { ReSubscribeUserAgentServer, UserAgentClient } from "../../src/core/user-agents";
-import { IncomingRequest as IncomingRequestMessage } from "../../src/SIPMessage";
 import { Subscription } from "../../src/Subscription";
 import { Timers } from "../../src/Timers";
 import { URI } from "../../src/URI";

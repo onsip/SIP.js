@@ -1,10 +1,10 @@
 import { Exceptions } from "../../Exceptions";
-import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { URI } from "../../URI";
 import { Dialog, SessionDialog } from "../dialogs";
 import {
   IncomingInviteRequest,
   IncomingRequestDelegate,
+  IncomingRequestMessage,
   OutgoingResponse,
   OutgoingResponseWithSession,
   ResponseOptions

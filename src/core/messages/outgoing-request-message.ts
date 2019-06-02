@@ -1,10 +1,14 @@
-import { Body } from "./core";
-import { TypeStrings } from "./Enums";
-import { Grammar } from "./Grammar";
-import { NameAddrHeader } from "./NameAddrHeader";
-import { URI } from "./URI";
-import { Utils } from "./Utils";
+import { TypeStrings } from "../../Enums";
+import { NameAddrHeader } from "../../NameAddrHeader";
+import { URI } from "../../URI";
+import { Utils } from "../../Utils";
 
+import { Body } from "./body";
+
+/**
+ * Outgoing SIP request message options.
+ * @public
+ */
 export interface OutgoingRequestMessageOptions {
   callId?: string;
   callIdPrefix?: string;
@@ -22,9 +26,10 @@ export interface OutgoingRequestMessageOptions {
 }
 
 /**
- * Outgoing SIP request.
+ * Outgoing SIP request message.
+ * @public
  */
-export class OutgoingRequest {
+export class OutgoingRequestMessage {
 
   /** Get a copy of the default options. */
   private static getDefaultOptions(): Required<OutgoingRequestMessageOptions> {
@@ -71,7 +76,7 @@ export class OutgoingRequest {
   public extraHeaders: Array<string> = [];
   public body: { body: string, contentType: string } | undefined;
 
-  private options: Required<OutgoingRequestMessageOptions> = OutgoingRequest.getDefaultOptions();
+  private options: Required<OutgoingRequestMessageOptions> = OutgoingRequestMessage.getDefaultOptions();
 
   constructor(
     method: string,
@@ -120,12 +125,12 @@ export class OutgoingRequest {
     // From
     this.fromURI = fromURI.clone();
     this.fromTag = this.options.fromTag ? this.options.fromTag : Utils.newTag();
-    this.from = OutgoingRequest.makeNameAddrHeader(this.fromURI, this.options.fromDisplayName, this.fromTag);
+    this.from = OutgoingRequestMessage.makeNameAddrHeader(this.fromURI, this.options.fromDisplayName, this.fromTag);
 
     // To
     this.toURI = toURI.clone();
     this.toTag = this.options.toTag;
-    this.to = OutgoingRequest.makeNameAddrHeader(this.toURI, this.options.toDisplayName, this.toTag);
+    this.to = OutgoingRequestMessage.makeNameAddrHeader(this.toURI, this.options.toDisplayName, this.toTag);
 
     // Call-ID
     this.callId = this.options.callId ? this.options.callId : this.options.callIdPrefix + Utils.createRandomToken(15);
@@ -150,8 +155,8 @@ export class OutgoingRequest {
 
   /**
    * Get the value of the given header name at the given position.
-   * @param {String} name header name
-   * @returns {String|undefined} Returns the specified header, undefined if header doesn't exist.
+   * @param name - header name
+   * @returns Returns the specified header, undefined if header doesn't exist.
    */
   public getHeader(name: string): string | undefined {
     const header: Array<string> = this.headers[Utils.headerize(name)];
@@ -173,8 +178,8 @@ export class OutgoingRequest {
 
   /**
    * Get the header/s of the given name.
-   * @param {String} name header name
-   * @returns {Array} Array with all the headers of the specified name.
+   * @param name - header name
+   * @returns Array with all the headers of the specified name.
    */
   public getHeaders(name: string): Array<string> {
     const result: Array<string> = [];
@@ -197,8 +202,8 @@ export class OutgoingRequest {
 
   /**
    * Verify the existence of the given header.
-   * @param {String} name header name
-   * @returns {boolean} true if header with given name exists, false otherwise
+   * @param name - header name
+   * @returns true if header with given name exists, false otherwise
    */
   public hasHeader(name: string): boolean {
     if (this.headers[Utils.headerize(name)]) {
@@ -217,8 +222,8 @@ export class OutgoingRequest {
 
   /**
    * Replace the the given header by the given value.
-   * @param {String} name header name
-   * @param {String | Array} value header value
+   * @param name - header name
+   * @param value - header value
    */
   public setHeader(name: string, value: string | Array<string>): void {
     this.headers[Utils.headerize(name)] = (value instanceof Array) ? value : [value];
@@ -238,8 +243,8 @@ export class OutgoingRequest {
    * transaction created by that request.  This parameter is used by both
    * the client and the server.
    * https://tools.ietf.org/html/rfc3261#section-8.1.1.7
-   * @param branchParameter The branch parameter.
-   * @param scheme The scheme.
+   * @param branchParameter - The branch parameter.
+   * @param scheme - The scheme.
    */
   public setViaHeader(branch: string, scheme: string = "WSS"): void {
     // FIXME: Hack
@@ -294,182 +299,5 @@ export class OutgoingRequest {
     }
 
     return msg;
-  }
-}
-
-/**
- * @class Class for incoming SIP message.
- */
-// tslint:disable-next-line:max-classes-per-file
-export class IncomingMessage {
-  public type: TypeStrings = TypeStrings.IncomingMessage;
-  public viaBranch!: string;
-  public method!: string;
-  public body!: string;
-  public toTag!: string;
-  public to!: NameAddrHeader;
-  public fromTag!: string;
-  public from!: NameAddrHeader;
-  public callId!: string;
-  public cseq!: number;
-  public via!: {host: string, port: number};
-  public headers: {[name: string]: Array<{ parsed?: any, raw: string }>} = {};
-  public referTo: string | undefined;
-  public data!: string;
-
-  /**
-   * Insert a header of the given name and value into the last position of the
-   * header array.
-   * @param {String} name header name
-   * @param {String} value header value
-   */
-  public addHeader(name: string, value: string): void {
-    const header = { raw: value };
-    name = Utils.headerize(name);
-
-    if (this.headers[name]) {
-      this.headers[name].push(header);
-    } else {
-      this.headers[name] = [header];
-    }
-  }
-
-  /**
-   * Get the value of the given header name at the given position.
-   * @param {String} name header name
-   * @returns {String|undefined} Returns the specified header, undefined if header doesn't exist.
-   */
-  public getHeader(name: string): string | undefined {
-    const header = this.headers[Utils.headerize(name)];
-
-    if (header) {
-      if (header[0]) {
-        return header[0].raw;
-      }
-    } else {
-      return;
-    }
-  }
-
-  /**
-   * Get the header/s of the given name.
-   * @param {String} name header name
-   * @returns {Array} Array with all the headers of the specified name.
-   */
-  public getHeaders(name: string): Array<string> {
-    const header: Array<any> = this.headers[Utils.headerize(name)];
-    const result: Array<string> = [];
-
-    if (!header) {
-      return [];
-    }
-    for (const headerPart of header) {
-      result.push(headerPart.raw);
-    }
-    return result;
-  }
-
-  /**
-   * Verify the existence of the given header.
-   * @param {String} name header name
-   * @returns {boolean} true if header with given name exists, false otherwise
-   */
-  public hasHeader(name: string): boolean {
-    return !!this.headers[Utils.headerize(name)];
-  }
-
-  /**
-   * Parse the given header on the given index.
-   * @param {String} name header name
-   * @param {Number} [idx=0] header index
-   * @returns {Object|undefined} Parsed header object, undefined if the
-   *   header is not present or in case of a parsing error.
-   */
-  public parseHeader(name: string, idx: number = 0): any | undefined {
-    name = Utils.headerize(name);
-
-    if (!this.headers[name]) {
-      // this.logger.log("header '" + name + "' not present");
-      return;
-    } else if (idx >= this.headers[name].length) {
-      // this.logger.log("not so many '" + name + "' headers present");
-      return;
-    }
-
-    const header = this.headers[name][idx];
-    const value = header.raw;
-
-    if (header.parsed) {
-      return header.parsed;
-    }
-
-    // substitute '-' by '_' for grammar rule matching.
-    const parsed: string | -1 = Grammar.parse(value, name.replace(/-/g, "_"));
-
-    if (parsed === -1) {
-      this.headers[name].splice(idx, 1); // delete from headers
-      // this.logger.warn('error parsing "' + name + '" header field with value "' + value + '"');
-      return;
-    } else {
-      header.parsed = parsed;
-      return parsed;
-    }
-  }
-
-  /**
-   * Message Header attribute selector. Alias of parseHeader.
-   * @param {String} name header name
-   * @param {Number} [idx=0] header index
-   * @returns {Object|undefined} Parsed header object, undefined if the
-   *   header is not present or in case of a parsing error.
-   *
-   * @example
-   * message.s('via',3).port
-   */
-  public s(name: string, idx: number = 0): any | undefined {
-    return this.parseHeader(name, idx);
-  }
-
-  /**
-   * Replace the value of the given header by the value.
-   * @param {String} name header name
-   * @param {String} value header value
-   */
-  public setHeader(name: string, value: string): void {
-    this.headers[Utils.headerize(name)] = [{ raw: value }];
-  }
-
-  public toString(): string {
-    return this.data;
-  }
-}
-
-/**
- * @class Class for incoming SIP request.
- */
-// tslint:disable-next-line:max-classes-per-file
-export class IncomingRequest extends IncomingMessage {
-  public type: TypeStrings;
-  public ruri: URI | undefined;
-
-  constructor() {
-    super();
-    this.type = TypeStrings.IncomingRequest;
-  }
-}
-
-/**
- * @class Class for incoming SIP response.
- */
-// tslint:disable-next-line:max-classes-per-file
-export class IncomingResponse extends IncomingMessage {
-  public type: TypeStrings;
-  public statusCode: number | undefined;
-  public reasonPhrase: string | undefined;
-
-  constructor() {
-    super();
-    this.type = TypeStrings.IncomingResponse;
-    this.headers = {};
   }
 }

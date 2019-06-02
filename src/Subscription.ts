@@ -4,8 +4,11 @@ import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import {
   IncomingNotifyRequest,
+  IncomingRequestMessage,
   IncomingRequestWithSubscription,
   IncomingResponse,
+  IncomingResponseMessage,
+  OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   RequestOptions
 } from "./core/messages";
@@ -16,11 +19,6 @@ import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
 import { NameAddrHeader } from "./NameAddrHeader";
 import { BodyObj } from "./session-description-handler";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";

@@ -9,11 +9,14 @@ import {
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
+  IncomingRequestMessage,
   IncomingRequestWithSubscription,
   IncomingResponse,
+  IncomingResponseMessage,
   OutgoingInviteRequest,
   OutgoingPublishRequest,
   OutgoingRequestDelegate,
+  OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,
   PrackableIncomingResponseWithSession
@@ -28,11 +31,6 @@ import {
 import { InviteUserAgentClient } from "../../../src/core/user-agents";
 import { Exceptions } from "../../../src/Exceptions";
 import { Parser } from "../../../src/Parser";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../../src/SIPMessage";
 import { Timers } from "../../../src/Timers";
 import { Transport } from "../../../src/Transport";
 import { makeUserAgentCoreConfigurationFromUA, UA } from "../../../src/UA";

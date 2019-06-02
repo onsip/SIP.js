@@ -1,7 +1,5 @@
-import {
-  IncomingRequest as IncomingRequestMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../../SIPMessage";
+import { IncomingRequestMessage } from "../incoming-request-message";
+import { OutgoingRequestMessage } from "../outgoing-request-message";
 
 // Note: As a request with no response, ACK is a special case.
 

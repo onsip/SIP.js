@@ -1,7 +1,11 @@
 import { C } from "../../Constants";
-import { IncomingResponse as IncomingResponseMessage } from "../../SIPMessage";
 import { SubscriptionDialog } from "../dialogs";
-import { OutgoingRequestDelegate, OutgoingSubscribeRequest, RequestOptions } from "../messages";
+import {
+  IncomingResponseMessage,
+  OutgoingRequestDelegate,
+  OutgoingSubscribeRequest,
+  RequestOptions
+} from "../messages";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 

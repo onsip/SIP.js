@@ -1,12 +1,12 @@
 import { C } from "../../Constants";
 import { NameAddrHeader } from "../../NameAddrHeader";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "../../SIPMessage";
 import { URI } from "../../URI";
-import { Body } from "../messages";
+import {
+  Body,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
+  OutgoingRequestMessage
+} from "../messages";
 import { UserAgentCore } from "../user-agent-core";
 import { DialogState } from "./dialog-state";
 

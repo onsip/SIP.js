@@ -1,8 +1,8 @@
 import { Exceptions } from "../../Exceptions";
-import { IncomingRequest } from "../../SIPMessage";
 import { Timers } from "../../Timers";
 import { Transport } from "../../Transport";
 
+import { IncomingRequestMessage } from "../messages";
 import { ServerTransaction } from "./server-transaction";
 import { TransactionState } from "./transaction-state";
 import { ServerTransactionUser } from "./transaction-user";
@@ -24,7 +24,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * @param transport The transport.
    * @param user The transaction user.
    */
-  constructor(request: IncomingRequest, transport: Transport, user: ServerTransactionUser) {
+  constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
     super(
       request,
       transport,
@@ -54,7 +54,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * Receive requests from transport matching this transaction.
    * @param request Request matching this transaction.
    */
-  public receiveRequest(request: IncomingRequest): void {
+  public receiveRequest(request: IncomingRequestMessage): void {
     switch (this.state) {
       case TransactionState.Trying:
         // Once in the "Trying" state, any further request retransmissions are discarded.

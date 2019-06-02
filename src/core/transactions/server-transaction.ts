@@ -1,6 +1,6 @@
-import { IncomingRequest } from "../../SIPMessage";
 import { Transport } from "../../Transport";
 
+import { IncomingRequestMessage } from "../messages";
 import { Transaction } from "./transaction";
 import { TransactionState } from "./transaction-state";
 import { ServerTransactionUser } from "./transaction-user";
@@ -16,7 +16,7 @@ import { ServerTransactionUser } from "./transaction-user";
  */
 export abstract class ServerTransaction extends Transaction {
   protected constructor(
-    private _request: IncomingRequest,
+    private _request: IncomingRequestMessage,
     transport: Transport,
     protected user: ServerTransactionUser,
     state: TransactionState,
@@ -32,7 +32,7 @@ export abstract class ServerTransaction extends Transaction {
   }
 
   /** The incoming request the transaction handling. */
-  get request(): IncomingRequest {
+  get request(): IncomingRequestMessage {
     return this._request;
   }
 
@@ -40,7 +40,7 @@ export abstract class ServerTransaction extends Transaction {
    * Receive incoming requests from the transport which match this transaction.
    * @param request The incoming request.
    */
-  public abstract receiveRequest(request: IncomingRequest): void;
+  public abstract receiveRequest(request: IncomingRequestMessage): void;
 
   /**
    * Receive outgoing responses to this request from the transaction user.

@@ -1,17 +1,13 @@
 import { C } from "../../Constants";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage,
-  OutgoingRequestMessageOptions
-} from "../../SIPMessage";
 import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import { Dialog } from ".././dialogs";
 import {
   Body,
   constructOutgoingResponse,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingMessageRequest,
@@ -19,6 +15,8 @@ import {
   OutgoingRegisterRequest,
   OutgoingRequest,
   OutgoingRequestDelegate,
+  OutgoingRequestMessage,
+  OutgoingRequestMessageOptions,
   OutgoingResponse,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,

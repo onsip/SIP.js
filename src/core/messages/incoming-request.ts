@@ -1,6 +1,6 @@
 import { Exceptions } from "../../Exceptions";
-import { IncomingRequest as IncomingRequestMessage } from "../../SIPMessage";
 import { URI } from "../../URI";
+import { IncomingRequestMessage } from "./incoming-request-message";
 import { OutgoingResponse, ResponseOptions } from "./outgoing-response";
 
 /**

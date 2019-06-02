@@ -1,3 +1,9 @@
+export {
+  IncomingRequestMessage as IncomingRequest,
+  IncomingResponseMessage as IncomingResponse,
+  OutgoingRequestMessage as OutgoingRequest
+} from "./core";
+
 export { ClientContext } from "./ClientContext";
 export { C } from "./Constants";
 export { DigestAuthentication } from "./DigestAuthentication";
@@ -34,11 +40,6 @@ export {
   SessionDescriptionHandlerModifiers,
   SessionDescriptionHandlerOptions
 } from "./session-description-handler";
-export {
-  IncomingRequest,
-  IncomingResponse,
-  OutgoingRequest
-} from "./SIPMessage";
 export { Subscription } from "./Subscription";
 export { Timers } from "./Timers";
 

@@ -1,6 +1,6 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { IncomingRequest } from "./core/messages";
+import { IncomingRequest, IncomingResponseMessage } from "./core/messages";
 import { Session } from "./core/session";
 import { NonInviteClientTransaction } from "./core/transactions";
 import { SessionStatus, TypeStrings } from "./Enums";
@@ -13,7 +13,6 @@ import {
   InviteServerContext
 } from "./Session";
 import { SessionDescriptionHandlerModifiers } from "./session-description-handler";
-import { IncomingResponse } from "./SIPMessage";
 import { UA } from "./UA";
 import { URI } from "./URI";
 
@@ -93,7 +92,7 @@ export class ReferClientContext extends ClientContext {
 
     this.applicant.sendRequest(C.REFER, {
       extraHeaders: this.extraHeaders,
-      receiveResponse: (response: IncomingResponse): void => {
+      receiveResponse: (response: IncomingResponseMessage): void => {
         const statusCode: string = response && response.statusCode ? response.statusCode.toString() : "";
         if (/^1[0-9]{2}$/.test(statusCode) ) {
           this.emit("referRequestProgress", this);
@@ -334,7 +333,7 @@ export class ReferServerContext extends ServerContext {
           }
         });
 
-        const referFailed: ((response: IncomingResponse) => void) = (response) => {
+        const referFailed: ((response: IncomingResponseMessage) => void) = (response) => {
           if (this.status === SessionStatus.STATUS_TERMINATED) {
             return; // No throw here because it is possible this gets called multiple times
           }
