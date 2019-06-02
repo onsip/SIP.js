@@ -1,6 +1,5 @@
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import {
   constructOutgoingResponse,
@@ -18,6 +17,7 @@ import {
   ServerTransactionUser,
   TransactionState
 } from "../transactions";
+import { Transport } from "../transport";
 import { UserAgentCore } from "../user-agent-core";
 
 type ServerTransactionConstructor = new (

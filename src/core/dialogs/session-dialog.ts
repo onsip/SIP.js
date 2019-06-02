@@ -1,7 +1,6 @@
 import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
 import { NameAddrHeader } from "../../NameAddrHeader";
-import { Timers } from "../../Timers";
 import {
   Body,
   getBody,
@@ -26,6 +25,7 @@ import {
   SessionState,
   SignalingState
 } from "../session";
+import { Timers } from "../timers";
 import {
   InviteClientTransaction,
   InviteServerTransaction,

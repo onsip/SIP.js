@@ -1,11 +1,11 @@
 import { C } from "../../src/Constants";
 import { Dialog, DialogState } from "../../src/core/dialogs";
 import { IncomingRequestMessage } from "../../src/core/messages";
+import { Timers } from "../../src/core/timers";
 import { NonInviteClientTransaction } from "../../src/core/transactions";
 import { UserAgentCore } from "../../src/core/user-agent-core";
 import { ReSubscribeUserAgentServer, UserAgentClient } from "../../src/core/user-agents";
 import { Subscription } from "../../src/Subscription";
-import { Timers } from "../../src/Timers";
 import { URI } from "../../src/URI";
 import { Utils } from "../../src/Utils";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../support/EventEmitterSpy";

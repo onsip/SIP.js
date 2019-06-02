@@ -1,5 +1,5 @@
+import { Transport } from "../../src/core";
 import { Logger } from "../../src/LoggerFactory";
-import { Transport } from "../../src/Transport";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;

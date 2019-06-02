@@ -1,12 +1,15 @@
 import { EventEmitter } from "events";
 
-import { TypeStrings } from "./Enums";
-import { Logger } from "./LoggerFactory";
+import { TypeStrings } from "../Enums";
+import { Logger } from "../LoggerFactory";
 
-/* Transport
- * @class Abstract transport layer parent class
- * @param {Logger} logger
- * @param {Object} [options]
+/**
+ * Transport
+ * @remarks
+ * Abstract transport layer base class.
+ * @param logger - Logger.
+ * @param options - Options bucket.
+ * @public
  */
 export abstract class Transport extends EventEmitter {
   public type: TypeStrings;
@@ -24,8 +27,7 @@ export abstract class Transport extends EventEmitter {
    * Returns the promise designated by the child layer then emits a connected event.
    * Automatically emits an event upon resolution, unless overrideEvent is set. If you
    * override the event in this fashion, you should emit it in your implementation of connectPromise
-   * @param {Object} [options]
-   * @returns {Promise}
+   * @param options - Options bucket.
    */
   public connect(options: any = {}): Promise<void> {
     return this.connectPromise(options).then((data: any) => {
@@ -37,7 +39,6 @@ export abstract class Transport extends EventEmitter {
 
   /**
    * Returns true if the transport is connected
-   * @returns {Boolean}
    */
   public abstract isConnected(): boolean;
 
@@ -45,9 +46,8 @@ export abstract class Transport extends EventEmitter {
    * Sends a message then emits a 'messageSent' event. Automatically emits an
    * event upon resolution, unless data.overrideEvent is set. If you override
    * the event in this fashion, you should emit it in your implementation of sendPromise
-   * @param {String} msg
-   * @param {Object} options
-   * @returns {Promise}
+   * @param msg - Message.
+   * @param options - Options bucket.
    */
   public send(msg: string, options: any = {}): Promise<void> {
     return this.sendPromise(msg).then((data: any) => {
@@ -62,8 +62,7 @@ export abstract class Transport extends EventEmitter {
    * disconnected event. Automatically emits an event upon resolution,
    * unless overrideEvent is set. If you override the event in this fashion,
    * you should emit it in your implementation of disconnectPromise
-   * @param {Object} [options]
-   * @returns {Promise}
+   * @param options - Options bucket
    */
   public disconnect(options: any = {}): Promise<void> {
     return this.disconnectPromise(options).then((data: any) => {
@@ -83,7 +82,6 @@ export abstract class Transport extends EventEmitter {
 
   /**
    * Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected()
-   * @returns {Promise}
    */
   public waitForConnected(): Promise<void> {
     // tslint:disable-next-line:no-console
@@ -95,10 +93,7 @@ export abstract class Transport extends EventEmitter {
   /**
    * Called by connect, must return a promise
    * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
-   * @abstract
-   * @private
-   * @param {Object} [options]
-   * @returns {Promise}
+   * @param options - Options bucket.
    */
   protected abstract connectPromise(options: any): Promise<any>;
 
@@ -106,27 +101,21 @@ export abstract class Transport extends EventEmitter {
    * Called by send, must return a promise
    * promise must resolve to an object. object supports 2 parameters: msg - string (mandatory)
    * and overrideEvent - Boolean (optional)
-   * @abstract
-   * @private
-   * @param {String} msg
-   * @param {Object} [options]
-   * @returns {Promise}
+   * @param msg - Message.
+   * @param options - Options bucket.
    */
   protected abstract sendPromise(msg: string, options?: any): Promise<any>;
 
   /**
    * Called by disconnect, must return a promise
    * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
-   * @abstract
-   * @private
-   * @param {Object} [options]
-   * @returns {Promise}
+   * @param options - Options bucket.
    */
   protected abstract disconnectPromise(options: any): Promise<any>;
 
   /**
    * To be called when a message is received
-   * @param {Event} e
+   * @param e - Event
    */
   protected abstract onMessage(e: any): void;
 }

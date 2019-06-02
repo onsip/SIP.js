@@ -1,5 +1,4 @@
 import { IncomingRequestMessage, IncomingResponseMessage } from "./core";
-import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { Logger } from "./LoggerFactory";
 
@@ -145,7 +144,7 @@ export namespace Parser {
         if (parsed) {
           message.cseq = parsed.value;
         }
-        if (message.type === TypeStrings.IncomingResponse) {
+        if (message instanceof IncomingResponseMessage) {
           message.method = parsed.method;
         }
         break;

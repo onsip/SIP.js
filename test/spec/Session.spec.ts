@@ -1,6 +1,6 @@
 import { SessionState, SignalingState } from "../../src/core/session";
+import { Timers } from "../../src/core/timers";
 import { InviteClientContext, InviteServerContext } from "../../src/Session";
-import { Timers } from "../../src/Timers";
 import { URI } from "../../src/URI";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../support/EventEmitterSpy";
 import { connectUserFake, makeUserFake, UserFake } from "../support/UserFake";

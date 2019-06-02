@@ -25,6 +25,7 @@ import {
   RequestOptions
 } from "./core/messages";
 import { Session as SessionCore, SessionState, SignalingState } from "./core/session";
+import { Timers } from "./core/timers";
 import {
   InviteServerTransaction,
   NonInviteServerTransaction
@@ -48,7 +49,6 @@ import {
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { DTMF } from "./Session/DTMF";
-import { Timers } from "./Timers";
 import { UA } from "./UA";
 import { URI } from "./URI";
 import { Utils } from "./Utils";

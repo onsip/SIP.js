@@ -7,10 +7,10 @@ import {
 } from "../../../src/core/messages";
 import { SessionDelegate } from "../../../src/core/session";
 import { SubscriptionDelegate } from "../../../src/core/subscription";
+import { Transport } from "../../../src/core/transport";
 import { UserAgentCoreDelegate } from "../../../src/core/user-agent-core";
 import { LoggerFactory } from "../../../src/LoggerFactory";
 import { Parser } from "../../../src/Parser";
-import { Transport } from "../../../src/Transport";
 import { UA } from "../../../src/UA";
 import { URI } from "../../../src/URI";
 import { Utils } from "../../../src/Utils";

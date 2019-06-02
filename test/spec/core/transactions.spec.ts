@@ -18,11 +18,11 @@ import {
   ServerTransactionUser,
   TransactionUser
 } from "../../../src/core/transactions";
+import { Transport } from "../../../src/core/transport";
 import {
   Levels,
   LoggerFactory
 } from "../../../src/LoggerFactory";
-import { Transport } from "../../../src/Transport";
 import { URI } from "../../../src/URI";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use

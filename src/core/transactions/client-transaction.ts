@@ -1,6 +1,5 @@
-import { Transport } from "../../Transport";
-
 import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
+import { Transport } from "../transport";
 import { Transaction } from "./transaction";
 import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";

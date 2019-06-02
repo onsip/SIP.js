@@ -1,6 +1,5 @@
 import { C } from "../../Constants";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import { Transport } from "../../Transport";
 import { URI } from "../../URI";
 import { Dialog } from ".././dialogs";
 import {
@@ -27,6 +26,7 @@ import {
   NonInviteClientTransaction,
   TransactionState
 } from "../transactions";
+import { Transport } from "../transport";
 import {
   InviteUserAgentClient,
   InviteUserAgentServer,

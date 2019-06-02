@@ -1,7 +1,9 @@
 export {
   IncomingRequestMessage as IncomingRequest,
   IncomingResponseMessage as IncomingResponse,
-  OutgoingRequestMessage as OutgoingRequest
+  OutgoingRequestMessage as OutgoingRequest,
+  Timers,
+  Transport
 } from "./core";
 
 export { ClientContext } from "./ClientContext";
@@ -41,7 +43,6 @@ export {
   SessionDescriptionHandlerOptions
 } from "./session-description-handler";
 export { Subscription } from "./Subscription";
-export { Timers } from "./Timers";
 
 import {
   InviteClientTransaction,
@@ -57,7 +58,6 @@ const Transactions = {
 };
 export { Transactions };
 
-export { Transport } from "./Transport";
 export { makeUserAgentCoreConfigurationFromUA, UA } from "./UA";
 export { URI } from "./URI";
 export { Utils } from "./Utils";

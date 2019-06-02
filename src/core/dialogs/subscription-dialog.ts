@@ -1,7 +1,6 @@
 import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
 import { NameAddrHeader } from "../../NameAddrHeader";
-import { Timers } from "../../Timers";
 import {
   IncomingRequestMessage,
   OutgoingRequestMessage,
@@ -10,6 +9,7 @@ import {
   RequestOptions
 } from "../messages";
 import { Subscription, SubscriptionDelegate, SubscriptionState } from "../subscription";
+import { Timers } from "../timers";
 import { AllowedMethods } from "../user-agent-core/allowed-methods";
 import { UserAgentCore } from "../user-agent-core/user-agent-core";
 import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server";

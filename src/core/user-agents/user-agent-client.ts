@@ -1,7 +1,6 @@
 import { C } from "../../Constants";
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import { Transport } from "../../Transport";
 import {
   IncomingResponseMessage,
   OutgoingRequest,
@@ -15,6 +14,7 @@ import {
   NonInviteClientTransaction,
   TransactionState
 } from "../transactions";
+import { Transport } from "../transport";
 import { UserAgentCore } from "../user-agent-core";
 
 type ClientTransactionConstructor = new (

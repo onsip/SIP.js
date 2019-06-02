@@ -1,4 +1,3 @@
-import { Timers } from "../../Timers";
 import { SubscriptionDialog } from "../dialogs/subscription-dialog";
 import {
   IncomingResponseMessage,
@@ -7,6 +6,7 @@ import {
   OutgoingSubscribeRequestDelegate
 } from "../messages";
 import { SubscriptionState } from "../subscription";
+import { Timers } from "../timers";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { NotifyUserAgentServer } from "./notify-user-agent-server";

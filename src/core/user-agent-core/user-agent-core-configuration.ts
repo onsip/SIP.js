@@ -1,7 +1,8 @@
 import { DigestAuthentication } from "../../DigestAuthentication";
 import { LoggerFactory } from "../../LoggerFactory";
-import { Transport } from "../../Transport";
 import { URI } from "../../URI";
+
+import { Transport } from "../transport";
 
 /**
  * User agent contact.

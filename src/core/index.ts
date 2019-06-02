@@ -5,3 +5,6 @@ export * from "./subscription";
 export * from "./transactions";
 export * from "./user-agent-core";
 export * from "./user-agents";
+
+export * from "./timers";
+export * from "./transport";

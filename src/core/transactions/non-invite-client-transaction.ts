@@ -1,8 +1,8 @@
 import { Exceptions } from "../../Exceptions";
-import { Timers } from "../../Timers";
-import { Transport } from "../../Transport";
 
 import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
+import { Timers } from "../timers";
+import { Transport } from "../transport";
 import { ClientTransaction } from "./client-transaction";
 import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";

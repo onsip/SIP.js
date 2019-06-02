@@ -11,6 +11,7 @@ import {
   IncomingResponseMessage,
   IncomingSubscribeRequest
 } from "./core/messages";
+import { Transport } from "./core/transport";
 import {
   UserAgentCore,
   UserAgentCoreConfiguration,
@@ -36,7 +37,6 @@ import {
   SessionDescriptionHandlerFactoryOptions
 } from "./session-description-handler-factory";
 import { Subscription } from "./Subscription";
-import { Transport } from "./Transport";
 import { URI } from "./URI";
 import { Utils } from "./Utils";
 import {
