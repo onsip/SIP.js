@@ -1,7 +1,10 @@
-import { SessionState, SignalingState } from "../../src/core/session";
-import { Timers } from "../../src/core/timers";
+import {
+  SessionState,
+  SignalingState,
+  Timers,
+  URI
+} from "../../src/core";
 import { InviteClientContext, InviteServerContext } from "../../src/Session";
-import { URI } from "../../src/URI";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../support/EventEmitterSpy";
 import { connectUserFake, makeUserFake, UserFake } from "../support/UserFake";
 import { soon } from "../support/Utils";

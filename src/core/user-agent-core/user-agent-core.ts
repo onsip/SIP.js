@@ -1,7 +1,6 @@
 import { C } from "../../Constants";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import { URI } from "../../URI";
-import { Dialog } from ".././dialogs";
+import { Dialog } from "../dialogs";
 import {
   Body,
   constructOutgoingResponse,
@@ -19,7 +18,8 @@ import {
   OutgoingResponse,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,
-  ResponseOptions
+  ResponseOptions,
+  URI
 } from "../messages";
 import {
   InviteServerTransaction,

@@ -1,9 +1,8 @@
 import MD5 from "crypto-js/md5";
 
-import { OutgoingRequestMessage } from "./core";
+import { OutgoingRequestMessage, URI } from "./core";
 import { TypeStrings } from "./Enums";
 import { Logger, LoggerFactory } from "./LoggerFactory";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 /**

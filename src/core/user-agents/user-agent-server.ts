@@ -1,6 +1,5 @@
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
-import { URI } from "../../URI";
 import {
   constructOutgoingResponse,
   IncomingRequest,
@@ -8,7 +7,8 @@ import {
   IncomingRequestMessage,
   newTag,
   OutgoingResponse,
-  ResponseOptions
+  ResponseOptions,
+  URI
 } from "../messages";
 import {
   InviteServerTransaction,

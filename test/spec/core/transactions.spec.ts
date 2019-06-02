@@ -1,29 +1,25 @@
 import {
+  ClientTransaction,
+  ClientTransactionUser,
   IncomingRequestMessage,
   IncomingResponseMessage,
-  OutgoingRequestMessage
-} from "../../../src/core/messages";
-import {
-  ClientTransaction,
   InviteClientTransaction,
   InviteServerTransaction,
   NonInviteClientTransaction,
   NonInviteServerTransaction,
+  OutgoingRequestMessage,
   ServerTransaction,
-  Transaction,
-  TransactionState
-} from "../../../src/core/transactions";
-import {
-  ClientTransactionUser,
   ServerTransactionUser,
-  TransactionUser
-} from "../../../src/core/transactions";
-import { Transport } from "../../../src/core/transport";
+  Transaction,
+  TransactionState,
+  TransactionUser,
+  Transport,
+  URI
+} from "../../../src/core";
 import {
   Levels,
   LoggerFactory
 } from "../../../src/LoggerFactory";
-import { URI } from "../../../src/URI";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use
 // the actual implementations, but the current implementations depend on UA

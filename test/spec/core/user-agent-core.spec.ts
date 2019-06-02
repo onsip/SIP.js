@@ -1,5 +1,4 @@
 import { C } from "../../../src/Constants";
-import { SessionDialog } from "../../../src/core/dialogs";
 import {
   AckableIncomingResponseWithSession,
   constructOutgoingResponse,
@@ -13,28 +12,30 @@ import {
   IncomingRequestWithSubscription,
   IncomingResponse,
   IncomingResponseMessage,
+  InviteClientTransaction,
+  InviteUserAgentClient,
   OutgoingInviteRequest,
   OutgoingPublishRequest,
   OutgoingRequestDelegate,
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,
-  PrackableIncomingResponseWithSession
-} from "../../../src/core/messages";
-import { Session, SessionDelegate, SignalingState } from "../../../src/core/session";
-import { Subscription, SubscriptionDelegate } from "../../../src/core/subscription";
-import { Timers } from "../../../src/core/timers";
-import { InviteClientTransaction } from "../../../src/core/transactions";
-import { Transport } from "../../../src/core/transport";
-import {
+  PrackableIncomingResponseWithSession,
+  Session,
+  SessionDelegate,
+  SessionDialog,
+  SignalingState,
+  Subscription,
+  SubscriptionDelegate,
+  Timers,
+  Transport,
+  URI,
   UserAgentCore,
   UserAgentCoreConfiguration
-} from "../../../src/core/user-agent-core";
-import { InviteUserAgentClient } from "../../../src/core/user-agents";
+} from "../../../src/core";
 import { Exceptions } from "../../../src/Exceptions";
 import { Parser } from "../../../src/Parser";
 import { makeUserAgentCoreConfigurationFromUA, UA } from "../../../src/UA";
-import { URI } from "../../../src/URI";
 
 import {
   connectTransportToUA,

@@ -1,12 +1,11 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { Body, IncomingResponseMessage } from "./core";
+import { Body, IncomingResponseMessage, URI } from "./core";
 import { Transport } from "./core/transport";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 /**

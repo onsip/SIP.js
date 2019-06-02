@@ -1,28 +1,23 @@
-import { TypeStrings } from "./Enums";
-import { Parameters, URI } from "./URI";
+import { Parameters } from "./parameters";
+import { URI } from "./uri";
 
 /**
- * @class Class creating a Name Address SIP header.
- *
- * @param {SIP.URI} uri
- * @param {String} [displayName]
- * @param {Object} [parameters]
- *
+ * Name Address SIP header.
+ * @public
  */
 export class NameAddrHeader extends Parameters {
-  public type: TypeStrings;
   public uri: URI;
 
   private _displayName: string;
 
-  constructor(uri: URI, displayName: string, parameters: {[name: string]: string}) {
+  /**
+   * Constructor
+   * @param uri
+   * @param displayName
+   * @param parameters
+   */
+  constructor(uri: URI, displayName: string, parameters: { [name: string]: string }) {
     super(parameters);
-    this.type = TypeStrings.NameAddrHeader;
-    // Checks
-    if (!uri || !(uri.type === TypeStrings.URI)) {
-      throw new TypeError('missing or invalid "uri" parameter');
-    }
-
     this.uri = uri;
     this._displayName = displayName;
   }

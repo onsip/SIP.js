@@ -1,77 +1,30 @@
-import { C } from "./Constants";
-import { TypeStrings } from "./Enums";
+import { Parameters } from "./parameters";
 
-export interface URIObject {
+interface URIObject {
   scheme: string;
   user: string | undefined;
   host: string;
   port: number | undefined;
 }
 
-export class Parameters {
-  public type: TypeStrings;
-  public parameters: {[name: string]: string} = {};
-
-  constructor(parameters: {[name: string]: string}) {
-    this.type = TypeStrings.Parameters;
-    for (const param in parameters) {
-      if (parameters.hasOwnProperty(param)) {
-        this.setParam(param, parameters[param]);
-      }
-    }
-  }
-
-  public setParam(key: string, value: any): void {
-    if (key) {
-      this.parameters[key.toLowerCase()] = (typeof value === "undefined" || value === null) ? null : value.toString();
-    }
-  }
-
-  public getParam(key: string) {
-    if (key) {
-      return this.parameters[key.toLowerCase()];
-    }
-  }
-
-  public hasParam(key: string): boolean {
-    if (key) {
-      return !!this.parameters.hasOwnProperty(key.toLowerCase());
-    }
-    return false;
-  }
-
-  public deleteParam(parameter: string): any {
-    parameter = parameter.toLowerCase();
-    if (this.parameters.hasOwnProperty(parameter)) {
-      const value = this.parameters[parameter];
-      delete this.parameters[parameter];
-      return value;
-    }
-  }
-
-  public clearParams(): void {
-    this.parameters = {};
-  }
-}
-
 /**
- * @class Class creating a SIP URI.
- *
- * @param {String} [scheme]
- * @param {String} [user]
- * @param {String} host
- * @param {String} [port]
- * @param {Object} [parameters]
- * @param {Object} [headers]
- *
+ * URI.
+ * @public
  */
-// tslint:disable-next-line:max-classes-per-file
 export class URI extends Parameters {
-  public type: TypeStrings;
   private headers: {[name: string]: any} = {};
   private normal: URIObject;
   private raw: URIObject;
 
+  /**
+   * Constructor
+   * @param scheme
+   * @param user
+   * @param host
+   * @param port
+   * @param parameters
+   * @param headers
+   */
   constructor(
     scheme: string,
     user: string,
@@ -81,14 +34,13 @@ export class URI extends Parameters {
     headers?: any
   ) {
     super(parameters);
-    this.type = TypeStrings.URI;
     // Checks
     if (!host) {
       throw new TypeError('missing or invalid "host" parameter');
     }
 
     // Initialize parameters
-    scheme = scheme || C.SIP;
+    scheme = scheme || "sip";
 
     for (const header in headers) {
       if (headers.hasOwnProperty(header)) {
@@ -112,9 +64,6 @@ export class URI extends Parameters {
       port
     };
   }
-
-  get _normal(): URIObject { return this.normal; }
-  get _raw(): URIObject { return this.raw; }
 
   get scheme(): string { return this.normal.scheme; }
   set scheme(value: string) {
@@ -185,6 +134,10 @@ export class URI extends Parameters {
   public toString(): string {
     return this._toString(this._normal);
   }
+
+  private get _normal(): URIObject { return this.normal; }
+
+  private get _raw(): URIObject { return this.raw; }
 
   private _toString(uri: any): string {
     let uriString: string  = uri.scheme + ":";

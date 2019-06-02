@@ -1,7 +1,6 @@
 import { DigestAuthentication } from "../../DigestAuthentication";
 import { LoggerFactory } from "../../LoggerFactory";
-import { URI } from "../../URI";
-
+import { URI } from "../messages";
 import { Transport } from "../transport";
 
 /**

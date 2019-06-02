@@ -1,7 +1,7 @@
 import { TypeStrings } from "../../Enums";
 import { Grammar } from "../../Grammar";
-import { NameAddrHeader } from "../../NameAddrHeader";
 import { Utils } from "../../Utils";
+import { NameAddrHeader } from "../messages";
 
 /**
  * Incoming SIP message.

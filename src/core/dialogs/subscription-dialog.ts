@@ -1,8 +1,8 @@
 import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
-import { NameAddrHeader } from "../../NameAddrHeader";
 import {
   IncomingRequestMessage,
+  NameAddrHeader,
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,

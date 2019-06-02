@@ -1,4 +1,4 @@
-import { URI } from "../../URI";
+import { URI } from "../messages/uri";
 
 /**
  * A dialog contains certain pieces of state needed for further message

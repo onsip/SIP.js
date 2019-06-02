@@ -1,9 +1,11 @@
 export {
   IncomingRequestMessage as IncomingRequest,
   IncomingResponseMessage as IncomingResponse,
+  NameAddrHeader,
   OutgoingRequestMessage as OutgoingRequest,
   Timers,
-  Transport
+  Transport,
+  URI
 } from "./core";
 
 export { ClientContext } from "./ClientContext";
@@ -18,7 +20,6 @@ export {
 export { Exceptions } from "./Exceptions";
 export { Grammar } from "./Grammar";
 export { LoggerFactory } from "./LoggerFactory";
-export { NameAddrHeader } from "./NameAddrHeader";
 export { Parser } from "./Parser";
 export { PublishContext } from "./PublishContext";
 export {
@@ -59,7 +60,6 @@ const Transactions = {
 export { Transactions };
 
 export { makeUserAgentCoreConfigurationFromUA, UA } from "./UA";
-export { URI } from "./URI";
 export { Utils } from "./Utils";
 
 import * as Web from "./Web/index";

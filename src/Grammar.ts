@@ -1,7 +1,6 @@
 import * as pegGrammar from "./Grammar/dist/Grammar";
 
-import { NameAddrHeader } from "./NameAddrHeader";
-import { URI } from "./URI";
+import { NameAddrHeader, URI } from "./core";
 
 export namespace Grammar {
   export function parse(input: string, startRule: string): any {

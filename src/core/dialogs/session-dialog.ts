@@ -1,12 +1,12 @@
 import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
-import { NameAddrHeader } from "../../NameAddrHeader";
 import {
   Body,
   getBody,
   IncomingRequestMessage,
   IncomingResponseMessage,
   isBody,
+  NameAddrHeader,
   OutgoingAckRequest,
   OutgoingByeRequest,
   OutgoingInfoRequest,

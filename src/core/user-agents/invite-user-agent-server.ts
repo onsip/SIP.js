@@ -1,5 +1,4 @@
 import { Exceptions } from "../../Exceptions";
-import { URI } from "../../URI";
 import { Dialog, SessionDialog } from "../dialogs";
 import {
   IncomingInviteRequest,
@@ -7,7 +6,8 @@ import {
   IncomingRequestMessage,
   OutgoingResponse,
   OutgoingResponseWithSession,
-  ResponseOptions
+  ResponseOptions,
+  URI
 } from "../messages";
 import { SignalingState } from "../session";
 import { InviteServerTransaction } from "../transactions";

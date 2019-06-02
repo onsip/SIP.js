@@ -1,13 +1,11 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { Body, IncomingResponseMessage, OutgoingRequestMessage } from "./core";
+import { Body, IncomingResponseMessage, NameAddrHeader, OutgoingRequestMessage, URI } from "./core";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 export class ClientContext extends EventEmitter {

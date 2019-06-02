@@ -1,5 +1,5 @@
 import { TypeStrings } from "../../Enums";
-import { URI } from "../../URI";
+import { URI } from "../messages";
 
 import { IncomingMessage } from "./incoming-message";
 

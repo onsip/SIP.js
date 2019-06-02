@@ -1,9 +1,8 @@
 import { TypeStrings } from "../../Enums";
-import { NameAddrHeader } from "../../NameAddrHeader";
-import { URI } from "../../URI";
 import { Utils } from "../../Utils";
-
 import { Body } from "./body";
+import { NameAddrHeader } from "./name-addr-header";
+import { URI } from "./uri";
 
 /**
  * Outgoing SIP request message options.
@@ -263,8 +262,7 @@ export class OutgoingRequestMessage {
   public toString(): string {
     let msg: string = "";
 
-    msg += this.method + " " + ((this.ruri as URI).type === TypeStrings.URI ?
-      (this.ruri as URI).toRaw() : this.ruri) + " SIP/2.0\r\n";
+    msg += this.method + " " + this.ruri.toRaw() + " SIP/2.0\r\n";
 
     for (const header in this.headers) {
       if (this.headers[header]) {

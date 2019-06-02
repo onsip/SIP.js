@@ -8,19 +8,20 @@ import {
   IncomingRequestWithSubscription,
   IncomingResponse,
   IncomingResponseMessage,
+  NameAddrHeader,
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
-  RequestOptions
-} from "./core/messages";
-import { Subscription as SubscriptionCore, SubscriptionState } from "./core/subscription";
-import { UserAgentCore } from "./core/user-agent-core";
+  RequestOptions,
+  Subscription as SubscriptionCore,
+  SubscriptionState,
+  URI,
+  UserAgentCore
+} from "./core";
 import { AllowedMethods } from "./core/user-agent-core/allowed-methods";
 import { TypeStrings } from "./Enums";
 import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 interface SubscriptionOptions {

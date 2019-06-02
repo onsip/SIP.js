@@ -1,12 +1,16 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { IncomingRequest, IncomingResponseMessage } from "./core/messages";
-import { Session } from "./core/session";
-import { NonInviteClientTransaction } from "./core/transactions";
+import {
+  IncomingRequest,
+  IncomingResponseMessage,
+  NameAddrHeader,
+  NonInviteClientTransaction,
+  Session,
+  URI
+} from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
-import { NameAddrHeader } from "./NameAddrHeader";
 import { ServerContext } from "./ServerContext";
 import {
   InviteClientContext,
@@ -14,7 +18,6 @@ import {
 } from "./Session";
 import { SessionDescriptionHandlerModifiers } from "./session-description-handler";
 import { UA } from "./UA";
-import { URI } from "./URI";
 
 export namespace ReferServerContext {
 

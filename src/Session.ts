@@ -14,6 +14,9 @@ import {
   IncomingRequestMessage,
   IncomingResponse,
   IncomingResponseMessage,
+  InviteServerTransaction,
+  NameAddrHeader,
+  NonInviteServerTransaction,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingRequest,
@@ -22,19 +25,17 @@ import {
   OutgoingResponse,
   OutgoingResponseWithSession,
   PrackableIncomingResponseWithSession,
-  RequestOptions
-} from "./core/messages";
-import { Session as SessionCore, SessionState, SignalingState } from "./core/session";
-import { Timers } from "./core/timers";
-import {
-  InviteServerTransaction,
-  NonInviteServerTransaction
-} from "./core/transactions";
+  RequestOptions,
+  Session as SessionCore,
+  SessionState,
+  SignalingState,
+  Timers,
+  URI
+} from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exception, Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
 import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import {
   ReferClientContext,
   ReferServerContext
@@ -50,7 +51,6 @@ import {
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { DTMF } from "./Session/DTMF";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 export namespace Session {

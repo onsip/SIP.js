@@ -1,9 +1,8 @@
 import { C } from "./Constants";
-import { Body } from "./core";
-import { TypeStrings } from "./Enums";
+import { Body } from "./core/messages/body";
+import { URI } from "./core/messages/uri";
 import { Grammar } from "./Grammar";
 import { BodyObj, SessionDescriptionHandlerModifier } from "./session-description-handler";
-import { URI } from "./URI";
 
 export namespace Utils {
   export interface Deferred<T> {
@@ -90,7 +89,7 @@ export namespace Utils {
     if (!target) {
       return;
     // If a SIP.URI instance is given then return it.
-    } else if ((target as URI).type === TypeStrings.URI) {
+    } else if (target instanceof URI) {
       return target as URI;
 
     // If a string is given split it by '@':

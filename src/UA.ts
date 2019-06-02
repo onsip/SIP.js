@@ -9,14 +9,13 @@ import {
   IncomingReferRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
-  IncomingSubscribeRequest
-} from "./core/messages";
-import { Transport } from "./core/transport";
-import {
+  IncomingSubscribeRequest,
+  Transport,
+  URI,
   UserAgentCore,
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
-} from "./core/user-agent-core";
+} from "./core";
 import { DigestAuthentication } from "./DigestAuthentication";
 import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
@@ -37,7 +36,6 @@ import {
   SessionDescriptionHandlerFactoryOptions
 } from "./session-description-handler-factory";
 import { Subscription } from "./Subscription";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 import {
   SessionDescriptionHandler as WebSessionDescriptionHandler

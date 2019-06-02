@@ -1,15 +1,18 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { fromBodyLegacy, IncomingRequest, IncomingRequestMessage, ResponseOptions } from "./core/messages";
 import {
+  fromBodyLegacy,
+  IncomingRequest,
+  IncomingRequestMessage,
   InviteServerTransaction,
-  NonInviteServerTransaction
-} from "./core/transactions";
+  NameAddrHeader,
+  NonInviteServerTransaction,
+  ResponseOptions
+} from "./core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
 import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 

@@ -1,5 +1,5 @@
 import { Exceptions } from "../../Exceptions";
-import { URI } from "../../URI";
+import { URI } from "../messages";
 import { IncomingRequestMessage } from "./incoming-request-message";
 import { OutgoingResponse, ResponseOptions } from "./outgoing-response";
 

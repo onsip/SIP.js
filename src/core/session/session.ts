@@ -1,4 +1,3 @@
-import { URI } from "../../URI";
 import {
   Body,
   OutgoingByeRequest,
@@ -9,7 +8,8 @@ import {
   OutgoingPrackRequest,
   OutgoingReferRequest,
   OutgoingRequestDelegate,
-  RequestOptions
+  RequestOptions,
+  URI
 } from "../messages";
 import { SessionDelegate } from "./session-delegate";
 

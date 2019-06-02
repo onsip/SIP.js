@@ -3,16 +3,16 @@ import {
   IncomingRequestMessage,
   IncomingResponseMessage,
   OutgoingRequestDelegate,
-  OutgoingSubscribeRequestDelegate
-} from "../../../src/core/messages";
-import { SessionDelegate } from "../../../src/core/session";
-import { SubscriptionDelegate } from "../../../src/core/subscription";
-import { Transport } from "../../../src/core/transport";
-import { UserAgentCoreDelegate } from "../../../src/core/user-agent-core";
+  OutgoingSubscribeRequestDelegate,
+  SessionDelegate,
+  SubscriptionDelegate,
+  Transport,
+  URI,
+  UserAgentCoreDelegate
+} from "../../../src/core";
 import { LoggerFactory } from "../../../src/LoggerFactory";
 import { Parser } from "../../../src/Parser";
 import { UA } from "../../../src/UA";
-import { URI } from "../../../src/URI";
 import { Utils } from "../../../src/Utils";
 
 export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: UA): void {

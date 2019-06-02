@@ -1,6 +1,6 @@
 import { C } from "../../src/Constants";
+import { URI } from "../../src/core";
 import { UA } from "../../src/UA";
-import { URI } from "../../src/URI";
 import { makeMockSessionDescriptionHandlerFactory } from "./SessionDescriptionHandlerMock";
 import { TransportFake } from "./TransportFake";
 
