@@ -15,6 +15,7 @@ import {
   IncomingResponse,
   IncomingResponseMessage,
   InviteServerTransaction,
+  Logger,
   NameAddrHeader,
   NonInviteServerTransaction,
   OutgoingInviteRequest,
@@ -35,7 +36,6 @@ import {
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exception, Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";
-import { Logger } from "./LoggerFactory";
 import {
   ReferClientContext,
   ReferServerContext

@@ -1,4 +1,4 @@
-import { Logger } from "../../LoggerFactory";
+import { Logger } from "../log";
 import {
   Body,
   C,

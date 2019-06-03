@@ -6,13 +6,13 @@ import {
   IncomingRequest,
   IncomingRequestMessage,
   InviteServerTransaction,
+  Logger,
   NameAddrHeader,
   NonInviteServerTransaction,
   ResponseOptions
 } from "./core";
 import { TypeStrings } from "./Enums";
 import { Grammar } from "./Grammar";
-import { Logger } from "./LoggerFactory";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 

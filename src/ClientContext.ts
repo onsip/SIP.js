@@ -1,9 +1,8 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { Body, IncomingResponseMessage, NameAddrHeader, OutgoingRequestMessage, URI } from "./core";
+import { Body, IncomingResponseMessage, Logger, NameAddrHeader, OutgoingRequestMessage, URI } from "./core";
 import { TypeStrings } from "./Enums";
-import { Logger } from "./LoggerFactory";
 import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
 import { Utils } from "./Utils";

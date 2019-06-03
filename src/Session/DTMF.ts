@@ -1,10 +1,9 @@
 import { EventEmitter } from "events";
 
 import { C } from "../Constants";
-import { IncomingRequest, IncomingResponseMessage } from "../core/messages";
+import { IncomingRequest, IncomingResponseMessage, Logger } from "../core";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Logger } from "../LoggerFactory";
 import { Session } from "../Session";
 import { Utils } from "../Utils";
 

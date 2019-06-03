@@ -1,5 +1,5 @@
-import { Logger, LoggerFactory } from "../../LoggerFactory";
 import { Dialog } from "../dialogs";
+import { Logger, LoggerFactory } from "../log";
 import {
   Body,
   C,

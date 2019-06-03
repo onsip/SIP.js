@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 
-import { Logger } from "../LoggerFactory";
+import { Logger } from "./log";
 
 /**
  * Transport

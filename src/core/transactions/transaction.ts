@@ -1,8 +1,7 @@
 import { EventEmitter } from "events";
 
 import { Exceptions } from "../../Exceptions";
-import { Logger } from "../../LoggerFactory";
-
+import { Logger } from "../log";
 import { Transport } from "../transport";
 import { TransactionState } from "./transaction-state";
 import { TransactionUser } from "./transaction-user";

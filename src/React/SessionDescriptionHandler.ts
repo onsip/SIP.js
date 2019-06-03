@@ -5,9 +5,9 @@ import {
   RTCPeerConnection,
 } from "react-native-webrtc";
 
+import { Logger } from "../core";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Logger } from "../LoggerFactory";
 import { InviteClientContext, InviteServerContext } from "../Session";
 import {
   BodyObj,

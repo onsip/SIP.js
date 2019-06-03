@@ -1,5 +1,5 @@
 import { Exceptions } from "../../Exceptions";
-import { LoggerFactory } from "../../LoggerFactory";
+import { LoggerFactory } from "../log";
 import { IncomingResponseMessage } from "../messages";
 import { TransactionState } from "./transaction-state";
 

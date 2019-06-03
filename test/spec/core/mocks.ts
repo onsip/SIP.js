@@ -2,6 +2,7 @@ import {
   IncomingInviteRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
+  LoggerFactory,
   OutgoingRequestDelegate,
   OutgoingSubscribeRequestDelegate,
   SessionDelegate,
@@ -10,7 +11,6 @@ import {
   URI,
   UserAgentCoreDelegate
 } from "../../../src/core";
-import { LoggerFactory } from "../../../src/LoggerFactory";
 import { Parser } from "../../../src/Parser";
 import { UA } from "../../../src/UA";
 import { Utils } from "../../../src/Utils";

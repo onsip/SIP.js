@@ -8,6 +8,7 @@ import {
   IncomingRequestWithSubscription,
   IncomingResponse,
   IncomingResponseMessage,
+  Logger,
   NameAddrHeader,
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
@@ -19,7 +20,6 @@ import {
 } from "./core";
 import { AllowedMethods } from "./core/user-agent-core/allowed-methods";
 import { TypeStrings } from "./Enums";
-import { Logger } from "./LoggerFactory";
 import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
 import { Utils } from "./Utils";

@@ -5,6 +5,8 @@ import {
   IncomingResponseMessage,
   InviteClientTransaction,
   InviteServerTransaction,
+  Levels,
+  LoggerFactory,
   NonInviteClientTransaction,
   NonInviteServerTransaction,
   OutgoingRequestMessage,
@@ -16,10 +18,6 @@ import {
   Transport,
   URI
 } from "../../../src/core";
-import {
-  Levels,
-  LoggerFactory
-} from "../../../src/LoggerFactory";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use
 // the actual implementations, but the current implementations depend on UA

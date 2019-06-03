@@ -1,4 +1,4 @@
-import { LoggerFactory } from "../../LoggerFactory";
+import { LoggerFactory } from "../log";
 import { DigestAuthentication, URI } from "../messages";
 import { Transport } from "../transport";
 

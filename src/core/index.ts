@@ -1,5 +1,6 @@
 // Directories
 export * from "./dialogs";
+export * from "./log";
 export * from "./messages";
 export * from "./session";
 export * from "./subscription";

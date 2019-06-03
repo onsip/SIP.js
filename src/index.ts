@@ -2,6 +2,7 @@ export {
   DigestAuthentication,
   IncomingRequestMessage as IncomingRequest,
   IncomingResponseMessage as IncomingResponse,
+  LoggerFactory,
   NameAddrHeader,
   OutgoingRequestMessage as OutgoingRequest,
   Timers,
@@ -19,7 +20,6 @@ export {
 } from "./Enums";
 export { Exceptions } from "./Exceptions";
 export { Grammar } from "./Grammar";
-export { LoggerFactory } from "./LoggerFactory";
 export { Parser } from "./Parser";
 export { PublishContext } from "./PublishContext";
 export {

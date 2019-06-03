@@ -1,7 +1,6 @@
 import { EventEmitter } from "events";
 
-import { IncomingRequestMessage, OutgoingRequestMessage } from "../core";
-import { Logger } from "../LoggerFactory";
+import { IncomingRequestMessage, Logger, OutgoingRequestMessage } from "../core";
 import { InviteClientContext, InviteServerContext } from "../Session";
 import { DTMF } from "../Session/DTMF";
 import { UA } from "../UA";

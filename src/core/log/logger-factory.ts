@@ -1,26 +1,20 @@
-import { TypeStrings } from "./Enums";
+import { Levels } from "./levels";
+import { Logger } from "./logger";
 
-export enum Levels {
-  error,
-  warn,
-  log,
-  debug
-}
-
+/**
+ * Logger.
+ * @public
+ */
 export class LoggerFactory {
-  public type: TypeStrings;
   public builtinEnabled: boolean = true;
 
-  // tslint:disable-next-line:variable-name
   private _level: Levels = Levels.log;
-  // tslint:disable-next-line:variable-name
   private _connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
 
   private loggers: any = {};
   private logger: Logger;
 
   constructor() {
-    this.type = TypeStrings.LoggerFactory;
     this.logger = this.getLogger("sip:loggerfactory");
   }
 
@@ -104,29 +98,5 @@ export class LoggerFactory {
       default:
         break;
     }
-  }
-}
-
-// tslint:disable-next-line:max-classes-per-file
-export class Logger {
-  public type: TypeStrings;
-
-  private logger: LoggerFactory;
-  private category: string;
-  private label: string | undefined;
-  constructor(logger: LoggerFactory, category: string, label?: string) {
-    this.type = TypeStrings.Logger;
-    this.logger = logger;
-    this.category = category;
-    this.label = label;
-  }
-
-  public error(content: string): void { this.genericLog(Levels.error, content); }
-  public warn(content: string): void { this.genericLog(Levels.warn, content); }
-  public log(content: string): void { this.genericLog(Levels.log, content); }
-  public debug(content: string): void { this.genericLog(Levels.debug, content); }
-
-  private genericLog(level: Levels, content: string): void {
-    this.logger.genericLog(level, this.category, this.label, content);
   }
 }

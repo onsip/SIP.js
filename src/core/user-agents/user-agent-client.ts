@@ -1,5 +1,5 @@
 import { Exceptions } from "../../Exceptions";
-import { Logger, LoggerFactory } from "../../LoggerFactory";
+import { Logger, LoggerFactory } from "../log";
 import {
   C,
   IncomingResponseMessage,
