@@ -1,4 +1,4 @@
-import { C as SIPConstants } from "../../Constants";
+import { C } from "../../Constants";
 import { Exceptions } from "../../Exceptions";
 
 import { IncomingRequestMessage } from "../messages";
@@ -95,7 +95,7 @@ export class InviteServerTransaction extends ServerTransaction {
         // recent provisional response that was received from the TU MUST be passed to the
         // transport layer for retransmission.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
-        if (request.method === SIPConstants.INVITE) {
+        if (request.method === C.INVITE) {
           if (this.lastProvisionalResponse) {
             this.send(this.lastProvisionalResponse).catch((error: Exceptions.TransportError) => {
               this.logTransportError(error, "Failed to send retransmission of provisional response.");
@@ -110,7 +110,7 @@ export class InviteServerTransaction extends ServerTransaction {
         // absorbed by the machine without changing its state. These
         // retransmissions are not passed onto the TU.
         // https://tools.ietf.org/html/rfc6026#section-7.1
-        if (request.method === SIPConstants.INVITE) {
+        if (request.method === C.INVITE) {
           return;
         }
         break;
@@ -118,7 +118,7 @@ export class InviteServerTransaction extends ServerTransaction {
         // Furthermore, while in the "Completed" state, if a request retransmission is
         // received, the server SHOULD pass the response to the transport for retransmission.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
-        if (request.method === SIPConstants.INVITE) {
+        if (request.method === C.INVITE) {
           if (!this.lastFinalResponse) {
             throw new Error("Last final response undefined.");
           }
@@ -130,7 +130,7 @@ export class InviteServerTransaction extends ServerTransaction {
         // If an ACK is received while the server transaction is in the "Completed" state,
         // the server transaction MUST transition to the "Confirmed" state.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
-        if (request.method === SIPConstants.ACK) {
+        if (request.method === C.ACK) {
           this.stateTransition(TransactionState.Confirmed);
           return;
         }
@@ -139,13 +139,13 @@ export class InviteServerTransaction extends ServerTransaction {
         // The purpose of the "Confirmed" state is to absorb any additional ACK messages that arrive,
         // triggered from retransmissions of the final response.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
-        if (request.method === SIPConstants.INVITE || request.method === SIPConstants.ACK) {
+        if (request.method === C.INVITE || request.method === C.ACK) {
           return;
         }
         break;
       case TransactionState.Terminated:
         // For good measure absorb any additional messages that arrive (should not happen).
-        if (request.method === SIPConstants.INVITE || request.method === SIPConstants.ACK) {
+        if (request.method === C.INVITE || request.method === C.ACK) {
           return;
         }
         break;
