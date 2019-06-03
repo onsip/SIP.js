@@ -1,4 +1,4 @@
-import { Exceptions } from "../../Exceptions";
+import { TransportError } from "../exceptions";
 import { URI } from "../messages";
 import { IncomingRequestMessage } from "./incoming-request-message";
 import { OutgoingResponse, ResponseOptions } from "./outgoing-response";
@@ -66,5 +66,5 @@ export interface IncomingRequestDelegate {
    * A transport error occurred attempted to send a response.
    * @param error Transport error.
    */
-  onTransportError?(error: Exceptions.TransportError): void;
+  onTransportError?(error: TransportError): void;
 }

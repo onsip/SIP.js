@@ -1,5 +1,5 @@
-import { Exceptions } from "../../Exceptions";
 import { Dialog, SessionDialog } from "../dialogs";
+import { TransactionStateError } from "../exceptions";
 import {
   IncomingInviteRequest,
   IncomingRequestDelegate,
@@ -55,7 +55,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponseWithSession {
     if (!this.acceptable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not acceptable in state ${this.transaction.state}.`
       );
     }
@@ -175,7 +175,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    */
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponseWithSession {
     if (!this.progressable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not progressable in state ${this.transaction.state}.`
       );
     }

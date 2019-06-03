@@ -1,4 +1,4 @@
-import { Exceptions } from "../../Exceptions";
+import { TransportError } from "../exceptions";
 import { Logger, LoggerFactory } from "../log";
 import {
   C,
@@ -346,7 +346,7 @@ export class UserAgentClient implements OutgoingRequest {
    * status code.
    * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
    */
-  private onTransportError(error: Exceptions.TransportError): void {
+  private onTransportError(error: TransportError): void {
     this.logger.error(error.message);
     this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
     const message = new IncomingResponseMessage();

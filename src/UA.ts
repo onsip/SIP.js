@@ -16,6 +16,7 @@ import {
   Logger,
   LoggerFactory,
   Transport,
+  TransportError,
   URI,
   UserAgentCore,
   UserAgentCoreConfiguration,
@@ -311,7 +312,7 @@ export class UA extends EventEmitter {
           onCancel: (cancel: IncomingRequestMessage): void => {
             context.onCancel(cancel);
           },
-          onTransportError: (error: Exceptions.TransportError): void => {
+          onTransportError: (error: TransportError): void => {
             context.onTransportError();
           }
         };
@@ -574,7 +575,7 @@ export class UA extends EventEmitter {
     if (this.status === UAStatus.STATUS_INIT) {
       this.status = UAStatus.STATUS_STARTING;
       if (!this.configuration.transportConstructor) {
-        throw new Exceptions.TransportError("Transport constructor not set");
+        throw new TransportError("Transport constructor not set");
       }
       this.transport = new this.configuration.transportConstructor(
         this.getLogger("sip.transport"),

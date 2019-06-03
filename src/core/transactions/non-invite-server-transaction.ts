@@ -1,5 +1,4 @@
-import { Exceptions } from "../../Exceptions";
-
+import { TransportError } from "../exceptions";
 import { IncomingRequestMessage } from "../messages";
 import { Timers } from "../timers";
 import { Transport } from "../transport";
@@ -67,7 +66,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
         if (!this.lastResponse) {
           throw new Error("Last response undefined.");
         }
-        this.send(this.lastResponse).catch((error: Exceptions.TransportError) => {
+        this.send(this.lastResponse).catch((error: TransportError) => {
           this.logTransportError(error, "Failed to send retransmission of provisional response.");
         });
         break;
@@ -79,7 +78,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
         if (!this.lastResponse) {
           throw new Error("Last response undefined.");
         }
-        this.send(this.lastResponse).catch((error: Exceptions.TransportError) => {
+        this.send(this.lastResponse).catch((error: TransportError) => {
           this.logTransportError(error, "Failed to send retransmission of final response.");
         });
         break;
@@ -121,14 +120,14 @@ export class NonInviteServerTransaction extends ServerTransaction {
         this.lastResponse = response;
         if (statusCode >= 100 && statusCode < 200) {
           this.stateTransition(TransactionState.Proceeding);
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send provisional response.");
           });
           return;
         }
         if (statusCode >= 200 && statusCode <= 699) {
           this.stateTransition(TransactionState.Completed);
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send final response.");
           });
           return;
@@ -144,7 +143,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
         this.lastResponse = response;
         if (statusCode >= 200 && statusCode <= 699) {
           this.stateTransition(TransactionState.Completed);
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send final response.");
           });
           return;

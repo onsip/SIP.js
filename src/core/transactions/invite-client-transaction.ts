@@ -1,4 +1,4 @@
-import { Exceptions } from "../../Exceptions";
+import { TransportError } from "../exceptions";
 
 import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
 import { Timers } from "../timers";
@@ -60,7 +60,7 @@ export class InviteClientTransaction extends ClientTransaction {
     // will wait for an INVITE message to be acknowledged (a SIP response message is received).
     // So Timer B should be cleared when the transaction state proceeds from "Calling".
     this.B = setTimeout(() => this.timer_B(), Timers.TIMER_B);
-    this.send(request.toString()).catch((error: Exceptions.TransportError) => {
+    this.send(request.toString()).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send initial outgoing request.");
     });
   }
@@ -116,7 +116,7 @@ export class InviteClientTransaction extends ClientTransaction {
     const scheme = this.transport.server && this.transport.server.scheme ? this.transport.server.scheme : undefined;
     ack.setViaHeader(id, scheme);
     this.ackRetransmissionCache.set(toTag, ack); // Add to ACK retransmission cache
-    this.send(ack.toString()).catch((error: Exceptions.TransportError) => {
+    this.send(ack.toString()).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send ACK to 2xx response.");
     });
   }
@@ -259,7 +259,7 @@ export class InviteClientTransaction extends ClientTransaction {
           // If we have a cache hit, try pulling the ACK from cache and retransmitting it.
           const ack = this.ackRetransmissionCache.get(response.toTag);
           if (ack) {
-            this.send(ack.toString()).catch((error: Exceptions.TransportError) => {
+            this.send(ack.toString()).catch((error: TransportError) => {
               this.logTransportError(error, "Failed to send retransmission of ACK to 2xx response.");
             });
             return;
@@ -307,7 +307,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * https://tools.ietf.org/html/rfc3261#section-17.1.4
    * @param error The error.
    */
-  protected onTransportError(error: Exceptions.TransportError): void {
+  protected onTransportError(error: TransportError): void {
     if (this.user.onTransportError) {
       this.user.onTransportError(error);
     }
@@ -369,7 +369,7 @@ export class InviteClientTransaction extends ClientTransaction {
 
     // TOOO: "User-Agent" header
 
-    this.send(ack).catch((error: Exceptions.TransportError) => {
+    this.send(ack).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send ACK to non-2xx response.");
     });
     return;

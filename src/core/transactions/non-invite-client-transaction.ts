@@ -1,5 +1,4 @@
-import { Exceptions } from "../../Exceptions";
-
+import { TransportError } from "../exceptions";
 import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
 import { Timers } from "../timers";
 import { Transport } from "../transport";
@@ -45,7 +44,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
     // MUST be passed to the transport layer for transmission.
     // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
     this.F = setTimeout(() => this.timer_F(), Timers.TIMER_F);
-    this.send(request.toString()).catch((error: Exceptions.TransportError) => {
+    this.send(request.toString()).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send initial outgoing request.");
     });
   }

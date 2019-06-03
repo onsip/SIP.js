@@ -1,4 +1,4 @@
-import { Exceptions } from "../../Exceptions";
+import { TransportError } from "../exceptions";
 import { C, IncomingRequestMessage } from "../messages";
 import { Timers } from "../timers";
 import { Transport } from "../transport";
@@ -95,7 +95,7 @@ export class InviteServerTransaction extends ServerTransaction {
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         if (request.method === C.INVITE) {
           if (this.lastProvisionalResponse) {
-            this.send(this.lastProvisionalResponse).catch((error: Exceptions.TransportError) => {
+            this.send(this.lastProvisionalResponse).catch((error: TransportError) => {
               this.logTransportError(error, "Failed to send retransmission of provisional response.");
             });
           }
@@ -120,7 +120,7 @@ export class InviteServerTransaction extends ServerTransaction {
           if (!this.lastFinalResponse) {
             throw new Error("Last final response undefined.");
           }
-          this.send(this.lastFinalResponse).catch((error: Exceptions.TransportError) => {
+          this.send(this.lastFinalResponse).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send retransmission of final response.");
           });
           return;
@@ -182,7 +182,7 @@ export class InviteServerTransaction extends ServerTransaction {
           if (statusCode > 100) {
             this.startProgressExtensionTimer(); // FIXME: remove
           }
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send 1xx response.");
           });
           return;
@@ -197,7 +197,7 @@ export class InviteServerTransaction extends ServerTransaction {
         if (statusCode >= 200 && statusCode <= 299) {
           this.lastFinalResponse = response;
           this.stateTransition(TransactionState.Accepted);
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send 2xx response.");
           });
           return;
@@ -210,7 +210,7 @@ export class InviteServerTransaction extends ServerTransaction {
         if (statusCode >= 300 && statusCode <= 699) {
           this.lastFinalResponse = response;
           this.stateTransition(TransactionState.Completed);
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send non-2xx final response.");
           });
           return;
@@ -221,7 +221,7 @@ export class InviteServerTransaction extends ServerTransaction {
         // the server transaction MUST pass the response to the transport layer for transmission.
         // https://tools.ietf.org/html/rfc6026#section-8.7
         if (statusCode >= 200 && statusCode <= 299) {
-          this.send(response).catch((error: Exceptions.TransportError) => {
+          this.send(response).catch((error: TransportError) => {
             this.logTransportError(error, "Failed to send 2xx response.");
           });
           return;
@@ -248,7 +248,7 @@ export class InviteServerTransaction extends ServerTransaction {
    */
   public retransmitAcceptedResponse(): void {
     if (this.state === TransactionState.Accepted && this.lastFinalResponse) {
-      this.send(this.lastFinalResponse).catch((error: Exceptions.TransportError) => {
+      this.send(this.lastFinalResponse).catch((error: TransportError) => {
         this.logTransportError(error, "Failed to send 2xx response.");
       });
     }
@@ -363,7 +363,7 @@ export class InviteServerTransaction extends ServerTransaction {
         if (!this.lastProvisionalResponse) {
           throw new Error("Last provisional response undefined.");
         }
-        this.send(this.lastProvisionalResponse).catch((error: Exceptions.TransportError) => {
+        this.send(this.lastProvisionalResponse).catch((error: TransportError) => {
           this.logTransportError(error, "Failed to send retransmission of provisional response.");
         });
       }, Timers.PROVISIONAL_RESPONSE_INTERVAL);

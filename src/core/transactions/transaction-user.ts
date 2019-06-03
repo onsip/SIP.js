@@ -1,4 +1,4 @@
-import { Exceptions } from "../../Exceptions";
+import { TransportError } from "../exceptions";
 import { LoggerFactory } from "../log";
 import { IncomingResponseMessage } from "../messages";
 import { TransactionState } from "./transaction-state";
@@ -42,7 +42,7 @@ export interface TransactionUser {
    * https://tools.ietf.org/html/rfc3261#section-17.2.4
    * https://tools.ietf.org/html/rfc6026
    */
-  onTransportError?: (error: Exceptions.TransportError) => void;
+  onTransportError?: (error: TransportError) => void;
 }
 
 /**

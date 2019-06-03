@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 
-import { Exceptions } from "../../Exceptions";
+import { TransportError } from "../exceptions";
 import { Logger } from "../log";
 import { Transport } from "../transport";
 import { TransactionState } from "./transaction-state";
@@ -73,13 +73,13 @@ export abstract class Transaction extends EventEmitter {
   public on(name: "stateChanged", callback: () => void): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
-  protected logTransportError(error: Exceptions.TransportError, message: string): void {
+  protected logTransportError(error: TransportError, message: string): void {
     this.logger.error(error.message);
     this.logger.error(`Transport error occurred in ${this.typeToString()} with id ${this.id}.`);
     this.logger.error(message);
   }
 
-  protected abstract onTransportError(error: Exceptions.TransportError): void;
+  protected abstract onTransportError(error: TransportError): void;
 
   /**
    * Pass message to transport for transmission. If transport fails,
@@ -91,15 +91,15 @@ export abstract class Transaction extends EventEmitter {
       // FIXME: Transport is not, yet, typed and it is not clear
       // yet what send() may or may not send our way. So for now,
       // make sure we convert it to a TransportError if need be.
-      if (error instanceof Exceptions.TransportError) {
+      if (error instanceof TransportError) {
         this.onTransportError(error);
         return;
       }
-      let transportError: Exceptions.TransportError;
+      let transportError: TransportError;
       if (error && typeof error.message === "string") {
-        transportError = new Exceptions.TransportError(error.message);
+        transportError = new TransportError(error.message);
       } else {
-        transportError = new Exceptions.TransportError();
+        transportError = new TransportError();
       }
       this.onTransportError(transportError);
       throw transportError;

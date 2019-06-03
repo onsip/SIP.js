@@ -29,11 +29,11 @@ import {
   SubscriptionDelegate,
   Timers,
   Transport,
+  TransportError,
   URI,
   UserAgentCore,
   UserAgentCoreConfiguration
 } from "../../../src/core";
-import { Exceptions } from "../../../src/Exceptions";
 import { Parser } from "../../../src/Parser";
 import { makeUserAgentCoreConfigurationFromUA, UA } from "../../../src/UA";
 
@@ -118,7 +118,7 @@ describe("UserAgentCore", () => {
 
       describe("Transport Error occurs", () => {
         beforeEach((done) => {
-          transportAlice.send.and.callFake(() => Promise.reject(new Exceptions.TransportError("Test error.")));
+          transportAlice.send.and.callFake(() => Promise.reject(new TransportError("Test error.")));
           request = coreAlice.invite(message);
           request.delegate = delegate;
           setTimeout(() => done(), 10); // transport calls are async, so give it some time

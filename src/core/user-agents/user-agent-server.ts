@@ -1,4 +1,4 @@
-import { Exceptions } from "../../Exceptions";
+import { TransactionStateError } from "../exceptions";
 import { Logger, LoggerFactory } from "../log";
 import {
   constructOutgoingResponse,
@@ -73,7 +73,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponse {
     if (!this.acceptable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not acceptable in state ${this.transaction.state}.`
       );
     }
@@ -87,7 +87,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponse {
     if (!this.progressable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not progressable in state ${this.transaction.state}.`
       );
     }
@@ -101,7 +101,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
     if (!this.redirectable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not redirectable in state ${this.transaction.state}.`
       );
     }
@@ -118,7 +118,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public reject(options: ResponseOptions = { statusCode: 480 }): OutgoingResponse {
     if (!this.rejectable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not rejectable in state ${this.transaction.state}.`
       );
     }
@@ -132,7 +132,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public trying(options?: ResponseOptions): OutgoingResponse {
     if (!this.tryingable) {
-      throw new Exceptions.TransactionStateError(
+      throw new TransactionStateError(
         `${this.message.method} not tryingable in state ${this.transaction.state}.`
       );
     }

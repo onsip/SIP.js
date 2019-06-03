@@ -5,6 +5,7 @@ import { C } from "./Constants";
 import {
   AckableIncomingResponseWithSession,
   Body,
+  Exception,
   fromBodyLegacy,
   getBody,
   Grammar,
@@ -35,7 +36,7 @@ import {
   URI
 } from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
-import { Exception, Exceptions } from "./Exceptions";
+import { Exceptions } from "./Exceptions";
 import {
   ReferClientContext,
   ReferServerContext
