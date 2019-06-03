@@ -4,6 +4,7 @@ export * from "./methods";
 // Files
 export * from "./body";
 export * from "./digest-authentication";
+export * from "./grammar";
 export * from "./incoming-message";
 export * from "./incoming-request-message";
 export * from "./incoming-request";

@@ -1,8 +1,19 @@
-import * as pegGrammar from "./Grammar/dist/Grammar";
+import * as pegGrammar from "../../grammar/dist/grammar";
 
-import { NameAddrHeader, URI } from "./core";
+import { NameAddrHeader } from "./name-addr-header";
+import { URI } from "./uri";
 
+/**
+ * Grammar.
+ * @internal
+ */
 export namespace Grammar {
+
+  /**
+   * Parse.
+   * @param input -
+   * @param startRule -
+   */
   export function parse(input: string, startRule: string): any {
     const options: any = {startRule};
 
@@ -17,8 +28,7 @@ export namespace Grammar {
   /**
    * Parse the given string and returns a SIP.NameAddrHeader instance or undefined if
    * it is an invalid NameAddrHeader.
-   * @public
-   * @param {String} name_addr_header
+   * @param name_addr_header -
    */
   export function nameAddrHeaderParse(nameAddrHeader: string): NameAddrHeader | undefined {
     const parsedNameAddrHeader: any = Grammar.parse(nameAddrHeader, "Name_Addr_Header");
@@ -29,8 +39,7 @@ export namespace Grammar {
   /**
    * Parse the given string and returns a SIP.URI instance or undefined if
    * it is an invalid URI.
-   * @public
-   * @param {String} uri
+   * @param uri -
    */
   export function URIParse(uri: string): URI | undefined {
     const parsedUri: any = Grammar.parse(uri, "SIP_URI");

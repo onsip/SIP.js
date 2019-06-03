@@ -1,7 +1,11 @@
-import { Logger, OutgoingRequestMessage, Transport as TransportBase } from "../core";
+import {
+  Grammar,
+  Logger,
+  OutgoingRequestMessage,
+  Transport as TransportBase
+} from "../core";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Grammar } from "../Grammar";
 import { Utils } from "../Utils";
 
 export enum TransportStatus {

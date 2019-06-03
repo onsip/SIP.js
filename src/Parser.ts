@@ -1,5 +1,9 @@
-import { IncomingRequestMessage, IncomingResponseMessage, Logger } from "./core";
-import { Grammar } from "./Grammar";
+import {
+  Grammar,
+  IncomingRequestMessage,
+  IncomingResponseMessage,
+  Logger
+} from "./core";
 
 /**
  * Extract and parse every header of a SIP message.

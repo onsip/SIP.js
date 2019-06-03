@@ -4,10 +4,10 @@ const fs = require("fs"),
     pegjs = require("pegjs"),
     tspegjs = require("ts-pegjs");
 
-const thisFolder = "./src/Grammar",
-    inputFile = thisFolder + "/src/Grammar.pegjs",
+const thisFolder = "./src/grammar",
+    inputFile = thisFolder + "/src/grammar.pegjs",
     outputFolder = thisFolder + "/dist",
-    outputFile = outputFolder + "/Grammar.ts";
+    outputFile = outputFolder + "/grammar.ts";
 
 const grammarContents = fs.readFileSync(inputFile, "utf8");
 

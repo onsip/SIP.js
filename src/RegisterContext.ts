@@ -1,10 +1,9 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
-import { IncomingResponseMessage, URI } from "./core";
+import { Grammar, IncomingResponseMessage, URI } from "./core";
 import { Transport } from "./core/transport";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { Grammar } from "./Grammar";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 

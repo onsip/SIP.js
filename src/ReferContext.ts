@@ -1,6 +1,7 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import {
+  Grammar,
   IncomingRequest,
   IncomingResponseMessage,
   NameAddrHeader,
@@ -10,7 +11,6 @@ import {
 } from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { Grammar } from "./Grammar";
 import { ServerContext } from "./ServerContext";
 import {
   InviteClientContext,

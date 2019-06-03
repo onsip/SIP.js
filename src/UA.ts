@@ -4,6 +4,7 @@ import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
 import {
   DigestAuthentication,
+  Grammar,
   IncomingInviteRequest,
   IncomingMessageRequest,
   IncomingNotifyRequest,
@@ -22,7 +23,6 @@ import {
 } from "./core";
 import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { Grammar } from "./Grammar";
 import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
 import { ReferServerContext } from "./ReferContext";

@@ -1,5 +1,6 @@
 export {
   DigestAuthentication,
+  Grammar,
   IncomingRequestMessage as IncomingRequest,
   IncomingResponseMessage as IncomingResponse,
   LoggerFactory,
@@ -19,7 +20,6 @@ export {
   UAStatus
 } from "./Enums";
 export { Exceptions } from "./Exceptions";
-export { Grammar } from "./Grammar";
 export { Parser } from "./Parser";
 export { PublishContext } from "./PublishContext";
 export {

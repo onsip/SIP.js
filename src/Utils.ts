@@ -1,7 +1,7 @@
 import { C } from "./Constants";
 import { Body } from "./core/messages/body";
+import { Grammar } from "./core/messages/grammar";
 import { URI } from "./core/messages/uri";
-import { Grammar } from "./Grammar";
 import { BodyObj, SessionDescriptionHandlerModifier } from "./session-description-handler";
 
 export namespace Utils {

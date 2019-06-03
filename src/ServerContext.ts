@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import { C } from "./Constants";
 import {
   fromBodyLegacy,
+  Grammar,
   IncomingRequest,
   IncomingRequestMessage,
   InviteServerTransaction,
@@ -12,7 +13,6 @@ import {
   ResponseOptions
 } from "./core";
 import { TypeStrings } from "./Enums";
-import { Grammar } from "./Grammar";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 

@@ -7,6 +7,7 @@ import {
   Body,
   fromBodyLegacy,
   getBody,
+  Grammar,
   IncomingAckRequest,
   IncomingInviteRequest,
   IncomingPrackRequest,
@@ -35,7 +36,6 @@ import {
 } from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
 import { Exception, Exceptions } from "./Exceptions";
-import { Grammar } from "./Grammar";
 import {
   ReferClientContext,
   ReferServerContext
