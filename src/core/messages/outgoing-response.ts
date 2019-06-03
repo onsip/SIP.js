@@ -1,7 +1,6 @@
-import { C } from "../../Constants";
 import { Body } from "./body";
 import { IncomingRequestMessage } from "./incoming-request-message";
-import { newTag, str_utf8_length } from "./utils";
+import { getReasonPhrase, newTag, str_utf8_length } from "./utils";
 
 /**
  * A SIP message sent from a local server to a remote client,
@@ -48,7 +47,7 @@ export function constructOutgoingResponse(
   if (options.statusCode < 100 || options.statusCode > 699) {
     throw new TypeError("Invalid statusCode: " + options.statusCode);
   }
-  const reasonPhrase = options.reasonPhrase ? options.reasonPhrase : C.REASON_PHRASE[options.statusCode];
+  const reasonPhrase = options.reasonPhrase ? options.reasonPhrase : getReasonPhrase(options.statusCode);
 
   // SIP responses are distinguished from requests by having a Status-Line
   // as their start-line.  A Status-Line consists of the protocol version

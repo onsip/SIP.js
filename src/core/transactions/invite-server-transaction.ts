@@ -1,7 +1,5 @@
-import { C } from "../../Constants";
 import { Exceptions } from "../../Exceptions";
-
-import { IncomingRequestMessage } from "../messages";
+import { C, IncomingRequestMessage } from "../messages";
 import { Timers } from "../timers";
 import { Transport } from "../transport";
 import { ServerTransaction } from "./server-transaction";

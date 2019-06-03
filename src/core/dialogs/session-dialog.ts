@@ -1,7 +1,7 @@
-import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
 import {
   Body,
+  C,
   getBody,
   IncomingRequestMessage,
   IncomingResponseMessage,

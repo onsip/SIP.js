@@ -1,6 +1,6 @@
-import { C } from "../../Constants";
 import { SubscriptionDialog } from "../dialogs";
 import {
+  C,
   IncomingResponseMessage,
   OutgoingRequestDelegate,
   OutgoingSubscribeRequest,

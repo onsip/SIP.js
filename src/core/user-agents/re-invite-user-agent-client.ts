@@ -1,6 +1,6 @@
-import { C } from "../../Constants";
 import { SessionDialog } from "../dialogs";
 import {
+  C,
   IncomingResponseMessage,
   OutgoingAckRequest,
   OutgoingInviteRequest,

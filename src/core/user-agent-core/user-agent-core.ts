@@ -1,8 +1,8 @@
-import { C } from "../../Constants";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
 import { Dialog } from "../dialogs";
 import {
   Body,
+  C,
   constructOutgoingResponse,
   IncomingRequestMessage,
   IncomingResponseMessage,
@@ -495,7 +495,7 @@ export class UserAgentCore {
     // If the Request-URI uses a scheme not supported by the UAS, it SHOULD
     // reject the request with a 416 (Unsupported URI Scheme) response.
     // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
-    if (message.ruri.scheme !== C.SIP) {
+    if (message.ruri.scheme !== "sip") {
       this.replyStateless(message, { statusCode: 416 });
       return;
     }

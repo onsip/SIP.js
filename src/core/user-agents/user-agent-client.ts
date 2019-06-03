@@ -1,7 +1,7 @@
-import { C } from "../../Constants";
 import { Exceptions } from "../../Exceptions";
 import { Logger, LoggerFactory } from "../../LoggerFactory";
 import {
+  C,
   IncomingResponseMessage,
   OutgoingRequest,
   OutgoingRequestDelegate,

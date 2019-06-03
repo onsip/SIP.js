@@ -1,6 +1,6 @@
-import { C } from "../../Constants";
 import { Logger } from "../../LoggerFactory";
 import {
+  C,
   IncomingRequestMessage,
   NameAddrHeader,
   OutgoingRequestMessage,

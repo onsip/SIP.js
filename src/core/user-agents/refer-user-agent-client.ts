@@ -1,6 +1,5 @@
-import { C } from "../../Constants";
 import { SessionDialog } from "../dialogs";
-import { OutgoingReferRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
+import { C, OutgoingReferRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 

@@ -1,4 +1,4 @@
-import { C } from "../../Constants";
+import { C } from "../messages";
 
 /**
  * FIXME: TODO: Should be configurable/variable.
