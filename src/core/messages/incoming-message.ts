@@ -1,4 +1,3 @@
-import { TypeStrings } from "../../Enums";
 import { Grammar } from "../../Grammar";
 import { NameAddrHeader } from "./name-addr-header";
 import { headerize } from "./utils";
@@ -8,7 +7,6 @@ import { headerize } from "./utils";
  * @public
  */
 export class IncomingMessage {
-  public type: TypeStrings = TypeStrings.IncomingMessage;
   public viaBranch!: string;
   public method!: string;
   public body!: string;

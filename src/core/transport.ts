@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 
-import { TypeStrings } from "../Enums";
 import { Logger } from "../LoggerFactory";
 
 /**
@@ -12,14 +11,11 @@ import { Logger } from "../LoggerFactory";
  * @public
  */
 export abstract class Transport extends EventEmitter {
-  public type: TypeStrings;
   public server: any;
   protected logger: Logger;
 
   constructor(logger: Logger, options: any) {
     super();
-    this.type = TypeStrings.Transport;
-
     this.logger = logger;
   }
 
