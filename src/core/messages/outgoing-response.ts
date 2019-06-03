@@ -1,6 +1,7 @@
 import { C } from "../../Constants";
 import { Body } from "./body";
 import { IncomingRequestMessage } from "./incoming-request-message";
+import { newTag, str_utf8_length } from "./utils";
 
 /**
  * A SIP message sent from a local server to a remote client,
@@ -169,21 +170,4 @@ export function constructOutgoingResponse(
   }
 
   return { message: response };
-}
-
-function createRandomToken(size: number, base: number = 32): string {
-  let token: string = "";
-  for (let i = 0; i < size; i++ ) {
-    const r: number = Math.floor(Math.random() * base);
-    token += r.toString(base);
-  }
-  return token;
-}
-
-export function newTag(): string {
-  return createRandomToken(10);
-}
-
-function str_utf8_length(str: string): number {
-  return encodeURIComponent(str).replace(/%[A-F\d]{2}/g, "U").length;
 }

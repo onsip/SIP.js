@@ -5,11 +5,12 @@ import {
   IncomingRequest,
   IncomingRequestDelegate,
   IncomingRequestMessage,
-  newTag,
   OutgoingResponse,
   ResponseOptions,
   URI
 } from "../messages";
+import { newTag } from "../messages/utils";
+
 import {
   InviteServerTransaction,
   NonInviteServerTransaction,
