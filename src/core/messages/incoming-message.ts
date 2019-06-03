@@ -1,7 +1,7 @@
 import { TypeStrings } from "../../Enums";
 import { Grammar } from "../../Grammar";
-import { Utils } from "../../Utils";
-import { NameAddrHeader } from "../messages";
+import { NameAddrHeader } from "./name-addr-header";
+import { headerize } from "./utils";
 
 /**
  * Incoming SIP message.
@@ -31,7 +31,7 @@ export class IncomingMessage {
    */
   public addHeader(name: string, value: string): void {
     const header = { raw: value };
-    name = Utils.headerize(name);
+    name = headerize(name);
 
     if (this.headers[name]) {
       this.headers[name].push(header);
@@ -46,7 +46,7 @@ export class IncomingMessage {
    * @returns Returns the specified header, undefined if header doesn't exist.
    */
   public getHeader(name: string): string | undefined {
-    const header = this.headers[Utils.headerize(name)];
+    const header = this.headers[headerize(name)];
 
     if (header) {
       if (header[0]) {
@@ -63,7 +63,7 @@ export class IncomingMessage {
    * @returns Array - with all the headers of the specified name.
    */
   public getHeaders(name: string): Array<string> {
-    const header: Array<any> = this.headers[Utils.headerize(name)];
+    const header: Array<any> = this.headers[headerize(name)];
     const result: Array<string> = [];
 
     if (!header) {
@@ -81,7 +81,7 @@ export class IncomingMessage {
    * @returns true if header with given name exists, false otherwise
    */
   public hasHeader(name: string): boolean {
-    return !!this.headers[Utils.headerize(name)];
+    return !!this.headers[headerize(name)];
   }
 
   /**
@@ -92,7 +92,7 @@ export class IncomingMessage {
    *   header is not present or in case of a parsing error.
    */
   public parseHeader(name: string, idx: number = 0): any | undefined {
-    name = Utils.headerize(name);
+    name = headerize(name);
 
     if (!this.headers[name]) {
       // this.logger.log("header '" + name + "' not present");
@@ -142,7 +142,7 @@ export class IncomingMessage {
    * @param value - header value
    */
   public setHeader(name: string, value: string): void {
-    this.headers[Utils.headerize(name)] = [{ raw: value }];
+    this.headers[headerize(name)] = [{ raw: value }];
   }
 
   public toString(): string {

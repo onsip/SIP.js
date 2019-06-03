@@ -1,4 +1,5 @@
 export {
+  DigestAuthentication,
   IncomingRequestMessage as IncomingRequest,
   IncomingResponseMessage as IncomingResponse,
   NameAddrHeader,
@@ -10,7 +11,6 @@ export {
 
 export { ClientContext } from "./ClientContext";
 export { C } from "./Constants";
-export { DigestAuthentication } from "./DigestAuthentication";
 export {
   DialogStatus,
   SessionStatus,

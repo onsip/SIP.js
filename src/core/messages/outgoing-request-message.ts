@@ -1,8 +1,12 @@
-import { TypeStrings } from "../../Enums";
-import { Utils } from "../../Utils";
 import { Body } from "./body";
 import { NameAddrHeader } from "./name-addr-header";
 import { URI } from "./uri";
+import {
+  createRandomToken,
+  headerize,
+  newTag,
+  str_utf8_length
+} from "./utils";
 
 /**
  * Outgoing SIP request message options.
@@ -57,8 +61,6 @@ export class OutgoingRequestMessage {
     return new NameAddrHeader(uri, displayName, parameters);
   }
 
-  // Deprecated
-  public type = TypeStrings.OutgoingRequest;
   public readonly headers: {[name: string]: Array<string>} = {};
 
   public readonly method: string;
@@ -123,7 +125,7 @@ export class OutgoingRequestMessage {
 
     // From
     this.fromURI = fromURI.clone();
-    this.fromTag = this.options.fromTag ? this.options.fromTag : Utils.newTag();
+    this.fromTag = this.options.fromTag ? this.options.fromTag : newTag();
     this.from = OutgoingRequestMessage.makeNameAddrHeader(this.fromURI, this.options.fromDisplayName, this.fromTag);
 
     // To
@@ -132,7 +134,7 @@ export class OutgoingRequestMessage {
     this.to = OutgoingRequestMessage.makeNameAddrHeader(this.toURI, this.options.toDisplayName, this.toTag);
 
     // Call-ID
-    this.callId = this.options.callId ? this.options.callId : this.options.callIdPrefix + Utils.createRandomToken(15);
+    this.callId = this.options.callId ? this.options.callId : this.options.callIdPrefix + createRandomToken(15);
 
     // CSeq
     this.cseq = this.options.cseq;
@@ -158,7 +160,7 @@ export class OutgoingRequestMessage {
    * @returns Returns the specified header, undefined if header doesn't exist.
    */
   public getHeader(name: string): string | undefined {
-    const header: Array<string> = this.headers[Utils.headerize(name)];
+    const header: Array<string> = this.headers[headerize(name)];
     if (header) {
       if (header[0]) {
         return header[0];
@@ -182,7 +184,7 @@ export class OutgoingRequestMessage {
    */
   public getHeaders(name: string): Array<string> {
     const result: Array<string> = [];
-    const headerArray: Array<string> = this.headers[Utils.headerize(name)];
+    const headerArray: Array<string> = this.headers[headerize(name)];
 
     if (headerArray) {
       for (const headerPart of headerArray) {
@@ -205,7 +207,7 @@ export class OutgoingRequestMessage {
    * @returns true if header with given name exists, false otherwise
    */
   public hasHeader(name: string): boolean {
-    if (this.headers[Utils.headerize(name)]) {
+    if (this.headers[headerize(name)]) {
       return true;
     } else {
       const regexp: RegExp = new RegExp("^\\s*" + name + "\\s*:", "i");
@@ -225,7 +227,7 @@ export class OutgoingRequestMessage {
    * @param value - header value
    */
   public setHeader(name: string, value: string | Array<string>): void {
-    this.headers[Utils.headerize(name)] = (value instanceof Array) ? value : [value];
+    this.headers[headerize(name)] = (value instanceof Array) ? value : [value];
   }
 
   /**
@@ -281,12 +283,12 @@ export class OutgoingRequestMessage {
 
     if (this.body) {
       if (typeof this.body === "string") {
-        msg += "Content-Length: " + Utils.str_utf8_length(this.body) + "\r\n\r\n";
+        msg += "Content-Length: " + str_utf8_length(this.body) + "\r\n\r\n";
         msg += this.body;
       } else {
         if (this.body.body && this.body.contentType) {
           msg += "Content-Type: " + this.body.contentType + "\r\n";
-          msg += "Content-Length: " + Utils.str_utf8_length(this.body.body) + "\r\n\r\n";
+          msg += "Content-Length: " + str_utf8_length(this.body.body) + "\r\n\r\n";
           msg += this.body.body;
         } else {
           msg += "Content-Length: " + 0 + "\r\n\r\n";

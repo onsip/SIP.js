@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
 import {
+  DigestAuthentication,
   IncomingInviteRequest,
   IncomingMessageRequest,
   IncomingNotifyRequest,
@@ -16,7 +17,6 @@ import {
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "./core";
-import { DigestAuthentication } from "./DigestAuthentication";
 import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
 import { Grammar } from "./Grammar";

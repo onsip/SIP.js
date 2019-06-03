@@ -1,18 +1,15 @@
 import MD5 from "crypto-js/md5";
 
-import { OutgoingRequestMessage, URI } from "./core";
-import { TypeStrings } from "./Enums";
-import { Logger, LoggerFactory } from "./LoggerFactory";
-import { Utils } from "./Utils";
+import { Logger, LoggerFactory } from "../../LoggerFactory";
+import { OutgoingRequestMessage } from "./outgoing-request-message";
+import { URI } from "./uri";
+import { createRandomToken } from "./utils";
 
 /**
- * SIP Digest Authentication.
- * @function Digest Authentication
- * @param {SIP.UA} ua
+ * Digest Authentication.
+ * @internal
  */
-
 export class DigestAuthentication {
-  public type: TypeStrings;
   public stale: boolean | undefined;
 
   private logger: Logger;
@@ -30,8 +27,13 @@ export class DigestAuthentication {
   private method: string | undefined;
   private uri: string | URI | undefined;
 
+  /**
+   * Constructor.
+   * @param loggerFactory - LoggerFactory.
+   * @param username - Username.
+   * @param password - Password.
+   */
   constructor(loggerFactory: LoggerFactory, username: string | undefined, password: string | undefined) {
-    this.type = TypeStrings.DigestAuthentication;
     this.logger = loggerFactory.getLogger("sipjs.digestauthentication");
     this.username = username;
     this.password = password;
@@ -42,10 +44,9 @@ export class DigestAuthentication {
   /**
    * Performs Digest authentication given a SIP request and the challenge
    * received in a response to that request.
-   * Returns true if credentials were successfully generated, false otherwise.
-   *
-   * @param {SIP.OutgoingRequest} request
-   * @param {Object} challenge
+   * @param request -
+   * @param challenge -
+   * @returns true if credentials were successfully generated, false otherwise.
    */
   public authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean {
     // Inspect and validate the challenge.
@@ -94,7 +95,7 @@ export class DigestAuthentication {
 
     this.method = request.method;
     this.uri = request.ruri;
-    this.cnonce = Utils.createRandomToken(12);
+    this.cnonce = createRandomToken(12);
     this.nc += 1;
     this.updateNcHex();
 
@@ -139,7 +140,6 @@ export class DigestAuthentication {
   }
   /**
    * Generate the 'nc' value as required by Digest in this.ncHex by reading this.nc.
-   * @private
    */
   private updateNcHex(): void {
     const hex = Number(this.nc).toString(16);
@@ -148,7 +148,6 @@ export class DigestAuthentication {
 
   /**
    * Generate Digest 'response' value.
-   * @private
    */
   private calculateResponse(body?: string): void {
     let ha2;
