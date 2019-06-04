@@ -1,12 +1,10 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
+import { Grammar, IncomingResponseMessage, URI } from "./core";
+import { Transport } from "./core/transport";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { Grammar } from "./Grammar";
-import { IncomingResponse } from "./SIPMessage";
-import { Transport } from "./Transport";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 export namespace RegisterContext {
@@ -239,7 +237,7 @@ export class RegisterContext extends ClientContext {
     this.closeHeaders = this.options.closeWithHeaders ?
       (this.options.extraHeaders || []).slice() : [];
 
-    this.receiveResponse = (response: IncomingResponse) => {
+    this.receiveResponse = (response: IncomingResponseMessage) => {
       // Discard responses to older REGISTER/un-REGISTER requests.
       if (response.cseq !== this.request.cseq) {
         return;
@@ -418,7 +416,7 @@ export class RegisterContext extends ClientContext {
     this.send();
   }
 
-  public unregistered(response?: IncomingResponse, cause?: string): void {
+  public unregistered(response?: IncomingResponseMessage, cause?: string): void {
     this.registered = false;
     this.emit("unregistered", response || undefined, cause || undefined);
   }
@@ -434,7 +432,7 @@ export class RegisterContext extends ClientContext {
     return this;
   }
 
-  private registrationFailure(response: IncomingResponse | undefined, cause: string): void {
+  private registrationFailure(response: IncomingResponseMessage | undefined, cause: string): void {
     this.emit("failed", response || undefined, cause || undefined);
   }
 

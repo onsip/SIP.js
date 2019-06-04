@@ -319,7 +319,7 @@ describe("URI", function() {
     });
 
     it('produces a SIP.URI', function () {
-      expect(uri.type).toBe(SIP.TypeStrings.URI);
+      expect(uri instanceof SIP.URI).toBe(true);
     });
 
     function itParses (property, expected) {

@@ -91,7 +91,7 @@ describe('ClientContext', function() {
         'Content-Length: 11',
         '',
         'a= sendrecv',
-        ''].join('\r\n'), ua);
+        ''].join('\r\n'), ua.getLogger("sip.parser"));
     });
 
     it('emits progress on a 100-199 response', function() {

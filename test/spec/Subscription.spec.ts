@@ -1,12 +1,16 @@
 import { C } from "../../src/Constants";
-import { Dialog, DialogState } from "../../src/Core/dialogs";
-import { NonInviteClientTransaction } from "../../src/Core/transactions";
-import { UserAgentCore } from "../../src/Core/user-agent-core";
-import { ReSubscribeUserAgentServer, UserAgentClient } from "../../src/Core/user-agents";
-import { IncomingRequest as IncomingRequestMessage } from "../../src/SIPMessage";
+import {
+  Dialog,
+  DialogState,
+  IncomingRequestMessage,
+  NonInviteClientTransaction,
+  ReSubscribeUserAgentServer,
+  Timers,
+  URI,
+  UserAgentClient,
+  UserAgentCore
+} from "../../src/core";
 import { Subscription } from "../../src/Subscription";
-import { Timers } from "../../src/Timers";
-import { URI } from "../../src/URI";
 import { Utils } from "../../src/Utils";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../support/EventEmitterSpy";
 import { connectUserFake, makeUserFake, UserFake } from "../support/UserFake";

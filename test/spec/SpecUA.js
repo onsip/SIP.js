@@ -426,7 +426,7 @@ describe('UA', function() {
     });
 
     it('returns the credentials that are found', function() {
-      var request = { ruri : { host : 'ruri host', type: SIP.TypeStrings.URI },
+      var request = { ruri : { host : 'ruri host' },
                       method : 'request method' };
       var credentials = { realm : 'credential realm' ,
                           uri : 'credential uri' };

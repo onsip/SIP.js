@@ -24,8 +24,7 @@ module.exports = function(config) {
       'test/spec/Web/SessionDescriptionHandler.spec.js': 'webpack',
       'test/spec/Web/Modifiers.spec.js': 'webpack',
       'test/spec/*.spec.js': ['webpack', 'sourcemap'],
-      'test/spec/Contexts/*.js': ['webpack', 'sourcemap'],
-      'test/spec/Core/*.js': ['webpack', 'sourcemap']
+      'test/spec/core/*.js': ['webpack', 'sourcemap']
     },
 
     webpack: {

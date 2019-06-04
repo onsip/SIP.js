@@ -1,8 +1,8 @@
 import { C } from "./Constants";
-import { TypeStrings } from "./Enums";
-import { Grammar } from "./Grammar";
-import { SessionDescriptionHandlerModifier } from "./session-description-handler";
-import { URI } from "./URI";
+import { Body } from "./core/messages/body";
+import { Grammar } from "./core/messages/grammar";
+import { URI } from "./core/messages/uri";
+import { BodyObj, SessionDescriptionHandlerModifier } from "./session-description-handler";
 
 export namespace Utils {
   export interface Deferred<T> {
@@ -89,7 +89,7 @@ export namespace Utils {
     if (!target) {
       return;
     // If a SIP.URI instance is given then return it.
-    } else if ((target as URI).type === TypeStrings.URI) {
+    } else if (target instanceof URI) {
       return target as URI;
 
     // If a string is given split it by '@':
@@ -213,5 +213,41 @@ export namespace Utils {
     reason = Utils.getReasonPhrase(code, reason);
 
     return "SIP/2.0 " + code + " " + reason + "\r\n";
+  }
+
+  /**
+   * Create a Body given a BodyObj.
+   * @param bodyObj Body Object
+   */
+  export function fromBodyObj(bodyObj: BodyObj): Body {
+    const content = bodyObj.body;
+    const contentType = bodyObj.contentType;
+    const contentDisposition = contentTypeToContentDisposition(contentType);
+    const body: Body = { contentDisposition, contentType, content };
+    return body;
+  }
+
+  /**
+   * Create a BodyObj given a Body.
+   * @param bodyObj Body Object
+   */
+  export function toBodyObj(body: Body): BodyObj {
+    const bodyObj: BodyObj = {
+      body: body.content,
+      contentType: body.contentType
+    };
+    return bodyObj;
+  }
+
+  // If the Content-Disposition header field is missing, bodies of
+  // Content-Type application/sdp imply the disposition "session", while
+  // other content types imply "render".
+  // https://tools.ietf.org/html/rfc3261#section-13.2.1
+  function contentTypeToContentDisposition(contentType: string): string {
+    if (contentType === "application/sdp") {
+      return "session";
+    } else {
+      return "render";
+    }
   }
 }

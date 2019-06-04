@@ -5,33 +5,38 @@ import { C } from "./Constants";
 import {
   AckableIncomingResponseWithSession,
   Body,
+  Exception,
   fromBodyLegacy,
-  fromBodyObj,
   getBody,
+  Grammar,
   IncomingAckRequest,
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequest,
+  IncomingRequestMessage,
   IncomingResponse,
+  IncomingResponseMessage,
+  InviteServerTransaction,
+  Logger,
+  NameAddrHeader,
+  NonInviteServerTransaction,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingRequest,
   OutgoingRequestDelegate,
+  OutgoingRequestMessage,
   OutgoingResponse,
   OutgoingResponseWithSession,
   PrackableIncomingResponseWithSession,
-  RequestOptions
-} from "./Core/messages";
-import { Session as SessionCore, SessionState, SignalingState } from "./Core/session";
-import {
-  InviteServerTransaction,
-  NonInviteServerTransaction
-} from "./Core/transactions";
+  RequestOptions,
+  Session as SessionCore,
+  SessionState,
+  SignalingState,
+  Timers,
+  URI
+} from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
-import { Exception, Exceptions } from "./Exceptions";
-import { Grammar } from "./Grammar";
-import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
+import { Exceptions } from "./Exceptions";
 import {
   ReferClientContext,
   ReferServerContext
@@ -46,14 +51,7 @@ import {
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { DTMF } from "./Session/DTMF";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "./SIPMessage";
-import { Timers } from "./Timers";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 export namespace Session {
@@ -265,7 +263,7 @@ export abstract class Session extends EventEmitter {
 
     // Convert any "body" option to a Body.
     if (options.body) {
-      options.body = fromBodyObj(options.body);
+      options.body = Utils.fromBodyObj(options.body);
     }
 
     // Convert any "receiveResponse" callback option passed to an OutgoingRequestDelegate.
@@ -643,7 +641,7 @@ export abstract class Session extends EventEmitter {
         incomingRequest.accept({
           statusCode: 200,
           extraHeaders,
-          body: fromBodyObj(description)
+          body: Utils.fromBodyObj(description)
         });
         this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
         this.emit("reinviteAccepted", this);
@@ -766,7 +764,7 @@ export abstract class Session extends EventEmitter {
 
         const requestOptions: RequestOptions = {
           extraHeaders,
-          body: fromBodyObj(description)
+          body: Utils.fromBodyObj(description)
         };
 
         this.session.invite(delegate, requestOptions);
@@ -1674,7 +1672,7 @@ export class InviteServerContext extends Session implements ServerContext {
     const sdh = this.getSessionDescriptionHandler();
     return sdh
       .getDescription(options.sessionDescriptionHandlerOptions, options.modifiers)
-      .then((bodyObj) => fromBodyObj(bodyObj));
+      .then((bodyObj) => Utils.fromBodyObj(bodyObj));
   }
 
   private setAnswer(answer: Body, options: {
@@ -1703,7 +1701,7 @@ export class InviteServerContext extends Session implements ServerContext {
     return sdh
       .setDescription(offer.content, options.sessionDescriptionHandlerOptions, options.modifiers)
       .then(() => sdh.getDescription(options.sessionDescriptionHandlerOptions, options.modifiers))
-      .then((bodyObj) => fromBodyObj(bodyObj));
+      .then((bodyObj) => Utils.fromBodyObj(bodyObj));
   }
 
   private getSessionDescriptionHandler(): SessionDescriptionHandler {
@@ -1870,7 +1868,12 @@ export class InviteClientContext extends Session implements ClientContext {
       }
       if (this.inviteWithoutSdp) {
         // just send an invite with no sdp...
-        this.request.body = this.renderbody;
+        if (this.renderbody && this.rendertype) {
+          this.request.body = {
+            body: this.renderbody,
+            contentType: this.rendertype
+          };
+        }
         this.status = SessionStatus.STATUS_INVITE_SENT;
         this.send();
       } else {
