@@ -7,6 +7,7 @@ describe('RegisterContext', function() {
     var log = jasmine.createSpy('log').and.callFake(function() {
       return 'log';
     });
+    const loggerFactory = new SIP.LoggerFactory();
     ua = {
       configuration : {
         displayName: 'displayName',
@@ -15,16 +16,20 @@ describe('RegisterContext', function() {
           expires : 999,
           regId: 1
         },
-        uri : 'uri',
+        uri : new SIP.URI("sip", "uri", "domain"),
+        viaHost: "viaHost",
       },
       contact : 'contact',
       on: function() {},
       getLogger : function() {
         return { log : log };
       },
+      getLoggerFactory: () => loggerFactory,
+      getSupportedResponseOptions: () => ["outbound"],
       normalizeTarget: function (target) { return target; },
       listeners: function () { return [1]; }
     };
+    ua.userAgentCore = new SIP.Core.UserAgentCore(SIP.makeUserAgentCoreConfigurationFromUA(ua));
     RegisterContext = new SIP.RegisterContext(ua, ua.configuration.registerOptions);
 
 

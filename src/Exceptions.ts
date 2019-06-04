@@ -1,27 +1,9 @@
+import { Exception } from "./core";
 import { SessionStatus, TypeStrings } from "./Enums";
 
 // tslint:disable:max-classes-per-file
 
-/**
- * An Exception is considered a condition that a reasonable application may wish to catch.
- * An Error indicates serious problems that a reasonable application should not try to catch.
- */
-export abstract class Exception extends Error {
-  protected constructor(message?: string) {
-    super(message); // 'Error' breaks prototype chain here
-    Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
-  }
-}
-
 export namespace Exceptions {
-  /**
-   * Indicates that the operation could not be completed given the current transaction state.
-   */
-  export class TransactionStateError extends Exception {
-    constructor(message?: string) {
-      super(message ? message : "Transaction state error.");
-    }
-  }
 
   /**
    * Indicates the session description handler has closed.
@@ -40,15 +22,6 @@ export namespace Exceptions {
   export class TerminatedSessionError extends Exception {
     constructor() {
       super("The session has terminated.");
-    }
-  }
-
-  /**
-   * Transport error.
-   */
-  export class TransportError extends Exception {
-    constructor(message?: string) {
-      super(message ? message : "Unspecified transport error.");
     }
   }
 

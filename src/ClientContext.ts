@@ -1,13 +1,10 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
+import { Body, IncomingResponseMessage, Logger, NameAddrHeader, OutgoingRequestMessage, URI } from "./core";
 import { TypeStrings } from "./Enums";
-import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import { BodyObj } from "./session-description-handler";
-import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 export class ClientContext extends EventEmitter {
@@ -41,27 +38,31 @@ export class ClientContext extends EventEmitter {
     * - body
     */
     options = Object.create(options || Object.prototype);
-    options.extraHeaders = (options.extraHeaders || []).slice();
-
-    // Build the request
-    objToConstruct.request = new OutgoingRequest(
-      objToConstruct.method,
-      target,
-      objToConstruct.ua,
-      options.params,
-      options.extraHeaders,
-    );
-
+    const extraHeaders = (options.extraHeaders || []).slice();
+    const params = options.params || {};
+    let bodyObj: BodyObj | undefined;
     if (options.body) {
-      const body = options.body;
-      const contentType = options.contentType ? options.contentType : "application/sdp";
-      const bodyObj: BodyObj = {
-        body,
-        contentType
+      bodyObj = {
+        body: options.body,
+        contentType: options.contentType ? options.contentType : "application/sdp"
       };
       objToConstruct.body = bodyObj;
-      objToConstruct.request.body = bodyObj;
     }
+    let body: Body | undefined;
+    if (bodyObj) {
+      body = Utils.fromBodyObj(bodyObj);
+    }
+
+    // Build the request
+    objToConstruct.request = ua.userAgentCore.makeOutgoingRequestMessage(
+      method,
+      target,
+      params.fromUri ? params.fromUri : ua.userAgentCore.configuration.aor,
+      params.toUri ? params.toUri : target,
+      params,
+      extraHeaders,
+      body
+    );
 
     /* Set other properties from the request */
     if (objToConstruct.request.from) {
@@ -79,7 +80,7 @@ export class ClientContext extends EventEmitter {
   // inheritance issue with InviteClientContext
   public ua!: UA;
   public logger!: Logger;
-  public request!: OutgoingRequest;
+  public request!: OutgoingRequestMessage;
   public method!: string;
   public body!: BodyObj | undefined;
   public localIdentity!: NameAddrHeader;
@@ -102,7 +103,7 @@ export class ClientContext extends EventEmitter {
     return this;
   }
 
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
     const cause: string = Utils.getReasonPhrase(statusCode);
 

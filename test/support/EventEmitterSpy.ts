@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { Logger } from "../../src/LoggerFactory";
+import { Logger } from "../../src/core";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;

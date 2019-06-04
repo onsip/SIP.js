@@ -5,9 +5,9 @@ import {
   RTCPeerConnection,
 } from "react-native-webrtc";
 
+import { Logger } from "../core";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Logger } from "../LoggerFactory";
 import { InviteClientContext, InviteServerContext } from "../Session";
 import {
   BodyObj,
@@ -26,6 +26,19 @@ import { SessionDescriptionHandlerObserver } from "./SessionDescriptionHandlerOb
  */
 
 export class SessionDescriptionHandler extends EventEmitter implements SessionDescriptionHandlerDefinition {
+  /**
+   * @param {SIP.Session} session
+   * @param {Object} [options]
+   */
+  public static defaultFactory(
+    session: InviteClientContext | InviteServerContext,
+    options: any
+  ): SessionDescriptionHandler {
+    const logger: Logger = session.ua.getLogger("sip.invitecontext.sessionDescriptionHandler", session.id);
+    const observer: SessionDescriptionHandlerObserver = new SessionDescriptionHandlerObserver(session, options);
+    return new SessionDescriptionHandler(logger, observer, options);
+  }
+
   public type: TypeStrings;
   private options: any;
   private logger: Logger;
@@ -87,16 +100,6 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     this.initPeerConnection(this.options.peerConnectionOptions);
 
     this.constraints = this.checkAndDefaultConstraints(this.options.constraints);
-  }
-
-  /**
-   * @param {SIP.Session} session
-   * @param {Object} [options]
-   */
-  public defaultFactory(session: InviteClientContext | InviteServerContext, options: any): SessionDescriptionHandler {
-    const logger: Logger = session.ua.getLogger("sip.invitecontext.sessionDescriptionHandler", session.id);
-    const observer: SessionDescriptionHandlerObserver = new SessionDescriptionHandlerObserver(session, options);
-    return new SessionDescriptionHandler(logger, observer, options);
   }
 
   // Functions the sesssion can use

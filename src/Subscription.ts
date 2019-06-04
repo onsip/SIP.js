@@ -3,28 +3,25 @@ import { EventEmitter } from "events";
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
 import {
-  fromBodyObj,
   IncomingNotifyRequest,
+  IncomingRequestMessage,
   IncomingRequestWithSubscription,
   IncomingResponse,
+  IncomingResponseMessage,
+  Logger,
+  NameAddrHeader,
+  OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   RequestOptions,
-  toBodyObj
-} from "./Core/messages";
-import { Subscription as SubscriptionCore, SubscriptionState } from "./Core/subscription";
-import { UserAgentCore } from "./Core/user-agent-core";
-import { AllowedMethods } from "./Core/user-agent-core/allowed-methods";
+  Subscription as SubscriptionCore,
+  SubscriptionState,
+  URI,
+  UserAgentCore
+} from "./core";
+import { AllowedMethods } from "./core/user-agent-core/allowed-methods";
 import { TypeStrings } from "./Enums";
-import { Logger } from "./LoggerFactory";
-import { NameAddrHeader } from "./NameAddrHeader";
 import { BodyObj } from "./session-description-handler";
-import {
-  IncomingRequest as IncomingRequestMessage,
-  IncomingResponse as IncomingResponseMessage,
-  OutgoingRequest as OutgoingRequestMessage
-} from "./SIPMessage";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 interface SubscriptionOptions {
@@ -425,7 +422,7 @@ export class Subscription extends EventEmitter implements ClientContext {
   private initContext(): SubscribeClientContext {
     const options = {
       extraHeaders: this.extraHeaders,
-      body: this.body ? fromBodyObj(this.body) : undefined
+      body: this.body ? Utils.fromBodyObj(this.body) : undefined
     };
     this.context = new SubscribeClientContext(this.ua.userAgentCore, this.uri, this.event, this.expires, options);
     this.context.delegate = {
@@ -490,10 +487,12 @@ class SubscribeClientContext {
     extraHeaders.push("Expires: " + this.expires);
     extraHeaders.push("Contact: " + this.core.configuration.contact.toString());
 
-    const body = options && options.body ? toBodyObj(options.body) : undefined;
+    const body = options && options.body;
 
-    this.message = this.core.configuration.outgoingRequestMessageFactory(
+    this.message = core.makeOutgoingRequestMessage(
       C.SUBSCRIBE,
+      this.target,
+      this.core.configuration.aor,
       this.target,
       {},
       extraHeaders,

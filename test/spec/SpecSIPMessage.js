@@ -18,11 +18,13 @@ describe('SIPMessage', function() {
       };
 
       method = 'method';
-      ruri = 'ruri';
+      ruri = new SIP.URI("sip", "ruri", "domain");
+      from = new SIP.URI("sip", "from", "domain");
+      to = new SIP.URI("sip", "to", "domain");
       body = 'body';
       extraHeaders = 'extraHeaders';
 
-      OutgoingRequest = new SIP.OutgoingRequest(method,ruri,ua,params,extraHeaders,body);
+      OutgoingRequest = new SIP.OutgoingRequest(method,ruri,from,to,params,extraHeaders,body);
 
     });
 
@@ -30,11 +32,10 @@ describe('SIPMessage', function() {
       OutgoingRequest = undefined;
       expect(OutgoingRequest).toBeUndefined();
 
-      OutgoingRequest = new SIP.OutgoingRequest(method,ruri,ua,params,extraHeaders,body);
+      OutgoingRequest = new SIP.OutgoingRequest(method,ruri,from,to,params,extraHeaders,body);
       expect(OutgoingRequest).toBeDefined();
-       expect(OutgoingRequest.ua).toBe(ua);
       expect(OutgoingRequest.headers).toBeDefined(); //might want to revisit this
-      expect(OutgoingRequest.ruri).toBe(ruri);
+      expect(OutgoingRequest.ruri).toEqual(ruri);
       expect(OutgoingRequest.body).toBeDefined(); // and this
       expect(OutgoingRequest.extraHeaders).toBe(extraHeaders);
       // grammar.nameAddrHeaderParse got overwritten to make these two lines work
@@ -196,7 +197,6 @@ describe('SIPMessage', function() {
       expect(IncomingRequest.to).toBeUndefined();
       expect(IncomingRequest.toTag).toBeUndefined();
       expect(IncomingRequest.body).toBeUndefined();
-      expect(IncomingRequest.ua).toBeDefined();
       expect(IncomingRequest.ruri).toBeUndefined();
       expect(IncomingRequest.transport).toBeDefined();
       expect(IncomingRequest.serverTransaction).toBeUndefined();

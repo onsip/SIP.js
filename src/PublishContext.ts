@@ -1,11 +1,11 @@
 import { ClientContext } from "./ClientContext";
 import { C } from "./Constants";
+import { Body, IncomingResponseMessage, URI } from "./core";
+import { Transport } from "./core/transport";
 import { TypeStrings } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { IncomingResponse, OutgoingRequest } from "./SIPMessage";
-import { Transport } from "./Transport";
+import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
-import { URI } from "./URI";
 import { Utils } from "./Utils";
 
 /**
@@ -146,7 +146,7 @@ export class PublishContext extends ClientContext {
     this.emit("unpublished", undefined, C.causes.CONNECTION_ERROR);
   }
 
-  public receiveResponse(response: IncomingResponse): void {
+  public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
     const cause: string = Utils.getReasonPhrase(statusCode);
 
@@ -292,14 +292,32 @@ export class PublishContext extends ClientContext {
       reqOptions.extraHeaders.push("SIP-If-Match: " + this.pubRequestEtag);
     }
 
-    this.request = new OutgoingRequest(C.PUBLISH, this.target, this.ua, this.options.params, reqOptions.extraHeaders);
-
+    const ruri = this.target instanceof URI ? this.target : this.ua.normalizeTarget(this.target);
+    if (!ruri) {
+      throw new Error("ruri undefined.");
+    }
+    const params = this.options.params || {};
+    let bodyObj: BodyObj | undefined;
     if (this.pubRequestBody !== undefined) {
-      this.request.body = {
+      bodyObj = {
         body: this.pubRequestBody,
         contentType: this.options.contentType
       };
     }
+    let body: Body | undefined;
+    if (bodyObj) {
+      body = Utils.fromBodyObj(bodyObj);
+    }
+
+    this.request = this.ua.userAgentCore.makeOutgoingRequestMessage(
+      C.PUBLISH,
+      ruri,
+      params.fromUri ? params.fromUri : this.ua.userAgentCore.configuration.aor,
+      params.toUri ? params.toUri : this.target,
+      params,
+      reqOptions.extraHeaders,
+      body
+    );
 
     this.send();
   }

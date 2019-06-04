@@ -1,9 +1,11 @@
+import {
+  Grammar,
+  Logger,
+  OutgoingRequestMessage,
+  Transport as TransportBase
+} from "../core";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Grammar } from "../Grammar";
-import { Logger } from "../LoggerFactory";
-import { OutgoingRequest } from "../SIPMessage";
-import { Transport as TransportBase } from "../Transport";
 import { Utils } from "../Utils";
 
 export enum TransportStatus {
@@ -97,7 +99,7 @@ export class Transport extends TransportBase {
    * @param {Object} [options]
    * @returns {Promise}
    */
-  protected sendPromise(msg: OutgoingRequest | string, options: any = {}): Promise<{msg: string}> {
+  protected sendPromise(msg: OutgoingRequestMessage | string, options: any = {}): Promise<{msg: string}> {
     if (!this.statusAssert(TransportStatus.STATUS_OPEN, options.force)) {
       this.onError("unable to send message - WebSocket not open");
       return Promise.reject();
