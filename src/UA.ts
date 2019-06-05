@@ -150,7 +150,7 @@ export class UA extends EventEmitter {
       toString: (options?: any) => string
     };
   public status: UAStatus;
-  public transport: Transport | undefined;
+  public transport: Transport;
   public sessions: {[id: string]: InviteClientContext | InviteServerContext};
   public subscriptions: {[id: string]: Subscription};
   public data: any;
@@ -260,6 +260,14 @@ export class UA extends EventEmitter {
       this.error = UA.C.CONFIGURATION_ERROR;
       throw e;
     }
+
+    if (!this.configuration.transportConstructor) {
+      throw new TransportError("Transport constructor not set");
+    }
+    this.transport = new this.configuration.transportConstructor(
+      this.getLogger("sip.transport"),
+      this.configuration.transportOptions
+    );
 
     const userAgentCoreConfiguration = makeUserAgentCoreConfigurationFromUA(this);
 
@@ -400,11 +408,9 @@ export class UA extends EventEmitter {
   public unregister(options?: any): this {
     this.configuration.register = false;
 
-    if (this.transport) {
-      this.transport.afterConnected(() => {
-        this.registerContext.unregister(options);
-      });
-    }
+    this.transport.afterConnected(() => {
+      this.registerContext.unregister(options);
+    });
 
     return this;
   }
@@ -432,20 +438,16 @@ export class UA extends EventEmitter {
     // Delay sending actual invite until the next 'tick' if we are already
     // connected, so that API consumers can register to events fired by the
     // the session.
-    if (this.transport) {
-      this.transport.afterConnected(() => {
-        context.invite();
-        this.emit("inviteSent", context);
-      });
-    }
+    this.transport.afterConnected(() => {
+      context.invite();
+      this.emit("inviteSent", context);
+    });
     return context;
   }
 
   public subscribe(target: string | URI, event: string, options: any): Subscription {
     const sub: Subscription = new Subscription(this, target, event, options);
-    if (this.transport) {
-      this.transport.afterConnected(() => sub.subscribe());
-    }
+    this.transport.afterConnected(() => sub.subscribe());
     return sub;
   }
 
@@ -462,11 +464,9 @@ export class UA extends EventEmitter {
   public publish(target: string | URI, event: string, body: string, options: any): PublishContext {
     const pub: PublishContext = new PublishContext(this, target, event, options);
 
-    if (this.transport) {
-      this.transport.afterConnected(() => {
-        pub.publish(body);
-      });
-    }
+    this.transport.afterConnected(() => {
+      pub.publish(body);
+    });
     return pub;
   }
 
@@ -494,9 +494,7 @@ export class UA extends EventEmitter {
   public request(method: string, target: string | URI, options?: any): ClientContext {
     const req: ClientContext = new ClientContext(this, method, target, options);
 
-    if (this.transport) {
-      this.transport.afterConnected(() => req.send());
-    }
+    this.transport.afterConnected(() => req.send());
     return req;
   }
 
@@ -549,9 +547,7 @@ export class UA extends EventEmitter {
     this.status = UAStatus.STATUS_USER_CLOSED;
 
     // Disconnect the transport and reset user agent core
-    if (this.transport) {
-      this.transport.disconnect();
-    }
+    this.transport.disconnect();
     this.userAgentCore.reset();
 
     if (typeof environment.removeEventListener === "function") {
@@ -574,24 +570,13 @@ export class UA extends EventEmitter {
     this.logger.log("user requested startup...");
     if (this.status === UAStatus.STATUS_INIT) {
       this.status = UAStatus.STATUS_STARTING;
-      if (!this.configuration.transportConstructor) {
-        throw new TransportError("Transport constructor not set");
-      }
-      this.transport = new this.configuration.transportConstructor(
-        this.getLogger("sip.transport"),
-        this.configuration.transportOptions
-      );
       this.setTransportListeners();
       this.emit("transportCreated", this.transport);
       this.transport.connect();
-
     } else if (this.status === UAStatus.STATUS_USER_CLOSED) {
       this.logger.log("resuming");
       this.status = UAStatus.STATUS_READY;
-      if (this.transport) {
-        this.transport.connect();
-      }
-
+      this.transport.connect();
     } else if (this.status === UAStatus.STATUS_STARTING) {
       this.logger.log("UA is in STARTING status, not opening new connection");
     } else if (this.status === UAStatus.STATUS_READY) {
@@ -701,11 +686,9 @@ export class UA extends EventEmitter {
    * Helper function. Sets transport listeners
    */
   private setTransportListeners(): void {
-    if (this.transport) {
-      this.transport.on("connected", () => this.onTransportConnected());
-      this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
-      this.transport.on("transportError", () => this.onTransportError());
-    }
+    this.transport.on("connected", () => this.onTransportConnected());
+    this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
+    this.transport.on("transportError", () => this.onTransportError());
   }
 
   /**
@@ -875,6 +858,8 @@ export class UA extends EventEmitter {
       // Transport related parameters
       transportConstructor: WebTransport,
       transportOptions: {},
+
+      usePreloadedRoute: false,
 
       // string to be inserted into User-Agent request header
       userAgentString: SIPConstants.USER_AGENT,
@@ -1236,6 +1221,12 @@ export class UA extends EventEmitter {
           }
         },
 
+        usePreloadedRoute: (usePreloadedRoute: boolean): boolean | undefined => {
+          if (typeof usePreloadedRoute === "boolean") {
+            return usePreloadedRoute;
+          }
+        },
+
         userAgentString: (userAgentString: string): string | undefined => {
           if (typeof userAgentString === "string") {
             return userAgentString;
@@ -1317,7 +1308,10 @@ export function makeUserAgentCoreConfigurationFromUA(ua: UA): UserAgentCoreConfi
   const contact = ua.contact;
   const displayName = ua.configuration.displayName ? ua.configuration.displayName : "";
   const hackViaTcp = ua.configuration.hackViaTcp ? true : false;
-  const routeSet = ua.configuration.usePreloadedRoute && ua.transport ? [ua.transport.server.sipUri] : [];
+  const routeSet =
+     ua.configuration.usePreloadedRoute && ua.transport.server && ua.transport.server.sipUri ?
+      [ua.transport.server.sipUri] :
+      [];
   const sipjsId = ua.configuration.sipjsId || Utils.createRandomToken(5);
 
   let supportedOptionTags: Array<string> = [];
