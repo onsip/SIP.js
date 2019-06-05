@@ -1766,8 +1766,8 @@ export class InviteClientContext extends Session implements ClientContext {
 
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
     if (anonymous && ua.configuration.uri) {
-      options.params.from_displayName = "Anonymous";
-      options.params.from_uri = "sip:anonymous@anonymous.invalid";
+      options.params.fromDisplayName = "Anonymous";
+      options.params.fromUri = "sip:anonymous@anonymous.invalid";
 
       extraHeaders.push("P-Preferred-Identity: " + ua.configuration.uri.toString());
       extraHeaders.push("Privacy: id");
