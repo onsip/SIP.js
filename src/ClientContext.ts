@@ -1,11 +1,24 @@
 import { EventEmitter } from "events";
 
 import { C } from "./Constants";
-import { Body, IncomingResponseMessage, Logger, NameAddrHeader, OutgoingRequestMessage, URI } from "./core";
+import { Body, Grammar, IncomingResponseMessage, Logger, NameAddrHeader, OutgoingRequestMessage, URI } from "./core";
 import { TypeStrings } from "./Enums";
 import { BodyObj } from "./session-description-handler";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
+
+export namespace ClientContext {
+  export interface Options {
+    body?: string;
+    contentType?: string;
+    extraHeaders?: Array<string>;
+    params?: {
+      fromUri?: string | URI;
+      toUri?: string | URI;
+      toDisplayName?: string;
+    };
+  }
+}
 
 export class ClientContext extends EventEmitter {
   public static initializer(
@@ -13,7 +26,7 @@ export class ClientContext extends EventEmitter {
     ua: UA,
     method: string,
     originalTarget: string | URI,
-    options?: any
+    options?: ClientContext.Options
   ): void {
     objToConstruct.type = TypeStrings.ClientContext;
 
@@ -30,6 +43,26 @@ export class ClientContext extends EventEmitter {
     if (!target) {
       throw new TypeError("Invalid target: " + originalTarget);
     }
+    let fromURI: URI | undefined = ua.userAgentCore.configuration.aor;
+    if (options && options.params && options.params.fromUri) {
+      fromURI =
+        (typeof options.params.fromUri === "string") ?
+          Grammar.URIParse(options.params.fromUri) :
+          options.params.fromUri;
+      if (!fromURI) {
+        throw new TypeError("Invalid from URI: " + options.params.fromUri);
+      }
+    }
+    let toURI: URI | undefined = target;
+    if (options && options.params && options.params.toUri) {
+      toURI =
+        (typeof options.params.toUri === "string") ?
+          Grammar.URIParse(options.params.toUri) :
+          options.params.toUri;
+      if (!toURI) {
+        throw new TypeError("Invalid to URI: " + options.params.toUri);
+      }
+    }
 
     /* Options
     * - extraHeaders
@@ -38,6 +71,7 @@ export class ClientContext extends EventEmitter {
     * - body
     */
     options = Object.create(options || Object.prototype);
+    options = options || {};
     const extraHeaders = (options.extraHeaders || []).slice();
     const params = options.params || {};
     let bodyObj: BodyObj | undefined;
@@ -57,8 +91,8 @@ export class ClientContext extends EventEmitter {
     objToConstruct.request = ua.userAgentCore.makeOutgoingRequestMessage(
       method,
       target,
-      params.fromUri ? params.fromUri : ua.userAgentCore.configuration.aor,
-      params.toUri ? params.toUri : target,
+      fromURI,
+      toURI,
       params,
       extraHeaders,
       body
@@ -86,7 +120,7 @@ export class ClientContext extends EventEmitter {
   public localIdentity!: NameAddrHeader;
   public remoteIdentity!: NameAddrHeader;
 
-  constructor(ua: UA, method: string, target: string | URI, options?: any) {
+  constructor(ua: UA, method: string, target: string | URI, options?: ClientContext.Options) {
     super();
 
     ClientContext.initializer(this, ua, method, target, options);

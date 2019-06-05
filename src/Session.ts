@@ -1716,15 +1716,30 @@ export class InviteServerContext extends Session implements ServerContext {
 
 export namespace InviteClientContext {
   export interface Options {
+    /** Anonymous call if true. */
+    anonymous?: boolean;
+    /** Deprecated. */
+    body?: string;
+    /** Deprecated. */
+    contentType?: string;
     /** Array of extra headers added to the INVITE. */
     extraHeaders?: Array<string>;
     /** If true, send INVITE without SDP. */
     inviteWithoutSdp?: boolean;
-    /** Deprecated */
+    /** Deprecated. */
+    onInfo?: any;
+    /** Deprecated. */
     params?: {
-      toUri?: string;
-      toDisplayName: string;
+      fromDisplayName?: string;
+      fromTag?: string;
+      fromUri?: string | URI;
+      toDisplayName?: string;
+      toUri?: string | URI;
     };
+    /** Deprecated. */
+    renderbody?: string;
+    /** Deprecated. */
+    rendertype?: string;
     /** Options to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
   }
@@ -1743,7 +1758,12 @@ export class InviteClientContext extends Session implements ClientContext {
   private earlyMediaSessionDescriptionHandlers: Map<string, SessionDescriptionHandler>;
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
 
-  constructor(ua: UA, target: string | URI, options: any = {}, modifiers: any = []) {
+  constructor(
+    ua: UA,
+    target: string | URI,
+    options: InviteClientContext.Options = {},
+    modifiers: SessionDescriptionHandlerModifiers = []
+  ) {
     if (!ua.configuration.sessionDescriptionHandlerFactory) {
       ua.logger.warn("Can't build ISC without SDH Factory");
       throw new Error("ICC Constructor Failed");
