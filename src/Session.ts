@@ -415,7 +415,9 @@ export abstract class Session extends EventEmitter {
   public on(
     event: "dtmf", listener: (request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF) => void
   ): this;
-  public on(event: "progress", listener: (response: string, reasonPhrase?: any) => void): this;
+  public on(
+    event: "progress", listener: (response: IncomingResponseMessage | string, reasonPhrase?: any) => void
+  ): this;
   public on(event: "referRequested", listener: (context: ReferServerContext) => void): this;
   public on(
     event:
