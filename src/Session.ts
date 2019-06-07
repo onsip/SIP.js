@@ -415,7 +415,9 @@ export abstract class Session extends EventEmitter {
   public on(
     event: "dtmf", listener: (request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF) => void
   ): this;
-  public on(event: "progress", listener: (response: string, reasonPhrase?: any) => void): this;
+  public on(
+    event: "progress", listener: (response: IncomingResponseMessage | string, reasonPhrase?: any) => void
+  ): this;
   public on(event: "referRequested", listener: (context: ReferServerContext) => void): this;
   public on(
     event:
@@ -1448,6 +1450,19 @@ export class InviteServerContext extends Session implements ServerContext {
     const reasonPhrase = options.reasonPhrase;
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
     const body = options.body ? fromBodyLegacy(options.body) : undefined;
+
+    // The 183 (Session Progress) response is used to convey information
+    // about the progress of the call that is not otherwise classified.  The
+    // Reason-Phrase, header fields, or message body MAY be used to convey
+    // more details about the call progress.
+    // https://tools.ietf.org/html/rfc3261#section-21.1.5
+
+    // It is the de facto industry standard to utilize 183 with SDP to provide "early media".
+    // While it is unlikely someone would want to send a 183 without SDP, so it should be an option.
+    if (statusCode === 183 && !body) {
+      return this._progressWithSDP(options);
+    }
+
     try {
       const progressResponse = this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
       this.emit("progress", progressResponse.message, reasonPhrase); // Ported
@@ -1456,6 +1471,28 @@ export class InviteServerContext extends Session implements ServerContext {
     } catch (error) {
       return Promise.reject(error);
     }
+  }
+
+  /**
+   * A version of `progress` which resolves when the provisional response with sdp is sent.
+   * @param options Options bucket.
+   * @throws {ClosedSessionDescriptionHandlerError} The session description handler closed before method completed.
+   * @throws {TransactionStateError} The transaction state does not allow for `progress()` to be called.
+   *                                 Note that the transaction state can change while this call is in progress.
+   */
+  private _progressWithSDP(options: InviteServerContext.Options = {}): Promise<OutgoingResponseWithSession> {
+    const statusCode = options.statusCode || 183;
+    const reasonPhrase = options.reasonPhrase;
+    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
+
+    // Get an offer/answer and send a reply.
+    return this.generateResponseOfferAnswer(options)
+      .then((body) => this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
+      .then((progressResponse) => {
+        this.emit("progress", progressResponse.message, reasonPhrase); // Ported
+        this.session = progressResponse.session;
+        return progressResponse;
+      });
   }
 
   /**

@@ -335,6 +335,36 @@ describe("Session Class", () => {
     });
   }
 
+  function bobProgress183(): void {
+    beforeEach(async () => {
+      resetSpies();
+      inviteServerContext.progress({
+        statusCode: 183,
+      });
+      await inviteClientContextEmitSpy.wait("progress");
+    });
+
+    it("her ua should receive 183", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.mostRecent().args).toEqual(SIP_183);
+    });
+
+    it("her context should emit 'sdh', 'progress'", () => {
+      const spy = inviteClientContextEmitSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICC);
+    });
+
+    it("his context should emit 'progress'", () => {
+      const spy = inviteServerContextEmitSpy;
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
+      expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICS);
+    });
+  }
+
   function bobProgress2x(): void {
     beforeEach(async () => {
       resetSpies();
@@ -1054,6 +1084,34 @@ describe("Session Class", () => {
           });
         });
       });
+
+      // Sending offer in unreliable provisional not legal,
+      // but should still write test for that case. Punting...
+      if (!inviteWithoutSdp) {
+        describe("Bob progress(183)", () => {
+          bobProgress183();
+
+          describe("Bob accept()", () => {
+            bobAccept(false, false, false);
+          });
+
+          describe("Bob reject()", () => {
+            bobReject();
+          });
+
+          describe("Bob progress()", () => {
+            bobProgress();
+
+            describe("Bob accept()", () => {
+              bobAccept(false, false, false);
+            });
+
+            describe("Bob reject()", () => {
+              bobReject();
+            });
+          });
+        });
+      }
 
       describe("Bob progress(reliable)", () => {
         if (inviteWithoutSdp) {
