@@ -123,15 +123,15 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
     // not yet sent an offer.
     // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
     if (!options.body) {
-      if (
+      if (this.confirmedDialog.signalingState === SignalingState.Stable) {
+        options.body = this.confirmedDialog.answer; // resend the answer sent in provisional response
+      } else if (
         this.confirmedDialog.signalingState === SignalingState.Initial ||
         this.confirmedDialog.signalingState === SignalingState.HaveRemoteOffer
       ) {
         throw new Error("Response must have a body.");
       }
     }
-
-    // FIXME: TODO: Guard offer/answer
 
     options.statusCode = options.statusCode || 200;
     options.extraHeaders = options.extraHeaders || [];
@@ -145,7 +145,15 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
 
     // Update dialog signaling state
     if (options.body) {
-      this.confirmedDialog.signalingStateTransition(options.body);
+      // Once the UAS has sent or received an answer to the initial
+      // offer, it MUST NOT generate subsequent offers in any responses
+      // to the initial INVITE.  This means that a UAS based on this
+      // specification alone can never generate subsequent offers until
+      // completion of the initial transaction.
+      // https://tools.ietf.org/html/rfc3261#section-13.2.1
+      if (this.confirmedDialog.signalingState !== SignalingState.Stable) {
+        this.confirmedDialog.signalingStateTransition(options.body);
+      }
     }
 
     return result;
@@ -227,7 +235,15 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
 
     // Update dialog signaling state
     if (options.body) {
-      this.earlyDialog.signalingStateTransition(options.body);
+      // Once the UAS has sent or received an answer to the initial
+      // offer, it MUST NOT generate subsequent offers in any responses
+      // to the initial INVITE.  This means that a UAS based on this
+      // specification alone can never generate subsequent offers until
+      // completion of the initial transaction.
+      // https://tools.ietf.org/html/rfc3261#section-13.2.1
+      if (this.earlyDialog.signalingState !== SignalingState.Stable) {
+        this.earlyDialog.signalingStateTransition(options.body);
+      }
     }
 
     return result;
