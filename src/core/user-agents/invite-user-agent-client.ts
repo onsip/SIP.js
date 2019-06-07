@@ -8,6 +8,7 @@ import {
   OutgoingRequestMessage,
   RequestOptions
 } from "../messages";
+import { SignalingState } from "../session";
 import { InviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
@@ -118,8 +119,22 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
             return;
           }
 
-          // Update dialog signaling state if need be.
-          earlyDialog.signalingStateTransition(message);
+          // If the initial offer is in an INVITE, the answer MUST be in a
+          // reliable non-failure message from UAS back to UAC which is
+          // correlated to that INVITE.  For this specification, that is
+          // only the final 2xx response to that INVITE.  That same exact
+          // answer MAY also be placed in any provisional responses sent
+          // prior to the answer.  The UAC MUST treat the first session
+          // description it receives as the answer, and MUST ignore any
+          // session descriptions in subsequent responses to the initial
+          // INVITE.
+          // https://tools.ietf.org/html/rfc3261#section-13.2.1
+          if (
+            earlyDialog.signalingState === SignalingState.Initial ||
+            earlyDialog.signalingState === SignalingState.HaveLocalOffer
+          ) {
+            earlyDialog.signalingStateTransition(message);
+          }
 
           // Pass response to delegate.
           const session = earlyDialog;
@@ -203,8 +218,22 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
             this.confirmedDialogs.set(dialog.id, dialog);
           }
 
-          // Update dialog signaling state if need be.
-          dialog.signalingStateTransition(message);
+          // If the initial offer is in an INVITE, the answer MUST be in a
+          // reliable non-failure message from UAS back to UAC which is
+          // correlated to that INVITE.  For this specification, that is
+          // only the final 2xx response to that INVITE.  That same exact
+          // answer MAY also be placed in any provisional responses sent
+          // prior to the answer.  The UAC MUST treat the first session
+          // description it receives as the answer, and MUST ignore any
+          // session descriptions in subsequent responses to the initial
+          // INVITE.
+          // https://tools.ietf.org/html/rfc3261#section-13.2.1
+          if (
+            dialog.signalingState === SignalingState.Initial ||
+            dialog.signalingState === SignalingState.HaveLocalOffer
+          ) {
+            dialog.signalingStateTransition(message);
+          }
 
           // Session Initiated! :)
           const session = dialog;
