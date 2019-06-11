@@ -45,7 +45,7 @@ import {
 } from "./Web/SessionDescriptionHandler";
 import { Transport as WebTransport } from "./Web/Transport";
 
-const environment = (global as any).window || global;
+declare var chrome: any;
 
 export namespace UA {
   export interface Options {
@@ -161,7 +161,9 @@ export class UA extends EventEmitter {
   private log: LoggerFactory;
   private error: number | undefined;
   private registerContext: RegisterContext;
-  private environListener: any;
+
+  /** Unload listener. */
+  private unloadListener = (() => { this.stop(); });
 
   constructor(configuration?: UA.Options) {
     super();
@@ -550,11 +552,11 @@ export class UA extends EventEmitter {
     this.transport.disconnect();
     this.userAgentCore.reset();
 
-    if (typeof environment.removeEventListener === "function") {
-      // Google Chrome Packaged Apps don't allow 'unload' listeners:
-      // unload is not available in packaged apps
-      if (!((global as any).chrome && (global as any).chrome.app && (global as any).chrome.app.runtime)) {
-        environment.removeEventListener("unload", this.environListener);
+    if (this.configuration.autostop) {
+      // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
+      const googleChromePackagedApp = chrome && chrome.app && chrome.app.runtime ? true : false;
+      if (window && !googleChromePackagedApp) {
+        window.removeEventListener("unload", this.unloadListener);
       }
     }
 
@@ -585,12 +587,11 @@ export class UA extends EventEmitter {
       this.logger.error("Connection is down. Auto-Recovery system is trying to connect");
     }
 
-    if (this.configuration.autostop && typeof environment.addEventListener === "function") {
-      // Google Chrome Packaged Apps don't allow 'unload' listeners:
-      // unload is not available in packaged apps
-      if (!((global as any).chrome && (global as any).chrome.app && (global as any).chrome.app.runtime)) {
-        this.environListener = this.stop;
-        environment.addEventListener("unload", () => this.environListener());
+    if (this.configuration.autostop) {
+      // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
+      const googleChromePackagedApp = chrome && chrome.app && chrome.app.runtime ? true : false;
+      if (window && !googleChromePackagedApp) {
+        window.addEventListener("unload", this.unloadListener);
       }
     }
 
