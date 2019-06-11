@@ -27,8 +27,12 @@ describe('RegisterContext', function() {
       getLoggerFactory: () => loggerFactory,
       getSupportedResponseOptions: () => ["outbound"],
       normalizeTarget: function (target) { return target; },
-      listeners: function () { return [1]; }
-    };
+      listeners: function () { return [1]; },
+      transport: {
+        on: function () {},
+        send: function () {}
+      }
+  };
     ua.userAgentCore = new SIP.Core.UserAgentCore(SIP.makeUserAgentCoreConfigurationFromUA(ua));
     RegisterContext = new SIP.RegisterContext(ua, ua.configuration.registerOptions);
 
