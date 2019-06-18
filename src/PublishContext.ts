@@ -61,10 +61,6 @@ export class PublishContext extends ClientContext {
     this.logger = ua.getLogger("sip.publish");
 
     this.pubRequestExpires = this.options.expires;
-
-    ua.on("transportCreated", (transport: Transport) =>  {
-      transport.on("transportError", () => this.onTransportError());
-    });
   }
 
   /**

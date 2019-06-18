@@ -209,9 +209,7 @@ export class RegisterContext extends ClientContext {
     // Set status
     this.registered = false;
 
-    ua.on("transportCreated", (transport: Transport): void => {
-      transport.on("disconnected", () => this.onTransportDisconnected());
-    });
+    ua.transport.on("disconnected", () => this.onTransportDisconnected());
   }
 
   public register(options: any = {}): void {
