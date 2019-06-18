@@ -53,10 +53,9 @@ export class Transport extends TransportBase {
   public server: WsServer;
   public ws: any;
 
-  private WebSocket = ((global as any).window || global).WebSocket;
-
   private connectionPromise: Promise<any> | undefined;
   private connectDeferredResolve: ((obj: any) => void) | undefined;
+  private connectDeferredReject: ((obj: any) => void) | undefined;
   private connectionTimeout: any | undefined;
 
   private disconnectionPromise: Promise<any> | undefined;
@@ -182,6 +181,7 @@ export class Transport extends TransportBase {
       }
 
       this.connectDeferredResolve = resolve;
+      this.connectDeferredReject = reject;
 
       this.status = TransportStatus.STATUS_CONNECTING;
       this.emit("connecting");
@@ -194,11 +194,15 @@ export class Transport extends TransportBase {
         this.statusTransition(TransportStatus.STATUS_CLOSED, true);
         this.onError("error connecting to WebSocket " + this.server.wsUri + ":" + e);
         reject("Failed to create a websocket");
+        this.connectDeferredResolve = undefined;
+        this.connectDeferredReject = undefined;
         return;
       }
 
       if (!this.ws) {
         reject("Unexpected instance websocket not set");
+        this.connectDeferredResolve = undefined;
+        this.connectDeferredReject = undefined;
         return;
       }
 
@@ -209,6 +213,8 @@ export class Transport extends TransportBase {
         this.emit("disconnected", {code: 1000});
         this.connectionPromise = undefined;
         reject("Connection timeout");
+        this.connectDeferredResolve = undefined;
+        this.connectDeferredReject = undefined;
       }, this.configuration.connectionTimeout * 1000);
 
       this.boundOnOpen = this.onOpen.bind(this);
@@ -304,6 +310,8 @@ export class Transport extends TransportBase {
 
     if (this.connectDeferredResolve) {
       this.connectDeferredResolve({overrideEvent: true});
+      this.connectDeferredResolve = undefined;
+      this.connectDeferredReject = undefined;
     } else {
       this.logger.warn("Unexpected websocket.onOpen with no connectDeferredResolve");
     }
@@ -327,9 +335,13 @@ export class Transport extends TransportBase {
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
     }
+    if (this.connectDeferredReject) {
+      this.connectDeferredReject("Websocket Closed");
+    }
     this.connectionTimeout = undefined;
     this.connectionPromise = undefined;
     this.connectDeferredResolve = undefined;
+    this.connectDeferredReject = undefined;
 
     // Check whether the user requested to close.
     if (this.disconnectDeferredResolve) {
