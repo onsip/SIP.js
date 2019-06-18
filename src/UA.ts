@@ -555,7 +555,7 @@ export class UA extends EventEmitter {
     if (this.configuration.autostop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (window && !googleChromePackagedApp) {
+      if (typeof window !== "undefined" && !googleChromePackagedApp) {
         window.removeEventListener("unload", this.unloadListener);
       }
     }
@@ -590,7 +590,7 @@ export class UA extends EventEmitter {
     if (this.configuration.autostop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (window && !googleChromePackagedApp) {
+      if (typeof window !== "undefined" && !googleChromePackagedApp) {
         window.addEventListener("unload", this.unloadListener);
       }
     }
