@@ -53,8 +53,6 @@ export class Transport extends TransportBase {
   public server: WsServer;
   public ws: any;
 
-  private WebSocket = ((global as any).window || global).WebSocket;
-
   private connectionPromise: Promise<any> | undefined;
   private connectDeferredResolve: ((obj: any) => void) | undefined;
   private connectDeferredReject: ((obj: any) => void) | undefined;

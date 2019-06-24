@@ -72,7 +72,7 @@ export class Simple extends EventEmitter {
     this.options = options;
 
     // https://stackoverflow.com/questions/7944460/detect-safari-browser
-    const browserUa: string = (global as any).navigator.userAgent.toLowerCase();
+    const browserUa = navigator.userAgent.toLowerCase();
     let isSafari: boolean = false;
     let isFirefox: boolean = false;
     if (browserUa.indexOf("safari") > -1 && browserUa.indexOf("chrome") < 0) {
@@ -300,7 +300,7 @@ export class Simple extends EventEmitter {
     let remoteStream: any;
 
     if (pc.getReceivers) {
-      remoteStream = new (global as any).window.MediaStream();
+      remoteStream = new MediaStream();
       pc.getReceivers().forEach((receiver: any) => {
         const track = receiver.track;
         if (track) {
@@ -332,7 +332,7 @@ export class Simple extends EventEmitter {
       const pc = (this.session.sessionDescriptionHandler as SessionDescriptionHandler).peerConnection;
       let localStream: any;
       if (pc.getSenders) {
-        localStream = new (global as any).window.MediaStream();
+        localStream = new MediaStream();
         pc.getSenders().forEach((sender: any) => {
           const track = sender.track;
           if (track && track.kind === "video") {
