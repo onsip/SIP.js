@@ -511,10 +511,6 @@ export class UA extends EventEmitter {
       return this;
     }
 
-    // Close registerContext
-    this.logger.log("closing registerContext");
-    this.registerContext.close();
-
     // Run terminate on every Session
     for (const session in this.sessions) {
       if (this.sessions[session]) {
@@ -548,9 +544,19 @@ export class UA extends EventEmitter {
 
     this.status = UAStatus.STATUS_USER_CLOSED;
 
-    // Disconnect the transport and reset user agent core
-    this.transport.disconnect();
-    this.userAgentCore.reset();
+    // Disconnect the transport and reset user agent core after successful unregistration
+    this.once("unregistered", () => {
+      // tslint:disable-next-line:no-console
+      console.log("unregistered event received!");
+      if (this.transport) {
+          this.transport.disconnect();
+      }
+      this.userAgentCore.reset();
+    });
+
+    // Close registerContext
+    this.logger.log("closing registerContext");
+    this.registerContext.close();
 
     if (this.configuration.autostop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
