@@ -53,8 +53,6 @@ export class Transport extends TransportBase {
   public server: WsServer;
   public ws: any;
 
-  private WebSocket = ((global as any).window || global).WebSocket;
-
   private connectionPromise: Promise<any> | undefined;
   private connectDeferredResolve: ((obj: any) => void) | undefined;
   private connectDeferredReject: ((obj: any) => void) | undefined;
@@ -367,6 +365,7 @@ export class Transport extends TransportBase {
       this.ws.removeEventListener("message", this.boundOnMessage);
       this.ws.removeEventListener("close", this.boundOnClose);
       this.ws.removeEventListener("error", this.boundOnError);
+      this.ws.close();
       this.ws = undefined;
     }
   }

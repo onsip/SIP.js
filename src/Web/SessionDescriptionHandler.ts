@@ -59,7 +59,6 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   private direction: string;
   private C: any;
   private modifiers: SessionDescriptionHandlerModifiers;
-  private WebRTC: any;
   private iceGatheringDeferred: Utils.Deferred<any> | undefined;
   private iceGatheringTimeout: boolean;
   private iceGatheringTimer: any | undefined;
@@ -97,13 +96,6 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     if (!Array.isArray(this.modifiers)) {
       this.modifiers = [this.modifiers];
     }
-
-    const environment = (global as any).window || global;
-    this.WebRTC = {
-      MediaStream           : environment.MediaStream,
-      getUserMedia          : environment.navigator.mediaDevices.getUserMedia.bind(environment.navigator.mediaDevices),
-      RTCPeerConnection     : environment.RTCPeerConnection
-    };
 
     this.iceGatheringTimeout = false;
 
@@ -444,7 +436,8 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     }).then(() => this.waitForIceGatheringComplete())
     .then(() => {
       const localDescription: RTCSessionDescriptionInit =
-        this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
+       this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
+      // const localDescription = this.peerConnection.localDescription;
       return Utils.reducePromises(modifiers, localDescription);
     }).then((localDescription: RTCSessionDescriptionInit) => {
       this.setDirection(localDescription.sdp || "");
@@ -513,7 +506,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       this.peerConnection.close();
     }
 
-    this.peerConnection = new this.WebRTC.RTCPeerConnection(options.rtcConfiguration);
+    this.peerConnection = new RTCPeerConnection(options.rtcConfiguration);
 
     this.logger.log("New peer connection created");
 
@@ -610,7 +603,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       this.emit("userMediaRequest", constraints);
 
       if (constraints.audio || constraints.video) {
-        this.WebRTC.getUserMedia(constraints).then((streams: any) => {
+        navigator.mediaDevices.getUserMedia(constraints).then((streams) => {
           this.observer.trackAdded();
           this.emit("userMedia", streams);
           resolve(streams);

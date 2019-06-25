@@ -557,6 +557,7 @@ export class SessionDialog extends Dialog implements Session {
         // https://tools.ietf.org/html/rfc3261#section-14.2
         {
           const uas = new ReInviteUserAgentServer(this, message);
+          this.signalingStateTransition(message);
           this.delegate && this.delegate.onInvite ?
             this.delegate.onInvite(uas) :
             uas.reject({ statusCode: 488 }); // TODO: Warning header field.
