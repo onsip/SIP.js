@@ -276,8 +276,8 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       throw error;
     }).then((modifiedDescription) => {
       this.emit("setDescription", modifiedDescription);
-      console.log('before return this.peerConnection.setRemoteDescription(modifiedDescription);');
-      console.log(modifiedDescription);
+      this.logger.debug("before return this.peerConnection.setRemoteDescription(modifiedDescription);");
+      this.logger.debug(modifiedDescription);
 
       return this.peerConnection.setRemoteDescription(modifiedDescription);
     }).catch((e) => {
