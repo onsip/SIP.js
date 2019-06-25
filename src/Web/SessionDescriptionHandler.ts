@@ -262,7 +262,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
           this.shouldAcquireMedia = false;
         });
       }
-    }).then(() => Utils.reducePromises(modifiers, description))
+    }).then(() => Utils.reducePromises(modifiers, sessionDescription))
     .catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
