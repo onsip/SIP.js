@@ -380,9 +380,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       throw error;
     }).then(
       (sdp: RTCSessionDescriptionInit) =>
-        // Utils.reducePromises(modifiers, this.createRTCSessionDescriptionInit(sdp))
-        Utils.reducePromises(modifiers, sdp)
-
+        Utils.reducePromises(modifiers, this.createRTCSessionDescriptionInit(sdp))
       )
       .then((sdp: RTCSessionDescriptionInit) => {
         this.resetIceGatheringComplete();
@@ -402,9 +400,9 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
         throw error;
       }).then(() => this.waitForIceGatheringComplete())
       .then(() => {
-        // const localDescription: RTCSessionDescriptionInit =
-        //   this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
-        const localDescription = this.peerConnection.localDescription;
+        const localDescription: RTCSessionDescriptionInit =
+          this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
+        // const localDescription = this.peerConnection.localDescription;
         return Utils.reducePromises(modifiers, localDescription);
       }).then((localDescription: RTCSessionDescriptionInit) => {
         this.setDirection(localDescription.sdp || "");
