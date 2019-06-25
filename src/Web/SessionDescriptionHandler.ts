@@ -262,7 +262,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
           this.shouldAcquireMedia = false;
         });
       }
-    }).then(() => Utils.reducePromises(modifiers, sessionDescription))
+    }).then(() => Utils.reducePromises(modifiers, description))
     .catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
@@ -276,6 +276,9 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       throw error;
     }).then((modifiedDescription) => {
       this.emit("setDescription", modifiedDescription);
+      console.log('before return this.peerConnection.setRemoteDescription(modifiedDescription);');
+      console.log(modifiedDescription);
+
       return this.peerConnection.setRemoteDescription(modifiedDescription);
     }).catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
@@ -437,6 +440,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     .then(() => {
       const localDescription: RTCSessionDescriptionInit =
        this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
+      // const localDescription = this.peerConnection.localDescription;
       return Utils.reducePromises(modifiers, localDescription);
     }).then((localDescription: RTCSessionDescriptionInit) => {
       this.setDirection(localDescription.sdp || "");
