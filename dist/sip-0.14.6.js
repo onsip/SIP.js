@@ -18246,8 +18246,6 @@ var SessionDescriptionHandler = /** @class */ (function (_super) {
             throw error;
         }).then(function (modifiedDescription) {
             _this.emit("setDescription", modifiedDescription);
-            _this.logger.debug("before return this.peerConnection.setRemoteDescription(modifiedDescription);");
-            _this.logger.debug(modifiedDescription);
             return _this.peerConnection.setRemoteDescription(modifiedDescription);
         }).catch(function (e) {
             if (e.type === Enums_1.TypeStrings.SessionDescriptionHandlerError) {
