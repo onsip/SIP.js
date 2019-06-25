@@ -18235,7 +18235,7 @@ var SessionDescriptionHandler = /** @class */ (function (_super) {
                     _this.shouldAcquireMedia = false;
                 });
             }
-        }).then(function () { return Utils_1.Utils.reducePromises(modifiers, description); })
+        }).then(function () { return Utils_1.Utils.reducePromises(modifiers, sessionDescription); })
             .catch(function (e) {
             if (e.type === Enums_1.TypeStrings.SessionDescriptionHandlerError) {
                 throw e;
@@ -18340,9 +18340,10 @@ var SessionDescriptionHandler = /** @class */ (function (_super) {
             _this.emit("peerConnection-" + methodName + "Failed", error);
             throw error;
         }).then(function (sdp) {
-            // Utils.reducePromises(modifiers, sdp)
-            return Utils_1.Utils.reducePromises(modifiers, _this.createRTCSessionDescriptionInit(sdp));
-        }).then(function (sdp) {
+            return Utils_1.Utils.reducePromises(modifiers, sdp);
+        }
+        // Utils.reducePromises(modifiers, this.createRTCSessionDescriptionInit(sdp))
+        ).then(function (sdp) {
             _this.resetIceGatheringComplete();
             _this.logger.log("Setting local sdp.");
             _this.logger.log("sdp is " + sdp.sdp || false);
@@ -18356,8 +18357,9 @@ var SessionDescriptionHandler = /** @class */ (function (_super) {
             throw error;
         }).then(function () { return _this.waitForIceGatheringComplete(); })
             .then(function () {
-            var localDescription = _this.createRTCSessionDescriptionInit(_this.peerConnection.localDescription);
-            // const localDescription = this.peerConnection.localDescription;
+            // const localDescription: RTCSessionDescriptionInit =
+            //  this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
+            var localDescription = _this.peerConnection.localDescription;
             return Utils_1.Utils.reducePromises(modifiers, localDescription);
         }).then(function (localDescription) {
             _this.setDirection(localDescription.sdp || "");
