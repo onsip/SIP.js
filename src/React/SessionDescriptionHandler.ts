@@ -285,7 +285,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       throw error;
     }).then((modifiedDescription) => {
       this.emit("setDescription", modifiedDescription);
-      return this.peerConnection.setRemoteDescription(new RTCSessionDescription(modifiedDescription));
+      return this.peerConnection.setRemoteDescription(modifiedDescription);
     }).catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
