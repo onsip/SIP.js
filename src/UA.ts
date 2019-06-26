@@ -253,6 +253,11 @@ export class UA extends EventEmitter {
       }
     }
 
+    const deprecatedMessage =
+      "The UA class has been deprecated and will no longer be available starting with SIP.js release 0.16.0. " +
+      "The UA has been replaced by the UserAgent class. Please update accordingly.";
+    this.logger.warn(deprecatedMessage);
+
     try {
       this.loadConfig(configuration);
     } catch (e) {
