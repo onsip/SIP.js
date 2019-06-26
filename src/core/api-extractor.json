@@ -46,7 +46,7 @@
    *
    * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
    */
-  "mainEntryPointFilePath": "<projectFolder>/lib/Core/index.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/lib/core/index.d.ts",
 
   /**
    * Determines how the TypeScript compiler engine will be invoked by API Extractor.
