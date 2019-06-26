@@ -46,6 +46,7 @@ import {
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { SessionInviteOptions } from "./session-invite-options";
+import { SessionOptions } from "./session-options";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 
@@ -161,9 +162,10 @@ export abstract class Session extends EventEmitter {
    * @param userAgent - User agent. See {@link UserAgent} for details.
    * @internal
    */
-  protected constructor(userAgent: UserAgent) {
+  protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
     super();
     this.userAgent = userAgent;
+    this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
 
     const sessionDescriptionHandlerFactory = this.userAgent.configuration.sessionDescriptionHandlerFactory;

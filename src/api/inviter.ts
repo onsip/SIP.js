@@ -81,7 +81,7 @@ export class Inviter extends Session {
     targetURI: URI,
     options: InviterOptions = {}
   ) {
-    super(userAgent);
+    super(userAgent, options);
 
     // Default options params
     options.params = options.params || {};

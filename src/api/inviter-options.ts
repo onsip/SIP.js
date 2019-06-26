@@ -1,12 +1,13 @@
 import { URI } from "../core";
 import { SessionDescriptionHandlerModifier } from "./session-description-handler";
 import { SessionDescriptionHandlerOptions } from "./session-description-handler";
+import { SessionOptions } from "./session-options";
 
 /**
  * Options for {@link Inviter} constructor.
  * @public
  */
-export interface InviterOptions {
+export interface InviterOptions extends SessionOptions {
   /** If true, an anonymous call. */
   anonymous?: boolean;
   /** @deprecated TODO: provide alternative. */
