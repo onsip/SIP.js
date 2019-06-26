@@ -80,6 +80,13 @@ export namespace Parser {
           message.fromTag = parsed.getParam("tag");
         }
         break;
+      case "p-asserted-identity":
+        message.setHeader(headerName.toLowerCase(), headerValue);
+        parsed = Grammar.parse(headerValue, "Name_Addr_Header");
+        if(parsed){
+          message.setHeader(headerName.toLowerCase(), parsed);
+        }
+        break;  
       case "to":
       case "t":
         message.setHeader("to", headerValue);
