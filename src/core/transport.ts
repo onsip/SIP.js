@@ -12,12 +12,12 @@ export abstract class Transport extends EventEmitter {
   public server: any;
   protected logger: Logger;
 
-/**
- * Constructor
- * @param logger - Logger.
- * @param options - Options bucket.
- */
-constructor(logger: Logger, options: any) {
+  /**
+   * Constructor
+   * @param logger - Logger.
+   * @param options - Options bucket.
+   */
+  constructor(logger: Logger, options: any) {
     super();
     this.logger = logger;
   }
