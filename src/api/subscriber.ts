@@ -86,7 +86,7 @@ export class Subscriber extends Subscription {
    * @param options - Options bucket. See {@link SubscriberOptions} for details.
    */
   constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: SubscriberOptions = {}) {
-    super(userAgent);
+    super(userAgent, options);
 
     this.logger = userAgent.getLogger("sip.subscription");
     if (options.body) {

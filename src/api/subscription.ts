@@ -6,6 +6,7 @@ import {
 } from "../core";
 import { Emitter, makeEmitter } from "./emitter";
 import { SubscriptionDelegate } from "./subscription-delegate";
+import { SubscriptionOptions } from "./subscription-options";
 import { SubscriptionState } from "./subscription-state";
 import { SubscriptionSubscribeOptions } from "./subscription-subscribe-options";
 import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-options";
@@ -52,10 +53,11 @@ export abstract class Subscription extends EventEmitter {
    * @param userAgent - User agent. See {@link UserAgent} for details.
    * @internal
    */
-  protected constructor(userAgent: UserAgent) {
+  protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
     super();
     this._logger = userAgent.getLogger("sip.subscription");
     this.userAgent = userAgent;
+    this.delegate = options.delegate;
   }
 
   /**
