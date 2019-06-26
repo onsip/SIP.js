@@ -19,31 +19,61 @@ export interface Body {
     contentType: string;
 }
 
-// @public (undocumented)
+// @public
 export class ByeUserAgentClient extends UserAgentClient implements OutgoingByeRequest {
     constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions);
 }
 
-// @public (undocumented)
+// @public
 export class ByeUserAgentServer extends UserAgentServer implements IncomingByeRequest {
-    // Warning: (ae-forgotten-export) The symbol "IncomingRequest" needs to be exported by the entry point index.d.ts
-    constructor(dialog: SessionDialog, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
 }
 
-// @public (undocumented)
+// Warning: (ae-internal-missing-underscore) The name "C" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
+export namespace C {
+    const // (undocumented)
+    ACK = "ACK";
+    const // (undocumented)
+    BYE = "BYE";
+    const // (undocumented)
+    CANCEL = "CANCEL";
+    const // (undocumented)
+    INFO = "INFO";
+    const // (undocumented)
+    INVITE = "INVITE";
+    const // (undocumented)
+    MESSAGE = "MESSAGE";
+    const // (undocumented)
+    NOTIFY = "NOTIFY";
+    const // (undocumented)
+    OPTIONS = "OPTIONS";
+    const // (undocumented)
+    REGISTER = "REGISTER";
+    const // (undocumented)
+    UPDATE = "UPDATE";
+    const // (undocumented)
+    SUBSCRIBE = "SUBSCRIBE";
+    const // (undocumented)
+    PUBLISH = "PUBLISH";
+    const // (undocumented)
+    REFER = "REFER";
+    const // (undocumented)
+    PRACK = "PRACK";
+}
+
+// @public
 export class CancelUserAgentClient extends UserAgentClient implements OutgoingCancelRequest {
-    // Warning: (ae-forgotten-export) The symbol "OutgoingRequest" needs to be exported by the entry point index.d.ts
-    constructor(core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingRequestDelegate);
+    constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate);
 }
 
 // @public
 export abstract class ClientTransaction extends Transaction {
-    // Warning: (ae-forgotten-export) The symbol "Transport" needs to be exported by the entry point index.d.ts
-    protected constructor(_request: OutgoingRequest_2, transport: Transport, user: ClientTransactionUser, state: TransactionState, loggerCategory: string);
+    protected constructor(_request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser, state: TransactionState, loggerCategory: string);
     protected onRequestTimeout(): void;
-    // Warning: (ae-forgotten-export) The symbol "IncomingResponse" needs to be exported by the entry point index.d.ts
-    abstract receiveResponse(response: IncomingResponse_2): void;
-    readonly request: OutgoingRequest_2;
+    abstract receiveResponse(response: IncomingResponseMessage): void;
+    readonly request: OutgoingRequestMessage;
     // (undocumented)
     protected user: ClientTransactionUser;
 }
@@ -51,16 +81,16 @@ export abstract class ClientTransaction extends Transaction {
 // @public
 export interface ClientTransactionUser extends TransactionUser {
     onRequestTimeout?: () => void;
-    receiveResponse?: (response: IncomingResponse_2) => void;
+    receiveResponse?: (response: IncomingResponseMessage) => void;
 }
 
-// @public
-export function constructOutgoingResponse(message: IncomingRequest_2, options: ResponseOptions): OutgoingResponse;
+// Warning: (ae-internal-missing-underscore) The name "constructOutgoingResponse" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
+export function constructOutgoingResponse(message: IncomingRequestMessage, options: ResponseOptions): OutgoingResponse;
 
 // @public
 export interface Contact {
-    // Warning: (ae-forgotten-export) The symbol "URI" needs to be exported by the entry point index.d.ts
-    // 
     // (undocumented)
     pubGruu: URI | undefined;
     // (undocumented)
@@ -82,26 +112,26 @@ export class Dialog {
         cseq?: number;
         extraHeaders?: Array<string>;
         body?: Body;
-    }): OutgoingRequest_2;
+    }): OutgoingRequestMessage;
     // (undocumented)
     protected dialogState: DialogState;
     dispose(): void;
     readonly early: boolean;
     readonly id: string;
-    static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequest_2, incomingResponseMessage: IncomingResponse_2): DialogState;
-    static initialDialogStateForUserAgentServer(incomingRequestMessage: IncomingRequest_2, toTag: string, early?: boolean): DialogState;
+    static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequestMessage, incomingResponseMessage: IncomingResponseMessage): DialogState;
+    static initialDialogStateForUserAgentServer(incomingRequestMessage: IncomingRequestMessage, toTag: string, early?: boolean): DialogState;
     readonly localSequenceNumber: number | undefined;
     readonly localTag: string;
     readonly localURI: URI;
-    receiveRequest(message: IncomingRequest_2): void;
-    recomputeRouteSet(message: IncomingResponse_2): void;
+    receiveRequest(message: IncomingRequestMessage): void;
+    recomputeRouteSet(message: IncomingResponseMessage): void;
     readonly remoteSequenceNumber: number | undefined;
     readonly remoteTag: string;
     readonly remoteTarget: URI;
     readonly remoteURI: URI;
     readonly routeSet: Array<string>;
     readonly secure: boolean;
-    protected sequenceGuard(message: IncomingRequest_2): boolean;
+    protected sequenceGuard(message: IncomingRequestMessage): boolean;
     readonly userAgentCore: UserAgentCore;
 }
 
@@ -133,41 +163,70 @@ export interface DialogState {
     secure: boolean;
 }
 
+// Warning: (ae-internal-missing-underscore) The name "DigestAuthentication" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
+export class DigestAuthentication {
+    constructor(loggerFactory: LoggerFactory, username: string | undefined, password: string | undefined);
+    authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean;
+    // (undocumented)
+    stale: boolean | undefined;
+    toString(): string;
+    }
+
 // @public
+export abstract class Exception extends Error {
+    protected constructor(message?: string);
+}
+
+// Warning: (ae-internal-missing-underscore) The name "fromBodyLegacy" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
 export function fromBodyLegacy(bodyLegacy: string | {
     body: string;
     contentType: string;
 }): Body;
 
-// @public
-export function getBody(message: IncomingRequest_2 | IncomingResponse_2 | OutgoingRequest_2 | Body): Body | undefined;
+// Warning: (ae-internal-missing-underscore) The name "getBody" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
+export function getBody(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): Body | undefined;
+
+// Warning: (ae-internal-missing-underscore) The name "Grammar" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
+export namespace Grammar {
+    export function nameAddrHeaderParse(nameAddrHeader: string): NameAddrHeader | undefined;
+    export function parse(input: string, startRule: string): any;
+    export function URIParse(uri: string): URI | undefined;
+}
 
 // @public
 export interface IncomingAckRequest {
-    readonly message: IncomingRequest_2;
+    readonly message: IncomingRequestMessage;
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingByeRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingByeResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingCancelRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingCancelResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingInfoRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingInfoResponse extends IncomingResponse {
 }
 
@@ -177,51 +236,98 @@ export interface IncomingInviteRequest extends IncomingRequest {
     progress(options?: ResponseOptions): OutgoingResponseWithSession;
 }
 
-// @public (undocumented)
+// @public
+export class IncomingMessage {
+    addHeader(name: string, value: string): void;
+    // (undocumented)
+    body: string;
+    // (undocumented)
+    callId: string;
+    // (undocumented)
+    cseq: number;
+    // (undocumented)
+    data: string;
+    // (undocumented)
+    from: NameAddrHeader;
+    // (undocumented)
+    fromTag: string;
+    getHeader(name: string): string | undefined;
+    getHeaders(name: string): Array<string>;
+    hasHeader(name: string): boolean;
+    // (undocumented)
+    headers: {
+        [name: string]: Array<{
+            parsed?: any;
+            raw: string;
+        }>;
+    };
+    // (undocumented)
+    method: string;
+    parseHeader(name: string, idx?: number): any | undefined;
+    // (undocumented)
+    referTo: string | undefined;
+    s(name: string, idx?: number): any | undefined;
+    setHeader(name: string, value: string): void;
+    // (undocumented)
+    to: NameAddrHeader;
+    // (undocumented)
+    toString(): string;
+    // (undocumented)
+    toTag: string;
+    // (undocumented)
+    via: {
+        host: string;
+        port: number;
+    };
+    // (undocumented)
+    viaBranch: string;
+}
+
+// @public
 export interface IncomingMessageRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingMessageResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingNotifyRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingNotifyResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingPrackRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingPrackResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingPublishRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingPublishResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingReferRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingReferResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingRegisterRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingRegisterResponse extends IncomingResponse {
 }
 
@@ -229,7 +335,7 @@ export interface IncomingRegisterResponse extends IncomingResponse {
 export interface IncomingRequest {
     accept(options?: ResponseOptions): OutgoingResponse;
     delegate?: IncomingRequestDelegate;
-    readonly message: IncomingRequest_2;
+    readonly message: IncomingRequestMessage;
     progress(options?: ResponseOptions): OutgoingResponse;
     redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
     reject(options?: ResponseOptions): OutgoingResponse;
@@ -238,12 +344,18 @@ export interface IncomingRequest {
 
 // @public
 export interface IncomingRequestDelegate {
-    onCancel?(message: IncomingRequest_2): void;
-    // Warning: (ae-forgotten-export) The symbol "Exceptions" needs to be exported by the entry point index.d.ts
-    onTransportError?(error: Exceptions.TransportError): void;
+    onCancel?(message: IncomingRequestMessage): void;
+    onTransportError?(error: TransportError): void;
 }
 
-// @public (undocumented)
+// @public
+export class IncomingRequestMessage extends IncomingMessage {
+    constructor();
+    // (undocumented)
+    ruri: URI | undefined;
+}
+
+// @public
 export interface IncomingRequestWithSubscription {
     readonly request: IncomingNotifyRequest;
     readonly subscription?: Subscription;
@@ -251,40 +363,54 @@ export interface IncomingRequestWithSubscription {
 
 // @public
 export interface IncomingResponse {
-    readonly message: IncomingResponse_2;
+    readonly message: IncomingResponseMessage;
 }
 
-// @public (undocumented)
+// @public
+export class IncomingResponseMessage extends IncomingMessage {
+    constructor();
+    // (undocumented)
+    reasonPhrase: string | undefined;
+    // (undocumented)
+    statusCode: number | undefined;
+}
+
+// @public
 export interface IncomingSubscribeRequest extends IncomingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface IncomingSubscribeResponse extends IncomingResponse {
 }
 
-// @public (undocumented)
+// @public
+export class InfoUserAgentClient extends UserAgentClient implements OutgoingInfoRequest {
+    constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions);
+}
+
+// @public
 export class InfoUserAgentServer extends UserAgentServer implements IncomingInfoRequest {
-    constructor(dialog: SessionDialog, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
 }
 
 // @public
 export class InviteClientTransaction extends ClientTransaction {
-    constructor(request: OutgoingRequest_2, transport: Transport, user: ClientTransactionUser);
-    ackResponse(ack: OutgoingRequest_2): void;
+    constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser);
+    ackResponse(ack: OutgoingRequestMessage): void;
     dispose(): void;
     readonly kind: string;
-    protected onTransportError(error: Exceptions.TransportError): void;
-    receiveResponse(response: IncomingResponse_2): void;
+    protected onTransportError(error: TransportError): void;
+    receiveResponse(response: IncomingResponseMessage): void;
     protected typeToString(): string;
 }
 
 // @public
 export class InviteServerTransaction extends ServerTransaction {
-    constructor(request: IncomingRequest_2, transport: Transport, user: ServerTransactionUser);
+    constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser);
     dispose(): void;
     readonly kind: string;
     protected onTransportError(error: Error): void;
-    receiveRequest(request: IncomingRequest_2): void;
+    receiveRequest(request: IncomingRequestMessage): void;
     receiveResponse(statusCode: number, response: string): void;
     retransmitAcceptedResponse(): void;
     protected typeToString(): string;
@@ -292,17 +418,17 @@ export class InviteServerTransaction extends ServerTransaction {
 
 // @public
 export class InviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest {
-    constructor(core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingInviteRequestDelegate);
+    constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingInviteRequestDelegate);
     // (undocumented)
     delegate: OutgoingInviteRequestDelegate | undefined;
     // (undocumented)
     dispose(): void;
-    protected receiveResponse(message: IncomingResponse_2): void;
+    protected receiveResponse(message: IncomingResponseMessage): void;
 }
 
 // @public
 export class InviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
-    constructor(core: UserAgentCore, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     accept(options?: ResponseOptions): OutgoingResponseWithSession;
     // (undocumented)
     protected core: UserAgentCore;
@@ -313,69 +439,127 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
     reject(options?: ResponseOptions): OutgoingResponse;
 }
 
-// @public
+// Warning: (ae-internal-missing-underscore) The name "isBody" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
 export function isBody(body: any): body is Body;
 
-// @public (undocumented)
-export class MessageUserAgentClient extends UserAgentClient implements OutgoingMessageRequest {
-    constructor(core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingRequestDelegate);
+// @public
+export enum Levels {
+    // (undocumented)
+    debug = 3,
+    // (undocumented)
+    error = 0,
+    // (undocumented)
+    log = 2,
+    // (undocumented)
+    warn = 1
 }
 
-// @public (undocumented)
+// @public
+export class Logger {
+    constructor(logger: LoggerFactory, category: string, label?: string);
+    // (undocumented)
+    debug(content: string): void;
+    // (undocumented)
+    error(content: string): void;
+    // (undocumented)
+    log(content: string): void;
+    // (undocumented)
+    warn(content: string): void;
+}
+
+// @public
+export class LoggerFactory {
+    constructor();
+    // (undocumented)
+    builtinEnabled: boolean;
+    // (undocumented)
+    connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+    // (undocumented)
+    genericLog(levelToLog: Levels, category: string, label: string | undefined, content: any): void;
+    // (undocumented)
+    getLogger(category: string, label?: string): Logger;
+    // (undocumented)
+    level: Levels;
+    }
+
+// @public
+export class MessageUserAgentClient extends UserAgentClient implements OutgoingMessageRequest {
+    constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate);
+}
+
+// @public
 export class MessageUserAgentServer extends UserAgentServer implements IncomingMessageRequest {
-    constructor(core: UserAgentCore, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     // (undocumented)
     protected core: UserAgentCore;
 }
 
-// @public (undocumented)
-export function newTag(): string;
+// Warning: (ae-incompatible-release-tags) The symbol "NameAddrHeader" is marked as @public, but its signature references "Parameters" which is marked as @internal
+// 
+// @public
+export class NameAddrHeader extends Parameters {
+    constructor(uri: URI, displayName: string, parameters: {
+        [name: string]: string;
+    });
+    // (undocumented)
+    clone(): NameAddrHeader;
+    // (undocumented)
+    displayName: string;
+    // (undocumented)
+    readonly friendlyName: string;
+    // (undocumented)
+    toString(): string;
+    // (undocumented)
+    uri: URI;
+}
 
 // @public
 export class NonInviteClientTransaction extends ClientTransaction {
-    constructor(request: OutgoingRequest_2, transport: Transport, user: ClientTransactionUser);
+    constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser);
     dispose(): void;
     readonly kind: string;
     protected onTransportError(error: Error): void;
-    receiveResponse(response: IncomingResponse_2): void;
+    receiveResponse(response: IncomingResponseMessage): void;
     protected typeToString(): string;
 }
 
 // @public
 export class NonInviteServerTransaction extends ServerTransaction {
-    constructor(request: IncomingRequest_2, transport: Transport, user: ServerTransactionUser);
+    constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser);
     dispose(): void;
     readonly kind: string;
     protected onTransportError(error: Error): void;
-    receiveRequest(request: IncomingRequest_2): void;
+    receiveRequest(request: IncomingRequestMessage): void;
     receiveResponse(statusCode: number, response: string): void;
     protected typeToString(): string;
 }
 
-// @public (undocumented)
+// @public
 export class NotifyUserAgentClient extends UserAgentClient implements OutgoingNotifyRequest {
     constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions);
 }
 
-// @public (undocumented)
+// @public
 export class NotifyUserAgentServer extends UserAgentServer implements IncomingNotifyRequest {
-    constructor(dialogOrCore: Dialog | UserAgentCore, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialogOrCore: Dialog | UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
 }
 
 // @public
 export interface OutgoingAckRequest {
-    readonly message: OutgoingRequest_2;
+    readonly message: OutgoingRequestMessage;
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingByeRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingCancelRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingInfoRequest extends OutgoingRequest {
 }
 
@@ -390,27 +574,27 @@ export interface OutgoingInviteRequestDelegate extends OutgoingRequestDelegate {
     onProgress?(response: PrackableIncomingResponseWithSession): void;
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingMessageRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingNotifyRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingPrackRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingPublishRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingReferRequest extends OutgoingRequest {
 }
 
-// @public (undocumented)
+// @public
 export interface OutgoingRegisterRequest extends OutgoingRequest {
 }
 
@@ -419,7 +603,7 @@ export interface OutgoingRequest {
     cancel(reason?: string, options?: RequestOptions): void;
     delegate?: OutgoingRequestDelegate;
     dispose(): void;
-    readonly message: OutgoingRequest_2;
+    readonly message: OutgoingRequestMessage;
 }
 
 // @public
@@ -432,13 +616,83 @@ export interface OutgoingRequestDelegate {
 }
 
 // @public
-export interface OutgoingResponse {
-    readonly message: string;
+export class OutgoingRequestMessage {
+    constructor(method: string, ruri: URI, fromURI: URI, toURI: URI, options?: OutgoingRequestMessageOptions, extraHeaders?: Array<string>, body?: Body);
+    // (undocumented)
+    body: {
+        body: string;
+        contentType: string;
+    } | undefined;
+    // (undocumented)
+    branch: string | undefined;
+    // (undocumented)
+    readonly callId: string;
+    // (undocumented)
+    cseq: number;
+    // (undocumented)
+    extraHeaders: Array<string>;
+    // (undocumented)
+    readonly from: NameAddrHeader;
+    // (undocumented)
+    readonly fromTag: string;
+    // (undocumented)
+    readonly fromURI: URI;
+    getHeader(name: string): string | undefined;
+    getHeaders(name: string): Array<string>;
+    hasHeader(name: string): boolean;
+    // (undocumented)
+    readonly headers: {
+        [name: string]: Array<string>;
+    };
+    // (undocumented)
+    readonly method: string;
+    // (undocumented)
+    readonly ruri: URI;
+    setHeader(name: string, value: string | Array<string>): void;
+    setViaHeader(branch: string, scheme?: string): void;
+    // (undocumented)
+    readonly to: NameAddrHeader;
+    // (undocumented)
+    toString(): string;
+    // (undocumented)
+    readonly toTag: string | undefined;
+    // (undocumented)
+    readonly toURI: URI;
 }
 
 // @public
-export interface OutgoingResponseWithSession extends OutgoingResponse {
-    readonly session: Session;
+export interface OutgoingRequestMessageOptions {
+    // (undocumented)
+    callId?: string;
+    // (undocumented)
+    callIdPrefix?: string;
+    // (undocumented)
+    cseq?: number;
+    // (undocumented)
+    forceRport?: boolean;
+    // (undocumented)
+    fromDisplayName?: string;
+    // (undocumented)
+    fromTag?: string;
+    // (undocumented)
+    hackViaTcp?: boolean;
+    // (undocumented)
+    optionTags?: Array<string>;
+    // (undocumented)
+    routeSet?: Array<string>;
+    // (undocumented)
+    toDisplayName?: string;
+    // (undocumented)
+    toTag?: string;
+    // (undocumented)
+    userAgentString?: string;
+    // (undocumented)
+    viaHost?: string;
+}
+
+// @public
+export interface OutgoingResponse {
+    readonly message: string;
 }
 
 // @public
@@ -458,41 +712,64 @@ export interface OutgoingSubscribeRequestDelegate extends OutgoingRequestDelegat
     onNotifyTimeout?(): void;
 }
 
+// Warning: (ae-internal-missing-underscore) The name "Parameters" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal (undocumented)
+export class Parameters {
+    constructor(parameters: {
+        [name: string]: string;
+    });
+    // (undocumented)
+    clearParams(): void;
+    // (undocumented)
+    deleteParam(parameter: string): any;
+    // (undocumented)
+    getParam(key: string): string | undefined;
+    // (undocumented)
+    hasParam(key: string): boolean;
+    // (undocumented)
+    parameters: {
+        [name: string]: string;
+    };
+    // (undocumented)
+    setParam(key: string, value: any): void;
+}
+
 // @public
 export interface PrackableIncomingResponseWithSession extends IncomingResponse {
     prack(options?: RequestOptions): OutgoingPrackRequest;
     readonly session: Session;
 }
 
-// @public (undocumented)
+// @public
 export class PrackUserAgentClient extends UserAgentClient implements OutgoingPrackRequest {
     constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions);
 }
 
-// @public (undocumented)
+// @public
 export class PrackUserAgentServer extends UserAgentServer implements IncomingPrackRequest {
-    constructor(dialog: SessionDialog, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     accept(options?: ResponseOptions): OutgoingResponse;
     }
 
-// @public (undocumented)
+// @public
 export class PublishUserAgentClient extends UserAgentClient implements OutgoingPublishRequest {
-    constructor(core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingRequestDelegate);
+    constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate);
 }
 
-// @public (undocumented)
+// @public
 export class ReferUserAgentClient extends UserAgentClient implements OutgoingReferRequest {
     constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions);
 }
 
-// @public (undocumented)
+// @public
 export class ReferUserAgentServer extends UserAgentServer implements IncomingReferRequest {
-    constructor(dialogOrCore: SessionDialog | UserAgentCore, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialogOrCore: SessionDialog | UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
 }
 
-// @public (undocumented)
+// @public
 export class RegisterUserAgentClient extends UserAgentClient implements OutgoingRegisterRequest {
-    constructor(core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingRequestDelegate);
+    constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate);
 }
 
 // @public
@@ -501,12 +778,12 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
     // (undocumented)
     delegate: OutgoingInviteRequestDelegate | undefined;
     // (undocumented)
-    protected receiveResponse(message: IncomingResponse_2): void;
+    protected receiveResponse(message: IncomingResponseMessage): void;
 }
 
 // @public
 export class ReInviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
-    constructor(dialog: SessionDialog, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     accept(options?: ResponseOptions): OutgoingResponseWithSession;
     progress(options?: ResponseOptions): OutgoingResponseWithSession;
 }
@@ -528,25 +805,25 @@ export interface ResponseOptions {
     userAgent?: string;
 }
 
-// @public (undocumented)
+// @public
 export class ReSubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
     constructor(dialog: SubscriptionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions);
-    protected receiveResponse(message: IncomingResponse_2): void;
+    protected receiveResponse(message: IncomingResponseMessage): void;
     // (undocumented)
     waitNotifyStop(): void;
 }
 
-// @public (undocumented)
+// @public
 export class ReSubscribeUserAgentServer extends UserAgentServer implements IncomingSubscribeRequest {
-    constructor(dialog: Dialog, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(dialog: Dialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
 }
 
 // @public
 export abstract class ServerTransaction extends Transaction {
-    protected constructor(_request: IncomingRequest_2, transport: Transport, user: ServerTransactionUser, state: TransactionState, loggerCategory: string);
-    abstract receiveRequest(request: IncomingRequest_2): void;
+    protected constructor(_request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser, state: TransactionState, loggerCategory: string);
+    abstract receiveRequest(request: IncomingRequestMessage): void;
     abstract receiveResponse(statusCode: number, response: string): void;
-    readonly request: IncomingRequest_2;
+    readonly request: IncomingRequestMessage;
     // (undocumented)
     protected user: ServerTransactionUser;
 }
@@ -578,7 +855,7 @@ export interface Session {
     readonly signalingState: SignalingState;
 }
 
-// @public (undocumented)
+// @public
 export interface SessionDelegate {
     onAck?(request: IncomingAckRequest): void;
     onAckTimeout?(): void;
@@ -590,7 +867,7 @@ export interface SessionDelegate {
     onRefer?(request: IncomingReferRequest): void;
 }
 
-// @public (undocumented)
+// @public
 export class SessionDialog extends Dialog implements Session {
     constructor(initialTransaction: InviteClientTransaction | InviteServerTransaction, core: UserAgentCore, state: DialogState, delegate?: SessionDelegate);
     ack(options?: RequestOptions): OutgoingAckRequest;
@@ -606,7 +883,7 @@ export class SessionDialog extends Dialog implements Session {
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     readonly offer: Body | undefined;
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
-    receiveRequest(message: IncomingRequest_2): void;
+    receiveRequest(message: IncomingRequestMessage): void;
     reConfirm(): void;
     refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest;
     // (undocumented)
@@ -614,11 +891,11 @@ export class SessionDialog extends Dialog implements Session {
     // (undocumented)
     reinviteUserAgentServer: ReInviteUserAgentServer | undefined;
     // (undocumented)
-    reliableSequenceGuard(message: IncomingResponse_2): boolean;
+    reliableSequenceGuard(message: IncomingResponseMessage): boolean;
     // (undocumented)
     readonly sessionState: SessionState;
     readonly signalingState: SignalingState;
-    signalingStateTransition(message: IncomingRequest_2 | IncomingResponse_2 | OutgoingRequest_2 | Body): void;
+    signalingStateTransition(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): void;
     }
 
 // @public
@@ -651,21 +928,21 @@ export enum SignalingState {
 
 // @public
 export class SubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
-    constructor(core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingSubscribeRequestDelegate);
+    constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingSubscribeRequestDelegate);
     // (undocumented)
     delegate: OutgoingSubscribeRequestDelegate | undefined;
     dispose(): void;
     onNotify(uas: NotifyUserAgentServer): void;
-    protected receiveResponse(message: IncomingResponse_2): void;
+    protected receiveResponse(message: IncomingResponseMessage): void;
     // (undocumented)
     waitNotifyStart(): void;
     // (undocumented)
     waitNotifyStop(): void;
 }
 
-// @public (undocumented)
+// @public
 export class SubscribeUserAgentServer extends UserAgentServer implements IncomingSubscribeRequest {
-    constructor(core: UserAgentCore, message: IncomingRequest_2, delegate?: IncomingRequestDelegate);
+    constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     // (undocumented)
     protected core: UserAgentCore;
 }
@@ -683,7 +960,7 @@ export interface Subscription {
     unsubscribe(): OutgoingSubscribeRequest;
 }
 
-// @public (undocumented)
+// @public
 export interface SubscriptionDelegate {
     onNotify?(request: IncomingNotifyRequest): void;
     onRefresh?(request: OutgoingSubscribeRequest): void;
@@ -699,8 +976,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     delegate: SubscriptionDelegate | undefined;
     // (undocumented)
     dispose(): void;
-    static initialDialogStateForSubscription(outgoingSubscribeRequestMessage: OutgoingRequest_2, incomingNotifyRequestMessage: IncomingRequest_2): DialogState;
-    receiveRequest(message: IncomingRequest_2): void;
+    static initialDialogStateForSubscription(outgoingSubscribeRequestMessage: OutgoingRequestMessage, incomingNotifyRequestMessage: IncomingRequestMessage): DialogState;
+    receiveRequest(message: IncomingRequestMessage): void;
     refresh(): OutgoingSubscribeRequest;
     subscribe(delegate?: OutgoingSubscribeRequestDelegate, options?: RequestOptions): OutgoingSubscribeRequest;
     // (undocumented)
@@ -730,20 +1007,36 @@ export enum SubscriptionState {
 }
 
 // @public
+export const Timers: {
+    T1: number;
+    T2: number;
+    T4: number;
+    TIMER_B: number;
+    TIMER_D: number;
+    TIMER_F: number;
+    TIMER_H: number;
+    TIMER_I: number;
+    TIMER_J: number;
+    TIMER_K: number;
+    TIMER_L: number;
+    TIMER_M: number;
+    TIMER_N: number;
+    PROVISIONAL_RESPONSE_INTERVAL: number;
+};
+
+// @public
 export abstract class Transaction extends EventEmitter {
     protected constructor(_transport: Transport, _user: TransactionUser, _id: string, _state: TransactionState, loggerCategory: string);
     dispose(): void;
     readonly id: string;
     readonly kind: string;
-    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-    // 
     // (undocumented)
     protected logger: Logger;
     // (undocumented)
-    protected logTransportError(error: Exceptions.TransportError, message: string): void;
+    protected logTransportError(error: TransportError, message: string): void;
     on(name: "stateChanged", callback: () => void): this;
     // (undocumented)
-    protected abstract onTransportError(error: Exceptions.TransportError): void;
+    protected abstract onTransportError(error: TransportError): void;
     protected send(message: string): Promise<void>;
     // (undocumented)
     protected setState(state: TransactionState): void;
@@ -772,19 +1065,81 @@ export enum TransactionState {
 }
 
 // @public
-export interface TransactionUser {
-    // Warning: (ae-forgotten-export) The symbol "LoggerFactory" needs to be exported by the entry point index.d.ts
-    loggerFactory: LoggerFactory;
-    onStateChange?: (newState: TransactionState) => void;
-    onTransportError?: (error: Exceptions.TransportError) => void;
+export class TransactionStateError extends Exception {
+    constructor(message?: string);
 }
 
-// @public (undocumented)
+// @public
+export interface TransactionUser {
+    loggerFactory: LoggerFactory;
+    onStateChange?: (newState: TransactionState) => void;
+    onTransportError?: (error: TransportError) => void;
+}
+
+// @public
+export abstract class Transport extends EventEmitter {
+    constructor(logger: Logger, options: any);
+    // (undocumented)
+    afterConnected(callback: () => void): void;
+    connect(options?: any): Promise<void>;
+    protected abstract connectPromise(options: any): Promise<any>;
+    disconnect(options?: any): Promise<void>;
+    protected abstract disconnectPromise(options: any): Promise<any>;
+    abstract isConnected(): boolean;
+    // (undocumented)
+    protected logger: Logger;
+    protected abstract onMessage(e: any): void;
+    send(msg: string, options?: any): Promise<void>;
+    protected abstract sendPromise(msg: string, options?: any): Promise<any>;
+    // (undocumented)
+    server: any;
+    waitForConnected(): Promise<void>;
+}
+
+// @public
+export class TransportError extends Exception {
+    constructor(message?: string);
+}
+
+// Warning: (ae-incompatible-release-tags) The symbol "URI" is marked as @public, but its signature references "Parameters" which is marked as @internal
+// 
+// @public
+export class URI extends Parameters {
+    constructor(scheme: string, user: string, host: string, port?: number, parameters?: any, headers?: any);
+    // (undocumented)
+    readonly aor: string;
+    // (undocumented)
+    clearHeaders(): void;
+    // (undocumented)
+    clone(): URI;
+    // (undocumented)
+    deleteHeader(header: string): any;
+    // (undocumented)
+    getHeader(name: string): string | undefined;
+    // (undocumented)
+    hasHeader(name: string): boolean;
+    // (undocumented)
+    host: string;
+    // (undocumented)
+    port: number | undefined;
+    // (undocumented)
+    scheme: string;
+    // (undocumented)
+    setHeader(name: string, value: any): void;
+    // (undocumented)
+    toRaw(): string;
+    // (undocumented)
+    toString(): string;
+    // (undocumented)
+    user: string | undefined;
+}
+
+// @public
 export class UserAgentClient implements OutgoingRequest {
     // Warning: (ae-forgotten-export) The symbol "ClientTransactionConstructor" needs to be exported by the entry point index.d.ts
-    constructor(transactionConstructor: ClientTransactionConstructor, core: UserAgentCore, message: OutgoingRequest_2, delegate?: OutgoingRequestDelegate | undefined);
-    protected authenticationGuard(message: IncomingResponse_2): boolean;
-    cancel(reason?: string, options?: RequestOptions): OutgoingRequest_2;
+    constructor(transactionConstructor: ClientTransactionConstructor, core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate | undefined);
+    protected authenticationGuard(message: IncomingResponseMessage): boolean;
+    cancel(reason?: string, options?: RequestOptions): OutgoingRequestMessage;
     // (undocumented)
     protected core: UserAgentCore;
     // (undocumented)
@@ -796,8 +1151,8 @@ export class UserAgentClient implements OutgoingRequest {
     // (undocumented)
     readonly loggerFactory: LoggerFactory;
     // (undocumented)
-    message: OutgoingRequest_2;
-    protected receiveResponse(message: IncomingResponse_2): void;
+    message: OutgoingRequestMessage;
+    protected receiveResponse(message: IncomingResponseMessage): void;
     readonly transaction: ClientTransaction;
     }
 
@@ -808,19 +1163,18 @@ export class UserAgentCore {
     delegate: UserAgentCoreDelegate;
     dialogs: Map<string, Dialog>;
     dispose(): void;
-    invite(request: OutgoingRequest_2, delegate?: OutgoingInviteRequestDelegate): OutgoingInviteRequest;
+    invite(request: OutgoingRequestMessage, delegate?: OutgoingInviteRequestDelegate): OutgoingInviteRequest;
     readonly loggerFactory: LoggerFactory;
-    // Warning: (ae-forgotten-export) The symbol "OutgoingRequestMessageOptions" needs to be exported by the entry point index.d.ts
-    makeOutgoingRequestMessage(method: string, requestURI: URI, fromURI: URI, toURI: URI, options: OutgoingRequestMessageOptions, extraHeaders?: Array<string>, body?: Body): OutgoingRequest_2;
-    message(request: OutgoingRequest_2, delegate?: OutgoingRequestDelegate): OutgoingMessageRequest;
-    publish(request: OutgoingRequest_2, delegate?: OutgoingRequestDelegate): OutgoingPublishRequest;
-    receiveIncomingRequestFromTransport(message: IncomingRequest_2): void;
-    receiveIncomingResponseFromTransport(message: IncomingResponse_2): void;
-    register(request: OutgoingRequest_2, delegate?: OutgoingRequestDelegate): OutgoingRegisterRequest;
-    replyStateless(message: IncomingRequest_2, options: ResponseOptions): OutgoingResponse;
-    request(request: OutgoingRequest_2, delegate?: OutgoingRequestDelegate): OutgoingRequest;
+    makeOutgoingRequestMessage(method: string, requestURI: URI, fromURI: URI, toURI: URI, options: OutgoingRequestMessageOptions, extraHeaders?: Array<string>, body?: Body): OutgoingRequestMessage;
+    message(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingMessageRequest;
+    publish(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingPublishRequest;
+    receiveIncomingRequestFromTransport(message: IncomingRequestMessage): void;
+    receiveIncomingResponseFromTransport(message: IncomingResponseMessage): void;
+    register(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingRegisterRequest;
+    replyStateless(message: IncomingRequestMessage, options: ResponseOptions): OutgoingResponse;
+    request(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingRequest;
     reset(): void;
-    subscribe(request: OutgoingRequest_2, delegate?: OutgoingSubscribeRequestDelegate): OutgoingSubscribeRequest;
+    subscribe(request: OutgoingRequestMessage, delegate?: OutgoingSubscribeRequestDelegate): OutgoingSubscribeRequest;
     subscribers: Map<string, SubscribeUserAgentClient>;
     readonly transport: Transport;
     userAgentClients: Map<string, UserAgentClient>;
@@ -830,7 +1184,7 @@ export class UserAgentCore {
 // @public
 export interface UserAgentCoreConfiguration {
     aor: URI;
-    // Warning: (ae-forgotten-export) The symbol "DigestAuthentication" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-incompatible-release-tags) The symbol "authenticationFactory" is marked as @public, but its signature references "DigestAuthentication" which is marked as @internal
     authenticationFactory(): DigestAuthentication | undefined;
     contact: Contact;
     displayName: string;
@@ -858,7 +1212,7 @@ export interface UserAgentCoreDelegate {
 // @public
 export class UserAgentServer implements IncomingRequest {
     // Warning: (ae-forgotten-export) The symbol "ServerTransactionConstructor" needs to be exported by the entry point index.d.ts
-    constructor(transactionConstructor: ServerTransactionConstructor, core: UserAgentCore, message: IncomingRequest_2, delegate?: IncomingRequestDelegate | undefined);
+    constructor(transactionConstructor: ServerTransactionConstructor, core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate | undefined);
     // (undocumented)
     accept(options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
@@ -874,12 +1228,12 @@ export class UserAgentServer implements IncomingRequest {
     // (undocumented)
     readonly loggerFactory: LoggerFactory;
     // (undocumented)
-    message: IncomingRequest_2;
+    message: IncomingRequestMessage;
     // (undocumented)
     progress(options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
     protected readonly progressable: boolean;
-    receiveCancel(message: IncomingRequest_2): void;
+    receiveCancel(message: IncomingRequestMessage): void;
     // (undocumented)
     redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
@@ -897,7 +1251,5 @@ export class UserAgentServer implements IncomingRequest {
     protected readonly tryingable: boolean;
 }
 
-
-// (No @packageDocumentation comment for this package)
 
 ```
