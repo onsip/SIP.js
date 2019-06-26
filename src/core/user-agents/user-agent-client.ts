@@ -23,8 +23,10 @@ type ClientTransactionConstructor = new (
   user: ClientTransactionUser
 ) => ClientTransaction;
 
-/*
- * User Agent Client (UAC): A user agent client is a logical entity
+/**
+ * User Agent Client (UAC).
+ * @remarks
+ * A user agent client is a logical entity
  * that creates a new request, and then uses the client
  * transaction state machinery to send it.  The role of UAC lasts
  * only for the duration of that transaction.  In other words, if
@@ -33,6 +35,7 @@ type ClientTransactionConstructor = new (
  * later, it assumes the role of a user agent server for the
  * processing of that transaction.
  * https://tools.ietf.org/html/rfc3261#section-6
+ * @public
  */
 export class UserAgentClient implements OutgoingRequest {
   protected logger: Logger;
@@ -74,7 +77,7 @@ export class UserAgentClient implements OutgoingRequest {
    * CANCEL for a non-INVITE request would always create a race condition.
    * A CANCEL request SHOULD NOT be sent to cancel a request other than INVITE.
    * https://tools.ietf.org/html/rfc3261#section-9.1
-   * @param options Cancel options bucket.
+   * @param options - Cancel options bucket.
    */
   public cancel(reason?: string, options: RequestOptions = {}): OutgoingRequestMessage {
     if (!this.transaction) {
@@ -166,7 +169,7 @@ export class UserAgentClient implements OutgoingRequest {
    *
    * FIXME: This "guard for and retry the request with credentials"
    * implementation is not complete and at best minimally passable.
-   * @param response The incoming response to guard.
+   * @param response - The incoming response to guard.
    * @returns True if the program execution is to continue in the branch in question.
    *          Otherwise the request is retried with credentials and current request processing must stop.
    */
@@ -242,7 +245,7 @@ export class UserAgentClient implements OutgoingRequest {
 
   /**
    * Receive a response from the transaction layer.
-   * @param message Incoming response message.
+   * @param message - Incoming response message.
    */
   protected receiveResponse(message: IncomingResponseMessage): void {
     if (!this.authenticationGuard(message)) {

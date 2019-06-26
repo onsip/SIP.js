@@ -3,6 +3,10 @@ import { C, OutgoingInfoRequest, OutgoingRequestDelegate, RequestOptions } from 
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * INFO UAC.
+ * @public
+ */
 export class InfoUserAgentClient extends UserAgentClient implements OutgoingInfoRequest {
   constructor(
     dialog: SessionDialog,

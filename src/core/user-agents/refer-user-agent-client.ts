@@ -3,6 +3,10 @@ import { C, OutgoingReferRequest, OutgoingRequestDelegate, RequestOptions } from
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * REFER UAC.
+ * @public
+ */
 export class ReferUserAgentClient extends UserAgentClient implements OutgoingReferRequest {
   constructor(
     dialog: SessionDialog,

@@ -28,7 +28,9 @@ type ServerTransactionConstructor = new (
 ) => ServerTransaction;
 
 /**
- * User Agent Server (UAS): A user agent server is a logical entity
+ * User Agent Server (UAS).
+ * @remarks
+ * A user agent server is a logical entity
  * that generates a response to a SIP request.  The response
  * accepts, rejects, or redirects the request.  This role lasts
  * only for the duration of that transaction.  In other words, if
@@ -37,6 +39,7 @@ type ServerTransactionConstructor = new (
  * later, it assumes the role of a user agent client for the
  * processing of that transaction.
  * https://tools.ietf.org/html/rfc3261#section-6
+ * @public
  */
 export class UserAgentServer implements IncomingRequest {
   protected logger: Logger;
@@ -156,7 +159,7 @@ export class UserAgentServer implements IncomingRequest {
    * Terminated).  A CANCEL request has no impact on the processing of
    * transactions with any other method defined in this specification.
    * https://tools.ietf.org/html/rfc3261#section-9.2
-   * @param request Incoming CANCEL request.
+   * @param request - Incoming CANCEL request.
    */
   public receiveCancel(message: IncomingRequestMessage): void {
     // Note: Currently CANCEL is being handled as a special case.
@@ -241,8 +244,8 @@ export class UserAgentServer implements IncomingRequest {
    * been completed, the UAS hands the response back to the server
    * transaction from which it received the request.
    * https://tools.ietf.org/html/rfc3261#section-8.2.6
-   * @param statusCode Status code to reply with.
-   * @param options Reply options bucket.
+   * @param statusCode - Status code to reply with.
+   * @param options - Reply options bucket.
    */
   private reply(options: ResponseOptions): OutgoingResponse {
     if (!options.toTag && options.statusCode !== 100) {

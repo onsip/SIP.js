@@ -1,4 +1,7 @@
-/** Transaction state. */
+/**
+ * Transaction state.
+ * @public
+ */
 export enum TransactionState {
   Accepted = "Accepted",
   Calling = "Calling",

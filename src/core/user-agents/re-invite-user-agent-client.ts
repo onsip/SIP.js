@@ -12,10 +12,13 @@ import { InviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
 /**
+ * Re-INVITE UAC.
+ * @remarks
  * 14 Modifying an Existing Session
  * https://tools.ietf.org/html/rfc3261#section-14
  * 14.1 UAC Behavior
  * https://tools.ietf.org/html/rfc3261#section-14.1
+ * @public
  */
 export class ReInviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest {
   public delegate: OutgoingInviteRequestDelegate | undefined;

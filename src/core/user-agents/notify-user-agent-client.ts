@@ -3,6 +3,10 @@ import { C, OutgoingNotifyRequest, OutgoingRequestDelegate, RequestOptions } fro
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * NOTIFY UAS.
+ * @public
+ */
 export class NotifyUserAgentClient extends UserAgentClient implements OutgoingNotifyRequest {
   constructor(
     dialog: SessionDialog,

@@ -54,7 +54,9 @@ const acceptedBodyTypes = [
 ];
 
 /**
- * Core: Core designates the functions specific to a particular type
+ * User Agent Core.
+ * @remarks
+ * Core designates the functions specific to a particular type
  * of SIP entity, i.e., specific to either a stateful or stateless
  * proxy, a user agent or registrar.  All cores, except those for
  * the stateless proxy, are transaction users.
@@ -67,6 +69,7 @@ const acceptedBodyTypes = [
  * UAS Core: The set of processing functions required at a UAS that
  * resides above the transaction and transport layers.
  * https://tools.ietf.org/html/rfc3261#section-6
+ * @public
  */
 export class UserAgentCore {
   /** Configuration. */
@@ -86,8 +89,8 @@ export class UserAgentCore {
 
   /**
    * Constructor.
-   * @param configuration Configuration.
-   * @param delegate Delegate.
+   * @param configuration - Configuration.
+   * @param delegate - Delegate.
    */
   constructor(
     configuration: UserAgentCoreConfiguration,
@@ -133,8 +136,8 @@ export class UserAgentCore {
 
   /**
    * Send INVITE.
-   * @param request Outgoing request.
-   * @param delegate Request delegate.
+   * @param request - Outgoing request.
+   * @param delegate - Request delegate.
    */
   public invite(
     request: OutgoingRequestMessage,
@@ -145,8 +148,8 @@ export class UserAgentCore {
 
   /**
    * Send MESSAGE.
-   * @param request Outgoing request.
-   * @param delegate Request delegate.
+   * @param request - Outgoing request.
+   * @param delegate - Request delegate.
    */
   public message(
     request: OutgoingRequestMessage,
@@ -157,8 +160,8 @@ export class UserAgentCore {
 
   /**
    * Send PUBLISH.
-   * @param request Outgoing request.
-   * @param delegate Request delegate.
+   * @param request - Outgoing request.
+   * @param delegate - Request delegate.
    */
   public publish(
     request: OutgoingRequestMessage,
@@ -169,8 +172,8 @@ export class UserAgentCore {
 
   /**
    * Send REGISTER.
-   * @param request Outgoing request.
-   * @param delegate Request delegate.
+   * @param request - Outgoing request.
+   * @param delegate - Request delegate.
    */
   public register(
     request: OutgoingRequestMessage,
@@ -181,8 +184,8 @@ export class UserAgentCore {
 
   /**
    * Send SUBSCRIBE.
-   * @param request Outgoing request.
-   * @param delegate Request delegate.
+   * @param request - Outgoing request.
+   * @param delegate - Request delegate.
    */
   public subscribe(
     request: OutgoingRequestMessage,
@@ -193,8 +196,8 @@ export class UserAgentCore {
 
   /**
    * Send a request.
-   * @param request Outgoing request.
-   * @param delegate Request delegate.
+   * @param request - Outgoing request.
+   * @param delegate - Request delegate.
    */
   public request(
     request: OutgoingRequestMessage,
@@ -205,13 +208,13 @@ export class UserAgentCore {
 
   /**
    * Outgoing request message factory function.
-   * @param method Method.
-   * @param requestURI Request-URI.
-   * @param fromURI From URI.
-   * @param toURI To URI.
-   * @param options Request options.
-   * @param extraHeaders Extra headers to add.
-   * @param body Message body.
+   * @param method - Method.
+   * @param requestURI - Request-URI.
+   * @param fromURI - From URI.
+   * @param toURI - To URI.
+   * @param options - Request options.
+   * @param extraHeaders - Extra headers to add.
+   * @param body - Message body.
    */
   public makeOutgoingRequestMessage(
     method: string,
@@ -268,7 +271,7 @@ export class UserAgentCore {
 
   /**
    * Handle an incoming request message from the transport.
-   * @param message Incoming request message from transport layer.
+   * @param message - Incoming request message from transport layer.
    */
   public receiveIncomingRequestFromTransport(message: IncomingRequestMessage): void {
     this.receiveRequestFromTransport(message);
@@ -276,7 +279,7 @@ export class UserAgentCore {
 
   /**
    * Handle an incoming response message from the transport.
-   * @param message Incoming response message from transport layer.
+   * @param message - Incoming response message from transport layer.
    */
   public receiveIncomingResponseFromTransport(message: IncomingResponseMessage): void {
     this.receiveResponseFromTransport(message);
@@ -295,8 +298,8 @@ export class UserAgentCore {
    * receive requests directly from the transport layer and send responses
    * directly to the transport layer.
    * https://tools.ietf.org/html/rfc3261#section-8.2.7
-   * @param message Incoming request message to reply to.
-   * @param statusCode Status code to reply with.
+   * @param message - Incoming request message to reply to.
+   * @param statusCode - Status code to reply with.
    */
   public replyStateless(
     message: IncomingRequestMessage,
@@ -320,7 +323,7 @@ export class UserAgentCore {
    * is found, the request is passed to the core, which may decide to
    * construct a new server transaction for that request.
    * https://tools.ietf.org/html/rfc6026#section-8.10
-   * @param message Incoming request message from transport layer.
+   * @param message - Incoming request message from transport layer.
    */
   private receiveRequestFromTransport(message: IncomingRequestMessage): void {
     // When a request is received from the network by the server, it has to
@@ -455,7 +458,7 @@ export class UserAgentCore {
    * thoroughly in Section 12; they represent a peer-to-peer relationship
    * between user agents and are established by specific SIP methods, such
    * as INVITE.
-   * @param message Incoming request message.
+   * @param message - Incoming request message.
    */
   private receiveRequest(message: IncomingRequestMessage): void {
 
@@ -609,7 +612,7 @@ export class UserAgentCore {
    * be different roles than the UAs held during the transaction that
    * established the dialog.
    * https://tools.ietf.org/html/rfc3261#section-12.2
-   * @param message Incoming request message.
+   * @param message - Incoming request message.
    */
   private receiveInsideDialogRequest(message: IncomingRequestMessage): void {
 
@@ -749,7 +752,7 @@ export class UserAgentCore {
    * Assuming all of the checks in the previous subsections are passed,
    * the UAS processing becomes method-specific.
    *  https://tools.ietf.org/html/rfc3261#section-8.2.5
-   * @param message Incoming request message.
+   * @param message - Incoming request message.
    */
   private receiveOutsideDialogRequest(message: IncomingRequestMessage): void {
 
@@ -871,7 +874,7 @@ export class UserAgentCore {
    * of response processing in the TU is method specific.  However, there
    * are some general behaviors independent of the method.
    * https://tools.ietf.org/html/rfc3261#section-8.1.3
-   * @param message Incoming response message from transport layer.
+   * @param message - Incoming response message from transport layer.
    */
   private receiveResponseFromTransport(message: IncomingResponseMessage): void {
 

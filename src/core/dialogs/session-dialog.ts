@@ -47,6 +47,10 @@ import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server";
 import { Dialog } from "./dialog";
 import { DialogState } from "./dialog-state";
 
+/**
+ * Session Dialog.
+ * @public
+ */
 export class SessionDialog extends Dialog implements Session {
   public delegate: SessionDelegate | undefined;
 
@@ -173,7 +177,7 @@ export class SessionDialog extends Dialog implements Session {
    * acceptable, the UAC core MUST generate a valid answer in the ACK and
    * then send a BYE immediately.
    * https://tools.ietf.org/html/rfc3261#section-13.2.2.4
-   * @param options ACK options bucket.
+   * @param options - ACK options bucket.
    */
   public ack(options: RequestOptions = {}): OutgoingAckRequest {
     this.logger.log(`INVITE dialog ${this.id} sending ACK request`);
@@ -230,7 +234,7 @@ export class SessionDialog extends Dialog implements Session {
    *
    * https://tools.ietf.org/html/rfc3261#section-15
    * FIXME: Make these proper Exceptions...
-   * @param options BYE options bucket.
+   * @param options - BYE options bucket.
    * @returns
    * Throws `Error` if callee's UA attempts a BYE on an early dialog.
    * Throws `Error` if callee's UA attempts a BYE on a confirmed dialog
@@ -286,7 +290,7 @@ export class SessionDialog extends Dialog implements Session {
    * non-target refresh request within an existing invite dialog usage as
    * described in Section 12.2 of RFC 3261.
    * https://tools.ietf.org/html/rfc6086#section-4.2.1
-   * @param options Options bucket.
+   * @param options - Options bucket.
    */
   public info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfoRequest {
     this.logger.log(`INVITE dialog ${this.id} sending INFO request`);
@@ -316,7 +320,7 @@ export class SessionDialog extends Dialog implements Session {
    *
    * Either the caller or callee can modify an existing session.
    * https://tools.ietf.org/html/rfc3261#section-14
-   * @param options Options bucket
+   * @param options - Options bucket
    */
   public invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest {
     this.logger.log(`INVITE dialog ${this.id} sending INVITE request`);
@@ -356,7 +360,7 @@ export class SessionDialog extends Dialog implements Session {
    * The NOTIFY mechanism defined in [2] MUST be used to inform the agent
    * sending the REFER of the status of the reference.
    * https://tools.ietf.org/html/rfc3515#section-2.4.4
-   * @param options Options bucket.
+   * @param options - Options bucket.
    */
   public notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest {
     this.logger.log(`INVITE dialog ${this.id} sending NOTIFY request`);
@@ -375,7 +379,7 @@ export class SessionDialog extends Dialog implements Session {
    * MAY contain bodies, which are interpreted according to their type and
    * disposition.
    * https://tools.ietf.org/html/rfc3262#section-4
-   * @param options Options bucket.
+   * @param options - Options bucket.
    */
   public prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest {
     this.logger.log(`INVITE dialog ${this.id} sending PRACK request`);
@@ -386,7 +390,7 @@ export class SessionDialog extends Dialog implements Session {
    * REFER is a SIP request and is constructed as defined in [1].  A REFER
    * request MUST contain exactly one Refer-To header field value.
    * https://tools.ietf.org/html/rfc3515#section-2.4.1
-   * @param options Options bucket.
+   * @param options - Options bucket.
    */
   public refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest {
     this.logger.log(`INVITE dialog ${this.id} sending REFER request`);
@@ -404,7 +408,7 @@ export class SessionDialog extends Dialog implements Session {
    * associated with it are performed.  If the request is rejected, none
    * of the state changes are performed.
    * https://tools.ietf.org/html/rfc3261#section-12.2.2
-   * @param message Incoming request message within this dialog.
+   * @param message - Incoming request message within this dialog.
    */
   public receiveRequest(message: IncomingRequestMessage): void {
     this.logger.log(`INVITE dialog ${this.id} received ${message.method} request`);
@@ -426,6 +430,8 @@ export class SessionDialog extends Dialog implements Session {
           this.logger.warn(`INVITE dialog ${this.id} received unexpected ${message.method} request, dropping.`);
           return;
         }
+        // Update before the delegate has a chance to handle the
+        // message as delegate may callback into this dialog.
         this.ackWait = false;
       } else {
         if (!this.reinviteUserAgentServer) {
@@ -652,7 +658,7 @@ export class SessionDialog extends Dialog implements Session {
 
   /**
    * Update the signaling state of the dialog.
-   * @param message The message to base the update off of.
+   * @param message - The message to base the update off of.
    */
   public signalingStateTransition(
     message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body

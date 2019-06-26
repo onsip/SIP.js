@@ -7,8 +7,8 @@ import { TransactionState } from "./transaction-state";
 import { TransactionUser } from "./transaction-user";
 
 /**
- * Transaction
- *
+ * Transaction.
+ * @remarks
  * SIP is a transactional protocol: interactions between components take
  * place in a series of independent message exchanges.  Specifically, a
  * SIP transaction consists of a single request and any responses to
@@ -19,6 +19,7 @@ import { TransactionUser } from "./transaction-user";
  * a 2xx response.  If the response was a 2xx, the ACK is not considered
  * part of the transaction.
  * https://tools.ietf.org/html/rfc3261#section-17
+ * @public
  */
 export abstract class Transaction extends EventEmitter {
   protected logger: Logger;

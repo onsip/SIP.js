@@ -6,7 +6,10 @@ import {
 import { SubscriptionDelegate } from "./subscription-delegate";
 
 /**
+ * Subscription.
+ * @remarks
  * https://tools.ietf.org/html/rfc6665
+ * @public
  */
 export interface Subscription {
   /** Subscription delegate. */
@@ -29,8 +32,8 @@ export interface Subscription {
    * Send re-SUBSCRIBE request.
    * Refreshing a subscription and unsubscribing.
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
-   * @param delegate Request delegate.
-   * @param options Options bucket
+   * @param delegate - Request delegate.
+   * @param options - Options bucket
    */
   subscribe(delegate?: OutgoingSubscribeRequestDelegate, options?: RequestOptions): OutgoingSubscribeRequest;
 
@@ -49,7 +52,9 @@ export interface Subscription {
 
 /**
  * Subscription state.
+ * @remarks
  * https://tools.ietf.org/html/rfc6665#section-4.1.2
+ * @public
  */
 export enum SubscriptionState {
   Initial = "Initial",

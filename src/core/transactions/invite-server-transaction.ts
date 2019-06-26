@@ -7,8 +7,10 @@ import { TransactionState } from "./transaction-state";
 import { ServerTransactionUser } from "./transaction-user";
 
 /**
- * INVITE Server Transaction
+ * INVITE Server Transaction.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-17.2.1
+ * @public
  */
 export class InviteServerTransaction extends ServerTransaction {
   private lastFinalResponse: string | undefined;
@@ -43,9 +45,9 @@ export class InviteServerTransaction extends ServerTransaction {
    * After construction the transaction will be in the "proceeding" state and the transaction
    * `id` will equal the branch parameter set in the Via header of the incoming request.
    * https://tools.ietf.org/html/rfc3261#section-17.2.1
-   * @param request Incoming INVITE request from the transport.
-   * @param transport The transport.
-   * @param user The transaction user.
+   * @param request - Incoming INVITE request from the transport.
+   * @param transport - The transport.
+   * @param user - The transaction user.
    */
   constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
     super(
@@ -84,7 +86,7 @@ export class InviteServerTransaction extends ServerTransaction {
 
   /**
    * Receive requests from transport matching this transaction.
-   * @param request Request matching this transaction.
+   * @param request - Request matching this transaction.
    */
   public receiveRequest(request: IncomingRequestMessage): void {
     switch (this.state) {
@@ -159,8 +161,8 @@ export class InviteServerTransaction extends ServerTransaction {
 
   /**
    * Receive responses from TU for this transaction.
-   * @param statusCode Status code of response.
-   * @param response Response.
+   * @param statusCode - Status code of response.
+   * @param response - Response.
    */
   public receiveResponse(statusCode: number, response: string): void {
     if (statusCode < 100 || statusCode > 699) {
@@ -273,7 +275,7 @@ export class InviteServerTransaction extends ServerTransaction {
 
   /**
    * Execute a state transition.
-   * @param newState New state.
+   * @param newState - New state.
    */
   private stateTransition(newState: TransactionState): void {
     // Assert valid state transitions.

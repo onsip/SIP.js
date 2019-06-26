@@ -9,6 +9,10 @@ import {
 import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
+/**
+ * PRACK UAS.
+ * @public
+ */
 export class PrackUserAgentServer extends UserAgentServer implements IncomingPrackRequest {
   private dialog: SessionDialog;
 
@@ -25,7 +29,7 @@ export class PrackUserAgentServer extends UserAgentServer implements IncomingPra
 
   /**
    * Update the dialog signaling state on a 2xx response.
-   * @param options Options bucket.
+   * @param options - Options bucket.
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponse {
     if (options.body) {

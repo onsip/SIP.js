@@ -9,6 +9,10 @@ import {
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * Re-SUBSCRIBE UAC.
+ * @public
+ */
 export class ReSubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
   private dialog: SubscriptionDialog;
 
@@ -29,7 +33,7 @@ export class ReSubscribeUserAgentClient extends UserAgentClient implements Outgo
 
   /**
    * Receive a response from the transaction layer.
-   * @param message Incoming response message.
+   * @param message - Incoming response message.
    */
   protected receiveResponse(message: IncomingResponseMessage): void {
     if (message.statusCode && message.statusCode >= 200 && message.statusCode < 300) {
