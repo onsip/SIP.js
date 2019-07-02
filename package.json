@@ -45,12 +45,12 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^4.0.2",
     "pegjs": "^0.10.0",
-    "ts-loader": "^6.0.3",
+    "ts-loader": "^6.0.4",
     "ts-pegjs": "0.2.5",
-    "tslint": "^5.17.0",
+    "tslint": "^5.18.0",
     "typescript": "^3.5.2",
-    "webpack": "^4.34.0",
-    "webpack-cli": "^3.3.4"
+    "webpack": "^4.34.2",
+    "webpack-cli": "^3.3.5"
   },
   "engines": {
     "node": ">=8.0"
