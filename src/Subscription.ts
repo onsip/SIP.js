@@ -202,7 +202,7 @@ export class Subscription extends EventEmitter implements ClientContext {
   ): boolean;
   public emit(event: "notify", notification: { request: IncomingRequestMessage }): boolean;
   public emit(event: "terminated"): boolean;
-  public emit(event: string | symbol, ...args: any[]): boolean {
+  public emit(event: string | number, ...args: any[]): boolean {
     return super.emit(event, ...args);
   }
 

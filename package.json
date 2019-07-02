@@ -27,12 +27,13 @@
   ],
   "dependencies": {
     "crypto-js": "^3.1.9-1",
+    "events": "^3.0.0",
     "tslib": "^1.10.0"
   },
   "devDependencies": {
     "@types/crypto-js": "^3.1.43",
+    "@types/events": "^3.0.0",
     "@types/jasmine": "^3.3.13",
-    "@types/node": "^12.0.8",
     "circular-dependency-plugin": "^5.0.2",
     "jasmine-core": "^3.4.0",
     "karma": "^4.1.0",
@@ -67,6 +68,7 @@
     "browserTest": "npm run build-test && sleep 2 && open http://0.0.0.0:9876/debug.html & karma start --reporters kjhtml --no-single-run",
     "commandLineTest": "npm run build-test && karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
-    "buildAndBrowserTest": "npm run build && npm run browserTest"
+    "buildAndBrowserTest": "npm run build && npm run browserTest",
+    "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/Constants.ts"
   }
 }

@@ -55,6 +55,7 @@ module.exports = function (env) {
       libraryTarget: 'umd',
       globalObject: 'this'
     },
+    node: false,
     module: {
       rules: [
         {
