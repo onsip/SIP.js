@@ -194,7 +194,7 @@ export interface InviterInviteOptions {
 }
 
 // @public
-export interface InviterOptions {
+export interface InviterOptions extends SessionOptions {
     anonymous?: boolean;
     // @deprecated (undocumented)
     body?: string;
@@ -429,7 +429,7 @@ export interface RegistererUnregisterOptions {
 // @public
 export abstract class Session extends EventEmitter {
     // @internal
-    protected constructor(userAgent: UserAgent);
+    protected constructor(userAgent: UserAgent, options?: SessionOptions);
     // @internal @deprecated (undocumented)
     protected accepted(response?: IncomingResponseMessage | string, cause?: string): void;
     // @internal (undocumented)
@@ -701,6 +701,12 @@ export interface SessionInviteOptions {
 }
 
 // @public
+export interface SessionOptions {
+    // (undocumented)
+    delegate?: SessionDelegate;
+}
+
+// @public
 export enum SessionState {
     // (undocumented)
     Established = "Established",
@@ -759,7 +765,7 @@ export class Subscriber extends Subscription {
 }
 
 // @public
-export interface SubscriberOptions {
+export interface SubscriberOptions extends SubscriptionOptions {
     // (undocumented)
     body?: string;
     // (undocumented)
@@ -777,7 +783,7 @@ export interface SubscriberSubscribeOptions {
 // @public
 export abstract class Subscription extends EventEmitter {
     // @internal
-    protected constructor(userAgent: UserAgent);
+    protected constructor(userAgent: UserAgent, options?: SubscriptionOptions);
     data: any | undefined;
     delegate: SubscriptionDelegate | undefined;
     // Warning: (ae-forgotten-export) The symbol "Subscription" needs to be exported by the entry point index.d.ts
@@ -801,6 +807,12 @@ export abstract class Subscription extends EventEmitter {
 // @public
 export interface SubscriptionDelegate {
     onNotify(notification: Notification): void;
+}
+
+// @public
+export interface SubscriptionOptions {
+    // (undocumented)
+    delegate?: SubscriptionDelegate;
 }
 
 // @public
@@ -963,8 +975,8 @@ export interface UserAgentOptions {
     // (undocumented)
     log?: {
         builtinEnabled: boolean;
-        level: string | number;
-        connector: (level: string, category: string, label: string | undefined, content: any) => void;
+        level?: string | number;
+        connector?: (level: string, category: string, label: string | undefined, content: any) => void;
     };
     noAnswerTimeout?: number;
     // (undocumented)
