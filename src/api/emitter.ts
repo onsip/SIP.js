@@ -34,7 +34,7 @@ export function makeEmitter<T>(eventEmitter: EventEmitter, eventName: string = "
       eventEmitter.on(eventName, listener);
     },
     off: (listener: (data: T) => void): void => {
-      eventEmitter.off(eventName, listener);
+      eventEmitter.removeListener(eventName, listener);
     },
     once: (listener: (data: T) => void): void => {
       eventEmitter.once(eventName, listener);
