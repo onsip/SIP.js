@@ -166,9 +166,7 @@ export class UserAgent extends EventEmitter {
 
     // Apply log configuration if present
     if (options.log) {
-      if (options.log.hasOwnProperty("builtinEnabled")) {
-        this.log.builtinEnabled = options.log.builtinEnabled;
-      }
+      this.log.builtinEnabled = options.log.builtinEnabled;
 
       if (options.log.hasOwnProperty("connector")) {
         this.log.connector = options.log.connector;

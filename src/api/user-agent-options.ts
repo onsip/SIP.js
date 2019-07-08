@@ -79,8 +79,8 @@ export interface UserAgentOptions {
   hostportParams?: any;
   log?: {
     builtinEnabled: boolean,
-    level: string | number,
-    connector: (level: string, category: string, label: string | undefined, content: any) => void,
+    level?: string | number,
+    connector?: (level: string, category: string, label: string | undefined, content: any) => void,
   };
 
   /**
