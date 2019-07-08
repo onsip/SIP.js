@@ -313,7 +313,7 @@ const options = {
       console.log("INVITE received");
       invitation.accept();
     },
-    onMesesage: (message) => {
+    onMessage: (message) => {
       console.log("MESSAGE received");
       message.accept();
     },
