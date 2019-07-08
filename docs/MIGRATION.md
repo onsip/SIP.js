@@ -14,7 +14,7 @@ The legacy API will be removed in 0.16.x in favor of the new API.
 
 The 0.16.x release is not backwards compatible with 0.15.x.
 
-Significant architectural changes were made to address long standing issues including some ambiguities and race conditions that were difficult to resolve in the prior architecture. Additionally, years of code contributions to different aspects of the code base had resulted in inconsistencies in the overall API interface. Improvements made to some aspects of the API where often not carried across the whole API. An attempt has been made to rectified these inconsistencies in the new API by taking the "best" approach and applying it across the board.
+Significant architectural changes were made to address long standing issues including some ambiguities and race conditions that were difficult to resolve in the prior architecture. Additionally, years of code contributions to different aspects of the code base had resulted in inconsistencies in the overall API interface. Improvements made to some aspects of the API where often not carried across the whole API. An attempt has been made to rectify these inconsistencies in the new API by taking the "best" approach and applying it across the board.
 
 Architectural changes include:
 
