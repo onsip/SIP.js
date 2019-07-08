@@ -24,35 +24,44 @@ Architectural changes include:
 
 Migrating to the new API entails updating code accordingly. 
 
-## 1. `UA` class replaced by `UserAgent` class 
+## 1. `UserAgent` class replaces...
+
+- `UA`
 
 ### Configuration
 
 The following options are no longer supported. They have been removed or deprecated and may no longer work...
-* `allowLegacyNotifications`
-* `allowOutOfDialogRefers`
-* `authenticationFactory`
-* `autostart`
-* `dtmfType`
-* `hackIpInContact`
-* `hackViaTcp`
-* `hackWssInTransport`
-* `registerOptions`
-* `register`
+- `dtmfType`
+  - use `Session.info()` for "out-of-band" DTMF or `SessionDescriptionHandler` for "in-band" DTMF.
+- `registerOptions`
+  - pass `RegistererOptions` to `Registerer` instead (see below).
+- `register`
+  - use `Registerer.register()` instead (see below).
 
-### Construction
+### Construction, Starting, and Stopping
 
 Previously...
 ```
 const ua = new UA(options);
+ua.start();
+ua.stop();
 ```
 
 Now...
 ```
 const userAgent = new UserAgent(options);
+userAgent.start();
+userAgent.stop();
 ```
 
-## 2. `UA.register()` replaced by `Registerer` class
+## 3. `Registerer` class replaces...
+
+- `UA.register()`
+- `UA.unregister()`
+- `UA.isregistered()`
+- `UA.on("registered")`
+- `UA.on("unregistered")`
+- `UA.on("registrationFailed")`
 
 Previously...
 ```
@@ -75,6 +84,10 @@ ua.on("unregistered", (response, cause) => {
 });
 
 ua.register();
+
+const registered = ua.isRegistered();
+
+ua.unregister()
 ```
 
 Now...
@@ -111,36 +124,15 @@ registerer.register()
   .catch((error) => {
     console.log("Failed to send REGISTER");
   });
+
+const registered = registerer.registered;
+
+registerer.unregister()
 ```
 
-## 3. `UA.on("invite")` replaced by `UserAgent.delegate`
+## 4. `Inviter` class replaces...
 
-
-Previously...
-```
-const ua = new UA();
-
-ua.on("invite", (session) => {
-  console.log("Invite received");
-  session.accept();
-});
-```
-
-Now...
-```
-const options = {
-  delegate: {
-    onInvite: (invitation) => {
-      console.log("Invite received");
-      invitation.accept();
-    }
-  }
-}
-
-const userAgent = new UserAgent(options);
-```
-
-## 4. `UA.invite()` replaced by `Inviter` class
+- `UA.invite()`
 
 Previously...
 
@@ -258,4 +250,83 @@ session.invite(uri, options)
   .catch((error) => {
     console.log("Failed to send INVITE");
   });
+```
+
+## 5. `Messager` class replaces...
+
+- `UA.message()`
+
+TODO
+
+## 6. `Publisher` class replaces...
+
+- `UA.publish()`
+
+TODO
+
+## 7. `Subscriber` class replaces...
+
+- `UA.subscribe()`
+
+TODO
+
+## 8. Core replaces...
+
+- `UA.request()`
+
+TODO
+
+## 9. `UserAgentDelegate` interface replaces
+
+- `UA.on("invite")`
+- `UA.on("message")`
+- `UA.on("notify")`
+- `UA.on("outOfDialogReferRequested")`
+
+Previously...
+```
+const ua = new UA();
+
+ua.on("invite", (session) => {
+  console.log("INVITE received");
+  session.accept();
+});
+
+ua.on("message", (message) => {
+  console.log("MESSAGE received");
+});
+
+ua.on("notify", (notify) => {
+  console.log("NOTIFY received");
+});
+
+ua.on("outOfDialogReferRequested", (refer) => {
+  console.log("REFER received");
+});
+```
+
+Now...
+```
+const options = {
+  delegate: {
+    onInvite: (invitation) => {
+      console.log("INVITE received");
+      invitation.accept();
+    },
+    onMesesage: (message) => {
+      console.log("MESSAGE received");
+      message.accept();
+    },
+    onNotify: (notification) => {
+      console.log("NOTIFY received");
+      notification.accept();
+    },
+    onRefer: (referral) => {
+      console.log("REFER received");
+      referral.accept();
+    }
+  }
+}
+
+const userAgent = new UserAgent(options);
 ```
