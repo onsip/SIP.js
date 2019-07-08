@@ -9,7 +9,7 @@ Options for [Inviter](./sip.js.inviter.md) constructor.
 <b>Signature:</b>
 
 ```typescript
-export interface InviterOptions 
+export interface InviterOptions extends SessionOptions 
 ```
 
 ## Properties

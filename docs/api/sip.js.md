@@ -67,9 +67,11 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md) | Modifier for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) offer/answer. |
 |  [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) methods. |
 |  [SessionInviteOptions](./sip.js.sessioninviteoptions.md) | Options for [Session.invite()](./sip.js.session.invite.md)<!-- -->. |
+|  [SessionOptions](./sip.js.sessionoptions.md) | Options for [Session](./sip.js.session.md) constructor. |
 |  [SubscriberOptions](./sip.js.subscriberoptions.md) | Options for [Subscriber](./sip.js.subscriber.md) constructor. |
 |  [SubscriberSubscribeOptions](./sip.js.subscribersubscribeoptions.md) | Options for [Subscriber.subscribe()](./sip.js.subscriber.subscribe.md)<!-- -->. |
 |  [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) | Delegate for [Subscription](./sip.js.subscription.md)<!-- -->. |
+|  [SubscriptionOptions](./sip.js.subscriptionoptions.md) | Options for [Subscription](./sip.js.subscription.md) constructor. |
 |  [SubscriptionSubscribeOptions](./sip.js.subscriptionsubscribeoptions.md) | Options for [Subscription.subscribe()](./sip.js.subscription.subscribe.md)<!-- -->. |
 |  [SubscriptionUnsubscribeOptions](./sip.js.subscriptionunsubscribeoptions.md) | Options for [Subscription.unsubscribe()](./sip.js.subscription.unsubscribe.md)<!-- -->. |
 |  [UserAgentDelegate](./sip.js.useragentdelegate.md) | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |

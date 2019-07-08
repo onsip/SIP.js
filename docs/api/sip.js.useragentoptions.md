@@ -33,7 +33,7 @@ export interface UserAgentOptions
 |  [hackViaTcp](./sip.js.useragentoptions.hackviatcp.md) | <code>boolean</code> |  |
 |  [hackWssInTransport](./sip.js.useragentoptions.hackwssintransport.md) | <code>boolean</code> |  |
 |  [hostportParams](./sip.js.useragentoptions.hostportparams.md) | <code>any</code> |  |
-|  [log](./sip.js.useragentoptions.log.md) | <code>{</code><br/><code>        builtinEnabled: boolean;</code><br/><code>        level: string &#124; number;</code><br/><code>        connector: (level: string, category: string, label: string &#124; undefined, content: any) =&gt; void;</code><br/><code>    }</code> |  |
+|  [log](./sip.js.useragentoptions.log.md) | <code>{</code><br/><code>        builtinEnabled: boolean;</code><br/><code>        level?: string &#124; number;</code><br/><code>        connector?: (level: string, category: string, label: string &#124; undefined, content: any) =&gt; void;</code><br/><code>    }</code> |  |
 |  [noAnswerTimeout](./sip.js.useragentoptions.noanswertimeout.md) | <code>number</code> | Time (in seconds) after which an incoming call is rejected if not answered. |
 |  [password](./sip.js.useragentoptions.password.md) | <code>string</code> |  |
 |  [register](./sip.js.useragentoptions.register.md) | <code>boolean</code> | Indicate if the user agent should register automatically when starting. |

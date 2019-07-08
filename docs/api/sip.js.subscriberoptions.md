@@ -9,7 +9,7 @@ Options for [Subscriber](./sip.js.subscriber.md) constructor.
 <b>Signature:</b>
 
 ```typescript
-export interface SubscriberOptions 
+export interface SubscriberOptions extends SubscriptionOptions 
 ```
 
 ## Properties
