@@ -106,7 +106,7 @@ export class Subscriber extends Subscription {
     if (options.expires === undefined) {
       this.expires = 3600;
     } else if (typeof options.expires !== "number") { // pre-typescript type guard
-      userAgent.logger.warn(`Option "expires" must be a number. Using default of 3600.`);
+      this.logger.warn(`Option "expires" must be a number. Using default of 3600.`);
       this.expires = 3600;
     } else {
       this.expires = options.expires;

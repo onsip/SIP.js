@@ -29,6 +29,7 @@ import {
 } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
+import { SIPExtension } from "./user-agent-options";
 
 /**
  * An inviter offers to establish a {@link Session} (outgoing INVITE).
@@ -168,10 +169,10 @@ export class Inviter extends Session {
       "REFER"
     ].toString());
 
-    if (userAgent.configuration.rel100 === C.supported.REQUIRED) {
+    if (userAgent.configuration.sipExtension100rel === SIPExtension.Required) {
       extraHeaders.push("Require: 100rel");
     }
-    if (userAgent.configuration.replaces === C.supported.REQUIRED) {
+    if (userAgent.configuration.sipExtensionReplaces === SIPExtension.Required) {
       extraHeaders.push("Require: replaces");
     }
 

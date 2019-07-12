@@ -31,6 +31,7 @@ import {
 } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
+import { SIPExtension } from "./user-agent-options";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
@@ -159,7 +160,7 @@ export class Invitation extends Session {
       incomingInviteRequest.reject({ statusCode: 408 });
       this.failed(request, C.causes.NO_ANSWER);
       this.terminated(request, C.causes.NO_ANSWER);
-    }, this.userAgent.configuration.noAnswerTimeout || 60000);
+    }, this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000);
 
     // Set expiresTimer (RFC3261 13.3.1)
     if (request.hasHeader("expires")) {
@@ -327,7 +328,10 @@ export class Invitation extends Session {
     if (
       !(this.rel100 === C.supported.REQUIRED) &&
       !(this.rel100 === C.supported.SUPPORTED && options.rel100) &&
-      !(this.rel100 === C.supported.SUPPORTED && this.userAgent.configuration.rel100 === C.supported.REQUIRED)
+      !(
+        this.rel100 === C.supported.SUPPORTED &&
+        this.userAgent.configuration.sipExtension100rel === SIPExtension.Required
+      )
     ) {
       return this._progress(options)
         .then((response) => { return; })

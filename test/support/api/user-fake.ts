@@ -1,5 +1,5 @@
 import { C, URI } from "../../../src";
-import { UserAgent, UserAgentOptions } from "../../../src/api";
+import { SIPExtension, UserAgent, UserAgentOptions } from "../../../src/api";
 import { makeMockSessionDescriptionHandlerFactory } from "./session-description-handler-mock";
 import { TransportFake } from "./transport-fake";
 
@@ -33,11 +33,10 @@ export function makeUserFake(
 ): UserFake {
   const uri = new URI("sip", user, domain);
   const uaConfig: UserAgentOptions = {
-    uri: uri.toString(), // FIXME: UA.Options.uri is typed to take a URI, but it crashes
+    uri,
     displayName,
     noAnswerTimeout: 90, // seconds
-    register: false,
-    rel100: C.supported.SUPPORTED,
+    sipExtension100rel: SIPExtension.Supported,
     sessionDescriptionHandlerFactory: makeMockSessionDescriptionHandlerFactory(user),
     transportConstructor: TransportFake
   };

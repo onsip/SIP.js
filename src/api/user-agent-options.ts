@@ -1,22 +1,35 @@
-import { C } from "../Constants";
-
 import {
-  DigestAuthentication,
   Transport,
   URI
 } from "../core";
-import { RegistererOptions } from "./registerer-options";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
-import { UserAgent } from "./user-agent";
 import { UserAgentDelegate } from "./user-agent-delegate";
 
 /**
- * DTMF signaling delivery method.
- * @internal
+ * Log level.
+ * @public
  */
-export enum DTMFSignaling {
-  RTP = "RTP",
-  INFO = "INFO"
+export type LogLevel =  "debug" | "log" | "warn" | "error";
+
+/**
+ * Log connector function.
+ * @public
+ */
+export type LogConnector = (
+  level: LogLevel,
+  category: string,
+  label: string | undefined,
+  content: string
+) => void;
+
+/**
+ * SIP extension support level.
+ * @public
+ */
+export enum SIPExtension {
+  Required = "Required",
+  Supported = "Supported",
+  Unsupported = "Unsupported"
 }
 
 /**
@@ -24,30 +37,47 @@ export enum DTMFSignaling {
  * @public
  */
 export interface UserAgentOptions {
+  /**
+   * If `true`, the user agent will accept out of dialog NOTIFY.
+   * @remarks
+   * RFC 6665 obsoletes the use of out of dialog NOTIFY from RFC 3265.
+   * @defaultValue `false`
+   */
   allowLegacyNotifications?: boolean;
-  allowOutOfDialogRefers?: boolean;
-  authenticationFactory?: (ua: UserAgent) => DigestAuthentication | any; // any for custom ones
-  authorizationUser?: string;
 
-  // authorizationPassword?: string;
-  // authorizationUsername?: string;
+  /**
+   * If `true`, the user agent will accept out of dialog REFER.
+   * @defaultValue `false`
+   */
+  allowOutOfDialogRefers?: boolean;
+
+  /**
+   * Authorization password.
+   * @defaultValue `""`
+   */
+  authorizationPassword?: string;
+
+  /**
+   * Authorization username.
+   * @defaultValue `""`
+   */
+  authorizationUsername?: string;
 
   /**
    * If `true`, the user agent calls the `start()` method upon being created.
    * @defaultValue `true`
    */
-  autostart?: boolean;
-  // autoStart?: boolean;
+  autoStart?: boolean;
 
   /**
-   * If `true`, stop on unload (if running in browser window).
+   * If `true`, the user  agent calls the `stop()` method on unload (if running in browser window).
    * @defaultValue `true`
    */
-  autostop?: boolean;
-  // autoStop?: boolean;
+  autoStop?: boolean;
 
   /**
    * Delegate for {@link UserAgent}.
+   * @defaultValue `{}`
    */
   delegate?: UserAgentDelegate;
 
@@ -58,58 +88,115 @@ export interface UserAgentOptions {
    * (the display name portion of the From header).
    * It must NOT be enclosed between double quotes even if the given name contains multi-byte symbols
    * (SIPjs will always enclose the `displayName` value between double quotes).
+   * @defaultValue `""`
    */
   displayName?: string;
 
   /**
-   * DTMF signaling type.
-   * @remarks
-   * RTP Payload Spec: https://tools.ietf.org/html/rfc4733
-   * WebRTC Audio Spec: https://tools.ietf.org/html/rfc7874
+   * Force adding rport to Via header.
+   * @defaultValue `false`
    */
-  dtmfSignaling?: DTMFSignaling;
-
-  experimentalFeatures?: boolean;
-  extraSupported?: Array<string>;
   forceRport?: boolean;
-  hackIpInContact?: boolean;
-  hackAllowUnregisteredOptionTags?: boolean;
-  hackViaTcp?: boolean;
-  hackWssInTransport?: boolean;
-  hostportParams?: any;
-  log?: {
-    builtinEnabled: boolean,
-    level?: string | number,
-    connector?: (level: string, category: string, label: string | undefined, content: any) => void,
-  };
 
   /**
-   * Time (in seconds) after which an incoming call is rejected if not answered.
+   * Hack
+   * @deprecated TBD
+   */
+  hackIpInContact?: boolean | string;
+
+  /**
+   * Hack
+   * @deprecated TBD
+   */
+  hackAllowUnregisteredOptionTags?: boolean;
+
+  /**
+   * Hack
+   * @deprecated TBD
+   */
+  hackViaTcp?: boolean;
+
+  /**
+   * Hack
+   * @deprecated TBD
+   */
+  hackWssInTransport?: boolean;
+
+  /**
+   * Indicates whether log messages should be written to the browser console.
+   * @defaultValue `true`
+   */
+  logBuiltinEnabled?: boolean;
+
+  /**
+   * Indicates the verbosity level of the log messages.
+   * @defaultValue `"log"`
+   */
+  logLevel?: LogLevel;
+
+  /**
+   * A function which will be called everytime a log is generated.
+   * @defaultValue
+   * A noop if not defined.
+   */
+  logConnector?: LogConnector;
+
+  /**
+   * Number of seconds after which an incoming call is rejected if not answered.
    * @defaultValue 60
    */
   noAnswerTimeout?: number;
 
-  password?: string;
-
   /**
-   * Indicate if the user agent should register automatically when starting.
-   * @defaultValue `true`
+   * A factory for generating `SessionDescriptionHandler` instances.
+   * @remarks
+   * The factory will be passed a `Session` object for the current session
+   * and the `sessionDescriptionHandlerFactoryOptions` object.
+   * @defaultValue `Web.SessionDesecriptionHandler.defaultFactory`
    */
-  register?: boolean;
-
-  /**
-   * See {@link RegistererOptions}.
-   */
-  registerOptions?: RegistererOptions;
-
-  rel100?: C.supported;
-  replaces?: C.supported;
   sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
+
+  /**
+   * Options to passed to `sessionDescriptionHandlerFactory`.
+   * @remarks
+   * See `Web.SessionDesecriptionHandlerOptions` for details.
+   * @defaultValue `{}`
+   */
   sessionDescriptionHandlerFactoryOptions?: object;
+
+  /**
+   * Reliable provisional responses.
+   * https://tools.ietf.org/html/rfc3262
+   * @defaultValue `SIPExtension.Unsupported`
+   */
+  sipExtension100rel?: SIPExtension;
+
+  /**
+   * Replaces header.
+   * https://tools.ietf.org/html/rfc3891
+   * @defaultValue `SIPExtension.Unsupported`
+   */
+  sipExtensionReplaces?: SIPExtension;
+
+  /**
+   * Extra option tags to claim support for.
+   * @remarks
+   * Setting an extra option tag does not enable support for the associated extension
+   * it simply adds the tag to the list of supported options.
+   * See {@link UserAgentRegisteredOptionTags} for valid option tags.
+   * @defaultValue `[]`
+   */
+  sipExtensionExtraSupported?: Array<string>;
+
+  /**
+   * An id uniquely identify this user agent instance.
+   * @defaultValue
+   * A random id generated by default.
+   */
   sipjsId?: string;
 
   /**
-   * The constructor for an object to be used as the transport layer for the user agent.
+   * A constructor function for the user agent's `Transport`.
    * @remarks
    * For more information about creating your own transport see `Transport`.
    * @defaultValue `WebSocketTransport`
@@ -129,11 +216,69 @@ export interface UserAgentOptions {
    * @remarks
    * This is a SIP address given to you by your provider.
    * @defaultValue
-   * By default, URI is set to `anonymous.X@anonymous.invalid`, where X is a random token generated for each UA.
+   * By default, URI is set to `sip:anonymous.X@anonymous.invalid`, where X is a random token generated for each UA.
    */
-  uri?: string | URI;
+  uri?: URI;
 
+  /**
+   * Adds a Route header to requests.
+   * @defaultValue `false`
+   */
   usePreloadedRoute?: boolean;
+
+  /**
+   * User agent string used in the UserAgent header.
+   * @defaultValue
+   * A reasonable value is utilized.
+   */
   userAgentString?: string;
+
+  /**
+   * Hostname to use in Via header.
+   * @defaultValue
+   * A random hostname in the .invalid domain.
+   */
   viaHost?: string;
 }
+
+/**
+ * SIP Option Tags
+ * @remarks
+ * http://www.iana.org/assignments/sip-parameters/sip-parameters.xhtml#sip-parameters-4
+ * @public
+ */
+export const UserAgentRegisteredOptionTags: {[option: string]: boolean} = {
+  "100rel":                   true,  // RFC 3262
+  "199":                      true,  // RFC 6228
+  "answermode":               true,  // RFC 5373
+  "early-session":            true,  // RFC 3959
+  "eventlist":                true,  // RFC 4662
+  "explicitsub":              true,  // RFC-ietf-sipcore-refer-explicit-subscription-03
+  "from-change":              true,  // RFC 4916
+  "geolocation-http":         true,  // RFC 6442
+  "geolocation-sip":          true,  // RFC 6442
+  "gin":                      true,  // RFC 6140
+  "gruu":                     true,  // RFC 5627
+  "histinfo":                 true,  // RFC 7044
+  "ice":                      true,  // RFC 5768
+  "join":                     true,  // RFC 3911
+  "multiple-refer":           true,  // RFC 5368
+  "norefersub":               true,  // RFC 4488
+  "nosub":                    true,  // RFC-ietf-sipcore-refer-explicit-subscription-03
+  "outbound":                 true,  // RFC 5626
+  "path":                     true,  // RFC 3327
+  "policy":                   true,  // RFC 6794
+  "precondition":             true,  // RFC 3312
+  "pref":                     true,  // RFC 3840
+  "privacy":                  true,  // RFC 3323
+  "recipient-list-invite":    true,  // RFC 5366
+  "recipient-list-message":   true,  // RFC 5365
+  "recipient-list-subscribe": true,  // RFC 5367
+  "replaces":                 true,  // RFC 3891
+  "resource-priority":        true,  // RFC 4412
+  "sdp-anat":                 true,  // RFC 4092
+  "sec-agree":                true,  // RFC 3329
+  "tdialog":                  true,  // RFC 4538
+  "timer":                    true,  // RFC 4028
+  "uui":                      true   // RFC 7433
+};

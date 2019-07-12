@@ -1047,7 +1047,7 @@ describe("Session Class", () => {
         beforeEach(async () => {
           resetSpies();
           const noAnswerTimeout = 90000;
-          if (alice.ua.configuration.noAnswerTimeout !== noAnswerTimeout) {
+          if (alice.ua.configuration.noAnswerTimeout * 1000 !== noAnswerTimeout) {
             throw new Error("Test is assuming UA configured with 90 second no answer timeout");
           }
           await soon(noAnswerTimeout);
