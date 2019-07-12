@@ -4,8 +4,15 @@
 
 ## UserAgentOptions.sessionDescriptionHandlerFactory property
 
+A factory for generating `SessionDescriptionHandler` instances.
+
 <b>Signature:</b>
 
 ```typescript
 sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
 ```
+
+## Remarks
+
+The factory will be passed a `Session` object for the current session and the `sessionDescriptionHandlerFactoryOptions` object.
+

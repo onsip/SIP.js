@@ -4,8 +4,15 @@
 
 ## UserAgentOptions.allowLegacyNotifications property
 
+If `true`<!-- -->, the user agent will accept out of dialog NOTIFY.
+
 <b>Signature:</b>
 
 ```typescript
 allowLegacyNotifications?: boolean;
 ```
+
+## Remarks
+
+RFC 6665 obsoletes the use of out of dialog NOTIFY from RFC 3265.
+

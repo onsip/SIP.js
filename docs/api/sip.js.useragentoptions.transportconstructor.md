@@ -4,7 +4,7 @@
 
 ## UserAgentOptions.transportConstructor property
 
-The constructor for an object to be used as the transport layer for the user agent.
+A constructor function for the user agent's `Transport`<!-- -->.
 
 <b>Signature:</b>
 

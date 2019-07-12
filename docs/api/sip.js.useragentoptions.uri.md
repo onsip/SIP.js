@@ -9,7 +9,7 @@ SIP URI associated with the user agent.
 <b>Signature:</b>
 
 ```typescript
-uri?: string | URI;
+uri?: URI;
 ```
 
 ## Remarks

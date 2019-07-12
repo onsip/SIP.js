@@ -4,6 +4,8 @@
 
 ## UserAgentOptions.viaHost property
 
+Hostname to use in Via header.
+
 <b>Signature:</b>
 
 ```typescript

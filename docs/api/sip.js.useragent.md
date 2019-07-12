@@ -22,6 +22,7 @@ export declare class UserAgent extends EventEmitter
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
+|  [configuration](./sip.js.useragent.configuration.md) |  | <code>Required&lt;UserAgentOptions&gt;</code> |  |
 |  [delegate](./sip.js.useragent.delegate.md) |  | <code>UserAgentDelegate &#124; undefined</code> | Delegate. |
 
 ## Methods

@@ -4,6 +4,8 @@
 
 ## UserAgentOptions.userAgentString property
 
+User agent string used in the UserAgent header.
+
 <b>Signature:</b>
 
 ```typescript

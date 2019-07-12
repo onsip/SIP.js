@@ -4,8 +4,15 @@
 
 ## UserAgentOptions.sessionDescriptionHandlerFactoryOptions property
 
+Options to passed to `sessionDescriptionHandlerFactory`<!-- -->.
+
 <b>Signature:</b>
 
 ```typescript
 sessionDescriptionHandlerFactoryOptions?: object;
 ```
+
+## Remarks
+
+See `Web.SessionDesecriptionHandlerOptions` for details.
+

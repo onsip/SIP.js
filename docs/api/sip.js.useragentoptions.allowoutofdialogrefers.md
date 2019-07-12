@@ -4,6 +4,8 @@
 
 ## UserAgentOptions.allowOutOfDialogRefers property
 
+If `true`<!-- -->, the user agent will accept out of dialog REFER.
+
 <b>Signature:</b>
 
 ```typescript

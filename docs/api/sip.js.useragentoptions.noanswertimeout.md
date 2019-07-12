@@ -4,7 +4,7 @@
 
 ## UserAgentOptions.noAnswerTimeout property
 
-Time (in seconds) after which an incoming call is rejected if not answered.
+Number of seconds after which an incoming call is rejected if not answered.
 
 <b>Signature:</b>
 

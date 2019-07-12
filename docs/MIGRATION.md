@@ -28,20 +28,43 @@ Migrating to the new API entails updating code accordingly.
 
 - `UA`
 
-### Configuration
+### Configuration Options
 
-The following options are no longer supported. They have been removed or deprecated and may no longer work...
+The following `UA.Options` have been modified for use as `UserAgentOptions`...
+- `authenticationFactory`
+  - removed (it was a noop)
+- `authorizationUser`
+  - renamed to `authorizationUsername`
+- `autostart`
+  - renamed to `autoStart` (case changed for consistency)
+- `autostop`
+  - renamed to `autoStop` (case changed for consistency)
 - `dtmfType`
   - use `Session.info()` for "out-of-band" DTMF or `SessionDescriptionHandler` for "in-band" DTMF.
+- `experimentalFeatures`
+  - removed (it was a noop)
+- `hostportParams`
+  - removed (it was a noop)
+- `log`
+  - use `logBuiltinEnabled`, `logLevel` and `logConnector`
+- `password`
+  - renamed `authorizationPassword`
 - `registerOptions`
   - pass `RegistererOptions` to `Registerer` instead (see below).
 - `register`
   - use `Registerer.register()` instead (see below).
+- `100rel`
+  - renamed `sipExtension100rel`
+- `replaces`
+  - renamed `sipExtensionReplaces`
+- `extraSupported`
+  - renamed `sipExtensionExtraSupported`
 
 ### Construction, Starting, and Stopping
 
 Previously...
 ```
+const options: UA.Options = { /* set various options */ };
 const ua = new UA(options);
 ua.start();
 ua.stop();
@@ -49,6 +72,7 @@ ua.stop();
 
 Now...
 ```
+const options: UserAgentOptions = { /* set various options */ };
 const userAgent = new UserAgent(options);
 userAgent.start();
 userAgent.stop();

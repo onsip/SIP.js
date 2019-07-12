@@ -32,16 +32,6 @@ export interface ByerByeOptions {
 export interface ByerOptions {
 }
 
-// Warning: (ae-internal-missing-underscore) The name "DTMFSignaling" should be prefixed with an underscore because the declaration is marked as @internal
-// 
-// @internal
-export enum DTMFSignaling {
-    // (undocumented)
-    INFO = "INFO",
-    // (undocumented)
-    RTP = "RTP"
-}
-
 // @public
 export interface Emitter<T> {
     off(listener: (data: T) => void): void;
@@ -221,16 +211,16 @@ export interface InviterOptions extends SessionOptions {
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
 }
 
+// @public
+export type LogConnector = (level: LogLevel, category: string, label: string | undefined, content: string) => void;
+
+// @public
+export type LogLevel = "debug" | "log" | "warn" | "error";
+
 // Warning: (ae-internal-missing-underscore) The name "makeEmitter" should be prefixed with an underscore because the declaration is marked as @internal
 // 
 // @internal
 export function makeEmitter<T>(eventEmitter: EventEmitter, eventName?: string): Emitter<T>;
-
-// Warning: (ae-forgotten-export) The symbol "UserAgentCoreConfiguration" needs to be exported by the entry point index.d.ts
-// Warning: (ae-internal-missing-underscore) The name "makeUserAgentCoreConfigurationFromUA" should be prefixed with an underscore because the declaration is marked as @internal
-// 
-// @internal
-export function makeUserAgentCoreConfigurationFromUA(ua: UserAgent): UserAgentCoreConfiguration;
 
 // @public
 export class Message {
@@ -721,6 +711,16 @@ export enum SessionState {
 }
 
 // @public
+export enum SIPExtension {
+    // (undocumented)
+    Required = "Required",
+    // (undocumented)
+    Supported = "Supported",
+    // (undocumented)
+    Unsupported = "Unsupported"
+}
+
+// @public
 export class Subscriber extends Subscription {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: SubscriberOptions);
     // @internal @deprecated
@@ -856,15 +856,12 @@ export class UserAgent extends EventEmitter {
         MAX_FORWARDS: number;
         TAG_LENGTH: number;
     };
+    // (undocumented)
+    readonly configuration: Required<UserAgentOptions>;
+    // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
+    // 
     // @internal (undocumented)
-    configuration: UserAgentOptions;
-    // @internal (undocumented)
-    contact: {
-        pubGruu: URI | undefined;
-        tempGruu: URI | undefined;
-        uri: URI;
-        toString: (options?: any) => string;
-    };
+    contact: Contact;
     // @internal (undocumented)
     data: any;
     delegate: UserAgentDelegate | undefined;
@@ -879,10 +876,12 @@ export class UserAgent extends EventEmitter {
     // @internal (undocumented)
     getSupportedResponseOptions(): Array<string>;
     // @internal (undocumented)
-    logger: Logger;
-    // @internal (undocumented)
     makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
     makeTargetURI(target: string): URI | undefined;
+    // @internal (undocumented)
+    on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
+    // @internal (undocumented)
+    on(name: "notify", callback: (request: any) => void): this;
     // @internal (undocumented)
     on(name: "invite", callback: (session: Invitation) => void): this;
     // @internal (undocumented)
@@ -894,11 +893,7 @@ export class UserAgent extends EventEmitter {
     // @internal (undocumented)
     on(name: "subscribe", callback: (subscribe: IncomingSubscribeRequest) => void): this;
     // @internal (undocumented)
-    on(name: "notify", callback: (request: any) => void): this;
-    // @internal (undocumented)
     on(name: "message", callback: (message: any) => void): this;
-    // @internal (undocumented)
-    on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
     // @internal (undocumented)
     publishers: {
         [id: string]: Publisher;
@@ -921,8 +916,6 @@ export class UserAgent extends EventEmitter {
     // 
     // @internal (undocumented)
     transport: Transport;
-    // @internal (undocumented)
-    type: TypeStrings;
     // Warning: (ae-forgotten-export) The symbol "UserAgentCore" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -940,69 +933,45 @@ export interface UserAgentDelegate {
 
 // @public
 export interface UserAgentOptions {
-    // (undocumented)
     allowLegacyNotifications?: boolean;
-    // (undocumented)
     allowOutOfDialogRefers?: boolean;
-    // Warning: (ae-forgotten-export) The symbol "DigestAuthentication" needs to be exported by the entry point index.d.ts
-    // 
-    // (undocumented)
-    authenticationFactory?: (ua: UserAgent) => DigestAuthentication | any;
-    // (undocumented)
-    authorizationUser?: string;
-    autostart?: boolean;
-    autostop?: boolean;
+    authorizationPassword?: string;
+    authorizationUsername?: string;
+    autoStart?: boolean;
+    autoStop?: boolean;
     delegate?: UserAgentDelegate;
     displayName?: string;
-    // Warning: (ae-incompatible-release-tags) The symbol "dtmfSignaling" is marked as @public, but its signature references "DTMFSignaling" which is marked as @internal
-    dtmfSignaling?: DTMFSignaling;
-    // (undocumented)
-    experimentalFeatures?: boolean;
-    // (undocumented)
-    extraSupported?: Array<string>;
-    // (undocumented)
     forceRport?: boolean;
-    // (undocumented)
+    // @deprecated
     hackAllowUnregisteredOptionTags?: boolean;
-    // (undocumented)
-    hackIpInContact?: boolean;
-    // (undocumented)
+    // @deprecated
+    hackIpInContact?: boolean | string;
+    // @deprecated
     hackViaTcp?: boolean;
-    // (undocumented)
+    // @deprecated
     hackWssInTransport?: boolean;
-    // (undocumented)
-    hostportParams?: any;
-    // (undocumented)
-    log?: {
-        builtinEnabled: boolean;
-        level?: string | number;
-        connector?: (level: string, category: string, label: string | undefined, content: any) => void;
-    };
+    logBuiltinEnabled?: boolean;
+    logConnector?: LogConnector;
+    logLevel?: LogLevel;
     noAnswerTimeout?: number;
-    // (undocumented)
-    password?: string;
-    register?: boolean;
-    registerOptions?: RegistererOptions;
-    // (undocumented)
-    rel100?: C.supported;
-    // (undocumented)
-    replaces?: C.supported;
-    // (undocumented)
     sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
-    // (undocumented)
     sessionDescriptionHandlerFactoryOptions?: object;
-    // (undocumented)
+    sipExtension100rel?: SIPExtension;
+    sipExtensionExtraSupported?: Array<string>;
+    sipExtensionReplaces?: SIPExtension;
     sipjsId?: string;
     transportConstructor?: new (logger: any, options: any) => Transport;
     transportOptions?: any;
-    uri?: string | URI;
-    // (undocumented)
+    uri?: URI;
     usePreloadedRoute?: boolean;
-    // (undocumented)
     userAgentString?: string;
-    // (undocumented)
     viaHost?: string;
 }
+
+// @public
+export const UserAgentRegisteredOptionTags: {
+    [option: string]: boolean;
+};
 
 
 ```

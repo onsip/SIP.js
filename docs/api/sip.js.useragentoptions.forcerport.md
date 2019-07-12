@@ -4,6 +4,8 @@
 
 ## UserAgentOptions.forceRport property
 
+Force adding rport to Via header.
+
 <b>Signature:</b>
 
 ```typescript

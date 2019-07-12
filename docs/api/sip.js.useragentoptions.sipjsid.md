@@ -4,6 +4,8 @@
 
 ## UserAgentOptions.sipjsId property
 
+An id uniquely identify this user agent instance.
+
 <b>Signature:</b>
 
 ```typescript

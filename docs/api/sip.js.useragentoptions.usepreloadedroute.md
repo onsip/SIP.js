@@ -4,6 +4,8 @@
 
 ## UserAgentOptions.usePreloadedRoute property
 
+Adds a Route header to requests.
+
 <b>Signature:</b>
 
 ```typescript

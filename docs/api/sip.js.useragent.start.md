@@ -17,5 +17,5 @@ start(): Promise<void>;
 
 ## Remarks
 
-The first time `start` is called, the user agent will also attempt to register if `UserAgentOptions.register` was set to `true`<!-- -->. Connect to the WS server if status = STATUS\_INIT. Resume UA after being closed.
+Connect to the WS server if status = STATUS\_INIT. Resume UA after being closed.
 

@@ -33,6 +33,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  --- | --- |
 |  [RegistererState](./sip.js.registererstate.md) | [Registerer](./sip.js.registerer.md) state. |
 |  [SessionState](./sip.js.sessionstate.md) | [Session](./sip.js.session.md) state. |
+|  [SIPExtension](./sip.js.sipextension.md) | SIP extension support level. |
 |  [SubscriptionState](./sip.js.subscriptionstate.md) | [Subscription](./sip.js.subscription.md) state. |
 
 ## Interfaces
@@ -76,4 +77,17 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SubscriptionUnsubscribeOptions](./sip.js.subscriptionunsubscribeoptions.md) | Options for [Subscription.unsubscribe()](./sip.js.subscription.unsubscribe.md)<!-- -->. |
 |  [UserAgentDelegate](./sip.js.useragentdelegate.md) | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [UserAgentOptions](./sip.js.useragentoptions.md) | Options for [UserAgent](./sip.js.useragent.md) constructor. |
+
+## Variables
+
+|  Variable | Description |
+|  --- | --- |
+|  [UserAgentRegisteredOptionTags](./sip.js.useragentregisteredoptiontags.md) | SIP Option Tags |
+
+## Type Aliases
+
+|  Type Alias | Description |
+|  --- | --- |
+|  [LogConnector](./sip.js.logconnector.md) | Log connector function. |
+|  [LogLevel](./sip.js.loglevel.md) | Log level. |
 

@@ -4,8 +4,15 @@
 
 ## UserAgentOptions.hackIpInContact property
 
+> Warning: This API is now obsolete.
+> 
+> TBD
+> 
+
+Hack
+
 <b>Signature:</b>
 
 ```typescript
-hackIpInContact?: boolean;
+hackIpInContact?: boolean | string;
 ```

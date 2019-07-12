@@ -4,6 +4,13 @@
 
 ## UserAgentOptions.hackWssInTransport property
 
+> Warning: This API is now obsolete.
+> 
+> TBD
+> 
+
+Hack
+
 <b>Signature:</b>
 
 ```typescript
