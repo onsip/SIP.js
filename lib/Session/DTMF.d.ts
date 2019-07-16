@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
 import { IncomingRequest, IncomingResponseMessage } from "../core";
 import { TypeStrings } from "../Enums";

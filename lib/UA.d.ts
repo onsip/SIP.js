@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
 import { ClientContext } from "./ClientContext";
 import { C as SIPConstants } from "./Constants";
@@ -31,8 +30,8 @@ export declare namespace UA {
         hostportParams?: any;
         log?: {
             builtinEnabled: boolean;
-            level: string | number;
-            connector: (level: string, category: string, label: string | undefined, content: any) => void;
+            level?: string | number;
+            connector?: (level: string, category: string, label: string | undefined, content: any) => void;
         };
         noAnswerTimeout?: number;
         password?: string;

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
 import { IncomingRequest, IncomingRequestMessage, InviteServerTransaction, Logger, NameAddrHeader, NonInviteServerTransaction } from "./core";
 import { TypeStrings } from "./Enums";

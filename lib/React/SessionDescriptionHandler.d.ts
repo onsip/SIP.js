@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
 import { Logger } from "../core";
 import { TypeStrings } from "../Enums";
