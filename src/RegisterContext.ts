@@ -294,10 +294,11 @@ export class RegisterContext extends ClientContext {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
+          const expiresInMS = (expires * 1000);
           this.registrationTimer = setTimeout(() => {
             this.registrationTimer = undefined;
             this.register(this.options);
-          }, (expires * 1000) - 3000);
+          }, expiresInMS - expiresInMS / 2);
 
           this.registrationExpiredTimer = setTimeout(() => {
             this.logger.warn("registration expired");
