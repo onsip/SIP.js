@@ -8,3 +8,4 @@ src/**/*.js
 test/spec/*.spec.js
 test/spec/core/*.js
 test/support/**/*.js
+/dist
