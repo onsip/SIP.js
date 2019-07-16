@@ -25,7 +25,7 @@ export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionH
 
 export interface PeerConnectionOptions {
   iceCheckingTimeout?: number;
-  rtcConfiguration?: any;
+  rtcConfiguration?: RTCConfiguration;
 }
 
 /* SessionDescriptionHandler
@@ -62,7 +62,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   private iceGatheringDeferred: Utils.Deferred<any> | undefined;
   private iceGatheringTimeout: boolean;
   private iceGatheringTimer: any | undefined;
-  private constraints: any;
+  private constraints: MediaStreamConstraints;
 
   constructor(logger: Logger, observer: SessionDescriptionHandlerObserver, options: any) {
     super();
@@ -114,29 +114,29 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     // have to check signalingState since this.close() gets called multiple times
     if (this.peerConnection && this.peerConnection.signalingState !== "closed") {
       if (this.peerConnection.getSenders) {
-        this.peerConnection.getSenders().forEach((sender: any) => {
+        this.peerConnection.getSenders().forEach((sender: RTCRtpSender) => {
           if (sender.track) {
             sender.track.stop();
           }
         });
       } else {
         this.logger.warn("Using getLocalStreams which is deprecated");
-        (this.peerConnection as any).getLocalStreams().forEach((stream: any) => {
-          stream.getTracks().forEach((track: any) => {
+        (this.peerConnection as any).getLocalStreams().forEach((stream: MediaStream) => {
+          stream.getTracks().forEach((track: MediaStreamTrack) => {
             track.stop();
           });
         });
       }
       if (this.peerConnection.getReceivers) {
-        this.peerConnection.getReceivers().forEach((receiver: any) => {
+        this.peerConnection.getReceivers().forEach((receiver: RTCRtpReceiver) => {
           if (receiver.track) {
             receiver.track.stop();
           }
         });
       } else {
         this.logger.warn("Using getRemoteStreams which is deprecated");
-        (this.peerConnection as any).getRemoteStreams().forEach((stream: any) => {
-          stream.getTracks().forEach((track: any) => {
+        (this.peerConnection as any).getRemoteStreams().forEach((stream: MediaStream) => {
+          stream.getTracks().forEach((track: MediaStreamTrack) => {
             track.stop();
           });
         });
@@ -165,7 +165,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     }
 
     // Merge passed constraints with saved constraints and save
-    let newConstraints: any = Object.assign({}, this.constraints, options.constraints);
+    let newConstraints: MediaStreamConstraints = Object.assign({}, this.constraints, options.constraints);
     newConstraints = this.checkAndDefaultConstraints(newConstraints);
     if (JSON.stringify(newConstraints) !== JSON.stringify(this.constraints)) {
         this.constraints = newConstraints;
@@ -395,6 +395,10 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   public on(event: "userMediaFailed", listener: (error: any) => void): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
+  protected getMediaStream(constraints: MediaStreamConstraints): Promise<MediaStream> {
+    return navigator.mediaDevices.getUserMedia(constraints);
+  }
+
   // Internal functions
   private createOfferOrAnswer(
     RTCOfferOptions: any = {},
@@ -435,6 +439,9 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       throw error;
     }).then(() => this.waitForIceGatheringComplete())
     .then(() => {
+      if (!this.peerConnection.localDescription) {
+        throw new Exceptions.SessionDescriptionHandlerError("Missing local description");
+      }
       const localDescription: RTCSessionDescriptionInit =
        this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
       // const localDescription = this.peerConnection.localDescription;
@@ -453,7 +460,9 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   // Creates an RTCSessionDescriptionInit from an RTCSessionDescription
-  private createRTCSessionDescriptionInit(RTCSessionDescription: any): RTCSessionDescriptionInit {
+  private createRTCSessionDescriptionInit(
+    RTCSessionDescription: RTCSessionDescription | RTCSessionDescriptionInit
+  ): RTCSessionDescriptionInit {
     return {
       type: RTCSessionDescription.type,
       sdp: RTCSessionDescription.sdp
@@ -467,15 +476,15 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     return peerConnectionOptions;
   }
 
-  private addDefaultIceServers(rtcConfiguration: any): any {
+  private addDefaultIceServers(rtcConfiguration: RTCConfiguration): RTCConfiguration {
     if (!rtcConfiguration.iceServers) {
       rtcConfiguration.iceServers = [{urls: "stun:stun.l.google.com:19302"}];
     }
     return rtcConfiguration;
   }
 
-  private checkAndDefaultConstraints(constraints: any): any {
-    const defaultConstraints: any = {audio: true, video: !this.options.alwaysAcquireMediaFirst};
+  private checkAndDefaultConstraints(constraints: MediaStreamConstraints): MediaStreamConstraints {
+    const defaultConstraints: MediaStreamConstraints = {audio: true, video: !this.options.alwaysAcquireMediaFirst};
 
     constraints = constraints || defaultConstraints;
     // Empty object check
@@ -493,7 +502,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     return Boolean(this.peerConnection.getSenders);
   }
 
-  private initPeerConnection(options: any = {}): void {
+  private initPeerConnection(options: PeerConnectionOptions = {}): void {
     options = this.addDefaultIceCheckingTimeout(options);
     options.rtcConfiguration = options.rtcConfiguration || {};
     options.rtcConfiguration = this.addDefaultIceServers(options.rtcConfiguration);
@@ -590,11 +599,11 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     };
   }
 
-  private acquire(constraints: any): any {
+  private acquire(constraints: MediaStreamConstraints): Promise<void> {
     // Default audio & video to true
     constraints = this.checkAndDefaultConstraints(constraints);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<MediaStream | Array<MediaStream>> ((resolve, reject) => {
       /*
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
@@ -603,7 +612,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       this.emit("userMediaRequest", constraints);
 
       if (constraints.audio || constraints.video) {
-        navigator.mediaDevices.getUserMedia(constraints).then((streams) => {
+        this.getMediaStream(constraints).then((streams) => {
           this.observer.trackAdded();
           this.emit("userMedia", streams);
           resolve(streams);
@@ -625,19 +634,15 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
         this.logger.error(error.error);
       }
       throw error;
-    }).then((streams) => {
+    }).then((streams: MediaStream | Array<MediaStream>) => {
       this.logger.log("acquired local media streams");
-      try {
-        // Remove old tracks
-        if (this.peerConnection.removeTrack) {
-          this.peerConnection.getSenders().forEach((sender: any) => {
-            this.peerConnection.removeTrack(sender);
-          });
-        }
-        return streams;
-      } catch (e) {
-        return Promise.reject(e);
+      // Remove old tracks
+      if (this.peerConnection.removeTrack) {
+        this.peerConnection.getSenders().forEach((sender: RTCRtpSender) => {
+          this.peerConnection.removeTrack(sender);
+        });
       }
+      return streams;
     }).catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
@@ -648,22 +653,18 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
         this.logger.error(error.error);
       }
       throw error;
-    }).then((streams: any) => {
-      try {
-        streams = [].concat(streams);
-        streams.forEach((stream: any) => {
-          if (this.peerConnection.addTrack) {
-            stream.getTracks().forEach((track: any) => {
-              this.peerConnection.addTrack(track, stream);
-            });
-          } else {
-            // Chrome 59 does not support addTrack
-            (this.peerConnection as any).addStream(stream);
-          }
-        });
-      } catch (e) {
-        return Promise.reject(e);
-      }
+    }).then((streams: MediaStream | Array<MediaStream>) => {
+      const streamsArr = ([] as Array<MediaStream>).concat(streams);
+      streamsArr.forEach((stream: MediaStream) => {
+        if (this.peerConnection.addTrack) {
+          stream.getTracks().forEach((track: MediaStreamTrack) => {
+            this.peerConnection.addTrack(track, stream);
+          });
+        } else {
+          // Chrome 59 does not support addTrack
+          (this.peerConnection as any).addStream(stream);
+        }
+      });
       return Promise.resolve();
     }).catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
@@ -742,7 +743,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     }
   }
 
-  private waitForIceGatheringComplete(): Promise<any> {
+  private waitForIceGatheringComplete(): Promise<void> {
     this.logger.log("waitForIceGatheringComplete");
     if (this.isIceGatheringComplete()) {
       this.logger.log("ICE is already complete. Return resolved.");
