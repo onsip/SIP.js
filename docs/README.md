@@ -16,67 +16,42 @@ The API is intended to provide a complete and suitable interface for most end us
 
 However, if an application requires protocol level access it may need to utilize the core library directly.
 
-## Example
+## Example (TypeScript)
 
 ```ts
-class MyApp implements UserAgentDelegate {
-  private userAgent: UserAgent;
+/*
+ * Create a user agent
+ */
+const userAgentOptions: UserAgentOptions = { /* ... */ };
+const userAgent = new UserAgent(userAgentOptions);
 
-  constructor() {
-    // Set configuration options for a user agent
-    const options: UserAgentOptions = {/* ... */};
-    // Create a new user agent
-    this.userAgent = new UserAgent(options);
-    // Set ourselves as the user agent delegate
-    this.userAgent.delegate = this;
-  }
+/*
+ * Setup handling for incoming INVITE requests
+ */
+userAgent.delegate = {
+  onInvite(invitation: Invitation): void {
 
-  // Send outgoing INVITE request
-  public invite(target: URI): void {
-    // Create a new inviter
-    const inviter = new Inviter(this.userAgent, target);
-    // Create our session handler for the inviter
-    const handler = new MySessionHandler(inviter);
-    // Send the INVITE request
-    inviter.invite()
-      .then(() => {
-        // INVITE successfully sent
-      })
-      .catch((error: Error) => {
-        // INVITE failed to send
-      });
-  }
+    // An Invitation is a Session
+    const incomingSession: Session = invitation;
 
-  // Handle incoming INVITE request
-  public onInvite?(invitation: Invitation): void {
-    // Create our session handler for the invitation
-    const handler = new MySessionHandler(invitation);
-    // Send a 200 OK response
-    invitation.accept()
-      .then(() => {
-        // 200 OK successfully sent
-      })
-      .catch((error: Error) => {
-        // 200 OK failed to send
-      });
-  }
-}
+    // Setup incoming session delegate
+    incomingSession.delegate = {
+      // Handle incoming REFER request.
+      onRefer(referral: Referral): void {
+        // ...
+      }
+    };
 
-class MySessionHandler implements SessionDelegate {
-  constructor(private session: Session) {
-    // Set ourselves as the session delegate
-    this.session.delegate = this;
-
-    // Handle session state changes.
-    this.session.stateChange.on((newState: SessionState) => {
+    // Handle incoming session state changes.
+    incomingSession.stateChange.on((newState: SessionState) => {
       switch (newState) {
-        case "establishing":
+        case SessionState.Establishing:
           // Session is establishing.
           break;
-        case "established":
+        case SessionState.Established:
           // Session has been established.
           break;
-        case "terminated":
+        case SessionState.Terminated:
           // Session has terminated.
           break;
         default:
@@ -84,12 +59,67 @@ class MySessionHandler implements SessionDelegate {
       }
     });
   }
+};
 
-  // Handle incoming REFER request.
-  public onRefer?(referral: Referral): void {
-    // ...
-  }
-}
+/*
+ * Start the user agent
+ */
+userAgent.start().then(() => {
+
+  /*
+   * Register the user agent
+   */
+  const registererOptions: RegistererOptions = { /* ... */ };
+  const registerer = new Registerer(userAgent, registererOptions);
+  registerer.register();
+
+  /*
+   * Send an outgoing INVITE request
+   */
+  const target = userAgent.makeTargetURI("alice@example.com");
+
+  // Create a new Inviter
+  const inviterOptions: InviterOptions = { /* ... */ };
+  const inviter = new Inviter(this.userAgent, target, inviterOptions);
+
+  // An Inviter is a Session
+  const outgoingSession: Session = inviter;
+
+  // Setup outgoing session delegate
+  outgoingSession.delegate = {
+    // Handle incoming REFER request.
+    onRefer(referral: Referral): void {
+      // ...
+    }
+  };
+
+  // Handle outgoing session state changes.
+  outgoingSession.stateChange.on((newState: SessionState) => {
+    switch (newState) {
+      case SessionState.Establishing:
+        // Session is establishing.
+        break;
+      case SessionState.Established:
+        // Session has been established.
+        break;
+      case SessionState.Terminated:
+        // Session has terminated.
+        break;
+      default:
+        break;
+    }
+  });
+
+  // Send the INVITE request
+  inviter.invite()
+    .then(() => {
+      // INVITE sent
+    })
+    .catch((error: Error) => {
+      // INVITE did not send
+    });
+
+});
 ```
 
 # Core Library Overview
