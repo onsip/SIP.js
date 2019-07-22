@@ -31,15 +31,15 @@
     "tslib": "^1.10.0"
   },
   "devDependencies": {
-    "@microsoft/api-documenter": "^7.3.5",
-    "@microsoft/api-extractor": "^7.2.3",
+    "@microsoft/api-documenter": "^7.3.8",
+    "@microsoft/api-extractor": "^7.3.2",
     "@types/crypto-js": "^3.1.43",
     "@types/events": "^3.0.0",
-    "@types/jasmine": "^3.3.13",
+    "@types/jasmine": "^3.3.14",
     "circular-dependency-plugin": "^5.0.2",
     "jasmine-core": "^3.4.0",
-    "karma": "^4.1.0",
-    "karma-chrome-launcher": "^2.2.0",
+    "karma": "^4.2.0",
+    "karma-chrome-launcher": "^3.0.0",
     "karma-cli": "^2.0.0",
     "karma-jasmine": "^2.0.1",
     "karma-jasmine-html-reporter": "^1.4.2",
@@ -50,9 +50,9 @@
     "ts-loader": "^6.0.4",
     "ts-pegjs": "0.2.5",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.2",
-    "webpack": "^4.34.2",
-    "webpack-cli": "^3.3.5"
+    "typescript": "^3.5.3",
+    "webpack": "^4.36.1",
+    "webpack-cli": "^3.3.6"
   },
   "engines": {
     "node": ">=8.0"
