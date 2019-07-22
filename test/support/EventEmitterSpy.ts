@@ -41,7 +41,7 @@ export function makeEventEmitterEmitSpy(emitter: EventEmitter, logger: Logger): 
 
   const spy = Object.assign(
     spyOn(emitter, "emit").and.callFake(
-      (name: string | number, ...args: any[]): boolean => {
+      (name: string | symbol, ...args: any[]): boolean => {
         const event = String(name);
         logger.log(`Emitted ${event} [${args.length}]`);
         return emitHappened(event);

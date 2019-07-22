@@ -13,11 +13,14 @@ import { NotifyUserAgentServer } from "./notify-user-agent-server";
 import { UserAgentClient } from "./user-agent-client";
 
 /**
+ * SUBSCRIBE UAC.
+ * @remarks
  * 4.1.  Subscriber Behavior
  * https://tools.ietf.org/html/rfc6665#section-4.1
  *
  * User agent client for installation of a single subscription per SUBSCRIBE request.
  * TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE reqeuests.
+ * @public
  */
 export class SubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
   public delegate: OutgoingSubscribeRequestDelegate | undefined;
@@ -81,7 +84,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
   /**
    * Handle out of dialog NOTIFY assoicated with SUBSCRIBE request.
    * This is the first NOTIFY received after the SUBSCRIBE request.
-   * @param uas User agent server handling the subscription creating NOTIFY.
+   * @param uas - User agent server handling the subscription creating NOTIFY.
    */
   public onNotify(uas: NotifyUserAgentServer): void {
     // NOTIFY requests are matched to such SUBSCRIBE requests if they
@@ -265,7 +268,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
 
   /**
    * Receive a response from the transaction layer.
-   * @param message Incoming response message.
+   * @param message - Incoming response message.
    */
   protected receiveResponse(message: IncomingResponseMessage): void {
     if (!this.authenticationGuard(message)) {

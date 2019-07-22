@@ -31,6 +31,8 @@
     "tslib": "^1.10.0"
   },
   "devDependencies": {
+    "@microsoft/api-documenter": "^7.3.5",
+    "@microsoft/api-extractor": "^7.2.3",
     "@types/crypto-js": "^3.1.43",
     "@types/events": "^3.0.0",
     "@types/jasmine": "^3.3.13",
@@ -69,6 +71,15 @@
     "commandLineTest": "npm run build-test && karma start --reporters mocha --browsers ChromeHeadless --single-run",
     "buildAndTest": "npm run build && npm run commandLineTest",
     "buildAndBrowserTest": "npm run build && npm run browserTest",
+    "extract-api": "api-extractor run --local --verbose --config src/api/api-extractor.json",
+    "extract-core": "api-extractor run --local --verbose --config src/core/api-extractor.json",
+    "document-api": "api-documenter markdown --input-folder ./temp/api --output-folder ./temp/docs/api",
+    "document-core": "api-documenter markdown --input-folder ./temp/core --output-folder ./temp/docs/core",
+    "document-copy-api": "rm -rf ./docs/api/sip.js.* && cp ./temp/docs/api/* ./docs/api",
+    "document-copy-core": "rm -rf ./docs/core/sip.js.* && cp ./temp/docs/core/* ./docs/core",
+    "build-docs-api": "npm run extract-api && npm run document-api && npm run document-copy-api",
+    "build-docs-core": "npm run extract-core && npm run document-core && npm run document-copy-core",
+    "build-docs": "npm run build-lib && npm run build-docs-api && npm run build-docs-core",
     "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/Constants.ts"
   }
 }

@@ -5,8 +5,8 @@ import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
 
 /**
- * Client Transaction
- *
+ * Client Transaction.
+ * @remarks
  * The client transaction provides its functionality through the
  * maintenance of a state machine.
  *
@@ -17,6 +17,7 @@ import { ClientTransactionUser } from "./transaction-user";
  * client transaction begins execution of its state machine.  Valid
  * responses are passed up to the TU from the client transaction.
  * https://tools.ietf.org/html/rfc3261#section-17.1
+ * @public
  */
 export abstract class ClientTransaction extends Transaction {
   private static makeId(request: OutgoingRequestMessage): string {
@@ -63,7 +64,7 @@ export abstract class ClientTransaction extends Transaction {
   /**
    * Receive incoming responses from the transport which match this transaction.
    * Responses will be delivered to the transaction user as necessary.
-   * @param response The incoming response.
+   * @param response - The incoming response.
    */
   public abstract receiveResponse(response: IncomingResponseMessage): void;
 

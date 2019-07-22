@@ -11,6 +11,8 @@ import { UserAgentCore } from "../user-agent-core";
 import { DialogState } from "./dialog-state";
 
 /**
+ * Dialog.
+ * @remarks
  * A key concept for a user agent is that of a dialog.  A dialog
  * represents a peer-to-peer SIP relationship between two user agents
  * that persists for some time.  The dialog facilitates sequencing of
@@ -18,6 +20,7 @@ import { DialogState } from "./dialog-state";
  * between both of them.  The dialog represents a context in which to
  * interpret SIP messages.
  * https://tools.ietf.org/html/rfc3261#section-12
+ * @public
  */
 export class Dialog {
 
@@ -26,8 +29,8 @@ export class Dialog {
    * constructs the state of the dialog.  This state MUST be maintained
    * for the duration of the dialog.
    * https://tools.ietf.org/html/rfc3261#section-12.1.2
-   * @param outgoingRequestMessage Outgoing request message for dialog.
-   * @param incomingResponseMessage Incoming response message creating dialog.
+   * @param outgoingRequestMessage - Outgoing request message for dialog.
+   * @param incomingResponseMessage - Incoming response message creating dialog.
    */
   public static initialDialogStateForUserAgentClient(
     outgoingRequestMessage: OutgoingRequestMessage,
@@ -128,8 +131,8 @@ export class Dialog {
    * The UAS then constructs the state of the dialog.  This state MUST be
    * maintained for the duration of the dialog.
    * https://tools.ietf.org/html/rfc3261#section-12.1.1
-   * @param incomingRequestMessage Incoming request message creating dialog.
-   * @param toTag Tag in the To field in the response to the incoming request.
+   * @param incomingRequestMessage - Incoming request message creating dialog.
+   * @param toTag - Tag in the To field in the response to the incoming request.
    */
   public static initialDialogStateForUserAgentServer(
     incomingRequestMessage: IncomingRequestMessage,
@@ -205,8 +208,8 @@ export class Dialog {
 
   /**
    * Dialog constructor.
-   * @param core User agent core.
-   * @param dialogState Initial dialog state.
+   * @param core - User agent core.
+   * @param dialogState - Initial dialog state.
    */
   protected constructor(
     protected core: UserAgentCore,
@@ -327,7 +330,7 @@ export class Dialog {
    *    state.
    *
    * https://tools.ietf.org/html/rfc3261#section-12.2.2
-   * @param message Incoming request message within this dialog.
+   * @param message - Incoming request message within this dialog.
    */
   public receiveRequest(message: IncomingRequestMessage): void {
     // ACK guard.
@@ -406,7 +409,7 @@ export class Dialog {
    * A request within a dialog is constructed by using many of the
    * components of the state stored as part of the dialog.
    * https://tools.ietf.org/html/rfc3261#section-12.2.1.1
-   * @param method Outgoing request method.
+   * @param method - Outgoing request method.
    */
   public createOutgoingRequestMessage(
     method: string,
@@ -535,7 +538,7 @@ export class Dialog {
    * is out of order and MUST be rejected with a 500 (Server Internal
    * Error) response.
    * https://tools.ietf.org/html/rfc3261#section-12.2.2
-   * @param request Incoming request to guard.
+   * @param request - Incoming request to guard.
    * @returns True if the program execution is to continue in the branch in question.
    *          Otherwise a 500 Server Internal Error was stateless sent and request processing must stop.
    */

@@ -7,8 +7,10 @@ import { TransactionState } from "./transaction-state";
 import { ServerTransactionUser } from "./transaction-user";
 
 /**
- * Non-INVITE Server Transaction
+ * Non-INVITE Server Transaction.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-17.2.2
+ * @public
  */
 export class NonInviteServerTransaction extends ServerTransaction {
   private lastResponse: string | undefined;
@@ -19,9 +21,9 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * After construction the transaction will be in the "trying": state and the transaction
    * `id` will equal the branch parameter set in the Via header of the incoming request.
    * https://tools.ietf.org/html/rfc3261#section-17.2.2
-   * @param request Incoming Non-INVITE request from the transport.
-   * @param transport The transport.
-   * @param user The transaction user.
+   * @param request - Incoming Non-INVITE request from the transport.
+   * @param transport - The transport.
+   * @param user - The transaction user.
    */
   constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
     super(
@@ -51,7 +53,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
 
   /**
    * Receive requests from transport matching this transaction.
-   * @param request Request matching this transaction.
+   * @param request - Request matching this transaction.
    */
   public receiveRequest(request: IncomingRequestMessage): void {
     switch (this.state) {
@@ -91,8 +93,8 @@ export class NonInviteServerTransaction extends ServerTransaction {
 
   /**
    * Receive responses from TU for this transaction.
-   * @param statusCode Status code of repsonse. 101-199 not allowed per RFC 4320.
-   * @param response Response to send.
+   * @param statusCode - Status code of repsonse. 101-199 not allowed per RFC 4320.
+   * @param response - Response to send.
    */
   public receiveResponse(statusCode: number, response: string): void {
     if (statusCode < 100 || statusCode > 699) {

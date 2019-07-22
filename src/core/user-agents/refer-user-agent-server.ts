@@ -4,11 +4,15 @@ import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 
+/**
+ * REFER UAS.
+ * @public
+ */
 export class ReferUserAgentServer extends UserAgentServer implements IncomingReferRequest {
   /**
    * REFER UAS constructor.
-   * @param dialogOrCore Dialog for in dialog REFER, UserAgentCore for out of dialog REFER.
-   * @param message Incoming REFER request message.
+   * @param dialogOrCore - Dialog for in dialog REFER, UserAgentCore for out of dialog REFER.
+   * @param message - Incoming REFER request message.
    */
   constructor(
     dialogOrCore: SessionDialog | UserAgentCore,

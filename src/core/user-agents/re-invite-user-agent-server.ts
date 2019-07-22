@@ -10,10 +10,13 @@ import { InviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
 /**
+ * Re-INVITE UAS.
+ * @remarks
  * 14 Modifying an Existing Session
  * https://tools.ietf.org/html/rfc3261#section-14
  * 14.2 UAS Behavior
  * https://tools.ietf.org/html/rfc3261#section-14.2
+ * @public
  */
 export class ReInviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
   private dialog: SessionDialog;
@@ -30,7 +33,7 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
 
   /**
    * Update the dialog signaling state on a 2xx response.
-   * @param options Options bucket.
+   * @param options - Options bucket.
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponseWithSession {
 
@@ -65,7 +68,7 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
 
   /**
    * Update the dialog signaling state on a 1xx response.
-   * @param options Progress options bucket.
+   * @param options - Progress options bucket.
    */
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponseWithSession {
     // Send and return the response

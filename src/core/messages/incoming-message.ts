@@ -3,7 +3,7 @@ import { NameAddrHeader } from "./name-addr-header";
 import { headerize } from "./utils";
 
 /**
- * Incoming SIP message.
+ * Incoming message.
  * @public
  */
 export class IncomingMessage {

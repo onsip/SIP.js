@@ -12,9 +12,9 @@ export class NameAddrHeader extends Parameters {
 
   /**
    * Constructor
-   * @param uri
-   * @param displayName
-   * @param parameters
+   * @param uri -
+   * @param displayName -
+   * @param parameters -
    */
   constructor(uri: URI, displayName: string, parameters: { [name: string]: string }) {
     super(parameters);

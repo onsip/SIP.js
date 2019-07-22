@@ -3,17 +3,21 @@ import { IncomingRequestMessage } from "./incoming-request-message";
 import { getReasonPhrase, newTag, str_utf8_length } from "./utils";
 
 /**
- * A SIP message sent from a local server to a remote client,
- * for indicating the status of a request sent from the
- * client to the server.
+ * A SIP message sent from a local server to a remote client.
+ * @remarks
+ * For indicating the status of a request sent from the client to the server.
  * https://tools.ietf.org/html/rfc3261#section-7.2
+ * @public
  */
 export interface OutgoingResponse {
   /** The outgoing message. */
   readonly message: string;
 }
 
-/** Response options bucket. */
+/**
+ * Response options bucket.
+ * @public
+ */
 export interface ResponseOptions {
   /** Status code of the response. */
   statusCode: number;
@@ -37,6 +41,7 @@ export interface ResponseOptions {
  * Additional behaviors specific to the response code in question, which
  * are not detailed in this section, may also be required.
  * https://tools.ietf.org/html/rfc3261#section-8.2.6
+ * @internal
  */
 export function constructOutgoingResponse(
   message: IncomingRequestMessage,

@@ -7,11 +7,12 @@ import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
 
 /**
- * Non-INVITE Client Transaction
- *
+ * Non-INVITE Client Transaction.
+ * @remarks
  * Non-INVITE transactions do not make use of ACK.
  * They are simple request-response interactions.
  * https://tools.ietf.org/html/rfc3261#section-17.1.2
+ * @public
  */
 export class NonInviteClientTransaction extends ClientTransaction {
   private F: any | undefined;
@@ -24,9 +25,9 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * After construction the transaction will be in the "calling" state and the transaction id
    * will equal the branch parameter set in the Via header of the outgoing request.
    * https://tools.ietf.org/html/rfc3261#section-17.1.2
-   * @param request The outgoing Non-INVITE request.
-   * @param transport The transport.
-   * @param user The transaction user.
+   * @param request - The outgoing Non-INVITE request.
+   * @param transport - The transport.
+   * @param user - The transaction user.
    */
   constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser) {
     super(
@@ -71,7 +72,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
 
   /**
    * Handler for incoming responses from the transport which match this transaction.
-   * @param response The incoming response.
+   * @param response - The incoming response.
    */
   public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode = response.statusCode;
@@ -156,7 +157,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * and the client transaction SHOULD transition directly to the "Terminated" state.
    * The TU will handle the failover mechanisms described in [4].
    * https://tools.ietf.org/html/rfc3261#section-17.1.4
-   * @param error Trasnsport error
+   * @param error - Trasnsport error
    */
   protected onTransportError(error: Error): void {
     if (this.user.onTransportError) {
@@ -172,7 +173,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
 
   /**
    * Execute a state transition.
-   * @param newState New state.
+   * @param newState - New state.
    */
   private stateTransition(newState: TransactionState, dueToTransportError = false): void {
     // Assert valid state transitions.

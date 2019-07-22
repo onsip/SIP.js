@@ -3,6 +3,10 @@ import { IncomingByeRequest, IncomingRequestDelegate, IncomingRequestMessage } f
 import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
+/**
+ * BYE UAS.
+ * @public
+ */
 export class ByeUserAgentServer extends UserAgentServer implements IncomingByeRequest {
   constructor(
     dialog: SessionDialog,

@@ -1,6 +1,8 @@
 import { URI } from "../messages/uri";
 
 /**
+ * Dialog state.
+ * @remarks
  * A dialog contains certain pieces of state needed for further message
  * transmissions within the dialog.  This state consists of the dialog
  * ID, a local sequence number (used to order requests from the UA to
@@ -15,6 +17,7 @@ import { URI } from "../messages/uri";
  * all on that dialog, the early dialog terminates.
  *
  * https://tools.ietf.org/html/rfc3261#section-12
+ * @public
  */
 export interface DialogState {
   id: string;

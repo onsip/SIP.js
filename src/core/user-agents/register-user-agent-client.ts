@@ -3,6 +3,10 @@ import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * REGISTER UAC.
+ * @public
+ */
 export class RegisterUserAgentClient extends UserAgentClient implements OutgoingRegisterRequest {
   constructor(
     core: UserAgentCore,

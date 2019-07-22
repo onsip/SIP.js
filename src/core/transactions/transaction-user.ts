@@ -6,11 +6,13 @@ import { TransactionState } from "./transaction-state";
 // tslint:disable:no-empty-interface
 
 /**
- * Transaction User (TU) Interface
+ * Transaction User (TU).
+ * @remarks
  * The layer of protocol processing that resides above the transaction layer.
  * Transaction users include the UAC core, UAS core, and proxy core.
  * https://tools.ietf.org/html/rfc3261#section-5
  * https://tools.ietf.org/html/rfc3261#section-6
+ * @public
  */
 export interface TransactionUser {
   /**
@@ -46,7 +48,8 @@ export interface TransactionUser {
 }
 
 /**
- * UAC core Transaction User inteface.
+ * UAC Core Transaction User.
+ * @public
  */
 export interface ClientTransactionUser extends TransactionUser {
   /**
@@ -70,7 +73,8 @@ export interface ClientTransactionUser extends TransactionUser {
 }
 
 /**
- * UAS core Transaction User interface.
+ * UAS Core Transaction User.
+ * @public
  */
 export interface ServerTransactionUser extends TransactionUser {
   /**

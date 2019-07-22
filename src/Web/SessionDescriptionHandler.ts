@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 
+import { Session } from "../api/session";
 import { Logger } from "../core";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
@@ -40,10 +41,13 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
    * @param {Object} [options]
    */
   public static defaultFactory(
-    session: InviteClientContext | InviteServerContext,
+    session: InviteClientContext | InviteServerContext | Session,
     options: any
   ): SessionDescriptionHandler {
-    const logger: Logger = session.ua.getLogger("sip.invitecontext.sessionDescriptionHandler", session.id);
+    const logger: Logger =
+      (session instanceof Session) ?
+        session.userAgent.getLogger("sip.sessionDescriptionHandler", session.id) :
+        session.ua.getLogger("sip.invitecontext.sessionDescriptionHandler", session.id);
     const observer: SessionDescriptionHandlerObserver = new SessionDescriptionHandlerObserver(session, options);
     return new SessionDescriptionHandler(logger, observer, options);
   }

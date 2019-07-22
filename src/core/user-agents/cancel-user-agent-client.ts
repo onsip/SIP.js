@@ -3,6 +3,10 @@ import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * CANCEL UAC.
+ * @public
+ */
 export class CancelUserAgentClient extends UserAgentClient implements OutgoingCancelRequest {
   constructor(
     core: UserAgentCore,

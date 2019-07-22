@@ -9,7 +9,7 @@ import {
 } from "./utils";
 
 /**
- * Outgoing SIP request message options.
+ * Outgoing request message options.
  * @public
  */
 export interface OutgoingRequestMessageOptions {
