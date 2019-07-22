@@ -3,17 +3,20 @@ import { EventEmitter } from "events";
 import { Logger } from "./log";
 
 /**
- * Transport
+ * Transport.
  * @remarks
  * Abstract transport layer base class.
- * @param logger - Logger.
- * @param options - Options bucket.
  * @public
  */
 export abstract class Transport extends EventEmitter {
   public server: any;
   protected logger: Logger;
 
+  /**
+   * Constructor
+   * @param logger - Logger.
+   * @param options - Options bucket.
+   */
   constructor(logger: Logger, options: any) {
     super();
     this.logger = logger;

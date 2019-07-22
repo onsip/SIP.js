@@ -8,12 +8,13 @@ import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
 
 /**
- * INVITE Client Transaction
- *
+ * INVITE Client Transaction.
+ * @remarks
  * The INVITE transaction consists of a three-way handshake.  The client
  * transaction sends an INVITE, the server transaction sends responses,
  * and the client transaction sends an ACK.
  * https://tools.ietf.org/html/rfc3261#section-17.1.1
+ * @public
  */
 export class InviteClientTransaction extends ClientTransaction {
   private B: any | undefined;
@@ -21,7 +22,7 @@ export class InviteClientTransaction extends ClientTransaction {
   private M: any | undefined;
 
   /**
-   * Map of 2xx to-tag => ACK.
+   * Map of 2xx to-tag to ACK.
    * If value is not undefined, value is the ACK which was sent.
    * If key exists but value is undefined, a 2xx was received but the ACK not yet sent.
    * Otherwise, a 2xx was not (yet) received for this transaction.
@@ -35,9 +36,9 @@ export class InviteClientTransaction extends ClientTransaction {
    * After construction the transaction will be in the "calling" state and the transaction id
    * will equal the branch parameter set in the Via header of the outgoing request.
    * https://tools.ietf.org/html/rfc3261#section-17.1.1
-   * @param request The outgoing INVITE request.
-   * @param transport The transport.
-   * @param user The transaction user.
+   * @param request - The outgoing INVITE request.
+   * @param transport - The transport.
+   * @param user - The transaction user.
    */
   constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser) {
     super(
@@ -104,7 +105,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * the transport directly. Herein the transaction layer manages sending ACKs to 2xx responses
    * and any retransmissions of those ACKs as needed.
    *
-   * @param ack The outgoing ACK request.
+   * @param ack - The outgoing ACK request.
    */
   public ackResponse(ack: OutgoingRequestMessage): void {
     const toTag = ack.toTag;
@@ -123,7 +124,7 @@ export class InviteClientTransaction extends ClientTransaction {
 
   /**
    * Handler for incoming responses from the transport which match this transaction.
-   * @param response The incoming response.
+   * @param response - The incoming response.
    */
   public receiveResponse(response: IncomingResponseMessage): void {
     const statusCode = response.statusCode;
@@ -305,7 +306,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * to the "Terminated" state.  The TU will handle the failover
    * mechanisms described in [4].
    * https://tools.ietf.org/html/rfc3261#section-17.1.4
-   * @param error The error.
+   * @param error - The error.
    */
   protected onTransportError(error: TransportError): void {
     if (this.user.onTransportError) {
@@ -377,7 +378,7 @@ export class InviteClientTransaction extends ClientTransaction {
 
   /**
    * Execute a state transition.
-   * @param newState New state.
+   * @param newState - New state.
    */
   private stateTransition(newState: TransactionState, dueToTransportError = false): void {
     // Assert valid state transitions.

@@ -1,6 +1,7 @@
 export * from "./bye-user-agent-client";
 export * from "./bye-user-agent-server";
 export * from "./cancel-user-agent-client";
+export * from "./info-user-agent-client";
 export * from "./info-user-agent-server";
 export * from "./invite-user-agent-client";
 export * from "./invite-user-agent-server";

@@ -14,12 +14,15 @@ import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 
 /**
+ * INVITE UAC.
+ * @remarks
  * 13 Initiating a Session
  * https://tools.ietf.org/html/rfc3261#section-13
  * 13.1 Overview
  * https://tools.ietf.org/html/rfc3261#section-13.1
  * 13.2 UAC Processing
  * https://tools.ietf.org/html/rfc3261#section-13.2
+ * @public
  */
 export class InviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest {
   public delegate: OutgoingInviteRequestDelegate | undefined;
@@ -57,7 +60,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
    * Once the INVITE has been passed to the INVITE client transaction, the
    * UAC waits for responses for the INVITE.
    * https://tools.ietf.org/html/rfc3261#section-13.2.2
-   * @param incomingResponse Incoming response to INVITE request.
+   * @param incomingResponse - Incoming response to INVITE request.
    */
   protected receiveResponse(message: IncomingResponseMessage): void {
     if (!this.authenticationGuard(message)) {

@@ -18,12 +18,12 @@ export class URI extends Parameters {
 
   /**
    * Constructor
-   * @param scheme
-   * @param user
-   * @param host
-   * @param port
-   * @param parameters
-   * @param headers
+   * @param scheme -
+   * @param user -
+   * @param host -
+   * @param port -
+   * @param parameters -
+   * @param headers -
    */
   constructor(
     scheme: string,

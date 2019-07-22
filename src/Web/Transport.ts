@@ -215,6 +215,9 @@ export class Transport extends TransportBase {
         reject("Connection timeout");
         this.connectDeferredResolve = undefined;
         this.connectDeferredReject = undefined;
+        const ws = this.ws;
+        this.disposeWs();
+        ws.close(1000);
       }, this.configuration.connectionTimeout * 1000);
 
       this.boundOnOpen = this.onOpen.bind(this);
@@ -353,6 +356,8 @@ export class Transport extends TransportBase {
 
     this.statusTransition(TransportStatus.STATUS_CLOSED, true);
     this.emit("disconnected", {code: e.code, reason: e.reason});
+
+    this.disposeWs();
     this.reconnect();
   }
 

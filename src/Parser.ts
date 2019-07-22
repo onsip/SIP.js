@@ -173,7 +173,7 @@ export namespace Parser {
         break;
       default:
         // Do not parse this header.
-        message.setHeader(headerName, headerValue);
+        message.addHeader(headerName.toLowerCase(), headerValue);
         parsed = 0;
     }
 

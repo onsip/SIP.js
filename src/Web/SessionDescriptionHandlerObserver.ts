@@ -1,3 +1,4 @@
+import { Session } from "../api/session";
 import { TypeStrings } from "../Enums";
 import { InviteClientContext, InviteServerContext } from "../Session";
 
@@ -9,10 +10,10 @@ import { InviteClientContext, InviteServerContext } from "../Session";
 
 export class SessionDescriptionHandlerObserver {
   public type: TypeStrings;
-  private session: InviteClientContext | InviteServerContext;
+  private session: InviteClientContext | InviteServerContext | Session;
   private options: any;
 
-  constructor(session: InviteClientContext | InviteServerContext, options: any) {
+  constructor(session: InviteClientContext | InviteServerContext | Session, options: any) {
     this.type = TypeStrings.SessionDescriptionHandlerObserver;
     this.session = session;
     this.options = options;

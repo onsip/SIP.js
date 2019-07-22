@@ -1,7 +1,8 @@
 import { IncomingMessage } from "./incoming-message";
 
 /**
- * Incoming SIP response message.
+ * Incoming response message.
+ * @public
  */
 export class IncomingResponseMessage extends IncomingMessage {
   public statusCode: number | undefined;
@@ -9,6 +10,5 @@ export class IncomingResponseMessage extends IncomingMessage {
 
   constructor() {
     super();
-    this.headers = {};
   }
 }

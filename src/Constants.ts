@@ -1,8 +1,8 @@
-// tslint:disable-next-line:no-var-requires
-const pkg = require("../package.json");
+const LIBRARY_VERSION = "0.15.0";
 
 export namespace C {
-  export const USER_AGENT = pkg.title + "/" + pkg.version;
+  export const version = LIBRARY_VERSION;
+  export const USER_AGENT =  "SIP.js/" + LIBRARY_VERSION;
 
   // SIP scheme
   export const SIP = "sip";

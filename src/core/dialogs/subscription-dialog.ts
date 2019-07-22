@@ -18,6 +18,8 @@ import { Dialog } from "./dialog";
 import { DialogState } from "./dialog-state";
 
 /**
+ * Subscription Dialog.
+ * @remarks
  * SIP-Specific Event Notification
  *
  * Abstract
@@ -40,6 +42,7 @@ import { DialogState } from "./dialog-state";
  *    in that document.
  *
  *  https://tools.ietf.org/html/rfc6665
+ * @public
  */
 export class SubscriptionDialog extends Dialog implements Subscription {
 
@@ -48,8 +51,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
    * constructs the state of the dialog.  This state MUST be maintained
    * for the duration of the dialog.
    * https://tools.ietf.org/html/rfc3261#section-12.1.2
-   * @param outgoingRequestMessage Outgoing request message for dialog.
-   * @param incomingResponseMessage Incoming response message creating dialog.
+   * @param outgoingRequestMessage - Outgoing request message for dialog.
+   * @param incomingResponseMessage - Incoming response message creating dialog.
    */
   public static initialDialogStateForSubscription(
     outgoingSubscribeRequestMessage: OutgoingRequestMessage,
@@ -244,7 +247,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
 
   /**
    * Receive in dialog request message from transport.
-   * @param message The incoming request message.
+   * @param message -  The incoming request message.
    */
   public receiveRequest(message: IncomingRequestMessage): void {
     this.logger.log(`SUBSCRIBE dialog ${this.id} received ${message.method} request`);
@@ -290,8 +293,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
   /**
    * 4.1.2.2.  Refreshing of Subscriptions
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
-   * @param delegate Delegate to handle responses.
-   * @param options Options bucket.
+   * @param delegate - Delegate to handle responses.
+   * @param options - Options bucket.
    */
   public subscribe(
     delegate?: OutgoingSubscribeRequestDelegate,
@@ -342,7 +345,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
   /**
    * Handle in dialog NOTIFY requests.
    * This does not include the first NOTIFY which created the dialog.
-   * @param message The incoming NOTIFY request message.
+   * @param message - The incoming NOTIFY request message.
    */
   private onNotify(message: IncomingRequestMessage): void {
     // If, for some reason, the event package designated in the "Event"

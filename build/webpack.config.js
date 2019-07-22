@@ -44,6 +44,8 @@ module.exports = function (env) {
 
   var entry = {};
   entry['sip' + (env.buildType === 'min' ? '.min' : '')] = mainDir + '/src/index.ts';
+  entry['sip-api' + (env.buildType === 'min' ? '.min' : '')] = mainDir + '/src/api/index.ts';
+  entry['sip-core' + (env.buildType === 'min' ? '.min' : '')] = mainDir + '/src/core/index.ts';
 
   return {
     mode: mode,
@@ -55,6 +57,7 @@ module.exports = function (env) {
       libraryTarget: 'umd',
       globalObject: 'this'
     },
+    node: false,
     module: {
       rules: [
         {
@@ -63,6 +66,7 @@ module.exports = function (env) {
           options: {
             compilerOptions: {
               "declaration": false,
+              "declarationMap": false,
               "outDir": mainDir + "/dist"
             }
           }

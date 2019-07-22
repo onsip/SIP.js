@@ -3,6 +3,10 @@ import { IncomingRequestDelegate, IncomingRequestMessage, IncomingSubscribeReque
 import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
 
+/**
+ * Re-SUBSCRIBE UAS.
+ * @public
+ */
 export class ReSubscribeUserAgentServer extends UserAgentServer implements IncomingSubscribeRequest {
     constructor(
     dialog: Dialog,

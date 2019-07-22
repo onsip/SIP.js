@@ -12,7 +12,8 @@ export {
 } from "./core";
 
 export { ClientContext } from "./ClientContext";
-export { C } from "./Constants";
+import { C } from "./Constants";
+export { C };
 export {
   DialogStatus,
   SessionStatus,
@@ -65,11 +66,8 @@ export { Utils } from "./Utils";
 import * as Web from "./Web/index";
 export { Web };
 
-// tslint:disable-next-line:no-var-requires
-const pkg = require("../package.json");
-const name = pkg.title;
-const version = pkg.version;
-
+const version = C.version;
+const name = "sip.js";
 export {
   name,
   version

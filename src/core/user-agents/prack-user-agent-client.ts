@@ -3,6 +3,10 @@ import { C, OutgoingPrackRequest, OutgoingRequestDelegate, RequestOptions } from
 import { NonInviteClientTransaction } from "../transactions";
 import { UserAgentClient } from "./user-agent-client";
 
+/**
+ * PRACK UAC.
+ * @public
+ */
 export class PrackUserAgentClient extends UserAgentClient implements OutgoingPrackRequest {
   constructor(
     dialog: SessionDialog,

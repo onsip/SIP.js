@@ -16,12 +16,15 @@ import { AllowedMethods } from "../user-agent-core/allowed-methods";
 import { UserAgentServer } from "./user-agent-server";
 
 /**
+ * INVITE UAS.
+ * @remarks
  * 13 Initiating a Session
  * https://tools.ietf.org/html/rfc3261#section-13
  * 13.1 Overview
  * https://tools.ietf.org/html/rfc3261#section-13.1
  * 13.3 UAS Processing
  * https://tools.ietf.org/html/rfc3261#section-13.3
+ * @public
  */
 export class InviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
 
@@ -51,7 +54,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * dialog, and therefore follows the procedures of Section 12.1.1 in
    * addition to those of Section 8.2.6.
    * https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-   * @param options Accept options bucket.
+   * @param options - Accept options bucket.
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponseWithSession {
     if (!this.acceptable) {
@@ -179,7 +182,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * provisional response at every minute, to handle the possibility of
    * lost provisional responses.
    * https://tools.ietf.org/html/rfc3261#section-13.3.1.1
-   * @param options Progress options bucket.
+   * @param options - Progress options bucket.
    */
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponseWithSession {
     if (!this.progressable) {
@@ -258,7 +261,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * response is passed to the INVITE server transaction, which will deal
    * with its retransmissions.
    * https://tools.ietf.org/html/rfc3261#section-13.3.1.2
-   * @param options Reject options bucket.
+   * @param options - Reject options bucket.
    */
   public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
     return super.redirect(contacts, options);
@@ -270,7 +273,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * able to take additional calls at this end system.  A 486 (Busy Here)
    * SHOULD be returned in such a scenario.
    * https://tools.ietf.org/html/rfc3261#section-13.3.1.3
-   * @param options Reject options bucket.
+   * @param options - Reject options bucket.
    */
   public reject(options: ResponseOptions = { statusCode: 486 }): OutgoingResponse {
     return super.reject(options);

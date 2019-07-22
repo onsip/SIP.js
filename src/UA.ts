@@ -68,8 +68,8 @@ export namespace UA {
     hostportParams?: any;
     log?: {
       builtinEnabled: boolean,
-      level: string | number,
-      connector: (level: string, category: string, label: string | undefined, content: any) => void,
+      level?: string | number,
+      connector?: (level: string, category: string, label: string | undefined, content: any) => void,
     };
     noAnswerTimeout?: number;
     password?: string;
@@ -200,9 +200,7 @@ export class UA extends EventEmitter {
 
     // Apply log configuration if present
     if (configuration.log) {
-      if (configuration.log.hasOwnProperty("builtinEnabled")) {
-        this.log.builtinEnabled = configuration.log.builtinEnabled;
-      }
+      this.log.builtinEnabled = configuration.log.builtinEnabled;
 
       if (configuration.log.hasOwnProperty("connector")) {
         this.log.connector = configuration.log.connector;
@@ -254,6 +252,11 @@ export class UA extends EventEmitter {
         }
       }
     }
+
+    const deprecatedMessage =
+      "The UA class has been deprecated and will no longer be available starting with SIP.js release 0.16.0. " +
+      "The UA has been replaced by the UserAgent class. Please update accordingly.";
+    this.logger.warn(deprecatedMessage);
 
     try {
       this.loadConfig(configuration);

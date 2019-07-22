@@ -2,6 +2,10 @@ const T1: number = 500;
 const T2: number = 4000;
 const T4: number = 5000;
 
+/**
+ * Timers.
+ * @public
+ */
 export const Timers = {
   T1,
   T2,

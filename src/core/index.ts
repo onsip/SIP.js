@@ -1,4 +1,9 @@
-// Directories
+/**
+ * A core library implementing low level SIP protocol elements.
+ * @packageDocumentation
+ */
+
+ // Directories
 export * from "./dialogs";
 export * from "./exceptions";
 export * from "./log";

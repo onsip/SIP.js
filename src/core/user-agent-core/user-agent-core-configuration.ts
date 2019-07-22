@@ -3,12 +3,13 @@ import { DigestAuthentication, URI } from "../messages";
 import { Transport } from "../transport";
 
 /**
- * User agent contact.
+ * Contact.
  * @remarks
  * https://tools.ietf.org/html/rfc3261#section-8.1.1.8
  * This is ported from UA.contact.
  * FIXME: TODO: This is not a great rep for Contact
  * and is used in a kinda hacky way herein.
+ * @public
  */
 export interface Contact {
   pubGruu: URI | undefined;
@@ -18,7 +19,8 @@ export interface Contact {
 }
 
 /**
- * User agent core configuration.
+ * User Agent Core configuration.
+ * @public
  */
 export interface UserAgentCoreConfiguration {
   /**

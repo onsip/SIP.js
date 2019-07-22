@@ -3,8 +3,10 @@ import { IncomingResponseMessage } from "./incoming-response-message";
 import { OutgoingRequestMessage } from "./outgoing-request-message";
 
 /**
- * SIP Message Body.
+ * Message body.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-7.4
+ * @public
  */
 export interface Body {
   /**
@@ -43,8 +45,9 @@ export interface Body {
 }
 
 /**
- * Create a Body given a BodyObj.
- * @param bodyObj Body Object
+ * Create a Body given a legacy body type.
+ * @param bodyLegacy - Body Object
+ * @internal
  */
 export function fromBodyLegacy(bodyLegacy: string | { body: string, contentType: string }): Body {
   const content = (typeof bodyLegacy === "string") ? bodyLegacy : bodyLegacy.body;
@@ -54,16 +57,14 @@ export function fromBodyLegacy(bodyLegacy: string | { body: string, contentType:
   return body;
 }
 
-/** Outgoing response body */
-export type OutgoingResponseBody = Body;
-
 /**
  * Given a message, get a normalized body.
  * The content disposition is inferred if not set.
- * @param message The message.
+ * @param message - The message.
+ * @internal
  */
 export function getBody(
-  message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | OutgoingResponseBody
+  message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body
 ): Body | undefined {
   let contentDisposition: string | undefined;
   let contentType: string | undefined;
@@ -144,7 +145,8 @@ export function getBody(
 
 /**
  * User-Defined Type Guard for Body.
- * @param body Body to check.
+ * @param body - Body to check.
+ * @internal
  */
 export function isBody(body: any): body is Body {
   return body &&
