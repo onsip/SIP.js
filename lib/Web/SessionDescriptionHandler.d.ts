@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
 import { Logger } from "../core";
 import { TypeStrings } from "../Enums";
@@ -14,7 +13,7 @@ export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionH
 }
 export interface PeerConnectionOptions {
     iceCheckingTimeout?: number;
-    rtcConfiguration?: any;
+    rtcConfiguration?: RTCConfiguration;
 }
 export declare class SessionDescriptionHandler extends EventEmitter implements SessionDescriptionHandlerDefinition {
     /**
@@ -103,6 +102,7 @@ export declare class SessionDescriptionHandler extends EventEmitter implements S
     on(event: "userMediaRequest", listener: (constraints: MediaStreamConstraints) => void): this;
     on(event: "userMedia", listener: (streams: MediaStream) => void): this;
     on(event: "userMediaFailed", listener: (error: any) => void): this;
+    protected getMediaStream(constraints: MediaStreamConstraints): Promise<MediaStream>;
     private createOfferOrAnswer;
     private createRTCSessionDescriptionInit;
     private addDefaultIceCheckingTimeout;

@@ -68,8 +68,8 @@ export namespace UA {
     hostportParams?: any;
     log?: {
       builtinEnabled: boolean,
-      level: string | number,
-      connector: (level: string, category: string, label: string | undefined, content: any) => void,
+      level?: string | number,
+      connector?: (level: string, category: string, label: string | undefined, content: any) => void,
     };
     noAnswerTimeout?: number;
     password?: string;
@@ -200,9 +200,7 @@ export class UA extends EventEmitter {
 
     // Apply log configuration if present
     if (configuration.log) {
-      if (configuration.log.hasOwnProperty("builtinEnabled")) {
-        this.log.builtinEnabled = configuration.log.builtinEnabled;
-      }
+      this.log.builtinEnabled = configuration.log.builtinEnabled;
 
       if (configuration.log.hasOwnProperty("connector")) {
         this.log.connector = configuration.log.connector;

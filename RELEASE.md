@@ -1,49 +1,16 @@
 # How To version release SIP.js
 
-(These are developer notes.)
-
-(These may not be entirely accurate.)
-
-(Eric Green demands credit for these.)
-
-(So remember that if it's broken, you know who to contact.)
-
-(If you don't know, it's Eric Green.)
-
 * On your own github, checkout last tagged release on a new branch (note: this can be done on the repo's release branch, instead of making your own)
 * remove all dist files
 * cherry pick commits you want using -x flag (for "hot patch" releases)
 * once ready, test.
-* update version number on master
+* on master, npm version <major,minor,patch> --git-tag-version false
+* DO NOT MANUALLY UPDATE THE VERSION. We now hardcode it in the library, using npm version will update it appropriately
 * cherry pick version number commit to new branch (or just merge master, if you want everything)
 * build and test.
 * test again
 * add new dist files (git add -f if it complains)
 * commit
-* test npm:
-
-    ```shell
-    #!/usr/bin/env bash
-    set -e
-    SIPJS_DIR=`pwd`
-
-    cd /tmp
-    rm -rf node_modules
-    npm install $SIPJS_DIR
-
-    node -e "var SIP = require('sip.js'); new SIP.UA({traceSip: true}); setTimeout(process.exit, 2000)"
-    cd node_modules/sip.js && npm install && npm test
-
-    SIPJS_TEST="var SIP = require('sip.js'); var session = new SIP.UA({traceSip: true}).invite('welcome@onsip.com', new Audio());"
-    SIPJS_TEST+="session.on('accepted', setTimeout.bind(null, window.close, 5000))"
-    npm install -g browserify smokestack
-    browserify -r sip.js | cat - <(echo $SIPJS_TEST) | smokestack
-
-    # more tests
-
-    cd $SIPJS_DIR
-    set +e
-    ```
 
 * push to local github
 * merge (this step and the above one can be skipped if you just do it on the the repo's release branch itself)

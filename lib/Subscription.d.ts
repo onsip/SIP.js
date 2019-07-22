@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
 import { ClientContext } from "./ClientContext";
 import { IncomingNotifyRequest, IncomingRequestMessage, IncomingResponse, IncomingResponseMessage, Logger, NameAddrHeader, OutgoingRequestMessage, OutgoingSubscribeRequest, URI } from "./core";

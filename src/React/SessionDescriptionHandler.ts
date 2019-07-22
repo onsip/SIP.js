@@ -285,7 +285,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       throw error;
     }).then((modifiedDescription) => {
       this.emit("setDescription", modifiedDescription);
-      return this.peerConnection.setRemoteDescription(new RTCSessionDescription(modifiedDescription));
+      return this.peerConnection.setRemoteDescription(modifiedDescription);
     }).catch((e) => {
       if (e.type === TypeStrings.SessionDescriptionHandlerError) {
         throw e;
@@ -379,9 +379,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       this.emit("peerConnection-" + methodName + "Failed", error);
       throw error;
     }).then(
-      (sdp: RTCSessionDescriptionInit) =>
-        Utils.reducePromises(modifiers, this.createRTCSessionDescriptionInit(sdp))
-      )
+      (sdp: RTCSessionDescriptionInit) => Utils.reducePromises(modifiers, this.createRTCSessionDescriptionInit(sdp)))
       .then((sdp: RTCSessionDescriptionInit) => {
         this.resetIceGatheringComplete();
         this.logger.log("Setting local sdp.");
@@ -402,7 +400,6 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       .then(() => {
         const localDescription: RTCSessionDescriptionInit =
           this.createRTCSessionDescriptionInit(this.peerConnection.localDescription);
-        // const localDescription = this.peerConnection.localDescription;
         return Utils.reducePromises(modifiers, localDescription);
       }).then((localDescription: RTCSessionDescriptionInit) => {
         this.setDirection(localDescription.sdp || "");
