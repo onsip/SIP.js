@@ -21,7 +21,8 @@ describe('A UAS receiving an INVITE', function () {
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             },
-            setDescription: function () { return Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); },
+            close: function() { return true; }
           };
         }
       };
@@ -63,7 +64,8 @@ describe('A UAS receiving an INVITE', function () {
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             } ,
-            setDescription: function () { return Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); },
+            close: function() { return true; }
           };
         }
       };
@@ -117,7 +119,8 @@ describe('A UAS receiving an INVITE', function () {
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             },
-            setDescription: function () { return Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); },
+            close: function() { return true; }
           };
         }
       };
@@ -183,7 +186,8 @@ describe('A UAS receiving an INVITE', function () {
             hasDescription: function (contentType) {
               return contentType === 'application/sdp';
             },
-            setDescription: function () { return Promise.resolve(); }
+            setDescription: function () { return Promise.resolve(); },
+            close: function() { return true; }
           };
         }
       };

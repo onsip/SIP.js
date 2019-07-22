@@ -39,7 +39,7 @@ const rejectedEvent = ["rejected", jasmine.any(Object), jasmine.any(String)];
 const terminatedEvent = ["terminated"];
 const notifyEvent = ["notify", jasmine.any(Object)];
 
-describe("Subscription Class", () => {
+describe("Subscription Class New", () => {
   let alice: UserFake;
   let bob: UserFake;
   let target: URI;
