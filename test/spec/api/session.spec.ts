@@ -53,7 +53,7 @@ function terminate(invitation: Invitation): Promise<void> {
  * Session Integration Tests
  */
 
-describe("Session Class", () => {
+describe("Session Class New", () => {
   let alice: UserFake;
   let bob: UserFake;
   let target: URI;
