@@ -16,7 +16,7 @@ export declare abstract class Transaction extends EventEmitter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(\_transport, \_user, \_id, \_state, loggerCategory)](./sip.js.transaction.(constructor).md) |  | Constructs a new instance of the <code>Transaction</code> class |
+|  [(constructor)(\_transport, \_user, \_id, \_state, loggerCategory)](./sip.js.transaction._constructor_.md) |  | Constructs a new instance of the <code>Transaction</code> class |
 
 ## Properties
 

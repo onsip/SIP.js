@@ -16,5 +16,5 @@ export declare class ReferUserAgentClient extends UserAgentClient implements Out
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, delegate, options)](./sip.js.referuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>ReferUserAgentClient</code> class |
+|  [(constructor)(dialog, delegate, options)](./sip.js.referuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>ReferUserAgentClient</code> class |
 

@@ -16,7 +16,7 @@ export declare class NonInviteServerTransaction extends ServerTransaction
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(request, transport, user)](./sip.js.noninviteservertransaction.(constructor).md) |  | Constructor. After construction the transaction will be in the "trying": state and the transaction <code>id</code> will equal the branch parameter set in the Via header of the incoming request. https://tools.ietf.org/html/rfc3261\#section-17.2.2 |
+|  [(constructor)(request, transport, user)](./sip.js.noninviteservertransaction._constructor_.md) |  | Constructor. After construction the transaction will be in the "trying": state and the transaction <code>id</code> will equal the branch parameter set in the Via header of the incoming request. https://tools.ietf.org/html/rfc3261\#section-17.2.2 |
 
 ## Properties
 

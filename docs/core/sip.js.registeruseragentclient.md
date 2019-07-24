@@ -16,5 +16,5 @@ export declare class RegisterUserAgentClient extends UserAgentClient implements 
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.registeruseragentclient.(constructor).md) |  | Constructs a new instance of the <code>RegisterUserAgentClient</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.registeruseragentclient._constructor_.md) |  | Constructs a new instance of the <code>RegisterUserAgentClient</code> class |
 

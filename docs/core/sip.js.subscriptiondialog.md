@@ -16,7 +16,7 @@ export declare class SubscriptionDialog extends Dialog implements Subscription
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(subscriptionEvent, subscriptionExpires, subscriptionState, core, state, delegate)](./sip.js.subscriptiondialog.(constructor).md) |  | Constructs a new instance of the <code>SubscriptionDialog</code> class |
+|  [(constructor)(subscriptionEvent, subscriptionExpires, subscriptionState, core, state, delegate)](./sip.js.subscriptiondialog._constructor_.md) |  | Constructs a new instance of the <code>SubscriptionDialog</code> class |
 
 ## Properties
 

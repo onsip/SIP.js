@@ -16,13 +16,13 @@ export declare class UserAgent extends EventEmitter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(options)](./sip.js.useragent.(constructor).md) |  | Constructs a new instance of the <code>UserAgent</code> class. |
+|  [(constructor)(options)](./sip.js.useragent._constructor_.md) |  | Constructs a new instance of the <code>UserAgent</code> class. |
 
 ## Properties
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [configuration](./sip.js.useragent.configuration.md) |  | <code>Required&lt;UserAgentOptions&gt;</code> |  |
+|  [configuration](./sip.js.useragent.configuration.md) |  | <code>Required&lt;UserAgentOptions&gt;</code> | User agent configuration. |
 |  [delegate](./sip.js.useragent.delegate.md) |  | <code>UserAgentDelegate &#124; undefined</code> | Delegate. |
 
 ## Methods

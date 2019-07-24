@@ -16,7 +16,7 @@ export declare class InviteUserAgentServer extends UserAgentServer implements In
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.inviteuseragentserver.(constructor).md) |  | Constructs a new instance of the <code>InviteUserAgentServer</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.inviteuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>InviteUserAgentServer</code> class |
 
 ## Properties
 

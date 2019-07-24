@@ -16,7 +16,7 @@ export declare class UserAgentServer implements IncomingRequest
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(transactionConstructor, core, message, delegate)](./sip.js.useragentserver.(constructor).md) |  | Constructs a new instance of the <code>UserAgentServer</code> class |
+|  [(constructor)(transactionConstructor, core, message, delegate)](./sip.js.useragentserver._constructor_.md) |  | Constructs a new instance of the <code>UserAgentServer</code> class |
 
 ## Properties
 

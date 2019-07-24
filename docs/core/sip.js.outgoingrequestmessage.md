@@ -16,7 +16,7 @@ export declare class OutgoingRequestMessage
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(method, ruri, fromURI, toURI, options, extraHeaders, body)](./sip.js.outgoingrequestmessage.(constructor).md) |  | Constructs a new instance of the <code>OutgoingRequestMessage</code> class |
+|  [(constructor)(method, ruri, fromURI, toURI, options, extraHeaders, body)](./sip.js.outgoingrequestmessage._constructor_.md) |  | Constructs a new instance of the <code>OutgoingRequestMessage</code> class |
 
 ## Properties
 

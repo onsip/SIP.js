@@ -16,5 +16,5 @@ export declare class NotifyUserAgentServer extends UserAgentServer implements In
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialogOrCore, message, delegate)](./sip.js.notifyuseragentserver.(constructor).md) |  | NOTIFY UAS constructor. |
+|  [(constructor)(dialogOrCore, message, delegate)](./sip.js.notifyuseragentserver._constructor_.md) |  | NOTIFY UAS constructor. |
 

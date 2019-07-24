@@ -16,5 +16,5 @@ export declare class PrackUserAgentClient extends UserAgentClient implements Out
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, delegate, options)](./sip.js.prackuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>PrackUserAgentClient</code> class |
+|  [(constructor)(dialog, delegate, options)](./sip.js.prackuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>PrackUserAgentClient</code> class |
 

@@ -856,7 +856,6 @@ export class UserAgent extends EventEmitter {
         MAX_FORWARDS: number;
         TAG_LENGTH: number;
     };
-    // (undocumented)
     readonly configuration: Required<UserAgentOptions>;
     // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
     // 
@@ -951,6 +950,7 @@ export interface UserAgentOptions {
     // @deprecated
     hackWssInTransport?: boolean;
     logBuiltinEnabled?: boolean;
+    logConfiguration?: boolean;
     logConnector?: LogConnector;
     logLevel?: LogLevel;
     noAnswerTimeout?: number;

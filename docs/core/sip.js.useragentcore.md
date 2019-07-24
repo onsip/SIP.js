@@ -16,7 +16,7 @@ export declare class UserAgentCore
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(configuration, delegate)](./sip.js.useragentcore.(constructor).md) |  | Constructor. |
+|  [(constructor)(configuration, delegate)](./sip.js.useragentcore._constructor_.md) |  | Constructor. |
 
 ## Properties
 

@@ -16,7 +16,7 @@ export declare class InviteServerTransaction extends ServerTransaction
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(request, transport, user)](./sip.js.inviteservertransaction.(constructor).md) |  | Constructor. Upon construction, a "100 Trying" reply will be immediately sent. After construction the transaction will be in the "proceeding" state and the transaction <code>id</code> will equal the branch parameter set in the Via header of the incoming request. https://tools.ietf.org/html/rfc3261\#section-17.2.1 |
+|  [(constructor)(request, transport, user)](./sip.js.inviteservertransaction._constructor_.md) |  | Constructor. Upon construction, a "100 Trying" reply will be immediately sent. After construction the transaction will be in the "proceeding" state and the transaction <code>id</code> will equal the branch parameter set in the Via header of the incoming request. https://tools.ietf.org/html/rfc3261\#section-17.2.1 |
 
 ## Properties
 

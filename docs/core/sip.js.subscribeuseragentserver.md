@@ -16,7 +16,7 @@ export declare class SubscribeUserAgentServer extends UserAgentServer implements
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.subscribeuseragentserver.(constructor).md) |  | Constructs a new instance of the <code>SubscribeUserAgentServer</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.subscribeuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>SubscribeUserAgentServer</code> class |
 
 ## Properties
 

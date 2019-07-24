@@ -16,7 +16,7 @@ export declare class NameAddrHeader extends Parameters
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(uri, displayName, parameters)](./sip.js.nameaddrheader.(constructor).md) |  | Constructor |
+|  [(constructor)(uri, displayName, parameters)](./sip.js.nameaddrheader._constructor_.md) |  | Constructor |
 
 ## Properties
 
