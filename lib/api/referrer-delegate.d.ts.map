@@ -1,1 +1,0 @@
-{"version":3,"file":"referrer-delegate.d.ts","sourceRoot":"","sources":["../../src/api/referrer-delegate.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,uBAAuB,EAAE,MAAM,SAAS,CAAC;AAClD,OAAO,EAAE,YAAY,EAAE,MAAM,gBAAgB,CAAC;AAE9C;;;GAGG;AACH,MAAM,WAAW,gBAAiB,SAAQ,uBAAuB;IAC/D,QAAQ,CAAC,YAAY,EAAE,YAAY,GAAG,IAAI,CAAC;CAC5C"}
