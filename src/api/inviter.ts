@@ -764,9 +764,6 @@ export class Inviter extends Session {
       return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
 
-    // transition state
-    this.stateTransition(SessionState.Established);
-
     const response = inviteResponse.message;
     const session = inviteResponse.session;
 
@@ -814,6 +811,7 @@ export class Inviter extends Session {
           .then((body) => {
             this.status = SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
+            this.stateTransition(SessionState.Established);
             this.emit("ack", ackRequest.message);
             this.accepted(response);
           })
@@ -834,6 +832,7 @@ export class Inviter extends Session {
           this.earlyMediaSessionDescriptionHandlers.delete(session.id);
           this.status = SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
+          this.stateTransition(SessionState.Established);
           this.emit("ack", ackRequest.message);
           this.accepted(response);
           return Promise.resolve();
@@ -867,6 +866,7 @@ export class Inviter extends Session {
           // Otherwise we are good to go.
           this.status = SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
+          this.stateTransition(SessionState.Established);
           this.emit("ack", ackRequest.message);
           this.accepted(response);
           return Promise.resolve();
@@ -892,6 +892,7 @@ export class Inviter extends Session {
             }
             this.status = SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
+            this.stateTransition(SessionState.Established);
             this.emit("ack", ackRequest.message);
             this.accepted(response);
           })

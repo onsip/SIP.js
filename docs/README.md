@@ -77,10 +77,13 @@ userAgent.start().then(() => {
    * Send an outgoing INVITE request
    */
   const target = userAgent.makeTargetURI("alice@example.com");
+  if (!target) {
+    throw new Error("Failed to create target URI.");
+  }
 
   // Create a new Inviter
   const inviterOptions: InviterOptions = { /* ... */ };
-  const inviter = new Inviter(this.userAgent, target, inviterOptions);
+  const inviter = new Inviter(userAgent, target, inviterOptions);
 
   // An Inviter is a Session
   const outgoingSession: Session = inviter;
