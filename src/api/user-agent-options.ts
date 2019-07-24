@@ -129,10 +129,10 @@ export interface UserAgentOptions {
   logBuiltinEnabled?: boolean;
 
   /**
-   * Indicates the verbosity level of the log messages.
-   * @defaultValue `"log"`
+   * If true, constructor logs the user agent configuration.
+   * @defaultValue `true`
    */
-  logLevel?: LogLevel;
+  logConfiguration?: boolean;
 
   /**
    * A function which will be called everytime a log is generated.
@@ -140,6 +140,12 @@ export interface UserAgentOptions {
    * A noop if not defined.
    */
   logConnector?: LogConnector;
+
+  /**
+   * Indicates the verbosity level of the log messages.
+   * @defaultValue `"log"`
+   */
+  logLevel?: LogLevel;
 
   /**
    * Number of seconds after which an incoming call is rejected if not answered.
