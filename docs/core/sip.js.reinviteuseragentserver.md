@@ -16,7 +16,7 @@ export declare class ReInviteUserAgentServer extends UserAgentServer implements 
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, message, delegate)](./sip.js.reinviteuseragentserver.(constructor).md) |  | Constructs a new instance of the <code>ReInviteUserAgentServer</code> class |
+|  [(constructor)(dialog, message, delegate)](./sip.js.reinviteuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>ReInviteUserAgentServer</code> class |
 
 ## Methods
 

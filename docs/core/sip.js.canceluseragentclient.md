@@ -16,5 +16,5 @@ export declare class CancelUserAgentClient extends UserAgentClient implements Ou
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.canceluseragentclient.(constructor).md) |  | Constructs a new instance of the <code>CancelUserAgentClient</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.canceluseragentclient._constructor_.md) |  | Constructs a new instance of the <code>CancelUserAgentClient</code> class |
 

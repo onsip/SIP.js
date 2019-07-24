@@ -16,5 +16,5 @@ export declare class ReSubscribeUserAgentServer extends UserAgentServer implemen
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, message, delegate)](./sip.js.resubscribeuseragentserver.(constructor).md) |  | Constructs a new instance of the <code>ReSubscribeUserAgentServer</code> class |
+|  [(constructor)(dialog, message, delegate)](./sip.js.resubscribeuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>ReSubscribeUserAgentServer</code> class |
 

@@ -16,5 +16,5 @@ export declare class NotifyUserAgentClient extends UserAgentClient implements Ou
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, delegate, options)](./sip.js.notifyuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>NotifyUserAgentClient</code> class |
+|  [(constructor)(dialog, delegate, options)](./sip.js.notifyuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>NotifyUserAgentClient</code> class |
 

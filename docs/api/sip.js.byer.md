@@ -16,7 +16,7 @@ export declare class Byer
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(session, options)](./sip.js.byer.(constructor).md) |  | Constructs a new instance of the <code>Byer</code> class. |
+|  [(constructor)(session, options)](./sip.js.byer._constructor_.md) |  | Constructs a new instance of the <code>Byer</code> class. |
 
 ## Properties
 

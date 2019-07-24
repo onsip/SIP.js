@@ -16,7 +16,7 @@ export declare class Subscriber extends Subscription
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.subscriber.(constructor).md) |  | Constructor. |
+|  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.subscriber._constructor_.md) |  | Constructor. |
 
 ## Methods
 

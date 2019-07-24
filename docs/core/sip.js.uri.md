@@ -16,7 +16,7 @@ export declare class URI extends Parameters
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(scheme, user, host, port, parameters, headers)](./sip.js.uri.(constructor).md) |  | Constructor |
+|  [(constructor)(scheme, user, host, port, parameters, headers)](./sip.js.uri._constructor_.md) |  | Constructor |
 
 ## Properties
 

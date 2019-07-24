@@ -16,7 +16,7 @@ export declare class Dialog
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, dialogState)](./sip.js.dialog.(constructor).md) |  | Dialog constructor. |
+|  [(constructor)(core, dialogState)](./sip.js.dialog._constructor_.md) |  | Dialog constructor. |
 
 ## Properties
 

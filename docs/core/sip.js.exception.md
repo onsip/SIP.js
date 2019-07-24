@@ -16,5 +16,5 @@ export declare abstract class Exception extends Error
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(message)](./sip.js.exception.(constructor).md) |  | Constructs a new instance of the <code>Exception</code> class |
+|  [(constructor)(message)](./sip.js.exception._constructor_.md) |  | Constructs a new instance of the <code>Exception</code> class |
 

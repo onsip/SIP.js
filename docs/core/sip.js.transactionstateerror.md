@@ -16,5 +16,5 @@ export declare class TransactionStateError extends Exception
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(message)](./sip.js.transactionstateerror.(constructor).md) |  | Constructs a new instance of the <code>TransactionStateError</code> class |
+|  [(constructor)(message)](./sip.js.transactionstateerror._constructor_.md) |  | Constructs a new instance of the <code>TransactionStateError</code> class |
 

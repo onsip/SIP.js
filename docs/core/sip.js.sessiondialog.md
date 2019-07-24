@@ -16,7 +16,7 @@ export declare class SessionDialog extends Dialog implements Session
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(initialTransaction, core, state, delegate)](./sip.js.sessiondialog.(constructor).md) |  | Constructs a new instance of the <code>SessionDialog</code> class |
+|  [(constructor)(initialTransaction, core, state, delegate)](./sip.js.sessiondialog._constructor_.md) |  | Constructs a new instance of the <code>SessionDialog</code> class |
 
 ## Properties
 

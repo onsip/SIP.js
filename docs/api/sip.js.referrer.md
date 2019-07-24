@@ -16,7 +16,7 @@ export declare class Referrer
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(session, referTo, options)](./sip.js.referrer.(constructor).md) |  | Constructs a new instance of the <code>Referrer</code> class. |
+|  [(constructor)(session, referTo, options)](./sip.js.referrer._constructor_.md) |  | Constructs a new instance of the <code>Referrer</code> class. |
 
 ## Properties
 

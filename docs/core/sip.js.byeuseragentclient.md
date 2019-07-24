@@ -16,5 +16,5 @@ export declare class ByeUserAgentClient extends UserAgentClient implements Outgo
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, delegate, options)](./sip.js.byeuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>ByeUserAgentClient</code> class |
+|  [(constructor)(dialog, delegate, options)](./sip.js.byeuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>ByeUserAgentClient</code> class |
 

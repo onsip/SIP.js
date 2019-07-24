@@ -16,7 +16,7 @@ export declare class Registerer extends EventEmitter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(userAgent, options)](./sip.js.registerer.(constructor).md) |  | Constructs a new instance of the <code>Registerer</code> class. |
+|  [(constructor)(userAgent, options)](./sip.js.registerer._constructor_.md) |  | Constructs a new instance of the <code>Registerer</code> class. |
 
 ## Properties
 

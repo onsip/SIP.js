@@ -16,7 +16,7 @@ export declare class InviteUserAgentClient extends UserAgentClient implements Ou
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.inviteuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>InviteUserAgentClient</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.inviteuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>InviteUserAgentClient</code> class |
 
 ## Properties
 

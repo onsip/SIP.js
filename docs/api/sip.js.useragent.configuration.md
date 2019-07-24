@@ -4,6 +4,8 @@
 
 ## UserAgent.configuration property
 
+User agent configuration.
+
 <b>Signature:</b>
 
 ```typescript

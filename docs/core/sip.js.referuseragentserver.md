@@ -16,5 +16,5 @@ export declare class ReferUserAgentServer extends UserAgentServer implements Inc
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialogOrCore, message, delegate)](./sip.js.referuseragentserver.(constructor).md) |  | REFER UAS constructor. |
+|  [(constructor)(dialogOrCore, message, delegate)](./sip.js.referuseragentserver._constructor_.md) |  | REFER UAS constructor. |
 

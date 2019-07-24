@@ -16,7 +16,7 @@ export declare class Inviter extends Session
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(userAgent, targetURI, options)](./sip.js.inviter.(constructor).md) |  | Constructs a new instance of the <code>Inviter</code> class. |
+|  [(constructor)(userAgent, targetURI, options)](./sip.js.inviter._constructor_.md) |  | Constructs a new instance of the <code>Inviter</code> class. |
 
 ## Methods
 

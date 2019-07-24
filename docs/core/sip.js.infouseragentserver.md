@@ -16,5 +16,5 @@ export declare class InfoUserAgentServer extends UserAgentServer implements Inco
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, message, delegate)](./sip.js.infouseragentserver.(constructor).md) |  | Constructs a new instance of the <code>InfoUserAgentServer</code> class |
+|  [(constructor)(dialog, message, delegate)](./sip.js.infouseragentserver._constructor_.md) |  | Constructs a new instance of the <code>InfoUserAgentServer</code> class |
 

@@ -109,8 +109,9 @@ export class UserAgent extends EventEmitter {
     hackViaTcp: false,
     hackWssInTransport: false,
     logBuiltinEnabled: true,
-    logLevel: "log",
+    logConfiguration: true,
     logConnector: () => { /* noop */ },
+    logLevel: "log",
     noAnswerTimeout: 60,
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
@@ -221,21 +222,23 @@ export class UserAgent extends EventEmitter {
         break;
     }
 
-    this.logger.log("configuration parameters after validation:");
-    for (const [key, value] of Object.entries(this.options)) {
-      switch (key) {
-        case "uri":
-        case "sessionDescriptionHandlerFactory":
-          this.logger.log("· " + key + ": " + value);
-          break;
-        case "authorizationPassword":
-          this.logger.log("· " + key + ": " + "NOT SHOWN");
-          break;
-        case "transportConstructor":
-          this.logger.log("· " + key + ": " + value.name);
-          break;
-        default:
-          this.logger.log("· " + key + ": " + JSON.stringify(value));
+    if (this.options.logConfiguration) {
+      this.logger.log("Configuration:");
+      for (const [key, value] of Object.entries(this.options)) {
+        switch (key) {
+          case "uri":
+          case "sessionDescriptionHandlerFactory":
+            this.logger.log("· " + key + ": " + value);
+            break;
+          case "authorizationPassword":
+            this.logger.log("· " + key + ": " + "NOT SHOWN");
+            break;
+          case "transportConstructor":
+            this.logger.log("· " + key + ": " + value.name);
+            break;
+          default:
+            this.logger.log("· " + key + ": " + JSON.stringify(value));
+        }
       }
     }
 
@@ -256,6 +259,9 @@ export class UserAgent extends EventEmitter {
     }
   }
 
+  /**
+   * User agent configuration.
+   */
   public get configuration(): Required<UserAgentOptions> {
     return this.options;
   }
@@ -298,7 +304,11 @@ export class UserAgent extends EventEmitter {
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (typeof window !== "undefined" && !googleChromePackagedApp) {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.addEventListener === "function" &&
+        !googleChromePackagedApp
+      ) {
         window.addEventListener("unload", this.unloadListener);
       }
     }
@@ -381,7 +391,11 @@ export class UserAgent extends EventEmitter {
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (typeof window !== "undefined" && !googleChromePackagedApp) {
+      if (
+        typeof window !== "undefined" &&
+        window.removeEventListener &&
+        !googleChromePackagedApp
+      ) {
         window.removeEventListener("unload", this.unloadListener);
       }
     }

@@ -16,7 +16,7 @@ export declare abstract class ClientTransaction extends Transaction
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(\_request, transport, user, state, loggerCategory)](./sip.js.clienttransaction.(constructor).md) |  | Constructs a new instance of the <code>ClientTransaction</code> class |
+|  [(constructor)(\_request, transport, user, state, loggerCategory)](./sip.js.clienttransaction._constructor_.md) |  | Constructs a new instance of the <code>ClientTransaction</code> class |
 
 ## Properties
 

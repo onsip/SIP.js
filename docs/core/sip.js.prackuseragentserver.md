@@ -16,7 +16,7 @@ export declare class PrackUserAgentServer extends UserAgentServer implements Inc
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, message, delegate)](./sip.js.prackuseragentserver.(constructor).md) |  | Constructs a new instance of the <code>PrackUserAgentServer</code> class |
+|  [(constructor)(dialog, message, delegate)](./sip.js.prackuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>PrackUserAgentServer</code> class |
 
 ## Methods
 

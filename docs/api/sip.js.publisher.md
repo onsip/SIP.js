@@ -16,7 +16,7 @@ export declare class Publisher extends EventEmitter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.publisher.(constructor).md) |  | Constructs a new instance of the <code>Publisher</code> class. |
+|  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.publisher._constructor_.md) |  | Constructs a new instance of the <code>Publisher</code> class. |
 
 ## Methods
 

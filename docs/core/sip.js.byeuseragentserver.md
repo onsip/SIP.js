@@ -16,5 +16,5 @@ export declare class ByeUserAgentServer extends UserAgentServer implements Incom
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, message, delegate)](./sip.js.byeuseragentserver.(constructor).md) |  | Constructs a new instance of the <code>ByeUserAgentServer</code> class |
+|  [(constructor)(dialog, message, delegate)](./sip.js.byeuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>ByeUserAgentServer</code> class |
 

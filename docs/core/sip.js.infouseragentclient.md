@@ -16,5 +16,5 @@ export declare class InfoUserAgentClient extends UserAgentClient implements Outg
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, delegate, options)](./sip.js.infouseragentclient.(constructor).md) |  | Constructs a new instance of the <code>InfoUserAgentClient</code> class |
+|  [(constructor)(dialog, delegate, options)](./sip.js.infouseragentclient._constructor_.md) |  | Constructs a new instance of the <code>InfoUserAgentClient</code> class |
 

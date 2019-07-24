@@ -16,5 +16,5 @@ export declare class PublishUserAgentClient extends UserAgentClient implements O
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.publishuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>PublishUserAgentClient</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.publishuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>PublishUserAgentClient</code> class |
 

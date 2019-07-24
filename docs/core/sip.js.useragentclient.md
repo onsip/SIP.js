@@ -16,7 +16,7 @@ export declare class UserAgentClient implements OutgoingRequest
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(transactionConstructor, core, message, delegate)](./sip.js.useragentclient.(constructor).md) |  | Constructs a new instance of the <code>UserAgentClient</code> class |
+|  [(constructor)(transactionConstructor, core, message, delegate)](./sip.js.useragentclient._constructor_.md) |  | Constructs a new instance of the <code>UserAgentClient</code> class |
 
 ## Properties
 

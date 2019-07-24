@@ -16,7 +16,7 @@ export declare class IncomingRequestMessage extends IncomingMessage
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)()](./sip.js.incomingrequestmessage.(constructor).md) |  | Constructs a new instance of the <code>IncomingRequestMessage</code> class |
+|  [(constructor)()](./sip.js.incomingrequestmessage._constructor_.md) |  | Constructs a new instance of the <code>IncomingRequestMessage</code> class |
 
 ## Properties
 

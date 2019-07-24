@@ -16,5 +16,5 @@ export declare class TransportError extends Exception
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(message)](./sip.js.transporterror.(constructor).md) |  | Constructs a new instance of the <code>TransportError</code> class |
+|  [(constructor)(message)](./sip.js.transporterror._constructor_.md) |  | Constructs a new instance of the <code>TransportError</code> class |
 

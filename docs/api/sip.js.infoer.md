@@ -16,7 +16,7 @@ export declare class Infoer
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(session, options)](./sip.js.infoer.(constructor).md) |  | Constructs a new instance of the <code>Infoer</code> class. |
+|  [(constructor)(session, options)](./sip.js.infoer._constructor_.md) |  | Constructs a new instance of the <code>Infoer</code> class. |
 
 ## Properties
 

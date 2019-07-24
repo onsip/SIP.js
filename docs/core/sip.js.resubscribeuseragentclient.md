@@ -16,7 +16,7 @@ export declare class ReSubscribeUserAgentClient extends UserAgentClient implemen
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(dialog, delegate, options)](./sip.js.resubscribeuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>ReSubscribeUserAgentClient</code> class |
+|  [(constructor)(dialog, delegate, options)](./sip.js.resubscribeuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>ReSubscribeUserAgentClient</code> class |
 
 ## Methods
 

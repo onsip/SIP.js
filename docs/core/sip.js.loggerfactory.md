@@ -16,7 +16,7 @@ export declare class LoggerFactory
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)()](./sip.js.loggerfactory.(constructor).md) |  | Constructs a new instance of the <code>LoggerFactory</code> class |
+|  [(constructor)()](./sip.js.loggerfactory._constructor_.md) |  | Constructs a new instance of the <code>LoggerFactory</code> class |
 
 ## Properties
 

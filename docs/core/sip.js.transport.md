@@ -16,7 +16,7 @@ export declare abstract class Transport extends EventEmitter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(logger, options)](./sip.js.transport.(constructor).md) |  | Constructor |
+|  [(constructor)(logger, options)](./sip.js.transport._constructor_.md) |  | Constructor |
 
 ## Properties
 

@@ -16,7 +16,7 @@ export declare class Messager extends EventEmitter
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(userAgent, targetURI, content, contentType, options)](./sip.js.messager.(constructor).md) |  | Constructs a new instance of the <code>Messager</code> class. |
+|  [(constructor)(userAgent, targetURI, content, contentType, options)](./sip.js.messager._constructor_.md) |  | Constructs a new instance of the <code>Messager</code> class. |
 
 ## Methods
 

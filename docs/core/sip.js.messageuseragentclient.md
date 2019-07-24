@@ -16,5 +16,5 @@ export declare class MessageUserAgentClient extends UserAgentClient implements O
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(core, message, delegate)](./sip.js.messageuseragentclient.(constructor).md) |  | Constructs a new instance of the <code>MessageUserAgentClient</code> class |
+|  [(constructor)(core, message, delegate)](./sip.js.messageuseragentclient._constructor_.md) |  | Constructs a new instance of the <code>MessageUserAgentClient</code> class |
 
