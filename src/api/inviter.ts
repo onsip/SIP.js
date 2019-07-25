@@ -361,9 +361,6 @@ export class Inviter extends Session {
       return super.invite(options);
     }
 
-    // transition state
-    this.stateTransition(SessionState.Establishing);
-
     if (!this.id) {
       throw new Error("Session id undefined.");
     }
@@ -375,8 +372,12 @@ export class Inviter extends Session {
       if (this.renderbody && this.rendertype) {
         this.request.body = { contentType: this.rendertype, body: this.renderbody };
       }
+
+      // transition state
+      this.stateTransition(SessionState.Establishing);
+
       this.status = SessionStatus.STATUS_INVITE_SENT;
-      return Promise.resolve(this.sendInvite());
+      return Promise.resolve(this.sendInvite(options));
     }
 
     // get an offer and send it in an INVITE
@@ -390,6 +391,10 @@ export class Inviter extends Session {
         if (this.isCanceled || this.status === SessionStatus.STATUS_TERMINATED) {
           throw new Error("Session was canceled or terminated before INVITE was sent.");
         }
+
+        // transition state
+        this.stateTransition(SessionState.Establishing);
+
         this.status = SessionStatus.STATUS_INVITE_SENT;
         this.request.body = { body: body.content, contentType: body.contentType };
         return this.sendInvite(options);
@@ -674,7 +679,7 @@ export class Inviter extends Session {
         if (options.requestDelegate && options.requestDelegate.onTrying) {
           options.requestDelegate.onTrying(inviteResponse);
         }
-      },
+      }
     });
 
     return this.outgoingInviteRequest;
