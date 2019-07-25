@@ -233,7 +233,7 @@ export class Inviter extends Session {
     this.logger.log("Inviter.cancel");
 
     // validate state
-    if (this.state !== SessionState.Establishing) {
+    if (this.state !== SessionState.Initial && this.state !== SessionState.Establishing) {
       const error = new Error(`Invalid session state ${this.state}`);
       this.logger.error(error.message);
       return Promise.reject(error);
