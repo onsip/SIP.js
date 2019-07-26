@@ -1,3 +1,4 @@
+import { UserAgentOptions } from "../../../src/api";
 import { URI } from "../../../src/core";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
@@ -13,15 +14,19 @@ describe("UserAgent Class", () => {
 
   beforeEach(() => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    bob = makeUserFake("bob", "example.com", "Bob");
+    const options: UserAgentOptions = {
+      autoStart: false
+    };
+    alice = makeUserFake("alice", "example.com", "Alice", options);
+    bob = makeUserFake("bob", "example.com", "Bob", options);
     connectUserFake(alice, bob);
+    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(() => {
     jasmine.clock().uninstall();
-    // alice.ua.stop();
-    // bob.ua.stop();
+    alice.userAgent.stop();
+    bob.userAgent.stop();
   });
 
   describe("Alice exists", () => {
@@ -30,9 +35,9 @@ describe("UserAgent Class", () => {
       await soon();
     });
 
-    it("hello", () => {
-      const spy = alice.transportSendSpy;
-      expect(spy).toHaveBeenCalledTimes(0);
+    it("has a configuration", () => {
+      const configuration = alice.userAgent.configuration;
+      expect(configuration).toBeDefined();
     });
   });
 });
