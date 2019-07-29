@@ -16,6 +16,7 @@ import {
 } from "../session-description-handler";
 import { Utils } from "../Utils";
 
+import { Session } from "../api/session";
 import * as Modifiers from "../Web/Modifiers";
 import { SessionDescriptionHandlerObserver } from "./SessionDescriptionHandlerObserver";
 
@@ -34,7 +35,10 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     session: InviteClientContext | InviteServerContext,
     options: any
   ): SessionDescriptionHandler {
-    const logger: Logger = session.ua.getLogger("sip.invitecontext.sessionDescriptionHandler", session.id);
+    const logger: Logger =
+      (session instanceof Session) ?
+        session.userAgent.getLogger("sip.sessionDescriptionHandler", session.id) :
+        session.ua.getLogger("sip.invitecontext.sessionDescriptionHandler", session.id);
     const observer: SessionDescriptionHandlerObserver = new SessionDescriptionHandlerObserver(session, options);
     return new SessionDescriptionHandler(logger, observer, options);
   }
