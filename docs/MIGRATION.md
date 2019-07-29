@@ -59,12 +59,18 @@ The following `UA.Options` have been modified for use as `UserAgentOptions`...
   - renamed `sipExtensionReplaces`
 - `extraSupported`
   - renamed `sipExtensionExtraSupported`
+- `uri`
+  - must be a `URI` instance, use `UserAgent.makeURI()` to create (see below).
 
 ### Construction, Starting, and Stopping
 
 Previously...
 ```
-const options: UA.Options = { /* set various options */ };
+string uri = "sip:alice@example.com";
+const options: UA.Options = {
+  uri: uri
+  /* set various other options */
+};
 const ua = new UA(options);
 ua.start();
 ua.stop();
@@ -72,7 +78,14 @@ ua.stop();
 
 Now...
 ```
-const options: UserAgentOptions = { /* set various options */ };
+const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  // Failed to create URI
+}
+const options: UserAgentOptions = {
+  uri: uri,
+  /* set various other options */
+};
 const userAgent = new UserAgent(options);
 userAgent.start();
 userAgent.stop();
@@ -89,10 +102,11 @@ userAgent.stop();
 
 Previously...
 ```
+const uri = "sip:alice@example.com";
 const options = {
-  uri: "alice@example.com";
   authenticationUsername: "username",
   authenticationPassword: "password",
+  uri: uri
 }
 
 const ua = new UA(options);
@@ -116,16 +130,16 @@ ua.unregister()
 
 Now...
 ```
-const userAgent = new UserAgent();
-
-const aor = new URI("sip", "alice", "example.com");
-
+const uri = UserAgent.makeURI("sip:alice@example.com");
 const options = {
   authenticationUsername: "username",
   authenticationPassword: "password",
+  uri: uri
 }
 
-const registerer = new Registerer(userAgent, aor, options);
+const userAgent = new UserAgent(options);
+
+const registerer = new Registerer(userAgent);
 
 // Setup registerer state change handler
 registerer.stateChange.on((newState) => {
@@ -227,7 +241,7 @@ Now...
 
 ```
 // Target URI
-const uri = new URI("sip", "alice", "example.com");
+const uri = UserAgent.makeURI("sip", "alice", "example.com");
 
 // Create new Session instance in "initial" state
 const session = new Inviter(userAgent, uri);
