@@ -42,7 +42,7 @@ export interface UserAgentOptions
 |  [sipjsId](./sip.js.useragentoptions.sipjsid.md) | <code>string</code> | An id uniquely identify this user agent instance. |
 |  [transportConstructor](./sip.js.useragentoptions.transportconstructor.md) | <code>new (logger: any, options: any) =&gt; Transport</code> | A constructor function for the user agent's <code>Transport</code>. |
 |  [transportOptions](./sip.js.useragentoptions.transportoptions.md) | <code>any</code> | An options bucket object passed to <code>transportConstructor</code> when instantiated. |
-|  [uri](./sip.js.useragentoptions.uri.md) | <code>URI</code> | SIP URI associated with the user agent. |
+|  [uri](./sip.js.useragentoptions.uri.md) | <code>URI</code> | SIP Addresses-of-Record URI associated with the user agent. |
 |  [usePreloadedRoute](./sip.js.useragentoptions.usepreloadedroute.md) | <code>boolean</code> | Adds a Route header to requests. |
 |  [userAgentString](./sip.js.useragentoptions.useragentstring.md) | <code>string</code> | User agent string used in the UserAgent header. |
 |  [viaHost](./sip.js.useragentoptions.viahost.md) | <code>string</code> | Hostname to use in Via header. |
