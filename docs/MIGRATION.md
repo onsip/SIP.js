@@ -226,8 +226,11 @@ Now...
 * Call `Inviter.invite()` to send INVITE which returns a `Promise` resolving the sent request
 
 ```
+// Target URI
+const uri = new URI("sip", "alice", "example.com");
+
 // Create new Session instance in "initial" state
-const session = new Inviter(userAgent);
+const session = new Inviter(userAgent, uri);
 
 // Setup session state change handler
 session.stateChange.on((newState) => {
@@ -243,9 +246,6 @@ session.stateChange.on((newState) => {
       break;
   }
 });
-
-// Target URI
-const uri = new URI("sip", "alice", "example.com");
 
 // Options including delegate to capture response messages
 const options =  {
@@ -266,7 +266,7 @@ const options =  {
 };
 
 // Send initial INVITE
-session.invite(uri, options)
+session.invite(options)
   .then((request) => {
     console.log("Successfully sent INVITE");
     console.log("INVITE request = " + request);
