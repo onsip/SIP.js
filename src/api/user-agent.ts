@@ -62,19 +62,6 @@ declare var chrome: any;
  */
 export class UserAgent extends EventEmitter {
 
-  /**
-   * Create a URI object from a string.
-   * @param uri - The string to parse.
-   *
-   * @example
-   * ```ts
-   * const uri = UserAgent.makeURI("sip:edgar@example.com");
-   * ```
-   */
-  public static makeURI(uri: string): URI | undefined {
-    return Grammar.URIParse(uri);
-  }
-
   /** @internal */
   public static readonly C = {
     // UA status codes
@@ -108,6 +95,19 @@ export class UserAgent extends EventEmitter {
     MAX_FORWARDS: 70,
     TAG_LENGTH: 10
   };
+
+  /**
+   * Create a URI instance from a string.
+   * @param uri - The string to parse.
+   *
+   * @example
+   * ```ts
+   * const uri = UserAgent.makeURI("sip:edgar@example.com");
+   * ```
+   */
+  public static makeURI(uri: string): URI | undefined {
+    return Grammar.URIParse(uri);
+  }
 
   /** Default user agent options. */
   private static readonly defaultOptions: Required<UserAgentOptions> = {
