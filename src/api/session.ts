@@ -730,6 +730,8 @@ export abstract class Session extends EventEmitter {
       this.logger.error(`ACK received while in state ${this.state}, dropping request`);
       return;
     }
+
+    // FIXME: Review is this ever true? We're "Established" when dialog created in accept().
     if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
       this.stateTransition(SessionState.Established);
     }

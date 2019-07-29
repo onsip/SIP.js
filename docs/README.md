@@ -22,7 +22,14 @@ However, if an application requires protocol level access it may need to utilize
 /*
  * Create a user agent
  */
-const userAgentOptions: UserAgentOptions = { /* ... */ };
+const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  // Failed to create URI
+}
+const userAgentOptions: UserAgentOptions = {
+  uri: uri,
+  /* ... */
+};
 const userAgent = new UserAgent(userAgentOptions);
 
 /*
@@ -76,7 +83,7 @@ userAgent.start().then(() => {
   /*
    * Send an outgoing INVITE request
    */
-  const target = userAgent.makeTargetURI("alice@example.com");
+  const target = UserAgent.makeURI("sip:bob@example.com");
   if (!target) {
     throw new Error("Failed to create target URI.");
   }

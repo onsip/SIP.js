@@ -4,6 +4,7 @@ import { C as SIPConstants } from "../Constants";
 import {
   Contact,
   DigestAuthentication,
+  Grammar,
   IncomingInviteRequest,
   IncomingMessageRequest,
   IncomingNotifyRequest,
@@ -44,6 +45,7 @@ import {
   UserAgentOptions,
   UserAgentRegisteredOptionTags
 } from "./user-agent-options";
+import { UserAgentState } from "./user-agent-state";
 
 declare var chrome: any;
 
@@ -59,6 +61,20 @@ declare var chrome: any;
  * @public
  */
 export class UserAgent extends EventEmitter {
+
+  /**
+   * Create a URI object from a string.
+   * @param uri - The string to parse.
+   *
+   * @example
+   * ```ts
+   * const uri = UserAgent.makeURI("sip:edgar@example.com");
+   * ```
+   */
+  public static makeURI(uri: string): URI | undefined {
+    return Grammar.URIParse(uri);
+  }
+
   /** @internal */
   public static readonly C = {
     // UA status codes
@@ -159,6 +175,9 @@ export class UserAgent extends EventEmitter {
   private options: Required<UserAgentOptions>;
 
   private error: number | undefined;
+
+  private _state: UserAgentState = UserAgentState.Initial;
+  private _stateEventEmitter = new EventEmitter();
 
   /** Unload listener. */
   private unloadListener = (() => { this.stop(); });
@@ -264,17 +283,6 @@ export class UserAgent extends EventEmitter {
    */
   public get configuration(): Required<UserAgentOptions> {
     return this.options;
-  }
-
-  /**
-   * Normalize a string into a valid SIP request URI.
-   * @param target - The target.
-   */
-  public makeTargetURI(target: string): URI | undefined {
-    const uri = this.options.uri.clone();
-    uri.user = undefined;
-    const hostportParams = uri.toRaw().replace(/^sip:/i, "");
-    return Utils.normalizeTarget(target, hostportParams);
   }
 
   /**
@@ -519,12 +527,12 @@ export class UserAgent extends EventEmitter {
   private onTransportReceiveMsg(messageString: string): void {
     const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
     if (!message) {
-      this.logger.warn("UA failed to parse incoming SIP message - discarding.");
+      this.logger.warn("Failed to parse incoming message. Dropping.");
       return;
     }
 
     if (this.status === UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
-      this.logger.warn("UA received message when status = USER_CLOSED - aborting");
+      this.logger.warn(`Received ${message.method} request in state USER_CLOSED. Dropping.`);
       return;
     }
 
