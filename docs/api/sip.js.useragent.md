@@ -29,7 +29,7 @@ export declare class UserAgent extends EventEmitter
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [makeTargetURI(target)](./sip.js.useragent.maketargeturi.md) |  | Normalize a string into a valid SIP request URI. |
+|  [makeURI(uri)](./sip.js.useragent.makeuri.md) | <code>static</code> | Create a URI object from a string. |
 |  [start()](./sip.js.useragent.start.md) |  | Connect user agent to network transport. |
 |  [stop()](./sip.js.useragent.stop.md) |  | Gracefully close. Gracefully disconnect from network transport. |
 

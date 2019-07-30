@@ -59,12 +59,18 @@ The following `UA.Options` have been modified for use as `UserAgentOptions`...
   - renamed `sipExtensionReplaces`
 - `extraSupported`
   - renamed `sipExtensionExtraSupported`
+- `uri`
+  - must be a `URI` instance, use `UserAgent.makeURI()` to create (see below).
 
 ### Construction, Starting, and Stopping
 
 Previously...
 ```
-const options: UA.Options = { /* set various options */ };
+string uri = "sip:alice@example.com";
+const options: UA.Options = {
+  uri: uri
+  /* set various other options */
+};
 const ua = new UA(options);
 ua.start();
 ua.stop();
@@ -72,7 +78,14 @@ ua.stop();
 
 Now...
 ```
-const options: UserAgentOptions = { /* set various options */ };
+const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  // Failed to create URI
+}
+const options: UserAgentOptions = {
+  uri: uri,
+  /* set various other options */
+};
 const userAgent = new UserAgent(options);
 userAgent.start();
 userAgent.stop();
@@ -89,10 +102,11 @@ userAgent.stop();
 
 Previously...
 ```
+const uri = "sip:alice@example.com";
 const options = {
-  uri: "alice@example.com";
   authenticationUsername: "username",
   authenticationPassword: "password",
+  uri: uri
 }
 
 const ua = new UA(options);
@@ -116,16 +130,16 @@ ua.unregister()
 
 Now...
 ```
-const userAgent = new UserAgent();
-
-const aor = new URI("sip", "alice", "example.com");
-
+const uri = UserAgent.makeURI("sip:alice@example.com");
 const options = {
   authenticationUsername: "username",
   authenticationPassword: "password",
+  uri: uri
 }
 
-const registerer = new Registerer(userAgent, aor, options);
+const userAgent = new UserAgent(options);
+
+const registerer = new Registerer(userAgent);
 
 // Setup registerer state change handler
 registerer.stateChange.on((newState) => {
@@ -226,11 +240,14 @@ Now...
 * Call `Inviter.invite()` to send INVITE which returns a `Promise` resolving the sent request
 
 ```
+// Target URI
+const uri = UserAgent.makeURI("sip:alice@example.com");
+
 // Create new Session instance in "initial" state
-const session = new Inviter(userAgent);
+const session = new Inviter(userAgent, uri);
 
 // Setup session state change handler
-session.stateChange.on((newState) => {
+session.stateChange.on((newState: SessionState) => {
   switch (newState) {
     case SessionState.Establishing:
       console.log("Ringing");
@@ -244,16 +261,13 @@ session.stateChange.on((newState) => {
   }
 });
 
-// Target URI
-const uri = new URI("sip", "alice", "example.com");
-
 // Options including delegate to capture response messages
-const options =  {
-  delegate: {
-    onAccepted: (response) => {
+const inviteOptions: InviterInviteOptions = {
+  requestDelegate: {
+    onAccept: (response) => {
       console.log("Positive response = " + response);
     },
-    onRejected: (response) => {
+    onReject: (response) => {
       console.log("Negative response = " + response);
     }
   },
@@ -266,12 +280,12 @@ const options =  {
 };
 
 // Send initial INVITE
-session.invite(uri, options)
-  .then((request) => {
+session.invite(inviteOptions)
+  .then((request: OutgoingInviteRequest) => {
     console.log("Successfully sent INVITE");
     console.log("INVITE request = " + request);
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     console.log("Failed to send INVITE");
   });
 ```

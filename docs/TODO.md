@@ -63,7 +63,7 @@
 * UserAgent.start();
 * UserAgent.stop();
 
-* UserAgent.makeTargetURI(target) // string => URI
+* UserAgent.makeURI(target) // string => URI (static)
 
 * UserAgentDelegate.onInvite(invitation);
 * UserAgentDelegate.onMessage(message);
