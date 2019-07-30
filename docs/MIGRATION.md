@@ -241,13 +241,13 @@ Now...
 
 ```
 // Target URI
-const uri = UserAgent.makeURI("sip", "alice", "example.com");
+const uri = UserAgent.makeURI("sip:alice@example.com");
 
 // Create new Session instance in "initial" state
 const session = new Inviter(userAgent, uri);
 
 // Setup session state change handler
-session.stateChange.on((newState) => {
+session.stateChange.on((newState: SessionState) => {
   switch (newState) {
     case SessionState.Establishing:
       console.log("Ringing");
@@ -262,12 +262,12 @@ session.stateChange.on((newState) => {
 });
 
 // Options including delegate to capture response messages
-const options =  {
-  delegate: {
-    onAccepted: (response) => {
+const inviteOptions: InviterInviteOptions = {
+  requestDelegate: {
+    onAccept: (response) => {
       console.log("Positive response = " + response);
     },
-    onRejected: (response) => {
+    onReject: (response) => {
       console.log("Negative response = " + response);
     }
   },
@@ -280,12 +280,12 @@ const options =  {
 };
 
 // Send initial INVITE
-session.invite(options)
-  .then((request) => {
+session.invite(inviteOptions)
+  .then((request: OutgoingInviteRequest) => {
     console.log("Successfully sent INVITE");
     console.log("INVITE request = " + request);
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     console.log("Failed to send INVITE");
   });
 ```
