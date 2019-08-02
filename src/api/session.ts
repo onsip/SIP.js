@@ -480,6 +480,7 @@ export abstract class Session extends EventEmitter {
     return this.getOffer(offerOptions)
       .then((offerBody) => {
         if (!this.dialog) {
+          this.pendingReinvite = false;
           throw new Error("Dialog undefined.");
         }
 
@@ -516,6 +517,7 @@ export abstract class Session extends EventEmitter {
             return;
           },
           onReject: (response): void => {
+            this.pendingReinvite = false;
             this.logger.error("Received a non-2xx final response to re-invite");
             const error = new Error("Invalid response to a re-invite.");
             this.emit("reinviteFailed", this);
