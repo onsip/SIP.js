@@ -1,5 +1,5 @@
 import { Timers, URI } from "../../../src";
-import { Invitation, Inviter, SessionState } from "../../../src/api";
+import { Invitation, Inviter, Session, SessionState } from "../../../src/api";
 import { SessionState as SessionDialogState, SignalingState } from "../../../src/core";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
@@ -1268,6 +1268,7 @@ describe("Session Class New", () => {
     alice = makeUserFake("alice", "example.com", "Alice");
     bob = makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
+    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(() => {
@@ -1725,7 +1726,7 @@ describe("Session Class New", () => {
       await soon();
     });
 
-    describe("Alice invite()", () => {
+    describe("Alice invite() with SDP offer", () => {
       beforeEach(() => {
         resetSpies();
         return inviter.invite()
@@ -1743,7 +1744,7 @@ describe("Session Class New", () => {
           beforeEach(async () => {
             resetSpies();
             return inviter.invite()
-              .then(() => bob.transport.waitSent());
+              .then(() => alice.transport.waitSent()); // ACK
           });
 
           it("her ua should send INVITE, ACK", () => {
@@ -1763,7 +1764,67 @@ describe("Session Class New", () => {
             beforeEach(async () => {
               resetSpies();
               return inviter.invite()
-                .then(() => bob.transport.waitSent());
+                .then(() => alice.transport.waitSent()); // ACK
+            });
+
+            it("her ua should send INVITE, ACK", () => {
+              const spy = alice.transportSendSpy;
+              expect(spy).toHaveBeenCalledTimes(2);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+              expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+            });
+
+            it("her ua should receive 200", () => {
+              const spy = alice.transportReceiveSpy;
+              expect(spy).toHaveBeenCalledTimes(1);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            });
+          });
+        });
+      });
+    });
+
+    describe("Alice invite() without SDP offer", () => {
+      beforeEach(() => {
+        resetSpies();
+        return inviter.invite()
+          .then(() => bob.transport.waitSent());
+      });
+
+      describe("Bob accept()", () => {
+        beforeEach(() => {
+          resetSpies();
+          return invitation.accept()
+            .then(() => alice.transport.waitSent()); // ACK
+        });
+
+        describe("Alice hold()", () => {
+          beforeEach(async () => {
+            resetSpies();
+            const session: Session = inviter;
+            return session.invite({ withoutSdp: true })
+              .then(() => alice.transport.waitSent()); // ACK
+          });
+
+          it("her ua should send INVITE, ACK", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          });
+
+          describe("Alice unhold()", () => {
+            beforeEach(async () => {
+              resetSpies();
+              const session: Session = inviter;
+              return session.invite({ withoutSdp: true })
+                .then(() => alice.transport.waitSent()); // ACK
             });
 
             it("her ua should send INVITE, ACK", () => {
