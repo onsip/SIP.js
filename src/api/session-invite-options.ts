@@ -15,4 +15,6 @@ export interface SessionInviteOptions {
   requestOptions?: RequestOptions;
   sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
   sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+  /** If true, send INVITE without SDP. Default is false. */
+  withoutSdp?: boolean;
 }

@@ -1,5 +1,5 @@
 import { Timers, URI } from "../../../src";
-import { Invitation, Inviter, SessionState } from "../../../src/api";
+import { Invitation, Inviter, Session, SessionState } from "../../../src/api";
 import { SessionState as SessionDialogState, SignalingState } from "../../../src/core";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
@@ -1047,7 +1047,7 @@ describe("Session Class New", () => {
         beforeEach(async () => {
           resetSpies();
           const noAnswerTimeout = 90000;
-          if (alice.ua.configuration.noAnswerTimeout * 1000 !== noAnswerTimeout) {
+          if (alice.userAgent.configuration.noAnswerTimeout * 1000 !== noAnswerTimeout) {
             throw new Error("Test is assuming UA configured with 90 second no answer timeout");
           }
           await soon(noAnswerTimeout);
@@ -1268,23 +1268,24 @@ describe("Session Class New", () => {
     alice = makeUserFake("alice", "example.com", "Alice");
     bob = makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
+    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(() => {
     jasmine.clock().uninstall();
-    // alice.ua.stop();
-    // bob.ua.stop();
+    // alice.userAgent.stop();
+    // bob.userAgent.stop();
   });
 
   describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {
     beforeEach(async () => {
       target = bob.uri;
-      bob.ua.on("invite", (session: Invitation) => {
+      bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
-        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
       });
-      inviter = new Inviter(alice.ua, target);
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+      inviter = new Inviter(alice.userAgent, target);
+      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1294,12 +1295,12 @@ describe("Session Class New", () => {
   describe("Alice constructs a new INVITE client context targeting Bob without SDP offer", () => {
     beforeEach(async () => {
       target = bob.uri;
-      bob.ua.on("invite", (session: Invitation) => {
+      bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
-        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
       });
-      inviter = new Inviter(alice.ua, target, { inviteWithoutSdp: true });
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+      inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
+      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1309,12 +1310,12 @@ describe("Session Class New", () => {
   describe("Early Media Disabled...", () => {
     beforeEach(async () => {
       target = bob.uri;
-      bob.ua.on("invite", (session: Invitation) => {
+      bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
-        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
       });
-      inviter = new Inviter(alice.ua, target, { earlyMedia: false });
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+      inviter = new Inviter(alice.userAgent, target, { earlyMedia: false });
+      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1408,12 +1409,12 @@ describe("Session Class New", () => {
   describe("Early Media Enabled...", () => {
     beforeEach(async () => {
       target = bob.uri;
-      bob.ua.on("invite", (session: Invitation) => {
+      bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
-        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
       });
-      inviter = new Inviter(alice.ua, target, { earlyMedia: true });
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+      inviter = new Inviter(alice.userAgent, target, { earlyMedia: true });
+      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1677,16 +1678,16 @@ describe("Session Class New", () => {
     describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {
       beforeEach(async () => {
         target = bob.uri;
-        bob.ua.on("invite", (session: Invitation) => {
+        bob.userAgent.on("invite", (session: Invitation) => {
           invitation = session;
-          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
         });
-        bob2.ua.on("invite", (session: Invitation) => {
+        bob2.userAgent.on("invite", (session: Invitation) => {
           invitation2 = session;
-          invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.ua.getLogger("Bob2"));
+          invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.userAgent.getLogger("Bob2"));
         });
-        inviter = new Inviter(alice.ua, target);
-        inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+        inviter = new Inviter(alice.userAgent, target);
+        inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
         await soon();
       });
 
@@ -1696,16 +1697,16 @@ describe("Session Class New", () => {
     describe("Alice constructs a new INVITE client context targeting Bob without SDP offer", () => {
       beforeEach(async () => {
         target = bob.uri;
-        bob.ua.on("invite", (session: Invitation) => {
+        bob.userAgent.on("invite", (session: Invitation) => {
           invitation = session;
-          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
         });
-        bob2.ua.on("invite", (session: Invitation) => {
+        bob2.userAgent.on("invite", (session: Invitation) => {
           invitation2 = session;
-          invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.ua.getLogger("Bob2"));
+          invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.userAgent.getLogger("Bob2"));
         });
-        inviter = new Inviter(alice.ua, target, { inviteWithoutSdp: true });
-        inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+        inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
+        inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
         await soon();
       });
 
@@ -1716,16 +1717,16 @@ describe("Session Class New", () => {
   describe("In Dialog...", () => {
     beforeEach(async () => {
       target = bob.uri;
-      bob.ua.on("invite", (session: Invitation) => {
+      bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
-        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.ua.getLogger("Bob"));
+        invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
       });
-      inviter = new Inviter(alice.ua, target);
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.ua.getLogger("Alice"));
+      inviter = new Inviter(alice.userAgent, target);
+      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
-    describe("Alice invite()", () => {
+    describe("Alice invite() with SDP offer", () => {
       beforeEach(() => {
         resetSpies();
         return inviter.invite()
@@ -1743,7 +1744,7 @@ describe("Session Class New", () => {
           beforeEach(async () => {
             resetSpies();
             return inviter.invite()
-              .then(() => bob.transport.waitSent());
+              .then(() => alice.transport.waitSent()); // ACK
           });
 
           it("her ua should send INVITE, ACK", () => {
@@ -1763,7 +1764,67 @@ describe("Session Class New", () => {
             beforeEach(async () => {
               resetSpies();
               return inviter.invite()
-                .then(() => bob.transport.waitSent());
+                .then(() => alice.transport.waitSent()); // ACK
+            });
+
+            it("her ua should send INVITE, ACK", () => {
+              const spy = alice.transportSendSpy;
+              expect(spy).toHaveBeenCalledTimes(2);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+              expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+            });
+
+            it("her ua should receive 200", () => {
+              const spy = alice.transportReceiveSpy;
+              expect(spy).toHaveBeenCalledTimes(1);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            });
+          });
+        });
+      });
+    });
+
+    describe("Alice invite() without SDP offer", () => {
+      beforeEach(() => {
+        resetSpies();
+        return inviter.invite()
+          .then(() => bob.transport.waitSent());
+      });
+
+      describe("Bob accept()", () => {
+        beforeEach(() => {
+          resetSpies();
+          return invitation.accept()
+            .then(() => alice.transport.waitSent()); // ACK
+        });
+
+        describe("Alice hold()", () => {
+          beforeEach(async () => {
+            resetSpies();
+            const session: Session = inviter;
+            return session.invite({ withoutSdp: true })
+              .then(() => alice.transport.waitSent()); // ACK
+          });
+
+          it("her ua should send INVITE, ACK", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          });
+
+          describe("Alice unhold()", () => {
+            beforeEach(async () => {
+              resetSpies();
+              const session: Session = inviter;
+              return session.invite({ withoutSdp: true })
+                .then(() => alice.transport.waitSent()); // ACK
             });
 
             it("her ua should send INVITE, ACK", () => {

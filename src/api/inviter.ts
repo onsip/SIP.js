@@ -368,7 +368,7 @@ export class Inviter extends Session {
     this.userAgent.sessions[this.id] = this;
 
     // just send an INVITE with no sdp...
-    if (this.inviteWithoutSdp) {
+    if (options.withoutSdp || this.inviteWithoutSdp) {
       if (this.renderbody && this.rendertype) {
         this.request.body = { contentType: this.rendertype, body: this.renderbody };
       }

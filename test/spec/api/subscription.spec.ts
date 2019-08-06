@@ -69,8 +69,8 @@ describe("Subscription Class New", () => {
   describe("Alice constructs a new subscription targeting Bob", () => {
 
     beforeEach(() => {
-      subscription = subscriber = new Subscriber(alice.ua, target, event);
-      subscriptionEmitSpy = makeEventEmitterEmitSpy(subscriber, alice.ua.getLogger("Alice"));
+      subscription = subscriber = new Subscriber(alice.userAgent, target, event);
+      subscriptionEmitSpy = makeEventEmitterEmitSpy(subscriber, alice.userAgent.getLogger("Alice"));
     });
 
     it("the subscription should emit nothing", () => {
@@ -98,7 +98,7 @@ describe("Subscription Class New", () => {
       describe("Bob never responds to the request", () => {
         beforeEach(() => {
           resetSpies();
-          bob.ua.on("subscribe", (request) => {
+          bob.userAgent.on("subscribe", (request) => {
             return;
           });
         });
@@ -142,7 +142,7 @@ describe("Subscription Class New", () => {
       describe("Bob demands authentication for the reqeust", () => {
         beforeEach(async () => {
           resetSpies();
-          bob.ua.on("subscribe", (request) => {
+          bob.userAgent.on("subscribe", (request) => {
             // tslint:disable-next-line:max-line-length
             const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
             request.reject({ statusCode: 407, extraHeaders });
@@ -168,7 +168,7 @@ describe("Subscription Class New", () => {
       describe("Bob rejects the request", () => {
         beforeEach(async () => {
           resetSpies();
-          bob.ua.on("subscribe", (request) => {
+          bob.userAgent.on("subscribe", (request) => {
             request.reject();
           });
           await subscriptionEmitSpy.wait();
@@ -195,7 +195,7 @@ describe("Subscription Class New", () => {
 
         beforeEach(async () => {
           resetSpies();
-          bob.ua.on("subscribe", (request) => {
+          bob.userAgent.on("subscribe", (request) => {
             receivedEvent = request.message.parseHeader("Event").event;
             if (!receivedEvent || receivedEvent !== event) {
               request.reject({ statusCode: 489 });
@@ -218,10 +218,10 @@ describe("Subscription Class New", () => {
             // request.accept({ statusCode, toTag, extraHeaders });
 
             const dialogState = Dialog.initialDialogStateForUserAgentServer(request.message, toTag);
-            notifierDialog = new NotifierDialog(bob.ua.userAgentCore, dialogState);
+            notifierDialog = new NotifierDialog(bob.userAgent.userAgentCore, dialogState);
 
             extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
           });
@@ -248,7 +248,7 @@ describe("Subscription Class New", () => {
 
         beforeEach(async () => {
           resetSpies();
-          bob.ua.on("subscribe", (request) => {
+          bob.userAgent.on("subscribe", (request) => {
             receivedEvent = request.message.parseHeader("Event").event;
             if (!receivedEvent || receivedEvent !== event) {
               request.reject({ statusCode: 489 });
@@ -268,11 +268,11 @@ describe("Subscription Class New", () => {
             const extraHeaders = new Array<string>();
             extraHeaders.push(`Event: ${receivedEvent}`);
             extraHeaders.push(`Expires: ${receivedExpires}`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             request.accept({ statusCode, toTag, extraHeaders });
 
             const dialogState = Dialog.initialDialogStateForUserAgentServer(request.message, toTag);
-            notifierDialog = new NotifierDialog(bob.ua.userAgentCore, dialogState);
+            notifierDialog = new NotifierDialog(bob.userAgent.userAgentCore, dialogState);
             // FIXME: As we don't currently have a real notifiation dialog, hack in what we need for these test
             // TODO: Should just write a proper one
             const receiveRequestOriginal = notifierDialog.receiveRequest;
@@ -333,7 +333,7 @@ describe("Subscription Class New", () => {
             const extraHeaders = new Array<string>();
             extraHeaders.push(`Event: not${receivedEvent}`);
             extraHeaders.push(`Subscription-State: terminated`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
@@ -358,7 +358,7 @@ describe("Subscription Class New", () => {
             resetSpies();
             const extraHeaders = new Array<string>();
             extraHeaders.push(`Subscription-State: terminated`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
@@ -383,7 +383,7 @@ describe("Subscription Class New", () => {
             resetSpies();
             const extraHeaders = new Array<string>();
             extraHeaders.push(`Event: ${receivedEvent}`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
@@ -434,7 +434,7 @@ describe("Subscription Class New", () => {
             const extraHeaders = new Array<string>();
             extraHeaders.push(`Event: ${receivedEvent}`);
             extraHeaders.push(`Subscription-State: pending;expires=${receivedExpires}`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await subscriptionEmitSpy.wait();
@@ -475,7 +475,7 @@ describe("Subscription Class New", () => {
             const extraHeaders = new Array<string>();
             extraHeaders.push(`Event: ${receivedEvent}`);
             extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
-            extraHeaders.push(`Contact: ${bob.ua.contact.uri.toString()}`);
+            extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await subscriptionEmitSpy.wait();
