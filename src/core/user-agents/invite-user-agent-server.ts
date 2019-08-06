@@ -261,7 +261,8 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    * response is passed to the INVITE server transaction, which will deal
    * with its retransmissions.
    * https://tools.ietf.org/html/rfc3261#section-13.3.1.2
-   * @param options - Reject options bucket.
+   * @param contacts - Contacts to redirect to.
+   * @param options - Redirect options bucket.
    */
   public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
     return super.redirect(contacts, options);
