@@ -1,6 +1,7 @@
 import { Timers, URI } from "../../../src";
 import { Invitation, Inviter, Session, SessionState } from "../../../src/api";
 import { SessionState as SessionDialogState, SignalingState } from "../../../src/core";
+import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
@@ -59,8 +60,10 @@ describe("Session Class New", () => {
   let target: URI;
   let inviter: Inviter;
   let inviterEmitSpy: EventEmitterEmitSpy;
+  let inviterStateSpy: EmitterSpy<SessionState>;
   let invitation: Invitation;
   let invitationEmitSpy: EventEmitterEmitSpy;
+  let invitationStateSpy: EmitterSpy<SessionState>;
 
   function bobAccept(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean) {
 
@@ -750,6 +753,11 @@ describe("Session Class New", () => {
   }
 
   function inviteSuite(inviteWithoutSdp: boolean): void {
+    it("her state should not change", () => {
+      expect(inviter.state).toBe(SessionState.Initial);
+      expect(inviterStateSpy).not.toHaveBeenCalled();
+    });
+
     it("her ua should send nothing", () => {
       expect(alice.transportSendSpy).not.toHaveBeenCalled();
     });
@@ -792,23 +800,19 @@ describe("Session Class New", () => {
       }
 
       if (inviteWithoutSdp) {
-        it("her client context should emit 'cancel', 'progress', 'rejected', 'failed', 'terminated'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(5);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_CANCEL);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_FAILED);
-          expect(spy.calls.argsFor(4)).toEqual(EVENT_TERMINATED);
+        it("her session should transition 'establishing', 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Establishing);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Terminating);
+          expect(spy.calls.argsFor(2)[0]).toEqual(SessionState.Terminated);
         });
       } else {
-        it("her client context should emit 'sdh', 'cancel'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(4);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_CANCEL);
-          // expect(spy.calls.argsFor(2)).toEqual(EVENT_FAILED);
-          // expect(spy.calls.argsFor(3)).toEqual(EVENT_TERMINATED);
+        it("her session should transition 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminating);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Terminated);
         });
       }
     });
@@ -911,26 +915,18 @@ describe("Session Class New", () => {
           expect(spy.calls.argsFor(1)).toEqual(SIP_487);
         });
 
-        it("her context should emit 'cancel', 'rejected', 'failed', 'terminated'",
-          () => {
-            const spy = inviterEmitSpy;
-            expect(spy).toHaveBeenCalledTimes(4);
-            expect(spy.calls.argsFor(0)).toEqual(EVENT_CANCEL);
-            expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
-            expect(spy.calls.argsFor(2)).toEqual(EVENT_FAILED);
-            expect(spy.calls.argsFor(3)).toEqual(EVENT_TERMINATED);
-          }
-        );
+        it("her session should transition 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminating);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Terminated);
+        });
 
-        it("his context should emit 'sdh', 'cancel', 'rejected', 'failed', 'terminated'", () => {
-            const spy = invitationEmitSpy;
-            expect(spy).toHaveBeenCalledTimes(4);
-            expect(spy.calls.argsFor(0)).toEqual(EVENT_CANCEL);
-            expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
-            expect(spy.calls.argsFor(2)).toEqual(EVENT_FAILED);
-            expect(spy.calls.argsFor(3)).toEqual(EVENT_TERMINATED);
-          }
-        );
+        it("his session should transition 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
+        });
       });
 
       describe("Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
@@ -956,23 +952,18 @@ describe("Session Class New", () => {
           expect(spy.calls.argsFor(1)).toEqual(SIP_487);
         });
 
-        it("her context should emit 'cancel', 'rejected', 'failed', 'terminated'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(4);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_CANCEL);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_FAILED);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_TERMINATED);
+        it("her session should transition 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminating);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Terminated);
         });
 
-        it("his context should emit 'sdh', 'cancel', 'rejected', 'failed', 'terminated'", () => {
-          const spy = invitationEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(5);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_CANCEL);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_FAILED);
-          expect(spy.calls.argsFor(4)).toEqual(EVENT_TERMINATED);
+        it("his session should transition 'establishing', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Establishing);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Terminated);
         });
 
         it("his context should log an error regarding Bob accept() failure", async () => {
@@ -1023,23 +1014,19 @@ describe("Session Class New", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_200); // BYE
         });
 
-        it("her context should emit 'cancel', 'ack', 'bye', 'bye'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(4);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_CANCEL);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_ACK);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_BYE);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_BYE); // seems obviously broken
+        it("her session should transition 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminating);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Terminated);
         });
 
-        it("his context should emit 'sdh', 'accepted', 'confirmed', 'bye', 'terminated'", () => {
-          const spy = invitationEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(5);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_ACCEPTED_ICS);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_CONFIRMED);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_BYE);
-          expect(spy.calls.argsFor(4)).toEqual(EVENT_TERMINATED);
+        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Establishing);
+          expect(spy.calls.argsFor(1)[0]).toEqual(SessionState.Established);
+          expect(spy.calls.argsFor(2)[0]).toEqual(SessionState.Terminated);
         });
       });
 
@@ -1261,6 +1248,8 @@ describe("Session Class New", () => {
     bob.transportSendSpy.calls.reset();
     inviterEmitSpy.calls.reset();
     if (invitationEmitSpy) { invitationEmitSpy.calls.reset(); }
+    inviterStateSpy.calls.reset();
+    if (invitationStateSpy) { invitationStateSpy.calls.reset(); }
   }
 
   beforeEach(() => {
@@ -1273,8 +1262,8 @@ describe("Session Class New", () => {
 
   afterEach(() => {
     jasmine.clock().uninstall();
-    // alice.userAgent.stop();
-    // bob.userAgent.stop();
+    alice.userAgent.stop();
+    bob.userAgent.stop();
   });
 
   describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {
@@ -1283,9 +1272,11 @@ describe("Session Class New", () => {
       bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
         invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+        invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
       });
       inviter = new Inviter(alice.userAgent, target);
       inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+      inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1298,9 +1289,11 @@ describe("Session Class New", () => {
       bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
         invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+        invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
       });
       inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
       inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+      inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
