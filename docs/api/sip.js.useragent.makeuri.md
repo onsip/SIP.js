@@ -4,7 +4,7 @@
 
 ## UserAgent.makeURI() method
 
-Create a URI object from a string.
+Create a URI instance from a string.
 
 <b>Signature:</b>
 

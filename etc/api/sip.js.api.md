@@ -181,6 +181,7 @@ export interface InviterInviteOptions {
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     // (undocumented)
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    withoutSdp?: boolean;
 }
 
 // @public
@@ -688,6 +689,7 @@ export interface SessionInviteOptions {
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     // (undocumented)
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    withoutSdp?: boolean;
 }
 
 // @public
@@ -878,11 +880,13 @@ export class UserAgent extends EventEmitter {
     makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
     static makeURI(uri: string): URI | undefined;
     // @internal (undocumented)
+    on(name: "invite", callback: (session: Invitation) => void): this;
+    // @internal (undocumented)
     on(name: "outOfDialogReferRequested", callback: (context: any) => void): this;
     // @internal (undocumented)
     on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
     // @internal (undocumented)
-    on(name: "registered", callback: (response?: any) => void): this;
+    on(name: "message", callback: (message: any) => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingSubscribeRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -890,9 +894,7 @@ export class UserAgent extends EventEmitter {
     // @internal (undocumented)
     on(name: "notify", callback: (request: any) => void): this;
     // @internal (undocumented)
-    on(name: "message", callback: (message: any) => void): this;
-    // @internal (undocumented)
-    on(name: "invite", callback: (session: Invitation) => void): this;
+    on(name: "registered", callback: (response?: any) => void): this;
     // @internal (undocumented)
     publishers: {
         [id: string]: Publisher;

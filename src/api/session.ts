@@ -471,72 +471,116 @@ export abstract class Session extends EventEmitter {
       throw new Error("Session description handler undefined.");
     }
 
+    this.pendingReinvite = true;
+
+    const delegate: OutgoingInviteRequestDelegate = {
+      onAccept: (response): void => {
+        // Our peer accepted re-INVITE, so get description from body and set remote offer/answer...
+        const body = getBody(response.message);
+        if (!body) {
+          this.logger.error("Received 2xx final response to re-invite without a description");
+          const error = new Error("Invalid response to a re-invite.");
+          this.emit("reinviteFailed", this);
+          this.emit("renegotiationError", error);
+          this.pendingReinvite = false;
+          throw error;
+        }
+
+        if (options.withoutSdp) {
+          const answerOptions = {
+            sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
+            sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
+          };
+          // INVITE without SDP, so set remote offer and send answer in ACk
+          this.setOfferAndGetAnswer(body, answerOptions)
+            .then((answerBody) => {
+              const request = response.ack({ body: answerBody });
+              this.emit("ack", request.message);
+              this.emit("reinviteAccepted", this);
+              this.pendingReinvite = false;
+              if (options.requestDelegate && options.requestDelegate.onAccept) {
+                options.requestDelegate.onAccept(response);
+              }
+            })
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              this.emit("reinviteFailed", this);
+              this.emit("renegotiationError", error);
+              this.pendingReinvite = false;
+              throw error;
+            });
+        } else {
+          // INVITE with SDP, so set remote answer and send ACk
+          const answerOptions = {
+            sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
+            sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+          };
+          this.setAnswer(body, answerOptions)
+            .then(() => {
+              const request = response.ack();
+              this.emit("ack", request.message);
+              this.emit("reinviteAccepted", this);
+              this.pendingReinvite = false;
+              if (options.requestDelegate && options.requestDelegate.onAccept) {
+                options.requestDelegate.onAccept(response);
+              }
+            })
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              this.emit("reinviteFailed", this);
+              this.emit("renegotiationError", error);
+              this.pendingReinvite = false;
+              throw error;
+            });
+        }
+      },
+      onProgress: (response): void => {
+        return;
+      },
+      onRedirect: (response): void => {
+        return;
+      },
+      onReject: (response): void => {
+        this.logger.error("Received a non-2xx final response to re-invite");
+        const error = new Error("Invalid response to a re-invite.");
+        this.emit("reinviteFailed", this);
+        this.emit("renegotiationError", error);
+        this.pendingReinvite = false;
+        if (options.requestDelegate && options.requestDelegate.onReject) {
+          options.requestDelegate.onReject(response);
+        }
+      },
+      onTrying: (response): void => {
+        return;
+      }
+    };
+
+    const requestOptions = options.requestOptions || {};
+    requestOptions.extraHeaders = (requestOptions.extraHeaders || []).slice();
+    requestOptions.extraHeaders.push("Allow: " + AllowedMethods.toString());
+    requestOptions.extraHeaders.push("Contact: " + this.contact);
+
+    // just send an INVITE with no sdp...
+    if (options.withoutSdp) {
+      if (!this.dialog) {
+        this.pendingReinvite = false;
+        throw new Error("Dialog undefined.");
+      }
+      return Promise.resolve(this.dialog.invite(delegate, requestOptions));
+    }
+
+    // get an offer and send it in an INVITE
     const offerOptions = {
       sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
     };
-    this.pendingReinvite = true;
-
     return this.getOffer(offerOptions)
       .then((offerBody) => {
         if (!this.dialog) {
           this.pendingReinvite = false;
           throw new Error("Dialog undefined.");
         }
-
-        const delegate: OutgoingInviteRequestDelegate = {
-          onAccept: (response): void => {
-            // Our peer accepted re-INVITE, so get description from body and set remote answer...
-
-            const request = response.ack();
-            this.emit("ack", request.message);
-            this.emit("reinviteAccepted", this);
-            this.pendingReinvite = false;
-
-            const answerBody = getBody(response.message);
-            if (!answerBody) {
-              this.logger.error("Received 2xx final response to re-invite without a description");
-              const error = new Error("Invalid response to a re-invite.");
-              this.emit("reinviteFailed", this);
-              this.emit("renegotiationError", error);
-              throw error;
-            }
-            const answerOptions = {
-              sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-              sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
-            };
-            this.setAnswer(answerBody, answerOptions);
-            if (options.requestDelegate && options.requestDelegate.onAccept) {
-              options.requestDelegate.onAccept(response);
-            }
-          },
-          onProgress: (response): void => {
-            return;
-          },
-          onRedirect: (response): void => {
-            return;
-          },
-          onReject: (response): void => {
-            this.pendingReinvite = false;
-            this.logger.error("Received a non-2xx final response to re-invite");
-            const error = new Error("Invalid response to a re-invite.");
-            this.emit("reinviteFailed", this);
-            this.emit("renegotiationError", error);
-            if (options.requestDelegate && options.requestDelegate.onReject) {
-              options.requestDelegate.onReject(response);
-            }
-          },
-          onTrying: (response): void => {
-            return;
-          }
-        };
-
-        const requestOptions = options.requestOptions || {};
-        requestOptions.extraHeaders = (requestOptions.extraHeaders || []).slice();
-        requestOptions.extraHeaders.push("Allow: " + AllowedMethods.toString());
-        requestOptions.extraHeaders.push("Contact: " + this.contact);
         requestOptions.body = offerBody;
-
         return this.dialog.invite(delegate, requestOptions);
       })
       .catch((error: Error) => {
@@ -865,6 +909,9 @@ export abstract class Session extends EventEmitter {
     // TODO: would be nice to have core track and set the Contact header,
     // but currently the session which is setting it is holding onto it.
     const extraHeaders = ["Contact: " + this.contact];
+    // FIXME: TODO: These are the options/modifiers set on the initial INVITE and
+    // it seems just plain broken to re-use them on a re-invite.
+    // This behavior was ported from legacy code and the issue punted down the road.
     const options = {
       sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
@@ -1111,8 +1158,6 @@ export abstract class Session extends EventEmitter {
     switch (this.dialog.signalingState) {
       case SignalingState.Initial:
         return this.getOffer(options);
-      case SignalingState.Stable:
-        return Promise.resolve(undefined);
       case SignalingState.HaveLocalOffer:
         // o  Once the UAS has sent or received an answer to the initial
         // offer, it MUST NOT generate subsequent offers in any responses
@@ -1126,6 +1171,18 @@ export abstract class Session extends EventEmitter {
           throw new Error(`Session offer undefined in signaling state ${this.dialog.signalingState}.`);
         }
         return this.setOfferAndGetAnswer(this.dialog.offer, options);
+      case SignalingState.Stable:
+        // o  Once the UAS has sent or received an answer to the initial
+        // offer, it MUST NOT generate subsequent offers in any responses
+        // to the initial INVITE.  This means that a UAS based on this
+        // specification alone can never generate subsequent offers until
+        // completion of the initial transaction.
+        // https://tools.ietf.org/html/rfc3261#section-13.2.1
+        if (this.state !== SessionState.Established) {
+          return Promise.resolve(undefined);
+        }
+        // In dialog INVITE without offer, get an offer for the response.
+        return this.getOffer(options);
       case SignalingState.Closed:
         throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
       default:
