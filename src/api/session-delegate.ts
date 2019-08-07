@@ -38,6 +38,11 @@ export interface SessionDelegate {
   // - not clear how best to handle error responding to a reinvite
 
   /**
+   * Called upon receiving an incoming in dialog INVITE request.
+   */
+  onReinvite?(): boolean;
+
+  /**
    * Called upon successfully accepting a received in dialog INVITE request.
    * @internal
    */

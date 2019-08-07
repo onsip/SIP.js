@@ -389,8 +389,8 @@ export class Inviter extends Session {
 
         // TODO: Review error handling...
         // There are some race conditions which can occur, all of which will cause stateTransition() to throw.
-        //  - invite() can be called (a)synchronously after invite() is called causing the second call to invite() to fail
-        //  - cancel() or terminate()) can be called (a)synchronously after invite() causing invite() to fail
+        //  - invite() can be called (a)synchronously after invite() is called (second call to invite() fails)
+        //  - cancel() or terminate()) can be called (a)synchronously after invite() (invite() fails)
         // The caller should avoid the first case, but the second one is common.
         // For now we are just letting the state transition fail in all cases.
 

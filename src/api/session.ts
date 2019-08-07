@@ -546,8 +546,17 @@ export abstract class Session extends EventEmitter {
         this.emit("reinviteFailed", this);
         this.emit("renegotiationError", error);
         this.pendingReinvite = false;
-        if (options.requestDelegate && options.requestDelegate.onReject) {
-          options.requestDelegate.onReject(response);
+        if (options.withoutSdp) {
+          if (options.requestDelegate && options.requestDelegate.onReject) {
+            options.requestDelegate.onReject(response);
+          }
+        } else {
+          this.rollbackOffer()
+            .then(() => {
+              if (options.requestDelegate && options.requestDelegate.onReject) {
+                options.requestDelegate.onReject(response);
+              }
+            });
         }
       },
       onTrying: (response): void => {
@@ -885,7 +894,7 @@ export abstract class Session extends EventEmitter {
 
   /**
    * Handle in dialog INVITE request.
-   * Unless an `onInviteFailure` delegate is available, the session is terminated on failure.
+   * Unless an `onReinviteFailure` delegate is available, the session is terminated on failure.
    * @internal
    */
   protected onInviteRequest(request: IncomingInviteRequest): void {
@@ -893,6 +902,15 @@ export abstract class Session extends EventEmitter {
     if (this.state !== SessionState.Established) {
       this.logger.error(`INVITE received while in state ${this.state}, dropping request`);
       return;
+    }
+
+    // FIXME: This is currently a hack for testing.
+    // See SessionDelegate more on outstanding issues.
+    if (this.delegate && this.delegate.onReinvite) {
+      if (!this.delegate.onReinvite()) {
+        request.reject({ statusCode: 488 });
+        return;
+      }
     }
 
     // Handle P-Asserted-Identity
@@ -1203,6 +1221,21 @@ export abstract class Session extends EventEmitter {
     const sdhModifiers = options.sessionDescriptionHandlerModifiers;
     return sdh.getDescription(sdhOptions, sdhModifiers)
       .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
+      .catch((error: any) => { // don't trust SDH to reject with Error
+        throw (error instanceof Error ? error : new Error(error));
+      });
+  }
+
+  /**
+   * Rollback local/remote offer.
+   * @internal
+   */
+  protected rollbackOffer(): Promise<void> {
+    const sdh = this.setupSessionDescriptionHandler();
+    if (!sdh.rollbackDescription) {
+      return Promise.resolve();
+    }
+    return sdh.rollbackDescription()
       .catch((error: any) => { // don't trust SDH to reject with Error
         throw (error instanceof Error ? error : new Error(error));
       });
