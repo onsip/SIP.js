@@ -786,6 +786,8 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
     constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     accept(options?: ResponseOptions): OutgoingResponseWithSession;
     progress(options?: ResponseOptions): OutgoingResponseWithSession;
+    redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
+    reject(options?: ResponseOptions): OutgoingResponse;
 }
 
 // @public
@@ -895,6 +897,7 @@ export class SessionDialog extends Dialog implements Session {
     // (undocumented)
     readonly sessionState: SessionState;
     readonly signalingState: SignalingState;
+    signalingStateRollback(): void;
     signalingStateTransition(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): void;
     }
 

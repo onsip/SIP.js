@@ -599,6 +599,8 @@ export abstract class Session extends EventEmitter {
     protected rendertype: string | undefined;
     // @internal (undocumented)
     replacee: Session | undefined;
+    // @internal
+    protected rollbackOffer(): Promise<void>;
     readonly sessionDescriptionHandler: SessionDescriptionHandler | undefined;
     // @internal (undocumented)
     protected sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
@@ -645,6 +647,7 @@ export interface SessionDelegate {
     onInfo?(info: Info): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
+    onReinvite?(): boolean;
     // @internal
     onReinviteFailure?(error: Error): void;
     // @internal
@@ -657,6 +660,7 @@ export interface SessionDescriptionHandler {
     getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<BodyAndContentType>;
     hasDescription(contentType: string): boolean;
     holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
+    rollbackDescription?(): Promise<void>;
     sendDtmf(tones: string, options?: any): boolean;
     setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<void>;
 }

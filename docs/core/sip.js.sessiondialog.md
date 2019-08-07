@@ -46,5 +46,6 @@ export declare class SessionDialog extends Dialog implements Session
 |  [reConfirm()](./sip.js.sessiondialog.reconfirm.md) |  | Re-confirm the dialog. Only matters if handling re-INVITE request. |
 |  [refer(delegate, options)](./sip.js.sessiondialog.refer.md) |  | REFER is a SIP request and is constructed as defined in \[1\]. A REFER request MUST contain exactly one Refer-To header field value. https://tools.ietf.org/html/rfc3515\#section-2.4.1 |
 |  [reliableSequenceGuard(message)](./sip.js.sessiondialog.reliablesequenceguard.md) |  |  |
+|  [signalingStateRollback()](./sip.js.sessiondialog.signalingstaterollback.md) |  | If not in a stable signaling state, rollback to prior stable signaling state. |
 |  [signalingStateTransition(message)](./sip.js.sessiondialog.signalingstatetransition.md) |  | Update the signaling state of the dialog. |
 
