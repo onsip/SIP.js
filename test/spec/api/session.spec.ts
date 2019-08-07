@@ -18,6 +18,7 @@ const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
 const SIP_408 = [jasmine.stringMatching(/^SIP\/2.0 408/)];
 const SIP_480 = [jasmine.stringMatching(/^SIP\/2.0 480/)];
 const SIP_487 = [jasmine.stringMatching(/^SIP\/2.0 487/)];
+const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
 const EVENT_ACCEPTED_ICC = ["accepted", jasmine.any(Object), jasmine.any(String)];
 const EVENT_ACCEPTED_ICS = ["accepted", jasmine.any(String), jasmine.any(String)];
@@ -1266,7 +1267,7 @@ describe("Session Class New", () => {
     bob.userAgent.stop();
   });
 
-  describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {
+  describe("Alice constructs a new INVITE targeting Bob with SDP offer", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.on("invite", (session: Invitation) => {
@@ -1283,7 +1284,7 @@ describe("Session Class New", () => {
     inviteSuite(false);
   });
 
-  describe("Alice constructs a new INVITE client context targeting Bob without SDP offer", () => {
+  describe("Alice constructs a new INVITE targeting Bob without SDP offer", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.on("invite", (session: Invitation) => {
@@ -1306,9 +1307,11 @@ describe("Session Class New", () => {
       bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
         invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+        invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
       });
       inviter = new Inviter(alice.userAgent, target, { earlyMedia: false });
       inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+      inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1405,9 +1408,11 @@ describe("Session Class New", () => {
       bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
         invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+        invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
       });
       inviter = new Inviter(alice.userAgent, target, { earlyMedia: true });
       inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+      inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -1502,6 +1507,7 @@ describe("Session Class New", () => {
     let bob2: UserFake;
     let invitation2: Invitation;
     let invitationEmitSpy2: EventEmitterEmitSpy;
+    let invitationStateSpy2: EmitterSpy<SessionState>;
 
     function bobsAccept(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean) {
       const SIP_ACK_OR_BYE = [jasmine.stringMatching(/^ACK|^BYE/)];
@@ -1661,6 +1667,7 @@ describe("Session Class New", () => {
       bob2.transportReceiveSpy.calls.reset();
       bob2.transportSendSpy.calls.reset();
       if (invitationEmitSpy2) { invitationEmitSpy2.calls.reset(); }
+      if (invitationStateSpy2) { invitationStateSpy2.calls.reset(); }
     }
 
     beforeEach(async () => {
@@ -1674,13 +1681,16 @@ describe("Session Class New", () => {
         bob.userAgent.on("invite", (session: Invitation) => {
           invitation = session;
           invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+          invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         });
         bob2.userAgent.on("invite", (session: Invitation) => {
           invitation2 = session;
           invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.userAgent.getLogger("Bob2"));
+          invitationStateSpy2 = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob2"));
         });
         inviter = new Inviter(alice.userAgent, target);
         inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+        inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
         await soon();
       });
 
@@ -1693,13 +1703,16 @@ describe("Session Class New", () => {
         bob.userAgent.on("invite", (session: Invitation) => {
           invitation = session;
           invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+          invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         });
         bob2.userAgent.on("invite", (session: Invitation) => {
           invitation2 = session;
           invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.userAgent.getLogger("Bob2"));
+          invitationStateSpy2 = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob2"));
         });
         inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
         inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+        inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
         await soon();
       });
 
@@ -1707,134 +1720,136 @@ describe("Session Class New", () => {
     });
   });
 
+  function reinviteAccepted(withoutSdp: boolean): void {
+    beforeEach(async () => {
+      resetSpies();
+      invitation.delegate = undefined; // FIXME: HACK
+      return inviter.invite({ withoutSdp })
+        .then(() => alice.transport.waitSent()); // ACK
+    });
+
+    it("her ua should send INVITE, ACK", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+      expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+    });
+
+    it("her ua should receive 200", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+    });
+
+    it("her session should be stable", () => {
+      if (!inviter.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+    });
+
+    it("his session should be stable", () => {
+      if (!invitation.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(invitation.dialog.signalingState).toEqual(SignalingState.Stable);
+    });
+  }
+
+  function reinviteRejected(withoutSdp: boolean): void {
+    beforeEach(async () => {
+      resetSpies();
+      invitation.delegate = { onReinvite: () => false }; // FIXME: HACK
+      return inviter.invite({ withoutSdp })
+        .then(() => alice.transport.waitSent()); // ACK
+    });
+    it("her ua should send INVITE, ACK", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+      expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+    });
+
+    it("her ua should receive 488", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_488);
+    });
+
+    it("her session should be stable", () => {
+      if (!inviter.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+    });
+
+    it("his session should be stable", () => {
+      if (!invitation.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(invitation.dialog.signalingState).toEqual(SignalingState.Stable);
+    });
+  }
+
+  function reinviteSuite(withoutSdp: boolean): void {
+    describe("Alice invite()", () => {
+      beforeEach(() => {
+        resetSpies();
+        return inviter.invite()
+          .then(() => bob.transport.waitSent());
+      });
+
+      describe("Bob accept()", () => {
+        beforeEach(() => {
+          resetSpies();
+          invitation.delegate = undefined; // FIXME: HACK
+          return invitation.accept()
+            .then(() => alice.transport.waitSent()); // ACK
+        });
+
+        describe("Alice invite() accepted", () => {
+          reinviteAccepted(withoutSdp);
+
+          describe("Alice invite() accepted", () => {
+            reinviteAccepted(withoutSdp);
+          });
+        });
+
+        describe("Alice invite() rejected", () => {
+          reinviteRejected(withoutSdp);
+
+          describe("Alice invite() accepted", () => {
+            reinviteAccepted(withoutSdp);
+          });
+        });
+      });
+    });
+  }
+
   describe("In Dialog...", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.on("invite", (session: Invitation) => {
         invitation = session;
         invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
+        invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
       });
       inviter = new Inviter(alice.userAgent, target);
       inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
+      inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
-    describe("Alice invite() with SDP offer", () => {
-      beforeEach(() => {
-        resetSpies();
-        return inviter.invite()
-          .then(() => bob.transport.waitSent());
-      });
-
-      describe("Bob accept()", () => {
-        beforeEach(() => {
-          resetSpies();
-          return invitation.accept()
-            .then(() => alice.transport.waitSent()); // ACK
-        });
-
-        describe("Alice hold()", () => {
-          beforeEach(async () => {
-            resetSpies();
-            return inviter.invite()
-              .then(() => alice.transport.waitSent()); // ACK
-          });
-
-          it("her ua should send INVITE, ACK", () => {
-            const spy = alice.transportSendSpy;
-            expect(spy).toHaveBeenCalledTimes(2);
-            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-          });
-
-          it("her ua should receive 200", () => {
-            const spy = alice.transportReceiveSpy;
-            expect(spy).toHaveBeenCalledTimes(1);
-            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-          });
-
-          describe("Alice unhold()", () => {
-            beforeEach(async () => {
-              resetSpies();
-              return inviter.invite()
-                .then(() => alice.transport.waitSent()); // ACK
-            });
-
-            it("her ua should send INVITE, ACK", () => {
-              const spy = alice.transportSendSpy;
-              expect(spy).toHaveBeenCalledTimes(2);
-              expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-              expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-            });
-
-            it("her ua should receive 200", () => {
-              const spy = alice.transportReceiveSpy;
-              expect(spy).toHaveBeenCalledTimes(1);
-              expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-            });
-          });
-        });
-      });
+    describe("Re-INVITE with SDP...", () => {
+      reinviteSuite(false);
     });
 
-    describe("Alice invite() without SDP offer", () => {
-      beforeEach(() => {
-        resetSpies();
-        return inviter.invite()
-          .then(() => bob.transport.waitSent());
-      });
-
-      describe("Bob accept()", () => {
-        beforeEach(() => {
-          resetSpies();
-          return invitation.accept()
-            .then(() => alice.transport.waitSent()); // ACK
-        });
-
-        describe("Alice hold()", () => {
-          beforeEach(async () => {
-            resetSpies();
-            const session: Session = inviter;
-            return session.invite({ withoutSdp: true })
-              .then(() => alice.transport.waitSent()); // ACK
-          });
-
-          it("her ua should send INVITE, ACK", () => {
-            const spy = alice.transportSendSpy;
-            expect(spy).toHaveBeenCalledTimes(2);
-            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-          });
-
-          it("her ua should receive 200", () => {
-            const spy = alice.transportReceiveSpy;
-            expect(spy).toHaveBeenCalledTimes(1);
-            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-          });
-
-          describe("Alice unhold()", () => {
-            beforeEach(async () => {
-              resetSpies();
-              const session: Session = inviter;
-              return session.invite({ withoutSdp: true })
-                .then(() => alice.transport.waitSent()); // ACK
-            });
-
-            it("her ua should send INVITE, ACK", () => {
-              const spy = alice.transportSendSpy;
-              expect(spy).toHaveBeenCalledTimes(2);
-              expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-              expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-            });
-
-            it("her ua should receive 200", () => {
-              const spy = alice.transportReceiveSpy;
-              expect(spy).toHaveBeenCalledTimes(1);
-              expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-            });
-          });
-        });
-      });
+    describe("Re-INVITE without SDP...", () => {
+      reinviteSuite(true);
     });
   });
 });
