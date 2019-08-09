@@ -690,21 +690,6 @@ export class Inviter extends Session {
     return this.outgoingInviteRequest;
   }
 
-  private ackAndBye(
-    inviteResponse: AckableIncomingResponseWithSession,
-    statusCode?: number,
-    reasonPhrase?: string
-  ): void {
-    const extraHeaders: Array<string> = [];
-    if (statusCode) {
-      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
-    }
-    const outgoingAckRequest = inviteResponse.ack();
-    const outgoingByeRequest = inviteResponse.session.bye(undefined, { extraHeaders });
-    this.emit("ack", outgoingAckRequest.message);
-    this.emit("bye", outgoingByeRequest.message);
-  }
-
   private disposeEarlyMedia(): void {
     this.earlyMediaSessionDescriptionHandlers.forEach((sessionDescriptionHandler) => {
       sessionDescriptionHandler.close();

@@ -1741,7 +1741,7 @@ describe("Session Class New", () => {
       expect(spy.calls.argsFor(0)).toEqual(SIP_200);
     });
 
-    it("her session should be stable", () => {
+    it("her signaling should be stable", () => {
       if (!inviter.dialog) {
         fail("Session dialog undefined");
         return;
@@ -1749,7 +1749,7 @@ describe("Session Class New", () => {
       expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
     });
 
-    it("his session should be stable", () => {
+    it("his signaling should be stable", () => {
       if (!invitation.dialog) {
         fail("Session dialog undefined");
         return;
@@ -1758,10 +1758,66 @@ describe("Session Class New", () => {
     });
   }
 
+  function reinviteAcceptedWithoutDescription(withoutSdp: boolean): void {
+    beforeEach(async () => {
+      resetSpies();
+      invitation.delegate = { onReinviteTest: () => "acceptWithoutDescription" };
+      const session: Session = inviter;
+      return session.invite({ withoutSdp })
+        .then(() => alice.transport.waitSent()); // ACK
+    });
+    it("her ua should send INVITE, ACK, BYE", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(3);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+      expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+      expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+    });
+
+    it("her ua should receive 200", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+    });
+
+    it("her signaling should be closed", () => {
+      if (!inviter.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(inviter.dialog.signalingState).toEqual(SignalingState.Closed);
+    });
+
+    it("his signaling should be closed", () => {
+      if (!invitation.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(invitation.dialog.signalingState).toEqual(SignalingState.Closed);
+    });
+
+    it("her state should transition 'terminated'", () => {
+      const spy = inviterStateSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
+    });
+
+    it("his state should transition 'terminated'", () => {
+      const spy = invitationStateSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
+    });
+
+    it("her session should be failed", () => {
+      expect(inviter.isFailed).toBe(true);
+    });
+  }
+
   function reinviteRejected(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      invitation.delegate = { onReinvite: () => false }; // FIXME: HACK
+      invitation.delegate = { onReinviteTest: () => "reject488" }; // FIXME: HACK
       return inviter.invite({ withoutSdp })
         .then(() => alice.transport.waitSent()); // ACK
     });
@@ -1778,7 +1834,7 @@ describe("Session Class New", () => {
       expect(spy.calls.argsFor(0)).toEqual(SIP_488);
     });
 
-    it("her session should be stable", () => {
+    it("her signaling should be stable", () => {
       if (!inviter.dialog) {
         fail("Session dialog undefined");
         return;
@@ -1786,7 +1842,7 @@ describe("Session Class New", () => {
       expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
     });
 
-    it("his session should be stable", () => {
+    it("his signaling should be stable", () => {
       if (!invitation.dialog) {
         fail("Session dialog undefined");
         return;
@@ -1811,12 +1867,24 @@ describe("Session Class New", () => {
             .then(() => alice.transport.waitSent()); // ACK
         });
 
+        it("her state should be `established`", () => {
+          expect(inviter.state).toBe(SessionState.Established);
+        });
+
+        it("his state should be `established`", () => {
+          expect(invitation.state).toBe(SessionState.Established);
+        });
+
         describe("Alice invite() accepted", () => {
           reinviteAccepted(withoutSdp);
 
           describe("Alice invite() accepted", () => {
             reinviteAccepted(withoutSdp);
           });
+        });
+
+        describe("Alice invite() accepted without description", () => {
+          reinviteAcceptedWithoutDescription(withoutSdp);
         });
 
         describe("Alice invite() rejected", () => {

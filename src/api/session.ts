@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 
 import { C } from "../Constants";
 import {
+  AckableIncomingResponseWithSession,
   Body,
   getBody,
   Grammar,
@@ -122,6 +123,10 @@ export abstract class Session extends EventEmitter {
   /** DEPRECATED: Session status */
   /** @internal */
   public status: SessionStatus =  SessionStatus.STATUS_NULL;
+
+  /** True if an error caused session termination. */
+  /** @internal */
+  public isFailed: boolean = false;
 
   /** @internal */
   protected earlySdp: string | undefined; // FIXME: Needs review. Appears to be unused.
@@ -475,39 +480,49 @@ export abstract class Session extends EventEmitter {
 
     const delegate: OutgoingInviteRequestDelegate = {
       onAccept: (response): void => {
-        // Our peer accepted re-INVITE, so get description from body and set remote offer/answer...
+        // A re-INVITE transaction has an offer/answer [RFC3264] exchange
+        // associated with it.  The UAC (User Agent Client) generating a given
+        // re-INVITE can act as the offerer or as the answerer.  A UAC willing
+        // to act as the offerer includes an offer in the re-INVITE.  The UAS
+        // (User Agent Server) then provides an answer in a response to the
+        // re-INVITE.  A UAC willing to act as answerer does not include an
+        // offer in the re-INVITE.  The UAS then provides an offer in a response
+        // to the re-INVITE becoming, thus, the offerer.
+        // https://tools.ietf.org/html/rfc6141#section-1
         const body = getBody(response.message);
         if (!body) {
-          this.logger.error("Received 2xx final response to re-invite without a description");
-          const error = new Error("Invalid response to a re-invite.");
-          this.emit("reinviteFailed", this);
-          this.emit("renegotiationError", error);
+          this.logger.error("Received 2xx response to re-invite without a session descripton.");
+          this.ackAndBye(response, 400, "Missing session description");
+          this.stateTransition(SessionState.Terminated);
+          this.isFailed = true;
           this.pendingReinvite = false;
-          throw error;
+          return;
         }
 
         if (options.withoutSdp) {
+          // INVITE without SDP, so set remote offer and send answer in ACK
           const answerOptions = {
             sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
             sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
           };
-          // INVITE without SDP, so set remote offer and send answer in ACk
+          // FIXME: If setOfferAndGetAnswer() rejects,
           this.setOfferAndGetAnswer(body, answerOptions)
             .then((answerBody) => {
               const request = response.ack({ body: answerBody });
               this.emit("ack", request.message);
               this.emit("reinviteAccepted", this);
               this.pendingReinvite = false;
-              if (options.requestDelegate && options.requestDelegate.onAccept) {
-                options.requestDelegate.onAccept(response);
-              }
             })
             .catch((error: Error) => {
               this.logger.error(error.message);
               this.emit("reinviteFailed", this);
               this.emit("renegotiationError", error);
               this.pendingReinvite = false;
-              throw error;
+            })
+            .then(() => {
+              if (options.requestDelegate && options.requestDelegate.onAccept) {
+                options.requestDelegate.onAccept(response);
+              }
             });
         } else {
           // INVITE with SDP, so set remote answer and send ACk
@@ -771,6 +786,30 @@ export abstract class Session extends EventEmitter {
   }
 
   /**
+   * Send ACK and then BYE. There are unrecoverable errors which can occur
+   * while handling in-dialog INVITE responses and when they occur we ACK
+   * the response and terminate the session.
+   * @param inviteResponse The response causing the error.
+   * @param statusCode Status code for he reason phrase.
+   * @param reasonPhrase Reason phrase for the BYE.
+   * @internal
+   */
+  protected ackAndBye(
+    inviteResponse: AckableIncomingResponseWithSession,
+    statusCode?: number,
+    reasonPhrase?: string
+  ): void {
+    const extraHeaders: Array<string> = [];
+    if (statusCode) {
+      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
+    }
+    const outgoingAckRequest = inviteResponse.ack();
+    const outgoingByeRequest = inviteResponse.session.bye(undefined, { extraHeaders });
+    this.emit("ack", outgoingAckRequest.message);
+    this.emit("bye", outgoingByeRequest.message);
+  }
+
+  /**
    * Handle in dialog ACK request.
    * @internal
    */
@@ -904,10 +943,18 @@ export abstract class Session extends EventEmitter {
       return;
     }
 
-    // FIXME: This is currently a hack for testing.
-    // See SessionDelegate more on outstanding issues.
-    if (this.delegate && this.delegate.onReinvite) {
-      if (!this.delegate.onReinvite()) {
+    // TODO: would be nice to have core track and set the Contact header,
+    // but currently the session which is setting it is holding onto it.
+    const extraHeaders = ["Contact: " + this.contact];
+
+    // Check testing hook
+    if (this.delegate && this.delegate.onReinviteTest) {
+      const test = this.delegate.onReinviteTest();
+      if (test === "acceptWithoutDescription") {
+        request.accept({ statusCode: 200, extraHeaders });
+        return;
+      }
+      if (test === "reject488") {
         request.reject({ statusCode: 488 });
         return;
       }
@@ -924,9 +971,6 @@ export abstract class Session extends EventEmitter {
 
     this.emit("reinvite", this, request.message);
 
-    // TODO: would be nice to have core track and set the Contact header,
-    // but currently the session which is setting it is holding onto it.
-    const extraHeaders = ["Contact: " + this.contact];
     // FIXME: TODO: These are the options/modifiers set on the initial INVITE and
     // it seems just plain broken to re-use them on a re-invite.
     // This behavior was ported from legacy code and the issue punted down the road.
