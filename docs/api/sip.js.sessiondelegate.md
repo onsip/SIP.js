@@ -17,7 +17,7 @@ export interface SessionDelegate
 |  Method | Description |
 |  --- | --- |
 |  [onInfo(info)](./sip.js.sessiondelegate.oninfo.md) | Called upon receiving an incoming in dialog INFO request. |
+|  [onInvite(request, response, statusCode)](./sip.js.sessiondelegate.oninvite.md) | Called upon receiving an incoming in dialog INVITE request. |
 |  [onNotify(notification)](./sip.js.sessiondelegate.onnotify.md) | Called upon receiving an incoming in dialog NOTIFY request. |
 |  [onRefer(referral)](./sip.js.sessiondelegate.onrefer.md) | Called upon receiving an incoming in dialog REFER request. |
-|  [onReinvite()](./sip.js.sessiondelegate.onreinvite.md) | Called upon receiving an incoming in dialog INVITE request. |
 

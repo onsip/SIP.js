@@ -806,9 +806,9 @@ export abstract class Session extends EventEmitter {
    * Send ACK and then BYE. There are unrecoverable errors which can occur
    * while handling dialog forming and in-dialog INVITE responses and when
    * they occur we ACK the response and terminate the session.
-   * @param inviteResponse The response causing the error.
-   * @param statusCode Status code for he reason phrase.
-   * @param reasonPhrase Reason phrase for the BYE.
+   * @param inviteResponse - The response causing the error.
+   * @param statusCode - Status code for he reason phrase.
+   * @param reasonPhrase - Reason phrase for the BYE.
    * @internal
    */
   protected ackAndBye(
