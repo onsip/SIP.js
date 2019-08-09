@@ -45,7 +45,9 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
     const fromState = state;
     switch (state) {
       case "stable":
-        throw new Error(`rollbackDescription[${name}] ${fromState} => ${state} Invalid SDH state transition`);
+        // throw new Error(`rollbackDescription[${name}] ${fromState} => ${state} Invalid SDH state transition`);
+        state = "stable";
+        break;
       case "has-local-offer":
         state = "stable";
         break;

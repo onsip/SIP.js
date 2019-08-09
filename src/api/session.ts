@@ -503,6 +503,7 @@ export abstract class Session extends EventEmitter {
         if (options.withoutSdp) {
           // INVITE without SDP - set remote offer and send an answer in the ACK
           // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+          //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
             sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
             sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
@@ -528,6 +529,7 @@ export abstract class Session extends EventEmitter {
         } else {
           // INVITE with SDP - set remote answer and send an ACK
           // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+          //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
             sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
             sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
@@ -609,6 +611,7 @@ export abstract class Session extends EventEmitter {
 
     // Get an offer and send it in an INVITE
     // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+    //        This behavior was ported from legacy code and the issue punted down the road.
     const offerOptions = {
       sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
@@ -947,7 +950,6 @@ export abstract class Session extends EventEmitter {
 
   /**
    * Handle in dialog INVITE request.
-   * Unless an `onReinviteFailure` delegate is available, the session is terminated on failure.
    * @internal
    */
   protected onInviteRequest(request: IncomingInviteRequest): void {
@@ -961,7 +963,7 @@ export abstract class Session extends EventEmitter {
     // but currently the session which is setting it is holding onto it.
     const extraHeaders = ["Contact: " + this.contact];
 
-    // Check testing hook
+    // Check testing hooks
     if (this.delegate && this.delegate.onReinviteTest) {
       const test = this.delegate.onReinviteTest();
       if (test === "acceptWithoutDescription") {
@@ -983,36 +985,59 @@ export abstract class Session extends EventEmitter {
       this.assertedIdentity = Grammar.nameAddrHeaderParse(header);
     }
 
-    this.emit("reinvite", this, request.message);
-
-    // FIXME: TODO: These are the options/modifiers set on the initial INVITE and
-    // it seems just plain broken to re-use them on a re-invite.
-    // This behavior was ported from legacy code and the issue punted down the road.
+    // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+    //        This behavior was ported from legacy code and the issue punted down the road.
     const options = {
       sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
     };
     this.generateResponseOfferAnswerInDialog(options)
       .then((body) => {
-        request.accept({ statusCode: 200, extraHeaders, body });
-        this.emit("reinviteAccepted", this);
-        if (this.delegate && this.delegate.onReinviteSuccess) {
-          this.delegate.onReinviteSuccess();
+        const outgoingResponse = request.accept({ statusCode: 200, extraHeaders, body });
+        if (this.delegate && this.delegate.onInvite) {
+          this.delegate.onInvite(request.message, outgoingResponse.message, 200);
         }
       })
       .catch((error: Error) => {
         this.logger.error(error.message);
-        request.reject({ statusCode: 488 });
-        this.emit("reinviteFailed", this);
-        this.emit("renegotiationError", error);
-        if (this.delegate && this.delegate.onReinviteFailure) {
-          this.delegate.onReinviteFailure(error);
-        } else {
-          this.logger.error("A failure occurred processing re-INVITE request with no delegate, terminating session...");
-          this.bye(undefined, {
-            extraHeaders: ["Reason: " + Utils.getReasonHeaderValue(488, "Not Acceptable Here")]
-          });
+        this.logger.error("Failed to handle to re-INVITE request");
+        if (!this.dialog) {
+          throw new Error("Dialog undefined.");
         }
+        this.logger.error(this.dialog.signalingState);
+        // If we don't have a local/remote offer...
+        if (this.dialog.signalingState === SignalingState.Stable) {
+          const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
+          if (this.delegate && this.delegate.onInvite) {
+            this.delegate.onInvite(request.message, outgoingResponse.message, 488);
+          }
+          return;
+        }
+        // Otherwise rollback
+        this.rollbackOffer()
+          .then(() => {
+            const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
+            if (this.delegate && this.delegate.onInvite) {
+              this.delegate.onInvite(request.message, outgoingResponse.message, 488);
+            }
+          })
+          .catch ((errorRollback: Error) => {
+            // No way to recover, so terminate session and mark as failed.
+            this.logger.error(errorRollback.message);
+            this.logger.error("Failed to rollback offer on re-INVITE request");
+            const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
+            const extraHeadersBye: Array<string> = [];
+            extraHeadersBye.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+            if (!this.dialog) {
+              throw new Error("Dialog undefined.");
+            }
+            const outgoingByeRequest = this.dialog.bye(undefined, { extraHeaders });
+            this.stateTransition(SessionState.Terminated);
+            this.isFailed = true;
+            if (this.delegate && this.delegate.onInvite) {
+              this.delegate.onInvite(request.message, outgoingResponse.message, 488);
+            }
+          });
       });
   }
 

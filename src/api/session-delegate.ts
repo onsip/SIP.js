@@ -1,3 +1,4 @@
+import { IncomingRequestMessage } from "../core";
 import { Info } from "./info";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
@@ -12,6 +13,12 @@ export interface SessionDelegate {
    * @param info - The info.
    */
   onInfo?(info: Info): void;
+
+  /**
+   * Called upon receiving an incoming in dialog INVITE request.
+   * @param invite - The invite.
+   */
+  onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
 
   /**
    * Called upon receiving an incoming in dialog NOTIFY request.
@@ -43,17 +50,4 @@ export interface SessionDelegate {
    * @internal
    */
   onReinviteTest?(): "acceptWithoutDescription" | "reject488";
-
-  /**
-   * Called upon successfully accepting a received in dialog INVITE request.
-   * @internal
-   */
-  onReinviteSuccess?(): void;
-
-  /**
-   * Called upon failing to accept a received in dialog INVITE request.
-   * @param error - The error.
-   * @internal
-   */
-  onReinviteFailure?(error: Error): void;
 }

@@ -1,5 +1,5 @@
 import { Timers, URI } from "../../../src";
-import { Invitation, Inviter, Session, SessionState, SessionDescriptionHandler } from "../../../src/api";
+import { Invitation, Inviter, Session, SessionDescriptionHandler, SessionState } from "../../../src/api";
 import { SessionState as SessionDialogState, SignalingState } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
