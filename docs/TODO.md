@@ -7,12 +7,8 @@
 - new generated documentation base
 - review license for correctness
 
-# 15.1
+# 15.x
 - port simple to new api
-- more documentation
-- more tests
-
-# 15.2
 - address the outstanding issues with new api
 - address sdh race condition issues
 - address transport connect/disconnect auto register issues

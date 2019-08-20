@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 
 import { C } from "../Constants";
 import {
+  AckableIncomingResponseWithSession,
   Body,
   getBody,
   Grammar,
@@ -122,6 +123,10 @@ export abstract class Session extends EventEmitter {
   /** DEPRECATED: Session status */
   /** @internal */
   public status: SessionStatus =  SessionStatus.STATUS_NULL;
+
+  /** True if an error caused session termination. */
+  /** @internal */
+  public isFailed: boolean = false;
 
   /** @internal */
   protected earlySdp: string | undefined; // FIXME: Needs review. Appears to be unused.
@@ -475,42 +480,56 @@ export abstract class Session extends EventEmitter {
 
     const delegate: OutgoingInviteRequestDelegate = {
       onAccept: (response): void => {
-        // Our peer accepted re-INVITE, so get description from body and set remote offer/answer...
+        // A re-INVITE transaction has an offer/answer [RFC3264] exchange
+        // associated with it.  The UAC (User Agent Client) generating a given
+        // re-INVITE can act as the offerer or as the answerer.  A UAC willing
+        // to act as the offerer includes an offer in the re-INVITE.  The UAS
+        // (User Agent Server) then provides an answer in a response to the
+        // re-INVITE.  A UAC willing to act as answerer does not include an
+        // offer in the re-INVITE.  The UAS then provides an offer in a response
+        // to the re-INVITE becoming, thus, the offerer.
+        // https://tools.ietf.org/html/rfc6141#section-1
         const body = getBody(response.message);
         if (!body) {
-          this.logger.error("Received 2xx final response to re-invite without a description");
-          const error = new Error("Invalid response to a re-invite.");
-          this.emit("reinviteFailed", this);
-          this.emit("renegotiationError", error);
+          // No way to recover, so terminate session and mark as failed.
+          this.logger.error("Received 2xx response to re-INVITE without a session description");
+          this.ackAndBye(response, 400, "Missing session description");
+          this.stateTransition(SessionState.Terminated);
+          this.isFailed = true;
           this.pendingReinvite = false;
-          throw error;
+          return;
         }
 
         if (options.withoutSdp) {
+          // INVITE without SDP - set remote offer and send an answer in the ACK
+          // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+          //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
             sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
             sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
           };
-          // INVITE without SDP, so set remote offer and send answer in ACk
           this.setOfferAndGetAnswer(body, answerOptions)
             .then((answerBody) => {
               const request = response.ack({ body: answerBody });
-              this.emit("ack", request.message);
-              this.emit("reinviteAccepted", this);
+            })
+            .catch((error: Error) => {
+              // No way to recover, so terminate session and mark as failed.
+              this.logger.error(error.message);
+              this.logger.error("Failed to handle offer in 2xx response to re-INVITE");
+              this.ackAndBye(response, 488, "Bad Media Description");
+              this.stateTransition(SessionState.Terminated);
+              this.isFailed = true;
+            })
+            .then(() => {
               this.pendingReinvite = false;
               if (options.requestDelegate && options.requestDelegate.onAccept) {
                 options.requestDelegate.onAccept(response);
               }
-            })
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              this.emit("reinviteFailed", this);
-              this.emit("renegotiationError", error);
-              this.pendingReinvite = false;
-              throw error;
             });
         } else {
-          // INVITE with SDP, so set remote answer and send ACk
+          // INVITE with SDP - set remote answer and send an ACK
+          // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+          //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
             sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
             sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
@@ -518,19 +537,20 @@ export abstract class Session extends EventEmitter {
           this.setAnswer(body, answerOptions)
             .then(() => {
               const request = response.ack();
-              this.emit("ack", request.message);
-              this.emit("reinviteAccepted", this);
+            })
+            .catch((error: Error) => {
+              // No way to recover, so terminate session and mark as failed.
+              this.logger.error(error.message);
+              this.logger.error("Failed to handle answer in 2xx response to re-INVITE");
+              this.ackAndBye(response, 488, "Bad Media Description");
+              this.stateTransition(SessionState.Terminated);
+              this.isFailed = true;
+            })
+            .then(() => {
               this.pendingReinvite = false;
               if (options.requestDelegate && options.requestDelegate.onAccept) {
                 options.requestDelegate.onAccept(response);
               }
-            })
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              this.emit("reinviteFailed", this);
-              this.emit("renegotiationError", error);
-              this.pendingReinvite = false;
-              throw error;
             });
         }
       },
@@ -541,13 +561,33 @@ export abstract class Session extends EventEmitter {
         return;
       },
       onReject: (response): void => {
-        this.logger.error("Received a non-2xx final response to re-invite");
-        const error = new Error("Invalid response to a re-invite.");
-        this.emit("reinviteFailed", this);
-        this.emit("renegotiationError", error);
+        this.logger.warn("Received a non-2xx response to re-INVITE");
         this.pendingReinvite = false;
-        if (options.requestDelegate && options.requestDelegate.onReject) {
-          options.requestDelegate.onReject(response);
+        if (options.withoutSdp) {
+          if (options.requestDelegate && options.requestDelegate.onReject) {
+            options.requestDelegate.onReject(response);
+          }
+        } else {
+          this.rollbackOffer()
+            .catch((error: Error) => {
+              // No way to recover, so terminate session and mark as failed.
+              this.logger.error(error.message);
+              this.logger.error("Failed to rollback offer on non-2xx response to re-INVITE");
+              // Note that the ACK was already sent by the transaction, so just need to send BYE
+              if (!this.dialog) {
+                throw new Error("Dialog undefined.");
+              }
+              const extraHeaders: Array<string> = [];
+              extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+              const outgoingByeRequest = this.dialog.bye(undefined, { extraHeaders });
+              this.stateTransition(SessionState.Terminated);
+              this.isFailed = true;
+            })
+            .then(() => {
+              if (options.requestDelegate && options.requestDelegate.onReject) {
+                options.requestDelegate.onReject(response);
+              }
+            });
         }
       },
       onTrying: (response): void => {
@@ -560,16 +600,18 @@ export abstract class Session extends EventEmitter {
     requestOptions.extraHeaders.push("Allow: " + AllowedMethods.toString());
     requestOptions.extraHeaders.push("Contact: " + this.contact);
 
-    // just send an INVITE with no sdp...
+    // Just send an INVITE with no sdp...
     if (options.withoutSdp) {
       if (!this.dialog) {
         this.pendingReinvite = false;
-        throw new Error("Dialog undefined.");
+        return Promise.reject(new Error("Dialog undefined."));
       }
       return Promise.resolve(this.dialog.invite(delegate, requestOptions));
     }
 
-    // get an offer and send it in an INVITE
+    // Get an offer and send it in an INVITE
+    // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+    //        This behavior was ported from legacy code and the issue punted down the road.
     const offerOptions = {
       sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
@@ -585,8 +627,7 @@ export abstract class Session extends EventEmitter {
       })
       .catch((error: Error) => {
         this.logger.error(error.message);
-        this.emit("reinviteFailed", this);
-        this.emit("renegotiationError", error);
+        this.logger.error("Failed to send re-INVITE");
         this.pendingReinvite = false;
         throw error;
       });
@@ -762,6 +803,30 @@ export abstract class Session extends EventEmitter {
   }
 
   /**
+   * Send ACK and then BYE. There are unrecoverable errors which can occur
+   * while handling dialog forming and in-dialog INVITE responses and when
+   * they occur we ACK the response and terminate the session.
+   * @param inviteResponse - The response causing the error.
+   * @param statusCode - Status code for he reason phrase.
+   * @param reasonPhrase - Reason phrase for the BYE.
+   * @internal
+   */
+  protected ackAndBye(
+    response: AckableIncomingResponseWithSession,
+    statusCode?: number,
+    reasonPhrase?: string
+  ): void {
+    const outgoingAckRequest = response.ack();
+    this.emit("ack", outgoingAckRequest.message);
+    const extraHeaders: Array<string> = [];
+    if (statusCode) {
+      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
+    }
+    const outgoingByeRequest = response.session.bye(undefined, { extraHeaders });
+    this.emit("bye", outgoingByeRequest.message);
+  }
+
+  /**
    * Handle in dialog ACK request.
    * @internal
    */
@@ -885,7 +950,6 @@ export abstract class Session extends EventEmitter {
 
   /**
    * Handle in dialog INVITE request.
-   * Unless an `onInviteFailure` delegate is available, the session is terminated on failure.
    * @internal
    */
   protected onInviteRequest(request: IncomingInviteRequest): void {
@@ -893,6 +957,23 @@ export abstract class Session extends EventEmitter {
     if (this.state !== SessionState.Established) {
       this.logger.error(`INVITE received while in state ${this.state}, dropping request`);
       return;
+    }
+
+    // TODO: would be nice to have core track and set the Contact header,
+    // but currently the session which is setting it is holding onto it.
+    const extraHeaders = ["Contact: " + this.contact];
+
+    // Check testing hooks
+    if (this.delegate && this.delegate.onReinviteTest) {
+      const test = this.delegate.onReinviteTest();
+      if (test === "acceptWithoutDescription") {
+        request.accept({ statusCode: 200, extraHeaders });
+        return;
+      }
+      if (test === "reject488") {
+        request.reject({ statusCode: 488 });
+        return;
+      }
     }
 
     // Handle P-Asserted-Identity
@@ -904,39 +985,59 @@ export abstract class Session extends EventEmitter {
       this.assertedIdentity = Grammar.nameAddrHeaderParse(header);
     }
 
-    this.emit("reinvite", this, request.message);
-
-    // TODO: would be nice to have core track and set the Contact header,
-    // but currently the session which is setting it is holding onto it.
-    const extraHeaders = ["Contact: " + this.contact];
-    // FIXME: TODO: These are the options/modifiers set on the initial INVITE and
-    // it seems just plain broken to re-use them on a re-invite.
-    // This behavior was ported from legacy code and the issue punted down the road.
+    // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
+    //        This behavior was ported from legacy code and the issue punted down the road.
     const options = {
       sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
     };
     this.generateResponseOfferAnswerInDialog(options)
       .then((body) => {
-        request.accept({ statusCode: 200, extraHeaders, body });
-        this.emit("reinviteAccepted", this);
-        if (this.delegate && this.delegate.onReinviteSuccess) {
-          this.delegate.onReinviteSuccess();
+        const outgoingResponse = request.accept({ statusCode: 200, extraHeaders, body });
+        if (this.delegate && this.delegate.onInvite) {
+          this.delegate.onInvite(request.message, outgoingResponse.message, 200);
         }
       })
       .catch((error: Error) => {
         this.logger.error(error.message);
-        request.reject({ statusCode: 488 });
-        this.emit("reinviteFailed", this);
-        this.emit("renegotiationError", error);
-        if (this.delegate && this.delegate.onReinviteFailure) {
-          this.delegate.onReinviteFailure(error);
-        } else {
-          this.logger.error("A failure occurred processing re-INVITE request with no delegate, terminating session...");
-          this.bye(undefined, {
-            extraHeaders: ["Reason: " + Utils.getReasonHeaderValue(488, "Not Acceptable Here")]
-          });
+        this.logger.error("Failed to handle to re-INVITE request");
+        if (!this.dialog) {
+          throw new Error("Dialog undefined.");
         }
+        this.logger.error(this.dialog.signalingState);
+        // If we don't have a local/remote offer...
+        if (this.dialog.signalingState === SignalingState.Stable) {
+          const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
+          if (this.delegate && this.delegate.onInvite) {
+            this.delegate.onInvite(request.message, outgoingResponse.message, 488);
+          }
+          return;
+        }
+        // Otherwise rollback
+        this.rollbackOffer()
+          .then(() => {
+            const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
+            if (this.delegate && this.delegate.onInvite) {
+              this.delegate.onInvite(request.message, outgoingResponse.message, 488);
+            }
+          })
+          .catch ((errorRollback: Error) => {
+            // No way to recover, so terminate session and mark as failed.
+            this.logger.error(errorRollback.message);
+            this.logger.error("Failed to rollback offer on re-INVITE request");
+            const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
+            const extraHeadersBye: Array<string> = [];
+            extraHeadersBye.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+            if (!this.dialog) {
+              throw new Error("Dialog undefined.");
+            }
+            const outgoingByeRequest = this.dialog.bye(undefined, { extraHeaders });
+            this.stateTransition(SessionState.Terminated);
+            this.isFailed = true;
+            if (this.delegate && this.delegate.onInvite) {
+              this.delegate.onInvite(request.message, outgoingResponse.message, 488);
+            }
+          });
       });
   }
 
@@ -1203,6 +1304,21 @@ export abstract class Session extends EventEmitter {
     const sdhModifiers = options.sessionDescriptionHandlerModifiers;
     return sdh.getDescription(sdhOptions, sdhModifiers)
       .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
+      .catch((error: any) => { // don't trust SDH to reject with Error
+        throw (error instanceof Error ? error : new Error(error));
+      });
+  }
+
+  /**
+   * Rollback local/remote offer.
+   * @internal
+   */
+  protected rollbackOffer(): Promise<void> {
+    const sdh = this.setupSessionDescriptionHandler();
+    if (!sdh.rollbackDescription) {
+      return Promise.resolve();
+    }
+    return sdh.rollbackDescription()
       .catch((error: any) => { // don't trust SDH to reject with Error
         throw (error instanceof Error ? error : new Error(error));
       });

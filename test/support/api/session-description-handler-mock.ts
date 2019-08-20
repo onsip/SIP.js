@@ -7,11 +7,12 @@ import {
 
 export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<SessionDescriptionHandler> {
   let state: "stable" | "has-local-offer" | "has-remote-offer" = "stable";
-  const sdh = jasmine.createSpyObj<SessionDescriptionHandler>("SessionDescriptionHandler", [
+  const sdh = jasmine.createSpyObj<Required<SessionDescriptionHandler>>("SessionDescriptionHandler", [
     "close",
     "getDescription",
     "hasDescription",
     "holdModifier",
+    "rollbackDescription",
     "setDescription",
     "sendDtmf"
   ]);
@@ -40,6 +41,27 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
     });
   });
   sdh.hasDescription.and.callFake((contentType: string): boolean => contentType === "application/sdp");
+  sdh.rollbackDescription.and.callFake(() => {
+    const fromState = state;
+    switch (state) {
+      case "stable":
+        // throw new Error(`rollbackDescription[${name}] ${fromState} => ${state} Invalid SDH state transition`);
+        state = "stable";
+        break;
+      case "has-local-offer":
+        state = "stable";
+        break;
+      case "has-remote-offer":
+        state = "stable";
+        break;
+      default:
+        throw new Error("Unknown SDH state");
+    }
+    // console.warn(`rollbackDescription[${name}] ${fromState} => ${state}`);
+    return Promise.resolve().then(() => {
+      return;
+    });
+  });
   sdh.setDescription.and.callFake(() => {
     const fromState = state;
     switch (state) {

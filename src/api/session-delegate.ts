@@ -1,3 +1,4 @@
+import { IncomingRequestMessage } from "../core";
 import { Info } from "./info";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
@@ -12,6 +13,12 @@ export interface SessionDelegate {
    * @param info - The info.
    */
   onInfo?(info: Info): void;
+
+  /**
+   * Called upon receiving an incoming in dialog INVITE request.
+   * @param invite - The invite.
+   */
+  onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
 
   /**
    * Called upon receiving an incoming in dialog NOTIFY request.
@@ -32,21 +39,15 @@ export interface SessionDelegate {
   // TODO: Interface for handling re-invite needs to be sorted out...
   // - current callbacks are not consistent with the others as they are firing after responding
   //  - they are firing after sending response
-  //  - they don't provide  access to the request
-  //  - they don't provide  access to the response
+  //  - they don't provide access to the request
+  //  - they don't provide access to the response
   // - an Invitation is not a re-Invitation, so can't provide that to a callback
   // - not clear how best to handle error responding to a reinvite
 
   /**
-   * Called upon successfully accepting a received in dialog INVITE request.
+   * Hook which is called upon receiving an incoming in dialog INVITE request.
+   * Used for generating and testing failure cases.
    * @internal
    */
-  onReinviteSuccess?(): void;
-
-  /**
-   * Called upon failing to accept a received in dialog INVITE request.
-   * @param error - The error.
-   * @internal
-   */
-  onReinviteFailure?(error: Error): void;
+  onReinviteTest?(): "acceptWithoutDescription" | "reject488";
 }

@@ -40,6 +40,11 @@ export interface SessionDescriptionHandler {
   holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
 
   /**
+   * Rolls back the current local/remote offer to the prior stable state.
+   */
+  rollbackDescription?(): Promise<void>;
+
+  /**
    * Sets the remote description to the underlying media implementation.
    * @param  sessionDescription - The description provided by a SIP message to be set on the media implementation.
    * @param options - Options object to be used by setDescription.

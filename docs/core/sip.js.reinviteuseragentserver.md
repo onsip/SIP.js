@@ -24,6 +24,8 @@ export declare class ReInviteUserAgentServer extends UserAgentServer implements 
 |  --- | --- | --- |
 |  [accept(options)](./sip.js.reinviteuseragentserver.accept.md) |  | Update the dialog signaling state on a 2xx response. |
 |  [progress(options)](./sip.js.reinviteuseragentserver.progress.md) |  | Update the dialog signaling state on a 1xx response. |
+|  [redirect(contacts, options)](./sip.js.reinviteuseragentserver.redirect.md) |  | TODO: Not Yet Supported |
+|  [reject(options)](./sip.js.reinviteuseragentserver.reject.md) |  | 3.1 Background on Re-INVITE Handling by UASs An error response to a re-INVITE has the following semantics. As specified in Section 12.2.2 of RFC 3261 \[RFC3261\], if a re-INVITE is rejected, no state changes are performed. https://tools.ietf.org/html/rfc6141\#section-3.1 |
 
 ## Remarks
 

@@ -423,6 +423,10 @@ export abstract class Session extends EventEmitter {
     protected constructor(userAgent: UserAgent, options?: SessionOptions);
     // @internal @deprecated (undocumented)
     protected accepted(response?: IncomingResponseMessage | string, cause?: string): void;
+    // Warning: (ae-forgotten-export) The symbol "AckableIncomingResponseWithSession" needs to be exported by the entry point index.d.ts
+    // 
+    // @internal
+    protected ackAndBye(response: AckableIncomingResponseWithSession, statusCode?: number, reasonPhrase?: string): void;
     // @internal (undocumented)
     assertedIdentity: NameAddrHeader | undefined;
     // @internal (undocumented)
@@ -454,23 +458,23 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     protected earlySdp: string | undefined;
     // @internal @deprecated (undocumented)
-    emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed" | "replaced", session: Session): boolean;
+    emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "ack" | "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
+    emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed" | "replaced", session: Session): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
+    emit(event: "failed" | "rejected", response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "failed" | "rejected", response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string): boolean;
+    emit(event: "ack" | "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "accepted", response?: string | IncomingResponseMessage, cause?: string): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "renegotiationError", error: Error): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "connecting", request: {
         request: IncomingRequestMessage;
@@ -478,7 +482,7 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     emit(event: "progress", response: IncomingResponseMessage | string, reasonPhrase?: any): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "renegotiationError", error: Error): boolean;
+    emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected"): boolean;
     // @internal (undocumented)
@@ -514,6 +518,8 @@ export abstract class Session extends EventEmitter {
     info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
+    isFailed: boolean;
+    // @internal (undocumented)
     localHold: boolean;
     // @internal (undocumented)
     abstract localIdentity: NameAddrHeader;
@@ -523,8 +529,6 @@ export abstract class Session extends EventEmitter {
     logger: Logger;
     // @internal (undocumented)
     method: string;
-    // @internal @deprecated (undocumented)
-    on(event: "ack" | "invite" | "refer", listener: (request: OutgoingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
@@ -551,6 +555,8 @@ export abstract class Session extends EventEmitter {
     on(event: "reinvite", listener: (session: Session, request: IncomingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
+    // @internal @deprecated (undocumented)
+    on(event: "ack" | "invite" | "refer", listener: (request: OutgoingRequestMessage) => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -599,6 +605,8 @@ export abstract class Session extends EventEmitter {
     protected rendertype: string | undefined;
     // @internal (undocumented)
     replacee: Session | undefined;
+    // @internal
+    protected rollbackOffer(): Promise<void>;
     readonly sessionDescriptionHandler: SessionDescriptionHandler | undefined;
     // @internal (undocumented)
     protected sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
@@ -643,12 +651,11 @@ export abstract class Session extends EventEmitter {
 // @public
 export interface SessionDelegate {
     onInfo?(info: Info): void;
+    onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
     // @internal
-    onReinviteFailure?(error: Error): void;
-    // @internal
-    onReinviteSuccess?(): void;
+    onReinviteTest?(): "acceptWithoutDescription" | "reject488";
 }
 
 // @public
@@ -657,6 +664,7 @@ export interface SessionDescriptionHandler {
     getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<BodyAndContentType>;
     hasDescription(contentType: string): boolean;
     holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
+    rollbackDescription?(): Promise<void>;
     sendDtmf(tones: string, options?: any): boolean;
     setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<void>;
 }
