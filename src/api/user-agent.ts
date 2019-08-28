@@ -22,7 +22,7 @@ import {
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "../core";
-import { SessionStatus, UAStatus } from "../Enums";
+import { UAStatus } from "../Enums";
 import { Parser } from "../Parser";
 import { Utils } from "../Utils";
 import {
@@ -469,8 +469,6 @@ export class UserAgent extends EventEmitter {
   }
 
   /** @internal */
-  public on(name: "invite", callback: (session: Invitation) => void): this;
-  /** @internal */
   public on(name: "outOfDialogReferRequested", callback: (context: any) => void): this;
   /** @internal */
   public on(name: "message", callback: (message: any) => void): this;
@@ -711,73 +709,95 @@ export class UserAgent extends EventEmitter {
       transportAccessor: () => this.transport
     };
 
-    // The Replaces header contains information used to match an existing
-    // SIP dialog (call-id, to-tag, and from-tag).  Upon receiving an INVITE
-    // with a Replaces header, the User Agent (UA) attempts to match this
-    // information with a confirmed or early dialog.
-    // https://tools.ietf.org/html/rfc3891#section-3
-    const handleInviteWithReplacesHeader = (
-      context: Invitation,
-      request: IncomingRequestMessage
-    ): void => {
-      if (this.options.sipExtensionReplaces !== SIPExtension.Unsupported) {
-        const replaces = request.parseHeader("replaces");
-        if (replaces) {
-          const targetSession =
-            this.sessions[replaces.call_id + replaces.replaces_from_tag] ||
-            this.sessions[replaces.call_id + replaces.replaces_to_tag] ||
-            undefined;
-          if (!targetSession) {
-            this.userAgentCore.replyStateless(request, { statusCode: 481 });
-            return;
-          }
-          if (targetSession.status === SessionStatus.STATUS_TERMINATED) {
-            this.userAgentCore.replyStateless(request, { statusCode: 603 });
-            return;
-          }
-          const targetDialogId = replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag;
-          const targetDialog = this.userAgentCore.dialogs.get(targetDialogId);
-          if (!targetDialog) {
-            this.userAgentCore.replyStateless(request, { statusCode: 481 });
-            return;
-          }
-          if (!targetDialog.early && replaces.early_only) {
-            this.userAgentCore.replyStateless(request, { statusCode: 486 });
-            return;
-          }
-          context.replacee = targetSession;
-        }
-      }
-    };
-
     const userAgentCoreDelegate: UserAgentCoreDelegate = {
       onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+        const invitation = new Invitation(this, incomingInviteRequest);
+
+        incomingInviteRequest.delegate = {
+          onCancel: (cancel: IncomingRequestMessage): void => {
+            invitation.onCancel(cancel);
+          },
+          onTransportError: (error: TransportError): void => {
+            invitation.onTransportError();
+          }
+        };
+
         // FIXME: Ported - 100 Trying send should be configurable.
         // Only required if TU will not respond in 200ms.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         incomingInviteRequest.trying();
-        incomingInviteRequest.delegate = {
-          onCancel: (cancel: IncomingRequestMessage): void => {
-            context.onCancel(cancel);
-          },
-          onTransportError: (error: TransportError): void => {
-            context.onTransportError();
+
+        // The Replaces header contains information used to match an existing
+        // SIP dialog (call-id, to-tag, and from-tag).  Upon receiving an INVITE
+        // with a Replaces header, the User Agent (UA) attempts to match this
+        // information with a confirmed or early dialog.
+        // https://tools.ietf.org/html/rfc3891#section-3
+        if (this.options.sipExtensionReplaces !== SIPExtension.Unsupported) {
+          const message = incomingInviteRequest.message;
+          const replaces = message.parseHeader("replaces");
+          if (replaces) {
+            const callId = replaces.call_id;
+            if (typeof callId !== "string") {
+              throw new Error("Type of call id is not string");
+            }
+            const toTag = replaces.replaces_to_tag;
+            if (typeof toTag !== "string") {
+              throw new Error("Type of to tag is not string");
+            }
+            const fromTag = replaces.replaces_from_tag;
+            if (typeof fromTag !== "string") {
+              throw new Error("type of from tag is not string");
+            }
+            const targetDialogId = callId + toTag + fromTag;
+            const targetDialog = this.userAgentCore.dialogs.get(targetDialogId);
+
+            // If no match is found, the UAS rejects the INVITE and returns a 481
+            // Call/Transaction Does Not Exist response.  Likewise, if the Replaces
+            // header field matches a dialog which was not created with an INVITE,
+            // the UAS MUST reject the request with a 481 response.
+            // https://tools.ietf.org/html/rfc3891#section-3
+            if (!targetDialog) {
+              invitation.reject({ statusCode: 481 });
+              return;
+            }
+
+            // If the Replaces header field matches a confirmed dialog, it checks
+            // for the presence of the "early-only" flag in the Replaces header
+            // field.  (This flag allows the UAC to prevent a potentially
+            // undesirable race condition described in Section 7.1.) If the flag is
+            // present, the UA rejects the request with a 486 Busy response.
+            // https://tools.ietf.org/html/rfc3891#section-3
+            if (!targetDialog.early && replaces.early_only === true) {
+              invitation.reject({ statusCode: 486 });
+              return;
+            }
+
+            // Provide a handle on the session being replaced.
+            const targetSession = this.sessions[callId + fromTag] || this.sessions[callId + toTag] || undefined;
+            if (!targetSession) {
+              throw new Error("Session does not exist.");
+            }
+            invitation.replacee = targetSession;
           }
-        };
-        const context = new Invitation(this, incomingInviteRequest);
-        // Ported - handling of out of dialog INVITE with Replaces.
-        handleInviteWithReplacesHeader(context, incomingInviteRequest.message);
-        // Ported - make the first call to progress automatically.
-        if (context.autoSendAnInitialProvisionalResponse) {
-          context.progress();
         }
-        if (this.delegate && this.delegate.onInvite) {
-          this.delegate.onInvite(context);
+
+        // A common scenario occurs when the callee is currently not willing or
+        // able to take additional calls at this end system.  A 486 (Busy Here)
+        // SHOULD be returned in such a scenario.
+        // https://tools.ietf.org/html/rfc3261#section-13.3.1.3
+        if (!this.delegate || !this.delegate.onInvite) {
+          invitation.reject({ statusCode: 486 });
+          return;
+        }
+
+        // Delegate invitation handling.
+        if (!invitation.autoSendAnInitialProvisionalResponse) {
+          this.delegate.onInvite(invitation);
         } else {
-          // TODO: If no delegate, reject the request.
+          const onInvite = this.delegate.onInvite;
+          invitation.progress()
+            .then(() => onInvite(invitation));
         }
-        // DEPRECATED
-        this.emit("invite", context);
       },
       onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
         if (this.delegate && this.delegate.onMessage) {

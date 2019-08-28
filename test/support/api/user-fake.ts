@@ -28,6 +28,7 @@ export function makeUserFake(
       displayName,
       noAnswerTimeout: 90, // seconds
       sipExtension100rel: SIPExtension.Supported,
+      sipExtensionReplaces: SIPExtension.Supported,
       sessionDescriptionHandlerFactory: makeMockSessionDescriptionHandlerFactory(user),
       transportConstructor: TransportFake
     },
