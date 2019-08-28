@@ -1,22 +1,22 @@
 
 # Release Road Map
 
-# 15.0
+## 15.0
 - new api introduction with transition guide
 - deprecation warning message in console log if using UA
 - new generated documentation base
 - review license for correctness
 
-# 15.x
+## 15.x
 - port simple to new api
 - address the outstanding issues with new api
 - address sdh race condition issues
 - address transport connect/disconnect auto register issues
-- address make user agent tear down cleanly
+- address user agent tearing down cleanly issues
 - more documentation
 - more tests
 
-# 16.0
+## 16.0
 - new demo
 - new readme
 - remove old api
@@ -29,7 +29,11 @@
 
 # Work in Progress
 
-## Open Items
+## Tests
+- Unit tests for low level "core" components (Transaction, Transport)
+- Integration tests for high level "api" components (Session, Subscription)
+
+## Misc Open Items
 - Dependencies on "old" api files need to be removed from src/api
 - The entire src/api code needs a top down once over
 - Music-on-hold support needed
@@ -37,171 +41,28 @@
 - Options buckets deep copy
 - Dialog UACs are creating messages while non-dialog UACs are being handed message.
 - Extra headers approach is error prone
-- Incoming request, accept races cancel.
--- That is, attempt to accept may or may not succeed if cancel arrives.
-- Outgoing request, accept races cancel.
--- That is, attempt to cancel may or may not succeed if accept arrives.
+- Incoming request, accept races cancel. That is, attempt to accept may or may not succeed if cancel arrives.
+- Outgoing request, accept races cancel. That is, attempt to cancel may or may not succeed if accept arrives.
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
-- Unit tests for low level components
--- Transaction
--- Transport
-- Integration tests for high level components
--- Session
--- Subscription
+- SDH options & SDH modifiers options are applied somewhat ambiguously
+  - This behavior was ported from legacy code and the issue punted down the road.
+- Outstanding re-INVITE API issues
+  - AckAndBye on failure applying 200 OK answer/offer, reject on applying INVITE offer
+  - isFailed boolean on ackandbye (like isCanceled)
+  - Reinvite timeout response handling
+  - Outstanding reinvite api issues
+  - Interface for handling re-invite needs to be sorted out...
+    - current callbacks are not consistent with the others as they are firing after responding
+      - they are firing after sending response
+      - they don't provide access to the request
+      - they don't provide access to the response
+      - an Invitation is not a re-Invitation, so can't provide that to a callback
+      - not clear how best to handle error responding to a reinvite
+      - cannot get handle on ACK or BYE or BYE response
 
-# Notes - New API
+## REFER handling - it's evolved over time and we're out of date
 
-### UserAgent
-* UserAgent.delegate
-* TODO: UserAgent.state // Initial, Started, Stopped
-
-* UserAgent(options);
-* UserAgent.start();
-* UserAgent.stop();
-
-* UserAgent.makeURI(target) // string => URI (static)
-
-* UserAgentDelegate.onInvite(invitation);
-* UserAgentDelegate.onMessage(message);
-* UserAgentDelegate.onNotify(notification);
-* UserAgentDelegate.onRefer(referral);
-* UserAgentDelegate.onSubscribe(subscription);
-
-### REGISTER
-* Registerer.contacts // array
-* Registerer.registered // boolean
-* Registerer.state // Initial, Registered, Unregistered
-
-* Registerer(userAgent, options)
-* Registerer.register(options)		
-* Registerer.unregister(options)
-
-### INVITE
-* Session.data
-* Session.delegate
-* Session.dialog
-* Session.sessionDescriptionHandler
-* Session.state // Established, Establishing, Initial. Terminated, Terminating
-
-* Session.invite(options); // Re-INVITE
-
-* SessionDelegate.onInfo(info)
-* SessionDelegate.onNotify(notify)
-* SessionDelegate.onRefer(referral)
-
-// Incoming extends Session
-* Invitation.request
-
-* Invitation.accept(options)
-* Invitation.progress(options)
-* Invitation.reject(options)
-
-// Outgoing extends Session
-* Inviter(userAgent, targetURI, options)
-* Inviter.invite(options) // initial INVITE
-* Inviter.cancel(options)
-
-### BYE
-* Byer.session
-
-* Byer(session, options)
-* Byer.bye(options)
-
-### REFER
-* Referrral.referredBy
-* Referrral.referTo
-* Referrral.replaces
-* Referrral.request
-
-* Referrral.accept(options);
-* Referrral.reject(options);
-
-* Referrral.makeInviter(options) // Cover for Inviter constructor, new Inviter using Referral info
-
-* Referrer.delegate
-* Referrer.session
-
-* Referrer(session, referTo, options)
-* Referrer.refer(options)
-
-* ReferrerDelegate.onNotify(notification)	
-
-### PUBLISH
-* Publisher(userAgent, targetURI, eventType, options)
-* Publisher.publish(content, options) // PUBLISH and Re-PUBLISH
-* Publisher.unpublish(options)
-
-### SUBSCRIBE
-* Subscription.data
-* Subscription.delegate
-* Subscription.state // Initial, NotifyWait, Subscribed, Terminated
-
-* Subscription.subscribe(options) // Re-SUBSCRIBE
-* Subscription.unsubscribe(options)
-
-* SubscriptionDelegate.onNotify(notification)
-
-* Subscriber(userAgent, targetURI, eventType, options)
-* Subscriber.subscribe(options) // SUBSCRIBE
-
-### INFO
-* INFO.request
-
-* Info.accept(options);
-* Info.reject(options);
-
-* Infoer.session;
-* Infoer(session, options);
-* Infoer.info(options);
-
-### NOTIFY
-* Notification.request
-
-* Notification.accept(options);
-* Notification.reject(options);
-
-### MESSAGE
-* Message.request
-
-* Message.accept(options);
-* Message.reject(options);
-
-* Messager(userAgent, targetURI, content, contentType, options)
-* Messager.message(options)
-
-## Delegate Pattern Example
-```ts
-// Our delegate interface
-interface ICalendarDelegate {
-  onInvitation(date: Date, appointment: Appointment): void;
-  onReminder(appointment: Appointment): void;
-}
-
-// A class that wants to support events
-class Calendar {
-  private _delegate: ICalendarDelegate;
-  constructor(delegate: ICalendarDelegate) {
-    this._delegate = delegate;
-  }
-    
-    this._delegate.onReminder(new Appointment(...
-}
-
-class Client implements ICalendarDelegate {
-  private _calendar: Calendar;
-  constructor() {
-    // Registering event handlers via the ctor would be messy
-    // without a delegate interface
-    this._calendar = new Calendar(this);
-  }
-…
-}
-```
-
-
-# Notes - REFER (Transfer)
-
-The Session Initiation Protocol (SIP) Refer Method (2003)
+### The Session Initiation Protocol (SIP) Refer Method (2003)
 https://tools.ietf.org/html/rfc3515
 Abstract
 
@@ -212,7 +73,7 @@ Abstract
    referenced request.  This can be used to enable many applications,
    including call transfer.
 
-Multiple Dialog Usages in the Session Initiation Protocol (2007)
+### Multiple Dialog Usages in the Session Initiation Protocol (2007)
 https://tools.ietf.org/html/rfc5057
 Abstract
 
@@ -229,7 +90,7 @@ Abstract
    discusses alternatives to their use and clarifies essential behavior
    for elements that cannot currently avoid them.
 
-Session Initiation Protocol (SIP) Call Control - Transfer (2009)
+### Session Initiation Protocol (SIP) Call Control - Transfer (2009)
 https://tools.ietf.org/html/rfc5589
 Abstract
 
@@ -239,8 +100,7 @@ Abstract
    blind transfer, consultative transfer, and attended transfer.  This
    work is part of the SIP multiparty call control framework.
 
-
-SIP-Specific Event Notification (2012)
+### SIP-Specific Event Notification (2012)
 https://tools.ietf.org/html/rfc6665
 Abstract
 
@@ -250,7 +110,7 @@ Abstract
    notification from remote nodes indicating that certain events have
    occurred.
 
-Explicit Subscriptions for the REFER Method (2015)
+### Explicit Subscriptions for the REFER Method (2015)
 https://tools.ietf.org/html/rfc7614
 Abstract
 
@@ -262,7 +122,7 @@ Abstract
    This document defines extensions to REFER that remove the implicit
    subscription and, if desired, replace it with an explicit one.
 
-Clarifications for the Use of REFER with RFC 6665 (2015)
+### Clarifications for the Use of REFER with RFC 6665 (2015)
 https://tools.ietf.org/html/rfc7647
 Abstract
 
@@ -272,8 +132,7 @@ Abstract
    and updates the definition of the REFER method described in RFC 3515
    to clarify and disambiguate the impact of those changes.
 
-
-Clarifications for When to Use the name-addr Production in SIP Messages (2017)
+### Clarifications for When to Use the name-addr Production in SIP Messages (2017)
 https://tools.ietf.org/html/rfc8217
 Abstract
 
