@@ -21,9 +21,12 @@ import {
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "../core";
+import {
+  createRandomToken,
+  str_utf8_length
+} from "../core/messages/utils";
 import { UAStatus } from "../Enums";
 import { Parser } from "../Parser";
-import { Utils } from "../Utils";
 import { LIBRARY_VERSION } from "../version";
 import {
   SessionDescriptionHandler as WebSessionDescriptionHandler
@@ -159,11 +162,11 @@ export class UserAgent {
       // start with the default option values
       ...UserAgent.defaultOptions,
       // add a unique sipjs id for each instance
-      ...{ sipjsId: Utils.createRandomToken(5) },
+      ...{ sipjsId: createRandomToken(5) },
       // add a unique anonymous uri for each instance
-      ...{ uri: new URI("sip", "anonymous." + Utils.createRandomToken(6), "anonymous.invalid") },
+      ...{ uri: new URI("sip", "anonymous." + createRandomToken(6), "anonymous.invalid") },
       // add a unique via host for each instance
-      ...{ viaHost: Utils.createRandomToken(12) + ".invalid" },
+      ...{ viaHost: createRandomToken(12) + ".invalid" },
       // apply any options passed in via the constructor
       ...options
     };
@@ -512,7 +515,7 @@ export class UserAgent {
       // FIXME: This should be Transport check before we get here (Section 18).
       // Custom SIP.js check to reject requests if body length wrong.
       // This is port of SanityCheck.rfc3261_18_3_request().
-      const len: number = Utils.str_utf8_length(message.body);
+      const len: number = str_utf8_length(message.body);
       const contentLength: string | undefined = message.getHeader("content-length");
       if (contentLength && len < Number(contentLength)) {
         this.userAgentCore.replyStateless(message, { statusCode: 400 });
@@ -546,7 +549,7 @@ export class UserAgent {
       // FIXME: This should be Transport check before we get here (Section 18).
       // Custom SIP.js check to reject requests if body length wrong.
       // This is port of SanityCheck.rfc3261_18_3_response().
-      const len: number = Utils.str_utf8_length(message.body);
+      const len: number = str_utf8_length(message.body);
       const contentLength: string | undefined = message.getHeader("content-length");
       if (contentLength && len < Number(contentLength)) {
         this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
@@ -570,8 +573,7 @@ export class UserAgent {
   }
 
   private initContact(): Contact {
-    const contactName =
-      Utils.createRandomToken(8); // FIXME: should be configurable
+    const contactName = createRandomToken(8); // FIXME: should be configurable
     const contactTransport =
       this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
     const contact = {
