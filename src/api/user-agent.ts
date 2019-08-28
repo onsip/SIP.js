@@ -60,7 +60,7 @@ declare var chrome: any;
  *
  * @public
  */
-export class UserAgent extends EventEmitter {
+export class UserAgent {
 
   /** @internal */
   public static readonly C = {
@@ -187,8 +187,6 @@ export class UserAgent extends EventEmitter {
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
   constructor(options: UserAgentOptions = {}) {
-    super();
-
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -467,21 +465,6 @@ export class UserAgent extends EventEmitter {
   ): Inviter {
     return new Inviter(this, targetURI, options);
   }
-
-  /** @internal */
-  public on(name: "outOfDialogReferRequested", callback: (context: any) => void): this;
-  /** @internal */
-  public on(name: "message", callback: (message: any) => void): this;
-  /** @internal */
-  public on(name: "notify", callback: (request: any) => void): this;
-  /** @internal */
-  public on(name: "subscribe", callback: (subscribe: IncomingSubscribeRequest) => void): this;
-  /** @internal */
-  public on(name: "registered", callback: (response?: any) => void): this;
-  /** @internal */
-  public on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
-  /** @internal */
-  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
   // ==============================
   // Event Handlers
@@ -829,11 +812,6 @@ export class UserAgent extends EventEmitter {
             incomingNotifyRequest.reject({ statusCode: 481 });
           }
         }
-
-        // DEPRECATED
-        if (this.options.allowLegacyNotifications && this.listeners("notify").length > 0) {
-          this.emit("notify", { request: incomingNotifyRequest.message });
-        }
       },
       onRefer: (incomingReferRequest: IncomingReferRequest): void => {
         this.logger.log("Received an out of dialog refer");
@@ -855,10 +833,10 @@ export class UserAgent extends EventEmitter {
         // }
       },
       onSubscribe: (incomingSubscribeRequest: IncomingSubscribeRequest): void => {
-        this.emit("subscribe", incomingSubscribeRequest);
-        // if (this.delegate && this.delegate.onSubscribe) {
-        //   this.delegate.onSubscribe(incomingSubscribeRequest);
-        // }
+        // TOOD: this.delegate.onSubscribe(...)
+        if (this.delegate && this.delegate.onSubscribeRequest) {
+          this.delegate.onSubscribeRequest(incomingSubscribeRequest);
+        }
       }
     };
 
