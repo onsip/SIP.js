@@ -17,9 +17,9 @@ import {
   SignalingState,
   Timers
 } from "../core";
+import { getReasonPhrase } from "../core/messages/utils";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
 
 import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
@@ -386,7 +386,7 @@ export class Invitation extends Session {
 
     const statusCode = options.statusCode || 480;
 
-    const reasonPhrase = Utils.getReasonPhrase(statusCode, options.reasonPhrase);
+    const reasonPhrase = options.reasonPhrase ? options.reasonPhrase  : getReasonPhrase(statusCode);
     const extraHeaders = options.extraHeaders || [];
 
     if (statusCode < 300 || statusCode > 699) {
