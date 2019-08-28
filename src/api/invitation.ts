@@ -245,8 +245,12 @@ export class Invitation extends Session {
         };
         this.dialog = session;
         this.stateTransition(SessionState.Established);
-        // legacy
-        this.accepted(message, Utils.getReasonPhrase(200));
+
+        // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
+        // This behavoir has been ported forward from legacy versions.
+        if (this.replacee) {
+          this.replacee.bye();
+        }
       })
       .catch((error) => {
         this.onContextError(error);

@@ -229,8 +229,7 @@ export abstract class Session extends EventEmitter {
       "referRequestAccepted" |
       "referRequestRejected" |
       "reinviteAccepted" |
-      "reinviteFailed" |
-      "replaced",
+      "reinviteFailed",
     listener: (session: Session) => void
   ): this;
   /**
@@ -260,13 +259,6 @@ export abstract class Session extends EventEmitter {
    */
   public on(
     event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "accepted", listener: (response: string | IncomingResponseMessage, cause: string) => void
   ): this;
   /**
    * @deprecated Legacy state transition.
@@ -354,8 +346,7 @@ export abstract class Session extends EventEmitter {
       "referRequestAccepted" |
       "referRequestRejected" |
       "reinviteAccepted" |
-      "reinviteFailed" |
-      "replaced",
+      "reinviteFailed",
     session: Session): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -384,13 +375,6 @@ export abstract class Session extends EventEmitter {
    */
   public emit(
     event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "accepted", response?: string | IncomingResponseMessage, cause?: string
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -1149,24 +1133,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  protected accepted(response?: IncomingResponseMessage | string, cause?: string): void {
-    if (response instanceof IncomingResponseMessage) {
-      cause = Utils.getReasonPhrase(response.statusCode || 0, cause);
-    }
-
-    this.startTime = new Date();
-
-    if (this.replacee) {
-      this.replacee.emit("replaced", this);
-      this.replacee.bye();
-    }
-    this.emit("accepted", response, cause);
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   protected canceled(): void {
     if (this._sessionDescriptionHandler) {
       this._sessionDescriptionHandler.close();
@@ -1441,6 +1407,11 @@ export abstract class Session extends EventEmitter {
         break;
       default:
         throw new Error("Unrecognized state.");
+    }
+
+    // Deprecated legacy ported behavior
+    if (newState === SessionState.Established) {
+      this.startTime = new Date();
     }
 
     // Transition

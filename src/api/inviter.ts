@@ -808,7 +808,6 @@ export class Inviter extends Session {
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
             this.emit("ack", ackRequest.message);
-            this.accepted(response);
           })
           .catch((error: Error) => {
             this.ackAndBye(inviteResponse, 488, "Invalid session description");
@@ -829,7 +828,6 @@ export class Inviter extends Session {
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           this.emit("ack", ackRequest.message);
-          this.accepted(response);
           return Promise.resolve();
         }
 
@@ -863,7 +861,6 @@ export class Inviter extends Session {
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           this.emit("ack", ackRequest.message);
-          this.accepted(response);
           return Promise.resolve();
         }
 
@@ -889,7 +886,6 @@ export class Inviter extends Session {
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
             this.emit("ack", ackRequest.message);
-            this.accepted(response);
           })
           .catch((error: Error) => {
             this.logger.error(error.message);
