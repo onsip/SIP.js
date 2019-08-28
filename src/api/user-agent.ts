@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 
-import { C as SIPConstants } from "../Constants";
 import {
   Contact,
   DigestAuthentication,
@@ -25,6 +24,7 @@ import {
 import { UAStatus } from "../Enums";
 import { Parser } from "../Parser";
 import { Utils } from "../Utils";
+import { LIBRARY_VERSION } from "../version";
 import {
   SessionDescriptionHandler as WebSessionDescriptionHandler
 } from "../Web/SessionDescriptionHandler";
@@ -139,7 +139,7 @@ export class UserAgent {
     transportOptions: {},
     uri: new URI("sip", "anonymous", "anonymous.invalid"),
     usePreloadedRoute: false,
-    userAgentString: SIPConstants.USER_AGENT,
+    userAgentString: "SIP.js/" + LIBRARY_VERSION,
     viaHost: ""
   };
 
@@ -448,8 +448,8 @@ export class UserAgent {
 
     const allowUnregistered = this.options.hackAllowUnregisteredOptionTags || false;
     const optionTagSet: {[name: string]: boolean} = {};
-    optionTags = optionTags.filter((optionTag: string) => {
-      const registered = SIPConstants.OPTION_TAGS[optionTag];
+    optionTags = optionTags.filter((optionTag) => {
+      const registered = UserAgentRegisteredOptionTags[optionTag];
       const unique = !optionTagSet[optionTag];
       optionTagSet[optionTag] = true;
       return (registered || allowUnregistered) && unique;
