@@ -62,40 +62,6 @@ declare var chrome: any;
  */
 export class UserAgent {
 
-  /** @internal */
-  public static readonly C = {
-    // UA status codes
-    STATUS_INIT:                0,
-    STATUS_STARTING:            1,
-    STATUS_READY:               2,
-    STATUS_USER_CLOSED:         3,
-    STATUS_NOT_READY:           4,
-
-    // UA error codes
-    CONFIGURATION_ERROR:  1,
-    NETWORK_ERROR:        2,
-
-    ALLOWED_METHODS: [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ],
-
-    ACCEPTED_BODY_TYPES: [
-      "application/sdp",
-      "application/dtmf-relay"
-    ],
-
-    MAX_FORWARDS: 70,
-    TAG_LENGTH: 10
-  };
-
   /**
    * Create a URI instance from a string.
    * @param uri - The string to parse.
@@ -173,8 +139,6 @@ export class UserAgent {
   private loggerFactory: LoggerFactory = new LoggerFactory();
   /** Options. */
   private options: Required<UserAgentOptions>;
-
-  private error: number | undefined;
 
   private _state: UserAgentState = UserAgentState.Initial;
   private _stateEventEmitter = new EventEmitter();
@@ -474,11 +438,7 @@ export class UserAgent {
     if (this.status === UAStatus.STATUS_USER_CLOSED) {
       return;
     }
-
-    if (!this.error || this.error !== UserAgent.C.NETWORK_ERROR) {
-      this.status = UAStatus.STATUS_NOT_READY;
-      this.error = UserAgent.C.NETWORK_ERROR;
-    }
+    this.status = UAStatus.STATUS_NOT_READY;
   }
 
   /**
