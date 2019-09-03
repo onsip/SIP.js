@@ -78,7 +78,7 @@ userAgent.start().then(() => {
    */
   const registererOptions: RegistererOptions = { /* ... */ };
   const registerer = new Registerer(userAgent, registererOptions);
-  registerer.register();
+  userAgent.transport.on('connected', () => registerer.register());
 
   /*
    * Send an outgoing INVITE request
