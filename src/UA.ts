@@ -337,7 +337,9 @@ export class UA extends EventEmitter {
         if (context.autoSendAnInitialProvisionalResponse) {
           context.progress();
         }
-        this.emit("invite", context);
+        if (!this.isBusyCauseOutgoingCallInProgress) {
+          this.emit("invite", context);
+        }
       },
       onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
         // Ported - handling of out of dialog MESSAGE.
