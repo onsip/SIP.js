@@ -1464,10 +1464,18 @@ export class InviteServerContext extends Session implements ServerContext {
     }
 
     try {
-      const progressResponse = this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
-      this.emit("progress", progressResponse.message, reasonPhrase); // Ported
-      this.session = progressResponse.session;
-      return Promise.resolve(progressResponse);
+      if (this.ua.isBusyCauseOutgoingCallInProgress) {
+        this.incomingRequest.reject({ statusCode: 486 });
+        this.failed(undefined, "");
+        this.terminated(undefined, "");
+        this._canceled = true;
+        return Promise.reject("Outgoing call is in progress, so status 486 Busy Here");
+      } else {
+        const progressResponse = this.incomingRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
+        this.emit("progress", progressResponse.message, reasonPhrase); // Ported
+        this.session = progressResponse.session;
+        return Promise.resolve(progressResponse);
+      }
     } catch (error) {
       return Promise.reject(error);
     }
