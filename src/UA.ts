@@ -156,6 +156,12 @@ export class UA extends EventEmitter {
   public data: any;
   public logger: Logger;
 
+  /**
+   * isBusyCauseOutgoingCallInProgress parameter added to adjust logic for incoming call during
+   * outgoing call (remove "180 Ringing" status and send "486 Busy Here" exactly after "100 Trying" status)
+   */
+  public isBusyCauseOutgoingCallInProgress: boolean = false;
+
   public userAgentCore: UserAgentCore;
 
   private log: LoggerFactory;
@@ -331,7 +337,9 @@ export class UA extends EventEmitter {
         if (context.autoSendAnInitialProvisionalResponse) {
           context.progress();
         }
-        this.emit("invite", context);
+        if (!this.isBusyCauseOutgoingCallInProgress) {
+          this.emit("invite", context);
+        }
       },
       onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
         // Ported - handling of out of dialog MESSAGE.
