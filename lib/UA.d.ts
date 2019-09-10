@@ -101,6 +101,11 @@ export declare class UA extends EventEmitter {
     };
     data: any;
     logger: Logger;
+    /**
+     * isBusyCauseOutgoingCallInProgress parameter added to adjust logic for incoming call during
+     * outgoing call (remove "180 Ringing" status and send "486 Busy Here" exactly after "100 Trying" status)
+     */
+    isBusyCauseOutgoingCallInProgress: boolean;
     userAgentCore: UserAgentCore;
     private log;
     private error;
