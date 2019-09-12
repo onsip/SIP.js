@@ -145,8 +145,6 @@ export abstract class Session extends EventEmitter {
   /** @internal */
   protected rendertype: string | undefined;
   /** @internal */
-  protected sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
-  /** @internal */
   protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
@@ -172,14 +170,6 @@ export abstract class Session extends EventEmitter {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
-
-    const sessionDescriptionHandlerFactory = this.userAgent.configuration.sessionDescriptionHandlerFactory;
-    if (!sessionDescriptionHandlerFactory) {
-      throw new Exceptions.SessionDescriptionHandlerError(
-        "A session description handler is required for the session to function."
-      );
-    }
-    this.sessionDescriptionHandlerFactory = sessionDescriptionHandlerFactory;
 
     this.errorListener = this.onTransportError.bind(this);
     if (userAgent.transport) {
@@ -379,6 +369,13 @@ export abstract class Session extends EventEmitter {
    */
   get sessionDescriptionHandler(): SessionDescriptionHandler | undefined {
     return this._sessionDescriptionHandler;
+  }
+
+  /**
+   * Session description handler factory.
+   */
+  get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory {
+    return this.userAgent.configuration.sessionDescriptionHandlerFactory;
   }
 
   /**
