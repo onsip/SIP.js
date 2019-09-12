@@ -35,6 +35,9 @@
 
 ## Misc Open Items
 - Dependencies on "old" api files need to be removed from src/api
+  - Constants, Enums, Exceptions, Utils need to go away
+  - Parser needs to be moved to src/parser and shared
+- Event emissions need to be removed
 - The entire src/api code needs a top down once over
 - Music-on-hold support needed
 - Hold sdp offer too large for UDP
@@ -46,19 +49,6 @@
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
 - SDH options & SDH modifiers options are applied somewhat ambiguously
   - This behavior was ported from legacy code and the issue punted down the road.
-- Outstanding re-INVITE API issues
-  - AckAndBye on failure applying 200 OK answer/offer, reject on applying INVITE offer
-  - isFailed boolean on ackandbye (like isCanceled)
-  - Reinvite timeout response handling
-  - Outstanding reinvite api issues
-  - Interface for handling re-invite needs to be sorted out...
-    - current callbacks are not consistent with the others as they are firing after responding
-      - they are firing after sending response
-      - they don't provide access to the request
-      - they don't provide access to the response
-      - an Invitation is not a re-Invitation, so can't provide that to a callback
-      - not clear how best to handle error responding to a reinvite
-      - cannot get handle on ACK or BYE or BYE response
 
 ## REFER handling - it's evolved over time and we're out of date
 

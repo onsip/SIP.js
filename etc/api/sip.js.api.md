@@ -466,7 +466,7 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "ack" | "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
+    emit(event: "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
@@ -527,8 +527,6 @@ export abstract class Session extends EventEmitter {
     method: string;
     // @internal @deprecated (undocumented)
     on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
-    // @internal @deprecated (undocumented)
-    on(event: "ack" | "invite" | "refer", listener: (request: OutgoingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
