@@ -198,28 +198,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  // public on(
-  //   event: "dtmf",
-  //   listener: (request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF | DTMFSender) => void
-  // ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public on(
-  //   event: "referRequested", listener: (context: ReferClientContext | ReferServerContext) => void
-  // ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public on(
-  //   event: "referProgress" | "referAccepted", listener: (context: ReferServerContext) => void
-  // ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   public on(
     event:
       "referInviteSent" |
@@ -245,13 +223,6 @@ export abstract class Session extends EventEmitter {
    */
   public on(
     event: "confirmed" | "notify",   listener: (request: IncomingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "ack" | "invite" | "refer", listener: (request: OutgoingRequestMessage) => void
   ): this;
   /**
    * @deprecated Legacy state transition.
@@ -318,26 +289,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  // public emit(
-  //   event: "dtmf", request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF | DTMFSender
-  // ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public emit(
-  //   event: "referRequested", context: ReferClientContext | ReferServerContext
-  // ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public emit(
-  //   event: "referProgress" | "referAccepted", context: ReferServerContext): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   public emit(
     event:
       "referInviteSent" |
@@ -367,7 +318,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public emit(
-    event: "ack" | "invite" | "refer" | "notify", request: OutgoingRequestMessage
+    event: "invite" | "refer" | "notify", request: OutgoingRequestMessage
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -801,7 +752,6 @@ export abstract class Session extends EventEmitter {
     reasonPhrase?: string
   ): void {
     const outgoingAckRequest = response.ack();
-    this.emit("ack", outgoingAckRequest.message);
     const extraHeaders: Array<string> = [];
     if (statusCode) {
       extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));

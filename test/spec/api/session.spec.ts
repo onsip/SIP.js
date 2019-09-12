@@ -86,29 +86,27 @@ describe("Session Class New", () => {
     });
 
     if (answerInAck) {
-      it("her context should emit 'sdh', 'ack', 'accepted'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_ACK);
-      });
-    } else {
-      it("her context should emit ack', 'accepted'", () => {
+      it("her context should emit 'sdh'", () => {
         const spy = inviterEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_ACK);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("her context should emit nothing", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
 
     if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh', 'accepted', 'confirmed'", () => {
+      it("his context should emit 'sdh', 'confirmed'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(2);
         expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
         expect(spy.calls.argsFor(1)).toEqual(EVENT_CONFIRMED);
       });
     } else {
-      it("his context should emit 'accepted', 'confirmed'", () => {
+      it("his context should emit 'confirmed'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(EVENT_CONFIRMED);
@@ -167,36 +165,33 @@ describe("Session Class New", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_200);
     });
 
-    it("her context should emit 'ack', 'accepted'", () => {
+    it("her context should emit nothing", () => {
       const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_ACK);
+      expect(spy).toHaveBeenCalledTimes(0);
     });
 
     if (answerInAck) {
-      it("her context should emit 'sdh', 'ack', 'accepted'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_ACK);
-      });
-    } else {
-      it("her context should emit ack', 'accepted'", () => {
+      it("her context should emit 'sdh'", () => {
         const spy = inviterEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_ACK);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("her context should emit nothing", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
 
     if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh', 'accepted', 'confirmed'", () => {
+      it("his context should emit 'sdh', 'confirmed'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(2);
         expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
         expect(spy.calls.argsFor(1)).toEqual(EVENT_CONFIRMED);
       });
     } else {
-      it("his context should emit 'accepted', 'confirmed'", () => {
+      it("his context should emit 'confirmed'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(EVENT_CONFIRMED);
@@ -285,26 +280,24 @@ describe("Session Class New", () => {
     }
 
     if (answerInAck) {
-      it("her context should emit 'sdh', 'ack', 'accepted', 'bye', 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(4);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_ACK);
-        expect(spy.calls.argsFor(2)).toEqual(EVENT_BYE);
-        expect(spy.calls.argsFor(3)).toEqual(EVENT_TERMINATED);
-      });
-    } else {
-      it("her context should emit 'ack', 'accepted', 'bye', 'terminated'", () => {
+      it("her context should emit 'sdh', 'bye', 'terminated'", () => {
         const spy = inviterEmitSpy;
         expect(spy).toHaveBeenCalledTimes(3);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_ACK);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
         expect(spy.calls.argsFor(1)).toEqual(EVENT_BYE);
         expect(spy.calls.argsFor(2)).toEqual(EVENT_TERMINATED);
+      });
+    } else {
+      it("her context should emit 'bye', 'terminated'", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_BYE);
+        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
       });
     }
 
     if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh', 'accepted', 'bye', 'terminated'", () => {
+      it("his context should emit 'sdh', 'bye', 'terminated'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(4);
         expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
@@ -313,7 +306,7 @@ describe("Session Class New", () => {
         expect(spy.calls.argsFor(3)).toEqual(EVENT_BYE); // seems obviously broken
       });
     } else {
-      it("his context should emit 'accepted', 'bye', 'terminated'", () => {
+      it("his context should emit 'bye', 'terminated'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(3);
         expect(spy.calls.argsFor(0)).toEqual(EVENT_BYE);
@@ -1542,23 +1535,17 @@ describe("Session Class New", () => {
       });
 
       if (answerInAck) {
-        it("her context should emit 'sdh', 'ack', 'bye', 'ack', 'accepted'", () => {
+        it("her context should emit 'sdh', 'bye'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(4);
+          expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_ACK);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_BYE);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_ACK);
-          // expect(spy.calls.argsFor(4)).toEqual(EVENT_ACCEPTED_ICC);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_BYE);
         });
       } else {
-        it("her context should emit 'ack', 'bye', 'ack', 'accepted'", () => {
+        it("her context should emit 'bye'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
-          // expect(spy.calls.argsFor(0)).toEqual(EVENT_ACK);
-          // expect(spy.calls.argsFor(1)[0]).toEqual(EVENT_ACCEPTED_OR_BYE);
-          // expect(spy.calls.argsFor(2)).toEqual(EVENT_ACK);
-          // expect(spy.calls.argsFor(3)[0]).toEqual(EVENT_ACCEPTED_OR_BYE);
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_BYE);
         });
       }
 
