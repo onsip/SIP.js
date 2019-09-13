@@ -248,7 +248,8 @@ export class Inviter extends Session {
     // transition state
     this.stateTransition(SessionState.Terminating);
 
-    // cleanup media if need be
+    // cleanup media as needed
+    this.disposeEarlyMedia();
     if (this.sessionDescriptionHandler) {
       this.sessionDescriptionHandler.close();
     }

@@ -1283,10 +1283,12 @@ describe("Session Class New", () => {
     return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
-    alice.userAgent.stop();
-    bob.userAgent.stop();
+  afterEach(async () => {
+    return alice.userAgent.stop()
+      .then(() => expect(alice.isShutdown()).toBe(true))
+      .then(() => bob.userAgent.stop())
+      .then(() => expect(bob.isShutdown()).toBe(true))
+      .then(() => jasmine.clock().uninstall());
   });
 
   describe("Alice constructs a new INVITE targeting Bob with SDP offer", () => {
@@ -1697,6 +1699,11 @@ describe("Session Class New", () => {
     beforeEach(async () => {
       bob2 = makeUserFake("bob", "example.com", "Bob2");
       connectUserFake(alice, bob2);
+    });
+
+    afterEach(async () => {
+      return bob2.userAgent.stop()
+        .then(() => expect(bob2.isShutdown()).toBe(true));
     });
 
     describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {

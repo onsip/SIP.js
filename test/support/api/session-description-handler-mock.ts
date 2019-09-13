@@ -5,7 +5,8 @@ import {
   SessionDescriptionHandlerFactory
 } from "../../../src/api";
 
-export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<SessionDescriptionHandler> {
+export function makeMockSessionDescriptionHandler(name: string, id: number): jasmine.SpyObj<SessionDescriptionHandler> {
+  let closed = false;
   let state: "stable" | "has-local-offer" | "has-remote-offer" = "stable";
   const sdh = jasmine.createSpyObj<Required<SessionDescriptionHandler>>("SessionDescriptionHandler", [
     "close",
@@ -16,6 +17,17 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
     "setDescription",
     "sendDtmf"
   ]);
+  sdh.close.and.callFake(() => {
+    // console.warn(`SDH.close[${name}][${id}]`);
+    // TODO: Currently the API does call close() more than once in various
+    // circumstances so we are checking to make sure close() called at least once.
+    // But it  would be nice if the api did never called close() more than once...
+    // if (closed) {
+    //   throw new Error(`close[${name}][${id}] Already closed`);
+    // }
+    closed = true;
+    return;
+  }),
   sdh.getDescription.and.callFake(() => {
     const fromState = state;
     const contentType = "application/sdp";
@@ -26,7 +38,7 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
         body = "SDP OFFER";
         break;
       case "has-local-offer":
-        throw new Error(`getDescription[${name}] ${fromState} => ${state} Invalid SDH state transition`);
+        throw new Error(`SDH.getDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition`);
       case "has-remote-offer":
         state = "stable";
         body = "SDP ANSWER";
@@ -45,7 +57,8 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
     const fromState = state;
     switch (state) {
       case "stable":
-        // throw new Error(`rollbackDescription[${name}] ${fromState} => ${state} Invalid SDH state transition`);
+        // tslint:disable-next-line:max-line-length
+        // throw new Error(`SDH.rollbackDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition`);
         state = "stable";
         break;
       case "has-local-offer":
@@ -57,7 +70,7 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
       default:
         throw new Error("Unknown SDH state");
     }
-    // console.warn(`rollbackDescription[${name}] ${fromState} => ${state}`);
+    // console.warn(`SDH.rollbackDescription[${name}][${id}] ${fromState} => ${state}`);
     return Promise.resolve().then(() => {
       return;
     });
@@ -72,24 +85,32 @@ export function makeMockSessionDescriptionHandler(name: string): jasmine.SpyObj<
         state = "stable";
         break;
       case "has-remote-offer":
-        throw new Error(`setDescription[${name}] ${fromState} => ${state} Invalid SDH state transition`);
+        throw new Error(`SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition`);
       default:
         throw new Error("Unknown SDH state");
     }
-    // console.warn(`setDescription[${name}] ${fromState} => ${state}`);
+    // console.warn(`SDH.setDescription[${name}][${id}] ${fromState} => ${state}`);
     return Promise.resolve().then(() => {
       return;
     });
   });
+  // console.warn(`SDH.make[${name}][${id}]`);
   return sdh;
 }
 
-export function makeMockSessionDescriptionHandlerFactory(name: string): SessionDescriptionHandlerFactory {
+export function makeMockSessionDescriptionHandlerFactory(
+  name: string,
+  id: number = 0,
+  store?: Array<jasmine.SpyObj<SessionDescriptionHandler>>): SessionDescriptionHandlerFactory {
   const factory = (
     session: Session,
     options?: object
   ): jasmine.SpyObj<SessionDescriptionHandler> => {
-    return makeMockSessionDescriptionHandler(name);
+    const mock = makeMockSessionDescriptionHandler(name, id++);
+    if (store) {
+      store.push(mock);
+    }
+    return mock;
   };
   return factory;
 }

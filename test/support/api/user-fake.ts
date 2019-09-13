@@ -1,5 +1,5 @@
 import { URI } from "../../../src";
-import { SIPExtension, UserAgent, UserAgentOptions } from "../../../src/api";
+import { SessionDescriptionHandler, SIPExtension, UserAgent, UserAgentOptions } from "../../../src/api";
 import { makeMockSessionDescriptionHandlerFactory } from "./session-description-handler-mock";
 import { TransportFake } from "./transport-fake";
 
@@ -13,6 +13,7 @@ export interface UserFake {
   uri: URI;
   userAgent: UserAgent;
   userAgentOptions: UserAgentOptions;
+  isShutdown: () => boolean;
 }
 
 export function makeUserFake(
@@ -21,6 +22,8 @@ export function makeUserFake(
   displayName: string,
   options: UserAgentOptions = {}
 ): UserFake {
+  const mockSessionDescriptionHandlers: Array<jasmine.SpyObj<SessionDescriptionHandler>> = [];
+
   const uri = new URI("sip", user, domain);
   const userAgentOptions: UserAgentOptions = {
     ...{
@@ -29,7 +32,11 @@ export function makeUserFake(
       noAnswerTimeout: 90, // seconds
       sipExtension100rel: SIPExtension.Supported,
       sipExtensionReplaces: SIPExtension.Supported,
-      sessionDescriptionHandlerFactory: makeMockSessionDescriptionHandlerFactory(user),
+      sessionDescriptionHandlerFactory: makeMockSessionDescriptionHandlerFactory(
+        displayName,
+        0,
+        mockSessionDescriptionHandlers
+      ),
       transportConstructor: TransportFake
     },
     ...options
@@ -39,6 +46,27 @@ export function makeUserFake(
     throw new Error("Transport not TransportFake");
   }
   userAgent.transport.id = displayName;
+
+  const isShutdown = (): boolean => {
+    // TODO: Check user agent state finalized
+
+    // Confirm any and all session description handlers have been closed
+    const sdhClosed = mockSessionDescriptionHandlers.every((mock) => {
+      // TODO: Currently the API does call close() more than once in various
+      // circumstances so we are checking to make sure close() called at least once.
+      // But it  would be nice if the api did never called close() more than once...
+      if (mock.close.calls.count() === 0) {
+        return false;
+      }
+      return true;
+    });
+
+    const shutdown = sdhClosed;
+
+    // console.warn(`${displayName} is shutdown ${shutdown}`);
+    return shutdown;
+  };
+
   return {
     user,
     domain,
@@ -48,7 +76,8 @@ export function makeUserFake(
     transportSendSpy: spyOn(userAgent.transport, "send").and.callThrough(),
     uri,
     userAgent,
-    userAgentOptions
+    userAgentOptions,
+    isShutdown
   };
 }
 
