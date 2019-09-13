@@ -1029,6 +1029,30 @@ describe("Session Class New", () => {
         });
       });
 
+      describe("Bob accept(), Bob never receives ACK - a network failure condition", () => {
+        beforeEach(async () => {
+          resetSpies();
+          alice.transportReceiveSpy.and.returnValue(Promise.resolve()); // drop messages
+          return invitation.accept()
+            .then(() => soon(Timers.TIMER_L));
+        });
+
+        it("his ua should send 200, BYE", async () => {
+          const spy = bob.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(12); // 10 retransmissions of the 200
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
+        });
+
+        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+          expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+        });
+      });
+
       describe("Bob nothing - no answer timeout", () => {
         beforeEach(async () => {
           resetSpies();

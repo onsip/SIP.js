@@ -724,6 +724,7 @@ export class Invitation extends Session {
     }
     this.logger.log("No ACK received for an extended period of time, terminating session");
     this.dialog.bye();
+    this.stateTransition(SessionState.Terminated);
     this.terminated(undefined, C.causes.NO_ACK);
   }
 
