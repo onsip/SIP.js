@@ -433,24 +433,18 @@ export class Invitation extends Session {
       return;
     }
 
+    // flag canceled
+    this._canceled = true;
+
     // transition state
     this.stateTransition(SessionState.Terminated);
 
     // reject INVITE with 487 status code
     this.incomingInviteRequest.reject({ statusCode: 487 });
-    this.canceled();
+
     this.rejected(message, C.causes.CANCELED);
     this.failed(message, C.causes.CANCELED);
     this.terminated(message, C.causes.CANCELED);
-  }
-
-  /**
-   * Called when session canceled.
-   * @internal
-   */
-  protected canceled(): void {
-    this._canceled = true;
-    super.canceled();
   }
 
   /**

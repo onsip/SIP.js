@@ -259,7 +259,7 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public on(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
+  public on(event: "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
   /**
    * @deprecated Legacy state transition.
    * @internal
@@ -355,7 +355,7 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public emit(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected"): boolean;
+  public emit(event: "trackAdded" | "directionChanged" | "referRejected"): boolean;
   /**
    * @deprecated Legacy state transition.
    * @internal
@@ -1074,17 +1074,6 @@ export abstract class Session extends EventEmitter {
           });
       }
     }
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  protected canceled(): void {
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-    this.emit("cancel");
   }
 
   /**
