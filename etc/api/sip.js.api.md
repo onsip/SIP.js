@@ -83,8 +83,6 @@ export class Invitation extends Session {
     body: string | undefined;
     // @internal
     byePending(): void;
-    // @internal
-    protected canceled(): void;
     // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -439,8 +437,6 @@ export abstract class Session extends EventEmitter {
     // 
     // @internal (undocumented)
     static readonly C: typeof SessionStatus;
-    // @internal @deprecated (undocumented)
-    protected canceled(): void;
     // @internal (undocumented)
     close(): void;
     // @internal @deprecated (undocumented)
@@ -458,13 +454,13 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     emit(event: "renegotiationError", error: Error): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
-    // @internal @deprecated (undocumented)
     emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", session: Session): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
@@ -480,7 +476,7 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     emit(event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected"): boolean;
+    emit(event: "trackAdded" | "directionChanged" | "referRejected"): boolean;
     // @internal (undocumented)
     endTime: Date | undefined;
     // @internal (undocumented)
@@ -526,6 +522,8 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     method: string;
     // @internal @deprecated (undocumented)
+    on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
+    // @internal @deprecated (undocumented)
     on(event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "connecting", listener: (request: {
@@ -540,15 +538,13 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     on(event: "renegotiationError", listener: (error: Error) => void): this;
     // @internal @deprecated (undocumented)
-    on(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
+    on(event: "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
     // @internal @deprecated (undocumented)
     on(event: "SessionDescriptionHandler-created", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "referInviteSent" | "referProgress" | "referAccepted" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", listener: (session: Session) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "reinvite", listener: (session: Session, request: IncomingRequestMessage) => void): this;
-    // @internal @deprecated (undocumented)
-    on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -674,10 +670,7 @@ export interface SessionDescriptionHandlerModifier {
 // @public
 export interface SessionDescriptionHandlerOptions {
     // (undocumented)
-    constraints?: {
-        audio: boolean;
-        video: boolean;
-    };
+    constraints?: object;
 }
 
 // @public
