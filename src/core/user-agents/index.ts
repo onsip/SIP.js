@@ -19,6 +19,7 @@ export * from "./re-subscribe-user-agent-server";
 export * from "./refer-user-agent-client";
 export * from "./refer-user-agent-server";
 export * from "./register-user-agent-client";
+export * from "./register-user-agent-server";
 export * from "./subscribe-user-agent-client";
 export * from "./subscribe-user-agent-server";
 export * from "./user-agent-client";

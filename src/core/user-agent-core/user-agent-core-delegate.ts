@@ -3,6 +3,7 @@ import {
   IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingReferRequest,
+  IncomingRegisterRequest,
   IncomingSubscribeRequest
 } from "../messages";
 
@@ -34,6 +35,12 @@ export interface UserAgentCoreDelegate {
    * @param request - Incoming REFER request.
    */
   onRefer?(request: IncomingReferRequest): void;
+
+  /**
+   * Receive REGISTER request.
+   * @param request - Incoming REGISTER request.
+   */
+  onRegister?(request: IncomingRegisterRequest): void;
 
   /**
    * Receive SUBSCRIBE request.

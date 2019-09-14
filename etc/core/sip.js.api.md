@@ -773,6 +773,13 @@ export class RegisterUserAgentClient extends UserAgentClient implements Outgoing
 }
 
 // @public
+export class RegisterUserAgentServer extends UserAgentServer implements IncomingRegisterRequest {
+    constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
+    // (undocumented)
+    protected core: UserAgentCore;
+}
+
+// @public
 export class ReInviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest {
     constructor(dialog: SessionDialog, delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions);
     // (undocumented)
@@ -1209,6 +1216,7 @@ export interface UserAgentCoreDelegate {
     onMessage?(request: IncomingMessageRequest): void;
     onNotify?(request: IncomingNotifyRequest): void;
     onRefer?(request: IncomingReferRequest): void;
+    onRegister?(request: IncomingRegisterRequest): void;
     onSubscribe?(request: IncomingSubscribeRequest): void;
 }
 
