@@ -27,6 +27,8 @@ export function makeUserFake(
   const uri = new URI("sip", user, domain);
   const userAgentOptions: UserAgentOptions = {
     ...{
+      autoStart: false,
+      autoStop: false,
       uri,
       displayName,
       noAnswerTimeout: 90, // seconds

@@ -39,7 +39,7 @@ const rejectedEvent = ["rejected", jasmine.any(Object), jasmine.any(String)];
 const terminatedEvent = ["terminated"];
 const notifyEvent = ["notify", jasmine.any(Object)];
 
-describe("Subscription Class New", () => {
+describe("API Subscription", () => {
   let alice: UserFake;
   let bob: UserFake;
   let target: URI;
@@ -54,16 +54,21 @@ describe("Subscription Class New", () => {
     subscriptionEmitSpy.calls.reset();
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jasmine.clock().install();
     alice = makeUserFake("alice", "example.com", "Alice");
     bob = makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
     target = bob.uri;
+    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
+  afterEach(async () => {
+    return alice.userAgent.stop()
+      .then(() => expect(alice.isShutdown()).toBe(true))
+      .then(() => bob.userAgent.stop())
+      .then(() => expect(bob.isShutdown()).toBe(true))
+      .then(() => jasmine.clock().uninstall());
   });
 
   describe("Alice constructs a new subscription targeting Bob", () => {

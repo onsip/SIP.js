@@ -7,12 +7,12 @@ import { soon } from "../../support/api/utils";
  * UserAgent Integration Tests
  */
 
-describe("UserAgent Class", () => {
+describe("API UserAgent", () => {
   let alice: UserFake;
   let bob: UserFake;
   let target: URI;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jasmine.clock().install();
     const options: UserAgentOptions = {
       autoStart: false
@@ -23,10 +23,12 @@ describe("UserAgent Class", () => {
     return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
-  afterEach(() => {
-    jasmine.clock().uninstall();
-    alice.userAgent.stop();
-    bob.userAgent.stop();
+  afterEach(async () => {
+    return alice.userAgent.stop()
+      .then(() => expect(alice.isShutdown()).toBe(true))
+      .then(() => bob.userAgent.stop())
+      .then(() => expect(bob.isShutdown()).toBe(true))
+      .then(() => jasmine.clock().uninstall());
   });
 
   describe("Alice exists", () => {

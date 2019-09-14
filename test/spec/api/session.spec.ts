@@ -54,7 +54,7 @@ function terminate(invitation: Invitation): Promise<void> {
  * Session Integration Tests
  */
 
-describe("Session Class New", () => {
+describe("API Session", () => {
   let alice: UserFake;
   let bob: UserFake;
   let target: URI;
@@ -1275,7 +1275,7 @@ describe("Session Class New", () => {
     if (invitationStateSpy) { invitationStateSpy.calls.reset(); }
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jasmine.clock().install();
     alice = makeUserFake("alice", "example.com", "Alice");
     bob = makeUserFake("bob", "example.com", "Bob");
@@ -1699,6 +1699,7 @@ describe("Session Class New", () => {
     beforeEach(async () => {
       bob2 = makeUserFake("bob", "example.com", "Bob2");
       connectUserFake(alice, bob2);
+      return bob2.userAgent.start();
     });
 
     afterEach(async () => {
@@ -2210,6 +2211,12 @@ describe("Session Class New", () => {
             beforeEach(async () => {
               carol = makeUserFake("carol", "example.com", "Carol");
               connectUserFake(alice, carol);
+              return carol.userAgent.start();
+            });
+
+            afterEach(async () => {
+              return carol.userAgent.stop()
+                .then(() => expect(carol.isShutdown()).toBe(true));
             });
 
             describe("Replacing unknown session", () => {
