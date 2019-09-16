@@ -17,14 +17,14 @@ export interface UserFake {
 }
 
 export function makeUserFake(
-  user: string,
+  user: string | undefined,
   domain: string,
   displayName: string,
   options: UserAgentOptions = {}
 ): UserFake {
   const mockSessionDescriptionHandlers: Array<jasmine.SpyObj<SessionDescriptionHandler>> = [];
-
-  const uri = new URI("sip", user, domain);
+  const userHack: any = user; // FIXME: this is because grammar/parser produces undefined on no user
+  const uri = new URI("sip", userHack, domain);
   const userAgentOptions: UserAgentOptions = {
     ...{
       autoStart: false,
@@ -70,7 +70,7 @@ export function makeUserFake(
   };
 
   return {
-    user,
+    user: user ? user : "",
     domain,
     displayName,
     transport: userAgent.transport,

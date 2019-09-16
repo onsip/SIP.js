@@ -1,4 +1,4 @@
-import { IncomingSubscribeRequest } from "../core";
+import { IncomingRegisterRequest, IncomingSubscribeRequest } from "../core";
 import { Invitation } from "./invitation";
 import { Message } from "./message";
 import { Notification } from "./notification";
@@ -49,6 +49,13 @@ export interface UserAgentDelegate {
    * @param subscription - The subscription.
    */
   onSubscribe?(subscription: Subscription): void;
+
+  /**
+   * @internal
+   * Called upon receipt of a registration request. Used by test suite.
+   * @param request - The request.
+   */
+  onRegisterRequest?(request: IncomingRegisterRequest): void;
 
   /**
    * @internal

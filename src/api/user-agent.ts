@@ -8,6 +8,7 @@ import {
   IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingReferRequest,
+  IncomingRegisterRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
   IncomingSubscribeRequest,
@@ -39,6 +40,7 @@ import { InviterOptions } from "./inviter-options";
 import { Message } from "./message";
 import { Notification } from "./notification";
 import { Publisher } from "./publisher";
+import { Registerer } from "./registerer";
 import { Session } from "./session";
 import { SessionState } from "./session-state";
 import { Subscription } from "./subscription";
@@ -121,6 +123,8 @@ export class UserAgent {
   public applicants: {[id: string]: Inviter} = {};
   /** @internal */
   public publishers: {[id: string]: Publisher} = {};
+  /** @internal */
+  public registerers: {[id: string]: Registerer } = {};
   /** @internal */
   public sessions: {[id: string]: Session } = {};
   /** @internal */
@@ -295,16 +299,19 @@ export class UserAgent {
    * @remarks
    * Unregisters and terminates active sessions/subscriptions.
    */
-  public stop(): Promise<void> {
-    this.logger.log("user requested closure...");
+  public async stop(): Promise<void> {
+    this.logger.log(`Stopping user agent ${this.configuration.uri}...`);
 
     if (this.status === UAStatus.STATUS_USER_CLOSED) {
       this.logger.warn("UA already closed");
     }
 
-    // Close registerContext
-    // this.logger.log("closing registerContext");
-    // this.registerer.close();
+    // Dispose of Registerers
+    for (const id in this.registerers) {
+      if (this.registerers[id]) {
+        await this.registerers[id].dispose();
+      }
+    }
 
     // End every Session
     for (const id in this.sessions) {
@@ -793,6 +800,12 @@ export class UserAgent {
         // if (this.delegate && this.delegate.onRefer) {
         //   this.delegate.onRefer(incomingReferRequest);
         // }
+      },
+      onRegister: (incomingRegisterRequest: IncomingRegisterRequest): void => {
+        // TOOD: this.delegate.onRegister(...)
+        if (this.delegate && this.delegate.onRegisterRequest) {
+          this.delegate.onRegisterRequest(incomingRegisterRequest);
+        }
       },
       onSubscribe: (incomingSubscribeRequest: IncomingSubscribeRequest): void => {
         // TOOD: this.delegate.onSubscribe(...)

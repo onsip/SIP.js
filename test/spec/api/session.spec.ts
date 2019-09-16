@@ -140,9 +140,10 @@ describe("API Session", () => {
   }
 
   function bobAccept2x(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean): void {
-    let threw = false;
+    let threw: boolean;
 
     beforeEach(async () => {
+      threw  = false;
       resetSpies();
       invitation.accept();
       try {
@@ -558,9 +559,10 @@ describe("API Session", () => {
   }
 
   function bobReject2x(): void {
-    let threw = false;
+    let threw: boolean;
 
     beforeEach(async () => {
+      threw = false;
       resetSpies();
       invitation.reject();
       invitation.reject()
@@ -598,7 +600,7 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(2)).toEqual(EVENT_TERMINATED_ISC);
     });
 
-    it("her second reject() threw an error", () => {
+    it("his second reject() threw an error", () => {
       expect(threw).toBe(true);
     });
   }
@@ -668,9 +670,10 @@ describe("API Session", () => {
   }
 
   function bobTerminate2x(bye = true): void {
-    let threw = false;
+    let threw: boolean;
 
     beforeEach(async () => {
+      threw = false;
       resetSpies();
       terminate(invitation);
       terminate(invitation)
