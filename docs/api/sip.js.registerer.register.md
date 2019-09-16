@@ -4,10 +4,12 @@
 
 ## Registerer.register() method
 
+Sends the REGISTER request.
+
 <b>Signature:</b>
 
 ```typescript
-register(options?: RegistererRegisterOptions): Promise<void>;
+register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
 ```
 
 ## Parameters
@@ -18,5 +20,9 @@ register(options?: RegistererRegisterOptions): Promise<void>;
 
 <b>Returns:</b>
 
-`Promise<void>`
+`Promise<OutgoingRegisterRequest>`
+
+## Remarks
+
+If successfull, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
 

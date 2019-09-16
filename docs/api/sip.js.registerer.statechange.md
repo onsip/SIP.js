@@ -4,7 +4,7 @@
 
 ## Registerer.stateChange property
 
-Emits when the referrer state changes.
+Emits when the registerer state changes.
 
 <b>Signature:</b>
 

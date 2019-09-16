@@ -9,7 +9,7 @@ A registerer registers a contact for an address of record (outgoing REGISTER).
 <b>Signature:</b>
 
 ```typescript
-export declare class Registerer extends EventEmitter 
+export declare class Registerer 
 ```
 
 ## Constructors
@@ -23,14 +23,14 @@ export declare class Registerer extends EventEmitter
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [contacts](./sip.js.registerer.contacts.md) |  | <code>Array&lt;string&gt;</code> | The registered contacts. |
-|  [registered](./sip.js.registerer.registered.md) |  | <code>boolean</code> |  |
 |  [state](./sip.js.registerer.state.md) |  | <code>RegistererState</code> | The registration state. |
-|  [stateChange](./sip.js.registerer.statechange.md) |  | <code>Emitter&lt;RegistererState&gt;</code> | Emits when the referrer state changes. |
+|  [stateChange](./sip.js.registerer.statechange.md) |  | <code>Emitter&lt;RegistererState&gt;</code> | Emits when the registerer state changes. |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [register(options)](./sip.js.registerer.register.md) |  |  |
-|  [unregister(options)](./sip.js.registerer.unregister.md) |  |  |
+|  [dispose()](./sip.js.registerer.dispose.md) |  | Destructor. |
+|  [register(options)](./sip.js.registerer.register.md) |  | Sends the REGISTER request. |
+|  [unregister(options)](./sip.js.registerer.unregister.md) |  | Sends the REGISTER request with expires equal to zero. |
 

@@ -351,29 +351,19 @@ export interface ReferrerReferOptions {
 }
 
 // @public
-export class Registerer extends EventEmitter {
+export class Registerer {
     constructor(userAgent: UserAgent, options?: RegistererOptions);
-    // @internal (undocumented)
-    close(): void;
     readonly contacts: Array<string>;
-    // (undocumented)
-    register(options?: RegistererRegisterOptions): Promise<void>;
-    // (undocumented)
-    registered: boolean;
-    // @internal (undocumented)
-    send(): Promise<void>;
+    dispose(): Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "OutgoingRegisterRequest" needs to be exported by the entry point index.d.ts
+    register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
     readonly state: RegistererState;
     readonly stateChange: Emitter<RegistererState>;
-    // (undocumented)
-    unregister(options?: RegistererUnregisterOptions): Promise<void>;
-    // @internal (undocumented)
-    unregistered(response?: IncomingResponseMessage, cause?: string): void;
-}
+    unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
+    }
 
 // @public
 export interface RegistererOptions {
-    // (undocumented)
-    closeWithHeaders?: Array<string>;
     // (undocumented)
     expires?: number;
     // (undocumented)
@@ -391,10 +381,8 @@ export interface RegistererOptions {
 
 // @public
 export interface RegistererRegisterOptions {
-    // (undocumented)
-    closeWithHeaders?: Array<string>;
-    // (undocumented)
-    extraHeaders?: Array<string>;
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
 }
 
 // @public
@@ -409,10 +397,9 @@ export enum RegistererState {
 
 // @public
 export interface RegistererUnregisterOptions {
-    // (undocumented)
     all?: boolean;
-    // (undocumented)
-    extraHeaders?: Array<string>;
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
 }
 
 // @public
@@ -862,6 +849,10 @@ export class UserAgent {
         [id: string]: Publisher;
     };
     // @internal (undocumented)
+    registerers: {
+        [id: string]: Registerer;
+    };
+    // @internal (undocumented)
     sessions: {
         [id: string]: Session;
     };
@@ -891,6 +882,10 @@ export interface UserAgentDelegate {
     onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
+    // Warning: (ae-forgotten-export) The symbol "IncomingRegisterRequest" needs to be exported by the entry point index.d.ts
+    // 
+    // @internal
+    onRegisterRequest?(request: IncomingRegisterRequest): void;
     onSubscribe?(subscription: Subscription): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingSubscribeRequest" needs to be exported by the entry point index.d.ts
     // 
