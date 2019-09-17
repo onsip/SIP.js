@@ -36,8 +36,8 @@ export declare abstract class Transport extends EventEmitter
 |  [disconnectPromise(options)](./sip.js.transport.disconnectpromise.md) |  | Called by disconnect, must return a promise promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean |
 |  [isConnected()](./sip.js.transport.isconnected.md) |  | Returns true if the transport is connected |
 |  [onMessage(e)](./sip.js.transport.onmessage.md) |  | To be called when a message is received |
-|  [send(msg, options)](./sip.js.transport.send.md) |  | Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise |
-|  [sendPromise(msg, options)](./sip.js.transport.sendpromise.md) |  | Called by send, must return a promise promise must resolve to an object. object supports 2 parameters: msg - string (mandatory) and overrideEvent - Boolean (optional) |
+|  [send(message, options)](./sip.js.transport.send.md) |  | Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise Rejects with an Error if message fails to send. |
+|  [sendPromise(message, options)](./sip.js.transport.sendpromise.md) |  | Called by send. |
 |  [waitForConnected()](./sip.js.transport.waitforconnected.md) |  | Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected() |
 
 ## Remarks

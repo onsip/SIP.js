@@ -1088,7 +1088,7 @@ export interface TransactionUser {
 
 // @public
 export abstract class Transport extends EventEmitter {
-    constructor(logger: Logger, options: any);
+    constructor(logger: Logger, options?: any);
     // (undocumented)
     afterConnected(callback: () => void): void;
     connect(options?: any): Promise<void>;
@@ -1099,8 +1099,11 @@ export abstract class Transport extends EventEmitter {
     // (undocumented)
     protected logger: Logger;
     protected abstract onMessage(e: any): void;
-    send(msg: string, options?: any): Promise<void>;
-    protected abstract sendPromise(msg: string, options?: any): Promise<any>;
+    send(message: string, options?: any): Promise<void>;
+    protected abstract sendPromise(message: string, options?: any): Promise<{
+        msg: string;
+        overrideEvent?: boolean;
+    }>;
     // (undocumented)
     server: any;
     waitForConnected(): Promise<void>;
