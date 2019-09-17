@@ -16,6 +16,6 @@ export interface RegistererRegisterOptions
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [closeWithHeaders](./sip.js.registererregisteroptions.closewithheaders.md) | <code>Array&lt;string&gt;</code> |  |
-|  [extraHeaders](./sip.js.registererregisteroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> |  |
+|  [requestDelegate](./sip.js.registererregisteroptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
+|  [requestOptions](./sip.js.registererregisteroptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
 

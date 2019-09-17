@@ -16,7 +16,7 @@ export interface SessionDescriptionHandlerOptions
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) | <code>{</code><br/><code>        audio: boolean;</code><br/><code>        video: boolean;</code><br/><code>    }</code> |  |
+|  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) | <code>object</code> |  |
 
 ## Remarks
 

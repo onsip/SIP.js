@@ -1,4 +1,4 @@
-const LIBRARY_VERSION = "0.15.4";
+import { LIBRARY_VERSION } from "./version";
 
 export namespace C {
   export const version = LIBRARY_VERSION;

@@ -20,7 +20,7 @@ export interface UserAgentOptions
 |  [allowOutOfDialogRefers](./sip.js.useragentoptions.allowoutofdialogrefers.md) | <code>boolean</code> | If <code>true</code>, the user agent will accept out of dialog REFER. |
 |  [authorizationPassword](./sip.js.useragentoptions.authorizationpassword.md) | <code>string</code> | Authorization password. |
 |  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) | <code>string</code> | Authorization username. |
-|  [autoStart](./sip.js.useragentoptions.autostart.md) | <code>boolean</code> | If <code>true</code>, the user agent calls the <code>start()</code> method upon being created. |
+|  [autoStart](./sip.js.useragentoptions.autostart.md) | <code>boolean</code> |  |
 |  [autoStop](./sip.js.useragentoptions.autostop.md) | <code>boolean</code> | If <code>true</code>, the user agent calls the <code>stop()</code> method on unload (if running in browser window). |
 |  [delegate](./sip.js.useragentoptions.delegate.md) | <code>UserAgentDelegate</code> | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [displayName](./sip.js.useragentoptions.displayname.md) | <code>string</code> | The display name associated with the user agent. |

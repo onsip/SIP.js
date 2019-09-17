@@ -248,7 +248,8 @@ export class Inviter extends Session {
     // transition state
     this.stateTransition(SessionState.Terminating);
 
-    // cleanup media if need be
+    // cleanup media as needed
+    this.disposeEarlyMedia();
     if (this.sessionDescriptionHandler) {
       this.sessionDescriptionHandler.close();
     }
@@ -622,6 +623,7 @@ export class Inviter extends Session {
         if (this.dialog) {
           this.logger.log("Additional confirmed dialog, sending ACK and BYE");
           this.ackAndBye(inviteResponse);
+          // We do NOT transition state in this case (this is an "extra" dialog)
           return;
         }
 
@@ -807,8 +809,6 @@ export class Inviter extends Session {
             this.status = SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
-            this.emit("ack", ackRequest.message);
-            this.accepted(response);
           })
           .catch((error: Error) => {
             this.ackAndBye(inviteResponse, 488, "Invalid session description");
@@ -828,8 +828,6 @@ export class Inviter extends Session {
           this.status = SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
-          this.emit("ack", ackRequest.message);
-          this.accepted(response);
           return Promise.resolve();
         }
 
@@ -862,8 +860,6 @@ export class Inviter extends Session {
           this.status = SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
-          this.emit("ack", ackRequest.message);
-          this.accepted(response);
           return Promise.resolve();
         }
 
@@ -888,8 +884,6 @@ export class Inviter extends Session {
             this.status = SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
-            this.emit("ack", ackRequest.message);
-            this.accepted(response);
           })
           .catch((error: Error) => {
             this.logger.error(error.message);

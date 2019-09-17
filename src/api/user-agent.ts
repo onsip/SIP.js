@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 
-import { C as SIPConstants } from "../Constants";
 import {
   Contact,
   DigestAuthentication,
@@ -9,6 +8,7 @@ import {
   IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingReferRequest,
+  IncomingRegisterRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
   IncomingSubscribeRequest,
@@ -22,9 +22,13 @@ import {
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "../core";
-import { SessionStatus, UAStatus } from "../Enums";
+import {
+  createRandomToken,
+  str_utf8_length
+} from "../core/messages/utils";
+import { UAStatus } from "../Enums";
 import { Parser } from "../Parser";
-import { Utils } from "../Utils";
+import { LIBRARY_VERSION } from "../version";
 import {
   SessionDescriptionHandler as WebSessionDescriptionHandler
 } from "../Web/SessionDescriptionHandler";
@@ -36,6 +40,7 @@ import { InviterOptions } from "./inviter-options";
 import { Message } from "./message";
 import { Notification } from "./notification";
 import { Publisher } from "./publisher";
+import { Registerer } from "./registerer";
 import { Session } from "./session";
 import { SessionState } from "./session-state";
 import { Subscription } from "./subscription";
@@ -60,41 +65,7 @@ declare var chrome: any;
  *
  * @public
  */
-export class UserAgent extends EventEmitter {
-
-  /** @internal */
-  public static readonly C = {
-    // UA status codes
-    STATUS_INIT:                0,
-    STATUS_STARTING:            1,
-    STATUS_READY:               2,
-    STATUS_USER_CLOSED:         3,
-    STATUS_NOT_READY:           4,
-
-    // UA error codes
-    CONFIGURATION_ERROR:  1,
-    NETWORK_ERROR:        2,
-
-    ALLOWED_METHODS: [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ],
-
-    ACCEPTED_BODY_TYPES: [
-      "application/sdp",
-      "application/dtmf-relay"
-    ],
-
-    MAX_FORWARDS: 70,
-    TAG_LENGTH: 10
-  };
+export class UserAgent {
 
   /**
    * Create a URI instance from a string.
@@ -115,7 +86,7 @@ export class UserAgent extends EventEmitter {
     allowOutOfDialogRefers: false,
     authorizationPassword: "",
     authorizationUsername: "",
-    autoStart: true,
+    autoStart: false,
     autoStop: true,
     delegate: {},
     displayName: "",
@@ -139,7 +110,7 @@ export class UserAgent extends EventEmitter {
     transportOptions: {},
     uri: new URI("sip", "anonymous", "anonymous.invalid"),
     usePreloadedRoute: false,
-    userAgentString: SIPConstants.USER_AGENT,
+    userAgentString: "SIP.js/" + LIBRARY_VERSION,
     viaHost: ""
   };
 
@@ -152,6 +123,8 @@ export class UserAgent extends EventEmitter {
   public applicants: {[id: string]: Inviter} = {};
   /** @internal */
   public publishers: {[id: string]: Publisher} = {};
+  /** @internal */
+  public registerers: {[id: string]: Registerer } = {};
   /** @internal */
   public sessions: {[id: string]: Session } = {};
   /** @internal */
@@ -174,8 +147,6 @@ export class UserAgent extends EventEmitter {
   /** Options. */
   private options: Required<UserAgentOptions>;
 
-  private error: number | undefined;
-
   private _state: UserAgentState = UserAgentState.Initial;
   private _stateEventEmitter = new EventEmitter();
 
@@ -187,8 +158,6 @@ export class UserAgent extends EventEmitter {
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
   constructor(options: UserAgentOptions = {}) {
-    super();
-
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -197,11 +166,11 @@ export class UserAgent extends EventEmitter {
       // start with the default option values
       ...UserAgent.defaultOptions,
       // add a unique sipjs id for each instance
-      ...{ sipjsId: Utils.createRandomToken(5) },
+      ...{ sipjsId: createRandomToken(5) },
       // add a unique anonymous uri for each instance
-      ...{ uri: new URI("sip", "anonymous." + Utils.createRandomToken(6), "anonymous.invalid") },
+      ...{ uri: new URI("sip", "anonymous." + createRandomToken(6), "anonymous.invalid") },
       // add a unique via host for each instance
-      ...{ viaHost: Utils.createRandomToken(12) + ".invalid" },
+      ...{ viaHost: createRandomToken(12) + ".invalid" },
       // apply any options passed in via the constructor
       ...options
     };
@@ -330,16 +299,19 @@ export class UserAgent extends EventEmitter {
    * @remarks
    * Unregisters and terminates active sessions/subscriptions.
    */
-  public stop(): Promise<void> {
-    this.logger.log("user requested closure...");
+  public async stop(): Promise<void> {
+    this.logger.log(`Stopping user agent ${this.configuration.uri}...`);
 
     if (this.status === UAStatus.STATUS_USER_CLOSED) {
       this.logger.warn("UA already closed");
     }
 
-    // Close registerContext
-    // this.logger.log("closing registerContext");
-    // this.registerer.close();
+    // Dispose of Registerers
+    for (const id in this.registerers) {
+      if (this.registerers[id]) {
+        await this.registerers[id].dispose();
+      }
+    }
 
     // End every Session
     for (const id in this.sessions) {
@@ -450,8 +422,8 @@ export class UserAgent extends EventEmitter {
 
     const allowUnregistered = this.options.hackAllowUnregisteredOptionTags || false;
     const optionTagSet: {[name: string]: boolean} = {};
-    optionTags = optionTags.filter((optionTag: string) => {
-      const registered = SIPConstants.OPTION_TAGS[optionTag];
+    optionTags = optionTags.filter((optionTag) => {
+      const registered = UserAgentRegisteredOptionTags[optionTag];
       const unique = !optionTagSet[optionTag];
       optionTagSet[optionTag] = true;
       return (registered || allowUnregistered) && unique;
@@ -468,23 +440,6 @@ export class UserAgent extends EventEmitter {
     return new Inviter(this, targetURI, options);
   }
 
-  /** @internal */
-  public on(name: "invite", callback: (session: Invitation) => void): this;
-  /** @internal */
-  public on(name: "outOfDialogReferRequested", callback: (context: any) => void): this;
-  /** @internal */
-  public on(name: "message", callback: (message: any) => void): this;
-  /** @internal */
-  public on(name: "notify", callback: (request: any) => void): this;
-  /** @internal */
-  public on(name: "subscribe", callback: (subscribe: IncomingSubscribeRequest) => void): this;
-  /** @internal */
-  public on(name: "registered", callback: (response?: any) => void): this;
-  /** @internal */
-  public on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
-  /** @internal */
-  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
-
   // ==============================
   // Event Handlers
   // ==============================
@@ -493,11 +448,7 @@ export class UserAgent extends EventEmitter {
     if (this.status === UAStatus.STATUS_USER_CLOSED) {
       return;
     }
-
-    if (!this.error || this.error !== UserAgent.C.NETWORK_ERROR) {
-      this.status = UAStatus.STATUS_NOT_READY;
-      this.error = UserAgent.C.NETWORK_ERROR;
-    }
+    this.status = UAStatus.STATUS_NOT_READY;
   }
 
   /**
@@ -571,7 +522,7 @@ export class UserAgent extends EventEmitter {
       // FIXME: This should be Transport check before we get here (Section 18).
       // Custom SIP.js check to reject requests if body length wrong.
       // This is port of SanityCheck.rfc3261_18_3_request().
-      const len: number = Utils.str_utf8_length(message.body);
+      const len: number = str_utf8_length(message.body);
       const contentLength: string | undefined = message.getHeader("content-length");
       if (contentLength && len < Number(contentLength)) {
         this.userAgentCore.replyStateless(message, { statusCode: 400 });
@@ -605,7 +556,7 @@ export class UserAgent extends EventEmitter {
       // FIXME: This should be Transport check before we get here (Section 18).
       // Custom SIP.js check to reject requests if body length wrong.
       // This is port of SanityCheck.rfc3261_18_3_response().
-      const len: number = Utils.str_utf8_length(message.body);
+      const len: number = str_utf8_length(message.body);
       const contentLength: string | undefined = message.getHeader("content-length");
       if (contentLength && len < Number(contentLength)) {
         this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
@@ -629,8 +580,7 @@ export class UserAgent extends EventEmitter {
   }
 
   private initContact(): Contact {
-    const contactName =
-      Utils.createRandomToken(8); // FIXME: should be configurable
+    const contactName = createRandomToken(8); // FIXME: should be configurable
     const contactTransport =
       this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
     const contact = {
@@ -711,73 +661,95 @@ export class UserAgent extends EventEmitter {
       transportAccessor: () => this.transport
     };
 
-    // The Replaces header contains information used to match an existing
-    // SIP dialog (call-id, to-tag, and from-tag).  Upon receiving an INVITE
-    // with a Replaces header, the User Agent (UA) attempts to match this
-    // information with a confirmed or early dialog.
-    // https://tools.ietf.org/html/rfc3891#section-3
-    const handleInviteWithReplacesHeader = (
-      context: Invitation,
-      request: IncomingRequestMessage
-    ): void => {
-      if (this.options.sipExtensionReplaces !== SIPExtension.Unsupported) {
-        const replaces = request.parseHeader("replaces");
-        if (replaces) {
-          const targetSession =
-            this.sessions[replaces.call_id + replaces.replaces_from_tag] ||
-            this.sessions[replaces.call_id + replaces.replaces_to_tag] ||
-            undefined;
-          if (!targetSession) {
-            this.userAgentCore.replyStateless(request, { statusCode: 481 });
-            return;
-          }
-          if (targetSession.status === SessionStatus.STATUS_TERMINATED) {
-            this.userAgentCore.replyStateless(request, { statusCode: 603 });
-            return;
-          }
-          const targetDialogId = replaces.call_id + replaces.replaces_to_tag + replaces.replaces_from_tag;
-          const targetDialog = this.userAgentCore.dialogs.get(targetDialogId);
-          if (!targetDialog) {
-            this.userAgentCore.replyStateless(request, { statusCode: 481 });
-            return;
-          }
-          if (!targetDialog.early && replaces.early_only) {
-            this.userAgentCore.replyStateless(request, { statusCode: 486 });
-            return;
-          }
-          context.replacee = targetSession;
-        }
-      }
-    };
-
     const userAgentCoreDelegate: UserAgentCoreDelegate = {
       onInvite: (incomingInviteRequest: IncomingInviteRequest): void => {
+        const invitation = new Invitation(this, incomingInviteRequest);
+
+        incomingInviteRequest.delegate = {
+          onCancel: (cancel: IncomingRequestMessage): void => {
+            invitation.onCancel(cancel);
+          },
+          onTransportError: (error: TransportError): void => {
+            invitation.onTransportError();
+          }
+        };
+
         // FIXME: Ported - 100 Trying send should be configurable.
         // Only required if TU will not respond in 200ms.
         // https://tools.ietf.org/html/rfc3261#section-17.2.1
         incomingInviteRequest.trying();
-        incomingInviteRequest.delegate = {
-          onCancel: (cancel: IncomingRequestMessage): void => {
-            context.onCancel(cancel);
-          },
-          onTransportError: (error: TransportError): void => {
-            context.onTransportError();
+
+        // The Replaces header contains information used to match an existing
+        // SIP dialog (call-id, to-tag, and from-tag).  Upon receiving an INVITE
+        // with a Replaces header, the User Agent (UA) attempts to match this
+        // information with a confirmed or early dialog.
+        // https://tools.ietf.org/html/rfc3891#section-3
+        if (this.options.sipExtensionReplaces !== SIPExtension.Unsupported) {
+          const message = incomingInviteRequest.message;
+          const replaces = message.parseHeader("replaces");
+          if (replaces) {
+            const callId = replaces.call_id;
+            if (typeof callId !== "string") {
+              throw new Error("Type of call id is not string");
+            }
+            const toTag = replaces.replaces_to_tag;
+            if (typeof toTag !== "string") {
+              throw new Error("Type of to tag is not string");
+            }
+            const fromTag = replaces.replaces_from_tag;
+            if (typeof fromTag !== "string") {
+              throw new Error("type of from tag is not string");
+            }
+            const targetDialogId = callId + toTag + fromTag;
+            const targetDialog = this.userAgentCore.dialogs.get(targetDialogId);
+
+            // If no match is found, the UAS rejects the INVITE and returns a 481
+            // Call/Transaction Does Not Exist response.  Likewise, if the Replaces
+            // header field matches a dialog which was not created with an INVITE,
+            // the UAS MUST reject the request with a 481 response.
+            // https://tools.ietf.org/html/rfc3891#section-3
+            if (!targetDialog) {
+              invitation.reject({ statusCode: 481 });
+              return;
+            }
+
+            // If the Replaces header field matches a confirmed dialog, it checks
+            // for the presence of the "early-only" flag in the Replaces header
+            // field.  (This flag allows the UAC to prevent a potentially
+            // undesirable race condition described in Section 7.1.) If the flag is
+            // present, the UA rejects the request with a 486 Busy response.
+            // https://tools.ietf.org/html/rfc3891#section-3
+            if (!targetDialog.early && replaces.early_only === true) {
+              invitation.reject({ statusCode: 486 });
+              return;
+            }
+
+            // Provide a handle on the session being replaced.
+            const targetSession = this.sessions[callId + fromTag] || this.sessions[callId + toTag] || undefined;
+            if (!targetSession) {
+              throw new Error("Session does not exist.");
+            }
+            invitation.replacee = targetSession;
           }
-        };
-        const context = new Invitation(this, incomingInviteRequest);
-        // Ported - handling of out of dialog INVITE with Replaces.
-        handleInviteWithReplacesHeader(context, incomingInviteRequest.message);
-        // Ported - make the first call to progress automatically.
-        if (context.autoSendAnInitialProvisionalResponse) {
-          context.progress();
         }
-        if (this.delegate && this.delegate.onInvite) {
-          this.delegate.onInvite(context);
+
+        // A common scenario occurs when the callee is currently not willing or
+        // able to take additional calls at this end system.  A 486 (Busy Here)
+        // SHOULD be returned in such a scenario.
+        // https://tools.ietf.org/html/rfc3261#section-13.3.1.3
+        if (!this.delegate || !this.delegate.onInvite) {
+          invitation.reject({ statusCode: 486 });
+          return;
+        }
+
+        // Delegate invitation handling.
+        if (!invitation.autoSendAnInitialProvisionalResponse) {
+          this.delegate.onInvite(invitation);
         } else {
-          // TODO: If no delegate, reject the request.
+          const onInvite = this.delegate.onInvite;
+          invitation.progress()
+            .then(() => onInvite(invitation));
         }
-        // DEPRECATED
-        this.emit("invite", context);
       },
       onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
         if (this.delegate && this.delegate.onMessage) {
@@ -809,11 +781,6 @@ export class UserAgent extends EventEmitter {
             incomingNotifyRequest.reject({ statusCode: 481 });
           }
         }
-
-        // DEPRECATED
-        if (this.options.allowLegacyNotifications && this.listeners("notify").length > 0) {
-          this.emit("notify", { request: incomingNotifyRequest.message });
-        }
       },
       onRefer: (incomingReferRequest: IncomingReferRequest): void => {
         this.logger.log("Received an out of dialog refer");
@@ -834,11 +801,17 @@ export class UserAgent extends EventEmitter {
         //   this.delegate.onRefer(incomingReferRequest);
         // }
       },
+      onRegister: (incomingRegisterRequest: IncomingRegisterRequest): void => {
+        // TOOD: this.delegate.onRegister(...)
+        if (this.delegate && this.delegate.onRegisterRequest) {
+          this.delegate.onRegisterRequest(incomingRegisterRequest);
+        }
+      },
       onSubscribe: (incomingSubscribeRequest: IncomingSubscribeRequest): void => {
-        this.emit("subscribe", incomingSubscribeRequest);
-        // if (this.delegate && this.delegate.onSubscribe) {
-        //   this.delegate.onSubscribe(incomingSubscribeRequest);
-        // }
+        // TOOD: this.delegate.onSubscribe(...)
+        if (this.delegate && this.delegate.onSubscribeRequest) {
+          this.delegate.onSubscribeRequest(incomingSubscribeRequest);
+        }
       }
     };
 

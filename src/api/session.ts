@@ -145,8 +145,6 @@ export abstract class Session extends EventEmitter {
   /** @internal */
   protected rendertype: string | undefined;
   /** @internal */
-  protected sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
-  /** @internal */
   protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
@@ -173,14 +171,6 @@ export abstract class Session extends EventEmitter {
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
 
-    const sessionDescriptionHandlerFactory = this.userAgent.configuration.sessionDescriptionHandlerFactory;
-    if (!sessionDescriptionHandlerFactory) {
-      throw new Exceptions.SessionDescriptionHandlerError(
-        "A session description handler is required for the session to function."
-      );
-    }
-    this.sessionDescriptionHandlerFactory = sessionDescriptionHandlerFactory;
-
     this.errorListener = this.onTransportError.bind(this);
     if (userAgent.transport) {
       userAgent.transport.on("transportError", this.errorListener);
@@ -198,28 +188,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  // public on(
-  //   event: "dtmf",
-  //   listener: (request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF | DTMFSender) => void
-  // ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public on(
-  //   event: "referRequested", listener: (context: ReferClientContext | ReferServerContext) => void
-  // ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public on(
-  //   event: "referProgress" | "referAccepted", listener: (context: ReferServerContext) => void
-  // ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   public on(
     event:
       "referInviteSent" |
@@ -229,8 +197,7 @@ export abstract class Session extends EventEmitter {
       "referRequestAccepted" |
       "referRequestRejected" |
       "reinviteAccepted" |
-      "reinviteFailed" |
-      "replaced",
+      "reinviteFailed",
     listener: (session: Session) => void
   ): this;
   /**
@@ -252,21 +219,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public on(
-    event: "ack" | "invite" | "refer", listener: (request: OutgoingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
     event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "accepted", listener: (response: string | IncomingResponseMessage, cause: string) => void
   ): this;
   /**
    * @deprecated Legacy state transition.
@@ -306,7 +259,7 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public on(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
+  public on(event: "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
   /**
    * @deprecated Legacy state transition.
    * @internal
@@ -326,26 +279,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  // public emit(
-  //   event: "dtmf", request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF | DTMFSender
-  // ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public emit(
-  //   event: "referRequested", context: ReferClientContext | ReferServerContext
-  // ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  // public emit(
-  //   event: "referProgress" | "referAccepted", context: ReferServerContext): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   public emit(
     event:
       "referInviteSent" |
@@ -354,8 +287,7 @@ export abstract class Session extends EventEmitter {
       "referRequestAccepted" |
       "referRequestRejected" |
       "reinviteAccepted" |
-      "reinviteFailed" |
-      "replaced",
+      "reinviteFailed",
     session: Session): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -376,7 +308,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public emit(
-    event: "ack" | "invite" | "refer" | "notify", request: OutgoingRequestMessage
+    event: "invite" | "refer" | "notify", request: OutgoingRequestMessage
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -384,13 +316,6 @@ export abstract class Session extends EventEmitter {
    */
   public emit(
     event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "accepted", response?: string | IncomingResponseMessage, cause?: string
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -430,7 +355,7 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public emit(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected"): boolean;
+  public emit(event: "trackAdded" | "directionChanged" | "referRejected"): boolean;
   /**
    * @deprecated Legacy state transition.
    * @internal
@@ -444,6 +369,13 @@ export abstract class Session extends EventEmitter {
    */
   get sessionDescriptionHandler(): SessionDescriptionHandler | undefined {
     return this._sessionDescriptionHandler;
+  }
+
+  /**
+   * Session description handler factory.
+   */
+  get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory {
+    return this.userAgent.configuration.sessionDescriptionHandlerFactory;
   }
 
   /**
@@ -817,7 +749,6 @@ export abstract class Session extends EventEmitter {
     reasonPhrase?: string
   ): void {
     const outgoingAckRequest = response.ack();
-    this.emit("ack", outgoingAckRequest.message);
     const extraHeaders: Array<string> = [];
     if (statusCode) {
       extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
@@ -1149,35 +1080,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  protected accepted(response?: IncomingResponseMessage | string, cause?: string): void {
-    if (response instanceof IncomingResponseMessage) {
-      cause = Utils.getReasonPhrase(response.statusCode || 0, cause);
-    }
-
-    this.startTime = new Date();
-
-    if (this.replacee) {
-      this.replacee.emit("replaced", this);
-      this.replacee.bye();
-    }
-    this.emit("accepted", response, cause);
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  protected canceled(): void {
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-    this.emit("cancel");
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   protected connecting(request: IncomingRequestMessage): void {
     this.emit("connecting", { request });
   }
@@ -1441,6 +1343,11 @@ export abstract class Session extends EventEmitter {
         break;
       default:
         throw new Error("Unrecognized state.");
+    }
+
+    // Deprecated legacy ported behavior
+    if (newState === SessionState.Established) {
+      this.startTime = new Date();
     }
 
     // Transition

@@ -76,7 +76,7 @@ export type SessionDescriptionHandlerModifiers = Array<SessionDescriptionHandler
  */
 export interface SessionDescriptionHandlerOptions {
   modifiers?: SessionDescriptionHandlerModifiers;
-  constraints?: { audio: boolean, video: boolean };
+  constraints?: object;
 }
 
 /**

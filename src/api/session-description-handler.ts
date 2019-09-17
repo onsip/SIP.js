@@ -85,7 +85,7 @@ export interface SessionDescriptionHandlerModifier {
  * @public
  */
 export interface SessionDescriptionHandlerOptions {
-  constraints?: { audio: boolean, video: boolean };
+  constraints?: object;
 }
 
 /**

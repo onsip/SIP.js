@@ -1,8 +1,13 @@
+import { OutgoingRequestDelegate, RequestOptions } from "../core";
+
+// tslint:disable:no-empty-interface
 /**
  * Options for {@link Registerer.register}.
  * @public
  */
 export interface RegistererRegisterOptions {
-  closeWithHeaders?: Array<string>;
-  extraHeaders?: Array<string>;
+  /** See `core` API. */
+  requestDelegate?: OutgoingRequestDelegate;
+  /** See `core` API. */
+  requestOptions?: RequestOptions;
 }

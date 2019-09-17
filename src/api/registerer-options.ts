@@ -3,7 +3,6 @@
  * @public
  */
 export interface RegistererOptions {
-  closeWithHeaders?: Array<string>;
   expires?: number;
   extraContactHeaderParams?: Array<string>;
   /** Array of extra headers added to the REGISTER. */

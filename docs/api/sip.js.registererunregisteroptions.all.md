@@ -4,6 +4,8 @@
 
 ## RegistererUnregisterOptions.all property
 
+If true, unregister all contacts.
+
 <b>Signature:</b>
 
 ```typescript

@@ -41,6 +41,7 @@ A core library implementing low level SIP protocol elements.
 |  [ReferUserAgentClient](./sip.js.referuseragentclient.md) | REFER UAC. |
 |  [ReferUserAgentServer](./sip.js.referuseragentserver.md) | REFER UAS. |
 |  [RegisterUserAgentClient](./sip.js.registeruseragentclient.md) | REGISTER UAC. |
+|  [RegisterUserAgentServer](./sip.js.registeruseragentserver.md) | REGISTER UAS. |
 |  [ReInviteUserAgentClient](./sip.js.reinviteuseragentclient.md) | Re-INVITE UAC. |
 |  [ReInviteUserAgentServer](./sip.js.reinviteuseragentserver.md) | Re-INVITE UAS. |
 |  [ReSubscribeUserAgentClient](./sip.js.resubscribeuseragentclient.md) | Re-SUBSCRIBE UAC. |

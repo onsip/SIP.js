@@ -7,8 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-constraints?: {
-        audio: boolean;
-        video: boolean;
-    };
+constraints?: object;
 ```

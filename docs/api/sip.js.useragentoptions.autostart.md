@@ -4,10 +4,18 @@
 
 ## UserAgentOptions.autoStart property
 
-If `true`<!-- -->, the user agent calls the `start()` method upon being created.
+> Warning: This API is now obsolete.
+> 
+> If `true`<!-- -->, the user agent calls the `start()` method in the constructor.
+> 
 
 <b>Signature:</b>
 
 ```typescript
 autoStart?: boolean;
 ```
+
+## Remarks
+
+The call to start() resovles when the user agent connects, so if this option is set to `true` an alternative method of connection detection must be used.
+
