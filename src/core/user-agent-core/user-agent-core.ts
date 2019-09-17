@@ -36,6 +36,7 @@ import {
   PublishUserAgentClient,
   ReferUserAgentServer,
   RegisterUserAgentClient,
+  RegisterUserAgentServer,
   SubscribeUserAgentClient,
   SubscribeUserAgentServer,
   UserAgentClient,
@@ -829,7 +830,7 @@ export class UserAgentCore {
           const uas = new NotifyUserAgentServer(this, message);
           this.delegate.onNotify ?
             this.delegate.onNotify(uas) :
-            this.replyStateless(message, { statusCode: 405 });
+            uas.reject({ statusCode: 405 });
         }
         break;
       case C.OPTIONS:
@@ -849,7 +850,16 @@ export class UserAgentCore {
           const uas = new ReferUserAgentServer(this, message);
           this.delegate.onRefer ?
             this.delegate.onRefer(uas) :
-            this.replyStateless(message, { statusCode: 405 });
+            uas.reject({ statusCode: 405 });
+        }
+        break;
+      case C.REGISTER:
+        // https://tools.ietf.org/html/rfc3261#section-10.3
+        {
+          const uas = new RegisterUserAgentServer(this, message);
+          this.delegate.onRegister ?
+            this.delegate.onRegister(uas) :
+            uas.reject({ statusCode: 405 });
         }
         break;
       case C.SUBSCRIBE:
@@ -858,7 +868,7 @@ export class UserAgentCore {
           const uas = new SubscribeUserAgentServer(this, message);
           this.delegate.onSubscribe ?
             this.delegate.onSubscribe(uas) :
-            uas.reject();
+            uas.reject({ statusCode: 480 });
         }
         break;
       default:

@@ -17,9 +17,9 @@ import {
   SignalingState,
   Timers
 } from "../core";
+import { getReasonPhrase } from "../core/messages/utils";
 import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
 
 import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
@@ -245,8 +245,12 @@ export class Invitation extends Session {
         };
         this.dialog = session;
         this.stateTransition(SessionState.Established);
-        // legacy
-        this.accepted(message, Utils.getReasonPhrase(200));
+
+        // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
+        // This behavoir has been ported forward from legacy versions.
+        if (this.replacee) {
+          this.replacee.bye();
+        }
       })
       .catch((error) => {
         this.onContextError(error);
@@ -382,7 +386,7 @@ export class Invitation extends Session {
 
     const statusCode = options.statusCode || 480;
 
-    const reasonPhrase = Utils.getReasonPhrase(statusCode, options.reasonPhrase);
+    const reasonPhrase = options.reasonPhrase ? options.reasonPhrase  : getReasonPhrase(statusCode);
     const extraHeaders = options.extraHeaders || [];
 
     if (statusCode < 300 || statusCode > 699) {
@@ -429,24 +433,18 @@ export class Invitation extends Session {
       return;
     }
 
+    // flag canceled
+    this._canceled = true;
+
     // transition state
     this.stateTransition(SessionState.Terminated);
 
     // reject INVITE with 487 status code
     this.incomingInviteRequest.reject({ statusCode: 487 });
-    this.canceled();
+
     this.rejected(message, C.causes.CANCELED);
     this.failed(message, C.causes.CANCELED);
     this.terminated(message, C.causes.CANCELED);
-  }
-
-  /**
-   * Called when session canceled.
-   * @internal
-   */
-  protected canceled(): void {
-    this._canceled = true;
-    super.canceled();
   }
 
   /**
@@ -720,6 +718,7 @@ export class Invitation extends Session {
     }
     this.logger.log("No ACK received for an extended period of time, terminating session");
     this.dialog.bye();
+    this.stateTransition(SessionState.Terminated);
     this.terminated(undefined, C.causes.NO_ACK);
   }
 

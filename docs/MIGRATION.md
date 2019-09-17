@@ -132,8 +132,8 @@ Now...
 ```
 const uri = UserAgent.makeURI("sip:alice@example.com");
 const options = {
-  authenticationUsername: "username",
-  authenticationPassword: "password",
+  authorizationUsername: "username",
+  authorizationPassword: "password",
   uri: uri
 }
 

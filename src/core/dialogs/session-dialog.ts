@@ -59,10 +59,14 @@ export class SessionDialog extends Dialog implements Session {
 
   /** The state of the offer/answer exchange. */
   private _signalingState: SignalingState = SignalingState.Initial;
-  /** The current offer. Undefined unless signaling state HaveLocalOffer, HaveRemoteOffer, of Stable. */
+  /** The current offer. Undefined unless signaling state HaveLocalOffer, HaveRemoteOffer, or Stable. */
   private _offer: Body | undefined;
   /** The current answer. Undefined unless signaling state Stable. */
   private _answer: Body | undefined;
+  /** The rollback offer. Undefined unless signaling state HaveLocalOffer or HaveRemoteOffer. */
+  private _rollbackOffer: Body | undefined;
+  /** The rollback answer. Undefined unless signaling state HaveLocalOffer or HaveRemoteOffer. */
+  private _rollbackAnswer: Body | undefined;
 
   /** True if waiting for an ACK to the initial transaction 2xx (UAS only). */
   private ackWait = false;
@@ -657,17 +661,38 @@ export class SessionDialog extends Dialog implements Session {
   }
 
   /**
+   * If not in a stable signaling state, rollback to prior stable signaling state.
+   */
+  public signalingStateRollback(): void {
+    if (
+      this._signalingState === SignalingState.HaveLocalOffer ||
+      this.signalingState === SignalingState.HaveRemoteOffer) {
+      if (this._rollbackOffer && this._rollbackAnswer) {
+        this._signalingState = SignalingState.Stable;
+        this._offer = this._rollbackOffer;
+        this._answer = this._rollbackAnswer;
+      }
+    }
+  }
+
+  /**
    * Update the signaling state of the dialog.
    * @param message - The message to base the update off of.
    */
   public signalingStateTransition(
     message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body
-  ) {
+  ): void {
     const body = getBody(message);
 
     // No body, no session. No, woman, no cry.
     if (!body || body.contentDisposition !== "session") {
       return;
+    }
+
+    // We've got an existing offer and answer which we may wish to rollback to
+    if (this._signalingState === SignalingState.Stable) {
+      this._rollbackOffer = this._offer;
+      this._rollbackAnswer = this._answer;
     }
 
     // We're in UAS role, receiving incoming request with session description

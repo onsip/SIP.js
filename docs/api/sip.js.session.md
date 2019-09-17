@@ -20,6 +20,7 @@ export declare abstract class Session extends EventEmitter
 |  [delegate](./sip.js.session.delegate.md) |  | <code>SessionDelegate &#124; undefined</code> | The session delegate. |
 |  [dialog](./sip.js.session.dialog.md) |  | <code>SessionDialog &#124; undefined</code> | The confirmed session dialog. |
 |  [sessionDescriptionHandler](./sip.js.session.sessiondescriptionhandler.md) |  | <code>SessionDescriptionHandler &#124; undefined</code> | Session description handler. |
+|  [sessionDescriptionHandlerFactory](./sip.js.session.sessiondescriptionhandlerfactory.md) |  | <code>SessionDescriptionHandlerFactory</code> | Session description handler factory. |
 |  [state](./sip.js.session.state.md) |  | <code>SessionState</code> | Session state. |
 |  [stateChange](./sip.js.session.statechange.md) |  | <code>Emitter&lt;SessionState&gt;</code> | Session state change emitter. |
 

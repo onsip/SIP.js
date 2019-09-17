@@ -239,33 +239,33 @@ export class Inviter extends Session {
       return Promise.reject(error);
     }
 
-    // transition state
-    this.stateTransition(SessionState.Terminating);
-
-    // Check Session Status
-    if (this.status === SessionStatus.STATUS_TERMINATED || this.status === SessionStatus.STATUS_CONFIRMED) {
-      throw new Exceptions.InvalidStateError(this.status);
-    }
+    // canceled has some special cases
     if (this.isCanceled) {
-      throw new Exceptions.InvalidStateError(SessionStatus.STATUS_CANCELED);
+      throw new Error("Already canceled.");
     }
     this.isCanceled = true;
 
-    this.logger.log("Canceling session");
+    // transition state
+    this.stateTransition(SessionState.Terminating);
 
-    let cancelReason: string | undefined;
-    if (options.statusCode && options.reasonPhrase) {
-      cancelReason = Utils.getCancelReason(options.statusCode, options.reasonPhrase);
+    // cleanup media as needed
+    this.disposeEarlyMedia();
+    if (this.sessionDescriptionHandler) {
+      this.sessionDescriptionHandler.close();
     }
-
-    options.extraHeaders = (options.extraHeaders || []).slice();
 
     if (this.outgoingInviteRequest) {
-      this.logger.warn("Canceling session before it was created");
+      // the CANCEL may not be respected by peer(s), so don't transition to terminated
+      let cancelReason: string | undefined;
+      if (options.statusCode && options.reasonPhrase) {
+        cancelReason = Utils.getCancelReason(options.statusCode, options.reasonPhrase);
+      }
       this.outgoingInviteRequest.cancel(cancelReason, options);
+    } else {
+      this.logger.warn("Canceled session before INVITE was sent");
+      this.stateTransition(SessionState.Terminated);
     }
 
-    this.canceled();
     return Promise.resolve();
   }
 
@@ -387,10 +387,13 @@ export class Inviter extends Session {
     };
     return this.getOffer(offerOptions)
       .then((body) => {
-        // FIXME: There is a race condition where cancel (or terminate) can be called (a)synchronously after invite.
-        if (this.isCanceled || this.status === SessionStatus.STATUS_TERMINATED) {
-          throw new Error("Session was canceled or terminated before INVITE was sent.");
-        }
+
+        // TODO: Review error handling...
+        // There are some race conditions which can occur, all of which will cause stateTransition() to throw.
+        //  - invite() can be called (a)synchronously after invite() is called (second call to invite() fails)
+        //  - cancel() or terminate()) can be called (a)synchronously after invite() (invite() fails)
+        // The caller should avoid the first case, but the second one is common.
+        // For now we are just letting the state transition fail in all cases.
 
         // transition state
         this.stateTransition(SessionState.Establishing);
@@ -618,13 +621,17 @@ export class Inviter extends Session {
 
         // If we already received a confirmed dialog, ack & bye this additional confirmed session.
         if (this.dialog) {
+          this.logger.log("Additional confirmed dialog, sending ACK and BYE");
           this.ackAndBye(inviteResponse);
+          // We do NOT transition state in this case (this is an "extra" dialog)
           return;
         }
 
         // If the user requested cancellation, ack & bye this session.
         if (this.isCanceled) {
+          this.logger.log("Canceled session accepted, sending ACK and BYE");
           this.ackAndBye(inviteResponse);
+          this.stateTransition(SessionState.Terminated);
           this.emit("bye", this.request); // FIXME: Ported this odd second "bye" emit
           return;
         }
@@ -683,21 +690,6 @@ export class Inviter extends Session {
     });
 
     return this.outgoingInviteRequest;
-  }
-
-  private ackAndBye(
-    inviteResponse: AckableIncomingResponseWithSession,
-    statusCode?: number,
-    reasonPhrase?: string
-  ): void {
-    const extraHeaders: Array<string> = [];
-    if (statusCode) {
-      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
-    }
-    const outgoingAckRequest = inviteResponse.ack();
-    const outgoingByeRequest = inviteResponse.session.bye(undefined, { extraHeaders });
-    this.emit("ack", outgoingAckRequest.message);
-    this.emit("bye", outgoingByeRequest.message);
   }
 
   private disposeEarlyMedia(): void {
@@ -817,8 +809,6 @@ export class Inviter extends Session {
             this.status = SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
-            this.emit("ack", ackRequest.message);
-            this.accepted(response);
           })
           .catch((error: Error) => {
             this.ackAndBye(inviteResponse, 488, "Invalid session description");
@@ -838,8 +828,6 @@ export class Inviter extends Session {
           this.status = SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
-          this.emit("ack", ackRequest.message);
-          this.accepted(response);
           return Promise.resolve();
         }
 
@@ -872,8 +860,6 @@ export class Inviter extends Session {
           this.status = SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
-          this.emit("ack", ackRequest.message);
-          this.accepted(response);
           return Promise.resolve();
         }
 
@@ -898,8 +884,6 @@ export class Inviter extends Session {
             this.status = SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
-            this.emit("ack", ackRequest.message);
-            this.accepted(response);
           })
           .catch((error: Error) => {
             this.logger.error(error.message);

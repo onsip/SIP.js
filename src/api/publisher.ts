@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 
-import { C } from "../Constants";
 import {
   Body,
+  C,
   IncomingResponseMessage,
   Logger,
   OutgoingRequestMessage,

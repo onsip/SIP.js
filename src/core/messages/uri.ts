@@ -181,15 +181,28 @@ export class URI extends Parameters {
     return uriString;
   }
 
-  // The following two functions were copied from Utils to break a circular dependency
   /*
    * Hex-escape a SIP URI user.
    * @private
    * @param {String} user
    */
   private escapeUser(user: string): string {
+    let decodedUser: string;
+
+    // FIXME: This is called by toString above which should never throw, but
+    // decodeURIComponent can throw and I've seen one case in production where
+    // it did throw resulting in a cascading failure. This class should be
+    // fixed so that decodeURIComponent is not called at this point (in toString).
+    // The user should be decoded when the URI is constructor or some other
+    // place where we can catch the error before the URI is created or somesuch.
+    try {
+      decodedUser = decodeURIComponent(user);
+    } catch (error) {
+      throw error;
+    }
+
     // Don't hex-escape ':' (%3A), '+' (%2B), '?' (%3F"), '/' (%2F).
-    return encodeURIComponent(decodeURIComponent(user))
+    return encodeURIComponent(decodedUser)
       .replace(/%3A/ig, ":")
       .replace(/%2B/ig, "+")
       .replace(/%3F/ig, "?")

@@ -4,10 +4,12 @@
 
 ## Registerer.unregister() method
 
+Sends the REGISTER request with expires equal to zero.
+
 <b>Signature:</b>
 
 ```typescript
-unregister(options?: RegistererUnregisterOptions): Promise<void>;
+unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
 ```
 
 ## Parameters
@@ -18,5 +20,5 @@ unregister(options?: RegistererUnregisterOptions): Promise<void>;
 
 <b>Returns:</b>
 
-`Promise<void>`
+`Promise<OutgoingRegisterRequest>`
 

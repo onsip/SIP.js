@@ -21,7 +21,7 @@ export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionH
   alwaysAcquireMediaFirst?: boolean;
   disableAudioFallback?: boolean;
   RTCOfferOptions?: any;
-  constraints?: any;
+  constraints?: MediaStreamConstraints;
 }
 
 export interface PeerConnectionOptions {

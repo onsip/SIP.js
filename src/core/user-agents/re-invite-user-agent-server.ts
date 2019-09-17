@@ -3,8 +3,10 @@ import {
   IncomingInviteRequest,
   IncomingRequestDelegate,
   IncomingRequestMessage,
+  OutgoingResponse,
   OutgoingResponseWithSession,
-  ResponseOptions
+  ResponseOptions,
+  URI
 } from "../messages";
 import { InviteServerTransaction } from "../transactions";
 import { UserAgentServer } from "./user-agent-server";
@@ -82,5 +84,30 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
     }
 
     return result;
+  }
+
+  /**
+   * TODO: Not Yet Supported
+   * @param contacts - Contacts to redirect to.
+   * @param options - Redirect options bucket.
+   */
+  public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
+    this.dialog.signalingStateRollback();
+    this.dialog.reinviteUserAgentServer = undefined; // ACK will be handled by transaction
+    throw new Error("Unimplemented.");
+  }
+
+  /**
+   * 3.1 Background on Re-INVITE Handling by UASs
+   * An error response to a re-INVITE has the following semantics.  As
+   * specified in Section 12.2.2 of RFC 3261 [RFC3261], if a re-INVITE is
+   * rejected, no state changes are performed.
+   * https://tools.ietf.org/html/rfc6141#section-3.1
+   * @param options - Reject options bucket.
+   */
+  public reject(options: ResponseOptions = { statusCode: 488 }): OutgoingResponse {
+    this.dialog.signalingStateRollback();
+    this.dialog.reinviteUserAgentServer = undefined; // ACK will be handled by transaction
+    return super.reject(options);
   }
 }

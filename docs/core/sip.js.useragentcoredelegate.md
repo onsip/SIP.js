@@ -20,5 +20,6 @@ export interface UserAgentCoreDelegate
 |  [onMessage(request)](./sip.js.useragentcoredelegate.onmessage.md) | Receive MESSAGE request. |
 |  [onNotify(request)](./sip.js.useragentcoredelegate.onnotify.md) | DEPRECATED. Receive NOTIFY request. |
 |  [onRefer(request)](./sip.js.useragentcoredelegate.onrefer.md) | Receive REFER request. |
+|  [onRegister(request)](./sip.js.useragentcoredelegate.onregister.md) | Receive REGISTER request. |
 |  [onSubscribe(request)](./sip.js.useragentcoredelegate.onsubscribe.md) | Receive SUBSCRIBE request. |
 

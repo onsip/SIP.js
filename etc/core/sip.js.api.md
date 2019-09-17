@@ -773,6 +773,13 @@ export class RegisterUserAgentClient extends UserAgentClient implements Outgoing
 }
 
 // @public
+export class RegisterUserAgentServer extends UserAgentServer implements IncomingRegisterRequest {
+    constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
+    // (undocumented)
+    protected core: UserAgentCore;
+}
+
+// @public
 export class ReInviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest {
     constructor(dialog: SessionDialog, delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions);
     // (undocumented)
@@ -786,6 +793,8 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
     constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
     accept(options?: ResponseOptions): OutgoingResponseWithSession;
     progress(options?: ResponseOptions): OutgoingResponseWithSession;
+    redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
+    reject(options?: ResponseOptions): OutgoingResponse;
 }
 
 // @public
@@ -895,6 +904,7 @@ export class SessionDialog extends Dialog implements Session {
     // (undocumented)
     readonly sessionState: SessionState;
     readonly signalingState: SignalingState;
+    signalingStateRollback(): void;
     signalingStateTransition(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): void;
     }
 
@@ -1206,6 +1216,7 @@ export interface UserAgentCoreDelegate {
     onMessage?(request: IncomingMessageRequest): void;
     onNotify?(request: IncomingNotifyRequest): void;
     onRefer?(request: IncomingReferRequest): void;
+    onRegister?(request: IncomingRegisterRequest): void;
     onSubscribe?(request: IncomingSubscribeRequest): void;
 }
 

@@ -16,7 +16,6 @@ export interface RegistererOptions
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [closeWithHeaders](./sip.js.registereroptions.closewithheaders.md) | <code>Array&lt;string&gt;</code> |  |
 |  [expires](./sip.js.registereroptions.expires.md) | <code>number</code> |  |
 |  [extraContactHeaderParams](./sip.js.registereroptions.extracontactheaderparams.md) | <code>Array&lt;string&gt;</code> |  |
 |  [extraHeaders](./sip.js.registereroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the REGISTER. |

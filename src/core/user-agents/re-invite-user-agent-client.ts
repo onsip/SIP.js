@@ -78,11 +78,17 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
         }
         break;
       case /^3[0-9]{2}$/.test(statusCode):
+        this.dialog.signalingStateRollback();
+        this.dialog.reinviteUserAgentClient = undefined; // ACK was handled by transaction
+
         if (this.delegate && this.delegate.onRedirect) {
           this.delegate.onRedirect({ message });
         }
         break;
       case /^[4-6][0-9]{2}$/.test(statusCode):
+        this.dialog.signalingStateRollback();
+        this.dialog.reinviteUserAgentClient = undefined; // ACK was handled by transaction
+
         if (this.delegate && this.delegate.onReject) {
           this.delegate.onReject({ message });
         } else {

@@ -9,7 +9,7 @@ A user agent sends and receives requests using a `Transport`<!-- -->.
 <b>Signature:</b>
 
 ```typescript
-export declare class UserAgent extends EventEmitter 
+export declare class UserAgent 
 ```
 
 ## Constructors

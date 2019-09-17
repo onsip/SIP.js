@@ -83,8 +83,6 @@ export class Invitation extends Session {
     body: string | undefined;
     // @internal
     byePending(): void;
-    // @internal
-    protected canceled(): void;
     // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -353,29 +351,19 @@ export interface ReferrerReferOptions {
 }
 
 // @public
-export class Registerer extends EventEmitter {
+export class Registerer {
     constructor(userAgent: UserAgent, options?: RegistererOptions);
-    // @internal (undocumented)
-    close(): void;
     readonly contacts: Array<string>;
-    // (undocumented)
-    register(options?: RegistererRegisterOptions): Promise<void>;
-    // (undocumented)
-    registered: boolean;
-    // @internal (undocumented)
-    send(): Promise<void>;
+    dispose(): Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "OutgoingRegisterRequest" needs to be exported by the entry point index.d.ts
+    register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
     readonly state: RegistererState;
     readonly stateChange: Emitter<RegistererState>;
-    // (undocumented)
-    unregister(options?: RegistererUnregisterOptions): Promise<void>;
-    // @internal (undocumented)
-    unregistered(response?: IncomingResponseMessage, cause?: string): void;
-}
+    unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
+    }
 
 // @public
 export interface RegistererOptions {
-    // (undocumented)
-    closeWithHeaders?: Array<string>;
     // (undocumented)
     expires?: number;
     // (undocumented)
@@ -393,10 +381,8 @@ export interface RegistererOptions {
 
 // @public
 export interface RegistererRegisterOptions {
-    // (undocumented)
-    closeWithHeaders?: Array<string>;
-    // (undocumented)
-    extraHeaders?: Array<string>;
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
 }
 
 // @public
@@ -411,18 +397,19 @@ export enum RegistererState {
 
 // @public
 export interface RegistererUnregisterOptions {
-    // (undocumented)
     all?: boolean;
-    // (undocumented)
-    extraHeaders?: Array<string>;
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
 }
 
 // @public
 export abstract class Session extends EventEmitter {
     // @internal
     protected constructor(userAgent: UserAgent, options?: SessionOptions);
-    // @internal @deprecated (undocumented)
-    protected accepted(response?: IncomingResponseMessage | string, cause?: string): void;
+    // Warning: (ae-forgotten-export) The symbol "AckableIncomingResponseWithSession" needs to be exported by the entry point index.d.ts
+    // 
+    // @internal
+    protected ackAndBye(response: AckableIncomingResponseWithSession, statusCode?: number, reasonPhrase?: string): void;
     // @internal (undocumented)
     assertedIdentity: NameAddrHeader | undefined;
     // @internal (undocumented)
@@ -437,8 +424,6 @@ export abstract class Session extends EventEmitter {
     // 
     // @internal (undocumented)
     static readonly C: typeof SessionStatus;
-    // @internal @deprecated (undocumented)
-    protected canceled(): void;
     // @internal (undocumented)
     close(): void;
     // @internal @deprecated (undocumented)
@@ -454,23 +439,19 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     protected earlySdp: string | undefined;
     // @internal @deprecated (undocumented)
-    emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed" | "replaced", session: Session): boolean;
+    emit(event: "renegotiationError", error: Error): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "ack" | "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
+    emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", session: Session): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
+    emit(event: "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
+    // @internal @deprecated (undocumented)
     emit(event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "failed" | "rejected", response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "accepted", response?: string | IncomingResponseMessage, cause?: string): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "connecting", request: {
         request: IncomingRequestMessage;
@@ -478,9 +459,11 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     emit(event: "progress", response: IncomingResponseMessage | string, reasonPhrase?: any): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "renegotiationError", error: Error): boolean;
+    emit(event: "failed" | "rejected", response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected"): boolean;
+    emit(event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "trackAdded" | "directionChanged" | "referRejected"): boolean;
     // @internal (undocumented)
     endTime: Date | undefined;
     // @internal (undocumented)
@@ -514,6 +497,8 @@ export abstract class Session extends EventEmitter {
     info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
+    isFailed: boolean;
+    // @internal (undocumented)
     localHold: boolean;
     // @internal (undocumented)
     abstract localIdentity: NameAddrHeader;
@@ -524,11 +509,9 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     method: string;
     // @internal @deprecated (undocumented)
-    on(event: "ack" | "invite" | "refer", listener: (request: OutgoingRequestMessage) => void): this;
+    on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void): this;
-    // @internal @deprecated (undocumented)
-    on(event: "accepted", listener: (response: string | IncomingResponseMessage, cause: string) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "connecting", listener: (request: {
         request: IncomingRequestMessage;
@@ -542,15 +525,13 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     on(event: "renegotiationError", listener: (error: Error) => void): this;
     // @internal @deprecated (undocumented)
-    on(event: "cancel" | "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
+    on(event: "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
     // @internal @deprecated (undocumented)
     on(event: "SessionDescriptionHandler-created", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
     // @internal @deprecated (undocumented)
-    on(event: "referInviteSent" | "referProgress" | "referAccepted" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed" | "replaced", listener: (session: Session) => void): this;
+    on(event: "referInviteSent" | "referProgress" | "referAccepted" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", listener: (session: Session) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "reinvite", listener: (session: Session, request: IncomingRequestMessage) => void): this;
-    // @internal @deprecated (undocumented)
-    on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -599,9 +580,10 @@ export abstract class Session extends EventEmitter {
     protected rendertype: string | undefined;
     // @internal (undocumented)
     replacee: Session | undefined;
+    // @internal
+    protected rollbackOffer(): Promise<void>;
     readonly sessionDescriptionHandler: SessionDescriptionHandler | undefined;
-    // @internal (undocumented)
-    protected sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
+    readonly sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
     // @internal (undocumented)
     protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
     // @internal (undocumented)
@@ -643,12 +625,11 @@ export abstract class Session extends EventEmitter {
 // @public
 export interface SessionDelegate {
     onInfo?(info: Info): void;
+    onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
     // @internal
-    onReinviteFailure?(error: Error): void;
-    // @internal
-    onReinviteSuccess?(): void;
+    onReinviteTest?(): "acceptWithoutDescription" | "reject488";
 }
 
 // @public
@@ -657,6 +638,7 @@ export interface SessionDescriptionHandler {
     getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<BodyAndContentType>;
     hasDescription(contentType: string): boolean;
     holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
+    rollbackDescription?(): Promise<void>;
     sendDtmf(tones: string, options?: any): boolean;
     setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<void>;
 }
@@ -675,10 +657,7 @@ export interface SessionDescriptionHandlerModifier {
 // @public
 export interface SessionDescriptionHandlerOptions {
     // (undocumented)
-    constraints?: {
-        audio: boolean;
-        video: boolean;
-    };
+    constraints?: object;
 }
 
 // @public
@@ -838,25 +817,11 @@ export interface SubscriptionUnsubscribeOptions {
 }
 
 // @public
-export class UserAgent extends EventEmitter {
+export class UserAgent {
     constructor(options?: UserAgentOptions);
     // @internal (undocumented)
     applicants: {
         [id: string]: Inviter;
-    };
-    // @internal (undocumented)
-    static readonly C: {
-        STATUS_INIT: number;
-        STATUS_STARTING: number;
-        STATUS_READY: number;
-        STATUS_USER_CLOSED: number;
-        STATUS_NOT_READY: number;
-        CONFIGURATION_ERROR: number;
-        NETWORK_ERROR: number;
-        ALLOWED_METHODS: string[];
-        ACCEPTED_BODY_TYPES: string[];
-        MAX_FORWARDS: number;
-        TAG_LENGTH: number;
     };
     readonly configuration: Required<UserAgentOptions>;
     // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
@@ -880,24 +845,12 @@ export class UserAgent extends EventEmitter {
     makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
     static makeURI(uri: string): URI | undefined;
     // @internal (undocumented)
-    on(name: "invite", callback: (session: Invitation) => void): this;
-    // @internal (undocumented)
-    on(name: "outOfDialogReferRequested", callback: (context: any) => void): this;
-    // @internal (undocumented)
-    on(name: "unregistered" | "registrationFailed", callback: (response?: any, cause?: any) => void): this;
-    // @internal (undocumented)
-    on(name: "message", callback: (message: any) => void): this;
-    // Warning: (ae-forgotten-export) The symbol "IncomingSubscribeRequest" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    on(name: "subscribe", callback: (subscribe: IncomingSubscribeRequest) => void): this;
-    // @internal (undocumented)
-    on(name: "notify", callback: (request: any) => void): this;
-    // @internal (undocumented)
-    on(name: "registered", callback: (response?: any) => void): this;
-    // @internal (undocumented)
     publishers: {
         [id: string]: Publisher;
+    };
+    // @internal (undocumented)
+    registerers: {
+        [id: string]: Registerer;
     };
     // @internal (undocumented)
     sessions: {
@@ -929,7 +882,15 @@ export interface UserAgentDelegate {
     onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
+    // Warning: (ae-forgotten-export) The symbol "IncomingRegisterRequest" needs to be exported by the entry point index.d.ts
+    // 
+    // @internal
+    onRegisterRequest?(request: IncomingRegisterRequest): void;
     onSubscribe?(subscription: Subscription): void;
+    // Warning: (ae-forgotten-export) The symbol "IncomingSubscribeRequest" needs to be exported by the entry point index.d.ts
+    // 
+    // @internal
+    onSubscribeRequest?(request: IncomingSubscribeRequest): void;
 }
 
 // @public
@@ -938,6 +899,7 @@ export interface UserAgentOptions {
     allowOutOfDialogRefers?: boolean;
     authorizationPassword?: string;
     authorizationUsername?: string;
+    // @deprecated (undocumented)
     autoStart?: boolean;
     autoStop?: boolean;
     delegate?: UserAgentDelegate;

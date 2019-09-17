@@ -16,8 +16,8 @@ redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  contacts | <code>Array&lt;URI&gt;</code> |  |
-|  options | <code>ResponseOptions</code> | Reject options bucket. |
+|  contacts | <code>Array&lt;URI&gt;</code> | Contacts to redirect to. |
+|  options | <code>ResponseOptions</code> | Redirect options bucket. |
 
 <b>Returns:</b>
 
