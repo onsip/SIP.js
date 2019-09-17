@@ -480,7 +480,7 @@ export class UserAgentCore {
     // header field MUST list the set of methods supported by the UAS
     // generating the message.
     // https://tools.ietf.org/html/rfc3261#section-8.2.1
-    if (!AllowedMethods.includes(message.method)) {
+    if (AllowedMethods.indexOf(message.method) === -1) {
       const allowHeader = "Allow: " + AllowedMethods.toString();
       this.replyStateless(message, {
         statusCode: 405,

@@ -212,7 +212,8 @@ export class UserAgent {
 
     if (this.options.logConfiguration) {
       this.logger.log("Configuration:");
-      for (const [key, value] of Object.entries(this.options)) {
+      Object.keys(this.options).forEach((key) => {
+        const value = (this.options as any)[key];
         switch (key) {
           case "uri":
           case "sessionDescriptionHandlerFactory":
@@ -227,7 +228,7 @@ export class UserAgent {
           default:
             this.logger.log("· " + key + ": " + JSON.stringify(value));
         }
-      }
+      });
     }
 
     // initialize transport
