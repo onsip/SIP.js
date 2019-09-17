@@ -64,13 +64,18 @@ export interface UserAgentOptions {
   authorizationUsername?: string;
 
   /**
-   * If `true`, the user agent calls the `start()` method upon being created.
-   * @defaultValue `true`
+   * @deprecated
+   * If `true`, the user agent calls the `start()` method in the constructor.
+   * @defaultValue `false`
+   * @remarks
+   * The call to start() resovles when the user agent connects, so if this
+   * option is set to `true` an alternative method of connection detection
+   * must be used.
    */
   autoStart?: boolean;
 
   /**
-   * If `true`, the user  agent calls the `stop()` method on unload (if running in browser window).
+   * If `true`, the user agent calls the `stop()` method on unload (if running in browser window).
    * @defaultValue `true`
    */
   autoStop?: boolean;

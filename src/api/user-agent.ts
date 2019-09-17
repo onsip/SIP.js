@@ -86,7 +86,7 @@ export class UserAgent {
     allowOutOfDialogRefers: false,
     authorizationPassword: "",
     authorizationUsername: "",
-    autoStart: true,
+    autoStart: false,
     autoStop: true,
     delegate: {},
     displayName: "",

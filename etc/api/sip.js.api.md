@@ -899,6 +899,7 @@ export interface UserAgentOptions {
     allowOutOfDialogRefers?: boolean;
     authorizationPassword?: string;
     authorizationUsername?: string;
+    // @deprecated (undocumented)
     autoStart?: boolean;
     autoStop?: boolean;
     delegate?: UserAgentDelegate;

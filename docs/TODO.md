@@ -8,11 +8,12 @@
 - review license for correctness
 
 ## 15.x
-- port simple to new api
-- address the outstanding issues with new api
-- address sdh race condition issues
 - address transport connect/disconnect auto register issues
 - address user agent tearing down cleanly issues
+- address the outstanding issues with new api
+- address sdh race condition issues
+- review ES6 requirement issues (vs ES5 with Shim)
+- port simple to new api
 - more documentation
 - more tests
 
@@ -49,6 +50,21 @@
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
 - SDH options & SDH modifiers options are applied somewhat ambiguously
   - This behavior was ported from legacy code and the issue punted down the road.
+- SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
+- Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
+- Refactor Registerer constructor and private properties
+
+## Grammar
+- grammar.ts has everything typed as any
+- parsed URIs are not able to always be matched to configured URI because of typing issues
+- URI constructor doesn't allow user of type undefined, but grammar passed undefined is no user parsed
+- URI should be strongly typed (currently using any for constructor params)
+- URI allows "" for user and 0 for port which is confusing and should probably be undefined instead
+- IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
+
+## Transport
+- Make sure Transport is RFC compliant and integrates with core ins compliant fashion
+- Review interface and inner workings
 
 ## REFER handling - it's evolved over time and we're out of date
 
