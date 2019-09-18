@@ -671,7 +671,20 @@ export class UserAgent {
             invitation.onCancel(cancel);
           },
           onTransportError: (error: TransportError): void => {
-            invitation.onTransportError();
+            // A server transaction MUST NOT discard transaction state based only on
+            // encountering a non-recoverable transport error when sending a
+            // response.  Instead, the associated INVITE server transaction state
+            // machine MUST remain in its current state.  (Timers will eventually
+            // cause it to transition to the "Terminated" state).
+            // https://tools.ietf.org/html/rfc6026#section-7.1
+
+            // As noted in the comment above, we are to leaving it to the transaction
+            // timers to evenutally cause the transaction to sort itself out in the case
+            // of a transport failure in an invite server transaction. This delegate method
+            // is here simply here for completeness and to make it clear that it provides
+            // nothing more than informational hook into the core. That is, if you think
+            // you should be trying to deal with a transport error here, you are likely wrong.
+            this.logger.error("A transport error has occured while handling an incoming INVITE request.");
           }
         };
 
