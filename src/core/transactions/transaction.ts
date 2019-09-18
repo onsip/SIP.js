@@ -90,12 +90,12 @@ export abstract class Transaction extends EventEmitter {
    */
   protected send(message: string): Promise<void> {
     return this.transport.send(message).catch((error) => {
-      // FIXME: Transport is not, yet, typed and it is not clear
-      // yet what send() may or may not send our way. So for now,
+      // If the transport rejects, it SHOULD reject with a TransportError.
+      // But the transport may be external code, so we are careful
       // make sure we convert it to a TransportError if need be.
       if (error instanceof TransportError) {
         this.onTransportError(error);
-        return;
+        throw error;
       }
       let transportError: TransportError;
       if (error && typeof error.message === "string") {
