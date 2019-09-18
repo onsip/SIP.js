@@ -257,7 +257,7 @@ describe("API Registration", () => {
       });
     });
 
-    describe("Alice unregister(), send fails (Trasnport Error)", () => {
+    describe("Alice unregister(), send fails - Transport Error", () => {
       let statusCode: number | undefined;
 
       beforeEach(async () => {
@@ -267,11 +267,6 @@ describe("API Registration", () => {
         alice.userAgent.transport.setConnected(false);
         statusCode = undefined;
         resetSpies();
-        registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
-            return;
-          }
-        };
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
             onReject: (response) => {
@@ -290,7 +285,6 @@ describe("API Registration", () => {
       });
 
       it("her ua should send REGISTER and receive a 503 (faked)", async () => {
-        await soon(Timers.TIMER_F + 1);
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
@@ -298,14 +292,13 @@ describe("API Registration", () => {
       });
 
       it("her registration should transition 'unregistered'", async () => {
-        await soon(Timers.TIMER_F + 1);
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
       });
     });
 
-    describe("Alice unregister(), Registrar never responds to the request (Request Timeout)", () => {
+    describe("Alice unregister(), no response - Request Timeout", () => {
       let statusCode: number | undefined;
 
       beforeEach(async () => {
@@ -628,7 +621,7 @@ describe("API Registration", () => {
       });
     });
 
-    describe("Alice register(), send fails (Trasnport Error)", () => {
+    describe("Alice register(), send fails - Transport Error", () => {
       let statusCode: number | undefined;
 
       beforeEach(async () => {
@@ -636,13 +629,8 @@ describe("API Registration", () => {
           throw new Error("Transport not TransportFake");
         }
         alice.userAgent.transport.setConnected(false);
-        resetSpies();
         statusCode = undefined;
-        registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
-            return;
-          }
-        };
+        resetSpies();
         const options: RegistererRegisterOptions = {
           requestDelegate: {
             onReject: (response) => {
@@ -661,7 +649,6 @@ describe("API Registration", () => {
       });
 
       it("her ua should send REGISTER and receive a 503 (faked)", async () => {
-        await soon(Timers.TIMER_F + 1);
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
@@ -669,14 +656,13 @@ describe("API Registration", () => {
       });
 
       it("her registration should transition 'unregistered'", async () => {
-        await soon(Timers.TIMER_F + 1);
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
       });
     });
 
-    describe("Alice register(), Registrar never responds to the request (Request Timeout)", () => {
+    describe("Alice register(), no response - Request Timeout", () => {
       let statusCode: number | undefined;
 
       beforeEach(async () => {

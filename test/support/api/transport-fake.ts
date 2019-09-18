@@ -79,6 +79,7 @@ export class TransportFake extends Transport {
   protected sendPromise(msg: string, options?: any): Promise<{ msg: string, overrideEvent?: boolean }> {
     if (!this.connected) {
       return Promise.resolve().then(() => {
+        this.sendHappened();
         throw new Error("Not connected.");
       });
     }
