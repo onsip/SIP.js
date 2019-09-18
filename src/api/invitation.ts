@@ -9,9 +9,7 @@ import {
   IncomingPrackRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
-  InviteServerTransaction,
   NameAddrHeader,
-  NonInviteServerTransaction,
   OutgoingResponse,
   OutgoingResponseWithSession,
   SignalingState,
@@ -42,29 +40,12 @@ type RejectFunction = (reason: Error) => void;
  */
 export class Invitation extends Session {
 
-  // BEGIN ServerContext Interface
-  // public type: TypeStrings;
-  // public ua: UA;
-  // public logger: Logger;
-  // public data: any = {};
-  // public method = C.INVITE;
   /** @internal */
   public body: string | undefined = undefined;
-  // public contentType: string | undefined;
   /** @internal */
   public localIdentity: NameAddrHeader;
   /** @internal */
   public remoteIdentity: NameAddrHeader;
-  // public assertedIdentity: NameAddrHeader | undefined;
-  /** @internal */
-  public transaction!: InviteServerTransaction | NonInviteServerTransaction; // not used
-  // public accept: (options: any = {}) => any;
-  // public progress: (options: any = {}) => any;
-  // public reject: (options: any = {}) => any;
-  // public reply!: (options: any) => any; // not used
-  // public onRequestTimeout: () => void;
-  // public onTransportError: () => void;
-  // END ServerContext interface
 
   /**
    * FIXME: TODO:
@@ -158,7 +139,6 @@ export class Invitation extends Session {
       // transition state
       this.stateTransition(SessionState.Terminated);
       incomingInviteRequest.reject({ statusCode: 408 });
-      this.failed(request, C.causes.NO_ANSWER);
       this.terminated(request, C.causes.NO_ANSWER);
     }, this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000);
 
@@ -171,7 +151,6 @@ export class Invitation extends Session {
           // transition state
           this.stateTransition(SessionState.Terminated);
           incomingInviteRequest.reject({ statusCode: 487 });
-          this.failed(request, C.causes.EXPIRES);
           this.terminated(request, C.causes.EXPIRES);
         }
       }, expires);
@@ -206,7 +185,7 @@ export class Invitation extends Session {
     return this.rel100 === C.supported.REQUIRED ? false : true;
   }
 
-  /** Incoming MESSAGE request message. */
+  /** Incoming INVITE request message. */
   get request(): IncomingRequestMessage {
     return this.incomingInviteRequest.message;
   }
@@ -401,7 +380,6 @@ export class Invitation extends Session {
       this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
 
     this.emit("rejected", response.message, reasonPhrase);
-    this.emit("failed", response.message, reasonPhrase);
 
     this.terminated();
     return Promise.resolve();
@@ -443,7 +421,6 @@ export class Invitation extends Session {
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
     this.rejected(message, C.causes.CANCELED);
-    this.failed(message, C.causes.CANCELED);
     this.terminated(message, C.causes.CANCELED);
   }
 
@@ -754,7 +731,6 @@ export class Invitation extends Session {
     }
     try {
       this.incomingInviteRequest.reject({ statusCode }); // "Temporarily Unavailable"
-      this.failed(this.incomingInviteRequest.message, error.message);
       this.terminated(this.incomingInviteRequest.message, error.message);
     } catch (error) {
       return;

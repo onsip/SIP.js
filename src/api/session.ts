@@ -131,8 +131,6 @@ export abstract class Session extends EventEmitter {
   /** @internal */
   protected earlySdp: string | undefined; // FIXME: Needs review. Appears to be unused.
   /** @internal */
-  protected errorListener: ((...args: Array<any>) => void);
-  /** @internal */
   protected fromTag: string | undefined;
   /** @internal */
   protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
@@ -170,12 +168,7 @@ export abstract class Session extends EventEmitter {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
-
-    this.errorListener = this.onTransportError.bind(this);
-    if (userAgent.transport) {
-      userAgent.transport.on("transportError", this.errorListener);
     }
-  }
 
   /**
    * @deprecated Legacy state transition.
@@ -240,7 +233,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public on(
-    event: "failed" | "rejected",
+    event: "rejected",
     listener: (response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string) => void
   ): this;
   /**
@@ -336,7 +329,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public emit(
-    event: "failed" | "rejected",
+    event: "rejected",
     response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string
   ): boolean;
   /**
@@ -701,9 +694,6 @@ export abstract class Session extends EventEmitter {
     }
 
     this.status = SessionStatus.STATUS_TERMINATED;
-    if (this.userAgent.transport) {
-      this.userAgent.transport.removeListener("transportError", this.errorListener);
-    }
 
     if (!this.id) {
       throw new Error("Session id undefined.");
@@ -711,27 +701,6 @@ export abstract class Session extends EventEmitter {
     delete this.userAgent.sessions[this.id];
 
     return;
-  }
-
-  /**
-   * @internal
-   */
-  public onRequestTimeout(): void {
-    if (this.status === SessionStatus.STATUS_CONFIRMED) {
-      this.terminated(undefined, C.causes.REQUEST_TIMEOUT);
-    } else if (this.status !== SessionStatus.STATUS_TERMINATED) {
-      this.failed(undefined, C.causes.REQUEST_TIMEOUT);
-      this.terminated(undefined, C.causes.REQUEST_TIMEOUT);
-    }
-  }
-
-  /**
-   * @internal
-   */
-  public onTransportError(): void {
-    if (this.status !== SessionStatus.STATUS_CONFIRMED && this.status !== SessionStatus.STATUS_TERMINATED) {
-      this.failed(undefined, C.causes.CONNECTION_ERROR);
-    }
   }
 
   /**
@@ -824,7 +793,6 @@ export abstract class Session extends EventEmitter {
             this.logger.error(error);
             const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
             this.bye(undefined, { extraHeaders });
-            this.failed(request.message, C.causes.BAD_MEDIA_DESCRIPTION);
             this.terminated(request.message, C.causes.BAD_MEDIA_DESCRIPTION);
             throw error;
           });
@@ -1082,17 +1050,6 @@ export abstract class Session extends EventEmitter {
    */
   protected connecting(request: IncomingRequestMessage): void {
     this.emit("connecting", { request });
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  protected failed(response: IncomingResponseMessage | IncomingRequestMessage | undefined, cause: string): void {
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-    this.emit("failed", response, cause);
   }
 
   /**
