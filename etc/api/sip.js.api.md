@@ -98,11 +98,6 @@ export class Invitation extends Session {
     // 
     // @internal
     protected terminated(message?: IncomingResponseMessage | IncomingRequestMessage, cause?: string): void;
-    // Warning: (ae-forgotten-export) The symbol "InviteServerTransaction" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "NonInviteServerTransaction" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    transaction: InviteServerTransaction | NonInviteServerTransaction;
     }
 
 // @public
@@ -439,19 +434,21 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     protected earlySdp: string | undefined;
     // @internal @deprecated (undocumented)
-    emit(event: "renegotiationError", error: Error): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", session: Session): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
-    // @internal @deprecated (undocumented)
     emit(event: "confirmed" | "notify", request: IncomingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "invite" | "refer" | "notify", request: OutgoingRequestMessage): boolean;
     // @internal @deprecated (undocumented)
+    emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "rejected", response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "reinvite", session: Session, request: IncomingRequestMessage): boolean;
+    // @internal @deprecated (undocumented)
     emit(event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "referInviteSent" | "referRejected" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", session: Session): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "connecting", request: {
         request: IncomingRequestMessage;
@@ -459,19 +456,13 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     emit(event: "progress", response: IncomingResponseMessage | string, reasonPhrase?: any): boolean;
     // @internal @deprecated (undocumented)
-    emit(event: "failed" | "rejected", response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string): boolean;
+    emit(event: "renegotiationError", error: Error): boolean;
     // @internal @deprecated (undocumented)
     emit(event: "trackAdded" | "directionChanged" | "referRejected"): boolean;
     // @internal (undocumented)
     endTime: Date | undefined;
     // @internal (undocumented)
-    protected errorListener: ((...args: Array<any>) => void);
-    // @internal (undocumented)
     protected expiresTimer: any;
-    // @internal @deprecated (undocumented)
-    protected failed(response: IncomingResponseMessage | IncomingRequestMessage | undefined, cause: string): void;
     // @internal (undocumented)
     protected fromTag: string | undefined;
     // Warning: (ae-forgotten-export) The symbol "Body" needs to be exported by the entry point index.d.ts
@@ -509,6 +500,8 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     method: string;
     // @internal @deprecated (undocumented)
+    on(event: "reinvite", listener: (session: Session, request: IncomingRequestMessage) => void): this;
+    // @internal @deprecated (undocumented)
     on(event: "confirmed" | "notify", listener: (request: IncomingRequestMessage) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void): this;
@@ -519,7 +512,7 @@ export abstract class Session extends EventEmitter {
     // @internal @deprecated (undocumented)
     on(event: "progress", listener: (response: IncomingResponseMessage | string, reasonPhrase?: any) => void): this;
     // @internal @deprecated (undocumented)
-    on(event: "failed" | "rejected", listener: (response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string) => void): this;
+    on(event: "rejected", listener: (response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "terminated", listener: (response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string) => void): this;
     // @internal @deprecated (undocumented)
@@ -530,8 +523,6 @@ export abstract class Session extends EventEmitter {
     on(event: "SessionDescriptionHandler-created", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
     // @internal @deprecated (undocumented)
     on(event: "referInviteSent" | "referProgress" | "referAccepted" | "referRequestProgress" | "referRequestAccepted" | "referRequestRejected" | "reinviteAccepted" | "reinviteFailed", listener: (session: Session) => void): this;
-    // @internal @deprecated (undocumented)
-    on(event: "reinvite", listener: (session: Session, request: IncomingRequestMessage) => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -554,10 +545,6 @@ export abstract class Session extends EventEmitter {
     protected onPrackRequest(request: IncomingPrackRequest): void;
     // @internal
     protected onReferRequest(request: IncomingReferRequest): void;
-    // @internal (undocumented)
-    onRequestTimeout(): void;
-    // @internal (undocumented)
-    onTransportError(): void;
     // @internal (undocumented)
     protected passedOptions: any;
     // @internal
