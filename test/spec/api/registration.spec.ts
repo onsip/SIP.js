@@ -1,6 +1,7 @@
-import { Registerer, RegistererState} from "../../../src/api";
+import { Registerer, RegistererRegisterOptions, RegistererState, RegistererUnregisterOptions } from "../../../src/api";
 import { Timers } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
+import { TransportFake } from "../../support/api/transport-fake";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
 
@@ -92,7 +93,10 @@ describe("API Registration", () => {
     });
 
     describe("Alice unregister()", () => {
+      let statusCode: number | undefined;
+
       beforeEach(async () => {
+        statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
           onRegisterRequest: (request) => {
@@ -103,8 +107,15 @@ describe("API Registration", () => {
             request.accept();
           }
         };
-        registerer.unregister();
-        await alice.transport.waitReceived(); // 200
+        const options: RegistererUnregisterOptions = {
+          requestDelegate: {
+            onAccept: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        registerer.unregister(options);
+        await alice.transport.waitReceived();
       });
 
       it("her ua should send REGISTER", () => {
@@ -117,6 +128,7 @@ describe("API Registration", () => {
         const spy = alice.transportReceiveSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(statusCode).toEqual(200);
       });
 
       it("her registration should transition 'unregistered'", async () => {
@@ -245,117 +257,44 @@ describe("API Registration", () => {
       });
     });
 
-    describe("Alice register(), register()", () => {
-      let threw: boolean;
+    describe("Alice unregister(), send fails (Trasnport Error)", () => {
+      let statusCode: number | undefined;
 
       beforeEach(async () => {
-        threw = false;
-        resetSpies();
-        registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
-            const contact = request.message.parseHeader("contact");
-            expect(contact).toBeDefined();
-            request.accept({
-              extraHeaders: [`Contact: ${contact}`],
-              statusCode: 200
-            });
-          }
-        };
-        registerer.register();
-        registerer.register()
-          .catch(() => {
-            threw = true;
-          });
-        await alice.transport.waitReceived(); // 200
-      });
-
-      it("her ua should send REGISTER", () => {
-        const spy = alice.transportSendSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
-      });
-
-      it("her ua should receive 200", () => {
-        const spy = alice.transportReceiveSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-      });
-
-      it("her registration should transition 'registered'", async () => {
-        const spy = registererStateSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
-      });
-
-      it("her second register() should throw an error", () => {
-        expect(threw).toBe(true);
-      });
-    });
-
-    describe("Alice register(), dispose()", () => {
-      let count: number;
-
-      beforeEach(async () => {
-        count = 0;
-        resetSpies();
-        registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
-            const contact = request.message.parseHeader("contact");
-            expect(contact).toBeDefined();
-            if (count === 0) {
-              request.accept({
-                extraHeaders: [`Contact: ${contact}`],
-                statusCode: 200
-              });
-            } else {
-              request.accept();
-            }
-          }
-        };
-        registerer.register();
-        registerer.dispose();
-        await alice.transport.waitReceived();
-        await alice.transport.waitReceived();
-      });
-
-      it("her ua should send REGISTER, REGISTER", () => {
-        const spy = alice.transportSendSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
-        expect(spy.calls.argsFor(1)).toEqual(SIP_REGISTER);
-      });
-
-      it("her ua should receive 200, 200", () => {
-        const spy = alice.transportReceiveSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-        expect(spy.calls.argsFor(1)).toEqual(SIP_200);
-      });
-
-      it("her registration should transition 'registered', 'unregistered'", () => {
-        const spy = registererStateSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
-        expect(spy.calls.argsFor(1)).toEqual([RegistererState.Unregistered]);
-      });
-    });
-
-    describe("Alice register(), Registrar never responds to the request (timeout)", () => {
-      beforeEach(async () => {
+        if (!(alice.userAgent.transport instanceof TransportFake)) {
+          throw new Error("Transport not TransportFake");
+        }
+        alice.userAgent.transport.setConnected(false);
+        statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
           onRegisterRequest: (request) => {
             return;
           }
         };
-        return registerer.register();
+        const options: RegistererUnregisterOptions = {
+          requestDelegate: {
+            onReject: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        return registerer.unregister(options);
       });
 
-      it("her ua should send REGISTER", async () => {
+      afterEach(() => {
+        if (!(alice.userAgent.transport instanceof TransportFake)) {
+          throw new Error("Transport not TransportFake");
+        }
+        alice.userAgent.transport.setConnected(true);
+      });
+
+      it("her ua should send REGISTER and receive a 503 (faked)", async () => {
         await soon(Timers.TIMER_F + 1);
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+        expect(statusCode).toEqual(503);
       });
 
       it("her registration should transition 'unregistered'", async () => {
@@ -366,96 +305,50 @@ describe("API Registration", () => {
       });
     });
 
-    describe("Alice register(), Registrar responds with 423 Interval Too Brief without Min-Expires", () => {
+    describe("Alice unregister(), Registrar never responds to the request (Request Timeout)", () => {
+      let statusCode: number | undefined;
+
       beforeEach(async () => {
         resetSpies();
+        statusCode = undefined;
         registrar.userAgent.delegate = {
           onRegisterRequest: (request) => {
-            request.reject({ statusCode: 423 });
+            return;
           }
         };
-        registerer.register();
-        await alice.transport.waitReceived();
+        const options: RegistererUnregisterOptions = {
+          requestDelegate: {
+            onReject: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        return registerer.unregister(options);
       });
 
-      it("her ua should send REGISTER", () => {
+      it("her ua should send REGISTER and receive a 408 (faked)", async () => {
+        await soon(Timers.TIMER_F + 1);
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+        expect(statusCode).toEqual(408);
       });
 
-      it("her registration should transition 'unregistered'", () => {
+      it("her registration should transition 'unregistered'", async () => {
+        await soon(Timers.TIMER_F + 1);
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
       });
     });
 
-    describe("Alice register(), Registrar responds with 423 Interval Too Brief", () => {
-      let count: number;
-      const minExpires = 60000;
-
-      beforeEach(async () => {
-        count = 0;
-        resetSpies();
-        registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
-            count++;
-            if (count === 1) {
-              request.reject({
-                extraHeaders: [`Min-Expires: ${minExpires}`],
-                statusCode: 423
-              });
-            } else if (count === 2) {
-              const contact = request.message.parseHeader("contact");
-              expect(contact).toBeDefined();
-              const expires = contact.getParam("expires");
-              expect(expires).toEqual(`${minExpires}`);
-              request.accept({
-                extraHeaders: [`Contact: ${contact}`],
-                statusCode: 200
-              });
-            } else {
-              const contact = request.message.parseHeader("contact");
-              expect(contact).toBeDefined();
-              request.accept({
-                extraHeaders: [`Contact: ${contact}`],
-                statusCode: 200
-              });
-            }
-          }
-        };
-        registerer.register();
-        await alice.transport.waitReceived(); // 423
-        await alice.transport.waitReceived(); // 200
-      });
-
-      it("her ua should send REGISTER, REGISTER", () => {
-        const spy = alice.transportSendSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
-        expect(spy.calls.argsFor(1)).toEqual(SIP_REGISTER);
-      });
-
-      it("her ua should receive 423, 200", () => {
-        const spy = alice.transportReceiveSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_423);
-        expect(spy.calls.argsFor(1)).toEqual(SIP_200);
-      });
-
-      it("her registration should transition 'registered'", async () => {
-        const spy = registererStateSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
-      });
-    });
-
-    describe("Alice register(), Registrar responds with 200 Ok", () => {
+    describe("Alice register()", () => {
       let cseq: number;
       let expires: string;
+      let statusCode: number | undefined;
 
       beforeEach(async () => {
+        statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
           onRegisterRequest: (request) => {
@@ -470,7 +363,14 @@ describe("API Registration", () => {
             });
           }
         };
-        registerer.register();
+        const options: RegistererRegisterOptions = {
+          requestDelegate: {
+            onAccept: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        registerer.register(options);
         await alice.transport.waitReceived();
       });
 
@@ -484,6 +384,7 @@ describe("API Registration", () => {
         const spy = alice.transportReceiveSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(statusCode).toEqual(200);
       });
 
       it("her registration should transition 'registered'", async () => {
@@ -631,5 +532,271 @@ describe("API Registration", () => {
         });
       });
     });
+
+    describe("Alice register(), dispose()", () => {
+      let count: number;
+
+      beforeEach(async () => {
+        count = 0;
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            const contact = request.message.parseHeader("contact");
+            expect(contact).toBeDefined();
+            if (count === 0) {
+              request.accept({
+                extraHeaders: [`Contact: ${contact}`],
+                statusCode: 200
+              });
+            } else {
+              request.accept();
+            }
+          }
+        };
+        registerer.register();
+        registerer.dispose();
+        await alice.transport.waitReceived();
+        await alice.transport.waitReceived();
+      });
+
+      it("her ua should send REGISTER, REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 200, 200", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+      });
+
+      it("her registration should transition 'registered', 'unregistered'", () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
+        expect(spy.calls.argsFor(1)).toEqual([RegistererState.Unregistered]);
+      });
+    });
+
+    describe("Alice register(), register()", () => {
+      let threw: boolean;
+
+      beforeEach(async () => {
+        threw = false;
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            const contact = request.message.parseHeader("contact");
+            expect(contact).toBeDefined();
+            request.accept({
+              extraHeaders: [`Contact: ${contact}`],
+              statusCode: 200
+            });
+          }
+        };
+        registerer.register();
+        registerer.register()
+          .catch(() => {
+            threw = true;
+          });
+        await alice.transport.waitReceived(); // 200
+      });
+
+      it("her ua should send REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 200", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+      });
+
+      it("her registration should transition 'registered'", async () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
+      });
+
+      it("her second register() should throw an error", () => {
+        expect(threw).toBe(true);
+      });
+    });
+
+    describe("Alice register(), send fails (Trasnport Error)", () => {
+      let statusCode: number | undefined;
+
+      beforeEach(async () => {
+        if (!(alice.userAgent.transport instanceof TransportFake)) {
+          throw new Error("Transport not TransportFake");
+        }
+        alice.userAgent.transport.setConnected(false);
+        resetSpies();
+        statusCode = undefined;
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            return;
+          }
+        };
+        const options: RegistererRegisterOptions = {
+          requestDelegate: {
+            onReject: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        return registerer.register(options);
+      });
+
+      afterEach(() => {
+        if (!(alice.userAgent.transport instanceof TransportFake)) {
+          throw new Error("Transport not TransportFake");
+        }
+        alice.userAgent.transport.setConnected(true);
+      });
+
+      it("her ua should send REGISTER and receive a 503 (faked)", async () => {
+        await soon(Timers.TIMER_F + 1);
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+        expect(statusCode).toEqual(503);
+      });
+
+      it("her registration should transition 'unregistered'", async () => {
+        await soon(Timers.TIMER_F + 1);
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+      });
+    });
+
+    describe("Alice register(), Registrar never responds to the request (Request Timeout)", () => {
+      let statusCode: number | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        statusCode = undefined;
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            return;
+          }
+        };
+        const options: RegistererRegisterOptions = {
+          requestDelegate: {
+            onReject: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        return registerer.register(options);
+      });
+
+      it("her ua should send REGISTER and receive a 408 (faked)", async () => {
+        await soon(Timers.TIMER_F + 1);
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+        expect(statusCode).toEqual(408);
+      });
+
+      it("her registration should transition 'unregistered'", async () => {
+        await soon(Timers.TIMER_F + 1);
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+      });
+    });
+
+    describe("Alice register(), Registrar responds with 423 Interval Too Brief without Min-Expires", () => {
+      beforeEach(async () => {
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            request.reject({ statusCode: 423 });
+          }
+        };
+        registerer.register();
+        await alice.transport.waitReceived();
+      });
+
+      it("her ua should send REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+      });
+
+      it("her registration should transition 'unregistered'", () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+      });
+    });
+
+    describe("Alice register(), Registrar responds with 423 Interval Too Brief", () => {
+      let count: number;
+      const minExpires = 60000;
+
+      beforeEach(async () => {
+        count = 0;
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            count++;
+            if (count === 1) {
+              request.reject({
+                extraHeaders: [`Min-Expires: ${minExpires}`],
+                statusCode: 423
+              });
+            } else if (count === 2) {
+              const contact = request.message.parseHeader("contact");
+              expect(contact).toBeDefined();
+              const expires = contact.getParam("expires");
+              expect(expires).toEqual(`${minExpires}`);
+              request.accept({
+                extraHeaders: [`Contact: ${contact}`],
+                statusCode: 200
+              });
+            } else {
+              const contact = request.message.parseHeader("contact");
+              expect(contact).toBeDefined();
+              request.accept({
+                extraHeaders: [`Contact: ${contact}`],
+                statusCode: 200
+              });
+            }
+          }
+        };
+        registerer.register();
+        await alice.transport.waitReceived(); // 423
+        await alice.transport.waitReceived(); // 200
+      });
+
+      it("her ua should send REGISTER, REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 423, 200", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_423);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+      });
+
+      it("her registration should transition 'registered'", async () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
+      });
+    });
+
   });
 });

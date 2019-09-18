@@ -409,14 +409,22 @@ export class Registerer {
         }
 
         this.registered(expires);
+        if (options.requestDelegate && options.requestDelegate.onAccept) {
+          options.requestDelegate.onAccept(response);
+        }
         this.waitingToggle(false);
       },
       onProgress: (response): void => {
-        return;
+        if (options.requestDelegate && options.requestDelegate.onProgress) {
+          options.requestDelegate.onProgress(response);
+        }
       },
       onRedirect: (response): void => {
         this.logger.error("Redirect received. Not supported.");
         this.unregistered();
+        if (options.requestDelegate && options.requestDelegate.onRedirect) {
+          options.requestDelegate.onRedirect(response);
+        }
         this.waitingToggle(false);
       },
       onReject: (response): void => {
@@ -439,7 +447,7 @@ export class Registerer {
           // https://tools.ietf.org/html/rfc3261#section-10.3
           if (!response.message.hasHeader("min-expires")) {
             // This response MUST contain a Min-Expires header field
-            this.logger.error("423 response received for REGISTER without Min-Expires");
+            this.logger.error("423 response received for REGISTER without Min-Expires, dropping response");
             this.unregistered();
             this.waitingToggle(false);
             return;
@@ -453,10 +461,15 @@ export class Registerer {
         }
         this.logger.warn(`Failed to register, status code ${response.message.statusCode}`);
         this.unregistered();
+        if (options.requestDelegate && options.requestDelegate.onReject) {
+          options.requestDelegate.onReject(response);
+        }
         this.waitingToggle(false);
       },
       onTrying: (response): void => {
-        return;
+        if (options.requestDelegate && options.requestDelegate.onTrying) {
+          options.requestDelegate.onTrying(response);
+        }
       }
     });
 
@@ -547,7 +560,6 @@ export class Registerer {
         this.waitingToggle(false);
       },
       onReject: (response): void => {
-        this.waitingToggle(false);
         this.logger.error(`Unregister rejected with status code ${response.message.statusCode}`);
         this.unregistered();
         if (options.requestDelegate && options.requestDelegate.onReject) {

@@ -13,6 +13,8 @@ export class TransportFake extends Transport {
   private waitingForReceiveResolve: ResolveFunction | undefined;
   private waitingForReceiveReject: RejectFunction | undefined;
 
+  private connected: boolean = true;
+
   constructor(logger: Logger, options: any) {
     super(logger, options);
   }
@@ -26,7 +28,11 @@ export class TransportFake extends Transport {
   }
 
   public isConnected(): boolean {
-    return true;
+    return this.connected;
+  }
+
+  public setConnected(connected: boolean): void {
+    this.connected = connected;
   }
 
   public receive(msg: string): void {
@@ -61,25 +67,32 @@ export class TransportFake extends Transport {
   }
 
   protected connectPromise(options: any): Promise<any> {
+    this.connected = true;
     return Promise.resolve({});
   }
 
-  protected sendPromise(msg: string, options?: any): Promise<any> {
+  protected disconnectPromise(options: any): Promise<any> {
+    this.connected = false;
+    return Promise.resolve({});
+  }
+
+  protected sendPromise(msg: string, options?: any): Promise<{ msg: string, overrideEvent?: boolean }> {
+    if (!this.connected) {
+      return Promise.resolve().then(() => {
+        throw new Error("Not connected.");
+      });
+    }
     let message = "";
     message += this._id ? `${this._id} ` : "";
-    message +=  `Sending...\n${msg}`;
+    message += `Sending...\n${msg}`;
     this.logger.log(message);
     return Promise.resolve().then(() => {
       this.peers.forEach((peer) => {
         peer.onMessage(msg);
       });
       this.sendHappened();
-      return {};
+      return { msg };
     });
-  }
-
-  protected disconnectPromise(options: any): Promise<any> {
-    return Promise.resolve({});
   }
 
   protected onMessage(msg: string): void {
