@@ -1059,11 +1059,11 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
         });
 
-        it("her ua should receive 180, 408", () => {
+        it("her ua should receive 180, 480", () => {
           const spy = alice.transportReceiveSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual(SIP_180); // provisional resend timer generates this at 60 sec
-          expect(spy.calls.argsFor(1)).toEqual(SIP_408);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_480);
         });
 
         it("her context should emit 'progress', 'rejected', 'terminated'", () => {
