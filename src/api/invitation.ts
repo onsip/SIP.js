@@ -133,22 +133,27 @@ export class Invitation extends Session {
     // Update status again - sigh
     this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
 
-    // Set userNoAnswerTimer
+    // The following mapping values are RECOMMENDED:
+    // ...
+    // 19 no answer from the user              480 Temporarily unavailable
+    // https://tools.ietf.org/html/rfc3398#section-7.2.4.1
     this.userNoAnswerTimer = setTimeout(() => {
-      // FIXME: refactor the following bit
-      // transition state
       this.stateTransition(SessionState.Terminated);
-      incomingInviteRequest.reject({ statusCode: 408 });
+      incomingInviteRequest.reject({ statusCode: 480 });
       this.terminated(request, C.causes.NO_ANSWER);
     }, this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000);
 
-    // Set expiresTimer (RFC3261 13.3.1)
+    // 1. If the request is an INVITE that contains an Expires header
+    // field, the UAS core sets a timer for the number of seconds
+    // indicated in the header field value.  When the timer fires, the
+    // invitation is considered to be expired.  If the invitation
+    // expires before the UAS has generated a final response, a 487
+    // (Request Terminated) response SHOULD be generated.
+    // https://tools.ietf.org/html/rfc3261#section-13.3.1
     if (request.hasHeader("expires")) {
       const expires: number = Number(request.getHeader("expires") || 0) * 1000;
       this.expiresTimer = setTimeout(() => {
         if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-          // FIXME: refactor the following bit
-          // transition state
           this.stateTransition(SessionState.Terminated);
           incomingInviteRequest.reject({ statusCode: 487 });
           this.terminated(request, C.causes.EXPIRES);
