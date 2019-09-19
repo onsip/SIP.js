@@ -118,13 +118,13 @@ describe("API Session", () => {
       });
     }
 
-    it("her session should be 'established'", () => {
+    it("her session state should transition 'established'", () => {
       const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
     });
 
-    it("his session should be 'establishing', 'established'", () => {
+    it("his session state should trnasition 'establishing', 'established'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(2);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -750,7 +750,7 @@ describe("API Session", () => {
       expect(alice.transportSendSpy).not.toHaveBeenCalled();
     });
 
-    it("her state should not change", () => {
+    it("her session state should not change", () => {
       expect(inviter.state).toBe(SessionState.Initial);
       expect(inviterStateSpy).not.toHaveBeenCalled();
     });
@@ -789,7 +789,7 @@ describe("API Session", () => {
       }
 
       if (inviteWithoutSdp) {
-        it("her session should transition 'establishing', 'terminating', 'terminated'", () => {
+        it("her session state should transition 'establishing', 'terminating', 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(3);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -797,7 +797,7 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
       } else {
-        it("her session should transition 'terminating', 'terminated'", () => {
+        it("her session state should transition 'terminating', 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminating]);
@@ -840,7 +840,7 @@ describe("API Session", () => {
         expect(statusCode).toEqual(503);
       });
 
-      it("her state should transition 'establishing', 'terminated'", () => {
+      it("her session state should transition 'establishing', 'terminated'", () => {
         const spy = inviterStateSpy;
         expect(spy).toHaveBeenCalledTimes(2);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -891,7 +891,7 @@ describe("API Session", () => {
         expect(statusCode).toEqual(408);
       });
 
-      it("her state should transition 'establishing', 'terminated'", () => {
+      it("her session state should transition 'establishing', 'terminated'", () => {
         const spy = inviterStateSpy;
         expect(spy).toHaveBeenCalledTimes(2);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -936,7 +936,7 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(1)).toEqual(SIP_180);
       });
 
-      it("her state should transition 'establishing'", () => {
+      it("her session state should transition 'establishing'", () => {
         const spy = inviterStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -980,14 +980,14 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual(SIP_487);
         });
 
-        it("her session should transition 'terminating', 'terminated'", () => {
+        it("her session state should transition 'terminating', 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminating]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
 
-        it("his session should transition 'terminated'", () => {
+        it("his session state should transition 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
@@ -1017,14 +1017,14 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual(SIP_487);
         });
 
-        it("her session should transition 'terminating', 'terminated'", () => {
+        it("her session state should transition 'terminating', 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminating]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
 
-        it("his session should transition 'establishing', 'terminated'", () => {
+        it("his session state should transition 'establishing', 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -1079,14 +1079,14 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_200); // BYE
         });
 
-        it("her session should transition 'terminating', 'terminated'", () => {
+        it("her session state should transition 'terminating', 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminating]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
 
-        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(3);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -1120,7 +1120,7 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
         });
 
-        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(3);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -1155,14 +1155,14 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
         });
 
-        it("her session should transition 'established', 'terminated'", () => {
+        it("her session state should transition 'established', 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
 
-        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(3);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -1196,13 +1196,13 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_480);
         });
 
-        it("her session should transition 'terminated'", () => {
+        it("her session state should transition 'terminated'", () => {
           const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
         });
 
-        it("his session should transition 'terminated'", () => {
+        it("his session state should transition 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
@@ -1224,7 +1224,7 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
         });
 
-        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(3);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -2017,13 +2017,13 @@ describe("API Session", () => {
       expect(invitation.dialog.signalingState).toEqual(SignalingState.Closed);
     });
 
-    it("her state should transition 'terminated'", () => {
+    it("her session state should transition 'terminated'", () => {
       const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
 
-    it("his state should transition 'terminated'", () => {
+    it("his session state should transition 'terminated'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
@@ -2083,13 +2083,13 @@ describe("API Session", () => {
       expect(invitation.dialog.signalingState).toEqual(SignalingState.Closed);
     });
 
-    it("her state should transition 'terminated'", () => {
+    it("her session state should transition 'terminated'", () => {
       const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
 
-    it("his state should transition 'terminated'", () => {
+    it("his session state should transition 'terminated'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
@@ -2186,13 +2186,13 @@ describe("API Session", () => {
       expect(invitation.dialog.signalingState).toEqual(SignalingState.Closed);
     });
 
-    it("her state should transition 'terminated'", () => {
+    it("her session state should transition 'terminated'", () => {
       const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
 
-    it("his state should transition 'terminated'", () => {
+    it("his session state should transition 'terminated'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
@@ -2290,11 +2290,11 @@ describe("API Session", () => {
               .then(() => alice.transport.waitSent()); // ACK
           });
 
-          it("her state should be `established`", () => {
+          it("her session state should be `established`", () => {
             expect(inviter.state).toBe(SessionState.Established);
           });
 
-          it("his state should be `established`", () => {
+          it("his session state should be `established`", () => {
             expect(invitation.state).toBe(SessionState.Established);
           });
 

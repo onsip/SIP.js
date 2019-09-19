@@ -54,7 +54,7 @@ describe("API Registration", () => {
       expect(alice.transportSendSpy).not.toHaveBeenCalled();
     });
 
-    it("her state should not change", () => {
+    it("her registerer state should not change", () => {
       expect(registerer.state).toBe(RegistererState.Initial);
       expect(registererStateSpy).not.toHaveBeenCalled();
     });
@@ -69,7 +69,7 @@ describe("API Registration", () => {
         expect(alice.transportSendSpy).not.toHaveBeenCalled();
       });
 
-      it("her state should not change", () => {
+      it("her registerer state should not change", () => {
         expect(registerer.state).toBe(RegistererState.Initial);
         expect(registererStateSpy).not.toHaveBeenCalled();
       });
@@ -86,7 +86,7 @@ describe("API Registration", () => {
         expect(alice.transportSendSpy).not.toHaveBeenCalled();
       });
 
-      it("her state should not change", () => {
+      it("her registerer state should not change", () => {
         expect(registerer.state).toBe(RegistererState.Initial);
         expect(registererStateSpy).not.toHaveBeenCalled();
       });
@@ -131,7 +131,7 @@ describe("API Registration", () => {
         expect(statusCode).toEqual(200);
       });
 
-      it("her registration should transition 'unregistered'", async () => {
+      it("her registerer state should transition 'unregistered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -147,7 +147,7 @@ describe("API Registration", () => {
           expect(alice.transportSendSpy).not.toHaveBeenCalled();
         });
 
-        it("her state should not change", () => {
+        it("her registerer state should not change", () => {
           expect(registerer.state).toBe(RegistererState.Unregistered);
           expect(registererStateSpy).not.toHaveBeenCalled();
         });
@@ -185,7 +185,7 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(0)).toEqual(SIP_200);
       });
 
-      it("her registration should transition 'unregistered'", async () => {
+      it("her registerer state should transition 'unregistered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -291,7 +291,7 @@ describe("API Registration", () => {
         expect(statusCode).toEqual(503);
       });
 
-      it("her registration should transition 'unregistered'", async () => {
+      it("her registerer state should transition 'unregistered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -327,7 +327,7 @@ describe("API Registration", () => {
         expect(statusCode).toEqual(408);
       });
 
-      it("her registration should transition 'unregistered'", async () => {
+      it("her registerer state should transition 'unregistered'", async () => {
         await soon(Timers.TIMER_F + 1);
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
@@ -380,7 +380,7 @@ describe("API Registration", () => {
         expect(statusCode).toEqual(200);
       });
 
-      it("her registration should transition 'registered'", async () => {
+      it("her registerer state should transition 'registered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
@@ -405,7 +405,7 @@ describe("API Registration", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
         });
 
-        it("her registration should transition 'unregistered'", async () => {
+        it("her registerer state should transition 'unregistered'", async () => {
           const spy = registererStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -445,7 +445,7 @@ describe("API Registration", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
         });
 
-        it("her state should not change", () => {
+        it("her registerer state should not change", () => {
           expect(registerer.state).toBe(RegistererState.Registered);
           expect(registererStateSpy).not.toHaveBeenCalled();
         });
@@ -482,7 +482,7 @@ describe("API Registration", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
         });
 
-        it("her registration should transition 'unregistered'", async () => {
+        it("her registerer state should transition 'unregistered'", async () => {
           const spy = registererStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -519,7 +519,7 @@ describe("API Registration", () => {
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
         });
 
-        it("her state should not change", () => {
+        it("her registerer state should not change", () => {
           expect(registerer.state).toBe(RegistererState.Registered);
           expect(registererStateSpy).not.toHaveBeenCalled();
         });
@@ -566,7 +566,7 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(1)).toEqual(SIP_200);
       });
 
-      it("her registration should transition 'registered', 'unregistered'", () => {
+      it("her registerer state should transition 'registered', 'unregistered'", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(2);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
@@ -610,7 +610,7 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(0)).toEqual(SIP_200);
       });
 
-      it("her registration should transition 'registered'", async () => {
+      it("her registerer state should transition 'registered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
@@ -655,7 +655,7 @@ describe("API Registration", () => {
         expect(statusCode).toEqual(503);
       });
 
-      it("her registration should transition 'unregistered'", async () => {
+      it("her registerer state should transition 'unregistered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -691,7 +691,7 @@ describe("API Registration", () => {
         expect(statusCode).toEqual(408);
       });
 
-      it("her registration should transition 'unregistered'", async () => {
+      it("her registerer state should transition 'unregistered'", async () => {
         await soon(Timers.TIMER_F + 1);
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
@@ -717,7 +717,7 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
       });
 
-      it("her registration should transition 'unregistered'", () => {
+      it("her registerer state should transition 'unregistered'", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
@@ -777,7 +777,7 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(1)).toEqual(SIP_200);
       });
 
-      it("her registration should transition 'registered'", async () => {
+      it("her registerer state should transition 'registered'", async () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
