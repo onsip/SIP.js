@@ -30,8 +30,6 @@ const SIP_487 = [jasmine.stringMatching(/^SIP\/2.0 487/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
 const EVENT_BYE = ["bye", jasmine.any(Object)];
-const EVENT_REJECTED = ["rejected", jasmine.any(Object), jasmine.any(String)];
-const EVENT_REJECTED_ISC = ["rejected", jasmine.any(String), jasmine.any(String)];
 const EVENT_SDH = ["SessionDescriptionHandler-created", jasmine.any(Object)];
 const EVENT_TERMINATED = ["terminated", jasmine.any(Object), jasmine.any(String)];
 const EVENT_TERMINATED_ISC = ["terminated", undefined, undefined];
@@ -366,9 +364,7 @@ describe("API Session", () => {
   function bobProgress183(): void {
     beforeEach(async () => {
       resetSpies();
-      return invitation.progress({
-        statusCode: 183,
-      });
+      return invitation.progress({ statusCode: 183 });
     });
 
     it("her ua should receive 183", () => {
@@ -563,18 +559,25 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_480);
     });
 
-    it("her context should emit 'rejected', 'terminated'", () => {
+    it("her request delegate onReject", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(0);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(1);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
+    });
+
+    it("her context should emit 'terminated'", () => {
       const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
     });
 
     it("his context should emit 'rejected', 'terminated'", () => {
       const spy = invitationEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED_ISC);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED_ISC);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
     });
   }
 
@@ -604,18 +607,25 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_480);
     });
 
-    it("her context should emit 'rejected', 'terminated'", () => {
-      const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+    it("her request delegate onReject", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(0);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(1);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
-    it("his context should emit 'rejected', 'terminated'", () => {
+    it("her context should emit 'terminated'", () => {
+      const spy = inviterEmitSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+    });
+
+    it("his context should emit 'terminated'", () => {
       const spy = invitationEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED_ISC);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED_ISC);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
     });
 
     it("his second reject() threw an error", () => {
@@ -669,18 +679,25 @@ describe("API Session", () => {
         expect(spy.calls.mostRecent().args).toEqual(SIP_480);
       });
 
-      it("her context should emit 'rejected', 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+      it("her request delegate onReject", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(0);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(1);
+        expect(spy.onTrying).toHaveBeenCalledTimes(0);
       });
 
-      it("his context should emit 'rejected', 'terminated'", () => {
+      it("her context should emit 'terminated'", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+      });
+
+      it("his context should emit 'terminated'", () => {
         const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED_ISC);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED_ISC);
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
       });
     }
   }
@@ -742,18 +759,25 @@ describe("API Session", () => {
         expect(spy.calls.mostRecent().args).toEqual(SIP_480);
       });
 
-      it("her context should emit 'rejected', 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+      it("her request delegate onReject", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(0);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(1);
+        expect(spy.onTrying).toHaveBeenCalledTimes(0);
       });
 
-      it("his context should emit 'rejected', 'terminated'", () => {
+      it("her context should emit 'terminated'", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+      });
+
+      it("his context should emit 'terminated'", () => {
         const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED_ISC);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED_ISC);
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
       });
 
       it("her second terminate() threw an error", () => {
@@ -824,23 +848,13 @@ describe("API Session", () => {
     });
 
     describe("Alice invite(), send fails - Transport Error", () => {
-      let statusCode: number | undefined;
-
       beforeEach(async () => {
         if (!(alice.userAgent.transport instanceof TransportFake)) {
           throw new Error("Transport not TransportFake");
         }
         alice.userAgent.transport.setConnected(false);
-        statusCode = undefined;
         resetSpies();
-        const options: InviterInviteOptions = {
-          requestDelegate: {
-            onReject: (response) => {
-              statusCode = response.message.statusCode;
-            }
-          }
-        };
-        return inviter.invite(options);
+        return inviter.invite({ requestDelegate: inviterRequestDelegateMock });
       });
 
       afterEach(() => {
@@ -850,11 +864,24 @@ describe("API Session", () => {
         alice.userAgent.transport.setConnected(true);
       });
 
-      it("her ua should send INVITE and receive a 503 (faked)", () => {
+      it("her ua should send INVITE", () => {
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-        expect(statusCode).toEqual(503);
+      });
+
+      it("her request delegate onReject", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(0);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(1);
+        expect(spy.onTrying).toHaveBeenCalledTimes(0);
+      });
+
+      it("her request delegate onReject should receive a 503 (faked)", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onReject.calls.argsFor(0)[0].message.statusCode).toEqual(503);
       });
 
       it("her session state should transition 'establishing', 'terminated'", () => {
@@ -865,47 +892,48 @@ describe("API Session", () => {
       });
 
       if (inviteWithoutSdp) {
-        it("her context should emit 'rejected', 'terminated'", () => {
+        it("her context should emit 'terminated'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
         });
       } else {
-        it("her context should emit 'sdh', 'rejected', 'terminated'", () => {
+        it("her context should emit 'sdh', 'terminated'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_TERMINATED);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
         });
       }
     });
 
     describe("Alice invite(), no response - Request Timeout", () => {
-      let statusCode: number | undefined;
-
       beforeEach(async () => {
         resetSpies();
-        statusCode = undefined;
         bob.transportReceiveSpy.and.returnValue(Promise.resolve()); // drop messages
-        const options: InviterInviteOptions = {
-          requestDelegate: {
-            onReject: (response) => {
-              statusCode = response.message.statusCode;
-            }
-          }
-        };
-        inviter.invite(options);
+        inviter.invite({ requestDelegate: inviterRequestDelegateMock });
         await alice.transport.waitSent();
         await soon(Timers.TIMER_B);
       });
 
-      it("her ua should send INVITE and receive a 408 (faked)", () => {
+      it("her ua should send INVITE", () => {
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-        expect(statusCode).toEqual(408);
+      });
+
+      it("her request delegate onReject", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(0);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(1);
+        expect(spy.onTrying).toHaveBeenCalledTimes(0);
+      });
+
+      it("her request delegate onReject should receive a 408 (faked)", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onReject.calls.argsFor(0)[0].message.statusCode).toEqual(408);
       });
 
       it("her session state should transition 'establishing', 'terminated'", () => {
@@ -916,19 +944,17 @@ describe("API Session", () => {
       });
 
       if (inviteWithoutSdp) {
-        it("her context should emit 'rejected', 'terminated'", () => {
+        it("her context should emit 'terminated'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
         });
       } else {
-        it("her context should emit 'sdh', 'rejected', 'terminated'", () => {
+        it("her context should emit 'sdh', 'terminated'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_TERMINATED);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
         });
       }
     });
@@ -1296,11 +1322,10 @@ describe("API Session", () => {
           expect(spy.onTrying).toHaveBeenCalledTimes(0);
         });
 
-        it("her context should emit 'rejected', 'terminated'", () => {
+        it("her context should emit 'terminated'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
         });
       });
 

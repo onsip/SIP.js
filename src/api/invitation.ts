@@ -384,8 +384,6 @@ export class Invitation extends Session {
       this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
       this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
 
-    this.emit("rejected", response.message, reasonPhrase);
-
     this.terminated();
     return Promise.resolve();
   }
@@ -425,7 +423,6 @@ export class Invitation extends Session {
     // reject INVITE with 487 status code
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
-    this.rejected(message, C.causes.CANCELED);
     this.terminated(message, C.causes.CANCELED);
   }
 

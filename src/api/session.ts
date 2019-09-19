@@ -189,14 +189,6 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public on(
-    event: "rejected",
-    listener: (response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
     event: "terminated", listener: (response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string) => void
   ): this;
   /**
@@ -225,14 +217,6 @@ export abstract class Session extends EventEmitter {
    */
   public emit(
     event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "rejected",
-    response?: IncomingRequestMessage | IncomingResponseMessage | string, cause?: string
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -910,14 +894,6 @@ export abstract class Session extends EventEmitter {
           });
       }
     }
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  protected rejected(response: IncomingResponseMessage | IncomingRequestMessage, cause: string): void {
-    this.emit("rejected", response, cause);
   }
 
   /**

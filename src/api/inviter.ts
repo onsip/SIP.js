@@ -1055,7 +1055,6 @@ export class Inviter extends Session {
     const response = inviteResponse.message;
     const statusCode = response.statusCode;
     const cause: string = Utils.sipErrorCause(statusCode || 0);
-    this.rejected(response, cause);
     this.terminated(response, cause);
   }
 
@@ -1082,7 +1081,6 @@ export class Inviter extends Session {
     const response = inviteResponse.message;
     const statusCode = response.statusCode;
     const cause: string = Utils.sipErrorCause(statusCode || 0);
-    this.rejected(response, cause);
     this.terminated(response, cause);
   }
 
