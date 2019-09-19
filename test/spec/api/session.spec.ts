@@ -7,7 +7,7 @@ import {
   SessionDescriptionHandler,
   SessionState
 } from "../../../src/api";
-import { SessionState as SessionDialogState, SignalingState } from "../../../src/core";
+import { OutgoingRequestDelegate, SessionState as SessionDialogState, SignalingState } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { TransportFake } from "../../support/api/transport-fake";
@@ -30,8 +30,6 @@ const SIP_487 = [jasmine.stringMatching(/^SIP\/2.0 487/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
 const EVENT_BYE = ["bye", jasmine.any(Object)];
-const EVENT_PROGRESS_ICC = ["progress", jasmine.any(Object)];
-const EVENT_PROGRESS_ICS = ["progress", jasmine.any(String), undefined];
 const EVENT_REJECTED = ["rejected", jasmine.any(Object), jasmine.any(String)];
 const EVENT_REJECTED_ISC = ["rejected", jasmine.any(String), jasmine.any(String)];
 const EVENT_SDH = ["SessionDescriptionHandler-created", jasmine.any(Object)];
@@ -68,6 +66,15 @@ describe("API Session", () => {
   let invitationEmitSpy: EventEmitterEmitSpy;
   let invitationStateSpy: EmitterSpy<SessionState>;
 
+  const inviterRequestDelegateMock =
+    jasmine.createSpyObj<Required<OutgoingRequestDelegate>>("OutgoingRequestDelegate", [
+    "onAccept",
+    "onProgress",
+    "onRedirect",
+    "onReject",
+    "onTrying"
+  ]);
+
   function bobAccept(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean) {
 
     beforeEach(async () => {
@@ -86,6 +93,15 @@ describe("API Session", () => {
       const spy = alice.transportReceiveSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.mostRecent().args).toEqual(SIP_200);
+    });
+
+    it("her request delegate should onAccept", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(1);
+      expect(spy.onProgress).toHaveBeenCalledTimes(0);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
     if (answerInAck) {
@@ -149,7 +165,7 @@ describe("API Session", () => {
       invitation.accept();
       return invitation.accept()
         .catch(() => { threw = true; })
-        .then(() => inviterStateSpy.wait(SessionState.Established));
+        .then(() => bob.transport.waitReceived()); // ACK
     });
 
     it("her ua should send ACK", () => {
@@ -162,6 +178,15 @@ describe("API Session", () => {
       const spy = alice.transportReceiveSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.mostRecent().args).toEqual(SIP_200);
+    });
+
+    it("her request delegate should onAccept", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(1);
+      expect(spy.onProgress).toHaveBeenCalledTimes(0);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
     it("her session state should transition 'established'", () => {
@@ -268,6 +293,15 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(0)).toEqual(SIP_200);
         expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
       });
+
+      it("her request delegate should onAccept", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(1);
+        expect(spy.onProgress).toHaveBeenCalledTimes(0);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(0);
+        expect(spy.onTrying).toHaveBeenCalledTimes(0);
+      });
     }
 
     if (answerInAck) {
@@ -310,8 +344,7 @@ describe("API Session", () => {
   function bobProgress(): void {
     beforeEach(async () => {
       resetSpies();
-      invitation.progress();
-      await inviterEmitSpy.wait("progress");
+      return invitation.progress();
     });
 
     it("her ua should receive 180", () => {
@@ -320,26 +353,22 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_180);
     });
 
-    it("her context should emit 'progress'", () => {
-      const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICC);
-    });
-
-    it("his context should emit 'progress'", () => {
-      const spy = invitationEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICS);
+    it("her request delegate onProgress", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(1);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
   }
 
   function bobProgress183(): void {
     beforeEach(async () => {
       resetSpies();
-      invitation.progress({
+      return invitation.progress({
         statusCode: 183,
       });
-      await inviterEmitSpy.wait("progress");
     });
 
     it("her ua should receive 183", () => {
@@ -348,18 +377,19 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_183);
     });
 
-    it("her context should emit 'sdh', 'progress'", () => {
-      const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICC);
+    it("her request delegate onProgress", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(1);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
-    it("his context should emit 'progress'", () => {
+    it("his context should emit 'sdh'", () => {
       const spy = invitationEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
-      expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICS);
     });
   }
 
@@ -367,8 +397,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       resetSpies();
       invitation.progress();
-      invitation.progress();
-      await inviterEmitSpy.wait("progress");
+      return invitation.progress();
     });
 
     it("her ua should receive 180, 180", () => {
@@ -378,18 +407,13 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(1)).toEqual(SIP_180);
     });
 
-    it("her context should emit 'progress', 'progress'", () => {
-      const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_PROGRESS_ICC);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-    });
-
-    it("his context should emit 'progress', 'progress;", () => {
-      const spy = invitationEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_PROGRESS_ICS);
-      expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
+    it("her request delegate onProgress, onProgress", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(2);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
   }
 
@@ -397,8 +421,8 @@ describe("API Session", () => {
     beforeEach(async () => {
       resetSpies();
       invitation.progress({ rel100: true });
-      await inviterEmitSpy.wait("progress");
       await bob.transport.waitSent(); // 200 for PRACK
+      await alice.transport.waitReceived(); // 200 for PRACK
     });
 
     it("her ua should receive 183", () => {
@@ -414,40 +438,44 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_PRACK);
     });
 
+    it("her request delegate onProgress", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(1);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
+    });
+
     if (offerInProgress) {
-      it("her context should emit 'sdh', 'progress'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-      });
-    } else {
-      it("her context should emit 'progress'", () => {
+      it("her context should emit 'sdh'", () => {
         const spy = inviterEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICC);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("her context should emit nothing", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
 
     if (offerInProgress) {
-      it("his context should emit 'sdh', 'progress'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
-      });
-    } else if (answerInProgress) {
-      it("his context should emit 'sdh', 'progress'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
-      });
-    } else {
-      it("his context should emit progress'", () => {
+      it("his context should emit 'sdh'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICS);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else if (answerInProgress) {
+      it("his context should emit 'sdh'", () => {
+        const spy = invitationEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("his context should emit nothing", () => {
+        const spy = invitationEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
   }
@@ -457,8 +485,8 @@ describe("API Session", () => {
       resetSpies();
       invitation.progress({ rel100: true });
       invitation.progress({ rel100: true }); // This one should be ignored as we are waiting on a PRACK.
-      await inviterEmitSpy.wait("progress");
       await bob.transport.waitSent(); // 200 for PRACK
+      await alice.transport.waitReceived(); // 200 for PRACK
     });
 
     it("her ua should receive 183", () => {
@@ -474,40 +502,44 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_PRACK);
     });
 
+    it("her request delegate onProgress", () => {
+      const spy = inviterRequestDelegateMock;
+      expect(spy.onAccept).toHaveBeenCalledTimes(0);
+      expect(spy.onProgress).toHaveBeenCalledTimes(1);
+      expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+      expect(spy.onReject).toHaveBeenCalledTimes(0);
+      expect(spy.onTrying).toHaveBeenCalledTimes(0);
+    });
+
     if (offerInProgress) {
-      it("her context should emit 'progress'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-      });
-    } else {
-      it("her context should emit 'progress'", () => {
+      it("her context should emit 'sdh'", () => {
         const spy = inviterEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICC);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("her context should emit nothing", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
 
     if (offerInProgress) {
-      it("his context should emit 'sdh', 'progress'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
-      });
-    } else if (answerInProgress) {
-      it("his context should emit 'sdh', 'progress'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICS);
-      });
-    } else {
-      it("his context should emit progress'", () => {
+      it("his context should emit 'sdh'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.mostRecent().args).toEqual(EVENT_PROGRESS_ICS);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else if (answerInProgress) {
+      it("his context should emit 'sdh'", () => {
+        const spy = invitationEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("his context should emit nothing", () => {
+        const spy = invitationEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
   }
@@ -904,8 +936,8 @@ describe("API Session", () => {
     describe("Alice invite()", () => {
       beforeEach(async () => {
         resetSpies();
-        inviter.invite();
-        await alice.transport.waitSent();
+        return inviter.invite({ requestDelegate: inviterRequestDelegateMock })
+          .then(() => bob.transport.waitSent());
       });
 
       it("her ua should send INVITE", () => {
@@ -921,6 +953,15 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(1)).toEqual(SIP_180);
       });
 
+      it("her request delegate onTyring, onProgress", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(1);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(0);
+        expect(spy.onTrying).toHaveBeenCalledTimes(1);
+      });
+
       it("her session state should transition 'establishing'", () => {
         const spy = inviterStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
@@ -928,19 +969,15 @@ describe("API Session", () => {
       });
 
       if (inviteWithoutSdp) {
-        it("her context should emit, 'progress', 'progress'", () => {
+        it("her context should emit nothing", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_PROGRESS_ICC);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
+          expect(spy).toHaveBeenCalledTimes(0);
         });
       } else {
-        it("her context should emit 'sdh', 'progress', 'progress'", () => {
+        it("her context should emit 'sdh'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_PROGRESS_ICC);
         });
       }
 
@@ -963,6 +1000,15 @@ describe("API Session", () => {
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
           expect(spy.calls.argsFor(1)).toEqual(SIP_487);
+        });
+
+        it("her request delegate onReject", () => {
+          const spy = inviterRequestDelegateMock;
+          expect(spy.onAccept).toHaveBeenCalledTimes(0);
+          expect(spy.onProgress).toHaveBeenCalledTimes(0);
+          expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+          expect(spy.onReject).toHaveBeenCalledTimes(1);
+          expect(spy.onTrying).toHaveBeenCalledTimes(0);
         });
 
         it("her session state should transition 'terminating', 'terminated'", () => {
@@ -1241,12 +1287,20 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual(SIP_480);
         });
 
-        it("her context should emit 'progress', 'rejected', 'terminated'", () => {
+        it("her request delegate onProgress, onReject", () => {
+          const spy = inviterRequestDelegateMock;
+          expect(spy.onAccept).toHaveBeenCalledTimes(0);
+          expect(spy.onProgress).toHaveBeenCalledTimes(1);
+          expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+          expect(spy.onReject).toHaveBeenCalledTimes(1);
+          expect(spy.onTrying).toHaveBeenCalledTimes(0);
+        });
+
+        it("her context should emit 'rejected', 'terminated'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_PROGRESS_ICC);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_TERMINATED);
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
         });
       });
 
@@ -1441,6 +1495,11 @@ describe("API Session", () => {
     if (invitationEmitSpy) { invitationEmitSpy.calls.reset(); }
     inviterStateSpy.calls.reset();
     if (invitationStateSpy) { invitationStateSpy.calls.reset(); }
+    inviterRequestDelegateMock.onAccept.calls.reset();
+    inviterRequestDelegateMock.onProgress.calls.reset();
+    inviterRequestDelegateMock.onRedirect.calls.reset();
+    inviterRequestDelegateMock.onReject.calls.reset();
+    inviterRequestDelegateMock.onTrying.calls.reset();
   }
 
   beforeEach(async () => {
@@ -1755,8 +1814,8 @@ describe("API Session", () => {
         resetSpies2();
         invitation.progress({ rel100: true });
         invitation2.progress({ rel100: true });
-        await inviterEmitSpy.wait("progress");
         await bob.transport.waitSent(); // 200 for PRACK
+        await alice.transport.waitReceived(); // 200 for PRACK
       });
 
       it("her ua should send PRACK, PRACK", () => {
@@ -1766,21 +1825,26 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(1)).toEqual(SIP_PRACK);
       });
 
+      it("her request delegate onProgress, onProgress", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(2);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(0);
+        expect(spy.onTrying).toHaveBeenCalledTimes(0);
+      });
+
       if (offerInProgress) {
-        it("her context should emit 'sdh', 'sdh', 'progress', 'progress'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(4);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(2)).toEqual(EVENT_PROGRESS_ICC);
-          expect(spy.calls.argsFor(3)).toEqual(EVENT_PROGRESS_ICC);
-        });
-      } else {
-        it("her context should emit 'progress', 'progress'", () => {
+        it("her context should emit 'sdh', 'sdh'", () => {
           const spy = inviterEmitSpy;
           expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_PROGRESS_ICC);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_SDH);
+        });
+      } else {
+        it("her context should emit nothing", () => {
+          const spy = inviterEmitSpy;
+          expect(spy).toHaveBeenCalledTimes(0);
         });
       }
     }
@@ -1794,8 +1858,8 @@ describe("API Session", () => {
       describe("Alice invite() fork", () => {
         beforeEach(async () => {
           resetSpies2();
-          inviter.invite();
-          await alice.transport.waitSent();
+          inviter.invite({ requestDelegate: inviterRequestDelegateMock });
+          await bob.transport.waitSent();
         });
 
         it("her ua should send INVITE", () => {
@@ -1813,24 +1877,25 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(3)).toEqual(SIP_180);
         });
 
+        it("her request delegate onTrying, onProgress", () => {
+          const spy = inviterRequestDelegateMock;
+          expect(spy.onAccept).toHaveBeenCalledTimes(0);
+          expect(spy.onProgress).toHaveBeenCalledTimes(2);
+          expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+          expect(spy.onReject).toHaveBeenCalledTimes(0);
+          expect(spy.onTrying).toHaveBeenCalledTimes(2);
+        });
+
         if (inviteWithoutSdp) {
-          it("her context should emit, 'progress', 'progress'", () => {
+          it("her context should emit nothing", () => {
             const spy = inviterEmitSpy;
-            expect(spy).toHaveBeenCalledTimes(4);
-            expect(spy.calls.argsFor(0)).toEqual(EVENT_PROGRESS_ICC);
-            expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-            expect(spy.calls.argsFor(2)).toEqual(EVENT_PROGRESS_ICC);
-            expect(spy.calls.argsFor(3)).toEqual(EVENT_PROGRESS_ICC);
+            expect(spy).toHaveBeenCalledTimes(0);
           });
         } else {
-          it("her context should emit 'sdh', 'progress', 'progress', 'progress', 'progress'", () => {
+          it("her context should emit 'sdh'", () => {
             const spy = inviterEmitSpy;
-            expect(spy).toHaveBeenCalledTimes(5);
+            expect(spy).toHaveBeenCalledTimes(1);
             expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-            expect(spy.calls.argsFor(1)).toEqual(EVENT_PROGRESS_ICC);
-            expect(spy.calls.argsFor(2)).toEqual(EVENT_PROGRESS_ICC);
-            expect(spy.calls.argsFor(3)).toEqual(EVENT_PROGRESS_ICC);
-            expect(spy.calls.argsFor(4)).toEqual(EVENT_PROGRESS_ICC);
           });
         }
 

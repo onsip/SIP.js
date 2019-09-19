@@ -513,7 +513,6 @@ export class Invitation extends Session {
 
     try {
       const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
-      this.emit("progress", progressResponse.message, reasonPhrase); // Ported
       this.dialog = progressResponse.session;
       return Promise.resolve(progressResponse);
     } catch (error) {
@@ -534,7 +533,6 @@ export class Invitation extends Session {
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
       .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
-        this.emit("progress", progressResponse.message, reasonPhrase); // Ported
         this.dialog = progressResponse.session;
         return progressResponse;
       });
@@ -578,7 +576,6 @@ export class Invitation extends Session {
           return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
         })
         .then((progressResponse) => {
-          this.emit("progress", progressResponse.message, reasonPhrase); // Ported
           this.dialog = progressResponse.session;
 
           let prackRequest: IncomingPrackRequest;

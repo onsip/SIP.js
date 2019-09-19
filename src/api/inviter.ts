@@ -946,14 +946,12 @@ export class Inviter extends Session {
           // FIXME: Known popular UA's currently end up here...
           inviteResponse.prack({ extraHeaders });
         }
-        this.emit("progress", response);
         return Promise.resolve();
       case SignalingState.HaveLocalOffer:
         // INVITE with offer and session only has that initial local offer.
         if (responseReliable) {
           inviteResponse.prack({ extraHeaders });
         }
-        this.emit("progress", response);
         return Promise.resolve();
       case SignalingState.HaveRemoteOffer:
         if (!responseReliable) {
@@ -991,7 +989,6 @@ export class Inviter extends Session {
               contentDisposition: "session", contentType: description.contentType, content: description.body
             };
             inviteResponse.prack({ extraHeaders, body });
-            this.emit("progress", response);
           })
           .catch((error) => {
             if (this.status === SessionStatus.STATUS_TERMINATED) {
@@ -1018,9 +1015,6 @@ export class Inviter extends Session {
             sessionDescriptionHandlerModifiers: sdhModifiers
           };
           return this.setAnswer(answer, options)
-            .then(() => {
-              this.emit("progress", response);
-            })
             .catch((error: Error) => {
               if (this.status === SessionStatus.STATUS_TERMINATED) {
                 throw error;
@@ -1029,7 +1023,6 @@ export class Inviter extends Session {
               throw error;
             });
         }
-        this.emit("progress", response);
         return Promise.resolve();
       case SignalingState.Closed:
         // Dialog has terminated.
@@ -1099,9 +1092,6 @@ export class Inviter extends Session {
    */
   private onTrying(inviteResponse: IncomingResponse): void {
     this.logger.log("Inviter.onTrying");
-
-    // legacy behavior - doing this in any state seems broken
-    this.emit("progress", inviteResponse.message);
 
     // validate state
     if (this.state !== SessionState.Establishing) {
