@@ -1,8 +1,16 @@
 import { Timers, URI } from "../../../src";
-import { Invitation, Inviter, Session, SessionDescriptionHandler, SessionState } from "../../../src/api";
+import {
+  Invitation,
+  Inviter,
+  InviterInviteOptions,
+  Session,
+  SessionDescriptionHandler,
+  SessionState
+} from "../../../src/api";
 import { SessionState as SessionDialogState, SignalingState } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
+import { TransportFake } from "../../support/api/transport-fake";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
 
@@ -738,17 +746,13 @@ describe("API Session", () => {
   }
 
   function inviteSuite(inviteWithoutSdp: boolean): void {
-    it("her state should not change", () => {
-      expect(inviter.state).toBe(SessionState.Initial);
-      expect(inviterStateSpy).not.toHaveBeenCalled();
-    });
-
     it("her ua should send nothing", () => {
       expect(alice.transportSendSpy).not.toHaveBeenCalled();
     });
 
-    it("her context should emit nothing", () => {
-      expect(inviterEmitSpy).not.toHaveBeenCalled();
+    it("her state should not change", () => {
+      expect(inviter.state).toBe(SessionState.Initial);
+      expect(inviterStateSpy).not.toHaveBeenCalled();
     });
 
     describe("Alice invite(), cancel()", () => {
@@ -802,19 +806,96 @@ describe("API Session", () => {
       }
     });
 
-    describe("Alice invite(), no response - transaction timeout", () => {
+    describe("Alice invite(), send fails - Transport Error", () => {
+      let statusCode: number | undefined;
+
+      beforeEach(async () => {
+        if (!(alice.userAgent.transport instanceof TransportFake)) {
+          throw new Error("Transport not TransportFake");
+        }
+        alice.userAgent.transport.setConnected(false);
+        statusCode = undefined;
+        resetSpies();
+        const options: InviterInviteOptions = {
+          requestDelegate: {
+            onReject: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        return inviter.invite(options);
+      });
+
+      afterEach(() => {
+        if (!(alice.userAgent.transport instanceof TransportFake)) {
+          throw new Error("Transport not TransportFake");
+        }
+        alice.userAgent.transport.setConnected(true);
+      });
+
+      it("her ua should send INVITE and receive a 503 (faked)", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+        expect(statusCode).toEqual(503);
+      });
+
+      it("her state should transition 'establishing', 'terminated'", () => {
+        const spy = inviterStateSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+        expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+      });
+
+      if (inviteWithoutSdp) {
+        it("her context should emit 'rejected', 'terminated'", () => {
+          const spy = inviterEmitSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_REJECTED);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
+        });
+      } else {
+        it("her context should emit 'sdh', 'rejected', 'terminated'", () => {
+          const spy = inviterEmitSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+          expect(spy.calls.argsFor(1)).toEqual(EVENT_REJECTED);
+          expect(spy.calls.argsFor(2)).toEqual(EVENT_TERMINATED);
+        });
+      }
+    });
+
+    describe("Alice invite(), no response - Request Timeout", () => {
+      let statusCode: number | undefined;
+
       beforeEach(async () => {
         resetSpies();
+        statusCode = undefined;
         bob.transportReceiveSpy.and.returnValue(Promise.resolve()); // drop messages
-        inviter.invite();
+        const options: InviterInviteOptions = {
+          requestDelegate: {
+            onReject: (response) => {
+              statusCode = response.message.statusCode;
+            }
+          }
+        };
+        inviter.invite(options);
         await alice.transport.waitSent();
         await soon(Timers.TIMER_B);
       });
 
-      it("her ua should send INVITE", () => {
+      it("her ua should send INVITE and receive a 408 (faked)", () => {
         const spy = alice.transportSendSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+        expect(statusCode).toEqual(408);
+      });
+
+      it("her state should transition 'establishing', 'terminated'", () => {
+        const spy = inviterStateSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+        expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
       });
 
       if (inviteWithoutSdp) {
@@ -877,11 +958,6 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(2)).toEqual(EVENT_PROGRESS_ICC);
         });
       }
-
-      it("his context should emit nothing", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
 
       describe("Alice cancel()", () => {
         beforeEach(async () => {
@@ -1019,7 +1095,121 @@ describe("API Session", () => {
         });
       });
 
-      describe("Bob accept(), Bob never receives ACK - a network failure condition", () => {
+      describe("Bob accept(), 200 send fails - Transport Error", () => {
+        beforeEach(async () => {
+          if (!(bob.userAgent.transport instanceof TransportFake)) {
+            throw new Error("Transport not TransportFake");
+          }
+          bob.userAgent.transport.setConnected(false);
+          resetSpies();
+          return invitation.accept()
+            .then(() => soon(Timers.TIMER_H));
+        });
+
+        afterEach(() => {
+          if (!(bob.userAgent.transport instanceof TransportFake)) {
+            throw new Error("Transport not TransportFake");
+          }
+          bob.userAgent.transport.setConnected(true);
+        });
+
+        it("his ua should send 200, BYE", () => {
+          const spy = bob.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(12); // 11 retransmissions of the 200
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
+        });
+
+        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+          expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+        });
+      });
+
+      describe("Bob accept(), ACK send fails - Transport Error", () => {
+        beforeEach(async () => {
+          if (!(alice.userAgent.transport instanceof TransportFake)) {
+            throw new Error("Transport not TransportFake");
+          }
+          alice.userAgent.transport.setConnected(false);
+          resetSpies();
+          return invitation.accept()
+            .then(() => alice.transport.waitSent()) // ACK
+            .then(() => soon(Timers.TIMER_L));
+        });
+
+        afterEach(() => {
+          if (!(alice.userAgent.transport instanceof TransportFake)) {
+            throw new Error("Transport not TransportFake");
+          }
+          alice.userAgent.transport.setConnected(true);
+        });
+
+        it("his ua should send 200, BYE", async () => {
+          const spy = bob.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(12); // 11 retransmissions of the 200
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
+        });
+
+        it("her session should transition 'established', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session should transition 'establishing', 'established', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+          expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+        });
+      });
+
+      describe("Bob reject(), ACK send fails - Transport Error", () => {
+        beforeEach(async () => {
+          if (!(alice.userAgent.transport instanceof TransportFake)) {
+            throw new Error("Transport not TransportFake");
+          }
+          alice.userAgent.transport.setConnected(false);
+          resetSpies();
+          return invitation.reject()
+            .then(() => alice.transport.waitSent()) // ACK
+            .then(() => soon(Timers.TIMER_H));
+        });
+
+        afterEach(() => {
+          if (!(alice.userAgent.transport instanceof TransportFake)) {
+            throw new Error("Transport not TransportFake");
+          }
+          alice.userAgent.transport.setConnected(true);
+        });
+
+        it("his ua should send 480", async () => {
+          const spy = bob.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_480);
+        });
+
+        it("her session should transition 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session should transition 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
+        });
+      });
+
+      describe("Bob accept(), Bob never receives ACK - Request Timeout", () => {
         beforeEach(async () => {
           resetSpies();
           alice.transportReceiveSpy.and.returnValue(Promise.resolve()); // drop messages
@@ -1027,7 +1217,7 @@ describe("API Session", () => {
             .then(() => soon(Timers.TIMER_L));
         });
 
-        it("his ua should send 200, BYE", async () => {
+        it("his ua should send 200, BYE", () => {
           const spy = bob.transportSendSpy;
           expect(spy).toHaveBeenCalledTimes(12); // 10 retransmissions of the 200
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
