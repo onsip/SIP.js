@@ -148,15 +148,12 @@ describe("API Session", () => {
     let threw: boolean;
 
     beforeEach(async () => {
-      threw  = false;
+      threw = false;
       resetSpies();
       invitation.accept();
-      try {
-        invitation.accept();
-      } catch (e) {
-        threw = true;
-      }
-      await inviterStateSpy.wait(SessionState.Established);
+      return invitation.accept()
+        .catch(() => { threw = true; })
+        .then(() => inviterStateSpy.wait(SessionState.Established));
     });
 
     it("her ua should send ACK", () => {
@@ -1281,8 +1278,12 @@ describe("API Session", () => {
         });
       });
 
-      xdescribe("Bob accept(), accept() // FIXME: Need guard against calling more than once.", () => {
-        bobAccept2x(false, true, false);
+      describe("Bob accept(), accept()", () => {
+        if (inviteWithoutSdp) {
+          bobAccept(true, false, true);
+        } else {
+          bobAccept2x(false, true, false);
+        }
       });
 
       describe("Bob progress()", () => {
