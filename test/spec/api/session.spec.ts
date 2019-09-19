@@ -24,14 +24,12 @@ const SIP_180 = [jasmine.stringMatching(/^SIP\/2.0 180/)];
 const SIP_183 = [jasmine.stringMatching(/^SIP\/2.0 183/)];
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
 const SIP_404 = [jasmine.stringMatching(/^SIP\/2.0 404/)];
-const SIP_408 = [jasmine.stringMatching(/^SIP\/2.0 408/)];
 const SIP_480 = [jasmine.stringMatching(/^SIP\/2.0 480/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_487 = [jasmine.stringMatching(/^SIP\/2.0 487/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
 const EVENT_BYE = ["bye", jasmine.any(Object)];
-const EVENT_CONFIRMED = ["confirmed", jasmine.any(Object)];
 const EVENT_PROGRESS_ICC = ["progress", jasmine.any(Object)];
 const EVENT_PROGRESS_ICS = ["progress", jasmine.any(String), undefined];
 const EVENT_REJECTED = ["rejected", jasmine.any(Object), jasmine.any(String)];
@@ -74,8 +72,8 @@ describe("API Session", () => {
 
     beforeEach(async () => {
       resetSpies();
-      invitation.accept();
-      await invitationEmitSpy.wait("confirmed");
+      return invitation.accept()
+        .then(() => bob.transport.waitReceived()); // ACK
     });
 
     it("her ua should send ACK", () => {
@@ -104,17 +102,15 @@ describe("API Session", () => {
     }
 
     if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh', 'confirmed'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_CONFIRMED);
-      });
-    } else {
-      it("his context should emit 'confirmed'", () => {
+      it("his context should emit 'sdh'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_CONFIRMED);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("his context should emit nothing", () => {
+        const spy = invitationEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
 
@@ -168,38 +164,30 @@ describe("API Session", () => {
       expect(spy.calls.mostRecent().args).toEqual(SIP_200);
     });
 
-    it("her context should emit nothing", () => {
-      const spy = inviterEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(0);
+    it("her session state should transition 'established'", () => {
+      const spy = inviterStateSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
     });
 
-    if (answerInAck) {
-      it("her context should emit 'sdh'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("her context should emit nothing", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
+    it("his session state should trnasition 'establishing', 'established'", () => {
+      const spy = invitationStateSpy;
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+      expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+    });
 
-    if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh', 'confirmed'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_CONFIRMED);
-      });
-    } else {
-      it("his context should emit 'confirmed'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_CONFIRMED);
-      });
-    }
+    it("her dialog should be 'confirmed' and 'stable'", () => {
+      const session = inviter.dialog;
+      expect(session && session.sessionState).toBe(SessionDialogState.Confirmed);
+      expect(session && session.signalingState).toBe(SignalingState.Stable);
+    });
+
+    it("his dialog should be 'confirmed' and 'stable'", () => {
+      const session = invitation.dialog;
+      expect(session && session.sessionState).toBe(SessionDialogState.Confirmed);
+      expect(session && session.signalingState).toBe(SignalingState.Stable);
+    });
 
     it("her second accept() threw an error", () => {
       expect(threw).toBe(true);

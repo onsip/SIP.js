@@ -182,44 +182,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public on(
-    event:
-      "referInviteSent" |
-      "referProgress" |
-      "referAccepted" |
-      "referRequestProgress" |
-      "referRequestAccepted" |
-      "referRequestRejected" |
-      "reinviteAccepted" |
-      "reinviteFailed",
-    listener: (session: Session) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "reinvite", listener: (session: Session, request: IncomingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "confirmed" | "notify",   listener: (request: IncomingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
     event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "connecting", listener: (request: { request: IncomingRequestMessage }) => void
   ): this;
   /**
    * @deprecated Legacy state transition.
@@ -247,12 +210,7 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public on(event: "renegotiationError", listener: (error: Error) => void): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(event: "trackAdded" | "directionChanged" | "referRejected", listener: () => void): this;
+  public on(event: "trackAdded" | "directionChanged", listener: () => void): this;
   /**
    * @deprecated Legacy state transition.
    * @internal
@@ -273,49 +231,7 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public emit(
-    event:
-      "referInviteSent" |
-      "referRejected" |
-      "referRequestProgress" |
-      "referRequestAccepted" |
-      "referRequestRejected" |
-      "reinviteAccepted" |
-      "reinviteFailed",
-    session: Session): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "reinvite", session: Session, request: IncomingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "confirmed" | "notify", request: IncomingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "invite" | "refer" | "notify", request: OutgoingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
     event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "connecting", request: { request: IncomingRequestMessage }
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -343,12 +259,7 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public emit(event: "renegotiationError", error: Error): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(event: "trackAdded" | "directionChanged" | "referRejected"): boolean;
+  public emit(event: "trackAdded" | "directionChanged"): boolean;
   /**
    * @deprecated Legacy state transition.
    * @internal
@@ -752,26 +663,20 @@ export abstract class Session extends EventEmitter {
       throw new Error("Dialog undefined.");
     }
 
-    // Helper function.
-    const confirmSession = (): void => {
-      this.status = SessionStatus.STATUS_CONFIRMED;
-      this.emit("confirmed", request.message);
-    };
-
     // If the ACK doesn't have an offer/answer, nothing to be done.
     const body = getBody(request.message);
     if (!body) {
-      confirmSession();
+      this.status = SessionStatus.STATUS_CONFIRMED;
       return;
     }
     if (body.contentDisposition === "render") {
       this.renderbody = body.content;
       this.rendertype = body.contentType;
-      confirmSession();
+      this.status = SessionStatus.STATUS_CONFIRMED;
       return;
     }
     if (body.contentDisposition !== "session") {
-      confirmSession();
+      this.status = SessionStatus.STATUS_CONFIRMED;
       return;
     }
 
@@ -787,7 +692,7 @@ export abstract class Session extends EventEmitter {
       case SignalingState.Stable:
         // Receved answer.
         this.setAnswer(body, options)
-          .then(() => confirmSession())
+          .then(() => { this.status = SessionStatus.STATUS_CONFIRMED; })
           .catch((error: any) => {
             // FIXME: TODO - need to do something to handle this error
             this.logger.error(error);
@@ -951,19 +856,6 @@ export abstract class Session extends EventEmitter {
       return;
     }
 
-    // DEPRECATED BEGIN
-    // ReferClientContext is deprecated
-    // if (
-    //   this.referContext &&
-    //   this.referContext.type === TypeStrings.ReferClientContext &&
-    //   incomingRequest.message.hasHeader("event") &&
-    //   /^refer(;.*)?$/.test(incomingRequest.message.getHeader("event") as string)
-    // ) {
-    //   this.referContext.receiveNotify(incomingRequest);
-    //   return;
-    // }
-    // DEPRECATED END
-
     // If this a NOTIFY associated with the progress of a REFER,
     // look to delegate handling to the associated Referrer.
     if (this.referrer && this.referrer.delegate && this.referrer.delegate.onNotify) {
@@ -979,7 +871,6 @@ export abstract class Session extends EventEmitter {
     } else {
       request.accept();
     }
-    this.emit("notify", request.message);
   }
 
   /**
@@ -1015,15 +906,6 @@ export abstract class Session extends EventEmitter {
         return;
       }
 
-      // DEPRECATED BEGIN
-      // // ReferServerContext is deprecated
-      // if (this.listeners("referRequested").length) {
-      //   const referContext = new ReferServerContext(this.ua, incomingRequest, this.dialog);
-      //   this.emit("referRequested", referContext);
-      //   return;
-      // }
-      // DEPRECATED END
-
       const referral = new Referral(request, this);
 
       if (this.delegate && this.delegate.onRefer) {
@@ -1042,14 +924,6 @@ export abstract class Session extends EventEmitter {
           });
       }
     }
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  protected connecting(request: IncomingRequestMessage): void {
-    this.emit("connecting", { request });
   }
 
   /**
