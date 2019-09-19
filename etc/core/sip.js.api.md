@@ -423,6 +423,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
     delegate: OutgoingInviteRequestDelegate | undefined;
     // (undocumented)
     dispose(): void;
+    protected onTransportError(error: TransportError): void;
     protected receiveResponse(message: IncomingResponseMessage): void;
 }
 
@@ -1165,6 +1166,8 @@ export class UserAgentClient implements OutgoingRequest {
     readonly loggerFactory: LoggerFactory;
     // (undocumented)
     message: OutgoingRequestMessage;
+    protected onRequestTimeout(): void;
+    protected onTransportError(error: TransportError): void;
     protected receiveResponse(message: IncomingResponseMessage): void;
     readonly transaction: ClientTransaction;
     }
