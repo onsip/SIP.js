@@ -774,11 +774,15 @@ export class Inviter extends Session {
     switch (session.signalingState) {
       case SignalingState.Initial:
         // INVITE without offer, so MUST have offer at this point, so invalid state.
+        this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
+        this.stateTransition(SessionState.Terminated);
         return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
       case SignalingState.HaveLocalOffer:
         // INVITE with offer, so MUST have answer at this point, so invalid state.
+        this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
+        this.stateTransition(SessionState.Terminated);
         return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
       case SignalingState.HaveRemoteOffer: {
         // INVITE without offer, received offer in 2xx, so MUST send answer in ACK.
@@ -797,6 +801,7 @@ export class Inviter extends Session {
           })
           .catch((error: Error) => {
             this.ackAndBye(inviteResponse, 488, "Invalid session description");
+            this.stateTransition(SessionState.Terminated);
             throw error;
           });
       }
@@ -837,6 +842,7 @@ export class Inviter extends Session {
             const error = new Error("Early media dialog does not equal confirmed dialog, terminating session");
             this.logger.error(error.message);
             this.ackAndBye(inviteResponse, 488, "Not Acceptable Here");
+            this.stateTransition(SessionState.Terminated);
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
@@ -871,6 +877,7 @@ export class Inviter extends Session {
           .catch((error: Error) => {
             this.logger.error(error.message);
             this.ackAndBye(inviteResponse, 488, "Not Acceptable Here");
+            this.stateTransition(SessionState.Terminated);
             throw error;
           });
       }
