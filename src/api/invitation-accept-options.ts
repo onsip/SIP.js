@@ -22,4 +22,9 @@ export interface InvitationAcceptOptions {
    * @internal
    */
   onInfo?: ((request: IncomingRequestMessage) => void);
+  /**
+   * For use in testing.
+   * @internal
+   */
+  test?: "acceptWithoutDescription";
 }
