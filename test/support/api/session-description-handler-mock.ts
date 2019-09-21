@@ -29,6 +29,9 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     return;
   }),
   sdh.getDescription.and.callFake(() => {
+    if (closed) {
+      throw new Error(`SDH.getDescription[${name}][${id}] SDH closed`);
+    }
     const fromState = state;
     const contentType = "application/sdp";
     let body: string;
@@ -52,8 +55,16 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       return bodyObj;
     });
   });
-  sdh.hasDescription.and.callFake((contentType: string): boolean => contentType === "application/sdp");
+  sdh.hasDescription.and.callFake((contentType: string): boolean => {
+    if (closed) {
+      throw new Error(`SDH.hasDescription[${name}][${id}] SDH closed`);
+    }
+    return contentType === "application/sdp";
+  });
   sdh.rollbackDescription.and.callFake(() => {
+    if (closed) {
+      throw new Error(`SDH.rollbackDescription[${name}][${id}] SDH closed`);
+    }
     const fromState = state;
     switch (state) {
       case "stable":
@@ -76,6 +87,9 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     });
   });
   sdh.setDescription.and.callFake(() => {
+    if (closed) {
+      throw new Error(`SDH.setDescription[${name}][${id}] SDH closed`);
+    }
     const fromState = state;
     switch (state) {
       case "stable":
