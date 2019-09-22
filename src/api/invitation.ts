@@ -140,7 +140,7 @@ export class Invitation extends Session {
     this.userNoAnswerTimer = setTimeout(() => {
       this.stateTransition(SessionState.Terminated);
       incomingInviteRequest.reject({ statusCode: 480 });
-      this.terminated(request, C.causes.NO_ANSWER);
+      this.close();
     }, this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000);
 
     // 1. If the request is an INVITE that contains an Expires header
@@ -156,7 +156,7 @@ export class Invitation extends Session {
         if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
           this.stateTransition(SessionState.Terminated);
           incomingInviteRequest.reject({ statusCode: 487 });
-          this.terminated(request, C.causes.EXPIRES);
+          this.close();
         }
       }, expires);
     }
@@ -384,7 +384,8 @@ export class Invitation extends Session {
       this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
       this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
 
-    this.terminated();
+    this.close();
+
     return Promise.resolve();
   }
 
@@ -414,17 +415,17 @@ export class Invitation extends Session {
     // reject INVITE with 487 status code
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
-    this.terminated(message, C.causes.CANCELED);
+    this.close();
   }
 
   /**
-   * Called when session terminated.
+   * Called to cleanup session after terminated.
    * Using it here just for the PRACK timeout.
    * @internal
    */
-  protected terminated(message?: IncomingResponseMessage | IncomingRequestMessage, cause?: string): void {
+  public close(): void {
     this.prackNeverArrived();
-    super.terminated(message, cause);
+    super.close();
   }
 
   /**
@@ -609,7 +610,7 @@ export class Invitation extends Session {
             clearTimeout(rel1xxRetransmissionTimer);
             try {
               this.incomingInviteRequest.reject({ statusCode: 504 });
-              this.terminated(undefined, C.causes.NO_PRACK);
+              this.close();
               reject(new Exceptions.TerminatedSessionError());
             } catch (error) {
               reject(error);
@@ -691,7 +692,7 @@ export class Invitation extends Session {
     this.logger.log("No ACK received for an extended period of time, terminating session");
     this.dialog.bye();
     this.stateTransition(SessionState.Terminated);
-    this.terminated(undefined, C.causes.NO_ACK);
+    this.close();
   }
 
   /**
@@ -726,7 +727,7 @@ export class Invitation extends Session {
     }
     try {
       this.incomingInviteRequest.reject({ statusCode }); // "Temporarily Unavailable"
-      this.terminated(this.incomingInviteRequest.message, error.message);
+      this.close();
     } catch (error) {
       return;
     }

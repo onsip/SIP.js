@@ -25,6 +25,37 @@ const SIP_404 = [jasmine.stringMatching(/^SIP\/2.0 404/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
+//
+// Simulatineous SIP Request Processing
+//   The answers are scattered in the RFCS, but the following email reply
+//   by Dale Worley does a very good job of pulling it all together...
+//
+// Q: Is it allowed to send an in-dialog request while a previous in-dialog
+//    request (in same direction) has no final response?
+//  Worley, Dale R (Dale) dworley at avaya.com
+//  Tue Apr 10 12:19:03 EDT 2012
+// --------
+// > From: Iñaki Baz Castillo [ibc at aliax.net]
+// >
+// > Hi, what should do a UAS that receives an in-dialog request while it
+// > has not yet replied a final response for a previous in-dialog
+// > request?:
+//
+// ...
+//
+// https://lists.cs.columbia.edu/pipermail/sip-implementors/2012-April/028302.html
+//
+// TLDR;
+// - A user agent should not send a request until the prior request is complete asa
+//   doing so will result in unexpected results as it becomes implementation dependent.
+// - A user agent must treat received non-invite requests "atomically" and as such most
+//   straight foward implementation is to serialize non-invite incoming requests.
+// - One exception to the is the BYE request which should be sendable at any time and
+//   handled upon receipt as it effects a state change per the state machine in RFC 5407.
+// - Invite request handling needs to be aware that non-invite requests, including BYE,
+//   may be occuring while an invite request is outstanding and guard accordingly.
+// - Invite requests which arrive while an invite request is outstanding MUST be rejected.
+
 /**
  * Session Integration Tests
  */

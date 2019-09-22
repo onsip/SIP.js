@@ -181,13 +181,6 @@ export abstract class Session extends EventEmitter {
    * @deprecated Legacy state transition.
    * @internal
    */
-  public on(
-    event: "terminated", listener: (response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
   public on(event: "trackAdded" | "directionChanged", listener: () => void): this;
   /**
    * @deprecated Legacy state transition.
@@ -203,13 +196,6 @@ export abstract class Session extends EventEmitter {
    */
   public emit(
     event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "terminated", response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -468,21 +454,21 @@ export abstract class Session extends EventEmitter {
         throw new Error(`Invalid dialog state ${dialog.sessionState}`);
       case SessionDialogState.AckWait: { // This state only occurs if we are the callee.
         this.stateTransition(SessionState.Terminating); // We're terminating
-        this.terminated();
+        this.close();
         return new Promise((resolve, reject) => {
           dialog.delegate = {
             // When ACK shows up, say BYE.
             onAck: (): void => {
               const request = dialog.bye(delegate, options);
               this.stateTransition(SessionState.Terminated);
-              this.terminated();
+              this.close();
               resolve(request);
             },
             // Or the server transaction times out before the ACK arrives.
             onAckTimeout: (): void => {
               const request = dialog.bye(delegate, options);
               this.stateTransition(SessionState.Terminated);
-              this.terminated();
+              this.close();
               resolve(request);
             }
           };
@@ -491,7 +477,7 @@ export abstract class Session extends EventEmitter {
       case SessionDialogState.Confirmed: {
         const request = dialog.bye(delegate, options);
         this.stateTransition(SessionState.Terminated);
-        this.terminated();
+        this.close();
         return Promise.resolve(request);
       }
       case SessionDialogState.Terminated:
@@ -537,6 +523,7 @@ export abstract class Session extends EventEmitter {
   }
 
   /**
+   * Called to cleanup session after terminated.
    * @internal
    */
   public close(): void {
@@ -658,7 +645,7 @@ export abstract class Session extends EventEmitter {
             this.logger.error(error);
             const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
             this.bye(undefined, { extraHeaders });
-            this.terminated(request.message, C.causes.BAD_MEDIA_DESCRIPTION);
+            this.close();
             throw error;
           });
         return;
@@ -688,7 +675,7 @@ export abstract class Session extends EventEmitter {
     request.accept();
     this.stateTransition(SessionState.Terminated);
     if (this.status === SessionStatus.STATUS_CONFIRMED) {
-      this.terminated(request.message, C.BYE);
+      this.close();
     }
   }
 
@@ -888,18 +875,6 @@ export abstract class Session extends EventEmitter {
           });
       }
     }
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  protected terminated(message?: IncomingResponseMessage | IncomingRequestMessage, cause?: string): void {
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-    this.close();
-    this.emit("terminated", message, cause);
   }
 
   /**

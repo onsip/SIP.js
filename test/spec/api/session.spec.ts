@@ -32,8 +32,6 @@ const SIP_487 = [jasmine.stringMatching(/^SIP\/2.0 487/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
 const EVENT_SDH = ["SessionDescriptionHandler-created", jasmine.any(Object)];
-const EVENT_TERMINATED = ["terminated", jasmine.any(Object), jasmine.any(String)];
-const EVENT_TERMINATED_ISC = ["terminated", undefined, undefined];
 
 function terminate(invitation: Invitation): Promise<void> {
   const session = invitation;
@@ -135,7 +133,7 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
     });
 
-    it("his session state should trnasition 'establishing', 'established'", () => {
+    it("his session state should transition 'establishing', 'established'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(2);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -194,7 +192,7 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
     });
 
-    it("his session state should trnasition 'establishing', 'established'", () => {
+    it("his session state should transition 'establishing', 'established'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(2);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -238,9 +236,9 @@ describe("API Session", () => {
         await alice.transport.waitSent(); // wait for first ACK sent (it will not be received)
         await soon(Timers.TIMER_L - 2); // transaction timeout waiting for ACK
         await soon(1); // a tick to let the retranmissions get processed after the clock jump
-        await soon(1); // and then send the BYE upon transaction timout
+        await soon(1); // and then send the BYE upon transaction timeout
       } else {
-        await inviterEmitSpy.wait("terminated");
+        await inviterStateSpy.wait(SessionState.Terminated);
       }
     });
 
@@ -310,7 +308,7 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
     });
 
-    it("his session state should trnasition 'establishing', 'established', 'terminating', 'terminated'", () => {
+    it("his session state should transition 'establishing', 'established', 'terminating', 'terminated'", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(4);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
@@ -320,32 +318,28 @@ describe("API Session", () => {
     });
 
     if (answerInAck) {
-      it("her context should emit 'sdh', 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
-      });
-    } else {
-      it("her context should emit 'terminated'", () => {
+      it("her context should emit 'sdh'", () => {
         const spy = inviterEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("her context should emit nothing", () => {
+        const spy = inviterEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
 
     if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh', 'terminated'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED_ISC);
-      });
-    } else {
-      it("his context should emit 'terminated'", () => {
+      it("his context should emit 'sdh'", () => {
         const spy = invitationEmitSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
+        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
+      });
+    } else {
+      it("his context should emit nothing", () => {
+        const spy = invitationEmitSpy;
+        expect(spy).toHaveBeenCalledTimes(0);
       });
     }
   }
@@ -555,7 +549,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       resetSpies();
       invitation.reject();
-      await inviterEmitSpy.wait("terminated");
+      await inviterStateSpy.wait(SessionState.Terminated);
     });
 
     it("her ua should send ACK", () => {
@@ -579,16 +573,16 @@ describe("API Session", () => {
       expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
-    it("her context should emit 'terminated'", () => {
-      const spy = inviterEmitSpy;
+    it("her session state should transition 'terminated'", () => {
+      const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+      expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
     });
 
-    it("his context should emit 'rejected', 'terminated'", () => {
-      const spy = invitationEmitSpy;
+    it("his session state should transition 'terminated'", () => {
+      const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
+      expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
     });
   }
 
@@ -603,7 +597,7 @@ describe("API Session", () => {
         .catch((error) => {
           threw = true;
         });
-      await inviterEmitSpy.wait("terminated");
+      await inviterStateSpy.wait(SessionState.Terminated);
     });
 
     it("her ua should send ACK", () => {
@@ -627,16 +621,16 @@ describe("API Session", () => {
       expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
-    it("her context should emit 'terminated'", () => {
-      const spy = inviterEmitSpy;
+    it("her session state should transition 'terminated'", () => {
+      const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+      expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
     });
 
-    it("his context should emit 'terminated'", () => {
-      const spy = invitationEmitSpy;
+    it("his session state should transition 'terminated'", () => {
+      const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
+      expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
     });
 
     it("his second reject() threw an error", () => {
@@ -648,7 +642,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       resetSpies();
       terminate(invitation);
-      await inviterEmitSpy.wait("terminated");
+      await inviterStateSpy.wait(SessionState.Terminated);
     });
 
     if (bye) {
@@ -664,16 +658,16 @@ describe("API Session", () => {
         expect(spy.calls.mostRecent().args).toEqual(SIP_BYE);
       });
 
-      it("her context should emit 'bye', 'terminated'", () => {
-        const spy = inviterEmitSpy;
+      it("her session state should transition 'terminated'", () => {
+        const spy = inviterStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+        expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
       });
 
-      it("his context should emit 'bye', 'terminated'", () => {
-        const spy = invitationEmitSpy;
+      it("his session state should transition 'terminated'", () => {
+        const spy = invitationStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
+        expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
       });
     } else {
       it("her ua should send ACK", () => {
@@ -703,22 +697,10 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
       });
 
-      it("his session state should trnasition 'terminated'", () => {
+      it("his session state should transition 'terminated'", () => {
         const spy = invitationStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
-      });
-
-      it("her context should emit 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
-      });
-
-      it("his context should emit 'terminated'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
       });
     }
   }
@@ -734,7 +716,7 @@ describe("API Session", () => {
         .catch((error) => {
           threw = true;
         });
-      await inviterEmitSpy.wait("terminated");
+      await inviterStateSpy.wait(SessionState.Terminated);
     });
 
     if (bye) {
@@ -756,22 +738,10 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
       });
 
-      it("his session state should trnasition 'terminated'", () => {
+      it("his session state should transition 'terminated'", () => {
         const spy = invitationStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
-      });
-
-      it("her context should emit 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
-      });
-
-      it("his context should emit 'terminated'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
       });
 
       it("her second terminate() threw an error", () => {
@@ -805,22 +775,10 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
       });
 
-      it("his session state should trnasition 'terminated'", () => {
+      it("his session state should transition 'terminated'", () => {
         const spy = invitationStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
-      });
-
-      it("her context should emit 'terminated'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
-      });
-
-      it("his context should emit 'terminated'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED_ISC);
       });
 
       it("her second terminate() threw an error", () => {
@@ -935,17 +893,15 @@ describe("API Session", () => {
       });
 
       if (inviteWithoutSdp) {
-        it("her context should emit 'terminated'", () => {
+        it("her context should emit nothing", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+          expect(spy).toHaveBeenCalledTimes(0);
         });
       } else {
-        it("her context should emit 'sdh', 'terminated'", () => {
+        it("her context should emit 'sdh'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
         });
       }
     });
@@ -987,17 +943,15 @@ describe("API Session", () => {
       });
 
       if (inviteWithoutSdp) {
-        it("her context should emit 'terminated'", () => {
+        it("her context should emit nothing", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+          expect(spy).toHaveBeenCalledTimes(0);
         });
       } else {
-        it("her context should emit 'sdh', 'terminated'", () => {
+        it("her context should emit 'sdh'", () => {
           const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_TERMINATED);
         });
       }
     });
@@ -1054,7 +1008,7 @@ describe("API Session", () => {
         beforeEach(async () => {
           resetSpies();
           inviter.cancel();
-          await inviterEmitSpy.wait("terminated");
+          await inviterStateSpy.wait(SessionState.Terminated);
         });
 
         it("her ua should send CANCEL, ACK", () => {
@@ -1100,7 +1054,7 @@ describe("API Session", () => {
           spyOn(invitation.logger, "error").and.callThrough();
           inviter.cancel();
           invitation.accept();
-          await inviterEmitSpy.wait("terminated");
+          await inviterStateSpy.wait(SessionState.Terminated);
         });
 
         it("her ua should send CANCEL, ACK", () => {
@@ -1422,10 +1376,10 @@ describe("API Session", () => {
           expect(spy.onTrying).toHaveBeenCalledTimes(0);
         });
 
-        it("her context should emit 'terminated'", () => {
-          const spy = inviterEmitSpy;
+        it("her session state should transition 'terminated'", () => {
+          const spy = inviterStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_TERMINATED);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
         });
       });
 

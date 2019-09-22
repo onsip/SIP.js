@@ -392,7 +392,7 @@ export class Inviter extends Session {
       })
       .catch((error) => {
         this.logger.log(error.message);
-        this.terminated(undefined, C.causes.WEBRTC_ERROR);
+        this.close();
         throw error;
       });
   }
@@ -1000,7 +1000,7 @@ export class Inviter extends Session {
             if (this.status === SessionStatus.STATUS_TERMINATED) {
               throw error;
             }
-            this.terminated(undefined, C.causes.WEBRTC_ERROR);
+            this.close();
             throw error;
           });
       case SignalingState.Stable:
@@ -1025,7 +1025,7 @@ export class Inviter extends Session {
               if (this.status === SessionStatus.STATUS_TERMINATED) {
                 throw error;
               }
-              this.terminated(undefined, C.causes.WEBRTC_ERROR);
+              this.close();
               throw error;
             });
         }
@@ -1056,12 +1056,8 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminated);
-
     this.disposeEarlyMedia();
-    const response = inviteResponse.message;
-    const statusCode = response.statusCode;
-    const cause: string = Utils.sipErrorCause(statusCode || 0);
-    this.terminated(response, cause);
+    this.close();
   }
 
   /**
@@ -1082,12 +1078,8 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminated);
-
     this.disposeEarlyMedia();
-    const response = inviteResponse.message;
-    const statusCode = response.statusCode;
-    const cause: string = Utils.sipErrorCause(statusCode || 0);
-    this.terminated(response, cause);
+    this.close();
   }
 
   /**
