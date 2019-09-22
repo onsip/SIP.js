@@ -320,8 +320,8 @@ export abstract class Session extends EventEmitter {
             })
             .catch((error: Error) => {
               // No way to recover, so terminate session and mark as failed.
-              this.logger.error(error.message);
               this.logger.error("Failed to handle offer in 2xx response to re-INVITE");
+              this.logger.error(error.message);
               if (this.state === SessionState.Terminated) {
                 // A BYE should not be sent if alreadly terminated.
                 // For example, a BYE may be sent/received while re-INVITE is outstanding.
@@ -352,8 +352,8 @@ export abstract class Session extends EventEmitter {
             })
             .catch((error: Error) => {
               // No way to recover, so terminate session and mark as failed.
-              this.logger.error(error.message);
               this.logger.error("Failed to handle answer in 2xx response to re-INVITE");
+              this.logger.error(error.message);
               // A BYE should only be sent if session is not alreadly terminated.
               // For example, a BYE may be sent/received while re-INVITE is outstanding.
               // The ACK needs to be sent regardless as it was not handled by the transaction.
@@ -390,8 +390,8 @@ export abstract class Session extends EventEmitter {
           this.rollbackOffer()
             .catch((error: Error) => {
               // No way to recover, so terminate session and mark as failed.
-              this.logger.error(error.message);
               this.logger.error("Failed to rollback offer on non-2xx response to re-INVITE");
+              this.logger.error(error.message);
               // A BYE should only be sent if session is not alreadly terminated.
               // For example, a BYE may be sent/received while re-INVITE is outstanding.
               // Note that the ACK was already sent by the transaction, so just need to send BYE.
@@ -1024,14 +1024,21 @@ export abstract class Session extends EventEmitter {
     const sdh = this.setupSessionDescriptionHandler();
     const sdhOptions = options.sessionDescriptionHandlerOptions;
     const sdhModifiers = options.sessionDescriptionHandlerModifiers;
-    try { // This is intentionally written very defensively. Don't trust SDH to behave.
+    // This is intentionally written very defensively. Don't trust SDH to behave.
+    try {
       return sdh.getDescription(sdhOptions, sdhModifiers)
         .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
         .catch((error: any) => { // don't trust SDH to reject with Error
-          throw (error instanceof Error ? error : new Error(error));
+          this.logger.error("Session.getOffer: SDH getDescription rejected...");
+          const e =  error instanceof Error ? error : new Error(error);
+          this.logger.error(e.message);
+          throw e;
         });
     } catch (error) { // don't trust SDH to throw an Error
-      return (error instanceof Error ? Promise.reject(error) : Promise.reject(new Error(error)));
+      this.logger.error("Session.getOffer: SDH getDescription threw...");
+      const e = error instanceof Error ? error : new Error(error);
+      this.logger.error(e.message);
+      return Promise.reject(e);
     }
   }
 
@@ -1044,13 +1051,20 @@ export abstract class Session extends EventEmitter {
     if (!sdh.rollbackDescription) {
       return Promise.resolve();
     }
-    try { // This is intentionally written very defensively. Don't trust SDH to behave.
+    // This is intentionally written very defensively. Don't trust SDH to behave.
+    try {
       return sdh.rollbackDescription()
         .catch((error: any) => { // don't trust SDH to reject with Error
-          throw (error instanceof Error ? error : new Error(error));
+          this.logger.error("Session.rollbackOffer: SDH rollbackDescription rejected...");
+          const e = error instanceof Error ? error : new Error(error);
+          this.logger.error(e.message);
+          throw e;
         });
     } catch (error) { // don't trust SDH to throw an Error
-      return (error instanceof Error ? Promise.reject(error) : Promise.reject(new Error(error)));
+      this.logger.error("Session.rollbackOffer: SDH rollbackDescription threw...");
+      const e = error instanceof Error ? error : new Error(error);
+      this.logger.error(e.message);
+      return Promise.reject(e);
     }
   }
 
@@ -1065,16 +1079,30 @@ export abstract class Session extends EventEmitter {
     const sdh = this.setupSessionDescriptionHandler();
     const sdhOptions = options.sessionDescriptionHandlerOptions;
     const sdhModifiers = options.sessionDescriptionHandlerModifiers;
-    try { // This is intentionally written very defensively. Don't trust SDH to behave.
+    // This is intentionally written very defensively. Don't trust SDH to behave.
+    try {
       if (!sdh.hasDescription(answer.contentType)) {
         return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
       }
+    } catch (error) {
+      this.logger.error("Session.setAnswer: SDH hasDescription threw...");
+      const e = error instanceof Error ? error : new Error(error);
+      this.logger.error(e.message);
+      return Promise.reject(e);
+    }
+    try {
       return sdh.setDescription(answer.content, sdhOptions, sdhModifiers)
         .catch((error: any) => { // don't trust SDH to reject with Error
-          throw (error instanceof Error ? error : new Error(error));
+          this.logger.error("Session.setAnswer: SDH setDescription rejected...");
+          const e = error instanceof Error ? error : new Error(error);
+          this.logger.error(e.message);
+          throw e;
         });
     } catch (error) { // don't trust SDH to throw an Error
-      return (error instanceof Error ? Promise.reject(error) : Promise.reject(new Error(error)));
+      this.logger.error("Session.setAnswer: SDH setDescription threw...");
+      const e = error instanceof Error ? error : new Error(error);
+      this.logger.error(e.message);
+      return Promise.reject(e);
     }
   }
 
@@ -1089,18 +1117,32 @@ export abstract class Session extends EventEmitter {
     const sdh = this.setupSessionDescriptionHandler();
     const sdhOptions = options.sessionDescriptionHandlerOptions;
     const sdhModifiers = options.sessionDescriptionHandlerModifiers;
-    try { // This is intentionally written very defensively. Don't trust SDH to behave.
+    // This is intentionally written very defensively. Don't trust SDH to behave.
+    try {
       if (!sdh.hasDescription(offer.contentType)) {
         return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
       }
+    } catch (error) {
+      this.logger.error("Session.setOfferAndGetAnswer: SDH hasDescription threw...");
+      const e = error instanceof Error ? error : new Error(error);
+      this.logger.error(e.message);
+      return Promise.reject(e);
+    }
+    try {
       return sdh.setDescription(offer.content, sdhOptions, sdhModifiers)
         .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
         .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
         .catch((error: any) => { // don't trust SDH to reject with Error
-          throw (error instanceof Error ? error : new Error(error));
+          this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription rejected...");
+          const e = error instanceof Error ? error : new Error(error);
+          this.logger.error(e.message);
+          throw e;
         });
     } catch (error) { // don't trust SDH to throw an Error
-      return (error instanceof Error ? Promise.reject(error) : Promise.reject(new Error(error)));
+      this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription threw...");
+      const e = error instanceof Error ? error : new Error(error);
+      this.logger.error(e.message);
+      return Promise.reject(e);
     }
   }
 
