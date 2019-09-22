@@ -389,15 +389,6 @@ export class Invitation extends Session {
   }
 
   /**
-   * FIXME: Kill this legacy emission
-   * @internal
-   */
-  public byePending(): void {
-    this.emit("bye", this.request);
-    super.byePending();
-  }
-
-  /**
    * Handle CANCEL request.
    * @param message - CANCEL message.
    * @internal

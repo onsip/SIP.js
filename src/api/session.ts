@@ -182,13 +182,6 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public on(
-    event: "bye", listener: (request: IncomingRequestMessage | OutgoingRequestMessage) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
     event: "terminated", listener: (response?: IncomingRequestMessage | IncomingResponseMessage, cause?: string) => void
   ): this;
   /**
@@ -210,13 +203,6 @@ export abstract class Session extends EventEmitter {
    */
   public emit(
     event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "bye", request: IncomingRequestMessage | OutgoingRequestMessage
   ): boolean;
   /**
    * @deprecated Legacy state transition.
@@ -457,27 +443,6 @@ export abstract class Session extends EventEmitter {
   }
 
   /**
-   * TODO: This is awkward.
-   * Helper function
-   * @internal
-   */
-  public byePending(): void {
-    this.stateTransition(SessionState.Terminating);
-    this.terminated();
-  }
-
-  /**
-   * TODO: This is awkward.
-   * Helper function
-   * @internal
-   */
-  public byeSent(request: OutgoingByeRequest): void {
-    this.emit("bye", request.message);
-    this.stateTransition(SessionState.Terminated);
-    this.terminated();
-  }
-
-  /**
    * Send BYE.
    * @param delegate - Request delegate.
    * @param options - Request options bucket.
@@ -502,19 +467,22 @@ export abstract class Session extends EventEmitter {
       case SessionDialogState.Early: // Implementation choice - not sending BYE for early dialogs.
         throw new Error(`Invalid dialog state ${dialog.sessionState}`);
       case SessionDialogState.AckWait: { // This state only occurs if we are the callee.
-        this.byePending();
+        this.stateTransition(SessionState.Terminating); // We're terminating
+        this.terminated();
         return new Promise((resolve, reject) => {
           dialog.delegate = {
             // When ACK shows up, say BYE.
             onAck: (): void => {
               const request = dialog.bye(delegate, options);
-              this.byeSent(request);
+              this.stateTransition(SessionState.Terminated);
+              this.terminated();
               resolve(request);
             },
             // Or the server transaction times out before the ACK arrives.
             onAckTimeout: (): void => {
               const request = dialog.bye(delegate, options);
-              this.byeSent(request);
+              this.stateTransition(SessionState.Terminated);
+              this.terminated();
               resolve(request);
             }
           };
@@ -522,7 +490,8 @@ export abstract class Session extends EventEmitter {
       }
       case SessionDialogState.Confirmed: {
         const request = dialog.bye(delegate, options);
-        this.byeSent(request);
+        this.stateTransition(SessionState.Terminated);
+        this.terminated();
         return Promise.resolve(request);
       }
       case SessionDialogState.Terminated:
@@ -625,8 +594,7 @@ export abstract class Session extends EventEmitter {
       extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
     }
     // Using the dialog session associate with the response (which might not be this.dialog)
-    const outgoingByeRequest = response.session.bye(undefined, { extraHeaders });
-    this.emit("bye", outgoingByeRequest.message);
+    response.session.bye(undefined, { extraHeaders });
   }
 
   /**
@@ -720,7 +688,6 @@ export abstract class Session extends EventEmitter {
     request.accept();
     this.stateTransition(SessionState.Terminated);
     if (this.status === SessionStatus.STATUS_CONFIRMED) {
-      this.emit("bye", request.message);
       this.terminated(request.message, C.BYE);
     }
   }

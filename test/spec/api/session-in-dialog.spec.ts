@@ -1,4 +1,3 @@
-import { Timers, URI } from "../../../src";
 import {
   Invitation,
   Inviter,
@@ -6,7 +5,11 @@ import {
   SessionDescriptionHandler,
   SessionState
 } from "../../../src/api";
-import { OutgoingRequestDelegate, SignalingState } from "../../../src/core";
+import {
+  OutgoingRequestDelegate,
+  SignalingState,
+  URI
+} from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";

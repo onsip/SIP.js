@@ -619,7 +619,6 @@ export class Inviter extends Session {
           this.logger.log("Canceled session accepted, sending ACK and BYE");
           this.ackAndBye(inviteResponse);
           this.stateTransition(SessionState.Terminated);
-          this.emit("bye", this.request); // FIXME: Ported this odd second "bye" emit
           return;
         }
 
