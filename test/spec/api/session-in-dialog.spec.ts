@@ -46,11 +46,11 @@ const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 // https://lists.cs.columbia.edu/pipermail/sip-implementors/2012-April/028302.html
 //
 // TLDR;
-// - A user agent should not send a request until the prior request is complete asa
+// - A user agent should not send a request until the prior request is complete as
 //   doing so will result in unexpected results as it becomes implementation dependent.
 // - A user agent must treat received non-invite requests "atomically" and as such most
-//   straight foward implementation is to serialize non-invite incoming requests.
-// - One exception to the is the BYE request which should be sendable at any time and
+//   straight forward implementation is to serialize non-invite incoming requests.
+// - One exception to that is the BYE request which should be sendable at any time and
 //   handled upon receipt as it effects a state change per the state machine in RFC 5407.
 // - Invite request handling needs to be aware that non-invite requests, including BYE,
 //   may be occuring while an invite request is outstanding and guard accordingly.
