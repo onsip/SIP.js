@@ -898,9 +898,6 @@ export abstract class Session extends EventEmitter {
     if (this.status === SessionStatus.STATUS_TERMINATED) {
       return;
     }
-
-    this.endTime = new Date();
-
     this.close();
     this.emit("terminated", message, cause);
   }
@@ -1193,6 +1190,10 @@ export abstract class Session extends EventEmitter {
     // Deprecated legacy ported behavior
     if (newState === SessionState.Established) {
       this.startTime = new Date();
+    }
+    // Deprecated legacy ported behavior
+    if (newState === SessionState.Terminated) {
+      this.endTime = new Date();
     }
 
     // Transition
