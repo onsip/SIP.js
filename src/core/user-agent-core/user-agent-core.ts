@@ -310,7 +310,17 @@ export class UserAgentCore {
     const supported = this.configuration.supportedOptionTagsResponse;
     options = { ...options, userAgent, supported };
     const response = constructOutgoingResponse(message, options);
-    this.transport.send(response.message);
+    this.transport.send(response.message).catch((error) => {
+      // If the transport rejects, it SHOULD reject with a TransportError.
+      // But the transport may be external code, so we are careful...
+      if (error instanceof Error) {
+        this.logger.error(error.message);
+      }
+      this.logger.error(`Transport error occurred sending stateless reply to ${message.method} request.`);
+      // TODO: Currently there is no hook to provide notification that a transport error occurred
+      // and throwing would result in an uncaught error (in promise), so we siliently eat the error.
+      // Furthermore, silienty eating stateless reply transport errors is arguably what we want to do here.
+    });
     return response;
   }
 
@@ -480,7 +490,7 @@ export class UserAgentCore {
     // header field MUST list the set of methods supported by the UAS
     // generating the message.
     // https://tools.ietf.org/html/rfc3261#section-8.2.1
-    if (!AllowedMethods.includes(message.method)) {
+    if (AllowedMethods.indexOf(message.method) === -1) {
       const allowHeader = "Allow: " + AllowedMethods.toString();
       this.replyStateless(message, {
         statusCode: 405,

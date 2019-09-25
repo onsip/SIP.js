@@ -16,7 +16,7 @@ export declare class Invitation extends Session
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [request](./sip.js.invitation.request.md) |  | <code>IncomingRequestMessage</code> | Incoming MESSAGE request message. |
+|  [request](./sip.js.invitation.request.md) |  | <code>IncomingRequestMessage</code> | Incoming INVITE request message. |
 
 ## Methods
 

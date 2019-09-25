@@ -5,7 +5,7 @@
     "esModuleInterop": true,
     "importHelpers": true,
     "lib": [
-      "es2017",
+      "es2015",
       "dom"
     ]
   },

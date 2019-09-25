@@ -1,32 +1,33 @@
 
 # Release Road Map
 
-## 15.0
-- new api introduction with transition guide
-- deprecation warning message in console log if using UA
+## 0.15.0
+- new API introduction with transition guide
+- deprecation warning message in console log if using legacy UA
 - new generated documentation base
 - review license for correctness
 
-## 15.x
+## 0.15.x
 - address transport connect/disconnect auto register issues
 - address user agent tearing down cleanly issues
-- address the outstanding issues with new api
-- address sdh race condition issues
-- review ES6 requirement issues (vs ES5 with Shim)
-- port simple to new api
+- address the outstanding issues with new API
+- address SDH race condition issues
+- port Simple to new API
 - more documentation
 - more tests
 
-## 16.0
+## 0.16.0
 - new demo
 - new readme
 - remove old api
 - remove old tests
 - separate tsconfigs for src/*
-- review packaging (es6/best practices)
-- free of DOM and Node dependency
+- review packaging best practices (es7, es6, drop es5)
+- free core and API from DOM and Node dependencies
+- cleanup and update sipjs.com
 - more documentation
 - more tests
+- 1.0 prep
 
 # Work in Progress
 
@@ -38,13 +39,12 @@
 - Dependencies on "old" api files need to be removed from src/api
   - Constants, Enums, Exceptions, Utils need to go away
   - Parser needs to be moved to src/parser and shared
-- Event emissions need to be removed
 - The entire src/api code needs a top down once over
-- Music-on-hold support needed
+- Event emissions need to be removed
 - Hold sdp offer too large for UDP
 - Options buckets deep copy
-- Dialog UACs are creating messages while non-dialog UACs are being handed message.
 - Extra headers approach is error prone
+- Dialog UACs are creating messages while non-dialog UACs are being handed message.
 - Incoming request, accept races cancel. That is, attempt to accept may or may not succeed if cancel arrives.
 - Outgoing request, accept races cancel. That is, attempt to cancel may or may not succeed if accept arrives.
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
@@ -60,6 +60,7 @@
 - URI constructor doesn't allow user of type undefined, but grammar passed undefined is no user parsed
 - URI should be strongly typed (currently using any for constructor params)
 - URI allows "" for user and 0 for port which is confusing and should probably be undefined instead
+- URI toString() can and does throw. Issue #286.
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 
 ## Transport

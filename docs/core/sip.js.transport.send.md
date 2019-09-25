@@ -4,19 +4,19 @@
 
 ## Transport.send() method
 
-Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise
+Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise Rejects with an Error if message fails to send.
 
 <b>Signature:</b>
 
 ```typescript
-send(msg: string, options?: any): Promise<void>;
+send(message: string, options?: any): Promise<void>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  msg | <code>string</code> | Message. |
+|  message | <code>string</code> | Message. |
 |  options | <code>any</code> | Options bucket. |
 
 <b>Returns:</b>

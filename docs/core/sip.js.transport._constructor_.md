@@ -9,7 +9,7 @@ Constructor
 <b>Signature:</b>
 
 ```typescript
-constructor(logger: Logger, options: any);
+constructor(logger: Logger, options?: any);
 ```
 
 ## Parameters
@@ -17,5 +17,5 @@ constructor(logger: Logger, options: any);
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  logger | <code>Logger</code> | Logger. |
-|  options | <code>any</code> | Options bucket. |
+|  options | <code>any</code> | Options bucket. Deprecated. |
 

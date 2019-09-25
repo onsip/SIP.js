@@ -29,7 +29,8 @@ module.exports = function(config) {
     },
 
     webpack: {
-      devtool: 'inline-source-map'
+      devtool: 'inline-source-map',
+      mode: 'production'
     },
 
     // test results reporter to use
