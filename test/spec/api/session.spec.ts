@@ -1118,21 +1118,41 @@ describe("API Session", () => {
           }
         });
 
-        it("her ua should send CANCEL, ACK, BYE", async () => {
-          const spy = alice.transportSendSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
-          expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
-          expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-          expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
-        });
+        if (inviteWithoutSdp) {
+          it("her ua should send CANCEL, ACK, BYE, 481", async () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(4);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+            expect(spy.calls.argsFor(3)).toEqual(SIP_481);
+          });
 
-        it("her ua should receive 200, 200, 200", () => {
-          const spy = alice.transportReceiveSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
-          expect(spy.calls.argsFor(0)).toEqual(SIP_200); // INVITE
-          expect(spy.calls.argsFor(0)).toEqual(SIP_200); // CANCEL
-          expect(spy.calls.argsFor(0)).toEqual(SIP_200); // BYE
-        });
+          it("her ua should receive 200, 200, BYE, 481", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(4);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+            expect(spy.calls.argsFor(3)).toEqual(SIP_481);
+          });
+        } else {
+          it("her ua should send CANCEL, ACK, BYE", async () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+          });
+
+          it("her ua should receive 200, 200, 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_200);
+          });
+        }
 
         it("her session state should transition 'terminating', 'terminated'", () => {
           const spy = inviterStateSpy;
@@ -1150,7 +1170,7 @@ describe("API Session", () => {
         });
       });
 
-      describe("Bob accept(), 200 send has no SDP - Invalid 200 Ok", () => {
+      describe("Bob accept(), 200 has no SDP - Invalid 200", () => {
         beforeEach(async () => {
           resetSpies();
           { // Setup hacky thing to cause undefined body returned once
@@ -1168,19 +1188,106 @@ describe("API Session", () => {
             .then(() => bob.transport.waitReceived());
         });
 
-        it("her ua should send ACK", () => {
+        it("her ua should send ACK, BYE, 481", () => {
           const spy = alice.transportSendSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy).toHaveBeenCalledTimes(3);
           expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
           expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+          expect(spy.calls.argsFor(2)).toEqual(SIP_481);
         });
 
-        it("her ua should receive 200", () => {
+        it("her ua should receive 200, BYE, 481", () => {
           const spy = alice.transportReceiveSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.mostRecent().args).toEqual(SIP_200);
-          expect(spy.calls.mostRecent().args).toEqual(SIP_200);
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+          expect(spy.calls.argsFor(2)).toEqual(SIP_481);
         });
+
+        it("her request delegate should onAccept", () => {
+          const spy = inviterRequestDelegateMock;
+          expect(spy.onAccept).toHaveBeenCalledTimes(1);
+          expect(spy.onProgress).toHaveBeenCalledTimes(0);
+          expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+          expect(spy.onReject).toHaveBeenCalledTimes(0);
+          expect(spy.onTrying).toHaveBeenCalledTimes(0);
+        });
+
+        it("her session state should transition 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+          expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+        });
+
+        it("her dialog should be 'terminated' and 'closed'", () => {
+          const session = inviter.dialog;
+          expect(session && session.sessionState).toBe(SessionDialogState.Terminated);
+          expect(session && session.signalingState).toBe(SignalingState.Closed);
+        });
+
+        it("his dialog should be 'terminated' and 'closed'", () => {
+          const session = invitation.dialog;
+          expect(session && session.sessionState).toBe(SessionDialogState.Terminated);
+          expect(session && session.signalingState).toBe(SignalingState.Closed);
+        });
+      });
+
+      describe("Bob accept(), 200 SDP set fails - SDH Error", () => {
+        beforeEach(async () => {
+          resetSpies();
+          { // Setup hacky thing to cause a rejection once
+            if (typeof (inviter as any).setupSessionDescriptionHandler !== "function") {
+              throw new Error("setupSessionDescriptionHandler() undefined.");
+            }
+            (inviter as any).setupSessionDescriptionHandler();
+            if (!inviter.sessionDescriptionHandler) {
+              throw new Error("SDH undefined.");
+            }
+            (inviter.sessionDescriptionHandler as any).setDescriptionRejectOnce = true;
+          }
+          return invitation.accept()
+            .then(() => bob.transport.waitReceived()); // ACK
+        });
+
+        if (inviteWithoutSdp) {
+          it("his ua should send 200, BYE, 481", () => {
+            const spy = bob.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_481);
+          });
+
+          it("his ua should receive ACK, BYE, 481", () => {
+            const spy = bob.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_481);
+          });
+        } else {
+          it("his ua should send 200, 200", () => {
+            const spy = bob.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+          });
+
+          it("his ua should receive ACK, BYE", () => {
+            const spy = bob.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+          });
+        }
 
         it("her request delegate should onAccept", () => {
           const spy = inviterRequestDelegateMock;
@@ -1252,6 +1359,83 @@ describe("API Session", () => {
         });
       });
 
+      // These only makes sense in INVITE without SDP case.
+      if (inviteWithoutSdp) {
+        describe("Bob accept(), ACK has no SDP - Invalid ACK", () => {
+          beforeEach(async () => {
+            resetSpies();
+            { // Setup hacky thing to cause undefined body returned once
+              if (typeof (inviter as any).setupSessionDescriptionHandler !== "function") {
+                throw new Error("setupSessionDescriptionHandler() undefined.");
+              }
+              (inviter as any).setupSessionDescriptionHandler();
+              if (!inviter.sessionDescriptionHandler) {
+                throw new Error("SDH undefined.");
+              }
+              (inviter.sessionDescriptionHandler as any).getDescriptionUndefinedBodyOnce = true;
+            }
+            return invitation.accept()
+              .then(() => bob.transport.waitReceived());  // ACK
+          });
+
+          it("his ua should send 200, BYE", () => {
+            const spy = bob.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+          });
+
+          it("his session state should transition 'establishing', 'established', 'terminated'", () => {
+            const spy = invitationStateSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+            expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+            expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+          });
+        });
+
+        describe("Bob accept(), ACK SDP set fails - SDH Error", () => {
+          beforeEach(async () => {
+            resetSpies();
+            { // Setup hacky thing to cause a rejection once
+              if (typeof (invitation as any).setupSessionDescriptionHandler !== "function") {
+                throw new Error("setupSessionDescriptionHandler() undefined.");
+              }
+              (invitation as any).setupSessionDescriptionHandler();
+              if (!invitation.sessionDescriptionHandler) {
+                throw new Error("SDH undefined.");
+              }
+              (invitation.sessionDescriptionHandler as any).setDescriptionRejectOnce = true;
+            }
+            return invitation.accept()
+              .then(() => bob.transport.waitReceived())  // ACK
+              .then(() => bob.transport.waitReceived()); // 200
+          });
+
+          it("his ua should send 200, BYE", () => {
+            const spy = bob.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+          });
+
+          it("his ua should receive ACK, 200", () => {
+            const spy = bob.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+          });
+
+          it("his session state should transition 'establishing', 'established', 'terminated'", () => {
+            const spy = invitationStateSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+            expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+            expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+          });
+        });
+      }
+
       describe("Bob accept(), ACK send fails - Transport Error", () => {
         beforeEach(async () => {
           if (!(alice.userAgent.transport instanceof TransportFake)) {
@@ -1283,6 +1467,30 @@ describe("API Session", () => {
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
+          expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
+        });
+      });
+
+      describe("Bob accept(), ACK never arrives - Request Timeout", () => {
+        beforeEach(async () => {
+          resetSpies();
+          alice.transportReceiveSpy.and.returnValue(Promise.resolve()); // drop messages
+          return invitation.accept()
+            .then(() => soon(Timers.TIMER_L));
+        });
+
+        it("his ua should send 200, BYE", () => {
+          const spy = bob.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(12); // 10 retransmissions of the 200
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
         });
 
         it("his session state should transition 'establishing', 'established', 'terminated'", () => {
@@ -1329,30 +1537,6 @@ describe("API Session", () => {
           const spy = invitationStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
-        });
-      });
-
-      describe("Bob accept(), Bob never receives ACK - Request Timeout", () => {
-        beforeEach(async () => {
-          resetSpies();
-          alice.transportReceiveSpy.and.returnValue(Promise.resolve()); // drop messages
-          return invitation.accept()
-            .then(() => soon(Timers.TIMER_L));
-        });
-
-        it("his ua should send 200, BYE", () => {
-          const spy = bob.transportSendSpy;
-          expect(spy).toHaveBeenCalledTimes(12); // 10 retransmissions of the 200
-          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-          expect(spy.calls.argsFor(11)).toEqual(SIP_BYE);
-        });
-
-        it("his session state should transition 'establishing', 'established', 'terminated'", () => {
-          const spy = invitationStateSpy;
-          expect(spy).toHaveBeenCalledTimes(3);
-          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
-          expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
-          expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
       });
 
@@ -1870,13 +2054,24 @@ describe("API Session", () => {
         await inviterStateSpy.wait(SessionState.Established);
       });
 
-      it("her ua should send ACK, BYE, ACK", () => {
-        const spy = alice.transportSendSpy;
-        expect(spy).toHaveBeenCalledTimes(3);
-        expect(spy.calls.argsFor(0)).toEqual(SIP_ACK_OR_BYE);
-        expect(spy.calls.argsFor(1)).toEqual(SIP_ACK_OR_BYE);
-        expect(spy.calls.argsFor(2)).toEqual(SIP_ACK_OR_BYE);
-      });
+      if (answerInAck) {
+        it("her ua should send ACK, BYE, ACK", () => {
+          const spy = alice.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(4);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_ACK_OR_BYE);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_ACK_OR_BYE);
+          // expect(spy.calls.argsFor(2)).toEqual(SIP_487);
+          expect(spy.calls.argsFor(3)).toEqual(SIP_ACK_OR_BYE);
+        });
+      } else {
+        it("her ua should send ACK, BYE, ACK", () => {
+          const spy = alice.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_ACK_OR_BYE);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_ACK_OR_BYE);
+          expect(spy.calls.argsFor(2)).toEqual(SIP_ACK_OR_BYE);
+        });
+      }
 
       if (answerInAck) {
         it("her context should emit 'sdh'", () => {

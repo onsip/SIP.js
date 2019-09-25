@@ -131,20 +131,39 @@ describe("API Session In-Dialog", () => {
         .then(() => alice.transport.waitSent()); // ACK
     });
 
-    it("her ua should send INVITE, ACK, BYE", () => {
-      const spy = alice.transportSendSpy;
-      expect(spy).toHaveBeenCalledTimes(3);
-      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-      expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-      expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
-    });
+    if (withoutSdp) {
+      it("her ua should send INVITE, ACK, BYE", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(3);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+        expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+      });
 
-    it("her ua should receive 200", () => {
-      const spy = alice.transportReceiveSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-    });
+      it("her ua should receive 200, 200", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+      });
+    } else {
+      it("her ua should send INVITE, ACK, BYE, 481", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(4);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+        expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+        expect(spy.calls.argsFor(3)).toEqual(SIP_481);
+      });
+
+      it("her ua should receive 200, BYE, 481", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(3);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+        expect(spy.calls.argsFor(2)).toEqual(SIP_481);
+      });
+    }
 
     it("her signaling should be closed", () => {
       if (!inviter.dialog) {
@@ -197,20 +216,39 @@ describe("API Session In-Dialog", () => {
         .then(() => alice.transport.waitSent()); // ACK
     });
 
-    it("her ua should send INVITE, ACK, BYE", () => {
-      const spy = alice.transportSendSpy;
-      expect(spy).toHaveBeenCalledTimes(3);
-      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
-      expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
-      expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
-    });
+    if (withoutSdp) {
+      it("her ua should send INVITE, ACK, BYE, 481", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(4);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+        expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+        expect(spy.calls.argsFor(3)).toEqual(SIP_481);
+      });
 
-    it("her ua should receive 200", () => {
-      const spy = alice.transportReceiveSpy;
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
-    });
+      it("her ua should receive 200, BYE, 481", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(3);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_BYE);
+        expect(spy.calls.argsFor(2)).toEqual(SIP_481);
+      });
+    } else {
+      it("her ua should send INVITE, ACK, BYE", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(3);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+        expect(spy.calls.argsFor(2)).toEqual(SIP_BYE);
+      });
+
+      it("her ua should receive 200, 200", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+      });
+    }
 
     it("her signaling should be closed", () => {
       if (!inviter.dialog) {

@@ -527,11 +527,11 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   public close(): void {
+    this.logger.log(`Session[${this.id}].close`);
+
     if (this.status === SessionStatus.STATUS_TERMINATED) {
       return;
     }
-
-    this.logger.log("closing INVITE session " + this.id);
 
     // 1st Step. Terminate media.
     if (this._sessionDescriptionHandler) {
@@ -564,7 +564,7 @@ export abstract class Session extends EventEmitter {
    * they occur we ACK the response and send a BYE.
    * Note that the BYE is sent in the dialog associated with the response
    * which is not necessarily `this.dialog`. And, accordingly, the
-   * session state is not transitioned to terminated.
+   * session state is not transitioned to terminated and session is not closed.
    * @param inviteResponse - The response causing the error.
    * @param statusCode - Status code for he reason phrase.
    * @param reasonPhrase - Reason phrase for the BYE.
@@ -610,51 +610,76 @@ export abstract class Session extends EventEmitter {
       throw new Error("Dialog undefined.");
     }
 
-    // If the ACK doesn't have an offer/answer, nothing to be done.
-    const body = getBody(request.message);
-    if (!body) {
-      this.status = SessionStatus.STATUS_CONFIRMED;
-      return;
-    }
-    if (body.contentDisposition === "render") {
-      this.renderbody = body.content;
-      this.rendertype = body.contentType;
-      this.status = SessionStatus.STATUS_CONFIRMED;
-      return;
-    }
-    if (body.contentDisposition !== "session") {
-      this.status = SessionStatus.STATUS_CONFIRMED;
-      return;
-    }
-
-    const options = {
-      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
-    };
-
     switch (dialog.signalingState) {
-      case SignalingState.Initial:
+      case SignalingState.Initial: {
         // State should never be reached as first reliable response must have answer/offer.
-        throw new Error(`Invalid signaling state ${dialog.signalingState}.`);
-      case SignalingState.Stable:
-        // Receved answer.
+        // So we must have never has sent an offer.
+        this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
+        this.isFailed = true;
+        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        dialog.bye(undefined, { extraHeaders });
+        this.stateTransition(SessionState.Terminated);
+        this.close();
+        return;
+      }
+      case SignalingState.Stable: {
+        // State we should be in.
+        // Either the ACK has the answer that got us here, or we were in this state prior to the ACK.
+        const body = getBody(request.message);
+        // If the ACK doesn't have an answer, nothing to be done.
+        if (!body) {
+          this.status = SessionStatus.STATUS_CONFIRMED;
+          return;
+        }
+        if (body.contentDisposition === "render") {
+          this.renderbody = body.content;
+          this.rendertype = body.contentType;
+          this.status = SessionStatus.STATUS_CONFIRMED;
+          return;
+        }
+        if (body.contentDisposition !== "session") {
+          this.status = SessionStatus.STATUS_CONFIRMED;
+          return;
+        }
+        // Receved answer in ACK.
+        const options = {
+          sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
+          sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+        };
         this.setAnswer(body, options)
           .then(() => { this.status = SessionStatus.STATUS_CONFIRMED; })
-          .catch((error: any) => {
-// FIXME: TODO - need to do something to handle this error
-            this.logger.error(error);
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            this.isFailed = true;
             const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
-            this.bye(undefined, { extraHeaders });
+            dialog.bye(undefined, { extraHeaders });
+            this.stateTransition(SessionState.Terminated);
             this.close();
-            throw error;
           });
         return;
-      case SignalingState.HaveLocalOffer:
-        // State should never be reached as local offer would be answered by this ACK
-        throw new Error(`Invalid signaling state ${dialog.signalingState}.`);
-      case SignalingState.HaveRemoteOffer:
+      }
+      case SignalingState.HaveLocalOffer: {
+        // State should never be reached as local offer would be answered by this ACK.
+        // So we must have received an ACK without an answer.
+        this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
+        this.isFailed = true;
+        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        dialog.bye(undefined, { extraHeaders });
+        this.stateTransition(SessionState.Terminated);
+        this.close();
+        return;
+      }
+      case SignalingState.HaveRemoteOffer: {
         // State should never be reached as remote offer would be answered in first reliable response.
-        throw new Error(`Invalid signaling state ${dialog.signalingState}.`);
+        // So we must have never has sent an answer.
+        this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
+        this.isFailed = true;
+        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        dialog.bye(undefined, { extraHeaders });
+        this.stateTransition(SessionState.Terminated);
+        this.close();
+        return;
+      }
       case SignalingState.Closed:
         throw new Error(`Invalid signaling state ${dialog.signalingState}.`);
       default:

@@ -22,6 +22,7 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
   const obj = sdh as any;
   obj.getDescriptionRejectOnce = undefined;
   obj.getDescriptionUndefinedBodyOnce = undefined;
+  obj.setDescriptionRejectOnce = undefined;
 
   sdh.close.and.callFake(() => {
     // console.warn(`SDH.close[${name}][${id}]`);
@@ -33,7 +34,8 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     // }
     closed = true;
     return;
-  }),
+  });
+
   sdh.getDescription.and.callFake(() => {
     if (closed) {
       throw new Error(`SDH.getDescription[${name}][${id}] SDH closed`);
@@ -73,12 +75,14 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       return bodyObj;
     });
   });
+
   sdh.hasDescription.and.callFake((contentType: string): boolean => {
     if (closed) {
       throw new Error(`SDH.hasDescription[${name}][${id}] SDH closed`);
     }
     return contentType === "application/sdp";
   });
+
   sdh.rollbackDescription.and.callFake(() => {
     if (closed) {
       throw new Error(`SDH.rollbackDescription[${name}][${id}] SDH closed`);
@@ -104,10 +108,17 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       return;
     });
   });
+
   sdh.setDescription.and.callFake(() => {
     if (closed) {
       throw new Error(`SDH.setDescription[${name}][${id}] SDH closed`);
     }
+
+    if ((sdh as any).setDescriptionRejectOnce) { // hacky
+      (sdh as any).setDescriptionRejectOnce = undefined;
+      return Promise.reject(new Error(`SDH.setDescription[${name}][${id}] SDH test failure`));
+    }
+
     const fromState = state;
     switch (state) {
       case "stable":
@@ -126,6 +137,7 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       return;
     });
   });
+
   // console.warn(`SDH.make[${name}][${id}]`);
   return sdh;
 }
