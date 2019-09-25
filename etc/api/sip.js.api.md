@@ -102,8 +102,6 @@ export interface InvitationAcceptOptions {
     onInfo?: ((request: IncomingRequestMessage) => void);
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
-    // @internal
-    test?: "acceptWithoutDescription";
 }
 
 // @public
@@ -138,6 +136,8 @@ export class Inviter extends Session {
     // @internal (undocumented)
     body: BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
+    // @internal
+    close(): void;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
@@ -428,9 +428,9 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     protected earlySdp: string | undefined;
     // @internal @deprecated (undocumented)
-    emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
-    // @internal @deprecated (undocumented)
     emit(event: "trackAdded" | "directionChanged"): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
     // @internal (undocumented)
     endTime: Date | undefined;
     // @internal (undocumented)
@@ -563,8 +563,6 @@ export interface SessionDelegate {
     onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
-    // @internal
-    onReinviteTest?(): "acceptWithoutDescription" | "reject488";
 }
 
 // @public
