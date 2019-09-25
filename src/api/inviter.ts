@@ -214,6 +214,16 @@ export class Inviter extends Session {
   }
 
   /**
+   * Called to cleanup session after terminated.
+   * Using it here just to dispose of early media.
+   * @internal
+   */
+  public close(): void {
+    this.disposeEarlyMedia();
+    super.close();
+  }
+
+  /**
    * Cancels the INVITE request.
    * @param options - Options bucket.
    */
@@ -392,7 +402,7 @@ export class Inviter extends Session {
       })
       .catch((error) => {
         this.logger.log(error.message);
-        this.close();
+        this.stateTransition(SessionState.Terminated);
         throw error;
       });
   }
@@ -682,6 +692,7 @@ export class Inviter extends Session {
     this.earlyMediaSessionDescriptionHandlers.forEach((sessionDescriptionHandler) => {
       sessionDescriptionHandler.close();
     });
+    this.earlyMediaSessionDescriptionHandlers.clear();
   }
 
   private notifyReferer(response: IncomingResponse): void {
@@ -1000,7 +1011,7 @@ export class Inviter extends Session {
             if (this.status === SessionStatus.STATUS_TERMINATED) {
               throw error;
             }
-            this.close();
+            this.stateTransition(SessionState.Terminated);
             throw error;
           });
       case SignalingState.Stable:
@@ -1025,7 +1036,7 @@ export class Inviter extends Session {
               if (this.status === SessionStatus.STATUS_TERMINATED) {
                 throw error;
               }
-              this.close();
+              this.stateTransition(SessionState.Terminated);
               throw error;
             });
         }
@@ -1056,8 +1067,6 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminated);
-    this.disposeEarlyMedia();
-    this.close();
   }
 
   /**
@@ -1078,8 +1087,6 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminated);
-    this.disposeEarlyMedia();
-    this.close();
   }
 
   /**

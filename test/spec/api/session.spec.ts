@@ -1883,7 +1883,8 @@ describe("API Session", () => {
         describe("Bob accept()", () => {
           beforeEach(() => {
             resetSpies();
-            return invitation.accept();
+            return invitation.accept()
+              .then(() => bob.transport.waitReceived());
           });
 
           it("her inviter sdh should have called get & set description once", () => {
@@ -1916,7 +1917,8 @@ describe("API Session", () => {
           describe("Bob accept()", () => {
             beforeEach(() => {
               resetSpies();
-              return invitation.accept();
+              return invitation.accept()
+                .then(() => bob.transport.waitReceived());
             });
 
             it("her inviter sdh should have called get & set description once", () => {
@@ -1986,7 +1988,8 @@ describe("API Session", () => {
         describe("Bob accept()", () => {
           beforeEach(() => {
             resetSpies();
-            return invitation.accept();
+            return invitation.accept()
+              .then(() => bob.transport.waitReceived());
           });
 
           it("her inviter sdh should have called get & set description once", () => {
@@ -2019,7 +2022,8 @@ describe("API Session", () => {
           describe("Bob accept()", () => {
             beforeEach(() => {
               resetSpies();
-              return invitation.accept();
+              return invitation.accept()
+                .then(() => bob.transport.waitReceived());
             });
 
             it("her inviter sdh should have called get & set description once", () => {

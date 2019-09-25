@@ -168,7 +168,43 @@ export abstract class Session extends EventEmitter {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
+  }
+
+  /**
+   * Called to cleanup session after terminated.
+   * @internal
+   */
+  public close(): void {
+    this.logger.log(`Session[${this.id}].close`);
+
+    if (this.status === SessionStatus.STATUS_TERMINATED) {
+      return;
     }
+
+    // 1st Step. Terminate media.
+    if (this._sessionDescriptionHandler) {
+      this._sessionDescriptionHandler.close();
+    }
+
+    // 2nd Step. Terminate signaling.
+
+    // Clear session timers
+    if (this.expiresTimer) {
+      clearTimeout(this.expiresTimer);
+    }
+    if (this.userNoAnswerTimer) {
+      clearTimeout(this.userNoAnswerTimer);
+    }
+
+    this.status = SessionStatus.STATUS_TERMINATED;
+
+    if (!this.id) {
+      throw new Error("Session id undefined.");
+    }
+    delete this.userAgent.sessions[this.id];
+
+    return;
+  }
 
   /**
    * @deprecated Legacy state transition.
@@ -454,21 +490,18 @@ export abstract class Session extends EventEmitter {
         throw new Error(`Invalid dialog state ${dialog.sessionState}`);
       case SessionDialogState.AckWait: { // This state only occurs if we are the callee.
         this.stateTransition(SessionState.Terminating); // We're terminating
-        this.close();
         return new Promise((resolve, reject) => {
           dialog.delegate = {
             // When ACK shows up, say BYE.
             onAck: (): void => {
               const request = dialog.bye(delegate, options);
               this.stateTransition(SessionState.Terminated);
-              this.close();
               resolve(request);
             },
             // Or the server transaction times out before the ACK arrives.
             onAckTimeout: (): void => {
               const request = dialog.bye(delegate, options);
               this.stateTransition(SessionState.Terminated);
-              this.close();
               resolve(request);
             }
           };
@@ -477,7 +510,6 @@ export abstract class Session extends EventEmitter {
       case SessionDialogState.Confirmed: {
         const request = dialog.bye(delegate, options);
         this.stateTransition(SessionState.Terminated);
-        this.close();
         return Promise.resolve(request);
       }
       case SessionDialogState.Terminated:
@@ -520,42 +552,6 @@ export abstract class Session extends EventEmitter {
     // If the session has a referrer, it will receive any in-dialog NOTIFY requests.
     this.referrer = referrer;
     return Promise.resolve(this.dialog.refer(delegate, options));
-  }
-
-  /**
-   * Called to cleanup session after terminated.
-   * @internal
-   */
-  public close(): void {
-    this.logger.log(`Session[${this.id}].close`);
-
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-
-    // 1st Step. Terminate media.
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-
-    // 2nd Step. Terminate signaling.
-
-    // Clear session timers
-    if (this.expiresTimer) {
-      clearTimeout(this.expiresTimer);
-    }
-    if (this.userNoAnswerTimer) {
-      clearTimeout(this.userNoAnswerTimer);
-    }
-
-    this.status = SessionStatus.STATUS_TERMINATED;
-
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    delete this.userAgent.sessions[this.id];
-
-    return;
   }
 
   /**
@@ -619,7 +615,6 @@ export abstract class Session extends EventEmitter {
         const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
-        this.close();
         return;
       }
       case SignalingState.Stable: {
@@ -654,7 +649,6 @@ export abstract class Session extends EventEmitter {
             const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
             dialog.bye(undefined, { extraHeaders });
             this.stateTransition(SessionState.Terminated);
-            this.close();
           });
         return;
       }
@@ -666,7 +660,6 @@ export abstract class Session extends EventEmitter {
         const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
-        this.close();
         return;
       }
       case SignalingState.HaveRemoteOffer: {
@@ -677,7 +670,6 @@ export abstract class Session extends EventEmitter {
         const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
-        this.close();
         return;
       }
       case SignalingState.Closed:
@@ -699,9 +691,6 @@ export abstract class Session extends EventEmitter {
     }
     request.accept();
     this.stateTransition(SessionState.Terminated);
-    if (this.status === SessionStatus.STATUS_CONFIRMED) {
-      this.close();
-    }
   }
 
   /**
@@ -1174,13 +1163,13 @@ export abstract class Session extends EventEmitter {
         throw new Error("Unrecognized state.");
     }
 
-    // Deprecated legacy ported behavior
     if (newState === SessionState.Established) {
-      this.startTime = new Date();
+      this.startTime = new Date(); // Deprecated legacy ported behavior
     }
-    // Deprecated legacy ported behavior
+
     if (newState === SessionState.Terminated) {
-      this.endTime = new Date();
+      this.endTime = new Date(); // Deprecated legacy ported behavior
+      this.close();
     }
 
     // Transition

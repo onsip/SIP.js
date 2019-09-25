@@ -138,9 +138,8 @@ export class Invitation extends Session {
     // 19 no answer from the user              480 Temporarily unavailable
     // https://tools.ietf.org/html/rfc3398#section-7.2.4.1
     this.userNoAnswerTimer = setTimeout(() => {
-      this.stateTransition(SessionState.Terminated);
       incomingInviteRequest.reject({ statusCode: 480 });
-      this.close();
+      this.stateTransition(SessionState.Terminated);
     }, this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000);
 
     // 1. If the request is an INVITE that contains an Expires header
@@ -154,12 +153,21 @@ export class Invitation extends Session {
       const expires: number = Number(request.getHeader("expires") || 0) * 1000;
       this.expiresTimer = setTimeout(() => {
         if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-          this.stateTransition(SessionState.Terminated);
           incomingInviteRequest.reject({ statusCode: 487 });
-          this.close();
+          this.stateTransition(SessionState.Terminated);
         }
       }, expires);
     }
+  }
+
+  /**
+   * Called to cleanup session after terminated.
+   * Using it here just for the PRACK timeout.
+   * @internal
+   */
+  public close(): void {
+    this.prackNeverArrived();
+    super.close();
   }
 
   /**
@@ -358,9 +366,6 @@ export class Invitation extends Session {
       return Promise.reject(error);
     }
 
-    // transition state
-    this.stateTransition(SessionState.Terminated);
-
     // Check Session Status
     if (this.status === SessionStatus.STATUS_TERMINATED) {
       throw new Exceptions.InvalidStateError(this.status);
@@ -384,7 +389,7 @@ export class Invitation extends Session {
       this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
       this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
 
-    this.close();
+    this.stateTransition(SessionState.Terminated);
 
     return Promise.resolve();
   }
@@ -409,23 +414,10 @@ export class Invitation extends Session {
     // flag canceled
     this._canceled = true;
 
-    // transition state
-    this.stateTransition(SessionState.Terminated);
-
     // reject INVITE with 487 status code
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
-    this.close();
-  }
-
-  /**
-   * Called to cleanup session after terminated.
-   * Using it here just for the PRACK timeout.
-   * @internal
-   */
-  public close(): void {
-    this.prackNeverArrived();
-    super.close();
+    this.stateTransition(SessionState.Terminated);
   }
 
   /**
@@ -605,7 +597,7 @@ export class Invitation extends Session {
             clearTimeout(rel1xxRetransmissionTimer);
             try {
               this.incomingInviteRequest.reject({ statusCode: 504 });
-              this.close();
+              this.stateTransition(SessionState.Terminated);
               reject(new Exceptions.TerminatedSessionError());
             } catch (error) {
               reject(error);
@@ -687,7 +679,6 @@ export class Invitation extends Session {
     this.logger.log("No ACK received for an extended period of time, terminating session");
     this.dialog.bye();
     this.stateTransition(SessionState.Terminated);
-    this.close();
   }
 
   /**
@@ -722,7 +713,7 @@ export class Invitation extends Session {
     }
     try {
       this.incomingInviteRequest.reject({ statusCode }); // "Temporarily Unavailable"
-      this.close();
+      this.stateTransition(SessionState.Terminated);
     } catch (error) {
       return;
     }
