@@ -17,6 +17,12 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     "setDescription",
     "sendDtmf"
   ]);
+
+  // Hacky properties to test failure cases...
+  const obj = sdh as any;
+  obj.getDescriptionRejectOnce = undefined;
+  obj.getDescriptionUndefinedBodyOnce = undefined;
+
   sdh.close.and.callFake(() => {
     // console.warn(`SDH.close[${name}][${id}]`);
     // TODO: Currently the API does call close() more than once in various
@@ -32,6 +38,12 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     if (closed) {
       throw new Error(`SDH.getDescription[${name}][${id}] SDH closed`);
     }
+
+    if ((sdh as any).getDescriptionRejectOnce) { // hacky
+      (sdh as any).getDescriptionRejectOnce = undefined;
+      return Promise.reject(new Error(`SDH.getDescription[${name}][${id}] SDH test failure`));
+    }
+
     const fromState = state;
     const contentType = "application/sdp";
     let body: string;
@@ -51,6 +63,12 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     }
     // console.warn(`getDescription[${name}] ${fromState} => ${state}`);
     const bodyObj: BodyAndContentType = { contentType, body};
+
+    if ((sdh as any).getDescriptionUndefinedBodyOnce) {  // hacky
+      (sdh as any).getDescriptionUndefinedBodyOnce = undefined;
+      bodyObj.body = "";
+    }
+
     return Promise.resolve().then(() => {
       return bodyObj;
     });

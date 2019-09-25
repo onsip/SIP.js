@@ -119,7 +119,13 @@ describe("API Session In-Dialog", () => {
   function reinviteAcceptedWithoutDescriptionFailure(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      invitation.delegate = { onReinviteTest: () => "acceptWithoutDescription" };
+      { // Setup hacky thing to cause undefined body returned once
+        if (!invitation.sessionDescriptionHandler) {
+          throw new Error("SDH undefined.");
+        }
+        const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+        (sdh as any).getDescriptionUndefinedBodyOnce = true;
+      }
       const session: Session = inviter;
       return session.invite({ withoutSdp })
         .then(() => alice.transport.waitSent()); // ACK
@@ -242,7 +248,13 @@ describe("API Session In-Dialog", () => {
   function reinviteRejected(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      invitation.delegate = { onReinviteTest: () => "reject488" };
+      { // Setup hacky thing to cause a rejection once
+        if (!invitation.sessionDescriptionHandler) {
+          throw new Error("SDH undefined.");
+        }
+        const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+        (sdh as any).getDescriptionRejectOnce = true;
+      }
       const session: Session = inviter;
       return session.invite({ withoutSdp })
         .then(() => alice.transport.waitSent()); // ACK
@@ -281,7 +293,13 @@ describe("API Session In-Dialog", () => {
   function reinviteRejectedRollbackFailure(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      invitation.delegate = { onReinviteTest: () => "reject488" };
+      { // Setup hacky thing to cause a rejection once
+        if (!invitation.sessionDescriptionHandler) {
+          throw new Error("SDH undefined.");
+        }
+        const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+        (sdh as any).getDescriptionRejectOnce = true;
+      }
       const session: Session = inviter;
       return session.invite({ withoutSdp: false }) // Note that rollback on reject this only happens INVITE with SDP
         .then(() => {

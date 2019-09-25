@@ -1,6 +1,7 @@
 import {
   Invitation,
   Inviter,
+  SessionDescriptionHandler,
   SessionState
 } from "../../../src/api";
 import {
@@ -1152,7 +1153,18 @@ describe("API Session", () => {
       describe("Bob accept(), 200 send has no SDP - Invalid 200 Ok", () => {
         beforeEach(async () => {
           resetSpies();
-          return invitation.accept({ test: "acceptWithoutDescription" })
+          { // Setup hacky thing to cause undefined body returned once
+            if (typeof (invitation as any).setupSessionDescriptionHandler !== "function") {
+              throw new Error("setupSessionDescriptionHandler() undefined.");
+            }
+            (invitation as any).setupSessionDescriptionHandler();
+            if (!invitation.sessionDescriptionHandler) {
+              throw new Error("SDH undefined.");
+            }
+            const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+            (sdh as any).getDescriptionUndefinedBodyOnce = true;
+          }
+          return invitation.accept()
             .then(() => bob.transport.waitReceived());
         });
 

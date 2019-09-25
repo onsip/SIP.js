@@ -641,7 +641,7 @@ export abstract class Session extends EventEmitter {
         this.setAnswer(body, options)
           .then(() => { this.status = SessionStatus.STATUS_CONFIRMED; })
           .catch((error: any) => {
-            // FIXME: TODO - need to do something to handle this error
+// FIXME: TODO - need to do something to handle this error
             this.logger.error(error);
             const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
             this.bye(undefined, { extraHeaders });
@@ -712,19 +712,6 @@ export abstract class Session extends EventEmitter {
     // TODO: would be nice to have core track and set the Contact header,
     // but currently the session which is setting it is holding onto it.
     const extraHeaders = ["Contact: " + this.contact];
-
-    // Check testing hooks
-    if (this.delegate && this.delegate.onReinviteTest) {
-      const test = this.delegate.onReinviteTest();
-      if (test === "acceptWithoutDescription") {
-        request.accept({ statusCode: 200, extraHeaders });
-        return;
-      }
-      if (test === "reject488") {
-        request.reject({ statusCode: 488 });
-        return;
-      }
-    }
 
     // Handle P-Asserted-Identity
     if (request.message.hasHeader("P-Asserted-Identity")) {

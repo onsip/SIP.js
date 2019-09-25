@@ -474,12 +474,7 @@ export class Invitation extends Session {
     this.status = SessionStatus.STATUS_ANSWERED;
     clearTimeout(this.userNoAnswerTimer); // Ported
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
-      .then((body) => {
-        if (options.test === "acceptWithoutDescription" && body) {
-          body.content = ""; // intentionally making broken for testing
-        }
-        return this.incomingInviteRequest.accept({ statusCode: 200, body });
-      });
+      .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
   }
 
   /**
