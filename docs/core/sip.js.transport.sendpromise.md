@@ -4,22 +4,28 @@
 
 ## Transport.sendPromise() method
 
-Called by send, must return a promise promise must resolve to an object. object supports 2 parameters: msg - string (mandatory) and overrideEvent - Boolean (optional)
+Called by send.
 
 <b>Signature:</b>
 
 ```typescript
-protected abstract sendPromise(msg: string, options?: any): Promise<any>;
+protected abstract sendPromise(message: string, options?: any): Promise<{
+        msg: string;
+        overrideEvent?: boolean;
+    }>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  msg | <code>string</code> | Message. |
+|  message | <code>string</code> | Message. |
 |  options | <code>any</code> | Options bucket. |
 
 <b>Returns:</b>
 
-`Promise<any>`
+`Promise<{
+        msg: string;
+        overrideEvent?: boolean;
+    }>`
 

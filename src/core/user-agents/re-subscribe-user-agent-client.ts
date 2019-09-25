@@ -65,7 +65,7 @@ export class ReSubscribeUserAgentClient extends UserAgentClient implements Outgo
       // and a new, unique "From" tag (see Section 4.1.2.1).
       // https://tools.ietf.org/html/rfc6665#section-4.1.2.2
       const errorCodes = [404, 405, 410, 416, 480, 481, 482, 483, 484, 485, 489, 501, 604];
-      if (errorCodes.includes(message.statusCode)) {
+      if (errorCodes.indexOf(message.statusCode) !== -1) {
         this.dialog.terminate();
       }
       // If a SUBSCRIBE request to refresh a subscription fails with any error

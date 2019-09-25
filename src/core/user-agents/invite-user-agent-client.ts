@@ -1,4 +1,5 @@
 import { Dialog, SessionDialog } from "../dialogs";
+import { TransportError } from "../exceptions";
 import {
   IncomingResponseMessage,
   OutgoingAckRequest,
@@ -9,7 +10,7 @@ import {
   RequestOptions
 } from "../messages";
 import { SignalingState } from "../session";
-import { InviteClientTransaction } from "../transactions";
+import { InviteClientTransaction, TransactionState } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 
@@ -54,6 +55,19 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
     this.earlyDialogs.forEach((earlyDialog) => earlyDialog.dispose());
     this.earlyDialogs.clear();
     super.dispose();
+  }
+
+  /**
+   * Special case for transport error while sending ACK.
+   * @param error - Transport error
+   */
+  protected onTransportError(error: TransportError): void {
+    if (this.transaction.state === TransactionState.Calling) {
+      return super.onTransportError(error);
+    }
+    // If not in 'calling' state, the transport error occurred while sending an ACK.
+    this.logger.error(error.message);
+    this.logger.error("User agent client request transport error while sending ACK.");
   }
 
   /**

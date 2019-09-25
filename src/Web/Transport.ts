@@ -51,7 +51,7 @@ export class Transport extends TransportBase {
   public static readonly C = TransportStatus;
   public type: TypeStrings;
   public server: WsServer;
-  public ws: any;
+  public ws: WebSocket | undefined;
 
   private connectionPromise: Promise<any> | undefined;
   private connectDeferredResolve: ((obj: any) => void) | undefined;
@@ -76,7 +76,7 @@ export class Transport extends TransportBase {
   private boundOnError: any;
 
   constructor(logger: Logger, options: any = {}) {
-    super(logger, options);
+    super(logger);
     this.type = TypeStrings.Transport;
 
     this.reconnectionAttempts = 0;
@@ -94,28 +94,39 @@ export class Transport extends TransportBase {
 
   /**
    * Send a message.
-   * @param {SIP.OutgoingRequest|String} msg
-   * @param {Object} [options]
-   * @returns {Promise}
+   * @param message - Outgoing message.
+   * @param options - Options bucket.
    */
-  protected sendPromise(msg: OutgoingRequestMessage | string, options: any = {}): Promise<{msg: string}> {
+  protected sendPromise(message: string, options: any = {}): Promise<{msg: string}> {
+    if (this.ws === undefined) {
+      this.onError("unable to send message - WebSocket undefined");
+      return Promise.reject(new Error("WebSocket undefined."));
+    }
+
+    // FIXME: This check is likely not necessary as WebSocket.send() will
+    // throw INVALID_STATE_ERR if the connection is not currently open
+    // which could happen regardless of what we thing the state is.
     if (!this.statusAssert(TransportStatus.STATUS_OPEN, options.force)) {
       this.onError("unable to send message - WebSocket not open");
-      return Promise.reject();
+      return Promise.reject(new Error("WebSocket not open."));
     }
 
-    const message: string = msg.toString();
+    if (this.configuration.traceSip === true) {
+      this.logger.log("sending WebSocket message:\n\n" + message + "\n");
+    }
 
-    if (this.ws) {
-      if (this.configuration.traceSip === true) {
-        this.logger.log("sending WebSocket message:\n\n" + message + "\n");
-      }
+    // WebSocket.send() can throw.
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/send
+    try {
       this.ws.send(message);
-      return Promise.resolve({msg: message});
-    } else {
-      this.onError("unable to send message - WebSocket does not exist");
-      return Promise.reject();
+    } catch (error) {
+      if (error instanceof error) {
+        Promise.reject(error);
+      }
+      return Promise.reject(new Error("Failed to send message."));
     }
+
+    return Promise.resolve({ msg: message });
   }
 
   /**
@@ -190,7 +201,7 @@ export class Transport extends TransportBase {
       try {
         this.ws = new WebSocket(this.server.wsUri, "sip");
       } catch (e) {
-        this.ws = null;
+        this.ws = undefined;
         this.statusTransition(TransportStatus.STATUS_CLOSED, true);
         this.onError("error connecting to WebSocket " + this.server.wsUri + ":" + e);
         reject("Failed to create a websocket");
@@ -217,7 +228,9 @@ export class Transport extends TransportBase {
         this.connectDeferredReject = undefined;
         const ws = this.ws;
         this.disposeWs();
-        ws.close(1000);
+        if (ws) {
+          ws.close(1000);
+        }
       }, this.configuration.connectionTimeout * 1000);
 
       this.boundOnOpen = this.onOpen.bind(this);
@@ -284,7 +297,9 @@ export class Transport extends TransportBase {
     if (this.status === TransportStatus.STATUS_CLOSED) { // Indicated that the transport thinks the ws is dead already
       const ws = this.ws;
       this.disposeWs();
-      ws.close(1000);
+      if (ws) {
+        ws.close(1000);
+      }
       return;
     }
     this.statusTransition(TransportStatus.STATUS_OPEN, true);

@@ -35,19 +35,4 @@ export interface SessionDelegate {
    * @param referral - The referral.
    */
   onRefer?(referral: Referral): void;
-
-  // TODO: Interface for handling re-invite needs to be sorted out...
-  // - current callbacks are not consistent with the others as they are firing after responding
-  //  - they are firing after sending response
-  //  - they don't provide access to the request
-  //  - they don't provide access to the response
-  // - an Invitation is not a re-Invitation, so can't provide that to a callback
-  // - not clear how best to handle error responding to a reinvite
-
-  /**
-   * Hook which is called upon receiving an incoming in dialog INVITE request.
-   * Used for generating and testing failure cases.
-   * @internal
-   */
-  onReinviteTest?(): "acceptWithoutDescription" | "reject488";
 }

@@ -244,6 +244,49 @@ export class UserAgentClient implements OutgoingRequest {
   }
 
   /**
+   * 8.1.3.1 Transaction Layer Errors
+   * In some cases, the response returned by the transaction layer will
+   * not be a SIP message, but rather a transaction layer error.  When a
+   * timeout error is received from the transaction layer, it MUST be
+   * treated as if a 408 (Request Timeout) status code has been received.
+   * If a fatal transport error is reported by the transport layer
+   * (generally, due to fatal ICMP errors in UDP or connection failures in
+   * TCP), the condition MUST be treated as a 503 (Service Unavailable)
+   * status code.
+   * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
+   */
+  protected onRequestTimeout(): void {
+    this.logger.warn("User agent client request timed out. Generating internal 408 Request Timeout.");
+    const message = new IncomingResponseMessage();
+    message.statusCode = 408;
+    message.reasonPhrase = "Request Timeout";
+    this.receiveResponse(message);
+    return;
+  }
+
+  /**
+   * 8.1.3.1 Transaction Layer Errors
+   * In some cases, the response returned by the transaction layer will
+   * not be a SIP message, but rather a transaction layer error.  When a
+   * timeout error is received from the transaction layer, it MUST be
+   * treated as if a 408 (Request Timeout) status code has been received.
+   * If a fatal transport error is reported by the transport layer
+   * (generally, due to fatal ICMP errors in UDP or connection failures in
+   * TCP), the condition MUST be treated as a 503 (Service Unavailable)
+   * status code.
+   * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
+   * @param error - Transport error
+   */
+   protected onTransportError(error: TransportError): void {
+    this.logger.error(error.message);
+    this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
+    const message = new IncomingResponseMessage();
+    message.statusCode = 503;
+    message.reasonPhrase = "Service Unavailable";
+    this.receiveResponse(message);
+  }
+
+  /**
    * Receive a response from the transaction layer.
    * @param message - Incoming response message.
    */
@@ -314,47 +357,5 @@ export class UserAgentClient implements OutgoingRequest {
     // Add the new transaction to the core.
     const userAgentClientId = transaction.id + transaction.request.method;
     this.core.userAgentClients.set(userAgentClientId, this);
-  }
-
-  /**
-   * 8.1.3.1 Transaction Layer Errors
-   * In some cases, the response returned by the transaction layer will
-   * not be a SIP message, but rather a transaction layer error.  When a
-   * timeout error is received from the transaction layer, it MUST be
-   * treated as if a 408 (Request Timeout) status code has been received.
-   * If a fatal transport error is reported by the transport layer
-   * (generally, due to fatal ICMP errors in UDP or connection failures in
-   * TCP), the condition MUST be treated as a 503 (Service Unavailable)
-   * status code.
-   * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
-   */
-  private onRequestTimeout(): void {
-    this.logger.warn("User agent client request timed out. Generating internal 408 Request Timeout.");
-    const message = new IncomingResponseMessage();
-    message.statusCode = 408;
-    message.reasonPhrase = "Request Timeout";
-    this.receiveResponse(message);
-    return;
-  }
-
-  /**
-   * 8.1.3.1 Transaction Layer Errors
-   * In some cases, the response returned by the transaction layer will
-   * not be a SIP message, but rather a transaction layer error.  When a
-   * timeout error is received from the transaction layer, it MUST be
-   * treated as if a 408 (Request Timeout) status code has been received.
-   * If a fatal transport error is reported by the transport layer
-   * (generally, due to fatal ICMP errors in UDP or connection failures in
-   * TCP), the condition MUST be treated as a 503 (Service Unavailable)
-   * status code.
-   * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
-   */
-  private onTransportError(error: TransportError): void {
-    this.logger.error(error.message);
-    this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
-    const message = new IncomingResponseMessage();
-    message.statusCode = 503;
-    message.reasonPhrase = "Service Unavailable";
-    this.receiveResponse(message);
   }
 }

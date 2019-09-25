@@ -24,8 +24,7 @@ import { InviterOptions } from "./inviter-options";
 import { Session } from "./session";
 import {
   BodyAndContentType,
-  SessionDescriptionHandler,
-  SessionDescriptionHandlerModifier
+  SessionDescriptionHandler
 } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
@@ -37,12 +36,6 @@ import { SIPExtension } from "./user-agent-options";
  */
 export class Inviter extends Session {
 
-  // BEGIN ClientContext interface
-  // public type: TypeStrings;
-  // public ua: UA;
-  // public logger: Logger;
-  // public data: any = {};
-  // public method = C.INVITE;
   /** @internal */
   public body: BodyAndContentType | undefined = undefined;
   /** @internal */
@@ -51,11 +44,6 @@ export class Inviter extends Session {
   public remoteIdentity: NameAddrHeader;
   /** @internal */
   public request: OutgoingRequestMessage;
-  // public onRequestTimeout!: () => void;
-  // public onTransportError!: () => void;
-  // public receiveResponse!: () => void; // not used
-  // public send!: () => this; // not used
-  // END ClientContext interface
 
   /** True if cancel() was called. */
   /** @internal */
@@ -223,6 +211,16 @@ export class Inviter extends Session {
     this.earlyMedia = options.earlyMedia || false;
 
     userAgent.applicants[this.toString()] = this;
+  }
+
+  /**
+   * Called to cleanup session after terminated.
+   * Using it here just to dispose of early media.
+   * @internal
+   */
+  public close(): void {
+    this.disposeEarlyMedia();
+    super.close();
   }
 
   /**
@@ -404,8 +402,7 @@ export class Inviter extends Session {
       })
       .catch((error) => {
         this.logger.log(error.message);
-        this.failed(undefined, C.causes.WEBRTC_ERROR);
-        this.terminated(undefined, C.causes.WEBRTC_ERROR);
+        this.stateTransition(SessionState.Terminated);
         throw error;
       });
   }
@@ -632,7 +629,6 @@ export class Inviter extends Session {
           this.logger.log("Canceled session accepted, sending ACK and BYE");
           this.ackAndBye(inviteResponse);
           this.stateTransition(SessionState.Terminated);
-          this.emit("bye", this.request); // FIXME: Ported this odd second "bye" emit
           return;
         }
 
@@ -696,6 +692,7 @@ export class Inviter extends Session {
     this.earlyMediaSessionDescriptionHandlers.forEach((sessionDescriptionHandler) => {
       sessionDescriptionHandler.close();
     });
+    this.earlyMediaSessionDescriptionHandlers.clear();
   }
 
   private notifyReferer(response: IncomingResponse): void {
@@ -787,13 +784,15 @@ export class Inviter extends Session {
     switch (session.signalingState) {
       case SignalingState.Initial:
         // INVITE without offer, so MUST have offer at this point, so invalid state.
+        this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
-        this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+        this.stateTransition(SessionState.Terminated);
         return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
       case SignalingState.HaveLocalOffer:
         // INVITE with offer, so MUST have answer at this point, so invalid state.
+        this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
-        this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+        this.stateTransition(SessionState.Terminated);
         return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
       case SignalingState.HaveRemoteOffer: {
         // INVITE without offer, received offer in 2xx, so MUST send answer in ACK.
@@ -812,7 +811,7 @@ export class Inviter extends Session {
           })
           .catch((error: Error) => {
             this.ackAndBye(inviteResponse, 488, "Invalid session description");
-            this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+            this.stateTransition(SessionState.Terminated);
             throw error;
           });
       }
@@ -853,7 +852,7 @@ export class Inviter extends Session {
             const error = new Error("Early media dialog does not equal confirmed dialog, terminating session");
             this.logger.error(error.message);
             this.ackAndBye(inviteResponse, 488, "Not Acceptable Here");
-            this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+            this.stateTransition(SessionState.Terminated);
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
@@ -888,7 +887,7 @@ export class Inviter extends Session {
           .catch((error: Error) => {
             this.logger.error(error.message);
             this.ackAndBye(inviteResponse, 488, "Not Acceptable Here");
-            this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
+            this.stateTransition(SessionState.Terminated);
             throw error;
           });
       }
@@ -964,14 +963,12 @@ export class Inviter extends Session {
           // FIXME: Known popular UA's currently end up here...
           inviteResponse.prack({ extraHeaders });
         }
-        this.emit("progress", response);
         return Promise.resolve();
       case SignalingState.HaveLocalOffer:
         // INVITE with offer and session only has that initial local offer.
         if (responseReliable) {
           inviteResponse.prack({ extraHeaders });
         }
-        this.emit("progress", response);
         return Promise.resolve();
       case SignalingState.HaveRemoteOffer:
         if (!responseReliable) {
@@ -1009,14 +1006,12 @@ export class Inviter extends Session {
               contentDisposition: "session", contentType: description.contentType, content: description.body
             };
             inviteResponse.prack({ extraHeaders, body });
-            this.emit("progress", response);
           })
           .catch((error) => {
             if (this.status === SessionStatus.STATUS_TERMINATED) {
               throw error;
             }
-            this.failed(undefined, C.causes.WEBRTC_ERROR);
-            this.terminated(undefined, C.causes.WEBRTC_ERROR);
+            this.stateTransition(SessionState.Terminated);
             throw error;
           });
       case SignalingState.Stable:
@@ -1037,19 +1032,14 @@ export class Inviter extends Session {
             sessionDescriptionHandlerModifiers: sdhModifiers
           };
           return this.setAnswer(answer, options)
-            .then(() => {
-              this.emit("progress", response);
-            })
             .catch((error: Error) => {
               if (this.status === SessionStatus.STATUS_TERMINATED) {
                 throw error;
               }
-              this.failed(undefined, C.causes.WEBRTC_ERROR);
-              this.terminated(undefined, C.causes.WEBRTC_ERROR);
+              this.stateTransition(SessionState.Terminated);
               throw error;
             });
         }
-        this.emit("progress", response);
         return Promise.resolve();
       case SignalingState.Closed:
         // Dialog has terminated.
@@ -1077,14 +1067,6 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminated);
-
-    this.disposeEarlyMedia();
-    const response = inviteResponse.message;
-    const statusCode = response.statusCode;
-    const cause: string = Utils.sipErrorCause(statusCode || 0);
-    this.rejected(response, cause);
-    this.failed(response, cause);
-    this.terminated(response, cause);
   }
 
   /**
@@ -1105,14 +1087,6 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminated);
-
-    this.disposeEarlyMedia();
-    const response = inviteResponse.message;
-    const statusCode = response.statusCode;
-    const cause: string = Utils.sipErrorCause(statusCode || 0);
-    this.rejected(response, cause);
-    this.failed(response, cause);
-    this.terminated(response, cause);
   }
 
   /**
@@ -1121,9 +1095,6 @@ export class Inviter extends Session {
    */
   private onTrying(inviteResponse: IncomingResponse): void {
     this.logger.log("Inviter.onTrying");
-
-    // legacy behavior - doing this in any state seems broken
-    this.emit("progress", inviteResponse.message);
 
     // validate state
     if (this.state !== SessionState.Establishing) {

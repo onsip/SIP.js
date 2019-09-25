@@ -15,9 +15,9 @@ export abstract class Transport extends EventEmitter {
   /**
    * Constructor
    * @param logger - Logger.
-   * @param options - Options bucket.
+   * @param options - Options bucket. Deprecated.
    */
-  constructor(logger: Logger, options: any) {
+  constructor(logger: Logger, options?: any) {
     super();
     this.logger = logger;
   }
@@ -45,13 +45,28 @@ export abstract class Transport extends EventEmitter {
    * Sends a message then emits a 'messageSent' event. Automatically emits an
    * event upon resolution, unless data.overrideEvent is set. If you override
    * the event in this fashion, you should emit it in your implementation of sendPromise
-   * @param msg - Message.
+   * Rejects with an Error if message fails to send.
+   * @param message - Message.
    * @param options - Options bucket.
    */
-  public send(msg: string, options: any = {}): Promise<void> {
-    return this.sendPromise(msg).then((data: any) => {
-      if (!data.overrideEvent) {
-        this.emit("messageSent", data.msg);
+  public send(message: string, options: any = {}): Promise<void> {
+    // Error handling is independent of whether the message was a request or
+    // response.
+    //
+    // If the transport user asks for a message to be sent over an
+    // unreliable transport, and the result is an ICMP error, the behavior
+    // depends on the type of ICMP error.  Host, network, port or protocol
+    // unreachable errors, or parameter problem errors SHOULD cause the
+    // transport layer to inform the transport user of a failure in sending.
+    // Source quench and TTL exceeded ICMP errors SHOULD be ignored.
+    //
+    // If the transport user asks for a request to be sent over a reliable
+    // transport, and the result is a connection failure, the transport
+    // layer SHOULD inform the transport user of a failure in sending.
+    // https://tools.ietf.org/html/rfc3261#section-18.4
+    return this.sendPromise(message).then((result) => {
+      if (!result.overrideEvent) {
+        this.emit("messageSent", result.msg);
       }
     });
   }
@@ -97,13 +112,11 @@ export abstract class Transport extends EventEmitter {
   protected abstract connectPromise(options: any): Promise<any>;
 
   /**
-   * Called by send, must return a promise
-   * promise must resolve to an object. object supports 2 parameters: msg - string (mandatory)
-   * and overrideEvent - Boolean (optional)
-   * @param msg - Message.
+   * Called by send.
+   * @param message - Message.
    * @param options - Options bucket.
    */
-  protected abstract sendPromise(msg: string, options?: any): Promise<any>;
+  protected abstract sendPromise(message: string, options?: any): Promise<{ msg: string, overrideEvent?: boolean }>;
 
   /**
    * Called by disconnect, must return a promise
