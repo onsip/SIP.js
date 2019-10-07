@@ -12,6 +12,10 @@ Dialog.
 export declare class Dialog 
 ```
 
+## Remarks
+
+A key concept for a user agent is that of a dialog. A dialog represents a peer-to-peer SIP relationship between two user agents that persists for some time. The dialog facilitates sequencing of messages between the user agents and proper routing of requests between both of them. The dialog represents a context in which to interpret SIP messages. https://tools.ietf.org/html/rfc3261\#section-12
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -50,8 +54,4 @@ export declare class Dialog
 |  [receiveRequest(message)](./sip.js.dialog.receiverequest.md) |  | Requests sent within a dialog, as any other requests, are atomic. If a particular request is accepted by the UAS, all the state changes associated with it are performed. If the request is rejected, none of the state changes are performed.<!-- -->Note that some requests, such as INVITEs, affect several pieces of state.<!-- -->https://tools.ietf.org/html/rfc3261\#section-12.2.2 |
 |  [recomputeRouteSet(message)](./sip.js.dialog.recomputerouteset.md) |  | If the dialog identifier in the 2xx response matches the dialog identifier of an existing dialog, the dialog MUST be transitioned to the "confirmed" state, and the route set for the dialog MUST be recomputed based on the 2xx response using the procedures of Section 12.2.1.2. Otherwise, a new dialog in the "confirmed" state MUST be constructed using the procedures of Section 12.1.2.<!-- -->Note that the only piece of state that is recomputed is the route set. Other pieces of state such as the highest sequence numbers (remote and local) sent within the dialog are not recomputed. The route set only is recomputed for backwards compatibility. RFC 2543 did not mandate mirroring of the Record-Route header field in a 1xx, only 2xx. However, we cannot update the entire state of the dialog, since mid-dialog requests may have been sent within the early dialog, modifying the sequence numbers, for example.<!-- -->https://tools.ietf.org/html/rfc3261\#section-13.2.2.4 |
 |  [sequenceGuard(message)](./sip.js.dialog.sequenceguard.md) |  | If the remote sequence number was not empty, but the sequence number of the request is lower than the remote sequence number, the request is out of order and MUST be rejected with a 500 (Server Internal Error) response. https://tools.ietf.org/html/rfc3261\#section-12.2.2 |
-
-## Remarks
-
-A key concept for a user agent is that of a dialog. A dialog represents a peer-to-peer SIP relationship between two user agents that persists for some time. The dialog facilitates sequencing of messages between the user agents and proper routing of requests between both of them. The dialog represents a context in which to interpret SIP messages. https://tools.ietf.org/html/rfc3261\#section-12
 

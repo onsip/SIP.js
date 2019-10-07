@@ -12,6 +12,10 @@ Server Transaction.
 export declare abstract class ServerTransaction extends Transaction 
 ```
 
+## Remarks
+
+The server transaction is responsible for the delivery of requests to the TU and the reliable transmission of responses. It accomplishes this through a state machine. Server transactions are created by the core when a request is received, and transaction handling is desired for that request (this is not always the case). https://tools.ietf.org/html/rfc3261\#section-17.2
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -31,8 +35,4 @@ export declare abstract class ServerTransaction extends Transaction
 |  --- | --- | --- |
 |  [receiveRequest(request)](./sip.js.servertransaction.receiverequest.md) |  | Receive incoming requests from the transport which match this transaction. |
 |  [receiveResponse(statusCode, response)](./sip.js.servertransaction.receiveresponse.md) |  | Receive outgoing responses to this request from the transaction user. Responses will be delivered to the transport as necessary. |
-
-## Remarks
-
-The server transaction is responsible for the delivery of requests to the TU and the reliable transmission of responses. It accomplishes this through a state machine. Server transactions are created by the core when a request is received, and transaction handling is desired for that request (this is not always the case). https://tools.ietf.org/html/rfc3261\#section-17.2
 

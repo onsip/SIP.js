@@ -12,6 +12,10 @@ A received message (incoming MESSAGE).
 export declare class Message 
 ```
 
+## Remarks
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Message` class.
+
 ## Properties
 
 |  Property | Modifiers | Type | Description |
@@ -24,8 +28,4 @@ export declare class Message
 |  --- | --- | --- |
 |  [accept(options)](./sip.js.message.accept.md) |  | Accept the request. |
 |  [reject(options)](./sip.js.message.reject.md) |  | Reject the request. |
-
-## Remarks
-
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Message` class.
 

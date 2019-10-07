@@ -12,6 +12,10 @@ A SIP message sent from a local client to a remote server.
 export interface OutgoingRequest 
 ```
 
+## Remarks
+
+For the purpose of invoking a particular operation. https://tools.ietf.org/html/rfc3261\#section-7.1
+
 ## Properties
 
 |  Property | Type | Description |
@@ -25,8 +29,4 @@ export interface OutgoingRequest
 |  --- | --- |
 |  [cancel(reason, options)](./sip.js.outgoingrequest.cancel.md) | Sends a CANCEL message targeting this request to the UAS. |
 |  [dispose()](./sip.js.outgoingrequest.dispose.md) | Destroy request. |
-
-## Remarks
-
-For the purpose of invoking a particular operation. https://tools.ietf.org/html/rfc3261\#section-7.1
 

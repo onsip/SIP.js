@@ -12,6 +12,10 @@ User Agent Server (UAS).
 export declare class UserAgentServer implements IncomingRequest 
 ```
 
+## Remarks
+
+A user agent server is a logical entity that generates a response to a SIP request. The response accepts, rejects, or redirects the request. This role lasts only for the duration of that transaction. In other words, if a piece of software responds to a request, it acts as a UAS for the duration of that transaction. If it generates a request later, it assumes the role of a user agent client for the processing of that transaction. https://tools.ietf.org/html/rfc3261\#section-6
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -46,8 +50,4 @@ export declare class UserAgentServer implements IncomingRequest
 |  [redirect(contacts, options)](./sip.js.useragentserver.redirect.md) |  |  |
 |  [reject(options)](./sip.js.useragentserver.reject.md) |  |  |
 |  [trying(options)](./sip.js.useragentserver.trying.md) |  |  |
-
-## Remarks
-
-A user agent server is a logical entity that generates a response to a SIP request. The response accepts, rejects, or redirects the request. This role lasts only for the duration of that transaction. In other words, if a piece of software responds to a request, it acts as a UAS for the duration of that transaction. If it generates a request later, it assumes the role of a user agent client for the processing of that transaction. https://tools.ietf.org/html/rfc3261\#section-6
 

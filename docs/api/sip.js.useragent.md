@@ -12,6 +12,10 @@ A user agent sends and receives requests using a `Transport`<!-- -->.
 export declare class UserAgent 
 ```
 
+## Remarks
+
+A user agent (UA) is associated with a user via the user's SIP address of record (AOR) and acts on behalf of that user to send and receive SIP requests. The user agent can register to receive incoming requests, as well as create and send outbound messages. The user agent also maintains the Transport over which its signaling travels.
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -32,8 +36,4 @@ export declare class UserAgent
 |  [makeURI(uri)](./sip.js.useragent.makeuri.md) | <code>static</code> | Create a URI instance from a string. |
 |  [start()](./sip.js.useragent.start.md) |  | Connect user agent to network transport. |
 |  [stop()](./sip.js.useragent.stop.md) |  | Gracefully close. Gracefully disconnect from network transport. |
-
-## Remarks
-
-A user agent (UA) is associated with a user via the user's SIP address of record (AOR) and acts on behalf of that user to send and receive SIP requests. The user agent can register to receive incoming requests, as well as create and send outbound messages. The user agent also maintains the Transport over which its signaling travels.
 

@@ -12,6 +12,10 @@ INVITE Client Transaction.
 export declare class InviteClientTransaction extends ClientTransaction 
 ```
 
+## Remarks
+
+The INVITE transaction consists of a three-way handshake. The client transaction sends an INVITE, the server transaction sends responses, and the client transaction sends an ACK. https://tools.ietf.org/html/rfc3261\#section-17.1.1
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -33,8 +37,4 @@ export declare class InviteClientTransaction extends ClientTransaction
 |  [onTransportError(error)](./sip.js.inviteclienttransaction.ontransporterror.md) |  | The client transaction SHOULD inform the TU that a transport failure has occurred, and the client transaction SHOULD transition directly to the "Terminated" state. The TU will handle the failover mechanisms described in \[4\]. https://tools.ietf.org/html/rfc3261\#section-17.1.4 |
 |  [receiveResponse(response)](./sip.js.inviteclienttransaction.receiveresponse.md) |  | Handler for incoming responses from the transport which match this transaction. |
 |  [typeToString()](./sip.js.inviteclienttransaction.typetostring.md) |  | For logging. |
-
-## Remarks
-
-The INVITE transaction consists of a three-way handshake. The client transaction sends an INVITE, the server transaction sends responses, and the client transaction sends an ACK. https://tools.ietf.org/html/rfc3261\#section-17.1.1
 

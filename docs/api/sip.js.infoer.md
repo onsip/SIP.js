@@ -12,6 +12,10 @@ An Infoer sends [Info](./sip.js.info.md) (outgoing INFO).
 export declare class Infoer 
 ```
 
+## Remarks
+
+Sends an outgoing in dialog INFO request.
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -29,8 +33,4 @@ export declare class Infoer
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [info(options)](./sip.js.infoer.info.md) |  | Sends the INFO request. |
-
-## Remarks
-
-Sends an outgoing in dialog INFO request.
 

@@ -12,6 +12,10 @@ Transaction.
 export declare abstract class Transaction extends EventEmitter 
 ```
 
+## Remarks
+
+SIP is a transactional protocol: interactions between components take place in a series of independent message exchanges. Specifically, a SIP transaction consists of a single request and any responses to that request, which include zero or more provisional responses and one or more final responses. In the case of a transaction where the request was an INVITE (known as an INVITE transaction), the transaction also includes the ACK only if the final response was not a 2xx response. If the response was a 2xx, the ACK is not considered part of the transaction. https://tools.ietf.org/html/rfc3261\#section-17
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -39,8 +43,4 @@ export declare abstract class Transaction extends EventEmitter
 |  [send(message)](./sip.js.transaction.send.md) |  | Pass message to transport for transmission. If transport fails, the transaction user is notified by callback to onTransportError(). |
 |  [setState(state)](./sip.js.transaction.setstate.md) |  |  |
 |  [typeToString()](./sip.js.transaction.typetostring.md) |  |  |
-
-## Remarks
-
-SIP is a transactional protocol: interactions between components take place in a series of independent message exchanges. Specifically, a SIP transaction consists of a single request and any responses to that request, which include zero or more provisional responses and one or more final responses. In the case of a transaction where the request was an INVITE (known as an INVITE transaction), the transaction also includes the ACK only if the final response was not a 2xx response. If the response was a 2xx, the ACK is not considered part of the transaction. https://tools.ietf.org/html/rfc3261\#section-17
 

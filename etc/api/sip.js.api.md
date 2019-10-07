@@ -652,21 +652,21 @@ export class Subscriber extends Subscription {
     // @internal
     _dispose(): void;
     // @internal (undocumented)
+    emit(event: "accepted" | "failed" | "rejected", message: IncomingResponseMessage, cause: string): boolean;
+    // @internal (undocumented)
     emit(event: "notify", notification: {
         request: IncomingRequestMessage;
     }): boolean;
     // @internal (undocumented)
-    emit(event: "accepted" | "failed" | "rejected", message: IncomingResponseMessage, cause: string): boolean;
-    // @internal (undocumented)
     emit(event: "terminated"): boolean;
-    // @internal (undocumented)
-    on(name: "terminated", callback: () => void): this;
     // @internal
     on(name: "accepted" | "failed" | "rejected", callback: (message: IncomingResponseMessage, cause: string) => void): this;
     // @internal (undocumented)
     on(name: "notify", callback: (notification: {
         request: IncomingRequestMessage;
     }) => void): this;
+    // @internal (undocumented)
+    on(name: "terminated", callback: () => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponse" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)

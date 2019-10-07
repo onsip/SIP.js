@@ -12,6 +12,10 @@ Contact.
 export interface Contact 
 ```
 
+## Remarks
+
+https://tools.ietf.org/html/rfc3261\#section-8.1.1.8 This is ported from UA.contact. FIXME: TODO: This is not a great rep for Contact and is used in a kinda hacky way herein.
+
 ## Properties
 
 |  Property | Type | Description |
@@ -20,8 +24,4 @@ export interface Contact
 |  [tempGruu](./sip.js.contact.tempgruu.md) | <code>URI &#124; undefined</code> |  |
 |  [toString](./sip.js.contact.tostring.md) | <code>(options?: any) =&gt; string</code> |  |
 |  [uri](./sip.js.contact.uri.md) | <code>URI</code> |  |
-
-## Remarks
-
-https://tools.ietf.org/html/rfc3261\#section-8.1.1.8 This is ported from UA.contact. FIXME: TODO: This is not a great rep for Contact and is used in a kinda hacky way herein.
 

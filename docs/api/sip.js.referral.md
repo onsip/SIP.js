@@ -12,6 +12,10 @@ A request to establish a [Session](./sip.js.session.md) elsewhere (incoming REFE
 export declare class Referral 
 ```
 
+## Remarks
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Referral` class.
+
 ## Properties
 
 |  Property | Modifiers | Type | Description |
@@ -28,8 +32,4 @@ export declare class Referral
 |  [accept(options)](./sip.js.referral.accept.md) |  | Accept the request. |
 |  [makeInviter(options)](./sip.js.referral.makeinviter.md) |  | Creates an inviter which may be used to send an out of dialog INVITE request. |
 |  [reject(options)](./sip.js.referral.reject.md) |  | Reject the request. |
-
-## Remarks
-
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Referral` class.
 

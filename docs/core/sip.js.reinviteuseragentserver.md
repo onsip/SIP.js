@@ -12,6 +12,10 @@ Re-INVITE UAS.
 export declare class ReInviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest 
 ```
 
+## Remarks
+
+14 Modifying an Existing Session https://tools.ietf.org/html/rfc3261\#section-14 14.2 UAS Behavior https://tools.ietf.org/html/rfc3261\#section-14.2
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -26,8 +30,4 @@ export declare class ReInviteUserAgentServer extends UserAgentServer implements 
 |  [progress(options)](./sip.js.reinviteuseragentserver.progress.md) |  | Update the dialog signaling state on a 1xx response. |
 |  [redirect(contacts, options)](./sip.js.reinviteuseragentserver.redirect.md) |  | TODO: Not Yet Supported |
 |  [reject(options)](./sip.js.reinviteuseragentserver.reject.md) |  | 3.1 Background on Re-INVITE Handling by UASs An error response to a re-INVITE has the following semantics. As specified in Section 12.2.2 of RFC 3261 \[RFC3261\], if a re-INVITE is rejected, no state changes are performed. https://tools.ietf.org/html/rfc6141\#section-3.1 |
-
-## Remarks
-
-14 Modifying an Existing Session https://tools.ietf.org/html/rfc3261\#section-14 14.2 UAS Behavior https://tools.ietf.org/html/rfc3261\#section-14.2
 

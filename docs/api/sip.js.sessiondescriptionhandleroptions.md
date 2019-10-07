@@ -12,13 +12,13 @@ Options for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) m
 export interface SessionDescriptionHandlerOptions 
 ```
 
+## Remarks
+
+These options are provided to various UserAgent methods (invite() for example) and passed through on calls to getDescription() and setDescription().
+
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
 |  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) | <code>object</code> |  |
-
-## Remarks
-
-These options are provided to various UserAgent methods (invite() for example) and passed through on calls to getDescription() and setDescription().
 

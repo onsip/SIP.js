@@ -12,6 +12,10 @@ An exchange of information (incoming INFO).
 export declare class Info 
 ```
 
+## Remarks
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Info` class.
+
 ## Properties
 
 |  Property | Modifiers | Type | Description |
@@ -24,8 +28,4 @@ export declare class Info
 |  --- | --- | --- |
 |  [accept(options)](./sip.js.info.accept.md) |  | Accept the request. |
 |  [reject(options)](./sip.js.info.reject.md) |  | Reject the request. |
-
-## Remarks
-
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Info` class.
 

@@ -12,6 +12,14 @@ User Agent Core.
 export declare class UserAgentCore 
 ```
 
+## Remarks
+
+Core designates the functions specific to a particular type of SIP entity, i.e., specific to either a stateful or stateless proxy, a user agent or registrar. All cores, except those for the stateless proxy, are transaction users. https://tools.ietf.org/html/rfc3261\#section-6
+
+UAC Core: The set of processing functions required of a UAC that reside above the transaction and transport layers. https://tools.ietf.org/html/rfc3261\#section-6
+
+UAS Core: The set of processing functions required at a UAS that resides above the transaction and transport layers. https://tools.ietf.org/html/rfc3261\#section-6
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -47,12 +55,4 @@ export declare class UserAgentCore
 |  [request(request, delegate)](./sip.js.useragentcore.request.md) |  | Send a request. |
 |  [reset()](./sip.js.useragentcore.reset.md) |  | Reset. |
 |  [subscribe(request, delegate)](./sip.js.useragentcore.subscribe.md) |  | Send SUBSCRIBE. |
-
-## Remarks
-
-Core designates the functions specific to a particular type of SIP entity, i.e., specific to either a stateful or stateless proxy, a user agent or registrar. All cores, except those for the stateless proxy, are transaction users. https://tools.ietf.org/html/rfc3261\#section-6
-
-UAC Core: The set of processing functions required of a UAC that reside above the transaction and transport layers. https://tools.ietf.org/html/rfc3261\#section-6
-
-UAS Core: The set of processing functions required at a UAS that resides above the transaction and transport layers. https://tools.ietf.org/html/rfc3261\#section-6
 
