@@ -62,6 +62,7 @@
 - URI allows "" for user and 0 for port which is confusing and should probably be undefined instead
 - URI toString() can and does throw. Issue #286.
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
+- Handling incoming REGISTER, "Contact: *" header fails to parse - there's a test written for it
 
 ## Transport
 - Make sure Transport is RFC compliant and integrates with core ins compliant fashion

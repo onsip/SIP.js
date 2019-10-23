@@ -25,6 +25,8 @@ export declare class Registerer
 |  [contacts](./sip.js.registerer.contacts.md) |  | <code>Array&lt;string&gt;</code> | The registered contacts. |
 |  [state](./sip.js.registerer.state.md) |  | <code>RegistererState</code> | The registration state. |
 |  [stateChange](./sip.js.registerer.statechange.md) |  | <code>Emitter&lt;RegistererState&gt;</code> | Emits when the registerer state changes. |
+|  [waiting](./sip.js.registerer.waiting.md) |  | <code>boolean</code> | True if the registerer is currently waiting for final response to a REGISTER request. |
+|  [waitingChange](./sip.js.registerer.waitingchange.md) |  | <code>Emitter&lt;boolean&gt;</code> | Emits when the registerer waiting state changes. |
 
 ## Methods
 

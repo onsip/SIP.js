@@ -199,7 +199,7 @@ export interface InviterOptions extends SessionOptions {
     renderbody?: string;
     // @deprecated (undocumented)
     rendertype?: string;
-    SessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
+    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
 }
 
@@ -355,6 +355,8 @@ export class Registerer {
     readonly state: RegistererState;
     readonly stateChange: Emitter<RegistererState>;
     unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
+    readonly waiting: boolean;
+    readonly waitingChange: Emitter<boolean>;
     }
 
 // @public
