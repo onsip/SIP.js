@@ -40,7 +40,7 @@ export interface InviterOptions extends SessionOptions {
   /** @deprecated TODO: provide alternative. */
   rendertype?: string;
   /** Modifiers to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
-  SessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
+  sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
   /** Options to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
   sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
 }
