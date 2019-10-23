@@ -201,7 +201,7 @@ export class Inviter extends Session {
     this.passedOptions = options; // Save for later to use with refer
     this.renderbody = options.renderbody || undefined;
     this.rendertype = options.rendertype || "text/plain";
-    this.sessionDescriptionHandlerModifiers = options.SessionDescriptionHandlerModifiers || [];
+    this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers || [];
     this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
 
     // InviteClientContext properties
