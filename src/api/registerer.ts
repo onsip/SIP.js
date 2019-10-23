@@ -262,6 +262,16 @@ export class Registerer {
     return makeEmitter(this._stateEventEmitter);
   }
 
+  /** True if the registerer is currently waiting for final response to a REGISTER request. */
+  get waiting(): boolean {
+    return this._waiting;
+  }
+
+  /** Emits when the registerer waiting state changes. */
+  get waitingChange(): Emitter<boolean> {
+    return makeEmitter(this._waitingEventEmitter);
+  }
+
   /** Destructor. */
   public async dispose(): Promise<void> {
     // Remove from UA's collection
@@ -689,16 +699,6 @@ export class Registerer {
     this._state = newState;
     this.logger.log(`Registration transitioned to state ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
-  }
-
-  /** True if waiting for final response to a REGISTER request. */
-  private get waiting(): boolean {
-    return this._waiting;
-  }
-
-  /** Emits when the registerer toggles waiting. */
-  private get waitingChange(): Emitter<boolean> {
-    return makeEmitter(this._waitingEventEmitter);
   }
 
   /**
