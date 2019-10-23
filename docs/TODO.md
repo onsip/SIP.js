@@ -52,7 +52,7 @@
   - This behavior was ported from legacy code and the issue punted down the road.
 - SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
 - Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
-- Refactor Registerer constructor and private properties
+- Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
 
 ## Grammar
 - grammar.ts has everything typed as any

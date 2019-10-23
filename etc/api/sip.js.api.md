@@ -361,19 +361,21 @@ export class Registerer {
 
 // @public
 export interface RegistererOptions {
-    // (undocumented)
     expires?: number;
-    // (undocumented)
     extraContactHeaderParams?: Array<string>;
     extraHeaders?: Array<string>;
-    // (undocumented)
     instanceId?: string;
-    // (undocumented)
-    params?: any;
-    // (undocumented)
+    logConfiguration?: boolean;
+    // @deprecated (undocumented)
+    params?: {
+        fromDisplayName?: string;
+        fromTag?: string;
+        fromUri?: URI;
+        toDisplayName?: string;
+        toUri?: URI;
+    };
     regId?: number;
-    // (undocumented)
-    registrar?: string;
+    registrar?: URI;
 }
 
 // @public

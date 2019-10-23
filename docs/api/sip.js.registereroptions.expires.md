@@ -4,6 +4,8 @@
 
 ## RegistererOptions.expires property
 
+Registration expiration time in seconds.
+
 <b>Signature:</b>
 
 ```typescript

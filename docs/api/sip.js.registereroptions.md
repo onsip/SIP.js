@@ -16,11 +16,12 @@ export interface RegistererOptions
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [expires](./sip.js.registereroptions.expires.md) | <code>number</code> |  |
-|  [extraContactHeaderParams](./sip.js.registereroptions.extracontactheaderparams.md) | <code>Array&lt;string&gt;</code> |  |
+|  [expires](./sip.js.registereroptions.expires.md) | <code>number</code> | Registration expiration time in seconds. |
+|  [extraContactHeaderParams](./sip.js.registereroptions.extracontactheaderparams.md) | <code>Array&lt;string&gt;</code> | Array of extra Contact header parameters. |
 |  [extraHeaders](./sip.js.registereroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the REGISTER. |
-|  [instanceId](./sip.js.registereroptions.instanceid.md) | <code>string</code> |  |
-|  [params](./sip.js.registereroptions.params.md) | <code>any</code> |  |
-|  [regId](./sip.js.registereroptions.regid.md) | <code>number</code> |  |
-|  [registrar](./sip.js.registereroptions.registrar.md) | <code>string</code> |  |
+|  [instanceId](./sip.js.registereroptions.instanceid.md) | <code>string</code> | UUID to provide with "+sip.instance" Contact parameter. |
+|  [logConfiguration](./sip.js.registereroptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the registerer configuration. |
+|  [params](./sip.js.registereroptions.params.md) | <code>{</code><br/><code>        fromDisplayName?: string;</code><br/><code>        fromTag?: string;</code><br/><code>        fromUri?: URI;</code><br/><code>        toDisplayName?: string;</code><br/><code>        toUri?: URI;</code><br/><code>    }</code> |  |
+|  [regId](./sip.js.registereroptions.regid.md) | <code>number</code> | Value to provide with "reg-id" Contact parameter. |
+|  [registrar](./sip.js.registereroptions.registrar.md) | <code>URI</code> | The URI of the registrar to send the REGISTER requests. |
 

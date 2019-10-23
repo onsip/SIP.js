@@ -4,8 +4,10 @@
 
 ## RegistererOptions.registrar property
 
+The URI of the registrar to send the REGISTER requests.
+
 <b>Signature:</b>
 
 ```typescript
-registrar?: string;
+registrar?: URI;
 ```

@@ -4,8 +4,19 @@
 
 ## RegistererOptions.params property
 
+> Warning: This API is now obsolete.
+> 
+> TODO: provide alternative.
+> 
+
 <b>Signature:</b>
 
 ```typescript
-params?: any;
+params?: {
+        fromDisplayName?: string;
+        fromTag?: string;
+        fromUri?: URI;
+        toDisplayName?: string;
+        toUri?: URI;
+    };
 ```
