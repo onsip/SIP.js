@@ -1,15 +1,13 @@
 import { EventEmitter } from "events";
 
-import { C } from "../Constants";
 import {
+  C,
   Grammar,
   Logger,
   OutgoingRegisterRequest,
   OutgoingRequestMessage,
   URI
 } from "../core";
-import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
 
 import { Emitter, makeEmitter } from "./emitter";
 import { RegistererOptions } from "./registerer-options";
@@ -19,143 +17,34 @@ import { RegistererUnregisterOptions } from "./registerer-unregister-options";
 import { UserAgent } from "./user-agent";
 
 /**
- * @internal
- */
-function loadConfig(configuration: RegistererOptions): any {
-  const settings = {
-    expires: 600,
-    extraContactHeaderParams: [],
-    instanceId: undefined,
-    params: {},
-    regId: undefined,
-    registrar: undefined,
-  };
-
-  const configCheck = getConfigurationCheck();
-
-  // Check Mandatory parameters
-  for (const parameter in configCheck.mandatory) {
-    if (!configuration.hasOwnProperty(parameter)) {
-      throw new Exceptions.ConfigurationError(parameter);
-    } else {
-      const value = (configuration as any)[parameter];
-      const checkedValue = configCheck.mandatory[parameter](value);
-      if (checkedValue !== undefined) {
-        (settings as any)[parameter] = checkedValue;
-      } else {
-        throw new Exceptions.ConfigurationError(parameter, value);
-      }
-    }
-  }
-
-  // Check Optional parameters
-  for (const parameter in configCheck.optional) {
-    if (configuration.hasOwnProperty(parameter)) {
-      const value = (configuration as any)[parameter];
-
-      // If the parameter value is an empty array, but shouldn't be, apply its default value.
-      if (value instanceof Array && value.length === 0) { continue; }
-
-      // If the parameter value is null, empty string, or undefined then apply its default value.
-      // If it's a number with NaN value then also apply its default value.
-      // NOTE: JS does not allow "value === NaN", the following does the work:
-      if (value === null || value === "" || value === undefined ||
-        (typeof(value) === "number" && isNaN(value))) {
-        continue;
-      }
-
-      const checkedValue = configCheck.optional[parameter](value);
-      if (checkedValue !== undefined) {
-        (settings as any)[parameter] = checkedValue;
-      } else {
-        throw new Exceptions.ConfigurationError(parameter, value);
-      }
-    }
-  }
-
-  return settings;
-}
-
-/**
- * @internal
- */
-function getConfigurationCheck(): any {
-  return {
-    mandatory: {
-    },
-
-    optional: {
-      expires: (expires: string): number | undefined => {
-        if (Utils.isDecimal(expires)) {
-          const value = Number(expires);
-          if (value >= 0) {
-            return value;
-          }
-        }
-      },
-      extraContactHeaderParams: (extraContactHeaderParams: Array<string>): Array<string> | undefined => {
-        if (extraContactHeaderParams instanceof Array) {
-          return extraContactHeaderParams.filter((contactHeaderParam) => (typeof contactHeaderParam === "string"));
-        }
-      },
-      instanceId: (instanceId: string): string | undefined => {
-        if (typeof instanceId !== "string") {
-          return;
-        }
-
-        if ((/^uuid:/i.test(instanceId))) {
-          instanceId = instanceId.substr(5);
-        }
-
-        if (Grammar.parse(instanceId, "uuid") === -1) {
-          return;
-        } else {
-          return instanceId;
-        }
-      },
-      params: (params: any): any | undefined => {
-        if (typeof params === "object") {
-          return params;
-        }
-      },
-      regId: (regId: string): number | undefined => {
-        if (Utils.isDecimal(regId)) {
-          const value = Number(regId);
-          if (value >= 0) {
-            return value;
-          }
-        }
-      },
-      registrar: (registrar: string): URI | undefined => {
-        if (typeof registrar !== "string") {
-          return;
-        }
-
-        if (!/^sip:/i.test(registrar)) {
-          registrar = C.SIP + ":" + registrar;
-        }
-        const parsed = Grammar.URIParse(registrar);
-
-        if (!parsed) {
-          return;
-        } else if (parsed.user) {
-          return;
-        } else {
-          return parsed;
-        }
-      }
-    }
-  };
-}
-
-/**
  * A registerer registers a contact for an address of record (outgoing REGISTER).
  * @public
  */
 export class Registerer {
-  private id: string;
 
-  private contact: string;
+  /** Default registerer options. */
+  private static readonly defaultOptions: Required<RegistererOptions> = {
+    expires: 600,
+    extraContactHeaderParams: [],
+    extraHeaders: [],
+    logConfiguration: true,
+    instanceId: "",
+    params: {},
+    regId: 0,
+    registrar: new URI("sip", "anonymous", "anonymous.invalid")
+  };
+
+  // http://stackoverflow.com/users/109538/broofa
+  private static newUUID(): string {
+    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r: number = Math.floor(Math.random() * 16);
+      const v: number = c === "x" ? r : (r % 4 + 8);
+      return v.toString(16);
+    });
+    return UUID;
+  }
+
+  private id: string;
   private expires: number;
   private logger: Logger;
   private options: RegistererOptions;
@@ -184,61 +73,86 @@ export class Registerer {
    * @param options - Options bucket. See {@link RegistererOptions} for details.
    */
   constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
-    const settings: any = loadConfig(options);
 
-    if (settings.regId && !settings.instanceId) {
-      settings.instanceId = Utils.newUUID();
-    } else if (!settings.regId && settings.instanceId) {
-      settings.regId = 1;
-    }
-
-    settings.params.toUri = settings.params.toUri || userAgent.configuration.uri;
-    settings.params.toDisplayName = settings.params.toDisplayName || userAgent.configuration.displayName;
-    settings.params.callId = settings.params.callId || Utils.createRandomToken(22);
-    settings.params.cseq = settings.params.cseq || Math.floor(Math.random() * 10000);
-
-    /* If no 'registrarServer' is set use the 'uri' value without user portion. */
-    if (!settings.registrar) {
-      let registrarServer: any = {};
-      if (typeof userAgent.configuration.uri === "object") {
-        registrarServer = userAgent.configuration.uri.clone();
-        registrarServer.user = undefined;
-      } else {
-        registrarServer = userAgent.configuration.uri;
-      }
-      settings.registrar = registrarServer;
-    }
-
+    // Set user agent
     this.userAgent = userAgent;
-    this.logger = userAgent.getLogger("sip.registerer");
 
+    // Default registrar is domain portion of user agent uri
+    const defaultUserAgentRegistrar = userAgent.configuration.uri.clone();
+    defaultUserAgentRegistrar.user = undefined;
+
+    // Initialize configuration
+    this.options = {
+      // start with the default option values
+      ...Registerer.defaultOptions,
+      // set the appropriate default registrar
+      ...{ registrar: defaultUserAgentRegistrar },
+      // apply any options passed in via the constructor
+      ...options
+    };
+
+    // Make sure we are not using references to array options
+    this.options.extraContactHeaderParams = (this.options.extraContactHeaderParams || []).slice();
+    this.options.extraHeaders = (this.options.extraHeaders || []).slice();
+
+    // Make sure we are not using references to registrar uri
+    if (!this.options.registrar) {
+      throw new Error("Registrar undefined.");
+    }
+    this.options.registrar = this.options.registrar.clone();
+
+    // Set instanceId and regId conditional defaults and validate
+    if (this.options.regId && !this.options.instanceId) {
+      this.options.instanceId = Registerer.newUUID();
+    } else if (!this.options.regId && this.options.instanceId) {
+      this.options.regId = 1;
+    }
+    if (this.options.instanceId && Grammar.parse(this.options.instanceId, "uuid") === -1) {
+      throw new Error("Invalid instanceId.");
+    }
+    if (this.options.regId && this.options.regId < 0) {
+      throw new Error("Invalid regId.");
+    }
+
+    const registrar = this.options.registrar;
+    const fromURI = (this.options.params && this.options.params.fromUri) || userAgent.userAgentCore.configuration.aor;
+    const toURI = (this.options.params && this.options.params.toUri) || userAgent.configuration.uri;
+    const params = this.options.params || {};
     const extraHeaders = (options.extraHeaders || []).slice();
 
     // Build the request
     this.request = userAgent.userAgentCore.makeOutgoingRequestMessage(
       C.REGISTER,
-      settings.registrar,
-      settings.params.fromUri ? settings.params.fromUri : userAgent.userAgentCore.configuration.aor,
-      settings.params.toUri ? settings.params.toUri : settings.registrar,
-      settings.params,
+      registrar,
+      fromURI,
+      toURI,
+      params,
       extraHeaders,
       undefined
     );
 
-    this.options = settings;
-
-    this.logger.log("configuration parameters for RegisterContext after validation:");
-    for (const parameter in settings) {
-      if (settings.hasOwnProperty(parameter)) {
-        this.logger.log("· " + parameter + ": " + JSON.stringify((settings as any)[parameter]));
-      }
+    // Registration expires
+    this.expires = this.options.expires || Registerer.defaultOptions.expires;
+    if (this.expires < 0) {
+      throw new Error("Invalid expires.");
     }
 
-    // Registration expires
-    this.expires = settings.expires;
+    // initialize logger
+    this.logger = userAgent.getLogger("sip.Registerer");
 
-    // Contact header
-    this.contact = userAgent.contact.toString();
+    if (this.options.logConfiguration) {
+      this.logger.log("Configuration:");
+      Object.keys(this.options).forEach((key) => {
+        const value = (this.options as any)[key];
+        switch (key) {
+          case "registrar":
+            this.logger.log("· " + key + ": " + value);
+            break;
+          default:
+            this.logger.log("· " + key + ": " + JSON.stringify(value));
+        }
+      });
+    }
 
     userAgent.transport.on("disconnected", () => this.onTransportDisconnected());
 
@@ -604,8 +518,8 @@ export class Registerer {
    * Helper Function to generate Contact Header
    * @internal
    */
-  private generateContactHeader(expires: number = 0): string {
-    let contact: string = this.contact;
+  private generateContactHeader(expires: number): string {
+    let contact = this.userAgent.contact.toString();
     if (this.options.regId && this.options.instanceId) {
       contact += ";reg-id=" + this.options.regId;
       contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
