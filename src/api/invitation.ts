@@ -8,7 +8,6 @@ import {
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequestMessage,
-  IncomingResponseMessage,
   NameAddrHeader,
   OutgoingResponse,
   OutgoingResponseWithSession,
