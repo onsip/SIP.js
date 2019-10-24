@@ -10,6 +10,7 @@ import {
 } from "../core";
 
 import { Emitter, makeEmitter } from "./emitter";
+import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
 import { RegistererRegisterOptions } from "./registerer-register-options";
 import { RegistererState } from "./registerer-state";
@@ -208,6 +209,7 @@ export class Registerer {
    * Sends the REGISTER request.
    * @remarks
    * If successfull, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
+   * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
    */
   public async register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
@@ -216,7 +218,7 @@ export class Registerer {
     // the previous REGISTER request has timed out.
     // https://tools.ietf.org/html/rfc3261#section-10.2
     if (this.waiting) {
-      const error = new Error("REGISTER request already in progress, waiting for final response");
+      const error = new RequestPendingError("REGISTER request already in progress, waiting for final response");
       return Promise.reject(error);
     }
 
@@ -392,6 +394,7 @@ export class Registerer {
 
   /**
    * Sends the REGISTER request with expires equal to zero.
+   * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
    */
   public async unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
@@ -400,7 +403,7 @@ export class Registerer {
     // the previous REGISTER request has timed out.
     // https://tools.ietf.org/html/rfc3261#section-10.2
     if (this.waiting) {
-      const error = new Error("REGISTER request already in progress, waiting for final response");
+      const error = new RequestPendingError("REGISTER request already in progress, waiting for final response");
       return Promise.reject(error);
     }
 

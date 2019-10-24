@@ -399,6 +399,14 @@ export interface RegistererUnregisterOptions {
     requestOptions?: RequestOptions;
 }
 
+// Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
+// 
+// @public
+export class RequestPendingError extends Exception {
+    // @internal
+    constructor(message?: string);
+}
+
 // @public
 export abstract class Session extends EventEmitter {
     // @internal
