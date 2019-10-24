@@ -1,4 +1,5 @@
 import {
+  Byer,
   Invitation,
   Inviter,
   SessionDescriptionHandler,
@@ -41,7 +42,7 @@ function terminate(invitation: Invitation): Promise<void> {
     case SessionState.Establishing:
       return session.reject();
     case SessionState.Established:
-      return session.bye().then(() => { return; });
+      return new Byer(session).bye().then(() => { return; });
     case SessionState.Terminating:
     case SessionState.Terminated:
     default:

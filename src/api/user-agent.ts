@@ -330,7 +330,7 @@ export class UserAgent {
             }
             break;
           case SessionState.Established:
-            session.bye();
+            session._bye();
             break;
           case SessionState.Terminating:
           case SessionState.Terminated:
@@ -352,14 +352,14 @@ export class UserAgent {
     for (const publisher in this.publishers) {
       if (this.publishers[publisher]) {
         this.logger.log("unpublish " + publisher);
-        this.publishers[publisher].close();
+        this.publishers[publisher]._close();
       }
     }
 
     // Run close on every applicant
     for (const applicant in this.applicants) {
       if (this.applicants[applicant]) {
-        this.applicants[applicant].close();
+        this.applicants[applicant]._close();
       }
     }
 
@@ -668,7 +668,7 @@ export class UserAgent {
 
         incomingInviteRequest.delegate = {
           onCancel: (cancel: IncomingRequestMessage): void => {
-            invitation.onCancel(cancel);
+            invitation._onCancel(cancel);
           },
           onTransportError: (error: TransportError): void => {
             // A server transaction MUST NOT discard transaction state based only on

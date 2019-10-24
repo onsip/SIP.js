@@ -126,26 +126,6 @@ export class Subscriber extends Subscription {
   }
 
   /**
-   * Destructor.
-   * @internal
-   */
-  public dispose(): void {
-    if (this.disposed) {
-      return;
-    }
-    super.dispose();
-
-    if (this.retryAfterTimer) {
-      clearTimeout(this.retryAfterTimer);
-      this.retryAfterTimer = undefined;
-    }
-    this.context.dispose();
-
-    // Remove from userAgent's collection
-    delete this.userAgent.subscriptions[this.id];
-  }
-
-  /**
    * Subscribe to event notifications.
    *
    * @remarks
@@ -167,7 +147,7 @@ export class Subscriber extends Subscription {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
                 onTerminated: () => {
-                  this.dispose();
+                  this._dispose();
                   this.onTerminated();
                 }
               };
@@ -201,8 +181,7 @@ export class Subscriber extends Subscription {
   }
 
   /**
-   * Unsubscribe.
-   * @internal
+   * {@inheritDoc Subscription.unsubscribe}
    */
   public unsubscribe(options: SubscriptionUnsubscribeOptions = {}): Promise<void> {
     if (this.disposed) {
@@ -230,7 +209,7 @@ export class Subscriber extends Subscription {
       default:
         break;
     }
-    this.dispose();
+    this._dispose();
     this.onTerminated();
     return Promise.resolve();
   }
@@ -240,8 +219,28 @@ export class Subscriber extends Subscription {
    * @deprecated Use `unsubscribe` instead.
    * @internal
    */
-  public close(): Promise<void> {
+  public _close(): Promise<void> {
     return this.unsubscribe();
+  }
+
+  /**
+   * Destructor.
+   * @internal
+   */
+  public _dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+    super._dispose();
+
+    if (this.retryAfterTimer) {
+      clearTimeout(this.retryAfterTimer);
+      this.retryAfterTimer = undefined;
+    }
+    this.context.dispose();
+
+    // Remove from userAgent's collection
+    delete this.userAgent.subscriptions[this.id];
   }
 
   /**
@@ -249,7 +248,7 @@ export class Subscriber extends Subscription {
    * @deprecated Use `subscribe` instead.
    * @internal
    */
-  public refresh(): Promise<void> {
+  public _refresh(): Promise<void> {
     if (this.context.state === SubscriptionDialogState.Active) {
       return this.subscribe();
     }
@@ -331,7 +330,7 @@ export class Subscriber extends Subscription {
 
   /** @internal */
   protected onFailed(response?: IncomingResponse): void {
-    this.close();
+    this._close();
     if (response) {
       const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
       const cause: string = Utils.getReasonPhrase(statusCode);
@@ -407,7 +406,7 @@ export class Subscriber extends Subscription {
                 break;
             }
           }
-          this.close();
+          this._close();
           break;
         default:
           break;

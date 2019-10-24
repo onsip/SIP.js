@@ -82,13 +82,13 @@ export class Invitation extends Session {
     // @internal (undocumented)
     body: string | undefined;
     // @internal
-    close(): void;
+    _close(): void;
     // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
     localIdentity: NameAddrHeader;
     // @internal
-    onCancel(message: IncomingRequestMessage): void;
+    _onCancel(message: IncomingRequestMessage): void;
     progress(options?: InvitationProgressOptions): Promise<void>;
     reject(options?: InvitationRejectOptions): Promise<void>;
     // @internal (undocumented)
@@ -137,7 +137,7 @@ export class Inviter extends Session {
     body: BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
     // @internal
-    close(): void;
+    _close(): void;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
@@ -229,7 +229,7 @@ export class Message {
 export class Messager extends EventEmitter {
     constructor(userAgent: UserAgent, targetURI: URI, content: string, contentType?: string, options?: MessagerOptions);
     // @internal
-    dispose(): void;
+    _dispose(): void;
     // Warning: (ae-forgotten-export) The symbol "MessagerMessageOptions" needs to be exported by the entry point index.d.ts
     message(options?: MessagerMessageOptions): Promise<void>;
     }
@@ -262,7 +262,7 @@ export class Notification {
 export class Publisher extends EventEmitter {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: PublisherOptions);
     // @internal
-    close(): void;
+    _close(): void;
     publish(content: string, options?: PublisherPublishOptions): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponseMessage" needs to be exported by the entry point index.d.ts
     // 
@@ -420,13 +420,13 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     abstract body: BodyAndContentType | string | undefined;
     // @internal
-    bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
+    _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // Warning: (ae-forgotten-export) The symbol "SessionStatus" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
     static readonly C: typeof SessionStatus;
     // @internal
-    close(): void;
+    _close(): void;
     // @internal (undocumented)
     contact: string | undefined;
     // @internal (undocumented)
@@ -438,9 +438,9 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     protected earlySdp: string | undefined;
     // @internal @deprecated (undocumented)
-    emit(event: "trackAdded" | "directionChanged"): boolean;
-    // @internal @deprecated (undocumented)
     emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
+    // @internal @deprecated (undocumented)
+    emit(event: "trackAdded" | "directionChanged"): boolean;
     // @internal (undocumented)
     endTime: Date | undefined;
     // @internal (undocumented)
@@ -467,7 +467,7 @@ export abstract class Session extends EventEmitter {
     // @internal (undocumented)
     id: string | undefined;
     // @internal
-    info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
+    _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
     isFailed: boolean;
@@ -648,9 +648,9 @@ export enum SIPExtension {
 export class Subscriber extends Subscription {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: SubscriberOptions);
     // @internal @deprecated
-    close(): Promise<void>;
+    _close(): Promise<void>;
     // @internal
-    dispose(): void;
+    _dispose(): void;
     // @internal (undocumented)
     emit(event: "notify", notification: {
         request: IncomingRequestMessage;
@@ -682,9 +682,8 @@ export class Subscriber extends Subscription {
     // @internal (undocumented)
     protected onTerminated(): void;
     // @internal @deprecated
-    refresh(): Promise<void>;
+    _refresh(): Promise<void>;
     subscribe(options?: SubscriberSubscribeOptions): Promise<void>;
-    // @internal
     unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
 }
 
@@ -715,7 +714,7 @@ export abstract class Subscription extends EventEmitter {
     // @internal
     dialog: Subscription_2 | undefined;
     // @internal
-    dispose(): void;
+    _dispose(): void;
     // @internal
     readonly disposed: boolean;
     readonly state: SubscriptionState;

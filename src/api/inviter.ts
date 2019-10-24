@@ -214,16 +214,6 @@ export class Inviter extends Session {
   }
 
   /**
-   * Called to cleanup session after terminated.
-   * Using it here just to dispose of early media.
-   * @internal
-   */
-  public close(): void {
-    this.disposeEarlyMedia();
-    super.close();
-  }
-
-  /**
    * Cancels the INVITE request.
    * @param options - Options bucket.
    */
@@ -405,6 +395,16 @@ export class Inviter extends Session {
         this.stateTransition(SessionState.Terminated);
         throw error;
       });
+  }
+
+  /**
+   * Called to cleanup session after terminated.
+   * Using it here just to dispose of early media.
+   * @internal
+   */
+  public _close(): void {
+    this.disposeEarlyMedia();
+    super._close();
   }
 
   /**

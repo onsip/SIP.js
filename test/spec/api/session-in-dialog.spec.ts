@@ -1,4 +1,5 @@
 import {
+  Byer,
   Invitation,
   Inviter,
   Referral,
@@ -556,7 +557,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite()
-                .then(() => inviter.bye())
+                .then(() => new Byer(inviter).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -600,7 +601,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite({ withoutSdp: true })
-                .then(() => inviter.bye())
+                .then(() => new Byer(inviter).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -644,7 +645,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite()
-                .then(() => invitation.bye())
+                .then(() => new Byer(invitation).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -689,7 +690,7 @@ describe("API Session In-Dialog", () => {
               invitation.delegate = undefined;
               return inviter.invite({ withoutSdp: true })
                 .then(() => bob.transport.waitSent())
-                .then(() => invitation.bye())
+                .then(() => new Byer(invitation).bye())
                 .then(() => alice.transport.waitSent());
             });
 

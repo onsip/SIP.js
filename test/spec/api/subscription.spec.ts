@@ -467,10 +467,10 @@ describe("API Subscription", () => {
             expect(spy.calls.argsFor(0)).toEqual(SIP_200);
           });
 
-          describe("Alice refreshes", () => {
+          describe("Alice re-subscribes", () => {
             beforeEach(async () => {
               resetSpies();
-              subscriber.refresh();
+              subscriber.subscribe();
               await soon();
             });
 
@@ -508,10 +508,10 @@ describe("API Subscription", () => {
             expect(spy.calls.argsFor(0)).toEqual(SIP_200);
           });
 
-          describe("Alice refreshes", () => {
+          describe("Alice re-subscribes", () => {
             beforeEach(async () => {
               resetSpies();
-              subscriber.refresh();
+              subscriber.subscribe();
               await alice.transport.waitReceived();
             });
 
@@ -548,10 +548,10 @@ describe("API Subscription", () => {
             });
           });
 
-          describe("Alice closes", () => {
+          describe("Alice unsubscribes", () => {
             beforeEach(async () => {
               resetSpies();
-              subscriber.close();
+              subscriber.unsubscribe();
               await alice.transport.waitReceived();
             });
 
