@@ -19,13 +19,11 @@ describe("API Registration", () => {
   let registrar: UserFake;
   let registerer: Registerer;
   let registererStateSpy: EmitterSpy<RegistererState>;
-  let registererWaitingSpy: EmitterSpy<boolean>;
 
   function resetSpies(): void {
     alice.transportReceiveSpy.calls.reset();
     alice.transportSendSpy.calls.reset();
     registererStateSpy.calls.reset();
-    registererWaitingSpy.calls.reset();
   }
 
   beforeEach(async () => {
@@ -49,7 +47,6 @@ describe("API Registration", () => {
     beforeEach(async () => {
       registerer = new Registerer(alice.userAgent);
       registererStateSpy = makeEmitterSpy(registerer.stateChange, alice.userAgent.getLogger("Alice"));
-      registererWaitingSpy = makeEmitterSpy(registerer.waitingChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
 
@@ -60,11 +57,6 @@ describe("API Registration", () => {
     it("her registerer state should not change", () => {
       expect(registerer.state).toBe(RegistererState.Initial);
       expect(registererStateSpy).not.toHaveBeenCalled();
-    });
-
-    it("her registerer waiting state should not change", () => {
-      expect(registerer.waiting).toBe(false);
-      expect(registererWaitingSpy).not.toHaveBeenCalled();
     });
 
     describe("Alice dispose()", () => {
@@ -80,11 +72,6 @@ describe("API Registration", () => {
       it("her registerer state should not change", () => {
         expect(registerer.state).toBe(RegistererState.Initial);
         expect(registererStateSpy).not.toHaveBeenCalled();
-      });
-
-      it("her registerer waiting state should not change", () => {
-        expect(registerer.waiting).toBe(false);
-        expect(registererWaitingSpy).not.toHaveBeenCalled();
       });
     });
 
@@ -102,11 +89,6 @@ describe("API Registration", () => {
       it("her registerer state should not change", () => {
         expect(registerer.state).toBe(RegistererState.Initial);
         expect(registererStateSpy).not.toHaveBeenCalled();
-      });
-
-      it("her registerer waiting state should not change", () => {
-        expect(registerer.waiting).toBe(false);
-        expect(registererWaitingSpy).not.toHaveBeenCalled();
       });
     });
 
@@ -153,13 +135,6 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-      });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
       });
 
       describe("Alice dispose()", () => {
@@ -214,13 +189,6 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-      });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
       });
     });
 
@@ -328,13 +296,6 @@ describe("API Registration", () => {
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
       });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-      });
     });
 
     describe("Alice unregister(), no response - Request Timeout", () => {
@@ -371,14 +332,6 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-      });
-
-      it("her registerer waiting state should cycle", async () => {
-        await soon(Timers.TIMER_F + 1);
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
       });
     });
 
@@ -433,13 +386,6 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
       });
 
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-      });
-
       describe("Alice dispose()", () => {
         beforeEach(async () => {
           resetSpies();
@@ -463,13 +409,6 @@ describe("API Registration", () => {
           const spy = registererStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-        });
-
-        it("her registerer waiting state should cycle", () => {
-          const spy = registererWaitingSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual([true]);
-          expect(spy.calls.argsFor(1)).toEqual([false]);
         });
       });
 
@@ -510,13 +449,6 @@ describe("API Registration", () => {
           expect(registerer.state).toBe(RegistererState.Registered);
           expect(registererStateSpy).not.toHaveBeenCalled();
         });
-
-        it("her registerer waiting state should cycle", () => {
-          const spy = registererWaitingSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual([true]);
-          expect(spy.calls.argsFor(1)).toEqual([false]);
-        });
       });
 
       describe("Alice unregister(), Registrar responds with 200 Ok", () => {
@@ -555,13 +487,6 @@ describe("API Registration", () => {
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
         });
-
-        it("her registerer waiting state should cycle", () => {
-          const spy = registererWaitingSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual([true]);
-          expect(spy.calls.argsFor(1)).toEqual([false]);
-        });
       });
 
       describe("Alice automatically re-registers before expires time elaspes", () => {
@@ -597,13 +522,6 @@ describe("API Registration", () => {
         it("her registerer state should not change", () => {
           expect(registerer.state).toBe(RegistererState.Registered);
           expect(registererStateSpy).not.toHaveBeenCalled();
-        });
-
-        it("her registerer waiting state should cycle", () => {
-          const spy = registererWaitingSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual([true]);
-          expect(spy.calls.argsFor(1)).toEqual([false]);
         });
       });
     });
@@ -654,15 +572,6 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
         expect(spy.calls.argsFor(1)).toEqual([RegistererState.Unregistered]);
       });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(4);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-        expect(spy.calls.argsFor(2)).toEqual([true]);
-        expect(spy.calls.argsFor(3)).toEqual([false]);
-      });
     });
 
     describe("Alice register(), register()", () => {
@@ -710,13 +619,6 @@ describe("API Registration", () => {
       it("her second register() should throw an error", () => {
         expect(threw).toBe(true);
       });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-      });
     });
 
     describe("Alice register(), send fails - Transport Error", () => {
@@ -758,13 +660,6 @@ describe("API Registration", () => {
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
       });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-      });
     });
 
     describe("Alice register(), no response - Request Timeout", () => {
@@ -802,14 +697,6 @@ describe("API Registration", () => {
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
       });
-
-      it("her registerer waiting state should cycle", async () => {
-        await soon(Timers.TIMER_F + 1);
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-      });
     });
 
     describe("Alice register(), Registrar responds with 423 Interval Too Brief without Min-Expires", () => {
@@ -834,13 +721,6 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-      });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(2);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
       });
     });
 
@@ -901,15 +781,6 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
-      });
-
-      it("her registerer waiting state should cycle", () => {
-        const spy = registererWaitingSpy;
-        expect(spy).toHaveBeenCalledTimes(4);
-        expect(spy.calls.argsFor(0)).toEqual([true]);
-        expect(spy.calls.argsFor(1)).toEqual([false]);
-        expect(spy.calls.argsFor(2)).toEqual([true]);
-        expect(spy.calls.argsFor(3)).toEqual([false]);
       });
     });
   });

@@ -355,8 +355,6 @@ export class Registerer {
     readonly state: RegistererState;
     readonly stateChange: Emitter<RegistererState>;
     unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
-    readonly waiting: boolean;
-    readonly waitingChange: Emitter<boolean>;
     }
 
 // @public
