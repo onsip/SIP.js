@@ -494,7 +494,9 @@ export class Registerer {
     return Promise.resolve(outgoingRegisterRequest);
   }
 
-  /** @internal */
+  /**
+   * Clear registration timers.
+   */
   private clearTimers(): void {
     if (this.registrationTimer !== undefined) {
       clearTimeout(this.registrationTimer);
@@ -508,8 +510,7 @@ export class Registerer {
   }
 
   /**
-   * Helper Function to generate Contact Header
-   * @internal
+   * Generate Contact Header
    */
   private generateContactHeader(expires: number): string {
     let contact = this.userAgent.contact.toString();
@@ -529,12 +530,16 @@ export class Registerer {
     return contact;
   }
 
-  /** @internal */
+  /**
+   * @deprecated
+   */
   private onTransportDisconnected(): void {
     this.unregistered();
   }
 
-  /** @internal */
+  /**
+   * Helper function, called when registered.
+   */
   private registered(expires: number): void {
     this.clearTimers();
 
@@ -556,7 +561,9 @@ export class Registerer {
     }
   }
 
-  /** @internal */
+  /**
+   * Helper function, called when unregistered.
+   */
   private unregistered(): void {
     this.clearTimers();
 
@@ -567,7 +574,6 @@ export class Registerer {
 
   /**
    * Transition registration state.
-   * @internal
    */
   private stateTransition(newState: RegistererState): void {
     const invalidTransition = () => {
@@ -620,7 +626,6 @@ export class Registerer {
 
   /**
    * Toggle waiting.
-   * @internal
    */
   private waitingToggle(waiting: boolean): void {
     if (this._waiting === waiting) {
