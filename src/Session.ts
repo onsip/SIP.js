@@ -51,6 +51,7 @@ import {
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { DTMF } from "./Session/DTMF";
+import { DTMFValidator } from "./Session/DTMFValidator";
 import { UA } from "./UA";
 import { Utils } from "./Utils";
 
@@ -161,10 +162,8 @@ export abstract class Session extends EventEmitter {
       throw new Exceptions.InvalidStateError(this.status);
     }
 
-    // Check tones
-    if ((!tones && tones !== 0) || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
-      throw new TypeError("Invalid tones: " + tones);
-    }
+    // Check tones' validity
+    DTMFValidator.checkTonesValidity(tones);
 
     const sendDTMF: () => void = (): void => {
       if (this.status === SessionStatus.STATUS_TERMINATED || !this.tones || this.tones.length === 0) {

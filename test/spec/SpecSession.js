@@ -104,6 +104,10 @@ describe('Session', function() {
       expect(function(){Session.dtmf(true);}).toThrowError('Invalid tones: true');
     });
 
+    it('accepts 0 as an integer argument', function() {
+      expect(function(){Session.dtmf(0);}).not.toThrowError('Invalid tones: 0');
+    });
+
     it('accepts a string argument', function() {
       expect(function(){Session.dtmf('1');}).not.toThrowError('Invalid tones: 1');
     });

@@ -6,6 +6,7 @@ import { SessionStatus, TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Session } from "../Session";
 import { Utils } from "../Utils";
+import { DTMFValidator } from "./DTMFValidator";
 
 /**
  * @class DTMF
@@ -36,21 +37,9 @@ export class DTMF extends EventEmitter {
     this.logger = session.ua.getLogger("sip.invitecontext.dtmf", session.id);
     this.owner = session;
 
-    // Check tone type
-    if (typeof tone === "string" ) {
-      tone = tone.toUpperCase();
-    } else if (typeof tone === "number") {
-      tone = tone.toString();
-    } else {
-      throw new TypeError("Invalid tone: " + tone);
-    }
-
-    // Check tone value
-    if (!tone.match(/^[0-9A-D#*]$/)) {
-      throw new TypeError("Invalid tone: " + tone);
-    } else {
-      this.tone = tone;
-    }
+    // If tone is invalid, it will automatically generate an exception.
+    // Otherwise, it will return the tone in the correct format.
+    this.tone = DTMFValidator.checkTonesValidity(tone);
 
     let duration: any = options.duration;
     let interToneGap: any = options.interToneGap;
