@@ -17,6 +17,6 @@ export class DTMFValidator {
   }
 
   private static generateInvalidToneError(tone: string): void {
-    throw new TypeError("Invalid tone(s): " + !!tone ? tone.toLowerCase() : tone);
+    throw new TypeError("Invalid tone(s): " + (!!tone ? tone.toLowerCase() : tone));
   }
 }
