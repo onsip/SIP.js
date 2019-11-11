@@ -14,14 +14,12 @@ import {
   IncomingPrackRequest,
   IncomingReferRequest,
   IncomingRequestMessage,
-  IncomingResponseMessage,
   Logger,
   NameAddrHeader,
   OutgoingByeRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingRequestDelegate,
-  OutgoingRequestMessage,
   RequestOptions,
   Session as SessionDialog,
   SessionState as SessionDialogState,
@@ -168,42 +166,6 @@ export abstract class Session extends EventEmitter {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
-  }
-
-  /**
-   * Called to cleanup session after terminated.
-   * @internal
-   */
-  public close(): void {
-    this.logger.log(`Session[${this.id}].close`);
-
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-
-    // 1st Step. Terminate media.
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-
-    // 2nd Step. Terminate signaling.
-
-    // Clear session timers
-    if (this.expiresTimer) {
-      clearTimeout(this.expiresTimer);
-    }
-    if (this.userNoAnswerTimer) {
-      clearTimeout(this.userNoAnswerTimer);
-    }
-
-    this.status = SessionStatus.STATUS_TERMINATED;
-
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    delete this.userAgent.sessions[this.id];
-
-    return;
   }
 
   /**
@@ -470,7 +432,7 @@ export abstract class Session extends EventEmitter {
    * @param options - Request options bucket.
    * @internal
    */
-  public bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
+  public _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
     // Using core session dialog
     if (!this.dialog) {
       return Promise.reject(new Error("Session dialog undefined."));
@@ -520,12 +482,48 @@ export abstract class Session extends EventEmitter {
   }
 
   /**
+   * Called to cleanup session after terminated.
+   * @internal
+   */
+  public _close(): void {
+    this.logger.log(`Session[${this.id}]._close`);
+
+    if (this.status === SessionStatus.STATUS_TERMINATED) {
+      return;
+    }
+
+    // 1st Step. Terminate media.
+    if (this._sessionDescriptionHandler) {
+      this._sessionDescriptionHandler.close();
+    }
+
+    // 2nd Step. Terminate signaling.
+
+    // Clear session timers
+    if (this.expiresTimer) {
+      clearTimeout(this.expiresTimer);
+    }
+    if (this.userNoAnswerTimer) {
+      clearTimeout(this.userNoAnswerTimer);
+    }
+
+    this.status = SessionStatus.STATUS_TERMINATED;
+
+    if (!this.id) {
+      throw new Error("Session id undefined.");
+    }
+    delete this.userAgent.sessions[this.id];
+
+    return;
+  }
+
+  /**
    * Send INFO.
    * @param delegate - Request delegate.
    * @param options - Request options bucket.
    * @internal
    */
-  public info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
+  public _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
     // Using core session dialog
     if (!this.dialog) {
       return Promise.reject(new Error("Session dialog undefined."));
@@ -1169,7 +1167,7 @@ export abstract class Session extends EventEmitter {
 
     if (newState === SessionState.Terminated) {
       this.endTime = new Date(); // Deprecated legacy ported behavior
-      this.close();
+      this._close();
     }
 
     // Transition

@@ -2,6 +2,7 @@
  * A simple yet powerful API which takes care of SIP signaling and WebRTC media sessions for you.
  * @packageDocumentation
  */
+export * from "./exceptions";
 export * from "./byer-bye-options";
 export * from "./byer-options";
 export * from "./byer";

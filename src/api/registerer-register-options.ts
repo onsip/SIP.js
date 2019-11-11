@@ -1,6 +1,5 @@
 import { OutgoingRequestDelegate, RequestOptions } from "../core";
 
-// tslint:disable:no-empty-interface
 /**
  * Options for {@link Registerer.register}.
  * @public

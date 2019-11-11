@@ -55,6 +55,6 @@ export class Byer {
       return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
     }
 
-    return this.session.bye(options.requestDelegate, options.requestOptions);
+    return this.session._bye(options.requestDelegate, options.requestOptions);
   }
 }

@@ -8,7 +8,6 @@ import {
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequestMessage,
-  IncomingResponseMessage,
   NameAddrHeader,
   OutgoingResponse,
   OutgoingResponseWithSession,
@@ -161,16 +160,6 @@ export class Invitation extends Session {
   }
 
   /**
-   * Called to cleanup session after terminated.
-   * Using it here just for the PRACK timeout.
-   * @internal
-   */
-  public close(): void {
-    this.prackNeverArrived();
-    super.close();
-  }
-
-  /**
    * If true, a first provisional response after the 100 Trying
    * will be sent automatically. This is false it the UAC required
    * reliable provisional responses (100rel in Require header),
@@ -241,7 +230,7 @@ export class Invitation extends Session {
         // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
         // This behavoir has been ported forward from legacy versions.
         if (this.replacee) {
-          this.replacee.bye();
+          this.replacee._bye();
         }
       })
       .catch((error) => {
@@ -395,12 +384,22 @@ export class Invitation extends Session {
   }
 
   /**
+   * Called to cleanup session after terminated.
+   * Using it here just for the PRACK timeout.
+   * @internal
+   */
+  public _close(): void {
+    this.prackNeverArrived();
+    super._close();
+  }
+
+  /**
    * Handle CANCEL request.
    * @param message - CANCEL message.
    * @internal
    */
-  public onCancel(message: IncomingRequestMessage): void {
-    this.logger.log("Invitation.onCancel");
+  public _onCancel(message: IncomingRequestMessage): void {
+    this.logger.log("Invitation._onCancel");
 
     // validate state
     if (

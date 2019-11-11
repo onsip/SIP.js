@@ -23,6 +23,7 @@ export declare class Subscriber extends Subscription
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [subscribe(options)](./sip.js.subscriber.subscribe.md) |  | Subscribe to event notifications. |
+|  [unsubscribe(options)](./sip.js.subscriber.unsubscribe.md) |  | Unsubscribe from event notifications. |
 
 ## Remarks
 

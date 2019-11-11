@@ -1,6 +1,11 @@
 import {
+  Byer,
   Invitation,
   Inviter,
+  Referral,
+  Referrer,
+  ReferrerOptions,
+  ReferrerReferOptions,
   Session,
   SessionDescriptionHandler,
   SessionState
@@ -18,9 +23,12 @@ import { soon } from "../../support/api/utils";
 const SIP_ACK = [jasmine.stringMatching(/^ACK/)];
 const SIP_BYE = [jasmine.stringMatching(/^BYE/)];
 const SIP_INVITE = [jasmine.stringMatching(/^INVITE/)];
+const SIP_NOTIFY = [jasmine.stringMatching(/^NOTIFY/)];
+const SIP_REFER = [jasmine.stringMatching(/^REFER/)];
 const SIP_100 = [jasmine.stringMatching(/^SIP\/2.0 100/)];
 const SIP_180 = [jasmine.stringMatching(/^SIP\/2.0 180/)];
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
+const SIP_202 = [jasmine.stringMatching(/^SIP\/2.0 202/)];
 const SIP_404 = [jasmine.stringMatching(/^SIP\/2.0 404/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
@@ -549,7 +557,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite()
-                .then(() => inviter.bye())
+                .then(() => new Byer(inviter).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -593,7 +601,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite({ withoutSdp: true })
-                .then(() => inviter.bye())
+                .then(() => new Byer(inviter).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -637,7 +645,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite()
-                .then(() => invitation.bye())
+                .then(() => new Byer(invitation).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -682,7 +690,7 @@ describe("API Session In-Dialog", () => {
               invitation.delegate = undefined;
               return inviter.invite({ withoutSdp: true })
                 .then(() => bob.transport.waitSent())
-                .then(() => invitation.bye())
+                .then(() => new Byer(invitation).bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -718,6 +726,185 @@ describe("API Session In-Dialog", () => {
             });
           });
         });
+
+        describe ("REFER Alice with default handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            inviter.delegate = undefined;
+            const referTo = new URI("sip", "carol", "example.com");
+            const referrerOptions: ReferrerOptions = {};
+            const referrerReferOptions: ReferrerReferOptions = {};
+            const referrer = new Referrer(invitation, referTo, referrerOptions);
+            return referrer.refer(referrerReferOptions)
+              .then(() => alice.transport.waitSent()) // 202
+              .then(() => alice.transport.waitSent()) // INVITE
+              .then(() => bob.transport.waitSent()); // 200
+          });
+
+          it("her ua should send 202, INVITE, ACK, NOTIFY", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(4);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_202);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(3)).toEqual(SIP_NOTIFY);
+          });
+
+          it("her ua should receive REFER, 404, 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_REFER);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_404); // fake transport wired to Bob (not Carol, and thus the 404)
+            expect(spy.calls.argsFor(2)).toEqual(SIP_200); // response to the NOTIFY
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+
+        describe ("REFER Alice with delegated handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            inviter.delegate = {
+              onRefer(referral: Referral): void {
+                referral
+                  .accept()
+                  .then(() => {
+                    const refereeInviter = referral.makeInviter();
+                    refereeInviter.invite();
+                  });
+              }
+            };
+            const referTo = new URI("sip", "carol", "example.com");
+            const referrerOptions: ReferrerOptions = {};
+            const referrerReferOptions: ReferrerReferOptions = {};
+            const referrer = new Referrer(invitation, referTo, referrerOptions);
+            return referrer.refer(referrerReferOptions)
+              .then(() => alice.transport.waitSent()) // 202
+              .then(() => alice.transport.waitSent()) // INVITE
+              .then(() => bob.transport.waitSent()); // 200
+          });
+
+          it("her ua should send 202, INVITE, ACK, NOTIFY", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(4);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_202);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(3)).toEqual(SIP_NOTIFY);
+          });
+
+          it("her ua should receive REFER, 404, 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_REFER);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_404); // fake transport wired to Bob (not Carol, and thus the 404)
+            expect(spy.calls.argsFor(2)).toEqual(SIP_200); // response to the NOTIFY
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+
+        describe ("REFER Bob with default handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            invitation.delegate = undefined;
+            const referTo = new URI("sip", "carol", "example.com");
+            const referrerOptions: ReferrerOptions = {};
+            const referrerReferOptions: ReferrerReferOptions = {};
+            const referrer = new Referrer(inviter, referTo, referrerOptions);
+            return referrer.refer(referrerReferOptions)
+              .then(() => bob.transport.waitSent()) // 202
+              .then(() => bob.transport.waitSent()) // INVITE
+              .then(() => alice.transport.waitSent()); // 200
+          });
+
+          it("his ua should send 202, INVITE, ACK, NOTIFY", () => {
+            const spy = bob.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(4);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_202);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(3)).toEqual(SIP_NOTIFY);
+          });
+
+          it("his ua should receive REFER, 404, 200", () => {
+            const spy = bob.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_REFER);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_404); // fake transport wired to Bob (not Carol, and thus the 404)
+            expect(spy.calls.argsFor(2)).toEqual(SIP_200); // response to the NOTIFY
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+
+        describe ("REFER Bob with delegated handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            invitation.delegate = {
+              onRefer(referral: Referral): void {
+                referral
+                  .accept()
+                  .then(() => {
+                    const refereeInviter = referral.makeInviter();
+                    refereeInviter.invite();
+                  });
+              }
+            };
+            const referTo = new URI("sip", "carol", "example.com");
+            const referrerOptions: ReferrerOptions = {};
+            const referrerReferOptions: ReferrerReferOptions = {};
+            const referrer = new Referrer(inviter, referTo, referrerOptions);
+            return referrer.refer(referrerReferOptions)
+              .then(() => bob.transport.waitSent()) // 202
+              .then(() => bob.transport.waitSent()) // INVITE
+              .then(() => alice.transport.waitSent()); // 200
+          });
+
+          it("his ua should send 202, INVITE, ACK, NOTIFY", () => {
+            const spy = bob.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(4);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_202);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(2)).toEqual(SIP_ACK);
+            expect(spy.calls.argsFor(3)).toEqual(SIP_NOTIFY);
+          });
+
+          it("his ua should receive REFER, 404, 200", () => {
+            const spy = bob.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(3);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_REFER);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_404); // fake transport wired to Bob (not Carol, and thus the 404)
+            expect(spy.calls.argsFor(2)).toEqual(SIP_200); // response to the NOTIFY
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+
       });
     });
   });

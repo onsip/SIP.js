@@ -99,21 +99,21 @@ export class Messager extends EventEmitter {
   }
 
   /**
-   * Destructor.
-   * @internal
-   */
-  public dispose(): void {
-    if (this._disposed) {
-      return;
-    }
-    this._disposed = true;
-  }
-
-  /**
    * Send the message.
    */
   public message(options: MessagerMessageOptions = {}): Promise<void> {
     this.userAgent.userAgentCore.request(this.request, options.requestDelegate);
     return Promise.resolve();
+  }
+
+  /**
+   * Destructor.
+   * @internal
+   */
+  public _dispose(): void {
+    if (this._disposed) {
+      return;
+    }
+    this._disposed = true;
   }
 }

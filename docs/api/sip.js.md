@@ -22,6 +22,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [Referral](./sip.js.referral.md) | A request to establish a [Session](./sip.js.session.md) elsewhere (incoming REFER). |
 |  [Referrer](./sip.js.referrer.md) | A referrer sends a [Referral](./sip.js.referral.md) (outgoing REFER). |
 |  [Registerer](./sip.js.registerer.md) | A registerer registers a contact for an address of record (outgoing REGISTER). |
+|  [RequestPendingError](./sip.js.requestpendingerror.md) | An exception indicating an outstanding prior request prevented execution. |
 |  [Session](./sip.js.session.md) | A session provides real time communication between one or more participants. |
 |  [Subscriber](./sip.js.subscriber.md) | A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SUBSCRIBE). |
 |  [Subscription](./sip.js.subscription.md) | A subscription provides asynchronous [Notification](./sip.js.notification.md) of events. |

@@ -777,12 +777,11 @@ describe("API Registration", () => {
         expect(spy.calls.argsFor(1)).toEqual(SIP_200);
       });
 
-      it("her registerer state should transition 'registered'", async () => {
+      it("her registerer state should transition 'registered'", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
       });
     });
-
   });
 });
