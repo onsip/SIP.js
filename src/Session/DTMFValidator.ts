@@ -1,4 +1,4 @@
-type ToneType = string | number;
+type ToneType = number | string;
 
 export class DTMFValidator {
   public static validate(tone: ToneType, moreThanOneTone: boolean = true): string {
@@ -7,17 +7,18 @@ export class DTMFValidator {
       tone = tone.toUpperCase();
     } else if (typeof tone === "number") {
       tone = tone.toString();
+    } else {
+      DTMFValidator.generateInvalidToneError(tone);
     }
-
     const regex = moreThanOneTone ? /^[0-9A-D#*,]+$/i : /^[0-9A-D#*]$/i;
     // Check tone value
-    if (!!tone && !tone.match(regex)) {
+    if (!tone.match(regex)) {
       DTMFValidator.generateInvalidToneError(tone);
     }
     return tone;
   }
 
-  private static generateInvalidToneError(tone: ToneType): void {
+  private static generateInvalidToneError(tone: any): void {
     throw new TypeError("Invalid tone(s): " + (!!tone && typeof tone !== 'boolean' ? tone.toString().toLowerCase() : tone));
   }
 }
