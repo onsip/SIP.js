@@ -11,7 +11,7 @@ export class DTMFValidator {
 
     const regex = moreThanOneTone ? /^[0-9A-D#*,]+$/i : /^[0-9A-D#*]$/i;
     // Check tone value
-    if (!tone.match(regex)) {
+    if (!!tone && !tone.match(regex)) {
       DTMFValidator.generateInvalidToneError(tone);
     }
     return tone;
