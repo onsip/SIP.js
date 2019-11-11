@@ -162,7 +162,7 @@ export abstract class Session extends EventEmitter {
     }
 
     // Check tones
-    if (!tones || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
+    if ((!tones && tones !== 0) || !tones.toString().match(/^[0-9A-D#*,]+$/i)) {
       throw new TypeError("Invalid tones: " + tones);
     }
 
