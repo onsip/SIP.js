@@ -37,9 +37,11 @@ export class DTMF extends EventEmitter {
     this.logger = session.ua.getLogger("sip.invitecontext.dtmf", session.id);
     this.owner = session;
 
+    const moreThanOneTone = false;
+
     // If tone is invalid, it will automatically generate an exception.
     // Otherwise, it will return the tone in the correct format.
-    this.tone = DTMFValidator.checkTonesValidity(tone);
+    this.tone = DTMFValidator.validate(tone, moreThanOneTone);
 
     let duration: any = options.duration;
     let interToneGap: any = options.interToneGap;

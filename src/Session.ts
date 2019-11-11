@@ -163,7 +163,7 @@ export abstract class Session extends EventEmitter {
     }
 
     // Check tones' validity
-    DTMFValidator.checkTonesValidity(tones);
+    DTMFValidator.validate(tones);
 
     const sendDTMF: () => void = (): void => {
       if (this.status === SessionStatus.STATUS_TERMINATED || !this.tones || this.tones.length === 0) {
