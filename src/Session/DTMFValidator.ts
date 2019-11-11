@@ -6,11 +6,11 @@ export class DTMFValidator {
     } else if (typeof tone === "number") {
       tone = tone.toString();
     } else {
-      throw new TypeError("Invalid tone: " + tone);
+      throw new TypeError("Invalid tones: " + tone);
     }
     // Check tone value
     if (!tone.match(/^[0-9A-D#*]$/)) {
-      throw new TypeError("Invalid tone: " + tone);
+      throw new TypeError("Invalid tones: " + tone);
     }
     return tone;
   }
