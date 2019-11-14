@@ -2,6 +2,7 @@ import {
   AckableIncomingResponseWithSession,
   Body,
   C,
+  fromBodyLegacy,
   Grammar,
   IncomingResponse,
   NameAddrHeader,
@@ -14,8 +15,7 @@ import {
   SignalingState,
   URI
 } from "../core";
-import { Utils } from "../Utils";
-
+import { getReasonPhrase, newTag } from "../core/messages/utils";
 import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
@@ -95,7 +95,7 @@ export class Inviter extends Session {
     }
 
     // From Tag
-    const fromTag = Utils.newTag();
+    const fromTag = newTag();
 
     // Contact
     // Do not add ;ob in initial forming dialog requests if the registration over
@@ -162,7 +162,7 @@ export class Inviter extends Session {
 
     let body: Body | undefined;
     if (this.body) {
-      body = Utils.fromBodyObj(this.body);
+      body = fromBodyLegacy(this.body);
     }
 
     // Request
@@ -238,11 +238,22 @@ export class Inviter extends Session {
       this.sessionDescriptionHandler.close();
     }
 
+    // helper function
+    function getCancelReason(code: number, reason: string): string | undefined {
+      if (code && code < 200 || code > 699) {
+        throw new TypeError("Invalid statusCode: " + code);
+      } else if (code) {
+        const cause = code;
+        const text = getReasonPhrase(code) || reason;
+        return "SIP;cause=" + cause + ';text="' + text + '"';
+      }
+    }
+
     if (this.outgoingInviteRequest) {
       // the CANCEL may not be respected by peer(s), so don't transition to terminated
       let cancelReason: string | undefined;
       if (options.statusCode && options.reasonPhrase) {
-        cancelReason = Utils.getCancelReason(options.statusCode, options.reasonPhrase);
+        cancelReason = getCancelReason(options.statusCode, options.reasonPhrase);
       }
       this.outgoingInviteRequest.cancel(cancelReason, options);
     } else {

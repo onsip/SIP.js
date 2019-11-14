@@ -1,5 +1,6 @@
 import {
   C,
+  fromBodyLegacy,
   IncomingNotifyRequest,
   IncomingRequestMessage,
   IncomingRequestWithSubscription,
@@ -14,9 +15,8 @@ import {
   URI,
   UserAgentCore
 } from "../core";
+import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { Utils } from "../Utils";
-
 import { Notification } from "./notification";
 import { BodyAndContentType } from "./session-description-handler";
 import { SubscriberOptions } from "./subscriber-options";
@@ -324,7 +324,7 @@ export class Subscriber extends Subscription {
   /** @internal */
   protected onAccepted(response: IncomingResponse): void {
     const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
-    const cause: string = Utils.getReasonPhrase(statusCode);
+    const cause: string = getReasonPhrase(statusCode);
     this.emit("accepted", response.message, cause);
   }
 
@@ -333,7 +333,7 @@ export class Subscriber extends Subscription {
     this._close();
     if (response) {
       const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
-      const cause: string = Utils.getReasonPhrase(statusCode);
+      const cause: string = getReasonPhrase(statusCode);
       this.emit("failed", response.message, cause);
       this.emit("rejected", response.message, cause);
     }
@@ -429,7 +429,7 @@ export class Subscriber extends Subscription {
   private initContext(): SubscribeClientContext {
     const options = {
       extraHeaders: this.extraHeaders,
-      body: this.body ? Utils.fromBodyObj(this.body) : undefined
+      body: this.body ? fromBodyLegacy(this.body) : undefined
     };
     this.context = new SubscribeClientContext(
       this.userAgent.userAgentCore,

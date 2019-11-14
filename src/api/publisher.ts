@@ -3,13 +3,14 @@ import { EventEmitter } from "events";
 import {
   Body,
   C,
+  fromBodyLegacy,
   IncomingResponseMessage,
   Logger,
   OutgoingRequestMessage,
   URI
 } from "../core";
+import { getReasonPhrase } from "../core/messages/utils";
 import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
 
 import { PublisherOptions } from "./publisher-options";
 import { PublisherPublishOptions } from "./publisher-publish-options";
@@ -167,7 +168,7 @@ export class Publisher extends EventEmitter {
   /** @internal */
   protected receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
-    const cause: string = Utils.getReasonPhrase(statusCode);
+    const cause: string = getReasonPhrase(statusCode);
 
     switch (true) {
       case /^1[0-9]{2}$/.test(statusCode.toString()):
@@ -323,7 +324,7 @@ export class Publisher extends EventEmitter {
     }
     let body: Body | undefined;
     if (bodyAndContentType) {
-      body = Utils.fromBodyObj(bodyAndContentType);
+      body = fromBodyLegacy(bodyAndContentType);
     }
 
     this.request = this.userAgent.userAgentCore.makeOutgoingRequestMessage(

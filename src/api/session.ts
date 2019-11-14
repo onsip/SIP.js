@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import {
   AckableIncomingResponseWithSession,
   Body,
+  fromBodyLegacy,
   getBody,
   Grammar,
   IncomingAckRequest,
@@ -24,9 +25,9 @@ import {
   SessionState as SessionDialogState,
   SignalingState
 } from "../core";
+import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
 import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
 
 import { Emitter, makeEmitter } from "./emitter";
 import { Info } from "./info";
@@ -347,7 +348,7 @@ export abstract class Session {
                   throw new Error("Dialog undefined.");
                 }
                 const extraHeaders: Array<string> = [];
-                extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+                extraHeaders.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
                 this.dialog.bye(undefined, { extraHeaders });
                 this.stateTransition(SessionState.Terminated);
                 this.isFailed = true;
@@ -549,7 +550,7 @@ export abstract class Session {
     response.ack();
     const extraHeaders: Array<string> = [];
     if (statusCode) {
-      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
+      extraHeaders.push("Reason: " + this.getReasonHeaderValue(statusCode, reasonPhrase));
     }
     // Using the dialog session associate with the response (which might not be this.dialog)
     response.session.bye(undefined, { extraHeaders });
@@ -577,7 +578,7 @@ export abstract class Session {
         // So we must have never has sent an offer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
         this.isFailed = true;
-        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
         return;
@@ -611,7 +612,7 @@ export abstract class Session {
           .catch((error: Error) => {
             this.logger.error(error.message);
             this.isFailed = true;
-            const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+            const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
             dialog.bye(undefined, { extraHeaders });
             this.stateTransition(SessionState.Terminated);
           });
@@ -622,7 +623,7 @@ export abstract class Session {
         // So we must have received an ACK without an answer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
         this.isFailed = true;
-        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
         return;
@@ -632,7 +633,7 @@ export abstract class Session {
         // So we must have never has sent an answer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
         this.isFailed = true;
-        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
         return;
@@ -750,7 +751,7 @@ export abstract class Session {
                 throw new Error("Dialog undefined.");
               }
               const extraHeadersBye: Array<string> = [];
-              extraHeadersBye.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+              extraHeadersBye.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
               this.dialog.bye(undefined, { extraHeaders });
               this.stateTransition(SessionState.Terminated);
               this.isFailed = true;
@@ -932,7 +933,7 @@ export abstract class Session {
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       return sdh.getDescription(sdhOptions, sdhModifiers)
-        .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
+        .then((bodyAndContentType) => fromBodyLegacy(bodyAndContentType))
         .catch((error: any) => { // don't trust SDH to reject with Error
           this.logger.error("Session.getOffer: SDH getDescription rejected...");
           const e =  error instanceof Error ? error : new Error(error);
@@ -1036,7 +1037,7 @@ export abstract class Session {
     try {
       return sdh.setDescription(offer.content, sdhOptions, sdhModifiers)
         .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
-        .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
+        .then((bodyAndContentType) => fromBodyLegacy(bodyAndContentType))
         .catch((error: any) => { // don't trust SDH to reject with Error
           this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription rejected...");
           const e = error instanceof Error ? error : new Error(error);
@@ -1140,5 +1141,14 @@ export abstract class Session {
     this._state = newState;
     this.logger.log(`Session ${this.id} transitioned to state ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+  }
+
+  private getReasonHeaderValue(code: number, reason?: string): string {
+    const cause = code;
+    let text = getReasonPhrase(code);
+    if (!text && reason) {
+      text = reason;
+    }
+    return "SIP;cause=" + cause + ';text="' + text + '"';
   }
 }
