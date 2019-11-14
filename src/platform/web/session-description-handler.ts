@@ -4,10 +4,11 @@ import {
   BodyAndContentType,
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
-  SessionDescriptionHandlerError,
   SessionDescriptionHandlerModifier,
   SessionDescriptionHandlerOptions
 } from "../../api";
+import { SessionDescriptionHandlerError } from "../../api/exceptions";
+
 import { Logger } from "../../core";
 import * as Modifiers from "./modifiers";
 
