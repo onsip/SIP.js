@@ -27,7 +27,6 @@ Abstract transport layer base class.
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [logger](./sip.js.transport.logger.md) |  | <code>Logger</code> |  |
-|  [server](./sip.js.transport.server.md) |  | <code>any</code> |  |
 
 ## Methods
 

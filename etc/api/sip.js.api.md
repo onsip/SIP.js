@@ -389,6 +389,8 @@ export enum RegistererState {
     // (undocumented)
     Registered = "Registered",
     // (undocumented)
+    Terminated = "Terminated",
+    // (undocumented)
     Unregistered = "Unregistered"
 }
 
@@ -408,7 +410,7 @@ export class RequestPendingError extends Exception {
 }
 
 // @public
-export abstract class Session extends EventEmitter {
+export abstract class Session {
     // @internal
     protected constructor(userAgent: UserAgent, options?: SessionOptions);
     // Warning: (ae-forgotten-export) The symbol "AckableIncomingResponseWithSession" needs to be exported by the entry point index.d.ts
@@ -437,10 +439,6 @@ export abstract class Session extends EventEmitter {
     dialog: Session_2 | undefined;
     // @internal (undocumented)
     protected earlySdp: string | undefined;
-    // @internal @deprecated (undocumented)
-    emit(event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler): boolean;
-    // @internal @deprecated (undocumented)
-    emit(event: "trackAdded" | "directionChanged"): boolean;
     // @internal (undocumented)
     endTime: Date | undefined;
     // @internal (undocumented)
@@ -481,10 +479,6 @@ export abstract class Session extends EventEmitter {
     logger: Logger;
     // @internal (undocumented)
     method: string;
-    // @internal @deprecated (undocumented)
-    on(event: "SessionDescriptionHandler-created", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
-    // @internal @deprecated (undocumented)
-    on(event: "trackAdded" | "directionChanged", listener: () => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -557,10 +551,6 @@ export abstract class Session extends EventEmitter {
     protected stateTransition(newState: SessionState): void;
     // @internal (undocumented)
     status: SessionStatus;
-    // Warning: (ae-forgotten-export) The symbol "TypeStrings" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    type: TypeStrings;
     // @internal (undocumented)
     userAgent: UserAgent;
     // @internal (undocumented)
@@ -760,7 +750,7 @@ export interface SubscriptionUnsubscribeOptions {
 
 // @public
 export class UserAgent {
-    constructor(options?: UserAgentOptions);
+    constructor(options?: Partial<UserAgentOptions>);
     // @internal (undocumented)
     applicants: {
         [id: string]: Inviter;
@@ -804,6 +794,7 @@ export class UserAgent {
     // @internal (undocumented)
     status: UAStatus;
     stop(): Promise<void>;
+    protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions>;
     // @internal (undocumented)
     subscriptions: {
         [id: string]: Subscription;

@@ -18,6 +18,7 @@ export declare enum RegistererState
 |  --- | --- | --- |
 |  Initial | <code>&quot;Initial&quot;</code> |  |
 |  Registered | <code>&quot;Registered&quot;</code> |  |
+|  Terminated | <code>&quot;Terminated&quot;</code> |  |
 |  Unregistered | <code>&quot;Unregistered&quot;</code> |  |
 
 ## Remarks
@@ -27,8 +28,11 @@ Valid state transitions:
 ```
 1. "initial" --> "registered"
 2. "initial" --> "unregistered"
-3. "registered" --> "unregistered"
-3. "unregistered" --> "registered"
+3. "initial" --> "terminated"
+4. "registered" --> "unregistered"
+5. "registered" --> "terminated"
+6. "unregistered" --> "registered"
+7. "unregistered" --> "terminated"
 
 ```
 

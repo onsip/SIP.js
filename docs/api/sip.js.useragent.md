@@ -36,4 +36,5 @@ A user agent (UA) is associated with a user via the user's SIP address of record
 |  [makeURI(uri)](./sip.js.useragent.makeuri.md) | <code>static</code> | Create a URI instance from a string. |
 |  [start()](./sip.js.useragent.start.md) |  | Connect user agent to network transport. |
 |  [stop()](./sip.js.useragent.stop.md) |  | Gracefully close. Gracefully disconnect from network transport. |
+|  [stripUndefinedProperties(options)](./sip.js.useragent.stripundefinedproperties.md) | <code>static</code> | Strip properties with undefined values from options. This is a work around while waiting for missing vs undefined to be addressed (or not)... https://github.com/Microsoft/TypeScript/issues/13195 |
 

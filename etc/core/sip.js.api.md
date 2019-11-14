@@ -1105,8 +1105,11 @@ export abstract class Transport extends EventEmitter {
         msg: string;
         overrideEvent?: boolean;
     }>;
-    // (undocumented)
-    server: any;
+    // @internal
+    server?: {
+        scheme?: string;
+        sipUri?: string;
+    };
     waitForConnected(): Promise<void>;
 }
 
