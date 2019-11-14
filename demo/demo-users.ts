@@ -28,13 +28,13 @@ if (token === "") {
 }
 
 // The demos uses unauthenticated users on the "sipjs.onsip.com" demo domain.
+// The demos uses OnSIP's WebSocket Server which hosts the "sipjs.onsip.com" demo domain.
 const domain = "sipjs.onsip.com";
 
 export const nameAlice = "Alice";
 export const uriAlice = "sip:alice." + token + "@" + domain;
+export const webSocketServerAlice = "wss://edge.sip.onsip.com";
 
 export const nameBob = "Bob";
 export const uriBob = "sip:bob." + token + "@" + domain;
-
-// The demos uses OnSIP's WebSocket Server which hosts the "sipjs.onsip.com" demo domain.
-export const webSocketServer = "wss://edge.sip.onsip.com";
+export const webSocketServerBob = "wss://edge.sip.onsip.com";

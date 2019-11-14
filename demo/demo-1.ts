@@ -1,55 +1,6 @@
 // tslint:disable: no-console
 import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platform/web";
-import { webSocketServer } from "./demo-constants";
-
-function getAudio(id: string): HTMLAudioElement {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLAudioElement)) {
-    throw new Error(`Element "${id}" not found or not an audio element.`);
-  }
-  return el;
-}
-
-function getButton(id: string): HTMLButtonElement {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLButtonElement)) {
-    throw new Error(`Element "${id}" not found or not a button element.`);
-  }
-  return el;
-}
-
-function getButtons(id: string): Array<HTMLButtonElement> {
-  const els = document.getElementsByClassName(id);
-  if (!els.length) {
-    throw new Error(`Elements "${id}" not found.`);
-  }
-  const buttons: Array<HTMLButtonElement> = [];
-  // tslint:disable-next-line:prefer-for-of
-  for (let i = 0; i < els.length; i++) {
-    const el = els[i];
-    if (!(el instanceof HTMLButtonElement)) {
-      throw new Error(`Element ${i} of "${id}" not a button element.`);
-    }
-    buttons.push(el);
-  }
-  return buttons;
-}
-
-function getInput(id: string): HTMLInputElement {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLInputElement)) {
-    throw new Error(`Element "${id}" not found or not an input element.`);
-  }
-  return el;
-}
-
-function getSpan(id: string): HTMLSpanElement {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLSpanElement)) {
-    throw new Error(`Element "${id}" not found or not a span element.`);
-  }
-  return el;
-}
+import { getAudio, getButton,  getButtons, getInput, getSpan } from "./demo-utils";
 
 const serverSpan = getSpan("server");
 const targetSpan = getSpan("target");
@@ -63,10 +14,11 @@ const dtmfSpan = getSpan("dtmf");
 const holdCheckbox = getInput("hold");
 const muteCheckbox = getInput("mute");
 
-// Display server URL
+// WebSocket Server URL
+const webSocketServer = "wss://edge.sip.onsip.com";
 serverSpan.innerHTML = webSocketServer;
 
-// Display target URI
+// Destination URI
 const target = "sip:welcome@onsip.com";
 targetSpan.innerHTML = target;
 

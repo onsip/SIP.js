@@ -1,22 +1,7 @@
 // tslint:disable: no-console
 import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platform/web";
-import { nameAlice, nameBob, uriAlice, uriBob, webSocketServer } from "./demo-constants";
-
-function getButton(id: string): HTMLButtonElement {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLButtonElement)) {
-    throw new Error(`Element "${id}" not found or not a button element.`);
-  }
-  return el;
-}
-
-function getVideo(id: string): HTMLVideoElement {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLVideoElement)) {
-    throw new Error(`Element "${id}" not found or not a video element.`);
-  }
-  return el;
-}
+import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users";
+import { getButton, getVideo } from "./demo-utils";
 
 const startAlice = getButton("startAlice");
 const startBob = getButton("startBob");
@@ -37,6 +22,7 @@ const videoRemoteBob = getVideo("videoRemoteBob");
 
 // New SimpleUser for Alice
 const alice = buildUser(
+  webSocketServerAlice,
   uriAlice,
   nameAlice,
   uriBob,
@@ -53,6 +39,7 @@ const alice = buildUser(
 
 // New SimpleUser for Bob
 const bob = buildUser(
+  webSocketServerBob,
   uriBob,
   nameBob,
   uriAlice,
@@ -68,6 +55,7 @@ const bob = buildUser(
 );
 
 function buildUser(
+  webSocketServer: string,
   aor: string,
   displayName: string,
   targetAOR: string,
