@@ -15,6 +15,7 @@ import {
   Levels,
   Logger,
   LoggerFactory,
+  Parser,
   Transport,
   TransportError,
   URI,
@@ -24,7 +25,6 @@ import {
 } from "./core";
 import { SessionStatus, TypeStrings, UAStatus } from "./Enums";
 import { Exceptions } from "./Exceptions";
-import { Parser } from "./Parser";
 import { PublishContext } from "./PublishContext";
 import { ReferServerContext } from "./ReferContext";
 import { RegisterContext } from "./RegisterContext";

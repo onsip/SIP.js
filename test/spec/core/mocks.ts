@@ -5,13 +5,13 @@ import {
   LoggerFactory,
   OutgoingRequestDelegate,
   OutgoingSubscribeRequestDelegate,
+  Parser,
   SessionDelegate,
   SubscriptionDelegate,
   Transport,
   URI,
   UserAgentCoreDelegate
 } from "../../../src/core";
-import { Parser } from "../../../src/Parser";
 import { UA } from "../../../src/UA";
 import { Utils } from "../../../src/Utils";
 

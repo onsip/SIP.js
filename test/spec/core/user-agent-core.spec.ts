@@ -1,6 +1,6 @@
-import { C } from "../../../src/Constants";
 import {
   AckableIncomingResponseWithSession,
+  C,
   constructOutgoingResponse,
   IncomingByeRequest,
   IncomingInfoRequest,
@@ -20,6 +20,7 @@ import {
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,
+  Parser,
   PrackableIncomingResponseWithSession,
   Session,
   SessionDelegate,
@@ -34,7 +35,6 @@ import {
   UserAgentCore,
   UserAgentCoreConfiguration
 } from "../../../src/core";
-import { Parser } from "../../../src/Parser";
 import { makeUserAgentCoreConfigurationFromUA, UA } from "../../../src/UA";
 
 import {

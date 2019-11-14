@@ -15,6 +15,7 @@ import {
   Levels,
   Logger,
   LoggerFactory,
+  Parser,
   Transport,
   TransportError,
   URI,
@@ -26,7 +27,6 @@ import {
   createRandomToken,
   str_utf8_length
 } from "../core/messages/utils";
-import { Parser } from "../Parser";
 import { LIBRARY_VERSION } from "../version";
 
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
