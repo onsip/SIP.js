@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 
-import { C } from "../Constants";
 import {
   AckableIncomingResponseWithSession,
   Body,
@@ -81,8 +80,6 @@ export abstract class Session {
   /** @internal */
   public logger: Logger;
   /** @internal */
-  public method = C.INVITE;
-  /** @internal */
   public abstract body: BodyAndContentType | string | undefined;
   /** @internal */
   public abstract localIdentity: NameAddrHeader;
@@ -133,7 +130,7 @@ export abstract class Session {
   /** @internal */
   protected passedOptions: any;
   /** @internal */
-  protected rel100 = C.supported.UNSUPPORTED;
+  protected rel100: "none" | "required" | "supported" = "none";
   /** @internal */
   protected renderbody: string | undefined;
   /** @internal */

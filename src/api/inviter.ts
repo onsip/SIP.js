@@ -1,7 +1,7 @@
-import { C } from "../Constants";
 import {
   AckableIncomingResponseWithSession,
   Body,
+  C,
   Grammar,
   IncomingResponse,
   NameAddrHeader,
@@ -143,7 +143,6 @@ export class Inviter extends Session {
 
     extraHeaders.push("Contact: " + contact);
 
-    // This is UA.C.ALLOWED_METHODS, removed to get around circular dependency
     extraHeaders.push("Allow: " + [
       "ACK",
       "CANCEL",
@@ -170,7 +169,7 @@ export class Inviter extends Session {
 
     // Request
     this.request = userAgent.userAgentCore.makeOutgoingRequestMessage(
-      this.method,
+      C.INVITE,
       targetURI,
       fromURI,
       toURI,
@@ -786,13 +785,13 @@ export class Inviter extends Session {
         this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
         this.stateTransition(SessionState.Terminated);
-        return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
+        return Promise.reject(new Error("Bad Media Description"));
       case SignalingState.HaveLocalOffer:
         // INVITE with offer, so MUST have answer at this point, so invalid state.
         this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
         this.stateTransition(SessionState.Terminated);
-        return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
+        return Promise.reject(new Error("Bad Media Description"));
       case SignalingState.HaveRemoteOffer: {
         // INVITE without offer, received offer in 2xx, so MUST send answer in ACK.
         if (!this.dialog.offer) {

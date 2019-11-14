@@ -1,4 +1,3 @@
-import { C } from "../Constants";
 import {
   Body,
   Exception,
@@ -112,13 +111,14 @@ export class Invitation extends Session {
 
     // Set 100rel if necessary
     const request = this.request;
-    const set100rel = (header: string, relSetting: C.supported) => {
-      if (request.hasHeader(header) && (request.getHeader(header) as string).toLowerCase().indexOf("100rel") >= 0) {
-        this.rel100 = relSetting;
-      }
-    };
-    set100rel("require", C.supported.REQUIRED);
-    set100rel("supported", C.supported.SUPPORTED);
+    const requireHeader = request.getHeader("require");
+    if (requireHeader && requireHeader.toLowerCase().indexOf("100rel") >= 0) {
+      this.rel100 = "required";
+    }
+    const supportedHeader = request.getHeader("supported");
+    if (supportedHeader && supportedHeader.toLowerCase().indexOf("100rel") >= 0) {
+      this.rel100 = "supported";
+    }
 
     // Set the toTag on the incoming request to the toTag which
     // will be used in the response to the incoming request!!!
@@ -183,7 +183,7 @@ export class Invitation extends Session {
    * @internal
    */
   get autoSendAnInitialProvisionalResponse(): boolean {
-    return this.rel100 === C.supported.REQUIRED ? false : true;
+    return this.rel100 === "required" ? false : true;
   }
 
   /** Incoming INVITE request message. */
@@ -310,10 +310,10 @@ export class Invitation extends Session {
 
     // Standard provisional response.
     if (
-      !(this.rel100 === C.supported.REQUIRED) &&
-      !(this.rel100 === C.supported.SUPPORTED && options.rel100) &&
+      !(this.rel100 === "required") &&
+      !(this.rel100 === "supported" && options.rel100) &&
       !(
-        this.rel100 === C.supported.SUPPORTED &&
+        this.rel100 === "supported" &&
         this.userAgent.configuration.sipExtension100rel === SIPExtension.Required
       )
     ) {
