@@ -14,7 +14,7 @@ import {
   SignalingState,
   URI
 } from "../core";
-import { SessionStatus, TypeStrings } from "../Enums";
+import { SessionStatus } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Utils } from "../Utils";
 
@@ -81,7 +81,6 @@ export class Inviter extends Session {
     }
 
     // ClientContext properties
-    this.type = TypeStrings.InviteClientContext;
     this.logger = userAgent.getLogger("sip.inviter");
     if (options.body) {
       this.body = {
@@ -996,7 +995,6 @@ export class Inviter extends Session {
           this,
           this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions || {}
         );
-        this.emit("SessionDescriptionHandler-created", sdh);
         this.earlyMediaSessionDescriptionHandlers.set(session.id, sdh);
         return sdh
           .setDescription(response.body, sdhOptions, sdhModifiers)

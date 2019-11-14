@@ -29,10 +29,9 @@ import {
 import { UAStatus } from "../Enums";
 import { Parser } from "../Parser";
 import { LIBRARY_VERSION } from "../version";
-import {
-  SessionDescriptionHandler as WebSessionDescriptionHandler
-} from "../Web/SessionDescriptionHandler";
-import { Transport as WebTransport } from "../Web/Transport";
+
+import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
+import { Transport as WebTransport } from "../platform/web/transport";
 
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
@@ -78,6 +77,21 @@ export class UserAgent {
    */
   public static makeURI(uri: string): URI | undefined {
     return Grammar.URIParse(uri);
+  }
+
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      if ((options as any)[key] !== undefined) {
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
   }
 
   /** Default user agent options. */
@@ -157,7 +171,7 @@ export class UserAgent {
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  constructor(options: UserAgentOptions = {}) {
+  constructor(options: Partial<UserAgentOptions> = {}) {
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -172,7 +186,7 @@ export class UserAgent {
       // add a unique via host for each instance
       ...{ viaHost: createRandomToken(12) + ".invalid" },
       // apply any options passed in via the constructor
-      ...options
+      ...UserAgent.stripUndefinedProperties(options)
     };
 
     // viaHost is hack
@@ -233,7 +247,7 @@ export class UserAgent {
 
     // initialize transport
     this.transport = new this.options.transportConstructor(
-      this.getLogger("sip.transport"),
+      this.getLogger("sip.Transport"),
       this.options.transportOptions
     );
 

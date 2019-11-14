@@ -15,7 +15,7 @@ import {
   Timers
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
-import { SessionStatus, TypeStrings } from "../Enums";
+import { SessionStatus } from "../Enums";
 import { Exceptions } from "../Exceptions";
 
 import { InvitationAcceptOptions } from "./invitation-accept-options";
@@ -70,7 +70,6 @@ export class Invitation extends Session {
     super(userAgent);
 
     // ServerContext properties
-    this.type = TypeStrings.InviteServerContext;
     this.logger = userAgent.getLogger("sip.invitation", this.id);
     if (this.request.body) {
       this.body = this.request.body;

@@ -26,7 +26,7 @@ import {
   SignalingState
 } from "../core";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { SessionStatus, TypeStrings } from "../Enums";
+import { SessionStatus } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Utils } from "../Utils";
 
@@ -53,7 +53,7 @@ import { UserAgent } from "./user-agent";
  * A session provides real time communication between one or more participants.
  * @public
  */
-export abstract class Session extends EventEmitter {
+export abstract class Session {
   // DEPRECATED
   /** @internal */
   public static readonly C = SessionStatus;
@@ -76,8 +76,6 @@ export abstract class Session extends EventEmitter {
   public dialog: SessionDialog | undefined;
 
   // Property overlap with ClientContext & ServerContext Interfaces
-  /** @internal */
-  public type = TypeStrings.Session;
   /** @internal */
   public userAgent: UserAgent;
   /** @internal */
@@ -154,7 +152,6 @@ export abstract class Session extends EventEmitter {
   private _stateEventEmitter = new EventEmitter();
 
   private pendingReinvite: boolean = false;
-  private tones: any = undefined;
 
   /**
    * Constructor.
@@ -162,54 +159,21 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
-    super();
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
   }
 
   /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "SessionDescriptionHandler-created", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(event: "trackAdded" | "directionChanged", listener: () => void): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(name: string, callback: (...args: any[]) => void): this {
-    return super.on(name, callback);
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(event: "trackAdded" | "directionChanged"): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(event: string | symbol, ...args: any[]): boolean {
-    return super.emit(event, ...args);
-  }
-
-  /**
    * Session description handler.
+   * @remarks
+   * If `this` is an instance of `Invitation`,
+   * `sessionDescriptionHandler` will be defined when the session state changes to "established".
+   * If `this` is an instance of `Inviter` and an offer was sent in the INVITE,
+   * `sessionDescriptionHandler` will be defined when the session state changes to "establishing".
+   * If `this` is an instance of `Inviter` and an offer was not sent in the INVITE,
+   * `sessionDescriptionHandler` will be defined when the session state changes to "established".
+   * Otherwise `undefined`.
    */
   get sessionDescriptionHandler(): SessionDescriptionHandler | undefined {
     return this._sessionDescriptionHandler;
@@ -584,19 +548,9 @@ export abstract class Session extends EventEmitter {
    */
   protected onAckRequest(request: IncomingAckRequest): void {
     this.logger.log("Session.onAckRequest");
-    if (
-      this.state !== SessionState.Initial &&
-      this.state !== SessionState.Establishing &&
-      this.state !== SessionState.Established &&
-      this.state !== SessionState.Terminating
-    ) {
+    if (this.state !== SessionState.Established && this.state !== SessionState.Terminating) {
       this.logger.error(`ACK received while in state ${this.state}, dropping request`);
       return;
-    }
-
-    // FIXME: Review is this ever true? We're "Established" when dialog created in accept().
-    if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
-      this.stateTransition(SessionState.Established);
     }
 
     const dialog = this.dialog;
@@ -1105,7 +1059,6 @@ export abstract class Session extends EventEmitter {
     }
     this._sessionDescriptionHandler =
       this.sessionDescriptionHandlerFactory(this, this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions);
-    this.emit("SessionDescriptionHandler-created", this._sessionDescriptionHandler);
     return this._sessionDescriptionHandler;
   }
 
