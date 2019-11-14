@@ -58,11 +58,12 @@
     "node": ">=8.0"
   },
   "scripts": {
-    "prebuild": "tslint -p tsconfig-base.json -c tslint.json",
+    "prebuild": "npm run lint",
     "generate-grammar": "node build/grammarGenerator.js",
     "build-reg-bundle": "webpack --progress --config build/webpack.config.js --env.buildType reg",
     "build-min-bundle": "webpack --progress --config build/webpack.config.js --env.buildType min",
     "build-bundles": "npm run build-reg-bundle && npm run build-min-bundle",
+    "build-demo": "webpack --progress --config demo/webpack.config.js",
     "build-lib": "tsc -p src",
     "build-test": "tsc -p test",
     "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js dist/sip-$npm_package_version.min.js",
@@ -80,6 +81,7 @@
     "build-docs-api": "npm run extract-api && npm run document-api && npm run document-copy-api",
     "build-docs-core": "npm run extract-core && npm run document-core && npm run document-copy-core",
     "build-docs": "npm run build-lib && npm run build-docs-api && npm run build-docs-core",
+    "lint": "tslint -p tsconfig-base.json -c tslint.json",
     "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/version.ts"
   }
 }
