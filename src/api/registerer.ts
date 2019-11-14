@@ -187,11 +187,15 @@ export class Registerer {
       const doClose = () => {
         // If we are registered, unregister and resolve after our state changes
         if (!this.waiting && this._state === RegistererState.Registered) {
-          this.stateChange.once(() => resolve());
+          this.stateChange.once(() => {
+            this.terminated();
+            resolve();
+          });
           this.unregister();
           return;
         }
         // Otherwise just resolve
+        this.terminated();
         resolve();
       };
 
@@ -531,7 +535,7 @@ export class Registerer {
   }
 
   /**
-   * @deprecated
+   * @deprecated This should get cleaned up when Transport is reworked
    */
   private onTransportDisconnected(): void {
     this.unregistered();
@@ -573,6 +577,17 @@ export class Registerer {
   }
 
   /**
+   * Helper function, called when terminated.
+   */
+  private terminated(): void {
+    this.clearTimers();
+
+    if (this._state !== RegistererState.Terminated) {
+      this.stateTransition(RegistererState.Terminated);
+    }
+  }
+
+  /**
    * Transition registration state.
    */
   private stateTransition(newState: RegistererState): void {
@@ -585,24 +600,30 @@ export class Registerer {
       case RegistererState.Initial:
         if (
           newState !== RegistererState.Registered &&
-          newState !== RegistererState.Unregistered
+          newState !== RegistererState.Unregistered &&
+          newState !== RegistererState.Terminated
         ) {
           invalidTransition();
         }
         break;
       case RegistererState.Registered:
         if (
-          newState !== RegistererState.Unregistered
+          newState !== RegistererState.Unregistered &&
+          newState !== RegistererState.Terminated
         ) {
           invalidTransition();
         }
         break;
       case RegistererState.Unregistered:
         if (
-          newState !== RegistererState.Registered
+          newState !== RegistererState.Registered &&
+          newState !== RegistererState.Terminated
         ) {
           invalidTransition();
         }
+        break;
+      case RegistererState.Terminated:
+        invalidTransition();
         break;
       default:
         throw new Error("Unrecognized state.");
