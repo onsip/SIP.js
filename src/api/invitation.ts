@@ -14,8 +14,7 @@ import {
   Timers
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
-import { Exceptions } from "../Exceptions";
-
+import { ContentTypeUnsupportedError, SessionDescriptionHandlerError, SessionTerminatedError } from "./exceptions";
 import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
 import { InvitationRejectOptions } from "./invitation-reject-options";
@@ -595,7 +594,7 @@ export class Invitation extends Session {
             try {
               this.incomingInviteRequest.reject({ statusCode: 504 });
               this.stateTransition(SessionState.Terminated);
-              reject(new Exceptions.TerminatedSessionError());
+              reject(new SessionTerminatedError());
             } catch (error) {
               reject(error);
             }
@@ -687,15 +686,12 @@ export class Invitation extends Session {
   private onContextError(error: Error): void {
     let statusCode = 480;
     if (error instanceof Exception) { // There might be interest in catching these Exceptions.
-      if (error instanceof Exceptions.SessionDescriptionHandlerError) {
+      if (error instanceof SessionDescriptionHandlerError) {
         this.logger.error(error.message);
-        if (error.error) {
-          this.logger.error(error.error);
-        }
-      } else if (error instanceof Exceptions.TerminatedSessionError) {
+      } else if (error instanceof SessionTerminatedError) {
         // PRACK never arrived, so we timed out waiting for it.
         this.logger.warn("Incoming session terminated while waiting for PRACK.");
-      } else if (error instanceof Exceptions.UnsupportedSessionDescriptionContentTypeError) {
+      } else if (error instanceof ContentTypeUnsupportedError) {
         statusCode = 415;
       } else if (error instanceof Exception) {
         this.logger.error(error.message);
@@ -727,7 +723,7 @@ export class Invitation extends Session {
 
   private prackNeverArrived(): void {
     if (this.waitingForPrackReject) {
-      this.waitingForPrackReject(new Exceptions.TerminatedSessionError());
+      this.waitingForPrackReject(new SessionTerminatedError());
     }
     this.waitingForPrackPromise = undefined;
     this.waitingForPrackResolve = undefined;

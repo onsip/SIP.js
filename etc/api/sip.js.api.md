@@ -32,6 +32,13 @@ export interface ByerByeOptions {
 export interface ByerOptions {
 }
 
+// Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
+// 
+// @public
+export class ContentTypeUnsupportedError extends Exception {
+    constructor(message?: string);
+}
+
 // @public
 export interface Emitter<T> {
     off(listener: (data: T) => void): void;
@@ -401,8 +408,6 @@ export interface RegistererUnregisterOptions {
     requestOptions?: RequestOptions;
 }
 
-// Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
-// 
 // @public
 export class RequestPendingError extends Exception {
     // @internal
@@ -569,6 +574,11 @@ export interface SessionDescriptionHandler {
 }
 
 // @public
+export class SessionDescriptionHandlerError extends Exception {
+    constructor(message?: string);
+}
+
+// @public
 export interface SessionDescriptionHandlerFactory {
     (session: Session, options?: object): SessionDescriptionHandler;
 }
@@ -644,6 +654,11 @@ export enum _SessionStatus {
     STATUS_WAITING_FOR_ANSWER = 4,
     // (undocumented)
     STATUS_WAITING_FOR_PRACK = 6
+}
+
+// @public
+export class SessionTerminatedError extends Exception {
+    constructor();
 }
 
 // @public

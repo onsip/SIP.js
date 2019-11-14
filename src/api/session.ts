@@ -27,9 +27,8 @@ import {
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { Exceptions } from "../Exceptions";
-
 import { Emitter, makeEmitter } from "./emitter";
+import { ContentTypeUnsupportedError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
 import { Notification } from "./notification";
@@ -988,7 +987,7 @@ export abstract class Session {
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       if (!sdh.hasDescription(answer.contentType)) {
-        return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
+        return Promise.reject(new ContentTypeUnsupportedError());
       }
     } catch (error) {
       this.logger.error("Session.setAnswer: SDH hasDescription threw...");
@@ -1026,7 +1025,7 @@ export abstract class Session {
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       if (!sdh.hasDescription(offer.contentType)) {
-        return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
+        return Promise.reject(new ContentTypeUnsupportedError());
       }
     } catch (error) {
       this.logger.error("Session.setOfferAndGetAnswer: SDH hasDescription threw...");

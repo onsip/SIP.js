@@ -10,7 +10,6 @@ import {
   URI
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
-import { Exceptions } from "../Exceptions";
 
 import { PublisherOptions } from "./publisher-options";
 import { PublisherPublishOptions } from "./publisher-publish-options";
@@ -290,13 +289,11 @@ export class Publisher extends EventEmitter {
     this.pubRequestBody = undefined;
 
     if (this.pubRequestEtag === undefined) {
-      // Request not valid
-      throw new Exceptions.MethodParameterError("Publish", "Body", undefined);
+      throw new Error("Etag undefined");
     }
 
     if (this.pubRequestExpires === 0) {
-      // Request not valid
-      throw new Exceptions.MethodParameterError("Publish", "Expire", this.pubRequestExpires);
+      throw new Error("Expires zero");
     }
 
     this.sendPublishRequest();

@@ -4,12 +4,12 @@ import {
   BodyAndContentType,
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
+  SessionDescriptionHandlerError,
   SessionDescriptionHandlerModifier,
   SessionDescriptionHandlerOptions
 } from "../../api";
 import { Logger } from "../../core";
 import * as Modifiers from "./modifiers";
-import { SessionDescriptionHandlerError } from "./session-description-handler-error";
 
 export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptions {
   peerConnectionOptions?: PeerConnectionOptions;
