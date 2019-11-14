@@ -96,14 +96,15 @@ export namespace Parser {
           parsed = undefined;
           break;
         }
-
-        for (const header in parsed) {
-          if (parsed[header]) {
-            message.addHeader("record-route", headerValue.substring(parsed[header].position, parsed[header].offset));
-            message.headers["Record-Route"][message.getHeaders("record-route").length - 1].parsed =
-              parsed[header].parsed;
-          }
+        if (!(parsed instanceof Array)) {
+          parsed = undefined;
+          break;
         }
+
+        parsed.forEach((header) => {
+          message.addHeader("record-route", headerValue.substring(header.position, header.offset));
+          message.headers["Record-Route"][message.getHeaders("record-route").length - 1].parsed = header.parsed;
+        });
         break;
       case "call-id":
       case "i":
