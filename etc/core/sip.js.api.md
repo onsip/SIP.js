@@ -736,6 +736,20 @@ export class Parameters {
     setParam(key: string, value: any): void;
 }
 
+// Warning: (ae-internal-missing-underscore) The name "Parser" should be prefixed with an underscore because the declaration is marked as @internal
+// 
+// @internal
+export namespace Parser {
+    // (undocumented)
+    export function getHeader(data: any, headerStart: number): number;
+    // (undocumented)
+    export function parseHeader(message: IncomingRequestMessage | IncomingResponseMessage, data: any, headerStart: number, headerEnd: number): boolean | {
+        error: string;
+    };
+    // (undocumented)
+    export function parseMessage(data: string, logger: Logger): IncomingRequestMessage | IncomingResponseMessage | undefined;
+}
+
 // @public
 export interface PrackableIncomingResponseWithSession extends IncomingResponse {
     prack(options?: RequestOptions): OutgoingPrackRequest;

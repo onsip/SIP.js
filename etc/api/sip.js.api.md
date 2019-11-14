@@ -233,7 +233,7 @@ export class Message {
 }
 
 // @public
-export class Messager extends EventEmitter {
+export class Messager {
     constructor(userAgent: UserAgent, targetURI: URI, content: string, contentType?: string, options?: MessagerOptions);
     // @internal
     _dispose(): void;
