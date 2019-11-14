@@ -1,4 +1,10 @@
 import {
+  SIPExtension,
+  UserAgent,
+  UserAgentRegisteredOptionTags
+} from "../../../src/api";
+import {
+  DigestAuthentication,
   IncomingInviteRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
@@ -10,12 +16,12 @@ import {
   SubscriptionDelegate,
   Transport,
   URI,
+  UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "../../../src/core";
-import { UA } from "../../../src/UA";
-import { Utils } from "../../../src/Utils";
+import { createRandomToken } from "../../../src/core/messages/utils";
 
-export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: UA): void {
+export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: UserAgent): void {
   transport.send.and.callFake((message: string) => {
     // console.log(`Sending to ${ua.configuration.displayName}...`);
     // console.log(message);
@@ -32,7 +38,7 @@ export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: U
   });
 }
 
-export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, ua1: UA, ua2: UA): void {
+export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, ua1: UserAgent, ua2: UserAgent): void {
   transport.send.and.callFake((message: string) => {
     // console.log(`Sending to ${ua1.configuration.displayName} and ${ua2.configuration.displayName}...`);
     // console.log(message);
@@ -40,7 +46,7 @@ export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, u
     const incomingMessage1 = Parser.parseMessage(message, ua1.getLogger("sip.parser"));
     const incomingMessage2 = Parser.parseMessage(message, ua2.getLogger("sip.parser"));
 
-    const requestMatches = (incomingMessage: IncomingRequestMessage, ua: UA): boolean => {
+    const requestMatches = (incomingMessage: IncomingRequestMessage, ua: UserAgent): boolean => {
       // FIXME: Configuration URI is a bad mix of tyes currently. It also needs to exist.
       if (!(ua.configuration.uri instanceof URI)) {
         throw new Error("Configuration URI not instance of URI.");
@@ -178,47 +184,99 @@ export function makeMockUserAgentCoreDelegate(): jasmine.SpyObj<Required<UserAge
 }
 
 /** Mocked UA factory function. */
-export function makeMockUA(user: string, domain: string, displayName: string, transport: Transport): UA {
+export function makeMockUA(user: string, domain: string, displayName: string, transport: Transport): UserAgent {
   const log = new LoggerFactory();
   const viaHost = `${user}Host.invalid`;
-  const contactURI = new URI("sip", Utils.createRandomToken(8), viaHost, undefined, { transport: "ws" });
+  const contactURI = new URI("sip", createRandomToken(8), viaHost, undefined, { transport: "ws" });
   const ua = {
     applicants: {},
-    configuration: {
-      aor: new URI("sip", user, domain, undefined),
-      displayName,
-      noAnswerTimeout: 60000, // ms
-      sipjsId: Utils.createRandomToken(5),
-      uri: new URI("sip", user, domain, undefined),
-      userAgentString: `SIP.js/${displayName}`,
-      viaHost
-    },
+    publishers: {},
+    registerers: {},
+    sessions: {},
+    subscriptions: {},
+    transport,
     contact: {
       pubGruu: undefined,
       tempGruu: undefined,
       uri: contactURI,
       toString: () => "<" + contactURI.toString() + ">"
     },
-    earlySubscriptions: {},
+    configuration: {
+      displayName,
+      noAnswerTimeout: 60000, // ms
+      sipjsId: createRandomToken(5),
+      uri: new URI("sip", user, domain, undefined),
+      userAgentString: `SIP.js/${displayName}`,
+      viaHost
+    },
+    logger: log.getLogger("sip.ua"),
     getLogger: (category: string, label?: string) => log.getLogger(category, label),
     getLoggerFactory: () => log,
-    getSupportedResponseOptions: () => ["outbound"],
-    logger: log.getLogger("sip.ua"),
-    normalizeTarget: (target: string | URI): URI | undefined =>
-      Utils.normalizeTarget(target, ua.configuration.hostportParams),
-    publishers: {},
-    sessions: {},
-    subscriptions: {},
-    transport
-  } as unknown as UA;
+    getSupportedResponseOptions: () => ["outbound"]
+  } as unknown as UserAgent;
   if (!ua.configuration) {
     throw new Error("UA configuration undefined.");
   }
   if (!ua.configuration.uri || !(ua.configuration.uri instanceof URI)) {
     throw new Error("UA configuration uri undefined.");
   }
-  const hostportParams = ua.configuration.uri.clone();
-  hostportParams.user = undefined;
-  ua.configuration.hostportParams = hostportParams.toRaw().replace(/^sip:/i, "");
   return ua;
 }
+
+/** Hijacked from UserAgent.initCore() */
+export function makeUserAgentCoreConfigurationFromUserAgent(ua: UserAgent): UserAgentCoreConfiguration {
+    // supported options
+    let supportedOptionTags: Array<string> = [];
+    supportedOptionTags.push("outbound"); // TODO: is this really supported?
+    if (ua.configuration.sipExtension100rel === SIPExtension.Supported) {
+      supportedOptionTags.push("100rel");
+    }
+    if (ua.configuration.sipExtensionReplaces === SIPExtension.Supported) {
+      supportedOptionTags.push("replaces");
+    }
+    if (ua.configuration.sipExtensionExtraSupported) {
+      supportedOptionTags.push(...ua.configuration.sipExtensionExtraSupported);
+    }
+    if (!ua.configuration.hackAllowUnregisteredOptionTags) {
+      supportedOptionTags = supportedOptionTags.filter((optionTag) => UserAgentRegisteredOptionTags[optionTag]);
+    }
+    supportedOptionTags = Array.from(new Set(supportedOptionTags)); // array of unique values
+
+    // FIXME: TODO: This was ported, but this is and was just plain broken.
+    const supportedOptionTagsResponse = supportedOptionTags.slice();
+    if (ua.contact.pubGruu || ua.contact.tempGruu) {
+      supportedOptionTagsResponse.push("gruu");
+    }
+
+    // core configuration
+    const userAgentCoreConfiguration: UserAgentCoreConfiguration = {
+      aor: ua.configuration.uri,
+      contact: ua.contact,
+      displayName: ua.configuration.displayName,
+      loggerFactory: ua.getLoggerFactory(),
+      hackViaTcp: ua.configuration.hackViaTcp,
+      routeSet:
+        ua.configuration.usePreloadedRoute && ua.transport.server && ua.transport.server.sipUri ?
+          [ua.transport.server.sipUri] :
+          [],
+      supportedOptionTags,
+      supportedOptionTagsResponse,
+      sipjsId: ua.configuration.sipjsId,
+      userAgentHeaderFieldValue: ua.configuration.userAgentString,
+      viaForceRport: ua.configuration.forceRport,
+      viaHost: ua.configuration.viaHost,
+      authenticationFactory: () => {
+        const username =
+          ua.configuration.authorizationUsername ?
+            ua.configuration.authorizationUsername :
+            ua.configuration.uri.user; // if authorization username not provided, use uri user as username
+        const password =
+          ua.configuration.authorizationPassword ?
+            ua.configuration.authorizationPassword :
+            undefined;
+        return new DigestAuthentication(ua.getLoggerFactory(), username, password);
+      },
+      transportAccessor: () => ua.transport
+    };
+    return userAgentCoreConfiguration;
+  }
