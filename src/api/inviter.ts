@@ -14,14 +14,12 @@ import {
   SignalingState,
   URI
 } from "../core";
-import { SessionStatus } from "../Enums";
-import { Exceptions } from "../Exceptions";
 import { Utils } from "../Utils";
 
 import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
-import { Session } from "./session";
+import { _SessionStatus, Session } from "./session";
 import {
   BodyAndContentType,
   SessionDescriptionHandler
@@ -76,8 +74,8 @@ export class Inviter extends Session {
     options.params = options.params || {};
 
     // Check Session Status
-    if (this.status !== SessionStatus.STATUS_NULL) {
-      throw new Exceptions.InvalidStateError(this.status);
+    if (this.status !== _SessionStatus.STATUS_NULL) {
+      throw new Error(`Invalid status ${this.status}`);
     }
 
     // ClientContext properties
@@ -362,7 +360,7 @@ export class Inviter extends Session {
       // transition state
       this.stateTransition(SessionState.Establishing);
 
-      this.status = SessionStatus.STATUS_INVITE_SENT;
+      this.status = _SessionStatus.STATUS_INVITE_SENT;
       return Promise.resolve(this.sendInvite(options));
     }
 
@@ -384,7 +382,7 @@ export class Inviter extends Session {
         // transition state
         this.stateTransition(SessionState.Establishing);
 
-        this.status = SessionStatus.STATUS_INVITE_SENT;
+        this.status = _SessionStatus.STATUS_INVITE_SENT;
         this.request.body = { body: body.content, contentType: body.contentType };
         return this.sendInvite(options);
       })
@@ -803,7 +801,7 @@ export class Inviter extends Session {
         };
         return this.setOfferAndGetAnswer(this.dialog.offer, options)
           .then((body) => {
-            this.status = SessionStatus.STATUS_CONFIRMED;
+            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
           })
@@ -822,7 +820,7 @@ export class Inviter extends Session {
           }
           this.setSessionDescriptionHandler(sdh);
           this.earlyMediaSessionDescriptionHandlers.delete(session.id);
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -854,7 +852,7 @@ export class Inviter extends Session {
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -878,7 +876,7 @@ export class Inviter extends Session {
                 body: { contentDisposition: "render", contentType: this.rendertype, content: this.renderbody }
               };
             }
-            this.status = SessionStatus.STATUS_CONFIRMED;
+            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
           })
@@ -920,7 +918,7 @@ export class Inviter extends Session {
     const session = inviteResponse.session;
 
     // Ported - Set status.
-    this.status = SessionStatus.STATUS_1XX_RECEIVED;
+    this.status = _SessionStatus.STATUS_1XX_RECEIVED;
 
     // Ported - Set assertedIdentity.
     if (response.hasHeader("P-Asserted-Identity")) {
@@ -1005,7 +1003,7 @@ export class Inviter extends Session {
             inviteResponse.prack({ extraHeaders, body });
           })
           .catch((error) => {
-            if (this.status === SessionStatus.STATUS_TERMINATED) {
+            if (this.status === _SessionStatus.STATUS_TERMINATED) {
               throw error;
             }
             this.stateTransition(SessionState.Terminated);
@@ -1030,7 +1028,7 @@ export class Inviter extends Session {
           };
           return this.setAnswer(answer, options)
             .catch((error: Error) => {
-              if (this.status === SessionStatus.STATUS_TERMINATED) {
+              if (this.status === _SessionStatus.STATUS_TERMINATED) {
                 throw error;
               }
               this.stateTransition(SessionState.Terminated);

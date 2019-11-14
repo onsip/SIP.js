@@ -25,7 +25,6 @@ import {
   SignalingState
 } from "../core";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { SessionStatus } from "../Enums";
 import { Exceptions } from "../Exceptions";
 import { Utils } from "../Utils";
 
@@ -49,13 +48,31 @@ import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 
 /**
+ * Deprecated
+ * @internal
+ */
+export enum _SessionStatus {
+  // Session states
+  STATUS_NULL,
+  STATUS_INVITE_SENT,
+  STATUS_1XX_RECEIVED,
+  STATUS_INVITE_RECEIVED,
+  STATUS_WAITING_FOR_ANSWER,
+  STATUS_ANSWERED,
+  STATUS_WAITING_FOR_PRACK,
+  STATUS_WAITING_FOR_ACK,
+  STATUS_CANCELED,
+  STATUS_TERMINATED,
+  STATUS_ANSWERED_WAITING_FOR_PRACK,
+  STATUS_EARLY_MEDIA,
+  STATUS_CONFIRMED
+}
+
+/**
  * A session provides real time communication between one or more participants.
  * @public
  */
 export abstract class Session {
-  // DEPRECATED
-  /** @internal */
-  public static readonly C = SessionStatus;
 
   /**
    * Property reserved for use by instance owner.
@@ -113,9 +130,6 @@ export abstract class Session {
   /** Accepted time. */
   /** @internal */
   public startTime: Date | undefined;
-  /** DEPRECATED: Session status */
-  /** @internal */
-  public status: SessionStatus =  SessionStatus.STATUS_NULL;
 
   /** True if an error caused session termination. */
   /** @internal */
@@ -139,6 +153,8 @@ export abstract class Session {
   protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+  /** @internal */
+  protected status: _SessionStatus = _SessionStatus.STATUS_NULL;
   /** @internal */
   protected expiresTimer: any = undefined;
   /** @internal */
@@ -449,7 +465,7 @@ export abstract class Session {
   public _close(): void {
     this.logger.log(`Session[${this.id}]._close`);
 
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
+    if (this.status === _SessionStatus.STATUS_TERMINATED) {
       return;
     }
 
@@ -468,7 +484,7 @@ export abstract class Session {
       clearTimeout(this.userNoAnswerTimer);
     }
 
-    this.status = SessionStatus.STATUS_TERMINATED;
+    this.status = _SessionStatus.STATUS_TERMINATED;
 
     if (!this.id) {
       throw new Error("Session id undefined.");
@@ -572,17 +588,17 @@ export abstract class Session {
         const body = getBody(request.message);
         // If the ACK doesn't have an answer, nothing to be done.
         if (!body) {
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         if (body.contentDisposition === "render") {
           this.renderbody = body.content;
           this.rendertype = body.contentType;
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         if (body.contentDisposition !== "session") {
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         // Receved answer in ACK.
@@ -591,7 +607,7 @@ export abstract class Session {
           sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
         };
         this.setAnswer(body, options)
-          .then(() => { this.status = SessionStatus.STATUS_CONFIRMED; })
+          .then(() => { this.status = _SessionStatus.STATUS_CONFIRMED; })
           .catch((error: Error) => {
             this.logger.error(error.message);
             this.isFailed = true;
@@ -799,7 +815,7 @@ export abstract class Session {
       return;
     }
 
-    if (this.status === SessionStatus.STATUS_CONFIRMED) {
+    if (this.status === _SessionStatus.STATUS_CONFIRMED) {
       // RFC 3515 2.4.1
       if (!request.message.hasHeader("refer-to")) {
         this.logger.warn("Invalid REFER packet. A refer-to header is required. Rejecting.");

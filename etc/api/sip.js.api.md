@@ -423,10 +423,6 @@ export abstract class Session {
     abstract body: BodyAndContentType | string | undefined;
     // @internal
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
-    // Warning: (ae-forgotten-export) The symbol "SessionStatus" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    static readonly C: typeof SessionStatus;
     // @internal
     _close(): void;
     // @internal (undocumented)
@@ -477,8 +473,6 @@ export abstract class Session {
     // 
     // @internal (undocumented)
     logger: Logger;
-    // @internal (undocumented)
-    method: string;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -509,10 +503,8 @@ export abstract class Session {
     referral: Inviter | undefined;
     // @internal (undocumented)
     referrer: Referrer | undefined;
-    // Warning: (ae-forgotten-export) The symbol "C" needs to be exported by the entry point index.d.ts
-    // 
     // @internal (undocumented)
-    protected rel100: C.supported;
+    protected rel100: "none" | "required" | "supported";
     // @internal (undocumented)
     abstract remoteIdentity: NameAddrHeader;
     // @internal (undocumented)
@@ -550,7 +542,7 @@ export abstract class Session {
     // @internal
     protected stateTransition(newState: SessionState): void;
     // @internal (undocumented)
-    status: SessionStatus;
+    protected status: _SessionStatus;
     // @internal (undocumented)
     userAgent: UserAgent;
     // @internal (undocumented)
@@ -622,6 +614,36 @@ export enum SessionState {
     Terminated = "Terminated",
     // (undocumented)
     Terminating = "Terminating"
+}
+
+// @internal
+export enum _SessionStatus {
+    // (undocumented)
+    STATUS_1XX_RECEIVED = 2,
+    // (undocumented)
+    STATUS_ANSWERED = 5,
+    // (undocumented)
+    STATUS_ANSWERED_WAITING_FOR_PRACK = 10,
+    // (undocumented)
+    STATUS_CANCELED = 8,
+    // (undocumented)
+    STATUS_CONFIRMED = 12,
+    // (undocumented)
+    STATUS_EARLY_MEDIA = 11,
+    // (undocumented)
+    STATUS_INVITE_RECEIVED = 3,
+    // (undocumented)
+    STATUS_INVITE_SENT = 1,
+    // (undocumented)
+    STATUS_NULL = 0,
+    // (undocumented)
+    STATUS_TERMINATED = 9,
+    // (undocumented)
+    STATUS_WAITING_FOR_ACK = 7,
+    // (undocumented)
+    STATUS_WAITING_FOR_ANSWER = 4,
+    // (undocumented)
+    STATUS_WAITING_FOR_PRACK = 6
 }
 
 // @public
@@ -789,10 +811,6 @@ export class UserAgent {
         [id: string]: Session;
     };
     start(): Promise<void>;
-    // Warning: (ae-forgotten-export) The symbol "UAStatus" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    status: UAStatus;
     stop(): Promise<void>;
     protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions>;
     // @internal (undocumented)

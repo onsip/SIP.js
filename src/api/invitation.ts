@@ -14,13 +14,12 @@ import {
   Timers
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
-import { SessionStatus } from "../Enums";
 import { Exceptions } from "../Exceptions";
 
 import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
 import { InvitationRejectOptions } from "./invitation-reject-options";
-import { Session } from "./session";
+import { _SessionStatus, Session } from "./session";
 import {
   SessionDescriptionHandlerModifier,
   SessionDescriptionHandlerOptions
@@ -104,7 +103,7 @@ export class Invitation extends Session {
     this.logger = userAgent.getLogger("sip.invitation", this.id);
 
     // Update status
-    this.status = SessionStatus.STATUS_INVITE_RECEIVED;
+    this.status = _SessionStatus.STATUS_INVITE_RECEIVED;
 
     // Save the session into the ua sessions collection.
     this.userAgent.sessions[this.id] = this;
@@ -129,7 +128,7 @@ export class Invitation extends Session {
     this.request.toTag = (incomingInviteRequest as any).toTag;
 
     // Update status again - sigh
-    this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
+    this.status = _SessionStatus.STATUS_WAITING_FOR_ANSWER;
 
     // The following mapping values are RECOMMENDED:
     // ...
@@ -150,7 +149,7 @@ export class Invitation extends Session {
     if (request.hasHeader("expires")) {
       const expires: number = Number(request.getHeader("expires") || 0) * 1000;
       this.expiresTimer = setTimeout(() => {
-        if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
+        if (this.status === _SessionStatus.STATUS_WAITING_FOR_ANSWER) {
           incomingInviteRequest.reject({ statusCode: 487 });
           this.stateTransition(SessionState.Terminated);
         }
@@ -264,17 +263,17 @@ export class Invitation extends Session {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
     // Ported
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
+    if (this.status === _SessionStatus.STATUS_TERMINATED) {
       this.logger.warn("Unexpected call for progress while terminated, ignoring");
       return Promise.resolve();
     }
     // Added
-    if (this.status === SessionStatus.STATUS_ANSWERED) {
+    if (this.status === _SessionStatus.STATUS_ANSWERED) {
       this.logger.warn("Unexpected call for progress while answered, ignoring");
       return Promise.resolve();
     }
     // Added
-    if (this.status === SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
+    if (this.status === _SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
       this.logger.warn("Unexpected call for progress while answered (waiting for prack), ignoring");
       return Promise.resolve();
     }
@@ -289,7 +288,7 @@ export class Invitation extends Session {
     // responses were sent before the first was acknowledged, the UAS could
     // not be certain these were received in order.
     // https://tools.ietf.org/html/rfc3262#section-3
-    if (this.status ===  SessionStatus.STATUS_WAITING_FOR_PRACK) {
+    if (this.status ===  _SessionStatus.STATUS_WAITING_FOR_PRACK) {
       this.logger.warn("Unexpected call for progress while waiting for prack, ignoring");
       return Promise.resolve();
     }
@@ -355,8 +354,8 @@ export class Invitation extends Session {
     }
 
     // Check Session Status
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      throw new Exceptions.InvalidStateError(this.status);
+    if (this.status === _SessionStatus.STATUS_TERMINATED) {
+      throw new Error(`Invalid status ${this.status}`);
     }
 
     this.logger.log("rejecting RTCSession");
@@ -443,11 +442,11 @@ export class Invitation extends Session {
     // reliable provisional responses (as opposed to retransmissions of
     // unacknowledged ones) after sending a final response to a request.
     // https://tools.ietf.org/html/rfc3262#section-3
-    if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK) {
-      this.status = SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK;
+    if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
+      this.status = _SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK;
       return this.waitForArrivalOfPrack()
         .then(() => {
-          this.status = SessionStatus.STATUS_ANSWERED;
+          this.status = _SessionStatus.STATUS_ANSWERED;
           clearTimeout(this.userNoAnswerTimer); // Ported
         })
         .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, options))
@@ -455,13 +454,13 @@ export class Invitation extends Session {
     }
 
     // Ported
-    if (this.status === SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-      this.status = SessionStatus.STATUS_ANSWERED;
+    if (this.status === _SessionStatus.STATUS_WAITING_FOR_ANSWER) {
+      this.status = _SessionStatus.STATUS_ANSWERED;
     } else {
-      return Promise.reject(new Exceptions.InvalidStateError(this.status));
+      return Promise.reject(new Error(`Invalid status ${this.status}`));
     }
 
-    this.status = SessionStatus.STATUS_ANSWERED;
+    this.status = _SessionStatus.STATUS_ANSWERED;
     clearTimeout(this.userNoAnswerTimer); // Ported
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
       .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
@@ -545,7 +544,7 @@ export class Invitation extends Session {
     let body: Body | undefined;
 
     // Ported - set status.
-    this.status = SessionStatus.STATUS_WAITING_FOR_PRACK;
+    this.status = _SessionStatus.STATUS_WAITING_FOR_PRACK;
 
     return new Promise((resolve, reject) => {
       let waitingForPrack = true;
@@ -573,8 +572,8 @@ export class Invitation extends Session {
                   try {
                     prackResponse = prackRequest.accept({ statusCode: 200, body: prackResponseBody });
                     // Ported - set status.
-                    if (this.status === SessionStatus.STATUS_WAITING_FOR_PRACK) {
-                      this.status = SessionStatus.STATUS_WAITING_FOR_ANSWER;
+                    if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
+                      this.status = _SessionStatus.STATUS_WAITING_FOR_ANSWER;
                     }
                     this.prackArrived();
                     resolve({ prackRequest, prackResponse, progressResponse });

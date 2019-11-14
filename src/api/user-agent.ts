@@ -26,7 +26,6 @@ import {
   createRandomToken,
   str_utf8_length
 } from "../core/messages/utils";
-import { UAStatus } from "../Enums";
 import { Parser } from "../Parser";
 import { LIBRARY_VERSION } from "../version";
 
@@ -52,6 +51,18 @@ import {
 import { UserAgentState } from "./user-agent-state";
 
 declare var chrome: any;
+
+/**
+ * Deprecated
+ * @internal
+ */
+enum _UAStatus {
+  STATUS_INIT,
+  STATUS_STARTING,
+  STATUS_READY,
+  STATUS_USER_CLOSED,
+  STATUS_NOT_READY
+}
 
 /**
  * A user agent sends and receives requests using a `Transport`.
@@ -144,8 +155,6 @@ export class UserAgent {
   /** @internal */
   public subscriptions: {[id: string]: Subscription} = {};
   /** @internal */
-  public status: UAStatus = UAStatus.STATUS_INIT;
-  /** @internal */
   public transport: Transport;
 
   /** @internal */
@@ -163,6 +172,9 @@ export class UserAgent {
 
   private _state: UserAgentState = UserAgentState.Initial;
   private _stateEventEmitter = new EventEmitter();
+
+  /** @internal */
+  private status: _UAStatus = _UAStatus.STATUS_INIT;
 
   /** Unload listener. */
   private unloadListener = (() => { this.stop(); });
@@ -277,17 +289,17 @@ export class UserAgent {
    */
   public start(): Promise<void> {
     this.logger.log("user requested startup...");
-    if (this.status === UAStatus.STATUS_INIT) {
-      this.status = UAStatus.STATUS_STARTING;
+    if (this.status === _UAStatus.STATUS_INIT) {
+      this.status = _UAStatus.STATUS_STARTING;
       this.setTransportListeners();
       return this.transport.connect();
-    } else if (this.status === UAStatus.STATUS_USER_CLOSED) {
+    } else if (this.status === _UAStatus.STATUS_USER_CLOSED) {
       this.logger.log("resuming");
-      this.status = UAStatus.STATUS_READY;
+      this.status = _UAStatus.STATUS_READY;
       return this.transport.connect();
-    } else if (this.status === UAStatus.STATUS_STARTING) {
+    } else if (this.status === _UAStatus.STATUS_STARTING) {
       this.logger.log("UA is in STARTING status, not opening new connection");
-    } else if (this.status === UAStatus.STATUS_READY) {
+    } else if (this.status === _UAStatus.STATUS_READY) {
       this.logger.log("UA is in READY status, not resuming");
     } else {
       this.logger.error("Connection is down. Auto-Recovery system is trying to connect");
@@ -317,7 +329,7 @@ export class UserAgent {
   public async stop(): Promise<void> {
     this.logger.log(`Stopping user agent ${this.configuration.uri}...`);
 
-    if (this.status === UAStatus.STATUS_USER_CLOSED) {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
       this.logger.warn("UA already closed");
     }
 
@@ -377,7 +389,7 @@ export class UserAgent {
       }
     }
 
-    this.status = UAStatus.STATUS_USER_CLOSED;
+    this.status = _UAStatus.STATUS_USER_CLOSED;
 
     // Disconnect the transport and reset user agent core
     this.transport.disconnect();
@@ -460,10 +472,10 @@ export class UserAgent {
   // ==============================
 
   private onTransportError(): void {
-    if (this.status === UAStatus.STATUS_USER_CLOSED) {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
       return;
     }
-    this.status = UAStatus.STATUS_NOT_READY;
+    this.status = _UAStatus.STATUS_NOT_READY;
   }
 
   /**
@@ -497,7 +509,7 @@ export class UserAgent {
       return;
     }
 
-    if (this.status === UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
       this.logger.warn(`Received ${message.method} request in state USER_CLOSED. Dropping.`);
       return;
     }
