@@ -2,10 +2,8 @@ import {
   C,
   fromBodyLegacy,
   IncomingNotifyRequest,
-  IncomingRequestMessage,
   IncomingRequestWithSubscription,
   IncomingResponse,
-  IncomingResponseMessage,
   Logger,
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
@@ -15,7 +13,6 @@ import {
   URI,
   UserAgentCore
 } from "../core";
-import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
 import { Notification } from "./notification";
 import { BodyAndContentType } from "./session-description-handler";
@@ -146,15 +143,12 @@ export class Subscriber extends Subscription {
               this.dialog.delegate = {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
-                onTerminated: () => {
-                  this._dispose();
-                  this.onTerminated();
-                }
+                onTerminated: () => this._dispose()
               };
             }
             this.onNotify(result.success.request);
           } else if (result.failure) {
-            this.onFailed(result.failure.response);
+            this.unsubscribe();
           }
         });
         break;
@@ -167,8 +161,8 @@ export class Subscriber extends Subscription {
           const request = this.dialog.refresh();
           request.delegate = {
             onAccept: ((response) => this.onAccepted(response)),
-            onRedirect: ((response) => this.onFailed(response)),
-            onReject: ((response) => this.onFailed(response)),
+            onRedirect: ((response) => this.unsubscribe()),
+            onReject: ((response) => this.unsubscribe()),
           };
         }
         break;
@@ -210,17 +204,7 @@ export class Subscriber extends Subscription {
         break;
     }
     this._dispose();
-    this.onTerminated();
     return Promise.resolve();
-  }
-
-  /**
-   * Alias for `unsubscribe`.
-   * @deprecated Use `unsubscribe` instead.
-   * @internal
-   */
-  public _close(): Promise<void> {
-    return this.unsubscribe();
   }
 
   /**
@@ -255,97 +239,15 @@ export class Subscriber extends Subscription {
     return Promise.resolve();
   }
 
-  /**
-   * Registration of event listeners.
-   *
-   * @remarks
-   * The following events are emitted...
-   *  - "accepted" A 200-class final response to a SUBSCRIBE request was received.
-   *  - "failed" A non-200-class final response to a SUBSCRIBE request was received.
-   *  - "rejected" Emitted immediately after a "failed" event (yes, it's redundant).
-   *  - "notify" A NOTIFY request was received.
-   *  - SubscriptionState.Terminated The subscription is moving to or has moved to a terminated state.
-   *
-   * More than one SUBSCRIBE request may be sent, so "accepted", "failed" and "rejected"
-   * may be emitted multiple times. However these event will NOT be emitted for SUBSCRIBE
-   * requests with expires of zero (unsubscribe requests).
-   *
-   * Note that a "terminated" event does NOT indicate the subscription is in the "terminated"
-   * state as described in RFC 6665. Instead, a SubscriptionState.Terminated event indicates that this class
-   * is no longer usable and/or is in the process of becoming no longer usable.
-   *
-   * The order the events are emitted in is not deterministic. Some examples...
-   *  - "accepted" may occur multiple times
-   *  - "accepted" may follow "notify" and "notify" may follow "accepted"
-   *  - SubscriptionState.Terminated may follow "accepted" and "accepted" may follow SubscriptionState.Terminated
-   *  - SubscriptionState.Terminated may follow "notify" and "notify" may follow SubscriptionState.Terminated
-   *
-   * Hint: Experience suggests one workable approach to utilizing these events
-   * is to make use of "notify" and SubscriptionState.Terminated only. That is, call `subscribe()`
-   * and if a "notify" occurs then you have a subscription. If a SubscriptionState.Terminated
-   * event occurs then either a new subscription failed to be established or an
-   * established subscription has terminated or is in the process of terminating.
-   * Note that "notify" events may follow a SubscriptionState.Terminated event, but experience
-   * suggests it is reasonable to discontinue usage of this class after receipt
-   * of a SubscriptionState.Terminated event. The other events are informational, but as they do not
-   * arrive in a deterministic manner it is difficult to make use of them otherwise.
-   *
-   * @param name - Event name.
-   * @param callback - Callback.
-   * @internal
-   */
-  public on(
-    name: "accepted" | "failed" | "rejected",
-    callback: (message: IncomingResponseMessage, cause: string) => void
-  ): this;
-  /** @internal */
-  public on(name: "notify", callback: (notification: { request: IncomingRequestMessage }) => void): this;
-  /** @internal */
-  public on(name: "terminated", callback: () => void): this;
-  /** @internal */
-  public on(name: string, callback: (...args: any[]) => void): this {
-    return super.on(name, callback);
-  }
-
-  /** @internal */
-  public emit(
-    event: "accepted" | "failed" | "rejected",
-    message: IncomingResponseMessage, cause: string
-  ): boolean;
-  /** @internal */
-  public emit(event: "notify", notification: { request: IncomingRequestMessage }): boolean;
-  /** @internal */
-  public emit(event: "terminated"): boolean;
-  /** @internal */
-  public emit(event: string | symbol, ...args: any[]): boolean {
-    return super.emit(event, ...args);
-  }
-
   /** @internal */
   protected onAccepted(response: IncomingResponse): void {
-    const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
-    const cause: string = getReasonPhrase(statusCode);
-    this.emit("accepted", response.message, cause);
-  }
-
-  /** @internal */
-  protected onFailed(response?: IncomingResponse): void {
-    this._close();
-    if (response) {
-      const statusCode: number = response.message.statusCode ? response.message.statusCode : 0;
-      const cause: string = getReasonPhrase(statusCode);
-      this.emit("failed", response.message, cause);
-      this.emit("rejected", response.message, cause);
-    }
+    // NOTE: If you think you should do something with this response,
+    // please make sure you understand what it is you are doing and why.
+    // Per the RFC, the first NOTIFY is all that actually matters.
   }
 
   /** @internal */
   protected onNotify(request: IncomingNotifyRequest): void {
-    // DEPRECATED BEGIN
-    // request.accept(); // Send 200 response.
-    this.emit("notify", { request: request.message });
-    // DEPRECATED END
-
     // If we've set state to done, no further processing should take place
     // and we are only interested in cleaning up after the appropriate NOTIFY.
     if (this.disposed) {
@@ -406,7 +308,7 @@ export class Subscriber extends Subscription {
                 break;
             }
           }
-          this._close();
+          this.unsubscribe();
           break;
         default:
           break;
@@ -419,11 +321,6 @@ export class Subscriber extends Subscription {
     request.delegate = {
       onAccept: (response) => this.onAccepted(response)
     };
-  }
-
-  /** @internal */
-  protected onTerminated(): void {
-    this.emit("terminated");
   }
 
   private initContext(): SubscribeClientContext {
