@@ -9,12 +9,12 @@ Constructs a new instance of the `UserAgent` class.
 <b>Signature:</b>
 
 ```typescript
-constructor(options?: UserAgentOptions);
+constructor(options?: Partial<UserAgentOptions>);
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>UserAgentOptions</code> | Options bucket. See [UserAgentOptions](./sip.js.useragentoptions.md) for details. |
+|  options | <code>Partial&lt;UserAgentOptions&gt;</code> | Options bucket. See [UserAgentOptions](./sip.js.useragentoptions.md) for details. |
 

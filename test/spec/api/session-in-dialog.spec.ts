@@ -949,15 +949,11 @@ describe("API Session In-Dialog", () => {
           let carol: UserFake;
           let replacesInviter: Inviter;
           let replacesInvitation: Invitation;
-          let replacesInvitationEmitSpy: EventEmitterEmitSpy;
-          let replacesInvitationStateSpy: EmitterSpy<SessionState>;
 
           function resetSpies3(): void {
             resetSpies();
             carol.transportReceiveSpy.calls.reset();
             carol.transportSendSpy.calls.reset();
-            if (replacesInvitationEmitSpy) { replacesInvitationEmitSpy.calls.reset(); }
-            if (replacesInvitationStateSpy) { replacesInvitationStateSpy.calls.reset(); }
           }
 
           beforeEach(async () => {
@@ -977,10 +973,6 @@ describe("API Session In-Dialog", () => {
               alice.userAgent.delegate = {
                 onInvite: (session) => {
                   replacesInvitation = session;
-                  replacesInvitationEmitSpy
-                    = makeEventEmitterEmitSpy(replacesInvitation, alice.userAgent.getLogger("Alice"));
-                  replacesInvitationStateSpy
-                    = makeEmitterSpy(replacesInvitation.stateChange, alice.userAgent.getLogger("Alice"));
                 }
               };
               const callId = "unknown";
@@ -1022,10 +1014,6 @@ describe("API Session In-Dialog", () => {
               alice.userAgent.delegate = {
                 onInvite: (session) => {
                   replacesInvitation = session;
-                  replacesInvitationEmitSpy =
-                    makeEventEmitterEmitSpy(replacesInvitation, alice.userAgent.getLogger("Alice"));
-                  replacesInvitationStateSpy =
-                    makeEmitterSpy(replacesInvitation.stateChange, alice.userAgent.getLogger("Alice"));
                 }
               };
               const callId = invitation.request.callId;

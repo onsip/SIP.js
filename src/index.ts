@@ -6,6 +6,7 @@ export {
   LoggerFactory,
   NameAddrHeader,
   OutgoingRequestMessage as OutgoingRequest,
+  Parser,
   Timers,
   Transport,
   URI
@@ -21,7 +22,6 @@ export {
   UAStatus
 } from "./Enums";
 export { Exceptions } from "./Exceptions";
-export { Parser } from "./Parser";
 export { PublishContext } from "./PublishContext";
 export {
   ReferClientContext,

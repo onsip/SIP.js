@@ -9,7 +9,7 @@ A messager sends a [Message](./sip.js.message.md) (outgoing MESSAGE).
 <b>Signature:</b>
 
 ```typescript
-export declare class Messager extends EventEmitter 
+export declare class Messager 
 ```
 
 ## Constructors

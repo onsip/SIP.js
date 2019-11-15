@@ -20,7 +20,7 @@ import { UserAgent } from "./user-agent";
  *
  * @public
  */
-export abstract class Subscription extends EventEmitter {
+export abstract class Subscription {
 
   /**
    * Property reserved for use by instance owner.
@@ -54,7 +54,6 @@ export abstract class Subscription extends EventEmitter {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
-    super();
     this._logger = userAgent.getLogger("sip.subscription");
     this.userAgent = userAgent;
     this.delegate = options.delegate;

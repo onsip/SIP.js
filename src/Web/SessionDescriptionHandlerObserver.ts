@@ -20,10 +20,16 @@ export class SessionDescriptionHandlerObserver {
   }
 
   public trackAdded(): void {
+    if (this.session instanceof Session) {
+      return;
+    }
     this.session.emit("trackAdded");
   }
 
   public directionChanged(): void {
+    if (this.session instanceof Session) {
+      return;
+    }
     this.session.emit("directionChanged");
   }
 }

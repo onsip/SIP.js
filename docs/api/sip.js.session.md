@@ -9,7 +9,7 @@ A session provides real time communication between one or more participants.
 <b>Signature:</b>
 
 ```typescript
-export declare abstract class Session extends EventEmitter 
+export declare abstract class Session 
 ```
 
 ## Remarks

@@ -1,7 +1,8 @@
-import { C } from "../Constants";
 import {
   AckableIncomingResponseWithSession,
   Body,
+  C,
+  fromBodyLegacy,
   Grammar,
   IncomingResponse,
   NameAddrHeader,
@@ -14,14 +15,11 @@ import {
   SignalingState,
   URI
 } from "../core";
-import { SessionStatus, TypeStrings } from "../Enums";
-import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
-
+import { getReasonPhrase, newTag } from "../core/messages/utils";
 import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
-import { Session } from "./session";
+import { _SessionStatus, Session } from "./session";
 import {
   BodyAndContentType,
   SessionDescriptionHandler
@@ -76,12 +74,11 @@ export class Inviter extends Session {
     options.params = options.params || {};
 
     // Check Session Status
-    if (this.status !== SessionStatus.STATUS_NULL) {
-      throw new Exceptions.InvalidStateError(this.status);
+    if (this.status !== _SessionStatus.STATUS_NULL) {
+      throw new Error(`Invalid status ${this.status}`);
     }
 
     // ClientContext properties
-    this.type = TypeStrings.InviteClientContext;
     this.logger = userAgent.getLogger("sip.inviter");
     if (options.body) {
       this.body = {
@@ -98,7 +95,7 @@ export class Inviter extends Session {
     }
 
     // From Tag
-    const fromTag = Utils.newTag();
+    const fromTag = newTag();
 
     // Contact
     // Do not add ;ob in initial forming dialog requests if the registration over
@@ -144,7 +141,6 @@ export class Inviter extends Session {
 
     extraHeaders.push("Contact: " + contact);
 
-    // This is UA.C.ALLOWED_METHODS, removed to get around circular dependency
     extraHeaders.push("Allow: " + [
       "ACK",
       "CANCEL",
@@ -166,12 +162,12 @@ export class Inviter extends Session {
 
     let body: Body | undefined;
     if (this.body) {
-      body = Utils.fromBodyObj(this.body);
+      body = fromBodyLegacy(this.body);
     }
 
     // Request
     this.request = userAgent.userAgentCore.makeOutgoingRequestMessage(
-      this.method,
+      C.INVITE,
       targetURI,
       fromURI,
       toURI,
@@ -242,11 +238,22 @@ export class Inviter extends Session {
       this.sessionDescriptionHandler.close();
     }
 
+    // helper function
+    function getCancelReason(code: number, reason: string): string | undefined {
+      if (code && code < 200 || code > 699) {
+        throw new TypeError("Invalid statusCode: " + code);
+      } else if (code) {
+        const cause = code;
+        const text = getReasonPhrase(code) || reason;
+        return "SIP;cause=" + cause + ';text="' + text + '"';
+      }
+    }
+
     if (this.outgoingInviteRequest) {
       // the CANCEL may not be respected by peer(s), so don't transition to terminated
       let cancelReason: string | undefined;
       if (options.statusCode && options.reasonPhrase) {
-        cancelReason = Utils.getCancelReason(options.statusCode, options.reasonPhrase);
+        cancelReason = getCancelReason(options.statusCode, options.reasonPhrase);
       }
       this.outgoingInviteRequest.cancel(cancelReason, options);
     } else {
@@ -364,7 +371,7 @@ export class Inviter extends Session {
       // transition state
       this.stateTransition(SessionState.Establishing);
 
-      this.status = SessionStatus.STATUS_INVITE_SENT;
+      this.status = _SessionStatus.STATUS_INVITE_SENT;
       return Promise.resolve(this.sendInvite(options));
     }
 
@@ -386,7 +393,7 @@ export class Inviter extends Session {
         // transition state
         this.stateTransition(SessionState.Establishing);
 
-        this.status = SessionStatus.STATUS_INVITE_SENT;
+        this.status = _SessionStatus.STATUS_INVITE_SENT;
         this.request.body = { body: body.content, contentType: body.contentType };
         return this.sendInvite(options);
       })
@@ -787,13 +794,13 @@ export class Inviter extends Session {
         this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
         this.stateTransition(SessionState.Terminated);
-        return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
+        return Promise.reject(new Error("Bad Media Description"));
       case SignalingState.HaveLocalOffer:
         // INVITE with offer, so MUST have answer at this point, so invalid state.
         this.logger.error("Received 2xx response to INVITE without a session description");
         this.ackAndBye(inviteResponse, 400, "Missing session description");
         this.stateTransition(SessionState.Terminated);
-        return Promise.reject(new Error(C.causes.BAD_MEDIA_DESCRIPTION));
+        return Promise.reject(new Error("Bad Media Description"));
       case SignalingState.HaveRemoteOffer: {
         // INVITE without offer, received offer in 2xx, so MUST send answer in ACK.
         if (!this.dialog.offer) {
@@ -805,7 +812,7 @@ export class Inviter extends Session {
         };
         return this.setOfferAndGetAnswer(this.dialog.offer, options)
           .then((body) => {
-            this.status = SessionStatus.STATUS_CONFIRMED;
+            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
           })
@@ -824,7 +831,7 @@ export class Inviter extends Session {
           }
           this.setSessionDescriptionHandler(sdh);
           this.earlyMediaSessionDescriptionHandlers.delete(session.id);
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -856,7 +863,7 @@ export class Inviter extends Session {
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -880,7 +887,7 @@ export class Inviter extends Session {
                 body: { contentDisposition: "render", contentType: this.rendertype, content: this.renderbody }
               };
             }
-            this.status = SessionStatus.STATUS_CONFIRMED;
+            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
           })
@@ -922,7 +929,7 @@ export class Inviter extends Session {
     const session = inviteResponse.session;
 
     // Ported - Set status.
-    this.status = SessionStatus.STATUS_1XX_RECEIVED;
+    this.status = _SessionStatus.STATUS_1XX_RECEIVED;
 
     // Ported - Set assertedIdentity.
     if (response.hasHeader("P-Asserted-Identity")) {
@@ -996,7 +1003,6 @@ export class Inviter extends Session {
           this,
           this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions || {}
         );
-        this.emit("SessionDescriptionHandler-created", sdh);
         this.earlyMediaSessionDescriptionHandlers.set(session.id, sdh);
         return sdh
           .setDescription(response.body, sdhOptions, sdhModifiers)
@@ -1008,7 +1014,7 @@ export class Inviter extends Session {
             inviteResponse.prack({ extraHeaders, body });
           })
           .catch((error) => {
-            if (this.status === SessionStatus.STATUS_TERMINATED) {
+            if (this.status === _SessionStatus.STATUS_TERMINATED) {
               throw error;
             }
             this.stateTransition(SessionState.Terminated);
@@ -1033,7 +1039,7 @@ export class Inviter extends Session {
           };
           return this.setAnswer(answer, options)
             .catch((error: Error) => {
-              if (this.status === SessionStatus.STATUS_TERMINATED) {
+              if (this.status === _SessionStatus.STATUS_TERMINATED) {
                 throw error;
               }
               this.stateTransition(SessionState.Terminated);

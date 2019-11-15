@@ -1,5 +1,3 @@
-import { EventEmitter } from "events";
-
 import {
   Body,
   C,
@@ -8,7 +6,6 @@ import {
   OutgoingRequestMessage,
   URI
 } from "../core";
-
 import { MessagerMessageOptions } from "./messager-message-options";
 import { MessagerOptions } from "./messager-options";
 import { UserAgent } from "./user-agent";
@@ -17,7 +14,7 @@ import { UserAgent } from "./user-agent";
  * A messager sends a {@link Message} (outgoing MESSAGE).
  * @public
  */
-export class Messager extends EventEmitter {
+export class Messager {
   private logger: Logger;
   private request: OutgoingRequestMessage;
   private userAgent: UserAgent;
@@ -39,10 +36,9 @@ export class Messager extends EventEmitter {
     contentType: string = "text/plain",
     options: MessagerOptions = {}
   ) {
-    super();
 
     // Logger
-    this.logger = userAgent.getLogger("sip.messager");
+    this.logger = userAgent.getLogger("sip.Messager");
 
     // Default options params
     options.params = options.params || {};
