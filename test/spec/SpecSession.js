@@ -89,7 +89,7 @@ describe('Session', function() {
     });
 
     it('throws an error if tones is undefined', function() {
-      expect(function(){Session.dtmf(undefined);}).toThrowError('Invalid tones: undefined');
+      expect(function(){Session.dtmf(undefined);}).toThrowError('Invalid tone(s): undefined');
     });
 
     it('throws an error if the session status is incorrect', function() {
@@ -98,14 +98,18 @@ describe('Session', function() {
     });
 
     it('throws an error if tones is the wrong type', function() {
-      expect(function(){Session.dtmf(1);}).not.toThrowError('Invalid tones: 1');
+      expect(function(){Session.dtmf(1);}).not.toThrowError('Invalid tone(s): 1');
       Session.status = 12;
-      expect(function(){Session.dtmf('one');}).toThrowError('Invalid tones: one');
-      expect(function(){Session.dtmf(true);}).toThrowError('Invalid tones: true');
+      expect(function(){Session.dtmf('one');}).toThrowError('Invalid tone(s): one');
+      expect(function(){Session.dtmf(true);}).toThrowError('Invalid tone(s): true');
+    });
+
+    it('accepts 0 as an integer argument', function() {
+      expect(function(){Session.dtmf(0);}).not.toThrowError('Invalid tone(s): 0');
     });
 
     it('accepts a string argument', function() {
-      expect(function(){Session.dtmf('1');}).not.toThrowError('Invalid tones: 1');
+      expect(function(){Session.dtmf('1');}).not.toThrowError('Invalid tone(s): 1');
     });
 
     xit('throws an error if tone duration is invalid', function() {

@@ -9,8 +9,12 @@ A session provides real time communication between one or more participants.
 <b>Signature:</b>
 
 ```typescript
-export declare abstract class Session extends EventEmitter 
+export declare abstract class Session 
 ```
+
+## Remarks
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Session` class.
 
 ## Properties
 
@@ -29,8 +33,4 @@ export declare abstract class Session extends EventEmitter
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [invite(options)](./sip.js.session.invite.md) |  | Renegotiate the session. Sends a re-INVITE. |
-
-## Remarks
-
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Session` class.
 

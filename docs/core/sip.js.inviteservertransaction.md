@@ -12,6 +12,10 @@ INVITE Server Transaction.
 export declare class InviteServerTransaction extends ServerTransaction 
 ```
 
+## Remarks
+
+https://tools.ietf.org/html/rfc3261\#section-17.2.1
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -34,8 +38,4 @@ export declare class InviteServerTransaction extends ServerTransaction
 |  [receiveResponse(statusCode, response)](./sip.js.inviteservertransaction.receiveresponse.md) |  | Receive responses from TU for this transaction. |
 |  [retransmitAcceptedResponse()](./sip.js.inviteservertransaction.retransmitacceptedresponse.md) |  | Retransmit the last 2xx response. This is a noop if not in the "accepted" state. |
 |  [typeToString()](./sip.js.inviteservertransaction.typetostring.md) |  | For logging. |
-
-## Remarks
-
-https://tools.ietf.org/html/rfc3261\#section-17.2.1
 

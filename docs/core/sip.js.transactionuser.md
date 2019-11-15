@@ -12,6 +12,10 @@ Transaction User (TU).
 export interface TransactionUser 
 ```
 
+## Remarks
+
+The layer of protocol processing that resides above the transaction layer. Transaction users include the UAC core, UAS core, and proxy core. https://tools.ietf.org/html/rfc3261\#section-5 https://tools.ietf.org/html/rfc3261\#section-6
+
 ## Properties
 
 |  Property | Type | Description |
@@ -19,8 +23,4 @@ export interface TransactionUser
 |  [loggerFactory](./sip.js.transactionuser.loggerfactory.md) | <code>LoggerFactory</code> | Logger factory. |
 |  [onStateChange](./sip.js.transactionuser.onstatechange.md) | <code>(newState: TransactionState) =&gt; void</code> | Callback for notification of transaction state changes.<!-- -->Not called when transaction is constructed, so there is no notification of entering the initial transaction state. Otherwise, called once for each transaction state change. State changes adhere to the following RFCs. https://tools.ietf.org/html/rfc3261\#section-17 https://tools.ietf.org/html/rfc6026 |
 |  [onTransportError](./sip.js.transactionuser.ontransporterror.md) | <code>(error: TransportError) =&gt; void</code> | Callback for notification of a transport error.<!-- -->If a fatal transport error is reported by the transport layer (generally, due to fatal ICMP errors in UDP or connection failures in TCP), the condition MUST be treated as a 503 (Service Unavailable) status code. https://tools.ietf.org/html/rfc3261\#section-8.1.3.1 https://tools.ietf.org/html/rfc3261\#section-17.1.4 https://tools.ietf.org/html/rfc3261\#section-17.2.4 https://tools.ietf.org/html/rfc6026 |
-
-## Remarks
-
-The layer of protocol processing that resides above the transaction layer. Transaction users include the UAC core, UAS core, and proxy core. https://tools.ietf.org/html/rfc3261\#section-5 https://tools.ietf.org/html/rfc3261\#section-6
 

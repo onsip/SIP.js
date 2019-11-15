@@ -4,6 +4,8 @@
 
 ## RegistererOptions.instanceId property
 
+UUID to provide with "+sip.instance" Contact parameter.
+
 <b>Signature:</b>
 
 ```typescript

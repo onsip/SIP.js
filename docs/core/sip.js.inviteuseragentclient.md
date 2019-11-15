@@ -12,6 +12,10 @@ INVITE UAC.
 export declare class InviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest 
 ```
 
+## Remarks
+
+13 Initiating a Session https://tools.ietf.org/html/rfc3261\#section-13 13.1 Overview https://tools.ietf.org/html/rfc3261\#section-13.1 13.2 UAC Processing https://tools.ietf.org/html/rfc3261\#section-13.2
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -31,8 +35,4 @@ export declare class InviteUserAgentClient extends UserAgentClient implements Ou
 |  [dispose()](./sip.js.inviteuseragentclient.dispose.md) |  |  |
 |  [onTransportError(error)](./sip.js.inviteuseragentclient.ontransporterror.md) |  | Special case for transport error while sending ACK. |
 |  [receiveResponse(message)](./sip.js.inviteuseragentclient.receiveresponse.md) |  | Once the INVITE has been passed to the INVITE client transaction, the UAC waits for responses for the INVITE. https://tools.ietf.org/html/rfc3261\#section-13.2.2 |
-
-## Remarks
-
-13 Initiating a Session https://tools.ietf.org/html/rfc3261\#section-13 13.1 Overview https://tools.ietf.org/html/rfc3261\#section-13.1 13.2 UAC Processing https://tools.ietf.org/html/rfc3261\#section-13.2
 

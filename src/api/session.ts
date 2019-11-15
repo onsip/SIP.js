@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 
-import { C } from "../Constants";
 import {
   AckableIncomingResponseWithSession,
   Body,
+  fromBodyLegacy,
   getBody,
   Grammar,
   IncomingAckRequest,
@@ -14,25 +14,21 @@ import {
   IncomingPrackRequest,
   IncomingReferRequest,
   IncomingRequestMessage,
-  IncomingResponseMessage,
   Logger,
   NameAddrHeader,
   OutgoingByeRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingRequestDelegate,
-  OutgoingRequestMessage,
   RequestOptions,
   Session as SessionDialog,
   SessionState as SessionDialogState,
   SignalingState
 } from "../core";
+import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { SessionStatus, TypeStrings } from "../Enums";
-import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
-
 import { Emitter, makeEmitter } from "./emitter";
+import { ContentTypeUnsupportedError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
 import { Notification } from "./notification";
@@ -52,13 +48,31 @@ import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 
 /**
+ * Deprecated
+ * @internal
+ */
+export enum _SessionStatus {
+  // Session states
+  STATUS_NULL,
+  STATUS_INVITE_SENT,
+  STATUS_1XX_RECEIVED,
+  STATUS_INVITE_RECEIVED,
+  STATUS_WAITING_FOR_ANSWER,
+  STATUS_ANSWERED,
+  STATUS_WAITING_FOR_PRACK,
+  STATUS_WAITING_FOR_ACK,
+  STATUS_CANCELED,
+  STATUS_TERMINATED,
+  STATUS_ANSWERED_WAITING_FOR_PRACK,
+  STATUS_EARLY_MEDIA,
+  STATUS_CONFIRMED
+}
+
+/**
  * A session provides real time communication between one or more participants.
  * @public
  */
-export abstract class Session extends EventEmitter {
-  // DEPRECATED
-  /** @internal */
-  public static readonly C = SessionStatus;
+export abstract class Session {
 
   /**
    * Property reserved for use by instance owner.
@@ -79,13 +93,9 @@ export abstract class Session extends EventEmitter {
 
   // Property overlap with ClientContext & ServerContext Interfaces
   /** @internal */
-  public type = TypeStrings.Session;
-  /** @internal */
   public userAgent: UserAgent;
   /** @internal */
   public logger: Logger;
-  /** @internal */
-  public method = C.INVITE;
   /** @internal */
   public abstract body: BodyAndContentType | string | undefined;
   /** @internal */
@@ -120,9 +130,6 @@ export abstract class Session extends EventEmitter {
   /** Accepted time. */
   /** @internal */
   public startTime: Date | undefined;
-  /** DEPRECATED: Session status */
-  /** @internal */
-  public status: SessionStatus =  SessionStatus.STATUS_NULL;
 
   /** True if an error caused session termination. */
   /** @internal */
@@ -137,7 +144,7 @@ export abstract class Session extends EventEmitter {
   /** @internal */
   protected passedOptions: any;
   /** @internal */
-  protected rel100 = C.supported.UNSUPPORTED;
+  protected rel100: "none" | "required" | "supported" = "none";
   /** @internal */
   protected renderbody: string | undefined;
   /** @internal */
@@ -146,6 +153,8 @@ export abstract class Session extends EventEmitter {
   protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+  /** @internal */
+  protected status: _SessionStatus = _SessionStatus.STATUS_NULL;
   /** @internal */
   protected expiresTimer: any = undefined;
   /** @internal */
@@ -156,7 +165,6 @@ export abstract class Session extends EventEmitter {
   private _stateEventEmitter = new EventEmitter();
 
   private pendingReinvite: boolean = false;
-  private tones: any = undefined;
 
   /**
    * Constructor.
@@ -164,90 +172,21 @@ export abstract class Session extends EventEmitter {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
-    super();
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
   }
 
   /**
-   * Called to cleanup session after terminated.
-   * @internal
-   */
-  public close(): void {
-    this.logger.log(`Session[${this.id}].close`);
-
-    if (this.status === SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-
-    // 1st Step. Terminate media.
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-
-    // 2nd Step. Terminate signaling.
-
-    // Clear session timers
-    if (this.expiresTimer) {
-      clearTimeout(this.expiresTimer);
-    }
-    if (this.userNoAnswerTimer) {
-      clearTimeout(this.userNoAnswerTimer);
-    }
-
-    this.status = SessionStatus.STATUS_TERMINATED;
-
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    delete this.userAgent.sessions[this.id];
-
-    return;
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(
-    event: "SessionDescriptionHandler-created", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void
-  ): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(event: "trackAdded" | "directionChanged", listener: () => void): this;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public on(name: string, callback: (...args: any[]) => void): this {
-    return super.on(name, callback);
-  }
-
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(
-    event: "SessionDescriptionHandler-created", sessionDescriptionHandler: SessionDescriptionHandler
-  ): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(event: "trackAdded" | "directionChanged"): boolean;
-  /**
-   * @deprecated Legacy state transition.
-   * @internal
-   */
-  public emit(event: string | symbol, ...args: any[]): boolean {
-    return super.emit(event, ...args);
-  }
-
-  /**
    * Session description handler.
+   * @remarks
+   * If `this` is an instance of `Invitation`,
+   * `sessionDescriptionHandler` will be defined when the session state changes to "established".
+   * If `this` is an instance of `Inviter` and an offer was sent in the INVITE,
+   * `sessionDescriptionHandler` will be defined when the session state changes to "establishing".
+   * If `this` is an instance of `Inviter` and an offer was not sent in the INVITE,
+   * `sessionDescriptionHandler` will be defined when the session state changes to "established".
+   * Otherwise `undefined`.
    */
   get sessionDescriptionHandler(): SessionDescriptionHandler | undefined {
     return this._sessionDescriptionHandler;
@@ -408,7 +347,7 @@ export abstract class Session extends EventEmitter {
                   throw new Error("Dialog undefined.");
                 }
                 const extraHeaders: Array<string> = [];
-                extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+                extraHeaders.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
                 this.dialog.bye(undefined, { extraHeaders });
                 this.stateTransition(SessionState.Terminated);
                 this.isFailed = true;
@@ -470,7 +409,7 @@ export abstract class Session extends EventEmitter {
    * @param options - Request options bucket.
    * @internal
    */
-  public bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
+  public _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
     // Using core session dialog
     if (!this.dialog) {
       return Promise.reject(new Error("Session dialog undefined."));
@@ -520,12 +459,48 @@ export abstract class Session extends EventEmitter {
   }
 
   /**
+   * Called to cleanup session after terminated.
+   * @internal
+   */
+  public _close(): void {
+    this.logger.log(`Session[${this.id}]._close`);
+
+    if (this.status === _SessionStatus.STATUS_TERMINATED) {
+      return;
+    }
+
+    // 1st Step. Terminate media.
+    if (this._sessionDescriptionHandler) {
+      this._sessionDescriptionHandler.close();
+    }
+
+    // 2nd Step. Terminate signaling.
+
+    // Clear session timers
+    if (this.expiresTimer) {
+      clearTimeout(this.expiresTimer);
+    }
+    if (this.userNoAnswerTimer) {
+      clearTimeout(this.userNoAnswerTimer);
+    }
+
+    this.status = _SessionStatus.STATUS_TERMINATED;
+
+    if (!this.id) {
+      throw new Error("Session id undefined.");
+    }
+    delete this.userAgent.sessions[this.id];
+
+    return;
+  }
+
+  /**
    * Send INFO.
    * @param delegate - Request delegate.
    * @param options - Request options bucket.
    * @internal
    */
-  public info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
+  public _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
     // Using core session dialog
     if (!this.dialog) {
       return Promise.reject(new Error("Session dialog undefined."));
@@ -574,7 +549,7 @@ export abstract class Session extends EventEmitter {
     response.ack();
     const extraHeaders: Array<string> = [];
     if (statusCode) {
-      extraHeaders.push("Reason: " + Utils.getReasonHeaderValue(statusCode, reasonPhrase));
+      extraHeaders.push("Reason: " + this.getReasonHeaderValue(statusCode, reasonPhrase));
     }
     // Using the dialog session associate with the response (which might not be this.dialog)
     response.session.bye(undefined, { extraHeaders });
@@ -586,19 +561,9 @@ export abstract class Session extends EventEmitter {
    */
   protected onAckRequest(request: IncomingAckRequest): void {
     this.logger.log("Session.onAckRequest");
-    if (
-      this.state !== SessionState.Initial &&
-      this.state !== SessionState.Establishing &&
-      this.state !== SessionState.Established &&
-      this.state !== SessionState.Terminating
-    ) {
+    if (this.state !== SessionState.Established && this.state !== SessionState.Terminating) {
       this.logger.error(`ACK received while in state ${this.state}, dropping request`);
       return;
-    }
-
-    // FIXME: Review is this ever true? We're "Established" when dialog created in accept().
-    if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
-      this.stateTransition(SessionState.Established);
     }
 
     const dialog = this.dialog;
@@ -612,7 +577,7 @@ export abstract class Session extends EventEmitter {
         // So we must have never has sent an offer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
         this.isFailed = true;
-        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
         return;
@@ -623,17 +588,17 @@ export abstract class Session extends EventEmitter {
         const body = getBody(request.message);
         // If the ACK doesn't have an answer, nothing to be done.
         if (!body) {
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         if (body.contentDisposition === "render") {
           this.renderbody = body.content;
           this.rendertype = body.contentType;
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         if (body.contentDisposition !== "session") {
-          this.status = SessionStatus.STATUS_CONFIRMED;
+          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         // Receved answer in ACK.
@@ -642,11 +607,11 @@ export abstract class Session extends EventEmitter {
           sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
         };
         this.setAnswer(body, options)
-          .then(() => { this.status = SessionStatus.STATUS_CONFIRMED; })
+          .then(() => { this.status = _SessionStatus.STATUS_CONFIRMED; })
           .catch((error: Error) => {
             this.logger.error(error.message);
             this.isFailed = true;
-            const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+            const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
             dialog.bye(undefined, { extraHeaders });
             this.stateTransition(SessionState.Terminated);
           });
@@ -657,7 +622,7 @@ export abstract class Session extends EventEmitter {
         // So we must have received an ACK without an answer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
         this.isFailed = true;
-        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
         return;
@@ -667,7 +632,7 @@ export abstract class Session extends EventEmitter {
         // So we must have never has sent an answer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
         this.isFailed = true;
-        const extraHeaders = ["Reason: " + Utils.getReasonHeaderValue(488, "Bad Media Description")];
+        const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
         return;
@@ -785,7 +750,7 @@ export abstract class Session extends EventEmitter {
                 throw new Error("Dialog undefined.");
               }
               const extraHeadersBye: Array<string> = [];
-              extraHeadersBye.push("Reason: " + Utils.getReasonHeaderValue(500, "Internal Server Error"));
+              extraHeadersBye.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
               this.dialog.bye(undefined, { extraHeaders });
               this.stateTransition(SessionState.Terminated);
               this.isFailed = true;
@@ -850,7 +815,7 @@ export abstract class Session extends EventEmitter {
       return;
     }
 
-    if (this.status === SessionStatus.STATUS_CONFIRMED) {
+    if (this.status === _SessionStatus.STATUS_CONFIRMED) {
       // RFC 3515 2.4.1
       if (!request.message.hasHeader("refer-to")) {
         this.logger.warn("Invalid REFER packet. A refer-to header is required. Rejecting.");
@@ -967,7 +932,7 @@ export abstract class Session extends EventEmitter {
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       return sdh.getDescription(sdhOptions, sdhModifiers)
-        .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
+        .then((bodyAndContentType) => fromBodyLegacy(bodyAndContentType))
         .catch((error: any) => { // don't trust SDH to reject with Error
           this.logger.error("Session.getOffer: SDH getDescription rejected...");
           const e =  error instanceof Error ? error : new Error(error);
@@ -1022,7 +987,7 @@ export abstract class Session extends EventEmitter {
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       if (!sdh.hasDescription(answer.contentType)) {
-        return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
+        return Promise.reject(new ContentTypeUnsupportedError());
       }
     } catch (error) {
       this.logger.error("Session.setAnswer: SDH hasDescription threw...");
@@ -1060,7 +1025,7 @@ export abstract class Session extends EventEmitter {
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       if (!sdh.hasDescription(offer.contentType)) {
-        return Promise.reject(new Exceptions.UnsupportedSessionDescriptionContentTypeError());
+        return Promise.reject(new ContentTypeUnsupportedError());
       }
     } catch (error) {
       this.logger.error("Session.setOfferAndGetAnswer: SDH hasDescription threw...");
@@ -1071,7 +1036,7 @@ export abstract class Session extends EventEmitter {
     try {
       return sdh.setDescription(offer.content, sdhOptions, sdhModifiers)
         .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
-        .then((bodyAndContentType) => Utils.fromBodyObj(bodyAndContentType))
+        .then((bodyAndContentType) => fromBodyLegacy(bodyAndContentType))
         .catch((error: any) => { // don't trust SDH to reject with Error
           this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription rejected...");
           const e = error instanceof Error ? error : new Error(error);
@@ -1107,7 +1072,6 @@ export abstract class Session extends EventEmitter {
     }
     this._sessionDescriptionHandler =
       this.sessionDescriptionHandlerFactory(this, this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions);
-    this.emit("SessionDescriptionHandler-created", this._sessionDescriptionHandler);
     return this._sessionDescriptionHandler;
   }
 
@@ -1169,12 +1133,21 @@ export abstract class Session extends EventEmitter {
 
     if (newState === SessionState.Terminated) {
       this.endTime = new Date(); // Deprecated legacy ported behavior
-      this.close();
+      this._close();
     }
 
     // Transition
     this._state = newState;
     this.logger.log(`Session ${this.id} transitioned to state ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+  }
+
+  private getReasonHeaderValue(code: number, reason?: string): string {
+    const cause = code;
+    let text = getReasonPhrase(code);
+    if (!text && reason) {
+      text = reason;
+    }
+    return "SIP;cause=" + cause + ';text="' + text + '"';
   }
 }

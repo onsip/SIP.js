@@ -12,6 +12,10 @@ An invitation is an offer to establish a [Session](./sip.js.session.md) (incomin
 export declare class Invitation extends Session 
 ```
 
+## Remarks
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Invitation` class.
+
 ## Properties
 
 |  Property | Modifiers | Type | Description |
@@ -25,8 +29,4 @@ export declare class Invitation extends Session
 |  [accept(options)](./sip.js.invitation.accept.md) |  | Accept the invitation. |
 |  [progress(options)](./sip.js.invitation.progress.md) |  | Indicate progress processing the invitation. |
 |  [reject(options)](./sip.js.invitation.reject.md) |  | Reject the invitation. |
-
-## Remarks
-
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Invitation` class.
 

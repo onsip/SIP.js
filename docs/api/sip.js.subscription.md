@@ -9,8 +9,14 @@ A subscription provides asynchronous [Notification](./sip.js.notification.md) of
 <b>Signature:</b>
 
 ```typescript
-export declare abstract class Subscription extends EventEmitter 
+export declare abstract class Subscription 
 ```
+
+## Remarks
+
+See [Subscriber](./sip.js.subscriber.md) for details on establishing a subscription.
+
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Subscription` class.
 
 ## Properties
 
@@ -27,10 +33,4 @@ export declare abstract class Subscription extends EventEmitter
 |  --- | --- | --- |
 |  [subscribe(options)](./sip.js.subscription.subscribe.md) |  | Sends a re-SUBSCRIBE request if the subscription is "active". |
 |  [unsubscribe(options)](./sip.js.subscription.unsubscribe.md) |  | Unsubscribe from event notifications. |
-
-## Remarks
-
-See [Subscriber](./sip.js.subscriber.md) for details on establishing a subscription.
-
-The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Subscription` class.
 

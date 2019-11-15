@@ -12,6 +12,10 @@ A SIP message sent from a remote client to a local server.
 export interface IncomingRequest 
 ```
 
+## Remarks
+
+For the purpose of invoking a particular operation. https://tools.ietf.org/html/rfc3261\#section-7.1
+
 ## Properties
 
 |  Property | Type | Description |
@@ -28,8 +32,4 @@ export interface IncomingRequest
 |  [redirect(contacts, options)](./sip.js.incomingrequest.redirect.md) | Send a 3xx negative final response to this request. Defaults to 302. |
 |  [reject(options)](./sip.js.incomingrequest.reject.md) | Send a 4xx, 5xx, or 6xx negative final response to this request. Defaults to 480. |
 |  [trying(options)](./sip.js.incomingrequest.trying.md) | Send a 100 outgoing response to this request. |
-
-## Remarks
-
-For the purpose of invoking a particular operation. https://tools.ietf.org/html/rfc3261\#section-7.1
 

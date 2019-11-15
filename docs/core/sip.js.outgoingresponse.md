@@ -12,13 +12,13 @@ A SIP message sent from a local server to a remote client.
 export interface OutgoingResponse 
 ```
 
+## Remarks
+
+For indicating the status of a request sent from the client to the server. https://tools.ietf.org/html/rfc3261\#section-7.2
+
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
 |  [message](./sip.js.outgoingresponse.message.md) | <code>string</code> | The outgoing message. |
-
-## Remarks
-
-For indicating the status of a request sent from the client to the server. https://tools.ietf.org/html/rfc3261\#section-7.2
 

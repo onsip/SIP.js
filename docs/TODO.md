@@ -8,6 +8,7 @@
 - review license for correctness
 
 ## 0.15.x
+- new API demo
 - address transport connect/disconnect auto register issues
 - address user agent tearing down cleanly issues
 - address the outstanding issues with new API
@@ -17,7 +18,6 @@
 - more tests
 
 ## 0.16.0
-- new demo
 - new readme
 - remove old api
 - remove old tests
@@ -32,27 +32,22 @@
 # Work in Progress
 
 ## Tests
-- Unit tests for low level "core" components (Transaction, Transport)
-- Integration tests for high level "api" components (Session, Subscription)
+- *Unit* tests are being written for low level "core" components (Transaction, Transport)
+- *Integration* tests are being written high level "api" components (Session, Subscription)
 
-## Misc Open Items
+## Misc Open API Items
 - Dependencies on "old" api files need to be removed from src/api
   - Constants, Enums, Exceptions, Utils need to go away
   - Parser needs to be moved to src/parser and shared
 - The entire src/api code needs a top down once over
 - Event emissions need to be removed
-- Hold sdp offer too large for UDP
 - Options buckets deep copy
 - Extra headers approach is error prone
 - Dialog UACs are creating messages while non-dialog UACs are being handed message.
 - Incoming request, accept races cancel. That is, attempt to accept may or may not succeed if cancel arrives.
 - Outgoing request, accept races cancel. That is, attempt to cancel may or may not succeed if accept arrives.
-- Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
-- SDH options & SDH modifiers options are applied somewhat ambiguously
-  - This behavior was ported from legacy code and the issue punted down the road.
-- SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
 - Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
-- Refactor Registerer constructor and private properties
+- Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
 
 ## Grammar
 - grammar.ts has everything typed as any
@@ -62,10 +57,26 @@
 - URI allows "" for user and 0 for port which is confusing and should probably be undefined instead
 - URI toString() can and does throw. Issue #286.
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
+- Handling incoming REGISTER, "Contact: *" header fails to parse - there's a test written for it
+
+## SessionDescriptionHandler
+- Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
+- SDH options & SDH modifiers options are applied somewhat ambiguously
+  - This behavior was ported from legacy code and the issue punted down the road.
+- SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
+- Hold sdp offer too large for UDP
+- Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
+
 
 ## Transport
+- Rework core transport to be an interface which implemented. It should not be an abstract class to be extended
+- Port and overhaul transport to implement interface (instead of extending abstract class)
+- A constructed Transport should be passed into the UserAgent constructor as a required argument
 - Make sure Transport is RFC compliant and integrates with core ins compliant fashion
 - Review interface and inner workings
+
+## URI
+- Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
 
 ## REFER handling - it's evolved over time and we're out of date
 

@@ -12,6 +12,10 @@ User Agent Client (UAC).
 export declare class UserAgentClient implements OutgoingRequest 
 ```
 
+## Remarks
+
+A user agent client is a logical entity that creates a new request, and then uses the client transaction state machinery to send it. The role of UAC lasts only for the duration of that transaction. In other words, if a piece of software initiates a request, it acts as a UAC for the duration of that transaction. If it receives a request later, it assumes the role of a user agent server for the processing of that transaction. https://tools.ietf.org/html/rfc3261\#section-6
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -39,8 +43,4 @@ export declare class UserAgentClient implements OutgoingRequest
 |  [onRequestTimeout()](./sip.js.useragentclient.onrequesttimeout.md) |  | 8.1.3.1 Transaction Layer Errors In some cases, the response returned by the transaction layer will not be a SIP message, but rather a transaction layer error. When a timeout error is received from the transaction layer, it MUST be treated as if a 408 (Request Timeout) status code has been received. If a fatal transport error is reported by the transport layer (generally, due to fatal ICMP errors in UDP or connection failures in TCP), the condition MUST be treated as a 503 (Service Unavailable) status code. https://tools.ietf.org/html/rfc3261\#section-8.1.3.1 |
 |  [onTransportError(error)](./sip.js.useragentclient.ontransporterror.md) |  | 8.1.3.1 Transaction Layer Errors In some cases, the response returned by the transaction layer will not be a SIP message, but rather a transaction layer error. When a timeout error is received from the transaction layer, it MUST be treated as if a 408 (Request Timeout) status code has been received. If a fatal transport error is reported by the transport layer (generally, due to fatal ICMP errors in UDP or connection failures in TCP), the condition MUST be treated as a 503 (Service Unavailable) status code. https://tools.ietf.org/html/rfc3261\#section-8.1.3.1 |
 |  [receiveResponse(message)](./sip.js.useragentclient.receiveresponse.md) |  | Receive a response from the transaction layer. |
-
-## Remarks
-
-A user agent client is a logical entity that creates a new request, and then uses the client transaction state machinery to send it. The role of UAC lasts only for the duration of that transaction. In other words, if a piece of software initiates a request, it acts as a UAC for the duration of that transaction. If it receives a request later, it assumes the role of a user agent server for the processing of that transaction. https://tools.ietf.org/html/rfc3261\#section-6
 

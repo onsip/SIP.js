@@ -5,13 +5,17 @@
  * ```
  * 1. "initial" --> "registered"
  * 2. "initial" --> "unregistered"
- * 3. "registered" --> "unregistered"
- * 3. "unregistered" --> "registered"
+ * 3. "initial" --> "terminated"
+ * 4. "registered" --> "unregistered"
+ * 5. "registered" --> "terminated"
+ * 6. "unregistered" --> "registered"
+ * 7. "unregistered" --> "terminated"
  * ```
  * @public
  */
 export enum RegistererState {
   Initial = "Initial",
   Registered =  "Registered",
-  Unregistered = "Unregistered"
+  Unregistered = "Unregistered",
+  Terminated = "Terminated"
 }

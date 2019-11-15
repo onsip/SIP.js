@@ -12,6 +12,12 @@ SUBSCRIBE UAC.
 export declare class SubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest 
 ```
 
+## Remarks
+
+4.1. Subscriber Behavior https://tools.ietf.org/html/rfc6665\#section-4.1
+
+User agent client for installation of a single subscription per SUBSCRIBE request. TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE reqeuests.
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -33,10 +39,4 @@ export declare class SubscribeUserAgentClient extends UserAgentClient implements
 |  [receiveResponse(message)](./sip.js.subscribeuseragentclient.receiveresponse.md) |  | Receive a response from the transaction layer. |
 |  [waitNotifyStart()](./sip.js.subscribeuseragentclient.waitnotifystart.md) |  |  |
 |  [waitNotifyStop()](./sip.js.subscribeuseragentclient.waitnotifystop.md) |  |  |
-
-## Remarks
-
-4.1. Subscriber Behavior https://tools.ietf.org/html/rfc6665\#section-4.1
-
-User agent client for installation of a single subscription per SUBSCRIBE request. TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE reqeuests.
 

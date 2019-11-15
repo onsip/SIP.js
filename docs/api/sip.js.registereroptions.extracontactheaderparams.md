@@ -4,6 +4,8 @@
 
 ## RegistererOptions.extraContactHeaderParams property
 
+Array of extra Contact header parameters.
+
 <b>Signature:</b>
 
 ```typescript

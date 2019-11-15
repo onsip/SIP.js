@@ -4,6 +4,8 @@
 
 ## RegistererOptions.regId property
 
+Value to provide with "reg-id" Contact parameter.
+
 <b>Signature:</b>
 
 ```typescript

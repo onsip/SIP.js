@@ -9,7 +9,21 @@ import { Logger } from "./log";
  * @public
  */
 export abstract class Transport extends EventEmitter {
-  public server: any;
+  /**
+   * FIXME: This needs to be reworked.
+   * Some transport configuration which is controlling core behavior.
+   * @internal
+   */
+  public server?: {
+    // This "scheme" currently dictates what gets written into the
+    // the Via header in ClientTransaction and InviteClientTransaction.
+    scheme?: string;
+    // This "sipUri" currently dictates what gets set in the route set
+    // of an outgoing request in OutgoingRequestMessage if the UserAgent
+    // is configured with preloaded route set is enabled.
+    sipUri?: string;
+  };
+
   protected logger: Logger;
 
   /**

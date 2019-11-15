@@ -12,6 +12,10 @@ Re-INVITE UAC.
 export declare class ReInviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest 
 ```
 
+## Remarks
+
+14 Modifying an Existing Session https://tools.ietf.org/html/rfc3261\#section-14 14.1 UAC Behavior https://tools.ietf.org/html/rfc3261\#section-14.1
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -29,8 +33,4 @@ export declare class ReInviteUserAgentClient extends UserAgentClient implements 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [receiveResponse(message)](./sip.js.reinviteuseragentclient.receiveresponse.md) |  |  |
-
-## Remarks
-
-14 Modifying an Existing Session https://tools.ietf.org/html/rfc3261\#section-14 14.1 UAC Behavior https://tools.ietf.org/html/rfc3261\#section-14.1
 

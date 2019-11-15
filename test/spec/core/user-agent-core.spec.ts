@@ -1,6 +1,7 @@
-import { C } from "../../../src/Constants";
+import { UserAgent } from "../../../src/api";
 import {
   AckableIncomingResponseWithSession,
+  C,
   constructOutgoingResponse,
   IncomingByeRequest,
   IncomingInfoRequest,
@@ -20,6 +21,7 @@ import {
   OutgoingRequestMessage,
   OutgoingSubscribeRequest,
   OutgoingSubscribeRequestDelegate,
+  Parser,
   PrackableIncomingResponseWithSession,
   Session,
   SessionDelegate,
@@ -34,8 +36,6 @@ import {
   UserAgentCore,
   UserAgentCoreConfiguration
 } from "../../../src/core";
-import { Parser } from "../../../src/Parser";
-import { makeUserAgentCoreConfigurationFromUA, UA } from "../../../src/UA";
 
 import {
   connectTransportToUA,
@@ -45,7 +45,8 @@ import {
   makeMockSubscriptionDelegate,
   makeMockTransport,
   makeMockUA,
-  makeMockUserAgentCoreDelegate
+  makeMockUserAgentCoreDelegate,
+  makeUserAgentCoreConfigurationFromUserAgent
 } from "./mocks";
 
 import { soon } from "../../support/Utils";
@@ -63,8 +64,8 @@ describe("UserAgentCore", () => {
   let coreBob: UserAgentCore;
   let transportAlice: jasmine.SpyObj<Transport>;
   let transportBob: jasmine.SpyObj<Transport>;
-  let uaAlice: UA;
-  let uaBob: UA;
+  let uaAlice: UserAgent;
+  let uaBob: UserAgent;
 
   beforeEach(() => {
     transportAlice = makeMockTransport();
@@ -73,8 +74,8 @@ describe("UserAgentCore", () => {
     uaBob = makeMockUA(userBob, domainBob, displayNameBob, transportBob);
     connectTransportToUA(transportAlice, uaBob);
     connectTransportToUA(transportBob, uaAlice);
-    configurationAlice = makeUserAgentCoreConfigurationFromUA(uaAlice);
-    configurationBob = makeUserAgentCoreConfigurationFromUA(uaBob);
+    configurationAlice = makeUserAgentCoreConfigurationFromUserAgent(uaAlice);
+    configurationBob = makeUserAgentCoreConfigurationFromUserAgent(uaBob);
     coreAlice = new UserAgentCore(configurationAlice, {});
     coreBob = new UserAgentCore(configurationBob, {});
     uaAlice.userAgentCore = coreAlice;

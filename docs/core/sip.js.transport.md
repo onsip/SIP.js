@@ -12,6 +12,10 @@ Transport.
 export declare abstract class Transport extends EventEmitter 
 ```
 
+## Remarks
+
+Abstract transport layer base class.
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -23,7 +27,6 @@ export declare abstract class Transport extends EventEmitter
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [logger](./sip.js.transport.logger.md) |  | <code>Logger</code> |  |
-|  [server](./sip.js.transport.server.md) |  | <code>any</code> |  |
 
 ## Methods
 
@@ -39,8 +42,4 @@ export declare abstract class Transport extends EventEmitter
 |  [send(message, options)](./sip.js.transport.send.md) |  | Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise Rejects with an Error if message fails to send. |
 |  [sendPromise(message, options)](./sip.js.transport.sendpromise.md) |  | Called by send. |
 |  [waitForConnected()](./sip.js.transport.waitforconnected.md) |  | Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected() |
-
-## Remarks
-
-Abstract transport layer base class.
 

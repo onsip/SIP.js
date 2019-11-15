@@ -12,6 +12,12 @@ Dialog state.
 export interface DialogState 
 ```
 
+## Remarks
+
+A dialog contains certain pieces of state needed for further message transmissions within the dialog. This state consists of the dialog ID, a local sequence number (used to order requests from the UA to its peer), a remote sequence number (used to order requests from its peer to the UA), a local URI, a remote URI, remote target, a boolean flag called "secure", and a route set, which is an ordered list of URIs. The route set is the list of servers that need to be traversed to send a request to the peer. A dialog can also be in the "early" state, which occurs when it is created with a provisional response, and then transition to the "confirmed" state when a 2xx final response arrives. For other responses, or if no response arrives at all on that dialog, the early dialog terminates.
+
+https://tools.ietf.org/html/rfc3261\#section-12
+
 ## Properties
 
 |  Property | Type | Description |
@@ -28,10 +34,4 @@ export interface DialogState
 |  [remoteURI](./sip.js.dialogstate.remoteuri.md) | <code>URI</code> |  |
 |  [routeSet](./sip.js.dialogstate.routeset.md) | <code>Array&lt;string&gt;</code> |  |
 |  [secure](./sip.js.dialogstate.secure.md) | <code>boolean</code> |  |
-
-## Remarks
-
-A dialog contains certain pieces of state needed for further message transmissions within the dialog. This state consists of the dialog ID, a local sequence number (used to order requests from the UA to its peer), a remote sequence number (used to order requests from its peer to the UA), a local URI, a remote URI, remote target, a boolean flag called "secure", and a route set, which is an ordered list of URIs. The route set is the list of servers that need to be traversed to send a request to the peer. A dialog can also be in the "early" state, which occurs when it is created with a provisional response, and then transition to the "confirmed" state when a 2xx final response arrives. For other responses, or if no response arrives at all on that dialog, the early dialog terminates.
-
-https://tools.ietf.org/html/rfc3261\#section-12
 

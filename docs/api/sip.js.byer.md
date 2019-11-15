@@ -12,6 +12,10 @@ A byer ends a [Session](./sip.js.session.md) (outgoing BYE).
 export declare class Byer 
 ```
 
+## Remarks
+
+Sends an outgoing in dialog BYE request.
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -29,8 +33,4 @@ export declare class Byer
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [bye(options)](./sip.js.byer.bye.md) |  | Sends the BYE request. |
-
-## Remarks
-
-Sends an outgoing in dialog BYE request.
 

@@ -3,13 +3,13 @@ import { EventEmitter } from "events";
 import {
   Body,
   C,
+  fromBodyLegacy,
   IncomingResponseMessage,
   Logger,
   OutgoingRequestMessage,
   URI
 } from "../core";
-import { Exceptions } from "../Exceptions";
-import { Utils } from "../Utils";
+import { getReasonPhrase } from "../core/messages/utils";
 
 import { PublisherOptions } from "./publisher-options";
 import { PublisherPublishOptions } from "./publisher-publish-options";
@@ -95,30 +95,6 @@ export class Publisher extends EventEmitter {
   }
 
   /**
-   * Close
-   * @internal
-   */
-  public close(): void {
-    // Send unpublish, if requested
-    if (this.options.unpublishOnClose) {
-      this.unpublish();
-    } else {
-      if (this.publishRefreshTimer) {
-        clearTimeout(this.publishRefreshTimer);
-        this.publishRefreshTimer = undefined;
-      }
-
-      this.pubRequestBody = undefined;
-      this.pubRequestExpires = 0;
-      this.pubRequestEtag = undefined;
-    }
-
-    if (this.userAgent.publishers[this.target.toString() + ":" + this.event]) {
-      delete this.userAgent.publishers[this.target.toString() + ":" + this.event];
-    }
-  }
-
-  /**
    * Publish
    * @param content - Body to publish
    */
@@ -164,10 +140,34 @@ export class Publisher extends EventEmitter {
     }
   }
 
+  /**
+   * Close
+   * @internal
+   */
+  public _close(): void {
+    // Send unpublish, if requested
+    if (this.options.unpublishOnClose) {
+      this.unpublish();
+    } else {
+      if (this.publishRefreshTimer) {
+        clearTimeout(this.publishRefreshTimer);
+        this.publishRefreshTimer = undefined;
+      }
+
+      this.pubRequestBody = undefined;
+      this.pubRequestExpires = 0;
+      this.pubRequestEtag = undefined;
+    }
+
+    if (this.userAgent.publishers[this.target.toString() + ":" + this.event]) {
+      delete this.userAgent.publishers[this.target.toString() + ":" + this.event];
+    }
+  }
+
   /** @internal */
   protected receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
-    const cause: string = Utils.getReasonPhrase(statusCode);
+    const cause: string = getReasonPhrase(statusCode);
 
     switch (true) {
       case /^1[0-9]{2}$/.test(statusCode.toString()):
@@ -289,13 +289,11 @@ export class Publisher extends EventEmitter {
     this.pubRequestBody = undefined;
 
     if (this.pubRequestEtag === undefined) {
-      // Request not valid
-      throw new Exceptions.MethodParameterError("Publish", "Body", undefined);
+      throw new Error("Etag undefined");
     }
 
     if (this.pubRequestExpires === 0) {
-      // Request not valid
-      throw new Exceptions.MethodParameterError("Publish", "Expire", this.pubRequestExpires);
+      throw new Error("Expires zero");
     }
 
     this.sendPublishRequest();
@@ -323,7 +321,7 @@ export class Publisher extends EventEmitter {
     }
     let body: Body | undefined;
     if (bodyAndContentType) {
-      body = Utils.fromBodyObj(bodyAndContentType);
+      body = fromBodyLegacy(bodyAndContentType);
     }
 
     this.request = this.userAgent.userAgentCore.makeOutgoingRequestMessage(

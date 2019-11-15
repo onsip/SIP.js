@@ -1,13 +1,11 @@
-import {
-  Grammar,
-  IncomingRequestMessage,
-  IncomingResponseMessage,
-  Logger
-} from "./core";
+import { Logger } from "../log/logger";
+import { Grammar } from "./grammar";
+import { IncomingRequestMessage } from "./incoming-request-message";
+import { IncomingResponseMessage } from "./incoming-response-message";
 
 /**
  * Extract and parse every header of a SIP message.
- * @namespace
+ * @internal
  */
 export namespace Parser {
 
@@ -34,7 +32,7 @@ export namespace Parser {
       }
 
       if (!data.substring(partialEnd + 2, partialEnd + 4).match(/(^\r\n)/) &&
-          data.charAt(partialEnd + 2).match(/(^\s+)/)) {
+        data.charAt(partialEnd + 2).match(/(^\s+)/)) {
         // Not the end of the message. Continue from the next position.
         start = partialEnd + 2;
       } else {
@@ -50,7 +48,7 @@ export namespace Parser {
     data: any,
     headerStart: number,
     headerEnd: number
-  ): boolean | {error: string} {
+  ): boolean | { error: string } {
     const hcolonIndex: number = data.indexOf(":", headerStart);
     const headerName: string = data.substring(headerStart, hcolonIndex).trim();
     const headerValue: string = data.substring(hcolonIndex + 1, headerEnd).trim();
@@ -96,14 +94,15 @@ export namespace Parser {
           parsed = undefined;
           break;
         }
-
-        for (const header in parsed) {
-          if (parsed[header]) {
-            message.addHeader("record-route", headerValue.substring(parsed[header].position, parsed[header].offset));
-            message.headers["Record-Route"][message.getHeaders("record-route").length - 1].parsed =
-              parsed[header].parsed;
-          }
+        if (!(parsed instanceof Array)) {
+          parsed = undefined;
+          break;
         }
+
+        parsed.forEach((header) => {
+          message.addHeader("record-route", headerValue.substring(header.position, header.offset));
+          message.headers["Record-Route"][message.getHeaders("record-route").length - 1].parsed = header.parsed;
+        });
         break;
       case "call-id":
       case "i":
@@ -186,12 +185,6 @@ export namespace Parser {
     }
   }
 
-  /** Parse SIP Message
-   * @function
-   * @param {String} message SIP message.
-   * @param {Object} logger object.
-   * @returns {SIP.IncomingRequest|SIP.IncomingResponse|undefined}
-   */
   export function parseMessage(
     data: string,
     logger: Logger
@@ -225,9 +218,8 @@ export namespace Parser {
     message.data = data;
     headerStart = headerEnd + 2;
 
-    /* Loop over every line in data. Detect the end of each header and parse
-    * it or simply add to the headers collection.
-    */
+    // Loop over every line in data. Detect the end of each header and parse
+    // it or simply add to the headers collection.
     let bodyStart: number;
     while (true) {
       headerEnd = getHeader(data, headerStart);
@@ -252,10 +244,9 @@ export namespace Parser {
       headerStart = headerEnd + 2;
     }
 
-    /* RFC3261 18.3.
-    * If there are additional bytes in the transport packet
-    * beyond the end of the body, they MUST be discarded.
-    */
+    // RFC3261 18.3.
+    // If there are additional bytes in the transport packet
+    // beyond the end of the body, they MUST be discarded.
     if (message.hasHeader("content-length")) {
       message.body = data.substr(bodyStart, Number(message.getHeader("content-length")));
     } else {

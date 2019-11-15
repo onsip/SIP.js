@@ -12,6 +12,10 @@ A referrer sends a [Referral](./sip.js.referral.md) (outgoing REFER).
 export declare class Referrer 
 ```
 
+## Remarks
+
+Sends an outgoing in dialog REFER request.
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -30,8 +34,4 @@ export declare class Referrer
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [refer(options)](./sip.js.referrer.refer.md) |  | Sends the REFER request. |
-
-## Remarks
-
-Sends an outgoing in dialog REFER request.
 

@@ -11,6 +11,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  Class | Description |
 |  --- | --- |
 |  [Byer](./sip.js.byer.md) | A byer ends a [Session](./sip.js.session.md) (outgoing BYE). |
+|  [ContentTypeUnsupportedError](./sip.js.contenttypeunsupportederror.md) | An exception indicating an unsupported content type prevented execution. |
 |  [Info](./sip.js.info.md) | An exchange of information (incoming INFO). |
 |  [Infoer](./sip.js.infoer.md) | An Infoer sends [Info](./sip.js.info.md) (outgoing INFO). |
 |  [Invitation](./sip.js.invitation.md) | An invitation is an offer to establish a [Session](./sip.js.session.md) (incoming INVITE). |
@@ -22,7 +23,10 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [Referral](./sip.js.referral.md) | A request to establish a [Session](./sip.js.session.md) elsewhere (incoming REFER). |
 |  [Referrer](./sip.js.referrer.md) | A referrer sends a [Referral](./sip.js.referral.md) (outgoing REFER). |
 |  [Registerer](./sip.js.registerer.md) | A registerer registers a contact for an address of record (outgoing REGISTER). |
+|  [RequestPendingError](./sip.js.requestpendingerror.md) | An exception indicating an outstanding prior request prevented execution. |
 |  [Session](./sip.js.session.md) | A session provides real time communication between one or more participants. |
+|  [SessionDescriptionHandlerError](./sip.js.sessiondescriptionhandlererror.md) | An exception indicating a session description handler error occured. |
+|  [SessionTerminatedError](./sip.js.sessionterminatederror.md) | An exception indicating the session terminated before the action completed. |
 |  [Subscriber](./sip.js.subscriber.md) | A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SUBSCRIBE). |
 |  [Subscription](./sip.js.subscription.md) | A subscription provides asynchronous [Notification](./sip.js.notification.md) of events. |
 |  [UserAgent](./sip.js.useragent.md) | A user agent sends and receives requests using a <code>Transport</code>. |

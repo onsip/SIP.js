@@ -15,6 +15,7 @@ import {
   Levels,
   Logger,
   LoggerFactory,
+  Parser,
   Transport,
   TransportError,
   URI,
@@ -26,13 +27,10 @@ import {
   createRandomToken,
   str_utf8_length
 } from "../core/messages/utils";
-import { UAStatus } from "../Enums";
-import { Parser } from "../Parser";
 import { LIBRARY_VERSION } from "../version";
-import {
-  SessionDescriptionHandler as WebSessionDescriptionHandler
-} from "../Web/SessionDescriptionHandler";
-import { Transport as WebTransport } from "../Web/Transport";
+
+import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
+import { Transport as WebTransport } from "../platform/web/transport";
 
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
@@ -53,6 +51,18 @@ import {
 import { UserAgentState } from "./user-agent-state";
 
 declare var chrome: any;
+
+/**
+ * Deprecated
+ * @internal
+ */
+enum _UAStatus {
+  STATUS_INIT,
+  STATUS_STARTING,
+  STATUS_READY,
+  STATUS_USER_CLOSED,
+  STATUS_NOT_READY
+}
 
 /**
  * A user agent sends and receives requests using a `Transport`.
@@ -78,6 +88,21 @@ export class UserAgent {
    */
   public static makeURI(uri: string): URI | undefined {
     return Grammar.URIParse(uri);
+  }
+
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      if ((options as any)[key] !== undefined) {
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
   }
 
   /** Default user agent options. */
@@ -130,8 +155,6 @@ export class UserAgent {
   /** @internal */
   public subscriptions: {[id: string]: Subscription} = {};
   /** @internal */
-  public status: UAStatus = UAStatus.STATUS_INIT;
-  /** @internal */
   public transport: Transport;
 
   /** @internal */
@@ -150,6 +173,9 @@ export class UserAgent {
   private _state: UserAgentState = UserAgentState.Initial;
   private _stateEventEmitter = new EventEmitter();
 
+  /** @internal */
+  private status: _UAStatus = _UAStatus.STATUS_INIT;
+
   /** Unload listener. */
   private unloadListener = (() => { this.stop(); });
 
@@ -157,7 +183,7 @@ export class UserAgent {
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  constructor(options: UserAgentOptions = {}) {
+  constructor(options: Partial<UserAgentOptions> = {}) {
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -172,7 +198,7 @@ export class UserAgent {
       // add a unique via host for each instance
       ...{ viaHost: createRandomToken(12) + ".invalid" },
       // apply any options passed in via the constructor
-      ...options
+      ...UserAgent.stripUndefinedProperties(options)
     };
 
     // viaHost is hack
@@ -233,7 +259,7 @@ export class UserAgent {
 
     // initialize transport
     this.transport = new this.options.transportConstructor(
-      this.getLogger("sip.transport"),
+      this.getLogger("sip.Transport"),
       this.options.transportOptions
     );
 
@@ -263,17 +289,17 @@ export class UserAgent {
    */
   public start(): Promise<void> {
     this.logger.log("user requested startup...");
-    if (this.status === UAStatus.STATUS_INIT) {
-      this.status = UAStatus.STATUS_STARTING;
+    if (this.status === _UAStatus.STATUS_INIT) {
+      this.status = _UAStatus.STATUS_STARTING;
       this.setTransportListeners();
       return this.transport.connect();
-    } else if (this.status === UAStatus.STATUS_USER_CLOSED) {
+    } else if (this.status === _UAStatus.STATUS_USER_CLOSED) {
       this.logger.log("resuming");
-      this.status = UAStatus.STATUS_READY;
+      this.status = _UAStatus.STATUS_READY;
       return this.transport.connect();
-    } else if (this.status === UAStatus.STATUS_STARTING) {
+    } else if (this.status === _UAStatus.STATUS_STARTING) {
       this.logger.log("UA is in STARTING status, not opening new connection");
-    } else if (this.status === UAStatus.STATUS_READY) {
+    } else if (this.status === _UAStatus.STATUS_READY) {
       this.logger.log("UA is in READY status, not resuming");
     } else {
       this.logger.error("Connection is down. Auto-Recovery system is trying to connect");
@@ -303,7 +329,7 @@ export class UserAgent {
   public async stop(): Promise<void> {
     this.logger.log(`Stopping user agent ${this.configuration.uri}...`);
 
-    if (this.status === UAStatus.STATUS_USER_CLOSED) {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
       this.logger.warn("UA already closed");
     }
 
@@ -330,7 +356,7 @@ export class UserAgent {
             }
             break;
           case SessionState.Established:
-            session.bye();
+            session._bye();
             break;
           case SessionState.Terminating:
           case SessionState.Terminated:
@@ -352,18 +378,18 @@ export class UserAgent {
     for (const publisher in this.publishers) {
       if (this.publishers[publisher]) {
         this.logger.log("unpublish " + publisher);
-        this.publishers[publisher].close();
+        this.publishers[publisher]._close();
       }
     }
 
     // Run close on every applicant
     for (const applicant in this.applicants) {
       if (this.applicants[applicant]) {
-        this.applicants[applicant].close();
+        this.applicants[applicant]._close();
       }
     }
 
-    this.status = UAStatus.STATUS_USER_CLOSED;
+    this.status = _UAStatus.STATUS_USER_CLOSED;
 
     // Disconnect the transport and reset user agent core
     this.transport.disconnect();
@@ -446,10 +472,10 @@ export class UserAgent {
   // ==============================
 
   private onTransportError(): void {
-    if (this.status === UAStatus.STATUS_USER_CLOSED) {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
       return;
     }
-    this.status = UAStatus.STATUS_NOT_READY;
+    this.status = _UAStatus.STATUS_NOT_READY;
   }
 
   /**
@@ -483,7 +509,7 @@ export class UserAgent {
       return;
     }
 
-    if (this.status === UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
       this.logger.warn(`Received ${message.method} request in state USER_CLOSED. Dropping.`);
       return;
     }
@@ -668,7 +694,7 @@ export class UserAgent {
 
         incomingInviteRequest.delegate = {
           onCancel: (cancel: IncomingRequestMessage): void => {
-            invitation.onCancel(cancel);
+            invitation._onCancel(cancel);
           },
           onTransportError: (error: TransportError): void => {
             // A server transaction MUST NOT discard transaction state based only on

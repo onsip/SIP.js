@@ -12,6 +12,10 @@ Session.
 export interface Session 
 ```
 
+## Remarks
+
+https://tools.ietf.org/html/rfc3261\#section-13
+
 ## Properties
 
 |  Property | Type | Description |
@@ -40,8 +44,4 @@ export interface Session
 |  [notify(delegate, options)](./sip.js.session.notify.md) | Send NOTIFY request. Inform referrer of transfer progress. The use of this is limited to the implicit creation of subscription by REFER (historical). Otherwise, notifiers MUST NOT create subscriptions except upon receipt of a SUBSCRIBE request. https://tools.ietf.org/html/rfc3515\#section-3.7 |
 |  [prack(delegate, options)](./sip.js.session.prack.md) | Send PRACK request. Acknowledge a reliable provisional response. https://tools.ietf.org/html/rfc3262\#section-4 |
 |  [refer(delegate, options)](./sip.js.session.refer.md) | Send REFER request (in dialog). Transfer a session. https://tools.ietf.org/html/rfc3515\#section-2.4.1 |
-
-## Remarks
-
-https://tools.ietf.org/html/rfc3261\#section-13
 

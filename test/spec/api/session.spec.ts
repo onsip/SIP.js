@@ -1,4 +1,5 @@
 import {
+  Byer,
   Invitation,
   Inviter,
   SessionDescriptionHandler,
@@ -12,7 +13,6 @@ import {
   URI
 } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { TransportFake } from "../../support/api/transport-fake";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
@@ -26,13 +26,9 @@ const SIP_100 = [jasmine.stringMatching(/^SIP\/2.0 100/)];
 const SIP_180 = [jasmine.stringMatching(/^SIP\/2.0 180/)];
 const SIP_183 = [jasmine.stringMatching(/^SIP\/2.0 183/)];
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
-const SIP_404 = [jasmine.stringMatching(/^SIP\/2.0 404/)];
 const SIP_480 = [jasmine.stringMatching(/^SIP\/2.0 480/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_487 = [jasmine.stringMatching(/^SIP\/2.0 487/)];
-const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
-
-const EVENT_SDH = ["SessionDescriptionHandler-created", jasmine.any(Object)];
 
 function terminate(invitation: Invitation): Promise<void> {
   const session = invitation;
@@ -41,7 +37,7 @@ function terminate(invitation: Invitation): Promise<void> {
     case SessionState.Establishing:
       return session.reject();
     case SessionState.Established:
-      return session.bye().then(() => { return; });
+      return new Byer(session).bye().then(() => { return; });
     case SessionState.Terminating:
     case SessionState.Terminated:
     default:
@@ -58,10 +54,8 @@ describe("API Session", () => {
   let bob: UserFake;
   let target: URI;
   let inviter: Inviter;
-  let inviterEmitSpy: EventEmitterEmitSpy;
   let inviterStateSpy: EmitterSpy<SessionState>;
   let invitation: Invitation;
-  let invitationEmitSpy: EventEmitterEmitSpy;
   let invitationStateSpy: EmitterSpy<SessionState>;
 
   const inviterRequestDelegateMock =
@@ -73,7 +67,7 @@ describe("API Session", () => {
     "onTrying"
   ]);
 
-  function bobAccept(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean) {
+  function bobAccept() {
 
     beforeEach(async () => {
       resetSpies();
@@ -102,32 +96,6 @@ describe("API Session", () => {
       expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
 
-    if (answerInAck) {
-      it("her context should emit 'sdh'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("her context should emit nothing", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
-
-    if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("his context should emit nothing", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
-
     it("her session state should transition 'established'", () => {
       const spy = inviterStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
@@ -154,7 +122,7 @@ describe("API Session", () => {
     });
   }
 
-  function bobAccept2x(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean): void {
+  function bobAccept2x(): void {
     let threw: boolean;
 
     beforeEach(async () => {
@@ -217,7 +185,7 @@ describe("API Session", () => {
     });
   }
 
-  function bobAcceptTerminate(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean, dropAcks: boolean): void {
+  function bobAcceptTerminate(dropAcks: boolean): void {
     // The caller's UA MAY send a BYE for either confirmed or early dialogs,
     // and the callee's UA MAY send a BYE on confirmed dialogs, but MUST NOT
     // send a BYE on early dialogs. However, the callee's UA MUST NOT send a
@@ -317,32 +285,6 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminating]);
       expect(spy.calls.argsFor(3)).toEqual([SessionState.Terminated]);
     });
-
-    if (answerInAck) {
-      it("her context should emit 'sdh'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("her context should emit nothing", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
-
-    if (answerInOk || offerInOk) {
-      it("his context should emit 'sdh'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("his context should emit nothing", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
   }
 
   function bobProgress(): void {
@@ -387,12 +329,6 @@ describe("API Session", () => {
       expect(spy.onReject).toHaveBeenCalledTimes(0);
       expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
-
-    it("his context should emit 'sdh'", () => {
-      const spy = invitationEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-    });
   }
 
   function bobProgress2x(): void {
@@ -419,7 +355,7 @@ describe("API Session", () => {
     });
   }
 
-  function bobProgressReliable(answerInProgress: boolean, offerInProgress: boolean): void {
+  function bobProgressReliable(): void {
     beforeEach(async () => {
       resetSpies();
       invitation.progress({ rel100: true });
@@ -448,41 +384,9 @@ describe("API Session", () => {
       expect(spy.onReject).toHaveBeenCalledTimes(0);
       expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
-
-    if (offerInProgress) {
-      it("her context should emit 'sdh'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("her context should emit nothing", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
-
-    if (offerInProgress) {
-      it("his context should emit 'sdh'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else if (answerInProgress) {
-      it("his context should emit 'sdh'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("his context should emit nothing", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
   }
 
-  function bobProgressReliable2x(answerInProgress: boolean, offerInProgress: boolean): void {
+  function bobProgressReliable2x(): void {
     beforeEach(async () => {
       resetSpies();
       invitation.progress({ rel100: true });
@@ -512,38 +416,6 @@ describe("API Session", () => {
       expect(spy.onReject).toHaveBeenCalledTimes(0);
       expect(spy.onTrying).toHaveBeenCalledTimes(0);
     });
-
-    if (offerInProgress) {
-      it("her context should emit 'sdh'", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("her context should emit nothing", () => {
-        const spy = inviterEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
-
-    if (offerInProgress) {
-      it("his context should emit 'sdh'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else if (answerInProgress) {
-      it("his context should emit 'sdh'", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-      });
-    } else {
-      it("his context should emit nothing", () => {
-        const spy = invitationEmitSpy;
-        expect(spy).toHaveBeenCalledTimes(0);
-      });
-    }
   }
 
   function bobReject(): void {
@@ -892,19 +764,6 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
         expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
       });
-
-      if (inviteWithoutSdp) {
-        it("her context should emit nothing", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(0);
-        });
-      } else {
-        it("her context should emit 'sdh'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        });
-      }
     });
 
     describe("Alice invite(), no response - Request Timeout", () => {
@@ -942,19 +801,6 @@ describe("API Session", () => {
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
         expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
       });
-
-      if (inviteWithoutSdp) {
-        it("her context should emit nothing", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(0);
-        });
-      } else {
-        it("her context should emit 'sdh'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        });
-      }
     });
 
     describe("Alice invite()", () => {
@@ -991,19 +837,6 @@ describe("API Session", () => {
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
       });
-
-      if (inviteWithoutSdp) {
-        it("her context should emit nothing", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(0);
-        });
-      } else {
-        it("her context should emit 'sdh'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        });
-      }
 
       describe("Alice cancel()", () => {
         beforeEach(async () => {
@@ -1580,11 +1413,7 @@ describe("API Session", () => {
       });
 
       describe("Bob accept()", () => {
-        if (inviteWithoutSdp) {
-          bobAccept(true, false, true);
-        } else {
-          bobAccept(false, true, false);
-        }
+        bobAccept();
 
         describe("Bob terminate()", () => {
           bobTerminate();
@@ -1597,9 +1426,9 @@ describe("API Session", () => {
 
       describe("Bob accept(), accept()", () => {
         if (inviteWithoutSdp) {
-          bobAccept(true, false, true);
+          bobAccept();
         } else {
-          bobAccept2x(false, true, false);
+          bobAccept2x();
         }
       });
 
@@ -1607,11 +1436,7 @@ describe("API Session", () => {
         bobProgress();
 
         describe("Bob accept()", () => {
-          if (inviteWithoutSdp) {
-            bobAccept(true, false, true);
-          } else {
-            bobAccept(false, true, false);
-          }
+          bobAccept();
         });
 
         describe("Bob reject()", () => {
@@ -1622,11 +1447,7 @@ describe("API Session", () => {
           bobProgress();
 
           describe("Bob accept()", () => {
-            if (inviteWithoutSdp) {
-              bobAccept(true, false, true);
-            } else {
-              bobAccept(false, true, false);
-            }
+            bobAccept();
           });
 
           describe("Bob reject()", () => {
@@ -1642,7 +1463,7 @@ describe("API Session", () => {
           bobProgress183();
 
           describe("Bob accept()", () => {
-            bobAccept(false, false, false);
+            bobAccept();
           });
 
           describe("Bob reject()", () => {
@@ -1653,7 +1474,7 @@ describe("API Session", () => {
             bobProgress();
 
             describe("Bob accept()", () => {
-              bobAccept(false, false, false);
+              bobAccept();
             });
 
             describe("Bob reject()", () => {
@@ -1664,14 +1485,10 @@ describe("API Session", () => {
       }
 
       describe("Bob progress(reliable)", () => {
-        if (inviteWithoutSdp) {
-          bobProgressReliable(false, true);
-        } else {
-          bobProgressReliable(true, false);
-        }
+        bobProgressReliable();
 
         describe("Bob accept()", () => {
-          bobAccept(false, false, false);
+          bobAccept();
         });
 
         describe("Bob reject()", () => {
@@ -1679,10 +1496,10 @@ describe("API Session", () => {
         });
 
         describe("Bob progress(reliable) ", () => {
-          bobProgressReliable(false, false);
+          bobProgressReliable();
 
           describe("Bob accept()", () => {
-            bobAccept(false, false, false);
+            bobAccept();
           });
 
           describe("Bob reject()", () => {
@@ -1694,7 +1511,7 @@ describe("API Session", () => {
           bobProgress();
 
           describe("Bob accept()", () => {
-            bobAccept(false, false, false);
+            bobAccept();
           });
 
           describe("Bob reject()", () => {
@@ -1702,10 +1519,10 @@ describe("API Session", () => {
           });
 
           describe("Bob progress(reliable) ", () => {
-            bobProgressReliable(false, false);
+            bobProgressReliable();
 
             describe("Bob accept()", () => {
-              bobAccept(false, false, false);
+              bobAccept();
             });
 
             describe("Bob reject()", () => {
@@ -1720,11 +1537,7 @@ describe("API Session", () => {
       });
 
       describe("Bob progress(reliable), progress(reliable)", () => {
-        if (inviteWithoutSdp) {
-          bobProgressReliable2x(false, true);
-        } else {
-          bobProgressReliable2x(true, false);
-        }
+        bobProgressReliable2x();
       });
 
       describe("Bob reject()", () => {
@@ -1744,19 +1557,11 @@ describe("API Session", () => {
       });
 
       describe("Bob accept(), terminate()", () => {
-        if (inviteWithoutSdp) {
-          bobAcceptTerminate(true, false, true, false);
-        } else {
-          bobAcceptTerminate(false, true, false, false);
-        }
+        bobAcceptTerminate(false);
       });
 
       describe("Bob accept(), terminate(), no ACK - transaction timeout", () => {
-        if (inviteWithoutSdp) {
-          bobAcceptTerminate(true, false, true, true);
-        } else {
-          bobAcceptTerminate(false, true, false, true);
-        }
+        bobAcceptTerminate(true);
       });
     });
   }
@@ -1766,8 +1571,6 @@ describe("API Session", () => {
     alice.transportSendSpy.calls.reset();
     bob.transportReceiveSpy.calls.reset();
     bob.transportSendSpy.calls.reset();
-    inviterEmitSpy.calls.reset();
-    if (invitationEmitSpy) { invitationEmitSpy.calls.reset(); }
     inviterStateSpy.calls.reset();
     if (invitationStateSpy) { invitationStateSpy.calls.reset(); }
     inviterRequestDelegateMock.onAccept.calls.reset();
@@ -1799,12 +1602,10 @@ describe("API Session", () => {
       bob.userAgent.delegate = {
         onInvite: (session) => {
           invitation = session;
-          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
       };
       inviter = new Inviter(alice.userAgent, target);
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
@@ -1818,12 +1619,10 @@ describe("API Session", () => {
       bob.userAgent.delegate = {
         onInvite: (session) => {
           invitation = session;
-          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
       };
       inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
@@ -1837,12 +1636,10 @@ describe("API Session", () => {
       bob.userAgent.delegate = {
         onInvite: (session) => {
           invitation = session;
-          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
       };
       inviter = new Inviter(alice.userAgent, target, { earlyMedia: false });
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
@@ -1942,12 +1739,10 @@ describe("API Session", () => {
       bob.userAgent.delegate = {
         onInvite: (session) => {
           invitation = session;
-          invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
       };
       inviter = new Inviter(alice.userAgent, target, { earlyMedia: true });
-      inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
       inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
       await soon();
     });
@@ -2044,12 +1839,10 @@ describe("API Session", () => {
   describe("Forking...", () => {
     let bob2: UserFake;
     let invitation2: Invitation;
-    let invitationEmitSpy2: EventEmitterEmitSpy;
     let invitationStateSpy2: EmitterSpy<SessionState>;
 
-    function bobsAccept(answerInAck: boolean, answerInOk: boolean, offerInOk: boolean) {
+    function bobsAccept(answerInAck: boolean) {
       const SIP_ACK_OR_BYE = [jasmine.stringMatching(/^ACK|^BYE/)];
-      const EVENT_ACCEPTED_OR_BYE = jasmine.stringMatching(/accepted|bye/);
 
       beforeEach(async () => {
         resetSpies2();
@@ -2077,19 +1870,6 @@ describe("API Session", () => {
         });
       }
 
-      if (answerInAck) {
-        it("her context should emit 'sdh'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-        });
-      } else {
-        it("her context should emit nothing", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(0);
-        });
-      }
-
       it("her session should be 'confirmed' and 'stable'", () => {
         const session = inviter.dialog;
         expect(session && session.sessionState).toBe(SessionDialogState.Confirmed);
@@ -2097,7 +1877,7 @@ describe("API Session", () => {
       });
     }
 
-    function bobsProgressReliable(answerInProgress: boolean, offerInProgress: boolean): void {
+    function bobsProgressReliable(): void {
       beforeEach(async () => {
         resetSpies2();
         invitation.progress({ rel100: true });
@@ -2121,20 +1901,6 @@ describe("API Session", () => {
         expect(spy.onReject).toHaveBeenCalledTimes(0);
         expect(spy.onTrying).toHaveBeenCalledTimes(0);
       });
-
-      if (offerInProgress) {
-        it("her context should emit 'sdh', 'sdh'", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(2);
-          expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          expect(spy.calls.argsFor(1)).toEqual(EVENT_SDH);
-        });
-      } else {
-        it("her context should emit nothing", () => {
-          const spy = inviterEmitSpy;
-          expect(spy).toHaveBeenCalledTimes(0);
-        });
-      }
     }
 
     function inviteSuiteFork(inviteWithoutSdp: boolean): void {
@@ -2174,36 +1940,19 @@ describe("API Session", () => {
           expect(spy.onTrying).toHaveBeenCalledTimes(2);
         });
 
-        if (inviteWithoutSdp) {
-          it("her context should emit nothing", () => {
-            const spy = inviterEmitSpy;
-            expect(spy).toHaveBeenCalledTimes(0);
-          });
-        } else {
-          it("her context should emit 'sdh'", () => {
-            const spy = inviterEmitSpy;
-            expect(spy).toHaveBeenCalledTimes(1);
-            expect(spy.calls.argsFor(0)).toEqual(EVENT_SDH);
-          });
-        }
-
         describe("Bob & Bob2 accept()", () => {
           if (inviteWithoutSdp) {
-            bobsAccept(true, false, true);
+            bobsAccept(true);
           } else {
-            bobsAccept(false, true, false);
+            bobsAccept(false);
           }
         });
 
         describe("Bob & Bob2 progress(reliable)", () => {
-          if (inviteWithoutSdp) {
-            bobsProgressReliable(false, true);
-          } else {
-            bobsProgressReliable(true, false);
-          }
+          bobsProgressReliable();
 
           describe("Bob & Bob2 accept()", () => {
-            bobsAccept(false, false, false);
+            bobsAccept(false);
           });
         });
       });
@@ -2213,7 +1962,6 @@ describe("API Session", () => {
       resetSpies();
       bob2.transportReceiveSpy.calls.reset();
       bob2.transportSendSpy.calls.reset();
-      if (invitationEmitSpy2) { invitationEmitSpy2.calls.reset(); }
       if (invitationStateSpy2) { invitationStateSpy2.calls.reset(); }
     }
 
@@ -2234,19 +1982,16 @@ describe("API Session", () => {
         bob.userAgent.delegate = {
           onInvite: (session) => {
             invitation = session;
-            invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
             invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
           }
         };
         bob2.userAgent.delegate = {
           onInvite: (session) => {
             invitation2 = session;
-            invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.userAgent.getLogger("Bob2"));
             invitationStateSpy2 = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob2"));
           }
         };
         inviter = new Inviter(alice.userAgent, target);
-        inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
         inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
         await soon();
       });
@@ -2260,19 +2005,16 @@ describe("API Session", () => {
         bob.userAgent.delegate = {
           onInvite: (session) => {
             invitation = session;
-            invitationEmitSpy = makeEventEmitterEmitSpy(invitation, bob.userAgent.getLogger("Bob"));
             invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
           }
         };
         bob2.userAgent.delegate = {
           onInvite: (session) => {
             invitation2 = session;
-            invitationEmitSpy2 = makeEventEmitterEmitSpy(invitation2, bob2.userAgent.getLogger("Bob2"));
             invitationStateSpy2 = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob2"));
           }
         };
         inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
-        inviterEmitSpy = makeEventEmitterEmitSpy(inviter, alice.userAgent.getLogger("Alice"));
         inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
         await soon();
       });

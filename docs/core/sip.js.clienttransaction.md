@@ -12,6 +12,12 @@ Client Transaction.
 export declare abstract class ClientTransaction extends Transaction 
 ```
 
+## Remarks
+
+The client transaction provides its functionality through the maintenance of a state machine.
+
+The TU communicates with the client transaction through a simple interface. When the TU wishes to initiate a new transaction, it creates a client transaction and passes it the SIP request to send and an IP address, port, and transport to which to send it. The client transaction begins execution of its state machine. Valid responses are passed up to the TU from the client transaction. https://tools.ietf.org/html/rfc3261\#section-17.1
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -31,10 +37,4 @@ export declare abstract class ClientTransaction extends Transaction
 |  --- | --- | --- |
 |  [onRequestTimeout()](./sip.js.clienttransaction.onrequesttimeout.md) |  | A 408 to non-INVITE will always arrive too late to be useful (\[3\]), The client already has full knowledge of the timeout. The only information this message would convey is whether or not the server believed the transaction timed out. However, with the current design of the NIT, a client cannot do anything with this knowledge. Thus, the 408 is simply wasting network resources and contributes to the response bombardment illustrated in \[3\]. https://tools.ietf.org/html/rfc4320\#section-4.1 |
 |  [receiveResponse(response)](./sip.js.clienttransaction.receiveresponse.md) |  | Receive incoming responses from the transport which match this transaction. Responses will be delivered to the transaction user as necessary. |
-
-## Remarks
-
-The client transaction provides its functionality through the maintenance of a state machine.
-
-The TU communicates with the client transaction through a simple interface. When the TU wishes to initiate a new transaction, it creates a client transaction and passes it the SIP request to send and an IP address, port, and transport to which to send it. The client transaction begins execution of its state machine. Valid responses are passed up to the TU from the client transaction. https://tools.ietf.org/html/rfc3261\#section-17.1
 

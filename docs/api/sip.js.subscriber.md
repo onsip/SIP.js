@@ -12,18 +12,6 @@ A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SU
 export declare class Subscriber extends Subscription 
 ```
 
-## Constructors
-
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.subscriber._constructor_.md) |  | Constructor. |
-
-## Methods
-
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [subscribe(options)](./sip.js.subscriber.subscribe.md) |  | Subscribe to event notifications. |
-
 ## Remarks
 
 This is (more or less) an implementation of a "subscriber" as defined in RFC 6665 "SIP-Specific Event Notifications". https://tools.ietf.org/html/rfc6665
@@ -58,4 +46,17 @@ subscriber.subscribe();
 subscriber.unsubscribe();
 
 ```
+
+## Constructors
+
+|  Constructor | Modifiers | Description |
+|  --- | --- | --- |
+|  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.subscriber._constructor_.md) |  | Constructor. |
+
+## Methods
+
+|  Method | Modifiers | Description |
+|  --- | --- | --- |
+|  [subscribe(options)](./sip.js.subscriber.subscribe.md) |  | Subscribe to event notifications. |
+|  [unsubscribe(options)](./sip.js.subscriber.unsubscribe.md) |  | Unsubscribe from event notifications. |
 

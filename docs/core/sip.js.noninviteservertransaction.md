@@ -12,6 +12,10 @@ Non-INVITE Server Transaction.
 export declare class NonInviteServerTransaction extends ServerTransaction 
 ```
 
+## Remarks
+
+https://tools.ietf.org/html/rfc3261\#section-17.2.2
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -33,8 +37,4 @@ export declare class NonInviteServerTransaction extends ServerTransaction
 |  [receiveRequest(request)](./sip.js.noninviteservertransaction.receiverequest.md) |  | Receive requests from transport matching this transaction. |
 |  [receiveResponse(statusCode, response)](./sip.js.noninviteservertransaction.receiveresponse.md) |  | Receive responses from TU for this transaction. |
 |  [typeToString()](./sip.js.noninviteservertransaction.typetostring.md) |  | For logging. |
-
-## Remarks
-
-https://tools.ietf.org/html/rfc3261\#section-17.2.2
 

@@ -20,7 +20,7 @@ import { UserAgent } from "./user-agent";
  *
  * @public
  */
-export abstract class Subscription extends EventEmitter {
+export abstract class Subscription {
 
   /**
    * Property reserved for use by instance owner.
@@ -54,31 +54,9 @@ export abstract class Subscription extends EventEmitter {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
-    super();
     this._logger = userAgent.getLogger("sip.subscription");
     this.userAgent = userAgent;
     this.delegate = options.delegate;
-  }
-
-  /**
-   * Destructor.
-   * @internal
-   */
-  public dispose(): void {
-    if (this._disposed) {
-      return;
-    }
-    this._disposed = true;
-    this.stateTransition(SubscriptionState.Terminated);
-    this._stateEventEmitter.removeAllListeners();
-  }
-
-  /**
-   * True if disposed.
-   * @internal
-   */
-  get disposed(): boolean {
-    return this._disposed;
   }
 
   /**
@@ -109,6 +87,27 @@ export abstract class Subscription extends EventEmitter {
    * Otherwise a noop.
    */
   public abstract unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
+
+  /**
+   * True if disposed.
+   * @internal
+   */
+  get disposed(): boolean {
+    return this._disposed;
+  }
+
+  /**
+   * Destructor.
+   * @internal
+   */
+  public _dispose(): void {
+    if (this._disposed) {
+      return;
+    }
+    this._disposed = true;
+    this.stateTransition(SubscriptionState.Terminated);
+    this._stateEventEmitter.removeAllListeners();
+  }
 
   /** @internal */
   protected stateTransition(newState: SubscriptionState): void {

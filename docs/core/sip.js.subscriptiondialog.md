@@ -12,6 +12,20 @@ Subscription Dialog.
 export declare class SubscriptionDialog extends Dialog implements Subscription 
 ```
 
+## Remarks
+
+SIP-Specific Event Notification
+
+Abstract
+
+This document describes an extension to the Session Initiation Protocol (SIP) defined by RFC 3261. The purpose of this extension is to provide an extensible framework by which SIP nodes can request notification from remote nodes indicating that certain events have occurred.
+
+Note that the event notification mechanisms defined herein are NOT intended to be a general-purpose infrastructure for all classes of event subscription and notification.
+
+This document represents a backwards-compatible improvement on the original mechanism described by RFC 3265, taking into account several years of implementation experience. Accordingly, this document obsoletes RFC 3265. This document also updates RFC 4660 slightly to accommodate some small changes to the mechanism that were discussed in that document.
+
+https://tools.ietf.org/html/rfc6665
+
 ## Constructors
 
 |  Constructor | Modifiers | Description |
@@ -41,18 +55,4 @@ export declare class SubscriptionDialog extends Dialog implements Subscription
 |  [subscribe(delegate, options)](./sip.js.subscriptiondialog.subscribe.md) |  | 4.1.2.2. Refreshing of Subscriptions https://tools.ietf.org/html/rfc6665\#section-4.1.2.2 |
 |  [terminate()](./sip.js.subscriptiondialog.terminate.md) |  | 4.4.1. Dialog Creation and Termination A subscription is destroyed after a notifier sends a NOTIFY request with a "Subscription-State" of "terminated", or in certain error situations described elsewhere in this document. https://tools.ietf.org/html/rfc6665\#section-4.4.1 |
 |  [unsubscribe()](./sip.js.subscriptiondialog.unsubscribe.md) |  | 4.1.2.3. Unsubscribing https://tools.ietf.org/html/rfc6665\#section-4.1.2.3 |
-
-## Remarks
-
-SIP-Specific Event Notification
-
-Abstract
-
-This document describes an extension to the Session Initiation Protocol (SIP) defined by RFC 3261. The purpose of this extension is to provide an extensible framework by which SIP nodes can request notification from remote nodes indicating that certain events have occurred.
-
-Note that the event notification mechanisms defined herein are NOT intended to be a general-purpose infrastructure for all classes of event subscription and notification.
-
-This document represents a backwards-compatible improvement on the original mechanism described by RFC 3265, taking into account several years of implementation experience. Accordingly, this document obsoletes RFC 3265. This document also updates RFC 4660 slightly to accommodate some small changes to the mechanism that were discussed in that document.
-
-https://tools.ietf.org/html/rfc6665
 

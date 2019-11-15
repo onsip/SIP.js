@@ -40,6 +40,6 @@ export class Infoer {
       return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
     }
 
-    return this.session.info(options.requestDelegate, options.requestOptions);
+    return this.session._info(options.requestDelegate, options.requestOptions);
   }
 }
