@@ -9,7 +9,7 @@ A subscription provides asynchronous [Notification](./sip.js.notification.md) of
 <b>Signature:</b>
 
 ```typescript
-export declare abstract class Subscription extends EventEmitter 
+export declare abstract class Subscription 
 ```
 
 ## Remarks

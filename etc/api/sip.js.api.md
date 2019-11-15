@@ -674,40 +674,18 @@ export enum SIPExtension {
 // @public
 export class Subscriber extends Subscription {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: SubscriberOptions);
-    // @internal @deprecated
-    _close(): Promise<void>;
     // @internal
     _dispose(): void;
-    // @internal (undocumented)
-    emit(event: "accepted" | "failed" | "rejected", message: IncomingResponseMessage, cause: string): boolean;
-    // @internal (undocumented)
-    emit(event: "notify", notification: {
-        request: IncomingRequestMessage;
-    }): boolean;
-    // @internal (undocumented)
-    emit(event: "terminated"): boolean;
-    // @internal
-    on(name: "accepted" | "failed" | "rejected", callback: (message: IncomingResponseMessage, cause: string) => void): this;
-    // @internal (undocumented)
-    on(name: "notify", callback: (notification: {
-        request: IncomingRequestMessage;
-    }) => void): this;
-    // @internal (undocumented)
-    on(name: "terminated", callback: () => void): this;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponse" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
     protected onAccepted(response: IncomingResponse): void;
-    // @internal (undocumented)
-    protected onFailed(response?: IncomingResponse): void;
     // @internal (undocumented)
     protected onNotify(request: IncomingNotifyRequest): void;
     // Warning: (ae-forgotten-export) The symbol "OutgoingSubscribeRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
     protected onRefresh(request: OutgoingSubscribeRequest): void;
-    // @internal (undocumented)
-    protected onTerminated(): void;
     // @internal @deprecated
     _refresh(): Promise<void>;
     subscribe(options?: SubscriberSubscribeOptions): Promise<void>;
@@ -731,7 +709,7 @@ export interface SubscriberSubscribeOptions {
 }
 
 // @public
-export abstract class Subscription extends EventEmitter {
+export abstract class Subscription {
     // @internal
     protected constructor(userAgent: UserAgent, options?: SubscriptionOptions);
     data: any | undefined;
