@@ -255,10 +255,7 @@ export function makeUserAgentCoreConfigurationFromUserAgent(ua: UserAgent): User
       displayName: ua.configuration.displayName,
       loggerFactory: ua.getLoggerFactory(),
       hackViaTcp: ua.configuration.hackViaTcp,
-      routeSet:
-        ua.configuration.usePreloadedRoute && ua.transport.server && ua.transport.server.sipUri ?
-          [ua.transport.server.sipUri] :
-          [],
+      routeSet: ua.configuration.preloadedRouteSet,
       supportedOptionTags,
       supportedOptionTagsResponse,
       sipjsId: ua.configuration.sipjsId,

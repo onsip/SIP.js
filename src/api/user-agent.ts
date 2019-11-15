@@ -125,6 +125,7 @@ export class UserAgent {
     logConnector: () => { /* noop */ },
     logLevel: "log",
     noAnswerTimeout: 60,
+    preloadedRouteSet: [],
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
     sipExtension100rel: SIPExtension.Unsupported,
@@ -134,7 +135,6 @@ export class UserAgent {
     transportConstructor: WebTransport,
     transportOptions: {},
     uri: new URI("sip", "anonymous", "anonymous.invalid"),
-    usePreloadedRoute: false,
     userAgentString: "SIP.js/" + LIBRARY_VERSION,
     viaHost: ""
   };
@@ -664,10 +664,7 @@ export class UserAgent {
       displayName: this.options.displayName,
       loggerFactory: this.loggerFactory,
       hackViaTcp: this.options.hackViaTcp,
-      routeSet:
-        this.options.usePreloadedRoute && this.transport.server && this.transport.server.sipUri ?
-          [this.transport.server.sipUri] :
-          [],
+      routeSet: this.options.preloadedRouteSet,
       supportedOptionTags,
       supportedOptionTagsResponse,
       sipjsId: this.options.sipjsId,
