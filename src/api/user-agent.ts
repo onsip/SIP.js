@@ -465,30 +465,16 @@ export class UserAgent {
     return new Inviter(this, targetURI, options);
   }
 
-  // ==============================
-  // Event Handlers
-  // ==============================
-
-  private onTransportError(): void {
-    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
-      return;
-    }
-    this.status = _UAStatus.STATUS_NOT_READY;
-  }
-
   /**
    * Helper function. Sets transport listeners
    */
   private setTransportListeners(): void {
     this.transport.on("connected", () => this.onTransportConnected());
     this.transport.on("disconnected", () => this.onTransportDisconnected());
-    this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
+    this.transport.on("message", (message: string) => this.onTransportReceived(message));
     this.transport.on("transportError", () => this.onTransportError());
   }
 
-  /**
-   * Transport connection event.
-   */
   private onTransportConnected(): void {
     // if (this.configuration.register) {
     //   // In an effor to maintain behavior from when we "initialized" an
@@ -506,11 +492,18 @@ export class UserAgent {
     }
   }
 
+  private onTransportError(): void {
+    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
+      return;
+    }
+    this.status = _UAStatus.STATUS_NOT_READY;
+  }
+
   /**
    * Handle SIP message received from the transport.
    * @param messageString - The message.
    */
-  private onTransportReceiveMsg(messageString: string): void {
+  private onTransportReceived(messageString: string): void {
     const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
     if (!message) {
       this.logger.warn("Failed to parse incoming message. Dropping.");
