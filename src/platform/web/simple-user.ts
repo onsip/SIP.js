@@ -14,6 +14,7 @@ import {
   RegistererRegisterOptions,
   RegistererState,
   RegistererUnregisterOptions,
+  RequestPendingError,
   Session,
   SessionInviteOptions,
   SessionState,
@@ -39,6 +40,7 @@ export class SimpleUser {
   public delegate: SimpleUserDelegate | undefined;
 
   private logger: Logger;
+  private held: boolean = false;
   private options: SimpleUserOptions;
   private registerer: Registerer | undefined = undefined;
   private session: Session | undefined = undefined;
@@ -174,6 +176,7 @@ export class SimpleUser {
 
   /**
    * Connect.
+   * @remarks
    * Start the UserAgent's WebSocket Transport.
    */
   public connect(): Promise<void> {
@@ -183,6 +186,7 @@ export class SimpleUser {
 
   /**
    * Disconnect.
+   * @remarks
    * Stop the UserAgent's WebSocket Transport.
    */
   public disconnect(): Promise<void> {
@@ -192,7 +196,9 @@ export class SimpleUser {
 
   /**
    * Start receiving incoming calls.
+   * @remarks
    * Send a REGISTER request for the UserAgent's AOR.
+   * Resolves when the REGISTER request is sent, otherwise rejects.
    */
   public register(
     registererOptions?: RegistererOptions,
@@ -231,7 +237,9 @@ export class SimpleUser {
 
   /**
    * Stop receiving incoming calls.
+   * @remarks
    * Send an un-REGISTER request for the UserAgent's AOR.
+   * Resolves when the un-REGISTER request is sent, otherwise rejects.
    */
   public unregister(
     registererUnregisterOptions?: RegistererUnregisterOptions
@@ -248,7 +256,10 @@ export class SimpleUser {
 
   /**
    * Make an outoing call.
+   * @remarks
    * Send an INVITE request to create a new Session.
+   * Resolves when the INVITE request is sent, otherwise rejects.
+   * Use `onCallAnswered` delegate method to determine if Session is established.
    * @param destination - The target destination to call. A SIP address to send the INVITE to.
    */
   public call(
@@ -288,7 +299,10 @@ export class SimpleUser {
 
   /**
    * Hangup a call.
+   * @remarks
    * Send a BYE request to end the current Session.
+   * Resolves when the BYE request is sent, otherwise rejects.
+   * Use `onCallTerminated` delegate method to determine if Session is terminated.
    */
   public hangup(): Promise<void> {
     this.logger.log(`[${this.id}] ending Session...`);
@@ -316,7 +330,10 @@ export class SimpleUser {
 
   /**
    * Answer an incoming call.
+   * @remarks
    * Accept an incoming INVITE request creating a new Session.
+   * Resolves with the response is sent, otherwise rejects.
+   * Use `onCallAnswered` delegate method to determine if Session is established.
    */
   public answer(
     invitationAcceptOptions?: InvitationAcceptOptions
@@ -347,7 +364,10 @@ export class SimpleUser {
 
   /**
    * Decline an incoming call.
+   * @remarks
    * Reject an incoming INVITE request.
+   * Resolves with the response is sent, otherwise rejects.
+   * Use `onCallTerminated` delegate method to determine if Session is terminated.
    */
   public decline(): Promise<void> {
     this.logger.log(`[${this.id}] rejecting Invitation...`);
@@ -364,123 +384,73 @@ export class SimpleUser {
   }
 
   /**
-   * Hold call.
+   * Hold call
+   * @remarks
    * Send a re-INVITE with new offer indicating "hold".
+   * Resolves when the re-INVITE request is sent, otherwise rejects.
+   * Use `onCallHold` delegate method to determine if request is accepted or rejected.
    * See: https://tools.ietf.org/html/rfc6337
    */
   public hold(): Promise<void> {
     this.logger.log(`[${this.id}] holding session...`);
-
-    if (!this.session) {
-      return Promise.reject(new Error("Session does not exist."));
-    }
-
-    if (this.session.state !== SessionState.Established) {
-      return Promise.reject(new Error("Session is not established."));
-    }
-
-    const sessionDescriptionHandler = this.session.sessionDescriptionHandler;
-    if (!(sessionDescriptionHandler instanceof SessionDescriptionHandler)) {
-      throw new Error("Session's session description handler not instance of SessionDescriptionHandler.");
-    }
-
-    const options: SessionInviteOptions = {
-      sessionDescriptionHandlerModifiers: [sessionDescriptionHandler.holdModifier]
-    };
-
-    // Mute
-    this.mute();
-
-    // Send re-INVITE
-    return this.session.invite(options)
-      .then(() => { return; });
+    return this.setHold(true);
   }
 
   /**
    * Unhold call.
+   * @remarks
    * Send a re-INVITE with new offer indicating "unhold".
+   * Resolves when the re-INVITE request is sent, otherwise rejects.
+   * Use `onCallHold` delegate method to determine if request is accepted or rejected.
    * See: https://tools.ietf.org/html/rfc6337
    */
   public unhold(): Promise<void> {
     this.logger.log(`[${this.id}] unholding session...`);
+    return this.setHold(false);
+  }
 
-    if (!this.session) {
-      return Promise.reject(new Error("Session does not exist."));
-    }
-
-    if (this.session.state !== SessionState.Established) {
-      return Promise.reject(new Error("Session is not established."));
-    }
-
-    const sessionDescriptionHandler = this.session.sessionDescriptionHandler;
-    if (!(sessionDescriptionHandler instanceof SessionDescriptionHandler)) {
-      throw new Error("Session's session description handler not instance of SessionDescriptionHandler.");
-    }
-
-    const options: SessionInviteOptions = {};
-
-    // Unmute
-    this.unmute();
-
-    // Send re-INVITE
-    return this.session.invite(options)
-      .then(() => { return; });
+  /**
+   * Hold state.
+   * @remarks
+   * True if session media is on hold.
+   */
+  public isHeld(): boolean {
+    return this.held;
   }
 
   /**
    * Mute call.
+   * @remarks
    * Disable sender's media tracks.
    */
   public mute(): void {
     this.logger.log(`[${this.id}] disabling media tracks...`);
-
-    if (!this.session) {
-      this.logger.warn(`[${this.id}] an session is required to disable media tracks`);
-      return;
-    }
-
-    if (this.session.state !== SessionState.Established) {
-      this.logger.warn(`[${this.id}] an established session is required to disable media tracks`);
-      return;
-    }
-
-    this.enableSenderTracks(false);
+    this.setMute(true);
   }
 
   /**
    * Unmute call.
+   * @remarks
    * Enable sender's media tracks.
    */
   public unmute(): void {
     this.logger.log(`[${this.id}] enabling media tracks...`);
-
-    if (!this.session) {
-      this.logger.warn(`[${this.id}] an session is required to enable media tracks`);
-      return;
-    }
-
-    if (this.session.state !== SessionState.Established) {
-      this.logger.warn(`[${this.id}] an established session is required to enable media tracks`);
-      return;
-    }
-
-    this.enableSenderTracks(true);
+    this.setMute(false);
   }
 
   /**
    * Mute state.
+   * @remarks
    * True if sender's media track is disabled.
    */
   public isMuted(): boolean {
     const track = this.localAudioTrack || this.localVideoTrack;
-    if (!track) {
-      return false;
-    }
-    return !track.enabled;
+    return track ? !track.enabled : false;
   }
 
   /**
    * Send DTMF.
+   * @remarks
    * Send an INFO request with content type application/dtmf-relay.
    * @param tone - Tone to send.
    */
@@ -512,6 +482,7 @@ export class SimpleUser {
 
   /**
    * Send a message.
+   * @remarks
    * Send a MESSAGE request.
    * @param destination - The target destination for the message. A SIP address to send the MESSAGE to.
    */
@@ -681,6 +652,78 @@ export class SimpleUser {
       .then((request) => {
         this.logger.log(`[${this.id}] sent INVITE`);
       });
+  }
+
+  /**
+   * Puts Session on hold.
+   * @param hold - Hold on if true, off if false.
+   */
+  private setHold(hold: boolean): Promise<void> {
+    if (!this.session) {
+      return Promise.reject(new Error("Session does not exist."));
+    }
+
+    // Just resolve if we are already in correct state
+    if (this.held === hold) {
+      return Promise.resolve();
+    }
+
+    const sessionDescriptionHandler = this.session.sessionDescriptionHandler;
+    if (!(sessionDescriptionHandler instanceof SessionDescriptionHandler)) {
+      throw new Error("Session's session description handler not instance of SessionDescriptionHandler.");
+    }
+
+    const options: SessionInviteOptions = {
+      requestDelegate: {
+        onAccept: () => {
+          this.held = hold;
+          if (this.delegate && this.delegate.onCallHold) {
+            this.delegate.onCallHold(this.held);
+          }
+        },
+        onReject: () => {
+          this.logger.warn(`[${this.id}] re-invite request was rejected`);
+          if (this.delegate && this.delegate.onCallHold) {
+            this.delegate.onCallHold(this.held);
+          }
+        }
+      }
+    };
+
+    // Use hold modifier to produce the appropriate SDP offer to place call on hold
+    if (hold) {
+      options.sessionDescriptionHandlerModifiers = [sessionDescriptionHandler.holdModifier];
+    }
+
+    // Send re-INVITE
+    return this.session.invite(options)
+      .then(() => {
+        this.enableSenderTracks(!hold); // mute/unmute
+      })
+      .catch((error: Error) => {
+        if (error instanceof RequestPendingError) {
+          this.logger.error("A hold request is already in progress.");
+        }
+        throw error;
+      });
+  }
+
+  /**
+   * Puts Session on mute.
+   * @param mute - Mute on if true, off if false.
+   */
+  private setMute(mute: boolean): void {
+    if (!this.session) {
+      this.logger.warn(`[${this.id}] an session is required to enabled/disable media tracks`);
+      return;
+    }
+
+    if (this.session.state !== SessionState.Established) {
+      this.logger.warn(`[${this.id}] an established session is required to enable/disable media tracks`);
+      return;
+    }
+
+    this.enableSenderTracks(!mute);
   }
 
   /** Helper function to attach local media to html elements. */

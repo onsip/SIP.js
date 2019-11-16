@@ -29,6 +29,12 @@ export interface SimpleUserDelegate {
   onCallHangup?(): void;
 
   /**
+   * Called when a call is put on hold or taken off hold.
+   * Callback for handling re-INVITE responses.
+   */
+  onCallHold?(held: boolean): void;
+
+  /**
    * Called upon receiving a message.
    * Callback for handling incoming MESSAGE requests.
    * @param message - The message received.
