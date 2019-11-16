@@ -20,23 +20,14 @@ export interface Transport extends CoreTransport  {
   disconnect(): Promise<void>;
 
   /**
-   * Returns true if the transport is connected
+   * Returns true if the transport is connected.
    */
   isConnected(): boolean;
 
   /**
-   * Calls the callback once the UA is connected.
+   * Events
    */
-  // afterConnected(callback: () => void): void;
-
-  /**
-   * Returns a promise which resolves once the UA is connected.
-   * @deprecated Use `afterConnected`
-   * @internal
-   */
-  // waitForConnected(): Promise<void>;
-
-  on(event: "connected" | "transportError", listener: () => void): this;
+  on(event: "connected" | "disconnected" | "transportError", listener: () => void): this;
   on(event: "message", listener: (message: string) => void): this;
   on(name: string, callback: (...args: any[]) => void): this;
 }

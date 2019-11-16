@@ -481,6 +481,7 @@ export class UserAgent {
    */
   private setTransportListeners(): void {
     this.transport.on("connected", () => this.onTransportConnected());
+    this.transport.on("disconnected", () => this.onTransportDisconnected());
     this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
     this.transport.on("transportError", () => this.onTransportError());
   }
@@ -494,6 +495,15 @@ export class UserAgent {
     //   // authentication factory, this is in a Promise.then
     //   Promise.resolve().then(() => this.registerer.register());
     // }
+  }
+
+  private onTransportDisconnected(): void {
+    // TODO: REVIEW NEEDED: Does it make sense to do this here?
+    for (const id in this.registerers) {
+      if (this.registerers[id]) {
+        this.registerers[id].unregister();
+      }
+    }
   }
 
   /**
