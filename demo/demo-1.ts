@@ -19,7 +19,8 @@ const webSocketServer = "wss://edge.sip.onsip.com";
 serverSpan.innerHTML = webSocketServer;
 
 // Destination URI
-const target = "sip:welcome@onsip.com";
+// const target = "sip:welcome@onsip.com";
+const target = "sip:john@junctionnetworks.com";
 targetSpan.innerHTML = target;
 
 // Name for demo user
@@ -48,6 +49,10 @@ const simpleUserDelegate: SimpleUserDelegate = {
     keypadDisabled(true);
     holdCheckboxDisabled(true);
     muteCheckboxDisabled(true);
+  },
+  onCallHold: (held: boolean): void => {
+    console.log(`[${displayName}] Call hold ${held}`);
+    holdCheckbox.checked = held;
   }
 };
 
