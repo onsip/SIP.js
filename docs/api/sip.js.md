@@ -79,6 +79,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SubscriptionOptions](./sip.js.subscriptionoptions.md) | Options for [Subscription](./sip.js.subscription.md) constructor. |
 |  [SubscriptionSubscribeOptions](./sip.js.subscriptionsubscribeoptions.md) | Options for [Subscription.subscribe()](./sip.js.subscription.subscribe.md)<!-- -->. |
 |  [SubscriptionUnsubscribeOptions](./sip.js.subscriptionunsubscribeoptions.md) | Options for [Subscription.unsubscribe()](./sip.js.subscription.unsubscribe.md)<!-- -->. |
+|  [Transport](./sip.js.transport.md) | Transport. |
 |  [UserAgentDelegate](./sip.js.useragentdelegate.md) | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [UserAgentOptions](./sip.js.useragentoptions.md) | Options for [UserAgent](./sip.js.useragent.md) constructor. |
 

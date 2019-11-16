@@ -4,12 +4,12 @@
 
 ## Transport.isConnected() method
 
-Returns true if the transport is connected
+Returns true if the transport is connected.
 
 <b>Signature:</b>
 
 ```typescript
-abstract isConnected(): boolean;
+isConnected(): boolean;
 ```
 <b>Returns:</b>
 

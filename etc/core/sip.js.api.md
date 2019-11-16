@@ -650,7 +650,7 @@ export class OutgoingRequestMessage {
     // (undocumented)
     readonly ruri: URI;
     setHeader(name: string, value: string | Array<string>): void;
-    setViaHeader(branch: string, scheme?: string): void;
+    setViaHeader(branch: string, transport: string): void;
     // (undocumented)
     readonly to: NameAddrHeader;
     // (undocumented)
@@ -1102,29 +1102,9 @@ export interface TransactionUser {
 }
 
 // @public
-export abstract class Transport extends EventEmitter {
-    constructor(logger: Logger, options?: any);
-    // (undocumented)
-    afterConnected(callback: () => void): void;
-    connect(options?: any): Promise<void>;
-    protected abstract connectPromise(options: any): Promise<any>;
-    disconnect(options?: any): Promise<void>;
-    protected abstract disconnectPromise(options: any): Promise<any>;
-    abstract isConnected(): boolean;
-    // (undocumented)
-    protected logger: Logger;
-    protected abstract onMessage(e: any): void;
-    send(message: string, options?: any): Promise<void>;
-    protected abstract sendPromise(message: string, options?: any): Promise<{
-        msg: string;
-        overrideEvent?: boolean;
-    }>;
-    // @internal
-    server?: {
-        scheme?: string;
-        sipUri?: string;
-    };
-    waitForConnected(): Promise<void>;
+export interface Transport {
+    readonly protocol: string;
+    send(message: string): Promise<void>;
 }
 
 // @public
