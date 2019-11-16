@@ -2,7 +2,21 @@ import { EventEmitter } from "events";
 
 import { Transport as TransportDefinition } from "../../api";
 import { Grammar, Logger } from "../../core";
-import { TransportOptions } from "./transport-options";
+
+/**
+ * Transport options.
+ * @public
+ */
+export interface TransportOptions {
+  /** URLs of one or more WebSocket servers to connect with. */
+  wsServers: Array<string> | string;
+  connectionTimeout?: number;
+  maxReconnectionAttempts?: number;
+  reconnectionTimeout?: number;
+  keepAliveInterval?: number;
+  keepAliveDebounce?: number;
+  traceSip?: boolean;
+}
 
 /**
  * FIXME: See below.
@@ -38,7 +52,7 @@ interface WebSocketServer {
   isError: boolean;
 }
 
-export enum TransportStatus {
+enum TransportStatus {
   STATUS_CONNECTING,
   STATUS_OPEN,
   STATUS_CLOSING,
@@ -46,7 +60,8 @@ export enum TransportStatus {
 }
 
 /**
- * Transport
+ * Transport for SIP over secure WebSocket (WSS).
+ * @public
  */
 export class Transport extends EventEmitter implements TransportDefinition {
   public static readonly C = TransportStatus;

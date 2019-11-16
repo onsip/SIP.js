@@ -20,20 +20,21 @@ import {
   SessionState,
   UserAgent,
   UserAgentOptions
-} from "../../api";
-import { Logger } from "../../core";
-import { SessionDescriptionHandler } from "./session-description-handler";
+} from "../../../api";
+import { Logger } from "../../../core";
+import { SessionDescriptionHandler } from "../session-description-handler";
+import { Transport } from "../transport";
 import { SimpleUserDelegate } from "./simple-user-delegate";
 import { SimpleUserOptions } from "./simple-user-options";
-import { Transport } from "./transport";
 
 /**
- * A Simple SIP User class.
+ * A simple SIP user class.
  * @remarks
  * While this class is completely functional for simple use cases, it is not intended
  * to provide an interface which is suitable for most (must less all) applications.
  * While this class has many limitations (for example, it only handles a single concurrent session),
  * it is, however, intended to serve as a simple example of using the SIP.js API.
+ * @public
  */
 export class SimpleUser {
   /** Delegate. */
@@ -149,7 +150,10 @@ export class SimpleUser {
     this.logger = this.userAgent.getLogger("sip.SimpleUser");
   }
 
-  /** Instance identifier. */
+  /**
+   * Instance identifier.
+   * @internal
+   */
   get id(): string {
     return (this.options.userAgentOptions && this.options.userAgentOptions.displayName) || "Anonymous";
   }
