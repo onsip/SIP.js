@@ -19,6 +19,7 @@ eliminating any support of ES5 environments (IE11 being the notable case).
 
 # Documentation
 
+* [SimpleUser](./simple-user/sip.js.md)
 * [API Overview](#api-overview)
 * [API Reference](./api/sip.js.md)
 * [Core Library Overview](#core-library-overview)
