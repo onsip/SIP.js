@@ -113,9 +113,7 @@ export class InviteClientTransaction extends ClientTransaction {
       throw new Error("To tag undefined.");
     }
     const id = "z9hG4bK" + Math.floor(Math.random() * 10000000);
-    // FIXME: Transport's server property is not typed (as of writing this).
-    const scheme = this.transport.server && this.transport.server.scheme ? this.transport.server.scheme : undefined;
-    ack.setViaHeader(id, scheme);
+    ack.setViaHeader(id, this.transport.protocol);
     this.ackRetransmissionCache.set(toTag, ack); // Add to ACK retransmission cache
     this.send(ack.toString()).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send ACK to 2xx response.");

@@ -245,14 +245,14 @@ export class OutgoingRequestMessage {
    * the client and the server.
    * https://tools.ietf.org/html/rfc3261#section-8.1.1.7
    * @param branchParameter - The branch parameter.
-   * @param scheme - The scheme.
+   * @param transport - The sent protocol transport.
    */
-  public setViaHeader(branch: string, scheme: string = "WSS"): void {
+  public setViaHeader(branch: string, transport: string): void {
     // FIXME: Hack
     if (this.options.hackViaTcp) {
-      scheme = "TCP";
+      transport = "TCP";
     }
-    let via = "SIP/2.0/" + scheme;
+    let via = "SIP/2.0/" + transport;
     via += " " + this.options.viaHost + ";branch=" + branch;
     if (this.options.forceRport) {
       via += ";rport";

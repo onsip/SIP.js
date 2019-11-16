@@ -119,6 +119,7 @@ const makeMockTransport = (): jasmine.SpyObj<Transport> => {
     "once",
     "removeListener"
   ]);
+  (transport.protocol as any) = "TEST";
   transport.connect.and.returnValue(Promise.resolve());
   transport.disconnect.and.returnValue(Promise.resolve());
   transport.send.and.returnValue(Promise.resolve());
@@ -221,7 +222,7 @@ describe("Transactions", () => {
 
         it("has updated the Via header of its outgoing request with the branch parameter and transport", () => {
           expect(request.setViaHeader).toHaveBeenCalledTimes(1);
-          expect(request.setViaHeader).toHaveBeenCalledWith(transaction.id, undefined);
+          expect(request.setViaHeader).toHaveBeenCalledWith(transaction.id, "TEST");
         });
 
         it("has sent its outgoing request to the transport", () => {

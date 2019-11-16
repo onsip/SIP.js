@@ -24,6 +24,17 @@ export abstract class Transport extends EventEmitter {
     sipUri?: string;
   };
 
+  /**
+   * The protocol.
+   *
+   * @remarks
+   * Formatted as defined for the Via header sent-protocol transport.
+   * https://tools.ietf.org/html/rfc3261#section-20.42
+   */
+  public get protocol(): string {
+    return this.server && this.server.scheme ? this.server.scheme : "WSS";
+  }
+
   protected logger: Logger;
 
   /**
