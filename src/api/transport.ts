@@ -25,9 +25,17 @@ export interface Transport extends CoreTransport  {
   isConnected(): boolean;
 
   /**
-   * Events
+   * Add listener for connection events.
    */
   on(event: "connected" | "disconnected" | "transportError", listener: () => void): this;
+
+  /**
+   * Add listener for message events.
+   */
   on(event: "message", listener: (message: string) => void): this;
+
+  /**
+   * @internal
+   */
   on(name: string, callback: (...args: any[]) => void): this;
 }
