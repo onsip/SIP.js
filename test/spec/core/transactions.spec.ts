@@ -112,16 +112,9 @@ const makeServerTransactionUser = (): jasmine.SpyObj<Required<ServerTransactionU
 /** Mocked transport factory function. */
 const makeMockTransport = (): jasmine.SpyObj<Transport> => {
   const transport = jasmine.createSpyObj<Transport>("Transport", [
-    "connect",
-    "disconnect",
-    "send",
-    "on",
-    "once",
-    "removeListener"
+    "send"
   ]);
   (transport.protocol as any) = "TEST";
-  transport.connect.and.returnValue(Promise.resolve());
-  transport.disconnect.and.returnValue(Promise.resolve());
   transport.send.and.returnValue(Promise.resolve());
   return transport;
 };

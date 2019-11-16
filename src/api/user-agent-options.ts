@@ -1,8 +1,6 @@
-import {
-  Transport,
-  URI
-} from "../core";
+import { URI } from "../core";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
+import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
 
 /**

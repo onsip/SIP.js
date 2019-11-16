@@ -16,7 +16,6 @@ import {
   Logger,
   LoggerFactory,
   Parser,
-  Transport,
   TransportError,
   URI,
   UserAgentCore,
@@ -27,11 +26,9 @@ import {
   createRandomToken,
   str_utf8_length
 } from "../core/messages/utils";
-import { LIBRARY_VERSION } from "../version";
-
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
-
+import { LIBRARY_VERSION } from "../version";
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
@@ -42,6 +39,7 @@ import { Registerer } from "./registerer";
 import { Session } from "./session";
 import { SessionState } from "./session-state";
 import { Subscription } from "./subscription";
+import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
 import {
   SIPExtension,

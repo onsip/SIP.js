@@ -156,15 +156,9 @@ export function makeMockSubscriptionDelegate(): jasmine.SpyObj<Required<Subscrip
 /** Mocked transport factory function. */
 export function makeMockTransport(): jasmine.SpyObj<Transport> {
   const transport = jasmine.createSpyObj<Transport>("Transport", [
-    "connect",
-    "disconnect",
-    "send",
-    "on",
-    "once",
-    "removeListener"
+    "send"
   ]);
-  transport.connect.and.returnValue(Promise.resolve());
-  transport.disconnect.and.returnValue(Promise.resolve());
+  (transport.protocol as any) = "TEST";
   transport.send.and.returnValue(Promise.resolve());
   return transport;
 }

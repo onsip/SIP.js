@@ -1,9 +1,12 @@
-import { Logger, Transport } from "../../../src/core";
+import { EventEmitter } from "events";
+
+import { Transport } from "../../../src/api";
+import { Logger } from "../../../src/core";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
-export class TransportFake extends Transport {
+export class TransportFake extends EventEmitter implements Transport {
   private _id: string = "";
   private peers: Array<TransportFake> = [];
   private waitingForSendPromise: Promise<void> | undefined;
@@ -15,16 +18,28 @@ export class TransportFake extends Transport {
 
   private connected: boolean = true;
 
-  constructor(logger: Logger, options: any) {
-    super(logger, options);
+  constructor(private logger: Logger, options: any) {
+    super();
   }
 
-  set id(id: string) {
+  public set id(id: string) {
     this._id = id;
   }
 
-  public addPeer(peer: TransportFake) {
-    this.peers.push(peer);
+  public get protocol(): string {
+    return "FAKE";
+  }
+
+  public send(message: string): Promise<void> {
+    return this.sendPromise(message).then(() => { return; });
+  }
+
+  public connect(): Promise<void> {
+    return this.connectPromise({});
+  }
+
+  public disconnect(): Promise<void> {
+    return  this.disconnectPromise({});
   }
 
   public isConnected(): boolean {
@@ -33,6 +48,10 @@ export class TransportFake extends Transport {
 
   public setConnected(connected: boolean): void {
     this.connected = connected;
+  }
+
+  public addPeer(peer: TransportFake) {
+    this.peers.push(peer);
   }
 
   public receive(msg: string): void {
