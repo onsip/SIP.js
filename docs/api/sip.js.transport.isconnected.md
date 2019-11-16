@@ -4,7 +4,7 @@
 
 ## Transport.isConnected() method
 
-Returns true if the transport is connected.
+Returns true if the `state` equals "Connected".
 
 <b>Signature:</b>
 
@@ -14,4 +14,23 @@ isConnected(): boolean;
 <b>Returns:</b>
 
 `boolean`
+
+## Remarks
+
+This is equivalent to `state === TransportState.Connected`<!-- -->. It is convenient. A common paradigm is, for example...
+
+## Example
+
+
+```ts
+// Monitor transport connectivity
+userAgent.transport.stateChange.on(() => {
+  if (userAgent.transport.isConnected()) {
+    // handle transport connect
+  } else {
+    // handle transport disconnect
+  }
+});
+
+```
 

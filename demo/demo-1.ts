@@ -85,6 +85,7 @@ connectButton.addEventListener("click", () => {
       hangupButton.disabled = true;
     })
     .catch((error: Error) => {
+      connectButton.disabled = false;
       console.error(`[${simpleUser.id}] failed to connect`);
       console.error(error);
       alert("Failed to connect.\n" + error);

@@ -183,12 +183,10 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
   const viaHost = `${user}Host.invalid`;
   const contactURI = new URI("sip", createRandomToken(8), viaHost, undefined, { transport: "ws" });
   const ua = {
-    applicants: {},
     publishers: {},
     registerers: {},
     sessions: {},
     subscriptions: {},
-    transport,
     contact: {
       pubGruu: undefined,
       tempGruu: undefined,
@@ -204,6 +202,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
       viaHost
     },
     logger: log.getLogger("sip.ua"),
+    transport,
     getLogger: (category: string, label?: string) => log.getLogger(category, label),
     getLoggerFactory: () => log,
     getSupportedResponseOptions: () => ["outbound"]

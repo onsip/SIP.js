@@ -672,6 +672,11 @@ export enum SIPExtension {
 }
 
 // @public
+export class StateTransitionError extends Exception {
+    constructor(message?: string);
+}
+
+// @public
 export class Subscriber extends Subscription {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: SubscriberOptions);
     // @internal
@@ -769,25 +774,34 @@ export interface SubscriptionUnsubscribeOptions {
 export interface Transport extends Transport_2 {
     connect(): Promise<void>;
     disconnect(): Promise<void>;
+    dispose(): Promise<void>;
     isConnected(): boolean;
-    on(event: "connected" | "disconnected" | "transportError", listener: () => void): this;
-    on(event: "message", listener: (message: string) => void): this;
-    // @internal (undocumented)
-    on(name: string, callback: (...args: any[]) => void): this;
+    onConnect: (() => void) | undefined;
+    onDisconnect: ((error?: Error) => void) | undefined;
+    onMessage: ((message: string) => void) | undefined;
+    send(message: string): Promise<void>;
+    readonly state: TransportState;
+    readonly stateChange: Emitter<TransportState>;
+}
+
+// @public
+export enum TransportState {
+    // (undocumented)
+    Connected = "Connected",
+    // (undocumented)
+    Connecting = "Connecting",
+    // (undocumented)
+    Disconnected = "Disconnected",
+    // (undocumented)
+    Disconnecting = "Disconnecting"
 }
 
 // @public
 export class UserAgent {
     constructor(options?: Partial<UserAgentOptions>);
-    // @internal (undocumented)
-    applicants: {
-        [id: string]: Inviter;
-    };
     readonly configuration: Required<UserAgentOptions>;
     // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    contact: Contact;
+    readonly contact: Contact;
     // @internal (undocumented)
     data: any;
     delegate: UserAgentDelegate | undefined;
@@ -801,13 +815,15 @@ export class UserAgent {
     getLoggerFactory(): LoggerFactory;
     // @internal (undocumented)
     getSupportedResponseOptions(): Array<string>;
-    // @internal (undocumented)
+    isConnected(): boolean;
+    // @internal
     makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
     static makeURI(uri: string): URI | undefined;
     // @internal (undocumented)
     publishers: {
         [id: string]: Publisher;
     };
+    reconnect(): Promise<void>;
     // @internal (undocumented)
     registerers: {
         [id: string]: Registerer;
@@ -817,22 +833,23 @@ export class UserAgent {
         [id: string]: Session;
     };
     start(): Promise<void>;
+    readonly state: UserAgentState;
+    readonly stateChange: Emitter<UserAgentState>;
     stop(): Promise<void>;
     protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions>;
     // @internal (undocumented)
     subscriptions: {
         [id: string]: Subscription;
     };
-    // @internal (undocumented)
-    transport: Transport;
+    readonly transport: Transport;
     // Warning: (ae-forgotten-export) The symbol "UserAgentCore" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    userAgentCore: UserAgentCore;
-}
+    readonly userAgentCore: UserAgentCore;
+    }
 
 // @public
 export interface UserAgentDelegate {
+    onConnect?(): void;
+    onDisconnect?(error?: Error): void;
     onInvite?(invitation: Invitation): void;
     onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
@@ -874,6 +891,8 @@ export interface UserAgentOptions {
     logLevel?: LogLevel;
     noAnswerTimeout?: number;
     preloadedRouteSet?: Array<string>;
+    reconnectionAttempts?: number;
+    reconnectionDelay?: number;
     sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
     sessionDescriptionHandlerFactoryOptions?: object;
     sipExtension100rel?: SIPExtension;
@@ -891,6 +910,14 @@ export interface UserAgentOptions {
 export const UserAgentRegisteredOptionTags: {
     [option: string]: boolean;
 };
+
+// @public
+export enum UserAgentState {
+    // (undocumented)
+    Started = "Started",
+    // (undocumented)
+    Stopped = "Stopped"
+}
 
 
 ```

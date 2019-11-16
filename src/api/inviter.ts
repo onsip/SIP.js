@@ -205,8 +205,6 @@ export class Inviter extends Session {
     this.isCanceled = false;
 
     this.earlyMedia = options.earlyMedia || false;
-
-    userAgent.applicants[this.toString()] = this;
   }
 
   /**

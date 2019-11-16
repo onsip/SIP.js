@@ -4,7 +4,7 @@
 
 ## Transport interface
 
-Transport.
+Transport layer interface expected by the user agent core.
 
 <b>Signature:</b>
 
@@ -14,13 +14,13 @@ export interface Transport
 
 ## Remarks
 
-Transport layer interface expected by the user agent core.
+The transport layer is responsible for the actual transmission of requests and responses over network transports. This includes determination of the connection to use for a request or response in the case of connection-oriented transports. https://tools.ietf.org/html/rfc3261\#section-18
 
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [protocol](./sip.js.transport.protocol.md) | <code>string</code> | The protocol. |
+|  [protocol](./sip.js.transport.protocol.md) | <code>string</code> | The transport protocol. |
 
 ## Methods
 

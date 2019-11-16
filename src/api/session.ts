@@ -458,6 +458,8 @@ export abstract class Session {
 
   /**
    * Called to cleanup session after terminated.
+   * Note that this is overriden.
+   * And it doesn't terminate signaling.
    * @internal
    */
   public _close(): void {

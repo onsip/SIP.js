@@ -1582,10 +1582,9 @@ describe("API Session", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    bob = makeUserFake("bob", "example.com", "Bob");
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    bob = await makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
-    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(async () => {
@@ -1966,9 +1965,8 @@ describe("API Session", () => {
     }
 
     beforeEach(async () => {
-      bob2 = makeUserFake("bob", "example.com", "Bob2");
+      bob2 = await makeUserFake("bob", "example.com", "Bob2");
       connectUserFake(alice, bob2);
-      return bob2.userAgent.start();
     });
 
     afterEach(async () => {

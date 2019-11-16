@@ -15,3 +15,17 @@ connect(): Promise<void>;
 
 `Promise<void>`
 
+## Remarks
+
+
+```txt
+- If `state` is "Connecting", `state` MUST NOT transition before returning.
+- If `state` is "Connected", `state` MUST NOT transition before returning.
+- If `state` is "Disconnecting", `state` MUST transition to "Connecting" before returning.
+- If `state` is "Disconnected" `state` MUST transition to "Connecting" before returning.
+- The `state` MUST transition to "Connected" before resolving (assuming `state` is not already "Connected").
+- The `state` MUST transition to "Disconnecting" or "Disconnected" before rejecting and MUST reject with an Error.
+
+```
+Resolves when the transport connects. Rejects if transport fails to connect. Rejects with [StateTransitionError](./sip.js.statetransitionerror.md) if a loop is detected. In particular, callbacks and emitters MUST NOT call this method synchronously.
+

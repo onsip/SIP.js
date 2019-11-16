@@ -1,6 +1,9 @@
 import { EventEmitter } from "events";
 
-import { Transport as TransportDefinition } from "../../api";
+import { Emitter, makeEmitter } from "../../api/emitter";
+import { StateTransitionError } from "../../api/exceptions";
+import { Transport as TransportDefinition } from "../../api/transport";
+import { TransportState } from "../../api/transport-state";
 import { Grammar, Logger } from "../../core";
 
 /**
@@ -8,55 +11,34 @@ import { Grammar, Logger } from "../../core";
  * @public
  */
 export interface TransportOptions {
-  /** URLs of one or more WebSocket servers to connect with. */
-  wsServers: Array<string> | string;
+  /**
+   * URL of WebSocket server to connect with. For example, "wss://localhost:8080".
+   */
+  server: string;
+
+  /**
+   * Seconds to wait for WebSocket to connect before giving up.
+   * @defaultValue `5`
+   */
   connectionTimeout?: number;
-  maxReconnectionAttempts?: number;
-  reconnectionTimeout?: number;
+
+  /**
+   * Keep alive - needs review.
+   * @internal
+   */
   keepAliveInterval?: number;
+
+  /**
+   * Keep alive - needs review.
+   * @internal
+   */
   keepAliveDebounce?: number;
+
+  /**
+   * If true, messsages sent and received by the transport are logged.
+   * @defaultValue `true`
+   */
   traceSip?: boolean;
-}
-
-/**
- * FIXME: See below.
- * @internal
- */
-interface WebSocketServer {
-  /**
-   * FIXME
-   * This "scheme" currently dictates what gets written into the
-   * the Via header in ClientTransaction and InviteClientTransaction.
-   */
-  scheme: string;
-  /**
-   * FIXME
-   * This "sipUri" currently dictates what gets set in the route set
-   * of an outgoing request in OutgoingRequestMessage if the UserAgent
-   * is configured with preloaded route set is enabled.
-   */
-  sipUri: string;
-  /**
-   * The URI of the WebSocket Server.
-   */
-  wsUri: string;
-  /**
-   * FIXME
-   * This "weight" is used in order servers to try.
-   */
-  weight: number;
-  /**
-   * FIXME
-   * Used to keep track if this server is in an error state.
-   */
-  isError: boolean;
-}
-
-enum TransportStatus {
-  STATUS_CONNECTING,
-  STATUS_OPEN,
-  STATUS_CLOSING,
-  STATUS_CLOSED
 }
 
 /**
@@ -64,50 +46,74 @@ enum TransportStatus {
  * @public
  */
 export class Transport extends EventEmitter implements TransportDefinition {
-  public static readonly C = TransportStatus;
 
   private static defaultOptions: Required<TransportOptions> = {
-    wsServers: [],
+    server: "",
     connectionTimeout: 5,
-    maxReconnectionAttempts: 3,
-    reconnectionTimeout: 4,
     keepAliveInterval: 0,
     keepAliveDebounce: 10,
     traceSip: true
   };
 
-  public server: WebSocketServer;
-  public ws: WebSocket | undefined;
+  public onConnect: (() => void) | undefined;
+  public onDisconnect: ((error?: Error) => void) | undefined;
+  public onMessage: ((message: string) => void) | undefined;
 
-  private logger: Logger;
-  private servers: Array<WebSocketServer> = [];
+  private _protocol: string;
+  private _state: TransportState = TransportState.Disconnected;
+  private _stateEventEmitter = new EventEmitter();
+  private _ws: WebSocket | undefined;
 
-  private connectionPromise: Promise<void> | undefined;
-  private connectDeferredResolve: (() => void) | undefined;
-  private connectDeferredReject: ((message: string) => void) | undefined;
-  private connectionTimeout: any | undefined;
+  private configuration: Required<TransportOptions>;
 
-  private disconnectionPromise: Promise<void> | undefined;
-  private disconnectDeferredResolve: (() => void) | undefined;
+  private connectPromise: Promise<void> | undefined;
+  private connectResolve: (() => void) | undefined;
+  private connectReject: ((error: Error) => void) | undefined;
+  private connectTimeout: any | undefined;
 
-  private reconnectionAttempts: number = 0;
-  private reconnectTimer: any | undefined;
+  private disconnectPromise: Promise<void> | undefined;
+  private disconnectResolve: (() => void) | undefined;
+  private disconnectReject: ((error?: Error) => void) | undefined;
 
-  // Keep alive
   private keepAliveInterval: any | undefined;
   private keepAliveDebounceTimeout: any | undefined;
 
-  private status: TransportStatus = TransportStatus.STATUS_CONNECTING;
-  private configuration: Required<TransportOptions>;
-  private boundOnOpen: any;
-  private boundOnMessage: any;
-  private boundOnClose: any;
-  private boundOnError: any;
+  private logger: Logger;
+  private transitioningState: boolean = false;
 
-  constructor(logger: Logger, options: TransportOptions) {
+  constructor(logger: Logger, options?: TransportOptions) {
     super();
 
+    // logger
     this.logger = logger;
+
+    // guard deprecated options (remove this in version 16.x)
+    if (options) {
+      const optionsDeprecated: any = options;
+      const wsServersDeprecated: string | Array<string> | undefined = optionsDeprecated.wsServers;
+      const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated.maxReconnectionAttempts;
+      if (wsServersDeprecated !== undefined) {
+        const deprecatedMessage =
+          `The transport option "wsServers" as has apparently been specified and has been deprecated. ` +
+          "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+        this.logger.warn(deprecatedMessage);
+      }
+      if (maxReconnectionAttemptsDeprecated !== undefined) {
+        const deprecatedMessage =
+          `The transport option "maxReconnectionAttempts" as has apparently been specified and has been deprecated. ` +
+          "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+        this.logger.warn(deprecatedMessage);
+      }
+      // hack
+      if (wsServersDeprecated && !options.server) {
+        if (typeof wsServersDeprecated === "string") {
+          options.server = wsServersDeprecated;
+        }
+        if (wsServersDeprecated instanceof Array) {
+          options.server = wsServersDeprecated[0];
+        }
+      }
+    }
 
     // initialize configuration
     this.configuration = {
@@ -117,39 +123,22 @@ export class Transport extends EventEmitter implements TransportDefinition {
       ...options
     };
 
-    // initialize WebSocket servers
-    let urls = options.wsServers;
-    if (typeof urls === "string") {
-      urls = [urls];
+    // validate server URL
+    const url = this.configuration.server;
+    const parsed: any | -1 = Grammar.parse(url, "absoluteURI");
+    if (parsed === -1) {
+      this.logger.error(`Invalid WebSocket Server URL "${url}"`);
+      throw new Error("Invalid WebSocket Server URL");
     }
-    for (const url of urls) {
-      const parsed: any | -1 = Grammar.parse(url, "absoluteURI");
-      if (parsed === -1) {
-        this.logger.error(`Invalid WebSocket Server URL "${url}"`);
-        throw new Error("Invalid WebSocket Server URL");
-      }
-      if (["wss", "ws", "udp"].indexOf(parsed.scheme) < 0) {
-        this.logger.error(`Invalid scheme in WebSocket Server URL "${url}"`);
-        throw new Error("Invalid scheme in WebSocket Server URL");
-      }
-      const scheme = parsed.scheme.toUpperCase();
-      const sipUri = "<sip:" + parsed.host +
-        (parsed.port ? ":" + parsed.port : "") + ";transport=" + parsed.scheme.replace(/^wss$/i, "ws") + ";lr>";
-      const wsUri = url;
-      const weight = 0;
-      const isError = false;
-      this.servers.push({
-        scheme,
-        sipUri,
-        wsUri,
-        weight,
-        isError
-      });
+    if (["wss", "ws", "udp"].indexOf(parsed.scheme) < 0) {
+      this.logger.error(`Invalid scheme in WebSocket Server URL "${url}"`);
+      throw new Error("Invalid scheme in WebSocket Server URL");
     }
-    if (this.servers.length === 0) {
-      throw new Error("No WebSocket server.");
-    }
-    this.server = this.servers[0];
+    this._protocol = parsed.scheme.toUpperCase();
+  }
+
+  public dispose(): Promise<void> {
+    return this.disconnect();
   }
 
   /**
@@ -160,32 +149,66 @@ export class Transport extends EventEmitter implements TransportDefinition {
    * https://tools.ietf.org/html/rfc3261#section-20.42
    */
   public get protocol(): string {
-    return this.server && this.server.scheme ? this.server.scheme : "WSS";
+    return this._protocol;
+  }
+
+  /**
+   * The URL of the WebSocket Server.
+   */
+  public get server(): string {
+    return this.configuration.server;
+  }
+
+  /**
+   * Transport state.
+   */
+  public get state(): TransportState {
+    return this._state;
+  }
+
+  /**
+   * Transport state change emitter.
+   */
+  public get stateChange(): Emitter<TransportState> {
+    return makeEmitter(this._stateEventEmitter);
+  }
+
+  /**
+   * The WebSocket.
+   */
+  public get ws(): WebSocket | undefined {
+    return this._ws;
   }
 
   /**
    * Connect to network.
-   * Resolves once connected.
-   * Otherwise rejects with an Error.
+   * Resolves once connected. Otherwise rejects with an Error.
    */
   public connect(): Promise<void> {
-    return this.connectPromise();
+    return this._connect();
   }
 
   /**
    * Disconnect from network.
-   * Resolves once disconnected.
-   * Otherwise rejects with an Error.
+   * Resolves once disconnected. Otherwise rejects with an Error.
    */
   public disconnect(): Promise<void> {
-    return this.disconnectPromise();
+    return this._disconnect();
+  }
+
+  /**
+   * Returns true if the `state` equals "Connected".
+   * @remarks
+   * This is equivalent to `state === TransportState.Connected`.
+   */
+  public isConnected(): boolean {
+    return this.state === TransportState.Connected;
   }
 
   /**
    * Sends a message.
-   * Resolves once message is sent.
-   * Otherwise rejects with an Error.
-   * @param message - Message.
+   * Resolves once message is sent. Otherwise rejects with an Error.
+   * @param message - Message to send.
    */
   public send(message: string): Promise<void> {
     // Error handling is independent of whether the message was a request or
@@ -202,435 +225,546 @@ export class Transport extends EventEmitter implements TransportDefinition {
     // transport, and the result is a connection failure, the transport
     // layer SHOULD inform the transport user of a failure in sending.
     // https://tools.ietf.org/html/rfc3261#section-18.4
-    return this.sendPromise(message);
+    return this._send(message);
   }
 
   /**
-   * Returns true if the transport is connected
+   * Add listener for connection events.
+   * @deprecated Use `onConnected`, `onDisconnected` and/or `stateChange`.
    */
-  public isConnected(): boolean {
-    return this.status === TransportStatus.STATUS_OPEN;
-  }
+  public on(event: "connected" | "connecting" | "disconnecting" | "disconnected", listener: () => void): this;
 
   /**
-   * Connect socket.
-   * Called by connect, must return a promise
-   * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
-   * @param options - Options bucket.
+   * Add listener for message event.
+   * @deprecated Use `onMessage`.
    */
-  private connectPromise(options: { force?: boolean } = {}): Promise<void> {
-    if (this.status === TransportStatus.STATUS_CLOSING && !options.force) {
-      return Promise.reject("WebSocket " + this.server.wsUri + " is closing");
-    }
-    if (this.connectionPromise) {
-      return this.connectionPromise;
-    }
-    this.server = this.server || this.getNextWsServer(options.force);
+  public on(event: "message", listener: (message: string) => void): this;
 
-    this.connectionPromise = new Promise((resolve, reject) => {
-      if ((this.status === TransportStatus.STATUS_OPEN || this.status === TransportStatus.STATUS_CLOSING)
-        && !options.force) {
-        this.logger.warn("WebSocket " + this.server.wsUri + " is already connected");
-        reject("Failed status check - attempted to open a connection but already open/closing");
-        return;
-      }
+  /**
+   * @internal
+   */
+  public on(name: string, callback: (...args: any[]) => void): this {
+    const deprecatedMessage =
+      `A listener has been registered for the transport event "${name}". ` +
+      "Registering listeners for transport events has been deprecated and will no longer be available starting with SIP.js release 0.16.0. " +
+      "Please use the onConnected, onDisconnected, onMessage callbacks and/or the stateChange emitter instead. Please update accordingly.";
+    this.logger.warn(deprecatedMessage);
+    return super.on(name, callback);
+  }
 
-      this.connectDeferredResolve = resolve;
-      this.connectDeferredReject = reject;
+  private _connect(): Promise<void> {
+    this.logger.log(`Connecting ${this.server}`);
 
-      this.status = TransportStatus.STATUS_CONNECTING;
-      this.emit("connecting");
-      this.logger.log("connecting to WebSocket " + this.server.wsUri);
-      this.disposeWs();
-      try {
-        this.ws = new WebSocket(this.server.wsUri, "sip");
-      } catch (e) {
-        this.ws = undefined;
-        this.statusTransition(TransportStatus.STATUS_CLOSED, true);
-        this.onError("error connecting to WebSocket " + this.server.wsUri + ":" + e);
-        reject("Failed to create a websocket");
-        this.connectDeferredResolve = undefined;
-        this.connectDeferredReject = undefined;
-        return;
-      }
-
-      if (!this.ws) {
-        reject("Unexpected instance websocket not set");
-        this.connectDeferredResolve = undefined;
-        this.connectDeferredReject = undefined;
-        return;
-      }
-
-      this.connectionTimeout = setTimeout(() => {
-        this.statusTransition(TransportStatus.STATUS_CLOSED);
-        this.logger.warn("took too long to connect - exceeded time set in configuration.connectionTimeout: " +
-          this.configuration.connectionTimeout + "s");
-        this.emit("disconnected", { code: 1000 });
-        this.connectionPromise = undefined;
-        reject("Connection timeout");
-        this.connectDeferredResolve = undefined;
-        this.connectDeferredReject = undefined;
-        const ws = this.ws;
-        this.disposeWs();
-        if (ws) {
-          ws.close(1000);
+    switch (this.state) {
+      case TransportState.Connecting:
+        // If `state` is "Connecting", `state` MUST NOT transition before returning.
+        if (this.transitioningState) {
+          return Promise.reject(this.transitionLoopDetectedError(TransportState.Connecting));
         }
-      }, this.configuration.connectionTimeout * 1000);
-
-      this.boundOnOpen = this.onOpen.bind(this);
-      this.boundOnMessage = this.onMessage.bind(this);
-      this.boundOnClose = this.onClose.bind(this);
-      this.boundOnError = this.onWebsocketError.bind(this);
-
-      this.ws.addEventListener("open", this.boundOnOpen);
-      this.ws.addEventListener("message", this.boundOnMessage);
-      this.ws.addEventListener("close", this.boundOnClose);
-      this.ws.addEventListener("error", this.boundOnError);
-    });
-
-    return this.connectionPromise;
-  }
-
-  /**
-   * Disconnect socket.
-   * Called by disconnect, must return a promise
-   * promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean
-   * @param options - Options bucket.
-   */
-  private disconnectPromise(options: { force?: boolean } = {}): Promise<void> {
-    if (this.disconnectionPromise) { // Already disconnecting. Just return this.
-      return this.disconnectionPromise;
+        if (!this.connectPromise) {
+          throw new Error("Connect promise must be defined.");
+        }
+        return this.connectPromise; // Already connecting
+      case TransportState.Connected:
+        // If `state` is "Connected", `state` MUST NOT transition before returning.
+        if (this.transitioningState) {
+          return Promise.reject(this.transitionLoopDetectedError(TransportState.Connecting));
+        }
+        if (this.connectPromise) {
+          throw new Error("Connect promise must not be defined.");
+        }
+        return Promise.resolve(); // Already connected
+      case TransportState.Disconnecting:
+        // If `state` is "Disconnecting", `state` MUST transition to "Connecting" before returning
+        if (this.connectPromise) {
+          throw new Error("Connect promise must not be defined.");
+        }
+        try {
+          this.transitionState(TransportState.Connecting);
+        } catch (e) {
+          if (e instanceof StateTransitionError) {
+            return Promise.reject(e); // Loop detected
+          }
+          throw e;
+        }
+        break;
+      case TransportState.Disconnected:
+        // If `state` is "Disconnected" `state` MUST transition to "Connecting" before returning
+        if (this.connectPromise) {
+          throw new Error("Connect promise must not be defined.");
+        }
+        try {
+          this.transitionState(TransportState.Connecting);
+        } catch (e) {
+          if (e instanceof StateTransitionError) {
+            return Promise.reject(e); // Loop detected
+          }
+          throw e;
+        }
+        break;
+      default:
+        throw new Error("Unknown state");
     }
 
-    if (!this.statusTransition(TransportStatus.STATUS_CLOSING, options.force)) {
-      if (this.status === TransportStatus.STATUS_CLOSED) { // Websocket is already closed
-        return Promise.resolve();
-      } else if (this.connectionPromise) { // Websocket is connecting, cannot move to disconneting yet
-        return this.connectionPromise
-          .then(() => Promise.reject("The websocket did not disconnect"))
-          .catch(() => Promise.resolve());
-      } else {
-        // Cannot move to disconnecting, but not in connecting state.
-        return Promise.reject("The websocket did not disconnect");
-      }
-    }
-    this.emit("disconnecting");
-    this.disconnectionPromise = new Promise((resolve, reject) => {
-      this.disconnectDeferredResolve = resolve;
-
-      if (this.reconnectTimer) {
-        clearTimeout(this.reconnectTimer);
-        this.reconnectTimer = undefined;
-      }
-
-      if (this.ws) {
-        this.stopSendingKeepAlives();
-
-        this.logger.log("closing WebSocket " + this.server.wsUri);
-        this.ws.close(1000, undefined);
-      } else {
-        reject("Attempted to disconnect but the websocket doesn't exist");
-      }
-    });
-
-    return this.disconnectionPromise;
-  }
-
-  /**
-   * Send a message.
-   * Called by send.
-   * @param message - Message.
-   * @param options - Options bucket.
-   */
-  private sendPromise(message: string, options: any = {}): Promise<void> {
-    if (this.ws === undefined) {
-      this.onError("unable to send message - WebSocket undefined");
-      return Promise.reject(new Error("WebSocket undefined."));
-    }
-
-    // FIXME: This check is likely not necessary as WebSocket.send() will
-    // throw INVALID_STATE_ERR if the connection is not currently open
-    // which could happen regardless of what we thing the state is.
-    if (!this.statusAssert(TransportStatus.STATUS_OPEN, options.force)) {
-      this.onError("unable to send message - WebSocket not open");
-      return Promise.reject(new Error("WebSocket not open."));
-    }
-
-    if (this.configuration.traceSip === true) {
-      this.logger.log("sending WebSocket message:\n\n" + message + "\n");
-    }
-
-    // WebSocket.send() can throw.
-    // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/send
+    let ws: WebSocket;
     try {
-      this.ws.send(message);
+      // WebSocket()
+      // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket
+      ws = new WebSocket(this.server, "sip");
+      ws.addEventListener("close", (ev: CloseEvent) => this.onWebSocketClose(ev, ws));
+      ws.addEventListener("error", (ev: Event) => this.onWebSocketError(ev, ws));
+      ws.addEventListener("open", (ev: Event) => this.onWebSocketOpen(ev, ws));
+      ws.addEventListener("message", (ev: MessageEvent) => this.onWebSocketMessage(ev, ws));
+      this._ws = ws;
     } catch (error) {
-      if (error instanceof error) {
-        Promise.reject(error);
-      }
-      return Promise.reject(new Error("Failed to send message."));
+      this._ws = undefined;
+      this.logger.error("WebSocket construction failed.");
+      return Promise.resolve()
+        .then(() => {
+          // The `state` MUST transition to "Disconnecting" or "Disconnected" before rejecting
+          this.transitionState(TransportState.Disconnected, error);
+          throw error;
+        });
     }
 
-    this.emit("messageSent", message);
+    this.connectPromise = new Promise((resolve, reject) => {
+      this.connectResolve = resolve;
+      this.connectReject = reject;
+
+      this.connectTimeout = setTimeout(() => {
+        this.logger.warn(
+          "Connect timed out. " +
+          "Exceeded time set in configuration.connectionTimeout: " + this.configuration.connectionTimeout + "s."
+        );
+        ws.close(1000); // careful here to use a local reference instead of this._ws
+      }, this.configuration.connectionTimeout * 1000);
+    });
+
+    return this.connectPromise;
+  }
+
+  private _disconnect(): Promise<void> {
+    this.logger.log(`Disconnecting ${this.server}`);
+
+    switch (this.state) {
+      case TransportState.Connecting:
+        // If `state` is "Connecting", `state` MUST transition to "Disconnecting" before returning.
+        if (this.disconnectPromise) {
+          throw new Error("Disconnect promise must not be defined.");
+        }
+        try {
+          this.transitionState(TransportState.Disconnecting);
+        } catch (e) {
+          if (e instanceof StateTransitionError) {
+            return Promise.reject(e); // Loop detected
+          }
+          throw e;
+        }
+        break;
+      case TransportState.Connected:
+        // If `state` is "Connected", `state` MUST transition to "Disconnecting" before returning.
+        if (this.disconnectPromise) {
+          throw new Error("Disconnect promise must not be defined.");
+        }
+        try {
+          this.transitionState(TransportState.Disconnecting);
+        } catch (e) {
+          if (e instanceof StateTransitionError) {
+            return Promise.reject(e); // Loop detected
+          }
+          throw e;
+        }
+        break;
+      case TransportState.Disconnecting:
+        // If `state` is "Disconnecting", `state` MUST NOT transition before returning.
+        if (this.transitioningState) {
+          return Promise.reject(this.transitionLoopDetectedError(TransportState.Disconnecting));
+        }
+        if (!this.disconnectPromise) {
+          throw new Error("Disconnect promise must be defined.");
+        }
+        return this.disconnectPromise; // Already disconnecting
+      case TransportState.Disconnected:
+        // If `state` is "Disconnected", `state` MUST NOT transition before returning.
+        if (this.transitioningState) {
+          return Promise.reject(this.transitionLoopDetectedError(TransportState.Disconnecting));
+        }
+        if (this.disconnectPromise) {
+          throw new Error("Disconnect promise must not be defined.");
+        }
+        return Promise.resolve(); // Already disconnected
+      default:
+        throw new Error("Unknown state");
+    }
+
+    if (!this._ws) {
+      throw new Error("WebSocket must be defined.");
+    }
+    const ws = this._ws;
+
+    this.disconnectPromise = new Promise((resolve, reject) => {
+      this.disconnectResolve = resolve;
+      this.disconnectReject = reject;
+
+      try {
+        // WebSocket.close()
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close
+        ws.close(1000); // careful here to use a local reference instead of this._ws
+      } catch (error) {
+        // Treating this as a coding error as it apparently can only happen
+        // if you pass close() invalid parameters (so it should never happen)
+        this.logger.error("WebSocket close failed.");
+        this.logger.error(error);
+        throw error;
+      }
+    });
+
+    return this.disconnectPromise;
+  }
+
+  private _send(message: string): Promise<void> {
+    if (this.configuration.traceSip === true) {
+      this.logger.log("Sending WebSocket message:\n\n" + message + "\n");
+    }
+
+    if (this._state !== TransportState.Connected) {
+      return Promise.reject(new Error("Not connected."));
+    }
+
+    if (!this._ws) {
+      throw new Error("WebSocket undefined.");
+    }
+
+    try {
+      // WebSocket.send()
+      // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/send
+      this._ws.send(message);
+    } catch (error) {
+      if (error instanceof Error) {
+        return Promise.reject(error);
+      }
+      return Promise.reject(new Error("WebSocket send failed."));
+    }
 
     return Promise.resolve();
   }
 
   /**
    * WebSocket "onclose" event handler.
-   * @param e - Event.
+   * @param ev - Event.
    */
-  private onClose(e: CloseEvent): void {
-    this.logger.log("WebSocket disconnected (code: " + e.code + (e.reason ? "| reason: " + e.reason : "") + ")");
-
-    if (this.status !== TransportStatus.STATUS_CLOSING) {
-      this.logger.warn("WebSocket closed without SIP.js requesting it");
-      this.emit("transportError");
-    }
-
-    this.stopSendingKeepAlives();
-
-    // Clean up connection variables so we can connect again from a fresh state
-    if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout);
-    }
-    if (this.connectDeferredReject) {
-      this.connectDeferredReject("Websocket Closed");
-    }
-    this.connectionTimeout = undefined;
-    this.connectionPromise = undefined;
-    this.connectDeferredResolve = undefined;
-    this.connectDeferredReject = undefined;
-
-    // Check whether the user requested to close.
-    if (this.disconnectDeferredResolve) {
-      this.disconnectDeferredResolve();
-      this.statusTransition(TransportStatus.STATUS_CLOSED);
-      this.disconnectDeferredResolve = undefined;
+  private onWebSocketClose(ev: CloseEvent, ws: WebSocket): void {
+    if (ws !== this._ws) {
       return;
     }
 
-    this.statusTransition(TransportStatus.STATUS_CLOSED, true);
-    this.emit("disconnected", { code: e.code, reason: e.reason });
+    const message = `WebSocket closed ${this.server} (code: ${ev.code})`;
+    const error = !this.disconnectPromise ? new Error(message) : undefined;
+    if (error) {
+      this.logger.warn("WebSocket closed unexpectedly");
+    }
+    this.logger.log(message);
 
-    this.disposeWs();
-    this.reconnect();
+    // We are about to transition to disconnected, so clear our web socket
+    this._ws = undefined;
+
+    // The `state` MUST transition to "Disconnected" before resolving (assuming `state` is not already "Disconnected").
+    this.transitionState(TransportState.Disconnected, error);
   }
 
   /**
    * WebSocket "onerror" event handler.
-   * @param e - Event.
+   * @param ev - Event.
    */
-  private onWebsocketError(e: Event): void {
-    this.onError("The Websocket had an error");
-  }
-
-  /**
-   * Error handler
-   * @param message - Message
-   */
-  private onError(message: string): void {
-    this.logger.warn("Transport error: " + message);
-    this.emit("transportError");
+  private onWebSocketError(ev: Event, ws: WebSocket): void {
+    if (ws !== this._ws) {
+      return;
+    }
+    this.logger.error("WebSocket error occurred.");
   }
 
   /**
    * WebSocket "onmessage" event handler.
-   * @param e - Event.
+   * @param ev - Event.
    */
-  private onMessage(e: MessageEvent): void {
-    const data: any = e.data;
+  private onWebSocketMessage(ev: MessageEvent, ws: WebSocket): void {
+    if (ws !== this._ws) {
+      return;
+    }
+
+    const data: any = ev.data;
     let finishedData: string;
+
     // CRLF Keep Alive response from server. Clear our keep alive timeout.
     if (/^(\r\n)+$/.test(data)) {
       this.clearKeepAliveTimeout();
-
       if (this.configuration.traceSip === true) {
-        this.logger.log("received WebSocket message with CRLF Keep Alive response");
+        this.logger.log("Received WebSocket message with CRLF Keep Alive response");
       }
       return;
-    } else if (!data) {
-      this.logger.warn("received empty message, message discarded");
+    }
+
+    if (!data) {
+      this.logger.warn("Received empty message, discarding...");
       return;
-    } else if (typeof data !== "string") { // WebSocket binary message.
+    }
+
+    if (typeof data !== "string") { // WebSocket binary message.
       try {
-        // the UInt8Data was here prior to types, and doesn't check
+        // TODO: UInt8Array is not an Array<number>, so this should be fixed. (It was ported as is.)
         finishedData = String.fromCharCode.apply(null, (new Uint8Array(data) as unknown as Array<number>));
       } catch (err) {
-        this.logger.warn("received WebSocket binary message failed to be converted into string, message discarded");
+        this.logger.warn("Received WebSocket binary message failed to be converted into string, message discarded");
         return;
       }
-
       if (this.configuration.traceSip === true) {
-        this.logger.log("received WebSocket binary message:\n\n" + data + "\n");
+        this.logger.log("Received WebSocket binary message:\n\n" + data + "\n");
       }
     } else { // WebSocket text message.
       if (this.configuration.traceSip === true) {
-        this.logger.log("received WebSocket text message:\n\n" + data + "\n");
+        this.logger.log("Received WebSocket text message:\n\n" + data + "\n");
       }
       finishedData = data;
     }
 
+    if (this.state !== TransportState.Connected) {
+      this.logger.warn("Received message while not connected, discarding...");
+      return;
+    }
+
+    if (this.onMessage) {
+      try {
+        this.onMessage(finishedData);
+      } catch (e) {
+        this.logger.error(e);
+        this.logger.error("Exception thrown by onMessage callback");
+        throw e; // rethrow unhandled exception
+      }
+    }
     this.emit("message", finishedData);
   }
 
   /**
    * WebSocket "onopen" event handler.
-   * @param e - Event.
+   * @param ev - Event.
    */
-  private onOpen(e: Event): void {
-    if (this.status === TransportStatus.STATUS_CLOSED) { // Indicated that the transport thinks the ws is dead already
-      const ws = this.ws;
-      this.disposeWs();
-      if (ws) {
-        ws.close(1000);
-      }
+  private onWebSocketOpen(ev: Event, ws: WebSocket): void {
+    if (ws !== this._ws) {
       return;
     }
-    this.statusTransition(TransportStatus.STATUS_OPEN, true);
-    this.emit("connected");
-    if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout);
-      this.connectionTimeout = undefined;
-    }
-
-    this.logger.log("WebSocket " + this.server.wsUri + " connected");
-
-    // Clear reconnectTimer since we are not disconnected
-    if (this.reconnectTimer !== undefined) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = undefined;
-    }
-    // Reset reconnectionAttempts
-    this.reconnectionAttempts = 0;
-
-    // Reset disconnection promise so we can disconnect from a fresh state
-    this.disconnectionPromise = undefined;
-    this.disconnectDeferredResolve = undefined;
-
-    // Start sending keep-alives
-    this.startSendingKeepAlives();
-
-    if (this.connectDeferredResolve) {
-      this.connectDeferredResolve();
-      this.connectDeferredResolve = undefined;
-      this.connectDeferredReject = undefined;
-    } else {
-      this.logger.warn("Unexpected websocket.onOpen with no connectDeferredResolve");
+    if (this._state === TransportState.Connecting) {
+      this.logger.log(`WebSocket opened ${this.server}`);
+      this.transitionState(TransportState.Connected);
     }
   }
 
   /**
-   * Removes event listeners and clears the instance ws.
+   * Helper function to generate an Error.
+   * @param state State transitioning to.
    */
-  private disposeWs(): void {
-    if (this.ws) {
-      this.ws.removeEventListener("open", this.boundOnOpen);
-      this.ws.removeEventListener("message", this.boundOnMessage);
-      this.ws.removeEventListener("close", this.boundOnClose);
-      this.ws.removeEventListener("error", this.boundOnError);
-      this.ws = undefined;
-    }
+  private transitionLoopDetectedError(state: string): StateTransitionError {
+    let message = `A state transition loop has been detected.`;
+    message += ` An attempt to transition from ${this._state} to ${state} before the prior transition completed.`;
+    message += ` Perhaps you are synchronously calling connect() or disconnect() from a callback or state change handler?`;
+    this.logger.error(message);
+    return new StateTransitionError("Loop detected.");
   }
 
   /**
-   * Reconnection attempt logic.
+   * Transition transport state.
+   * @internal
    */
-  private reconnect(): void {
-    if (this.reconnectionAttempts > 0) {
-      this.logger.log("Reconnection attempt " + this.reconnectionAttempts + " failed");
+  private transitionState(newState: TransportState, error?: Error): void {
+    const invalidTransition = () => {
+      throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
+    };
+
+    if (this.transitioningState) {
+      throw this.transitionLoopDetectedError(newState);
+    }
+    this.transitioningState = true;
+
+    // Validate state transition
+    switch (this._state) {
+      case TransportState.Connecting:
+        if (
+          newState !== TransportState.Connected &&
+          newState !== TransportState.Disconnecting &&
+          newState !== TransportState.Disconnected
+        ) {
+          invalidTransition();
+        }
+        break;
+      case TransportState.Connected:
+        if (
+          newState !== TransportState.Disconnecting &&
+          newState !== TransportState.Disconnected
+        ) {
+          invalidTransition();
+        }
+        break;
+      case TransportState.Disconnecting:
+        if (
+          newState !== TransportState.Connecting &&
+          newState !== TransportState.Disconnected
+        ) {
+          invalidTransition();
+        }
+        break;
+      case TransportState.Disconnected:
+        if (
+          newState !== TransportState.Connecting
+        ) {
+          invalidTransition();
+        }
+        break;
+      default:
+        throw new Error("Unknown state.");
     }
 
-    if (this.noAvailableServers()) {
-      this.logger.warn("attempted to get next ws server but there are no available ws servers left");
-      this.logger.warn("no available ws servers left - going to closed state");
-      this.statusTransition(TransportStatus.STATUS_CLOSED, true);
-      this.emit("closed");
-      this.resetServerErrorStatus();
-      return;
+    // Update state
+    const oldState = this._state;
+    this._state = newState;
+
+    // Local copies of connect promises (guarding against callbacks changing them indirectly)
+    const connectPromise = this.connectPromise;
+    const connectResolve = this.connectResolve;
+    const connectReject = this.connectReject;
+
+    // Reset connect promises if no longer connecting
+    if (oldState === TransportState.Connecting) {
+      this.connectPromise = undefined;
+      this.connectResolve = undefined;
+      this.connectReject = undefined;
     }
 
-    if (this.isConnected()) {
-      this.logger.warn("attempted to reconnect while connected - forcing disconnect");
-      this.disconnectPromise({ force: true });
+    // Local copies of disconnect promises (guarding against callbacks changing them indirectly)
+    const disconnectPromise = this.disconnectPromise;
+    const disconnectResolve = this.disconnectResolve;
+    const disconnectReject = this.disconnectReject;
+
+    // Reset disconnect promises if no longer disconnecting
+    if (oldState === TransportState.Disconnecting) {
+      this.disconnectPromise = undefined;
+      this.disconnectResolve = undefined;
+      this.disconnectReject = undefined;
     }
 
-    this.reconnectionAttempts += 1;
-
-    if (this.reconnectionAttempts > this.configuration.maxReconnectionAttempts) {
-      this.logger.warn("maximum reconnection attempts for WebSocket " + this.server.wsUri);
-      this.logger.log("transport " + this.server.wsUri + " failed | connection state set to 'error'");
-      this.server.isError = true;
-      this.emit("transportError");
-      if (!this.noAvailableServers()) {
-        this.server = this.getNextWsServer();
-      }
-      // When there are no available servers, the reconnect function ends on the next recursive call
-      // after checking for no available servers again.
-      this.reconnectionAttempts = 0;
-      this.reconnect();
-    } else {
-      this.logger.log("trying to reconnect to WebSocket " +
-        this.server.wsUri + " (reconnection attempt " + this.reconnectionAttempts + ")");
-      this.reconnectTimer = setTimeout(() => {
-        this.connect();
-        this.reconnectTimer = undefined;
-      }, (this.reconnectionAttempts === 1) ? 0 : this.configuration.reconnectionTimeout * 1000);
+    // Clear any outstanding connect timeout
+    if (this.connectTimeout) {
+      clearTimeout(this.connectTimeout);
+      this.connectTimeout = undefined;
     }
-  }
 
-  /**
-   * Resets the error state of all servers in the configuration
-   */
-  private resetServerErrorStatus(): void {
-    for (const websocket of this.servers) {
-      websocket.isError = false;
-    }
-  }
+    this.logger.log(`Transitioned from ${oldState} to ${this._state}`);
+    this._stateEventEmitter.emit("event", this._state);
 
-  /**
-   * Retrieve the next server to which connect.
-   * @param force - Allows bypass of server error status checking.
-   */
-  private getNextWsServer(force: boolean = false): WebSocketServer {
-    if (this.noAvailableServers()) {
-      this.logger.warn("attempted to get next ws server but there are no available ws servers left");
-      throw new Error("Attempted to get next ws server, but there are no available ws servers left.");
-    }
-    // Order servers by weight
-    let candidates: Array<WebSocketServer> = [];
-
-    for (const server of this.servers) {
-      if (server.isError && !force) {
-        continue;
-      } else if (candidates.length === 0) {
-        candidates.push(server);
-      } else if (server.weight > candidates[0].weight) {
-        candidates = [server];
-      } else if (server.weight === candidates[0].weight) {
-        candidates.push(server);
+    //  Transition to Connected
+    if (newState === TransportState.Connected) {
+      this.startSendingKeepAlives();
+      if (this.onConnect) {
+        try {
+          this.onConnect();
+        } catch (e) {
+          this.logger.error(e);
+          this.logger.error("Exception thrown by onConnect callback");
+          throw e; // rethrow unhandled exception
+        }
       }
     }
 
-    const idx: number = Math.floor(Math.random() * candidates.length);
-    return candidates[idx];
-  }
-
-  /**
-   * Checks all configuration servers, returns true if all of them have isError: true and false otherwise
-   */
-  private noAvailableServers(): boolean {
-    for (const server of this.servers) {
-      if (!server.isError) {
-        return false;
+    //  Transition from Connected
+    if (oldState === TransportState.Connected) {
+      this.stopSendingKeepAlives();
+      if (this.onDisconnect) {
+        try {
+          if (error) {
+            this.onDisconnect(error);
+          } else {
+            this.onDisconnect();
+          }
+        } catch (e) {
+          this.logger.error(e);
+          this.logger.error("Exception thrown by onDisconnect callback");
+          throw e; // rethrow unhandled exception
+        }
       }
     }
-    return true;
+
+    // Legacy transport behavior (or at least what I believe the legacy transport was shooting for)
+    switch (newState) {
+      case TransportState.Connecting:
+        this.emit("connecting");
+        break;
+      case TransportState.Connected:
+        this.emit("connected");
+        break;
+      case TransportState.Disconnecting:
+        this.emit("disconnecting");
+        break;
+      case TransportState.Disconnected:
+        this.emit("disconnected");
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
+
+    // Complete connect promise
+    if (oldState === TransportState.Connecting) {
+      if (!connectResolve) {
+        throw new Error("Connect resolve undefined.");
+      }
+      if (!connectReject) {
+        throw new Error("Connect reject undefined.");
+      }
+      newState === TransportState.Connected ? connectResolve() : connectReject(error || new Error("Connect aborted."));
+    }
+
+    // Complete disconnect promise
+    if (oldState === TransportState.Disconnecting) {
+      if (!disconnectResolve) {
+        throw new Error("Disconnect resolve undefined.");
+      }
+      if (!disconnectReject) {
+        throw new Error("Disconnect reject undefined.");
+      }
+      newState === TransportState.Disconnected ? disconnectResolve() : disconnectReject(error || new Error("Disconnect aborted."));
+    }
+
+    this.transitioningState = false;
   }
 
+  // TODO: Review "KeepAlive Stuff".
+  // It is not clear if it works and there are no tests for it.
+  // It was blindly lifted the keep alive code unchanged from earlier transport code.
+  //
+  // From the RFC...
+  //
+  // SIP WebSocket Clients and Servers may keep their WebSocket
+  // connections open by sending periodic WebSocket "Ping" frames as
+  // described in [RFC6455], Section 5.5.2.
+  // ...
+  // The indication and use of the CRLF NAT keep-alive mechanism defined
+  // for SIP connection-oriented transports in [RFC5626], Section 3.5.1 or
+  // [RFC6223] are, of course, usable over the transport defined in this
+  // specification.
+  // https://tools.ietf.org/html/rfc7118#section-6
+  //
+  // and...
+  //
+  // The Ping frame contains an opcode of 0x9.
+  // https://tools.ietf.org/html/rfc6455#section-5.5.2
+  //
   // ==============================
   // KeepAlive Stuff
   // ==============================
+
+  private clearKeepAliveTimeout(): void {
+    if (this.keepAliveDebounceTimeout) {
+      clearTimeout(this.keepAliveDebounceTimeout);
+    }
+    this.keepAliveDebounceTimeout = undefined;
+  }
 
   /**
    * Send a keep-alive (a double-CRLF sequence).
@@ -642,18 +776,10 @@ export class Transport extends EventEmitter implements TransportDefinition {
     }
 
     this.keepAliveDebounceTimeout = setTimeout(() => {
-      this.emit("keepAliveDebounceTimeout");
       this.clearKeepAliveTimeout();
     }, this.configuration.keepAliveDebounce * 1000);
 
     return this.send("\r\n\r\n");
-  }
-
-  private clearKeepAliveTimeout(): void {
-    if (this.keepAliveDebounceTimeout) {
-      clearTimeout(this.keepAliveDebounceTimeout);
-    }
-    this.keepAliveDebounceTimeout = undefined;
   }
 
   /**
@@ -662,7 +788,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
   private startSendingKeepAlives(): void {
     // Compute an amount of time in seconds to wait before sending another keep-alive.
     const computeKeepAliveTimeout = (upperBound: number): number => {
-      const lowerBound: number = upperBound * 0.8;
+      const lowerBound = upperBound * 0.8;
       return 1000 * (Math.random() * (upperBound - lowerBound) + lowerBound);
     };
 
@@ -686,56 +812,5 @@ export class Transport extends EventEmitter implements TransportDefinition {
     }
     this.keepAliveInterval = undefined;
     this.keepAliveDebounceTimeout = undefined;
-  }
-
-  // ==============================
-  // Status Stuff
-  // ==============================
-
-  /**
-   * Checks given status against instance current status. Returns true if they match.
-   * @param status - Transport status.
-   * @param force - Force.
-   */
-  private statusAssert(status: TransportStatus, force: boolean): boolean {
-    if (status === this.status) {
-      return true;
-    } else {
-      if (force) {
-        this.logger.warn("Attempted to assert " +
-          Object.keys(TransportStatus)[this.status] + " as " +
-          Object.keys(TransportStatus)[status] + "- continuing with option: 'force'");
-        return true;
-      } else {
-        this.logger.warn("Tried to assert " +
-          Object.keys(TransportStatus)[status] + " but is currently " +
-          Object.keys(TransportStatus)[this.status]);
-        return false;
-      }
-    }
-  }
-
-  /**
-   * Transitions the status. Checks for legal transition via assertion beforehand.
-   * @param status - Transport status.
-   * @param force - Force.
-   */
-  private statusTransition(status: TransportStatus, force: boolean = false): boolean {
-    this.logger.log("Attempting to transition status from " +
-      Object.keys(TransportStatus)[this.status] + " to " +
-      Object.keys(TransportStatus)[status]);
-    if (
-      (status === TransportStatus.STATUS_CONNECTING && this.statusAssert(TransportStatus.STATUS_CLOSED, force)) ||
-      (status === TransportStatus.STATUS_OPEN && this.statusAssert(TransportStatus.STATUS_CONNECTING, force)) ||
-      (status === TransportStatus.STATUS_CLOSING && this.statusAssert(TransportStatus.STATUS_OPEN, force)) ||
-      (status === TransportStatus.STATUS_CLOSED)
-    ) {
-      this.status = status;
-      return true;
-    } else {
-      this.logger.warn("Status transition failed - result: no-op - reason:" +
-        " either gave an nonexistent status or attempted illegal transition");
-      return false;
-    }
   }
 }

@@ -63,11 +63,10 @@ describe("API Subscription", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    bob = makeUserFake("bob", "example.com", "Bob");
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    bob = await makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
     target = bob.uri;
-    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(async () => {

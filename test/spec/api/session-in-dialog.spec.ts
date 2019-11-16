@@ -513,10 +513,9 @@ describe("API Session In-Dialog", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    bob = makeUserFake("bob", "example.com", "Bob");
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    bob = await makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
-    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(async () => {
@@ -1018,9 +1017,8 @@ describe("API Session In-Dialog", () => {
           }
 
           beforeEach(async () => {
-            carol = makeUserFake("carol", "example.com", "Carol");
+            carol = await makeUserFake("carol", "example.com", "Carol");
             connectUserFake(alice, carol);
-            return carol.userAgent.start();
           });
 
           afterEach(async () => {

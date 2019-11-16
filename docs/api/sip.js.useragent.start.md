@@ -4,7 +4,7 @@
 
 ## UserAgent.start() method
 
-Connect user agent to network transport.
+Start the user agent.
 
 <b>Signature:</b>
 
@@ -17,5 +17,19 @@ start(): Promise<void>;
 
 ## Remarks
 
-Connect to the WS server if status = STATUS\_INIT. Resume UA after being closed.
+Resolves if transport connects, otherwise rejects.
+
+## Example
+
+
+```ts
+userAgent.start()
+  .then(() => {
+    // userAgent.isConnected() === true
+  })
+  .catch((error: Error) => {
+    // userAgent.isConnected() === false
+  });
+
+```
 

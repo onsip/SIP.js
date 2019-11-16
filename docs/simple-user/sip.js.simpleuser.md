@@ -43,6 +43,7 @@ While this class is completely functional for simple use cases, it is not intend
 |  [disconnect()](./sip.js.simpleuser.disconnect.md) |  | Disconnect. |
 |  [hangup()](./sip.js.simpleuser.hangup.md) |  | Hangup a call. |
 |  [hold()](./sip.js.simpleuser.hold.md) |  | Hold call |
+|  [isConnected()](./sip.js.simpleuser.isconnected.md) |  | Return true if connected. |
 |  [isHeld()](./sip.js.simpleuser.isheld.md) |  | Hold state. |
 |  [isMuted()](./sip.js.simpleuser.ismuted.md) |  | Mute state. |
 |  [message(destination, message)](./sip.js.simpleuser.message.md) |  | Send a message. |

@@ -16,12 +16,12 @@ export interface UserFake {
   isShutdown: () => boolean;
 }
 
-export function makeUserFake(
+export async function makeUserFake(
   user: string | undefined,
   domain: string,
   displayName: string,
   options: UserAgentOptions = {}
-): UserFake {
+): Promise<UserFake> {
   const mockSessionDescriptionHandlers: Array<jasmine.SpyObj<SessionDescriptionHandler>> = [];
   const userHack: any = user; // FIXME: this is because grammar/parser produces undefined on no user
   const uri = new URI("sip", userHack, domain);
@@ -43,7 +43,10 @@ export function makeUserFake(
     },
     ...options
   };
+
   const userAgent = new UserAgent(userAgentOptions);
+  await userAgent.start();
+
   if (!(userAgent.transport instanceof TransportFake)) {
     throw new Error("Transport not TransportFake");
   }

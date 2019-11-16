@@ -19,7 +19,8 @@ import {
   SessionInviteOptions,
   SessionState,
   UserAgent,
-  UserAgentOptions
+  UserAgentOptions,
+  UserAgentState
 } from "../../../api";
 import { Logger } from "../../../core";
 import { SessionDescriptionHandler } from "../session-description-handler";
@@ -72,7 +73,7 @@ export class SimpleUser {
     // TransportOptions
     if (!userAgentOptions.transportOptions) {
       userAgentOptions.transportOptions = {
-        wsServers: webSocketServerURL
+        server: webSocketServerURL
       };
     }
 
@@ -93,6 +94,32 @@ export class SimpleUser {
 
     // UserAgent's delegate
     this.userAgent.delegate = {
+      // Handle connection with server established
+      onConnect: () => {
+        if (this.delegate && this.delegate.onServerConnect) {
+          this.delegate.onServerConnect();
+        }
+      },
+      // Handle connection with server lost
+      onDisconnect: (error?: Error) => {
+        if (this.delegate && this.delegate.onServerDisconnect) {
+          this.delegate.onServerDisconnect(error);
+        }
+        if (this.session) {
+          this.hangup() // will likely fail, but need to cleanup hung calls
+            .catch((e: Error) => {
+              this.logger.error(`[${this.id}] an error occured hanging up call after connection with server was lost.`);
+              this.logger.error(e.toString());
+            });
+        }
+        if (this.registerer) {
+          this.unregister() // will likely fail, but need to cleanup invalid registrations
+            .catch((e: Error) => {
+              this.logger.error(`[${this.id}] an error occured unregistering after connection with server was lost.`);
+              this.logger.error(e.toString());
+            });
+        }
+      },
       // Handle incoming invitations
       onInvite: (invitation: Invitation) => {
         this.logger.log(`[${this.id}] received INVITE`);
@@ -136,6 +163,7 @@ export class SimpleUser {
             });
         }
       },
+      // Handle incoming messages
       onMessage: (message: Message) => {
         message.accept()
           .then(() => {
@@ -184,8 +212,11 @@ export class SimpleUser {
    * Start the UserAgent's WebSocket Transport.
    */
   public connect(): Promise<void> {
-    this.logger.log(`[${this.id}] starting UserAgent...`);
-    return this.userAgent.start();
+    this.logger.log(`[${this.id}] connecting UserAgent...`);
+    if (this.userAgent.state !== UserAgentState.Started) {
+      return this.userAgent.start();
+    }
+    return this.userAgent.reconnect();
   }
 
   /**
@@ -194,8 +225,15 @@ export class SimpleUser {
    * Stop the UserAgent's WebSocket Transport.
    */
   public disconnect(): Promise<void> {
-    this.logger.log(`[${this.id}] stopping UserAgent...`);
+    this.logger.log(`[${this.id}] disconnecting UserAgent...`);
     return this.userAgent.stop();
+  }
+
+  /**
+   * Return true if connected.
+   */
+  public isConnected(): boolean {
+    return this.userAgent.isConnected();
   }
 
   /**
@@ -315,21 +353,32 @@ export class SimpleUser {
       return Promise.reject(new Error("Session does not exist."));
     }
 
-    // Attempt to CANCEL outgoing sessions that are not yet established
-    if (this.session instanceof Inviter) {
-      if (this.session.state === SessionState.Initial || this.session.state === SessionState.Establishing) {
+    if (this.session.state === SessionState.Establishing) {
+      if (this.session instanceof Inviter) {
+        // Attempt to CANCEL outgoing sessions that are not yet established
         return this.session.cancel()
           .then(() => {
             this.logger.log(`[${this.id}] sent CANCEL`);
+          });
+      } else if (this.session instanceof Invitation) {
+        // Attempt to reject incoming sessions that are not yet established
+        return this.session.reject()
+          .then(() => {
+            this.logger.log(`[${this.id}] rejected`);
           });
       }
     }
 
     // Send BYE
-    return new Byer(this.session).bye()
-      .then(() => {
-        this.logger.log(`[${this.id}] sent BYE`);
-      });
+    if (this.session.state === SessionState.Established) {
+      return new Byer(this.session).bye()
+        .then(() => {
+          this.logger.log(`[${this.id}] sent BYE`);
+        });
+    }
+
+    this.logger.log(`[${this.id}] in state ${this.session.state}, no action taken`);
+    return Promise.resolve();
   }
 
   /**
@@ -615,7 +664,7 @@ export class SimpleUser {
           }
           break;
         case SessionState.Terminating:
-          break;
+          // fall through
         case SessionState.Terminated:
           this.session = undefined;
           this.cleanupMedia();

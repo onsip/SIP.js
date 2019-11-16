@@ -3,10 +3,10 @@ import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platfo
 import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users";
 import { getButton, getVideo } from "./demo-utils";
 
-const startAlice = getButton("startAlice");
-const startBob = getButton("startBob");
-const stopAlice = getButton("stopAlice");
-const stopBob = getButton("stopBob");
+const connectAlice = getButton("connectAlice");
+const connectBob = getButton("connectBob");
+const disconnectAlice = getButton("disconnectAlice");
+const disconnectBob = getButton("disconnectBob");
 const registerAlice = getButton("registerAlice");
 const registerBob = getButton("registerBob");
 const unregisterAlice = getButton("unregisterAlice");
@@ -27,8 +27,8 @@ const alice = buildUser(
   nameAlice,
   uriBob,
   nameBob,
-  startAlice,
-  stopAlice,
+  connectAlice,
+  disconnectAlice,
   registerAlice,
   unregisterAlice,
   beginAlice,
@@ -44,8 +44,8 @@ const bob = buildUser(
   nameBob,
   uriAlice,
   nameAlice,
-  startBob,
-  stopBob,
+  connectBob,
+  disconnectBob,
   registerBob,
   unregisterBob,
   beginBob,
@@ -60,8 +60,8 @@ function buildUser(
   displayName: string,
   targetAOR: string,
   targetName: string,
-  startButton: HTMLButtonElement,
-  stopButton: HTMLButtonElement,
+  connectButton: HTMLButtonElement,
+  disconnectButton: HTMLButtonElement,
   registerButton: HTMLButtonElement,
   unregisterButton: HTMLButtonElement,
   beginButton: HTMLButtonElement,
@@ -100,18 +100,20 @@ function buildUser(
     onCallReceived: makeCallReceivedCallback(user),
     onCallHangup: makeCallHangupCallback(user, beginButton, endButton),
     onRegistered: makeRegisteredCallback(user, registerButton, unregisterButton),
-    onUnregistered: makeUnregisteredCallback(user, registerButton, unregisterButton)
+    onUnregistered: makeUnregisteredCallback(user, registerButton, unregisterButton),
+    onServerConnect: makeServerConnectCallback(user, connectButton, disconnectButton),
+    onServerDisconnect: makeServerDisconnectCallback(user, connectButton, disconnectButton, registerButton, beginButton)
   };
   user.delegate = delegate;
 
-  // Setup start button click listeners
-  startButton.addEventListener(
-    "click", makeStartButtonClickListener(user, startButton, stopButton, registerButton, beginButton)
+  // Setup connect button click listeners
+  connectButton.addEventListener(
+    "click", makeConnectButtonClickListener(user, connectButton, disconnectButton, registerButton, beginButton)
   );
 
-  // Setup stop button click listeners
-  stopButton.addEventListener(
-    "click", makeStopButtonClickListener(user, startButton, stopButton, registerButton, beginButton)
+  // Setup disconnect button click listeners
+  disconnectButton.addEventListener(
+    "click", makeDisconnectButtonClickListener(user, connectButton, disconnectButton, registerButton, beginButton)
   );
 
   // Setup register button click listeners
@@ -126,8 +128,8 @@ function buildUser(
   // Setup end button click listeners
   endButton.addEventListener("click", makeEndButtonClickListener(user));
 
-  // Enable start button
-  startButton.disabled = false;
+  // Enable connect button
+  connectButton.disabled = false;
 
   return user;
 }
@@ -142,7 +144,7 @@ function makeCallReceivedCallback(
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to answer call`);
         console.error(error);
-        alert("Failed to answer call.\n" + error);
+        alert(`[${user.id}] Failed to answer call.\n` + error);
       });
   };
 }
@@ -168,7 +170,7 @@ function makeCallHangupCallback(
 ): () => void {
   return () => {
     console.log(`[${user.id}] call hangup`);
-    beginButton.disabled = false;
+    beginButton.disabled = !user.isConnected();
     endButton.disabled = true;
   };
 }
@@ -194,55 +196,88 @@ function makeUnregisteredCallback(
 ): () => void {
   return () => {
     console.log(`[${user.id}] unregistered`);
-    registerButton.disabled = false;
+    registerButton.disabled = !user.isConnected();
     unregisterButton.disabled = true;
   };
 }
 
-// Helper function to setup click handler for start button
-function makeStartButtonClickListener(
+// Helper function to create network connect callback
+function makeServerConnectCallback(
   user: SimpleUser,
-  startButton: HTMLButtonElement,
-  stopButton: HTMLButtonElement,
+  connectButton: HTMLButtonElement,
+  disconnectButton: HTMLButtonElement,
+): () => void {
+  return () => {
+    console.log(`[${user.id}] connected`);
+    connectButton.disabled = true;
+    disconnectButton.disabled = false;
+  };
+}
+
+// Helper function to create network disconnect callback
+function makeServerDisconnectCallback(
+  user: SimpleUser,
+  connectButton: HTMLButtonElement,
+  disconnectButton: HTMLButtonElement,
+  registerButton: HTMLButtonElement,
+  beginButton: HTMLButtonElement
+): () => void {
+  return (error?: Error) => {
+    console.log(`[${user.id}] disconnected`);
+    connectButton.disabled = false;
+    disconnectButton.disabled = true;
+    registerButton.disabled = true;
+    beginButton.disabled = true;
+    if (error) {
+      alert(`[${user.id}] Server disconnected.\n` + error.message);
+    }
+  };
+}
+
+// Helper function to setup click handler for connect button
+function makeConnectButtonClickListener(
+  user: SimpleUser,
+  connectButton: HTMLButtonElement,
+  disconnectButton: HTMLButtonElement,
   registerButton: HTMLButtonElement,
   beginButton: HTMLButtonElement
 ): () => void {
   return () => {
     user.connect()
       .then(() => {
-        startButton.disabled = true;
-        stopButton.disabled = false;
+        connectButton.disabled = true;
+        disconnectButton.disabled = false;
         registerButton.disabled = false;
         beginButton.disabled = false;
       })
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to connect`);
         console.error(error);
-        alert("Failed to connect.\n" + error);
+        alert(`[${user.id}] Failed to connect.\n` + error);
       });
   };
 }
 
-// Helper function to setup click handler for stop button
-function makeStopButtonClickListener(
+// Helper function to setup click handler for disconnect button
+function makeDisconnectButtonClickListener(
   user: SimpleUser,
-  startButton: HTMLButtonElement,
-  stopButton: HTMLButtonElement,
+  connectButton: HTMLButtonElement,
+  disconnectButton: HTMLButtonElement,
   registerButton: HTMLButtonElement,
   beginButton: HTMLButtonElement
 ): () => void {
   return () => {
     user.disconnect()
       .then(() => {
-        startButton.disabled = false;
-        stopButton.disabled = true;
+        connectButton.disabled = false;
+        disconnectButton.disabled = true;
         registerButton.disabled = true;
         beginButton.disabled = true;
       })
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to disconnect`);
         console.error(error);
-        alert("Failed to disconnect.\n" + error);
+        alert(`[${user.id}] Failed to disconnect.\n` + error);
       });
   };
 }
@@ -259,7 +294,7 @@ function makeRegisterButtonClickListener(
         requestDelegate: {
           onReject: (response) => {
             console.warn(`[${user.id}] REGISTER rejected`);
-            let message = `Registration of "${response.message.to.uri.aor}" rejected.\n`;
+            let message = `Registration of "${user.id}" rejected.\n`;
             message += `Reason: ${response.message.reasonPhrase}\n`;
             alert(message);
           }
@@ -271,7 +306,7 @@ function makeRegisterButtonClickListener(
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to register`);
         console.error(error);
-        alert("Failed to register.\n" + error);
+        alert(`[${user.id}] Failed to register.\n` + error);
       });
   };
 }
@@ -289,7 +324,7 @@ function makeUnregisterButtonClickListener(
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to unregister`);
         console.error(error);
-        alert("Failed to unregister.\n" + error);
+        alert(`[${user.id}] Failed to unregister.\n` + error);
       });
   };
 }
@@ -319,7 +354,7 @@ function makeBeginButtonClickListener(
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to begin session`);
         console.error(error);
-        alert("Failed to begin session.\n" + error);
+        alert(`[${user.id}] Failed to begin session.\n` + error);
       });
   };
 }
@@ -333,7 +368,7 @@ function makeEndButtonClickListener(
       .catch((error: Error) => {
         console.error(`[${user.id}] failed to end session`);
         console.error(error);
-        alert("Failed to end session.\n" + error);
+        alert(`[${user.id}] Failed to end session.\n` + error);
       });
   };
 }
