@@ -19,7 +19,7 @@ import { getReasonPhrase, newTag } from "../core/messages/utils";
 import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
-import { _SessionStatus, Session } from "./session";
+import { Session } from "./session";
 import {
   BodyAndContentType,
   SessionDescriptionHandler
@@ -72,11 +72,6 @@ export class Inviter extends Session {
 
     // Default options params
     options.params = options.params || {};
-
-    // Check Session Status
-    if (this.status !== _SessionStatus.STATUS_NULL) {
-      throw new Error(`Invalid status ${this.status}`);
-    }
 
     // ClientContext properties
     this.logger = userAgent.getLogger("sip.inviter");

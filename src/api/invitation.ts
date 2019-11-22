@@ -18,7 +18,7 @@ import { ContentTypeUnsupportedError, SessionDescriptionHandlerError, SessionTer
 import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
 import { InvitationRejectOptions } from "./invitation-reject-options";
-import { _SessionStatus, Session } from "./session";
+import { Session } from "./session";
 import {
   SessionDescriptionHandlerModifier,
   SessionDescriptionHandlerOptions

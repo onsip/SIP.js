@@ -48,15 +48,6 @@ import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 
 /**
- * Deprecated
- * @internal
- */
-export enum _SessionStatus {
-  // Session states
-  STATUS_NULL
-}
-
-/**
  * A session provides real time communication between one or more participants.
  * @public
  */
@@ -141,8 +132,6 @@ export abstract class Session {
   protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
-  /** @internal */
-  protected status: _SessionStatus = _SessionStatus.STATUS_NULL;
   /** @internal */
   protected expiresTimer: any = undefined;
   /** @internal */
