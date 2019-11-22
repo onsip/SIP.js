@@ -1012,9 +1012,6 @@ export class Inviter extends Session {
             inviteResponse.prack({ extraHeaders, body });
           })
           .catch((error) => {
-            if (this.status === _SessionStatus.STATUS_TERMINATED) {
-              throw error;
-            }
             this.stateTransition(SessionState.Terminated);
             throw error;
           });
@@ -1037,9 +1034,6 @@ export class Inviter extends Session {
           };
           return this.setAnswer(answer, options)
             .catch((error: Error) => {
-              if (this.status === _SessionStatus.STATUS_TERMINATED) {
-                throw error;
-              }
               this.stateTransition(SessionState.Terminated);
               throw error;
             });

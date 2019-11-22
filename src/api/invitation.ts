@@ -261,11 +261,6 @@ export class Invitation extends Session {
     if (statusCode < 100 || statusCode > 199) {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
-    // Ported
-    if (this.status === _SessionStatus.STATUS_TERMINATED) {
-      this.logger.warn("Unexpected call for progress while terminated, ignoring");
-      return Promise.resolve();
-    }
     // Added
     if (this.status === _SessionStatus.STATUS_ANSWERED) {
       this.logger.warn("Unexpected call for progress while answered, ignoring");
@@ -351,13 +346,6 @@ export class Invitation extends Session {
       this.logger.error(error.message);
       return Promise.reject(error);
     }
-
-    // Check Session Status
-    if (this.status === _SessionStatus.STATUS_TERMINATED) {
-      throw new Error(`Invalid status ${this.status}`);
-    }
-
-    this.logger.log("rejecting RTCSession");
 
     const statusCode = options.statusCode || 480;
 

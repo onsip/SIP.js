@@ -62,7 +62,6 @@ export enum _SessionStatus {
   STATUS_WAITING_FOR_PRACK,
   STATUS_WAITING_FOR_ACK,
   STATUS_CANCELED,
-  STATUS_TERMINATED,
   STATUS_ANSWERED_WAITING_FOR_PRACK,
   STATUS_EARLY_MEDIA,
   STATUS_CONFIRMED
@@ -539,16 +538,13 @@ export abstract class Session {
   protected _close(): void {
     this.logger.log(`Session[${this.id}]._close`);
 
-    if (this.status === _SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-
     // 1st Step. Terminate media.
     if (this._sessionDescriptionHandler) {
       this._sessionDescriptionHandler.close();
     }
 
     // 2nd Step. Terminate signaling.
+    // TODO: Review
 
     // Clear session timers
     if (this.expiresTimer) {
@@ -558,14 +554,10 @@ export abstract class Session {
       clearTimeout(this.userNoAnswerTimer);
     }
 
-    this.status = _SessionStatus.STATUS_TERMINATED;
-
     if (!this.id) {
       throw new Error("Session id undefined.");
     }
     delete this.userAgent.sessions[this.id];
-
-    return;
   }
 
   /**
