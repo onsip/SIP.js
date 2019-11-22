@@ -27,16 +27,15 @@ export declare enum SessionState
 Valid state transitions:
 
 ```
-1. "initial" --> "establishing" (before INVITE sent on outgoing, before OK sent on incoming)
-2. "initial" --> "established" (after ACK is sent on outgoing, after OK sent on incoming)
-4. "initial" --> "terminating"
-4. "initial" --> "terminated"
-5. "establishing" --> "established"
-6. "establishing" --> "terminating"
-7. "establishing" --> "terminated"
-8. "established" --> "terminating"
-9. "established" --> "terminated"
-10. "terminating" --> "terminated"
+1. "initial" --> "establishing" (just before INVITE sent on outgoing, just before OK sent on incoming)
+2. "initial" --> "terminating"
+3. "initial" --> "terminated"
+4. "establishing" --> "established" (just after ACK is sent on outgoing, just after OK sent on incoming)
+5. "establishing" --> "terminating"
+6. "establishing" --> "terminated"
+7. "established" --> "terminating"
+8. "established" --> "terminated"
+9. "terminating" --> "terminated"
 
 ```
 

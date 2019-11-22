@@ -32,5 +32,6 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [dispose()](./sip.js.session.dispose.md) |  | Destructor. |
 |  [invite(options)](./sip.js.session.invite.md) |  | Renegotiate the session. Sends a re-INVITE. |
 

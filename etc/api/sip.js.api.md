@@ -89,7 +89,7 @@ export class Invitation extends Session {
     // @internal (undocumented)
     body: string | undefined;
     // @internal
-    _close(): void;
+    protected _close(): void;
     // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -144,7 +144,7 @@ export class Inviter extends Session {
     body: BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
     // @internal
-    _close(): void;
+    protected _close(): void;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
@@ -429,7 +429,7 @@ export abstract class Session {
     // @internal
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal
-    _close(): void;
+    protected _close(): void;
     // @internal (undocumented)
     contact: string | undefined;
     // @internal (undocumented)
@@ -438,6 +438,7 @@ export abstract class Session {
     delegate: SessionDelegate | undefined;
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
     dialog: Session_2 | undefined;
+    dispose(): Promise<void>;
     // @internal (undocumented)
     protected earlySdp: string | undefined;
     // @internal (undocumented)
@@ -547,8 +548,6 @@ export abstract class Session {
     // @internal
     protected stateTransition(newState: SessionState): void;
     // @internal (undocumented)
-    protected status: _SessionStatus;
-    // @internal (undocumented)
     userAgent: UserAgent;
     // @internal (undocumented)
     protected userNoAnswerTimer: any;
@@ -624,36 +623,6 @@ export enum SessionState {
     Terminated = "Terminated",
     // (undocumented)
     Terminating = "Terminating"
-}
-
-// @internal
-export enum _SessionStatus {
-    // (undocumented)
-    STATUS_1XX_RECEIVED = 2,
-    // (undocumented)
-    STATUS_ANSWERED = 5,
-    // (undocumented)
-    STATUS_ANSWERED_WAITING_FOR_PRACK = 10,
-    // (undocumented)
-    STATUS_CANCELED = 8,
-    // (undocumented)
-    STATUS_CONFIRMED = 12,
-    // (undocumented)
-    STATUS_EARLY_MEDIA = 11,
-    // (undocumented)
-    STATUS_INVITE_RECEIVED = 3,
-    // (undocumented)
-    STATUS_INVITE_SENT = 1,
-    // (undocumented)
-    STATUS_NULL = 0,
-    // (undocumented)
-    STATUS_TERMINATED = 9,
-    // (undocumented)
-    STATUS_WAITING_FOR_ACK = 7,
-    // (undocumented)
-    STATUS_WAITING_FOR_ANSWER = 4,
-    // (undocumented)
-    STATUS_WAITING_FOR_PRACK = 6
 }
 
 // @public
