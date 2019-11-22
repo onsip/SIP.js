@@ -259,11 +259,6 @@ export class Invitation extends Session {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
     // Added
-    if (this.status === _SessionStatus.STATUS_ANSWERED) {
-      this.logger.warn("Unexpected call for progress while answered, ignoring");
-      return Promise.resolve();
-    }
-    // Added
     if (this.status === _SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
       this.logger.warn("Unexpected call for progress while answered (waiting for prack), ignoring");
       return Promise.resolve();
@@ -429,22 +424,16 @@ export class Invitation extends Session {
     if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
       this.status = _SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK;
       return this.waitForArrivalOfPrack()
-        .then(() => {
-          this.status = _SessionStatus.STATUS_ANSWERED;
-          clearTimeout(this.userNoAnswerTimer); // Ported
-        })
+        .then(() => clearTimeout(this.userNoAnswerTimer)) // Ported
         .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, options))
         .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
     }
 
     // Ported
-    if (this.status === _SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-      this.status = _SessionStatus.STATUS_ANSWERED;
-    } else {
+    if (this.status !== _SessionStatus.STATUS_WAITING_FOR_ANSWER) {
       return Promise.reject(new Error(`Invalid status ${this.status}`));
     }
 
-    this.status = _SessionStatus.STATUS_ANSWERED;
     clearTimeout(this.userNoAnswerTimer); // Ported
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
       .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
