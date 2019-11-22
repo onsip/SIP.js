@@ -101,9 +101,6 @@ export class Invitation extends Session {
     // Update logger
     this.logger = userAgent.getLogger("sip.invitation", this.id);
 
-    // Update status
-    this.status = _SessionStatus.STATUS_INVITE_RECEIVED;
-
     // Save the session into the ua sessions collection.
     this.userAgent.sessions[this.id] = this;
 
