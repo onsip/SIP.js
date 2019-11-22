@@ -369,7 +369,6 @@ export class Inviter extends Session {
       // transition state
       this.stateTransition(SessionState.Establishing);
 
-      this.status = _SessionStatus.STATUS_INVITE_SENT;
       return Promise.resolve(this.sendInvite(options));
     }
 
@@ -391,7 +390,6 @@ export class Inviter extends Session {
         // transition state
         this.stateTransition(SessionState.Establishing);
 
-        this.status = _SessionStatus.STATUS_INVITE_SENT;
         this.request.body = { body: body.content, contentType: body.contentType };
         return this.sendInvite(options);
       })
