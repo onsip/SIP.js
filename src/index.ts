@@ -8,7 +8,6 @@ export {
   OutgoingRequestMessage as OutgoingRequest,
   Parser,
   Timers,
-  Transport,
   URI
 } from "./core";
 
@@ -45,6 +44,7 @@ export {
   SessionDescriptionHandlerOptions
 } from "./session-description-handler";
 export { Subscription } from "./Subscription";
+export { Transport } from "./Transport";
 
 import {
   InviteClientTransaction,

@@ -8,7 +8,6 @@ import {
   OutgoingRequestMessage,
   URI
 } from "../core";
-
 import { Emitter, makeEmitter } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
@@ -154,8 +153,6 @@ export class Registerer {
         }
       });
     }
-
-    userAgent.transport.on("disconnected", () => this.onTransportDisconnected());
 
     // Add to UA's collection
     this.id = this.request.callId + this.request.from.parameters.tag;
@@ -532,13 +529,6 @@ export class Registerer {
     contact += ";expires=" + expires;
 
     return contact;
-  }
-
-  /**
-   * @deprecated This should get cleaned up when Transport is reworked
-   */
-  private onTransportDisconnected(): void {
-    this.unregistered();
   }
 
   /**

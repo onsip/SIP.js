@@ -1,11 +1,10 @@
 import {
   Grammar,
-  Logger,
-  OutgoingRequestMessage,
-  Transport as TransportBase
+  Logger
 } from "../core";
 import { TypeStrings } from "../Enums";
 import { Exceptions } from "../Exceptions";
+import { Transport as TransportBase } from "../Transport";
 import { Utils } from "../Utils";
 
 export enum TransportStatus {

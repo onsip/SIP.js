@@ -763,6 +763,19 @@ export interface SubscriptionSubscribeOptions {
 export interface SubscriptionUnsubscribeOptions {
 }
 
+// Warning: (ae-forgotten-export) The symbol "Transport" needs to be exported by the entry point index.d.ts
+// 
+// @public
+export interface Transport extends Transport_2 {
+    connect(): Promise<void>;
+    disconnect(): Promise<void>;
+    isConnected(): boolean;
+    on(event: "connected" | "disconnected" | "transportError", listener: () => void): this;
+    on(event: "message", listener: (message: string) => void): this;
+    // @internal (undocumented)
+    on(name: string, callback: (...args: any[]) => void): this;
+}
+
 // @public
 export class UserAgent {
     constructor(options?: Partial<UserAgentOptions>);
@@ -810,8 +823,6 @@ export class UserAgent {
     subscriptions: {
         [id: string]: Subscription;
     };
-    // Warning: (ae-forgotten-export) The symbol "Transport" needs to be exported by the entry point index.d.ts
-    // 
     // @internal (undocumented)
     transport: Transport;
     // Warning: (ae-forgotten-export) The symbol "UserAgentCore" needs to be exported by the entry point index.d.ts
@@ -862,6 +873,7 @@ export interface UserAgentOptions {
     logConnector?: LogConnector;
     logLevel?: LogLevel;
     noAnswerTimeout?: number;
+    preloadedRouteSet?: Array<string>;
     sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
     sessionDescriptionHandlerFactoryOptions?: object;
     sipExtension100rel?: SIPExtension;
@@ -871,7 +883,6 @@ export interface UserAgentOptions {
     transportConstructor?: new (logger: any, options: any) => Transport;
     transportOptions?: any;
     uri?: URI;
-    usePreloadedRoute?: boolean;
     userAgentString?: string;
     viaHost?: string;
 }

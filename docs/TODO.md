@@ -8,12 +8,13 @@
 - review license for correctness
 
 ## 0.15.x
-- new API demo
+- give entire src/api code a top down once over
 - address transport connect/disconnect auto register issues
 - address user agent tearing down cleanly issues
 - address the outstanding issues with new API
 - address SDH race condition issues
-- port Simple to new API
+- port Simple to SimpleUser
+- create demo for new API
 - more documentation
 - more tests
 
@@ -27,27 +28,31 @@
 - cleanup and update sipjs.com
 - more documentation
 - more tests
+
+## 0.16.x
 - 1.0 prep
 
 # Work in Progress
 
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
+  - port grammar to core
 - *Integration* tests are being written high level "api" components (Session, Subscription)
+  - port platform web tests
+  - flush out api tests
 
-## Misc Open API Items
-- Dependencies on "old" api files need to be removed from src/api
-  - Constants, Enums, Exceptions, Utils need to go away
-  - Parser needs to be moved to src/parser and shared
-- The entire src/api code needs a top down once over
-- Event emissions need to be removed
-- Options buckets deep copy
-- Extra headers approach is error prone
-- Dialog UACs are creating messages while non-dialog UACs are being handed message.
+## API - Misc Open Issues
+- Publisher needs to be converted to new style API, stop events emits, port/write tests
 - Incoming request, accept races cancel. That is, attempt to accept may or may not succeed if cancel arrives.
 - Outgoing request, accept races cancel. That is, attempt to cancel may or may not succeed if accept arrives.
-- Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
 - Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
+- Public methods and properties should be indicated as public (or not) for consistency.
+- Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
+- Make sure all options buckets are deep copied
+
+## Core - Misc Open Issues
+- Dialog UACs are creating messages while non-dialog UACs are being handed message.
+- Extra headers array approach is error prone
 
 ## Grammar
 - grammar.ts has everything typed as any
@@ -67,7 +72,6 @@
 - Hold sdp offer too large for UDP
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
 
-
 ## Transport
 - Rework core transport to be an interface which implemented. It should not be an abstract class to be extended
 - Port and overhaul transport to implement interface (instead of extending abstract class)
@@ -78,7 +82,7 @@
 ## URI
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
 
-## REFER handling - it's evolved over time and we're out of date
+## REFER handling - it has evolved over time and we are out of date
 
 ### The Session Initiation Protocol (SIP) Refer Method (2003)
 https://tools.ietf.org/html/rfc3515

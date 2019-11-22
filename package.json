@@ -74,13 +74,17 @@
     "buildAndBrowserTest": "npm run build && npm run browserTest",
     "extract-api": "api-extractor run --local --verbose --config src/api/api-extractor.json",
     "extract-core": "api-extractor run --local --verbose --config src/core/api-extractor.json",
+    "extract-simple-user": "api-extractor run --local --verbose --config src/platform/web/simple-user/api-extractor.json",
     "document-api": "api-documenter markdown --input-folder ./temp/api --output-folder ./temp/docs/api",
     "document-core": "api-documenter markdown --input-folder ./temp/core --output-folder ./temp/docs/core",
+    "document-simple-user": "api-documenter markdown --input-folder ./temp/simple-user --output-folder ./temp/docs/simple-user",
     "document-copy-api": "rm -rf ./docs/api/sip.js.* && cp ./temp/docs/api/* ./docs/api",
     "document-copy-core": "rm -rf ./docs/core/sip.js.* && cp ./temp/docs/core/* ./docs/core",
+    "document-copy-simple-user": "rm -rf ./docs/simple-user/sip.js.* && cp ./temp/docs/simple-user/* ./docs/simple-user",
     "build-docs-api": "npm run extract-api && npm run document-api && npm run document-copy-api",
     "build-docs-core": "npm run extract-core && npm run document-core && npm run document-copy-core",
-    "build-docs": "npm run build-lib && npm run build-docs-api && npm run build-docs-core",
+    "build-docs-simple-user": "npm run extract-simple-user && npm run document-simple-user && npm run document-copy-simple-user",
+    "build-docs": "npm run build-lib && npm run build-docs-api && npm run build-docs-core && npm run build-docs-simple-user",
     "lint": "tslint -p tsconfig-base.json -c tslint.json",
     "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/version.ts"
   }

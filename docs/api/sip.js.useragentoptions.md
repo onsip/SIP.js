@@ -34,6 +34,7 @@ export interface UserAgentOptions
 |  [logConnector](./sip.js.useragentoptions.logconnector.md) | <code>LogConnector</code> | A function which will be called everytime a log is generated. |
 |  [logLevel](./sip.js.useragentoptions.loglevel.md) | <code>LogLevel</code> | Indicates the verbosity level of the log messages. |
 |  [noAnswerTimeout](./sip.js.useragentoptions.noanswertimeout.md) | <code>number</code> | Number of seconds after which an incoming call is rejected if not answered. |
+|  [preloadedRouteSet](./sip.js.useragentoptions.preloadedrouteset.md) | <code>Array&lt;string&gt;</code> | Adds a Route header(s) to outgoing requests. |
 |  [sessionDescriptionHandlerFactory](./sip.js.useragentoptions.sessiondescriptionhandlerfactory.md) | <code>SessionDescriptionHandlerFactory</code> | A factory for generating <code>SessionDescriptionHandler</code> instances. |
 |  [sessionDescriptionHandlerFactoryOptions](./sip.js.useragentoptions.sessiondescriptionhandlerfactoryoptions.md) | <code>object</code> | Options to passed to <code>sessionDescriptionHandlerFactory</code>. |
 |  [sipExtension100rel](./sip.js.useragentoptions.sipextension100rel.md) | <code>SIPExtension</code> | Reliable provisional responses. https://tools.ietf.org/html/rfc3262 |
@@ -43,7 +44,6 @@ export interface UserAgentOptions
 |  [transportConstructor](./sip.js.useragentoptions.transportconstructor.md) | <code>new (logger: any, options: any) =&gt; Transport</code> | A constructor function for the user agent's <code>Transport</code>. |
 |  [transportOptions](./sip.js.useragentoptions.transportoptions.md) | <code>any</code> | An options bucket object passed to <code>transportConstructor</code> when instantiated. |
 |  [uri](./sip.js.useragentoptions.uri.md) | <code>URI</code> | SIP Addresses-of-Record URI associated with the user agent. |
-|  [usePreloadedRoute](./sip.js.useragentoptions.usepreloadedroute.md) | <code>boolean</code> | Adds a Route header to requests. |
 |  [userAgentString](./sip.js.useragentoptions.useragentstring.md) | <code>string</code> | User agent string used in the UserAgent header. |
 |  [viaHost](./sip.js.useragentoptions.viahost.md) | <code>string</code> | Hostname to use in Via header. |
 

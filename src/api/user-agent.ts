@@ -16,7 +16,6 @@ import {
   Logger,
   LoggerFactory,
   Parser,
-  Transport,
   TransportError,
   URI,
   UserAgentCore,
@@ -27,11 +26,9 @@ import {
   createRandomToken,
   str_utf8_length
 } from "../core/messages/utils";
-import { LIBRARY_VERSION } from "../version";
-
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
-
+import { LIBRARY_VERSION } from "../version";
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
@@ -42,6 +39,7 @@ import { Registerer } from "./registerer";
 import { Session } from "./session";
 import { SessionState } from "./session-state";
 import { Subscription } from "./subscription";
+import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
 import {
   SIPExtension,
@@ -125,6 +123,7 @@ export class UserAgent {
     logConnector: () => { /* noop */ },
     logLevel: "log",
     noAnswerTimeout: 60,
+    preloadedRouteSet: [],
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
     sipExtension100rel: SIPExtension.Unsupported,
@@ -134,7 +133,6 @@ export class UserAgent {
     transportConstructor: WebTransport,
     transportOptions: {},
     uri: new URI("sip", "anonymous", "anonymous.invalid"),
-    usePreloadedRoute: false,
     userAgentString: "SIP.js/" + LIBRARY_VERSION,
     viaHost: ""
   };
@@ -467,9 +465,32 @@ export class UserAgent {
     return new Inviter(this, targetURI, options);
   }
 
-  // ==============================
-  // Event Handlers
-  // ==============================
+  /**
+   * Helper function. Sets transport listeners
+   */
+  private setTransportListeners(): void {
+    this.transport.on("connected", () => this.onTransportConnected());
+    this.transport.on("disconnected", () => this.onTransportDisconnected());
+    this.transport.on("message", (message: string) => this.onTransportReceived(message));
+    this.transport.on("transportError", () => this.onTransportError());
+  }
+
+  private onTransportConnected(): void {
+    // if (this.configuration.register) {
+    //   // In an effor to maintain behavior from when we "initialized" an
+    //   // authentication factory, this is in a Promise.then
+    //   Promise.resolve().then(() => this.registerer.register());
+    // }
+  }
+
+  private onTransportDisconnected(): void {
+    // TODO: REVIEW NEEDED: Does it make sense to do this here?
+    for (const id in this.registerers) {
+      if (this.registerers[id]) {
+        this.registerers[id].unregister();
+      }
+    }
+  }
 
   private onTransportError(): void {
     if (this.status === _UAStatus.STATUS_USER_CLOSED) {
@@ -479,30 +500,10 @@ export class UserAgent {
   }
 
   /**
-   * Helper function. Sets transport listeners
-   */
-  private setTransportListeners(): void {
-    this.transport.on("connected", () => this.onTransportConnected());
-    this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
-    this.transport.on("transportError", () => this.onTransportError());
-  }
-
-  /**
-   * Transport connection event.
-   */
-  private onTransportConnected(): void {
-    // if (this.configuration.register) {
-    //   // In an effor to maintain behavior from when we "initialized" an
-    //   // authentication factory, this is in a Promise.then
-    //   Promise.resolve().then(() => this.registerer.register());
-    // }
-  }
-
-  /**
    * Handle SIP message received from the transport.
    * @param messageString - The message.
    */
-  private onTransportReceiveMsg(messageString: string): void {
+  private onTransportReceived(messageString: string): void {
     const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
     if (!message) {
       this.logger.warn("Failed to parse incoming message. Dropping.");
@@ -664,10 +665,7 @@ export class UserAgent {
       displayName: this.options.displayName,
       loggerFactory: this.loggerFactory,
       hackViaTcp: this.options.hackViaTcp,
-      routeSet:
-        this.options.usePreloadedRoute && this.transport.server && this.transport.server.sipUri ?
-          [this.transport.server.sipUri] :
-          [],
+      routeSet: this.options.preloadedRouteSet,
       supportedOptionTags,
       supportedOptionTagsResponse,
       sipjsId: this.options.sipjsId,

@@ -5,24 +5,32 @@ import {
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions
+  SessionDescriptionHandlerOptions as SessionDescriptionHandlerOptionsDefinition,
 } from "../../api";
 import { SessionDescriptionHandlerError } from "../../api/exceptions";
 
 import { Logger } from "../../core";
 import * as Modifiers from "./modifiers";
 
-export interface WebSessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptions {
+/**
+ * Options for PeerConnection.
+ * @public
+ */
+export interface PeerConnectionOptions {
+  iceCheckingTimeout?: number;
+  rtcConfiguration?: RTCConfiguration;
+}
+
+/**
+ * Options for {@link SessionDescriptionHandler}.
+ * @public
+ */
+export interface SessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptionsDefinition {
   peerConnectionOptions?: PeerConnectionOptions;
   alwaysAcquireMediaFirst?: boolean;
   disableAudioFallback?: boolean;
   RTCOfferOptions?: any;
   constraints?: MediaStreamConstraints;
-}
-
-export interface PeerConnectionOptions {
-  iceCheckingTimeout?: number;
-  rtcConfiguration?: RTCConfiguration;
 }
 
 interface Deferred<T> {
@@ -47,6 +55,10 @@ function reducePromises(arr: Array<SessionDescriptionHandlerModifier>, val: any)
   }, Promise.resolve(val));
 }
 
+/**
+ * SessionDescriptionHandler for web browser.
+ * @public
+ */
 export class SessionDescriptionHandler extends EventEmitter implements SessionDescriptionHandlerDefinition  {
 
   public static defaultFactory(
@@ -150,17 +162,14 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   /**
-   * Gets the local description from the underlying media implementation
-   * @param {Object} [options] Options object to be used by getDescription
-   * @param {MediaStreamConstraints} [options.constraints] MediaStreamConstraints
-   *   https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
-   * @param {Object} [options.peerConnectionOptions] If this is set it will recreate the peer
-   *   connection with the new options
-   * @param {Array} [modifiers] Array with one time use description modifiers
-   * @returns {Promise} Promise that resolves with the local description to be used for the session
+   * Gets the local description from the underlying media implementation.
+   * @remarks
+   * Resolves with the local description to be used for the session.
+   * @param options - Options object to be used by getDescription
+   * @param modifiers - Array with one time use description modifiers
    */
   public getDescription(
-    options: WebSessionDescriptionHandlerOptions = {},
+    options: SessionDescriptionHandlerOptions = {},
     modifiers: Array<SessionDescriptionHandlerModifier> = []
   ): Promise<BodyAndContentType> {
     if (options.peerConnectionOptions) {
@@ -201,17 +210,17 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
 
   /**
    * Check if the Session Description Handler can handle the Content-Type described by a SIP Message
-   * @param {String} contentType The content type that is in the SIP Message
-   * @returns {boolean}
+   * @param contentType - The content type that is in the SIP Message
    */
   public hasDescription(contentType: string): boolean {
     return contentType === this.CONTENT_TYPE;
   }
 
   /**
-   * The modifier that should be used when the session would like to place the call on hold
-   * @param {String} [sdp] The description that will be modified
-   * @returns {Promise} Promise that resolves with modified SDP
+   * The modifier that should be used when the session would like to place the call on hold.
+   * @remarks
+   * Resolves with modified SDP.
+   * @param description - The description that will be modified
    */
   public holdModifier(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
     if (!description.sdp) {
@@ -228,19 +237,16 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   /**
-   * Set the remote description to the underlying media implementation
-   * @param {String} sessionDescription The description provided by a SIP message to be set on the media implementation
-   * @param {Object} [options] Options object to be used by getDescription
-   * @param {MediaStreamConstraints} [options.constraints] MediaStreamConstraints
-   *   https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints
-   * @param {Object} [options.peerConnectionOptions] If this is set it will recreate the peer
-   *   connection with the new options
-   * @param {Array} [modifiers] Array with one time use description modifiers
-   * @returns {Promise} Promise that resolves once the description is set
+   * Set the remote description to the underlying media implementation.
+   * @remarks
+   * Resolves once the description is set.
+   * @param sessionDescription - The description provided by a SIP message to be set on the media implementation.
+   * @param options - Options object to be used by getDescription.
+   * @param modifiers - Array with one time use description modifiers.
    */
   public setDescription(
     sessionDescription: string,
-    options: WebSessionDescriptionHandlerOptions = {},
+    options: SessionDescriptionHandlerOptions = {},
     modifiers: Array<SessionDescriptionHandlerModifier> = []
   ): Promise<void> {
     if (options.peerConnectionOptions) {
@@ -317,10 +323,11 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   /**
-   * Send DTMF via RTP (RFC 4733)
-   * @param {String} tones A string containing DTMF digits
-   * @param {Object} [options] Options object to be used by sendDtmf
-   * @returns {boolean} true if DTMF send is successful, false otherwise
+   * Send DTMF via RTP (RFC 4733).
+   * @remarks
+   * Returns true if DTMF send is successful, false otherwise.
+   * @param tones - A string containing DTMF digits.
+   * @param options - Options object to be used by sendDtmf.
    */
   public sendDtmf(tones: string, options: any = {}): boolean {
     if (!this.dtmfSender && this.hasBrowserGetSenderSupport()) {
@@ -357,7 +364,6 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
 
   /**
    * Get the direction of the session description
-   * @returns {String} direction of the description
    */
   public getDirection(): string {
     return this.direction;

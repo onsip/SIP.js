@@ -28,7 +28,7 @@ import {
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
 import { Emitter, makeEmitter } from "./emitter";
-import { ContentTypeUnsupportedError } from "./exceptions";
+import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
 import { Notification } from "./notification";
@@ -223,12 +223,10 @@ export abstract class Session {
       return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
     if (this.pendingReinvite) {
-      return Promise.reject(new Error("Reinvite in progress. Please wait until complete, then try again."));
+      return Promise.reject(
+        new RequestPendingError("Reinvite in progress. Please wait until complete, then try again."
+      ));
     }
-    if (!this._sessionDescriptionHandler) {
-      throw new Error("Session description handler undefined.");
-    }
-
     this.pendingReinvite = true;
 
     const delegate: OutgoingInviteRequestDelegate = {
@@ -374,7 +372,7 @@ export abstract class Session {
     if (options.withoutSdp) {
       if (!this.dialog) {
         this.pendingReinvite = false;
-        return Promise.reject(new Error("Dialog undefined."));
+        throw new Error("Dialog undefined.");
       }
       return Promise.resolve(this.dialog.invite(delegate, requestOptions));
     }

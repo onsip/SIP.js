@@ -11,7 +11,7 @@ When the UAC creates a request, it MUST insert a Via into that request. The prot
 <b>Signature:</b>
 
 ```typescript
-setViaHeader(branch: string, scheme?: string): void;
+setViaHeader(branch: string, transport: string): void;
 ```
 
 ## Parameters
@@ -19,7 +19,7 @@ setViaHeader(branch: string, scheme?: string): void;
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  branch | <code>string</code> |  |
-|  scheme | <code>string</code> | The scheme. |
+|  transport | <code>string</code> | The sent protocol transport. |
 
 <b>Returns:</b>
 
