@@ -258,11 +258,7 @@ export class Invitation extends Session {
     if (statusCode < 100 || statusCode > 199) {
       throw new TypeError("Invalid statusCode: " + statusCode);
     }
-    // Added
-    if (this.status === _SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK) {
-      this.logger.warn("Unexpected call for progress while answered (waiting for prack), ignoring");
-      return Promise.resolve();
-    }
+
     // After the first reliable provisional response for a request has been
     // acknowledged, the UAS MAY send additional reliable provisional
     // responses.  The UAS MUST NOT send a second reliable provisional
@@ -422,7 +418,6 @@ export class Invitation extends Session {
     // unacknowledged ones) after sending a final response to a request.
     // https://tools.ietf.org/html/rfc3262#section-3
     if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
-      this.status = _SessionStatus.STATUS_ANSWERED_WAITING_FOR_PRACK;
       return this.waitForArrivalOfPrack()
         .then(() => clearTimeout(this.userNoAnswerTimer)) // Ported
         .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, options))
