@@ -58,6 +58,7 @@ export class Invitation extends Session {
 
   private rseq = Math.floor(Math.random() * 10000);
 
+  private waitingForPrack: boolean = false;
   private waitingForPrackPromise: Promise<void> | undefined;
   private waitingForPrackResolve: ResolveFunction | undefined;
   private waitingForPrackReject: RejectFunction | undefined;
@@ -267,7 +268,7 @@ export class Invitation extends Session {
     // responses were sent before the first was acknowledged, the UAS could
     // not be certain these were received in order.
     // https://tools.ietf.org/html/rfc3262#section-3
-    if (this.status ===  _SessionStatus.STATUS_WAITING_FOR_PRACK) {
+    if (this.waitingForPrack) {
       this.logger.warn("Unexpected call for progress while waiting for prack, ignoring");
       return Promise.resolve();
     }
@@ -414,7 +415,7 @@ export class Invitation extends Session {
     // reliable provisional responses (as opposed to retransmissions of
     // unacknowledged ones) after sending a final response to a request.
     // https://tools.ietf.org/html/rfc3262#section-3
-    if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
+    if (this.waitingForPrack) {
       return this.waitForArrivalOfPrack()
         .then(() => clearTimeout(this.userNoAnswerTimer)) // Ported
         .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, options))
@@ -503,11 +504,8 @@ export class Invitation extends Session {
     extraHeaders.push("RSeq: " + this.rseq++);
     let body: Body | undefined;
 
-    // Ported - set status.
-    this.status = _SessionStatus.STATUS_WAITING_FOR_PRACK;
-
     return new Promise((resolve, reject) => {
-      let waitingForPrack = true;
+      this.waitingForPrack = true;
       return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
         .then((offerAnswer) => {
           body = offerAnswer;
@@ -523,18 +521,14 @@ export class Invitation extends Session {
               prackRequest = request;
               clearTimeout(prackWaitTimeoutTimer);
               clearTimeout(rel1xxRetransmissionTimer);
-              if (!waitingForPrack) {
+              if (!this.waitingForPrack) {
                 return;
               }
-              waitingForPrack = false;
+              this.waitingForPrack = false;
               this.handlePrackOfferAnswer(prackRequest, options)
                 .then((prackResponseBody) => {
                   try {
                     prackResponse = prackRequest.accept({ statusCode: 200, body: prackResponseBody });
-                    // Ported - set status.
-                    if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
-                      this.status = _SessionStatus.STATUS_NULL;
-                    }
                     this.prackArrived();
                     resolve({ prackRequest, prackResponse, progressResponse });
                   } catch (error) {
@@ -546,10 +540,10 @@ export class Invitation extends Session {
 
           // https://tools.ietf.org/html/rfc3262#section-3
           const prackWaitTimeout = () => {
-            if (!waitingForPrack) {
+            if (!this.waitingForPrack) {
               return;
             }
-            waitingForPrack = false;
+            this.waitingForPrack = false;
             this.logger.warn("No PRACK received, rejecting INVITE.");
             clearTimeout(rel1xxRetransmissionTimer);
             try {
@@ -567,7 +561,7 @@ export class Invitation extends Session {
             try {
               this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
             } catch (error) {
-              waitingForPrack = false;
+              this.waitingForPrack = false;
               reject(error);
               return;
             }

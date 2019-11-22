@@ -53,8 +53,7 @@ import { UserAgent } from "./user-agent";
  */
 export enum _SessionStatus {
   // Session states
-  STATUS_NULL,
-  STATUS_WAITING_FOR_PRACK
+  STATUS_NULL
 }
 
 /**
