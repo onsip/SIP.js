@@ -123,9 +123,6 @@ export class Invitation extends Session {
     // relies on it (which is yet another hack).
     this.request.toTag = (incomingInviteRequest as any).toTag;
 
-    // Update status again - sigh
-    this.status = _SessionStatus.STATUS_WAITING_FOR_ANSWER;
-
     // The following mapping values are RECOMMENDED:
     // ...
     // 19 no answer from the user              480 Temporarily unavailable
@@ -145,7 +142,7 @@ export class Invitation extends Session {
     if (request.hasHeader("expires")) {
       const expires: number = Number(request.getHeader("expires") || 0) * 1000;
       this.expiresTimer = setTimeout(() => {
-        if (this.status === _SessionStatus.STATUS_WAITING_FOR_ANSWER) {
+        if (this.state === SessionState.Initial) {
           incomingInviteRequest.reject({ statusCode: 487 });
           this.stateTransition(SessionState.Terminated);
         }
@@ -424,11 +421,6 @@ export class Invitation extends Session {
         .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
     }
 
-    // Ported
-    if (this.status !== _SessionStatus.STATUS_WAITING_FOR_ANSWER) {
-      return Promise.reject(new Error(`Invalid status ${this.status}`));
-    }
-
     clearTimeout(this.userNoAnswerTimer); // Ported
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
       .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
@@ -541,7 +533,7 @@ export class Invitation extends Session {
                     prackResponse = prackRequest.accept({ statusCode: 200, body: prackResponseBody });
                     // Ported - set status.
                     if (this.status === _SessionStatus.STATUS_WAITING_FOR_PRACK) {
-                      this.status = _SessionStatus.STATUS_WAITING_FOR_ANSWER;
+                      this.status = _SessionStatus.STATUS_NULL;
                     }
                     this.prackArrived();
                     resolve({ prackRequest, prackResponse, progressResponse });
