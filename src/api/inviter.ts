@@ -391,6 +391,7 @@ export class Inviter extends Session {
         this.stateTransition(SessionState.Establishing);
 
         this.request.body = { body: body.content, contentType: body.contentType };
+
         return this.sendInvite(options);
       })
       .catch((error) => {
@@ -770,8 +771,7 @@ export class Inviter extends Session {
     }
 
     // We have a confirmed dialog.
-    this.dialog = session;
-    this.dialog.delegate = {
+    session.delegate = {
       onAck: (ackRequest): void => this.onAckRequest(ackRequest),
       onBye: (byeRequest): void => this.onByeRequest(byeRequest),
       onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
@@ -780,6 +780,7 @@ export class Inviter extends Session {
       onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
       onRefer: (referRequest): void => this.onReferRequest(referRequest)
     };
+    this.dialog = session;
 
     const sdhOptions = this.sessionDescriptionHandlerOptions;
     const sdhModifiers = this.sessionDescriptionHandlerModifiers;
@@ -808,7 +809,6 @@ export class Inviter extends Session {
         };
         return this.setOfferAndGetAnswer(this.dialog.offer, options)
           .then((body) => {
-            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
           })
@@ -827,7 +827,6 @@ export class Inviter extends Session {
           }
           this.setSessionDescriptionHandler(sdh);
           this.earlyMediaSessionDescriptionHandlers.delete(session.id);
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -859,7 +858,6 @@ export class Inviter extends Session {
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -883,7 +881,6 @@ export class Inviter extends Session {
                 body: { contentDisposition: "render", contentType: this.rendertype, content: this.renderbody }
               };
             }
-            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
           })

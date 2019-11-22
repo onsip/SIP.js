@@ -57,8 +57,7 @@ export enum _SessionStatus {
   STATUS_WAITING_FOR_ANSWER,
   STATUS_ANSWERED,
   STATUS_WAITING_FOR_PRACK,
-  STATUS_ANSWERED_WAITING_FOR_PRACK,
-  STATUS_CONFIRMED
+  STATUS_ANSWERED_WAITING_FOR_PRACK
 }
 
 /**
@@ -587,17 +586,14 @@ export abstract class Session {
         const body = getBody(request.message);
         // If the ACK doesn't have an answer, nothing to be done.
         if (!body) {
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         if (body.contentDisposition === "render") {
           this.renderbody = body.content;
           this.rendertype = body.contentType;
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         if (body.contentDisposition !== "session") {
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           return;
         }
         // Receved answer in ACK.
@@ -606,7 +602,6 @@ export abstract class Session {
           sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
         };
         this.setAnswer(body, options)
-          .then(() => { this.status = _SessionStatus.STATUS_CONFIRMED; })
           .catch((error: Error) => {
             this.logger.error(error.message);
             this.isFailed = true;
@@ -814,31 +809,31 @@ export abstract class Session {
       return;
     }
 
-    if (this.status === _SessionStatus.STATUS_CONFIRMED) {
-      // RFC 3515 2.4.1
-      if (!request.message.hasHeader("refer-to")) {
-        this.logger.warn("Invalid REFER packet. A refer-to header is required. Rejecting.");
-        request.reject();
-        return;
-      }
+    // REFER is a SIP request and is constructed as defined in [1].  A REFER
+    // request MUST contain exactly one Refer-To header field value.
+    // https://tools.ietf.org/html/rfc3515#section-2.4.1
+    if (!request.message.hasHeader("refer-to")) {
+      this.logger.warn("Invalid REFER packet. A refer-to header is required. Rejecting.");
+      request.reject();
+      return;
+    }
 
-      const referral = new Referral(request, this);
+    const referral = new Referral(request, this);
 
-      if (this.delegate && this.delegate.onRefer) {
-        this.delegate.onRefer(referral);
-      } else {
-        this.logger.log("No delegate available to handle REFER, automatically accepting and following.");
-        referral
-          .accept()
-          .then(() => referral
-            .makeInviter(this.passedOptions)
-            .invite()
-          )
-          .catch((error: Error) => {
-            // FIXME: logging and eating error...
-            this.logger.error(error.message);
-          });
-      }
+    if (this.delegate && this.delegate.onRefer) {
+      this.delegate.onRefer(referral);
+    } else {
+      this.logger.log("No delegate available to handle REFER, automatically accepting and following.");
+      referral
+        .accept()
+        .then(() => referral
+          .makeInviter(this.passedOptions)
+          .invite()
+        )
+        .catch((error: Error) => {
+          // FIXME: logging and eating error...
+          this.logger.error(error.message);
+        });
     }
   }
 
