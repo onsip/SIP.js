@@ -381,16 +381,6 @@ export class Invitation extends Session {
   }
 
   /**
-   * Called to cleanup session after terminated.
-   * Using it here just for the PRACK timeout.
-   * @internal
-   */
-  public _close(): void {
-    this.prackNeverArrived();
-    super._close();
-  }
-
-  /**
    * Handle CANCEL request.
    * @param message - CANCEL message.
    * @internal
@@ -414,6 +404,16 @@ export class Invitation extends Session {
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
     this.stateTransition(SessionState.Terminated);
+  }
+
+  /**
+   * Called to cleanup session after terminated.
+   * Using it here just for the PRACK timeout.
+   * @internal
+   */
+  protected _close(): void {
+    this.prackNeverArrived();
+    super._close();
   }
 
   /**

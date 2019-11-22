@@ -407,7 +407,7 @@ export class Inviter extends Session {
    * Using it here just to dispose of early media.
    * @internal
    */
-  public _close(): void {
+  protected _close(): void {
     this.disposeEarlyMedia();
     super._close();
   }

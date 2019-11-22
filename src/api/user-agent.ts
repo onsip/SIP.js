@@ -462,7 +462,7 @@ export class UserAgent {
       // It is intentionally put last in this list at the moment
       // to give the others a prayer of completing some work before
       // the transport is disconnected, but this needs to be fixed up.
-      // For example, session._close() doesn't attempt to do anything
+      // For example, session.dispose() doesn't attempt to do anything
       // with regard to terminating the signaling.
       //
       // Also a lot of what is attempted to be done in these cases
@@ -471,17 +471,29 @@ export class UserAgent {
       // disposal methods check if that's is the case and it would
       // be easy for them to do so at this point.
 
+      // Dispose of Registerers
+      this.logger.log(`Dispose of registerers`);
+      for (const id in registerers) {
+        if (registerers[id]) {
+          await registerers[id].dispose()
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              delete this.registerers[id];
+              throw error;
+            });
+        }
+      }
+
       // Dispose of Sessions
       this.logger.log(`Dispose of sessions`);
       for (const id in sessions) {
         if (sessions[id]) {
-          try {
-            this.sessions[id]._close(); // FIXME: TODO should be named dispose and be async
-          } catch (e) {
-            this.logger.error(e);
-            delete this.sessions[id];
-            throw e;
-          }
+          await sessions[id].dispose()
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              delete this.sessions[id];
+              throw error;
+            });
         }
       }
 
@@ -510,19 +522,6 @@ export class UserAgent {
             delete this.publishers[id];
             throw e;
           }
-        }
-      }
-
-      // Dispose of Registerers
-      this.logger.log(`Dispose of registerers`);
-      for (const id in registerers) {
-        if (registerers[id]) {
-          await registerers[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this.registerers[id];
-              throw error;
-            });
         }
       }
     })();

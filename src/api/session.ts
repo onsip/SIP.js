@@ -214,6 +214,19 @@ export abstract class Session {
   }
 
   /**
+   * Destructor.
+   */
+  public async dispose(): Promise<void> {
+    // TODO: This needs to terminate the session gracefully
+    try {
+      this._close();
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
    * Renegotiate the session. Sends a re-INVITE.
    * @param options - Options bucket.
    */
@@ -457,44 +470,6 @@ export abstract class Session {
   }
 
   /**
-   * Called to cleanup session after terminated.
-   * Note that this is overriden.
-   * And it doesn't terminate signaling.
-   * @internal
-   */
-  public _close(): void {
-    this.logger.log(`Session[${this.id}]._close`);
-
-    if (this.status === _SessionStatus.STATUS_TERMINATED) {
-      return;
-    }
-
-    // 1st Step. Terminate media.
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-
-    // 2nd Step. Terminate signaling.
-
-    // Clear session timers
-    if (this.expiresTimer) {
-      clearTimeout(this.expiresTimer);
-    }
-    if (this.userNoAnswerTimer) {
-      clearTimeout(this.userNoAnswerTimer);
-    }
-
-    this.status = _SessionStatus.STATUS_TERMINATED;
-
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    delete this.userAgent.sessions[this.id];
-
-    return;
-  }
-
-  /**
    * Send INFO.
    * @param delegate - Request delegate.
    * @param options - Request options bucket.
@@ -553,6 +528,44 @@ export abstract class Session {
     }
     // Using the dialog session associate with the response (which might not be this.dialog)
     response.session.bye(undefined, { extraHeaders });
+  }
+
+  /**
+   * Called to cleanup session when they are terminated after terminated.
+   * Note that this is overriden.
+   * And it doesn't terminate signaling.
+   * @internal
+   */
+  protected _close(): void {
+    this.logger.log(`Session[${this.id}]._close`);
+
+    if (this.status === _SessionStatus.STATUS_TERMINATED) {
+      return;
+    }
+
+    // 1st Step. Terminate media.
+    if (this._sessionDescriptionHandler) {
+      this._sessionDescriptionHandler.close();
+    }
+
+    // 2nd Step. Terminate signaling.
+
+    // Clear session timers
+    if (this.expiresTimer) {
+      clearTimeout(this.expiresTimer);
+    }
+    if (this.userNoAnswerTimer) {
+      clearTimeout(this.userNoAnswerTimer);
+    }
+
+    this.status = _SessionStatus.STATUS_TERMINATED;
+
+    if (!this.id) {
+      throw new Error("Session id undefined.");
+    }
+    delete this.userAgent.sessions[this.id];
+
+    return;
   }
 
   /**
