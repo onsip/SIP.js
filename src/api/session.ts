@@ -54,7 +54,6 @@ import { UserAgent } from "./user-agent";
 export enum _SessionStatus {
   // Session states
   STATUS_NULL,
-  STATUS_1XX_RECEIVED,
   STATUS_INVITE_RECEIVED,
   STATUS_WAITING_FOR_ANSWER,
   STATUS_ANSWERED,

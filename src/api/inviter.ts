@@ -924,9 +924,6 @@ export class Inviter extends Session {
     const response = inviteResponse.message;
     const session = inviteResponse.session;
 
-    // Ported - Set status.
-    this.status = _SessionStatus.STATUS_1XX_RECEIVED;
-
     // Ported - Set assertedIdentity.
     if (response.hasHeader("P-Asserted-Identity")) {
       this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
