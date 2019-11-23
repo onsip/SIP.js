@@ -2,6 +2,7 @@ import { OutgoingByeRequest } from "../core";
 import { ByerByeOptions } from "./byer-bye-options";
 import { ByerOptions } from "./byer-options";
 import { Invitation } from "./invitation";
+import { Inviter } from "./inviter";
 import { Session } from "./session";
 import { SessionState } from "./session-state";
 
@@ -34,27 +35,45 @@ export class Byer {
    * @param options - {@link ByerByeOptions} options bucket.
    */
   public bye(options: ByerByeOptions = {}): Promise<OutgoingByeRequest> {
-    // guard session state
-    if (
-      this.session.state !== SessionState.Established &&
-      this.session.state !== SessionState.Terminating
-    ) {
-      let message = "Byer.bye() may only be called if established session.";
-      if (this.session.state === SessionState.Terminated) {
-        message += " However this session is already terminated.";
-      } else {
-        if (this.session instanceof Invitation) {
+    let message = "Byer.bye() may only be called if established session.";
+
+    switch (this.session.state) {
+      case SessionState.Initial:
+        if (this.session instanceof Inviter) {
+          message += " However Inviter.invite() has not yet been called.";
+          message += " Perhaps you should have called Inviter.cancel()?";
+        } else if (this.session instanceof Invitation) {
           message += " However Invitation.accept() has not yet been called.";
           message += " Perhaps you should have called Invitation.reject()?";
-        } else {
+        }
+        break;
+      case SessionState.Establishing:
+        if (this.session instanceof Inviter) {
           message += " However a dialog does not yet exist.";
           message += " Perhaps you should have called Inviter.cancel()?";
+        } else if (this.session instanceof Invitation) {
+          message += " However Invitation.accept() has not yet been called (or not yet resolved).";
+          message += " Perhaps you should have called Invitation.reject()?";
         }
-      }
-      this.session.logger.error(message);
-      return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
+        break;
+      case SessionState.Established:
+        return this.session._bye(options.requestDelegate, options.requestOptions);
+      case SessionState.Terminating:
+        message += " However this session is already terminating.";
+        if (this.session instanceof Inviter) {
+          message += " Perhaps you have already called Inviter.cancel()?";
+        } else if (this.session instanceof Invitation) {
+          message += " Perhaps you have already called Byer.bye()?";
+        }
+        break;
+      case SessionState.Terminated:
+        message += " However this session is already terminated.";
+        break;
+      default:
+        throw new Error("Unknown state");
     }
 
-    return this.session._bye(options.requestDelegate, options.requestOptions);
+    this.session.logger.error(message);
+    return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
   }
 }
