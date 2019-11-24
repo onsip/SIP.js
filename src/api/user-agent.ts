@@ -392,6 +392,11 @@ export class UserAgent {
     // Transition state
     this.transitionState(UserAgentState.Started);
 
+    // TODO: Review this as it is not clear it has any benefit and at worst causes additonal load the server.
+    // On unload it may be best to simply in most scenarios to do nothing. Furthermore and regardless, this
+    // kind of behavior seems more appropriate to be managned by the consumer of the API than the API itself.
+    // Should this perhaps be deprecated?
+    //
     // Add window unload event listener
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
@@ -426,6 +431,7 @@ export class UserAgent {
     // Transition state
     this.transitionState(UserAgentState.Stopped);
 
+    // TODO: See comments with associated complimentary code in start(). Should this perhaps be deprecated?
     // Remove window unload event listener
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
@@ -457,19 +463,15 @@ export class UserAgent {
 
     // Dispose of active clients and dialogs resovling when complete.
     await (async (): Promise<void> => {
-      // FIXME: TODO:
-      // Only Registerer currently has a proper dispose() method
-      // It is intentionally put last in this list at the moment
-      // to give the others a prayer of completing some work before
-      // the transport is disconnected, but this needs to be fixed up.
-      // For example, session.dispose() doesn't attempt to do anything
-      // with regard to terminating the signaling.
+      // FIXME: Fixup Subscription and Publisher.
+      // Only Registerer and Session currently have proper dispose() methods.
+      // Subscription and Publisher need to be done.
       //
-      // Also a lot of what is attempted to be done in these cases
-      // is not worth doing if the transport is not connected as we
-      // know sending requests will be futile, but none of these
-      // disposal methods check if that's is the case and it would
-      // be easy for them to do so at this point.
+      // TODO: Minor optimization.
+      // Also the disposal in all cases involves, in part, sending messages which
+      // is not worth doing if the transport is not connected as we know attempting
+      // to send messages will be futile. But none of these disposal methods check
+      // if that's is the case and it would be easy for them to do so at this point.
 
       // Dispose of Registerers
       this.logger.log(`Dispose of registerers`);

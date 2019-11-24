@@ -51,6 +51,7 @@ export class Inviter extends Session {
   /** @internal */
   public referred: Session | undefined;
 
+  private disposed: boolean = false;
   private earlyMedia: boolean;
   private earlyMediaDialog: SessionDialog | undefined;
   private earlyMediaSessionDescriptionHandlers = new Map<string, SessionDescriptionHandler>();
@@ -74,7 +75,7 @@ export class Inviter extends Session {
     options.params = options.params || {};
 
     // ClientContext properties
-    this.logger = userAgent.getLogger("sip.inviter");
+    this.logger = userAgent.getLogger("sip.Inviter");
     if (options.body) {
       this.body = {
         body: options.body,
@@ -208,11 +209,21 @@ export class Inviter extends Session {
   /**
    * Destructor.
    */
-  public dispose(): Promise<void> {
-    this.logger.log("Invitation.dispose");
+  public async dispose(): Promise<void> {
+    // Only run through this once. It can and does get called multiple times
+    // depending on the what the sessions state is when first called.
+    // For example, if called when "establishing" it will be called again
+    // at least once when the session transitions to "terminated".
+    // Regardless, running through this more than once is pointless.
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
 
+    // Dispose of early dialog media
     this.disposeEarlyMedia();
 
+    // If the final response for the initial INVITE not yet been received, cancel it
     switch (this.state) {
       case SessionState.Initial:
         return this.cancel().then(() => super.dispose());

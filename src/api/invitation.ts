@@ -56,6 +56,7 @@ export class Invitation extends Session {
    */
   private _canceled = false;
 
+  private disposed: boolean = false;
   private expiresTimer: any = undefined;
   private userNoAnswerTimer: any = undefined;
 
@@ -103,7 +104,7 @@ export class Invitation extends Session {
 
     // FIXME: This is being done twice...
     // Update logger
-    this.logger = userAgent.getLogger("sip.invitation", this.id);
+    this.logger = userAgent.getLogger("sip.Invitation", this.id);
 
     // Set 100rel if necessary
     const request = this.request;
@@ -157,9 +158,18 @@ export class Invitation extends Session {
   /**
    * Destructor.
    */
-  public dispose(): Promise<void> {
-    this.logger.log("Invitation.dispose");
+  public async dispose(): Promise<void> {
+    // Only run through this once. It can and does get called multiple times
+    // depending on the what the sessions state is when first called.
+    // For example, if called when "establishing" it will be called again
+    // at least once when the session transitions to "terminated".
+    // Regardless, running through this more than once is pointless.
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
 
+    // Clear timers
     if (this.expiresTimer) {
       clearTimeout(this.expiresTimer);
       this.expiresTimer = undefined;
@@ -169,6 +179,7 @@ export class Invitation extends Session {
       this.userNoAnswerTimer = undefined;
     }
 
+    // If the final response for the initial INVITE not yet been sent, reject it
     switch (this.state) {
       case SessionState.Initial:
         return this.reject().then(() => super.dispose());

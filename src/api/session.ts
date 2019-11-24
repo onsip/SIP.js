@@ -137,7 +137,6 @@ export abstract class Session {
   private _state: SessionState = SessionState.Initial;
   private _stateEventEmitter = new EventEmitter();
 
-  private disposed: boolean = false;
   private pendingReinvite: boolean = false;
 
   /**
@@ -155,12 +154,7 @@ export abstract class Session {
    * Destructor.
    */
   public async dispose(): Promise<void> {
-    this.logger.log("Session.dispose");
-
-    if (this.disposed) {
-      return Promise.resolve();
-    }
-    this.disposed = true;
+    this.logger.log(`Session ${this.id} in state ${this._state} is being disposed`);
 
     // Remove from the user agent's session collection
     if (!this.id) {
@@ -168,35 +162,42 @@ export abstract class Session {
     }
     delete this.userAgent.sessions[this.id];
 
+    // Dispose of dialog media
     if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close(); // dispose of media
+      this._sessionDescriptionHandler.close();
 
       // TODO: The SDH needs to remain defined as it will be called after it is closed in cases
-      // where and answer/offer arrives will the session is being torn down. There are a variety
+      // where an answer/offer arrives while the session is being torn down. There are a variety
       // of circumstances where this can happen - sending a BYE during a re-INVITE for example.
       // The code is currently written such that it lazily makes a new SDH when it needs one
       // and one is not yet defined. Thus if we undefined it here, it will currently make a
-      // new one which then never gets cleaned up. The downside is that calls this closed SDH
-      // will continue to be made (think setDescription) and those shoud/will fail. These
-      // failures are handled, but it would be nice to have it all coded up in a way where
-      // having an undefined SDH where one is expected throws an error.
+      // new one which is out of sysnc and then never gets cleaned up.
+      //
+      // The downside of leaving it defined are that calls this closed SDH will continue to be
+      // made (think setDescription) and those shoud/will fail. These failures are handled, but
+      // it would be nice to have it all coded up in a way where having an undefined SDH where
+      // one is expected throws an error.
       //
       // this._sessionDescriptionHandler = undefined;
     }
 
-    // waiting on pending BYE response?
-
     switch (this.state) {
       case SessionState.Initial:
-        break; // expecting the sub class to handle this case
+        break; // the Inviter/Invitation sub class dispose method handles this case
       case SessionState.Establishing:
-        break; // expecting the sub class to handle this case
+        break; // the Inviter/Invitation sub class dispose method handles this case
       case SessionState.Established:
-        return this._bye().then(() => { return; });
+        return new Promise((resolve, reject) => {
+          this._bye({ // wait for the response to the BYE before resolving
+            onAccept: () => resolve(),
+            onRedirect: () => resolve(),
+            onReject: () => resolve()
+          });
+        });
       case SessionState.Terminating:
-        return Promise.resolve();
+        return Promise.resolve(); // nothing to be done
       case SessionState.Terminated:
-        return Promise.resolve();
+        return Promise.resolve(); // nothing to be done
       default:
         throw new Error("Unknown state.");
     }
