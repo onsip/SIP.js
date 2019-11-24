@@ -180,6 +180,9 @@ export class Invitation extends Session {
       this.userNoAnswerTimer = undefined;
     }
 
+    // If accept is still waiting for a PRACK, make sure it rejects
+    this.prackNeverArrived();
+
     // If the final response for the initial INVITE not yet been sent, reject it
     switch (this.state) {
       case SessionState.Initial:
@@ -315,7 +318,7 @@ export class Invitation extends Session {
 
     // Trying provisional response
     if (options.statusCode === 100) {
-      return this.sendTrying()
+      return this.sendProgressTrying()
         .then((response) => { return; })
         .catch((error) => this.handleResponseError(error));
     }
@@ -368,7 +371,7 @@ export class Invitation extends Session {
 
     const body = options.body ? fromBodyLegacy(options.body) : undefined;
 
-    // FIXME: Need to redirect to someplae
+    // FIXME: Need to redirect to someplace
     const response = statusCode < 400 ?
       this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
       this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
@@ -462,13 +465,6 @@ export class Invitation extends Session {
   private handleResponseError(error: Error): void {
     let statusCode = 480; // "Temporarily Unavailable"
 
-    // Request was canceled
-    if (this.isCanceled) {
-      this.logger.warn(
-        "An error occurred while attempting to formulate and send a response to an incoming INVITE, however a CANCEL" +
-        "was received and processed while doing so which can (and often does) result in errors occurring (not unexpectedly).");
-    }
-
     // Log Error message
     if (error instanceof Error) {
       this.logger.error(error.message);
@@ -490,9 +486,9 @@ export class Invitation extends Session {
       this.logger.error("Session changed state before response could be formulated and sent");
     }
 
-    // Reject if still in "initial" state.
-    if (this.state === SessionState.Initial) {
-      try {
+    // Reject if still in "initial" or "establishing" state.
+    if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
+     try {
         this.incomingInviteRequest.reject({ statusCode });
         this.stateTransition(SessionState.Terminated);
       } catch (e) {
@@ -501,12 +497,22 @@ export class Invitation extends Session {
       }
     }
 
-    // FIXME: This is assuming the error is due to some expected async race on CANCEL and the eating error.
-    // This is potentially hiding "real" errors which occur after handling a CANCEL.
+    // FIXME: Here we are assuming the error is due to some async race on CANCEL resulting in
+    // an exception which we reasonable wish to handle. However the approach here is to assume
+    // ANY error that occurs after handling a CANCEL is one of those exceptions. As we are eating
+    // ALL errors in this case, we are potentially (likely) hiding "real" errors which occur.
+    //
     // Only rethrow error if the session has not been canceled.
-    if (!this.isCanceled) {
-      throw error;
+    if (this.isCanceled) {
+      this.logger.warn(
+        "An error occurred while attempting to formulate and send a response to an incoming INVITE." +
+        " However a CANCEL was received and processed while doing so which can (and often does) result" +
+        " in errors occurring as the session terminates in the meantime. Said error is being ignored."
+      );
+      return;
     }
+
+    throw error;
   }
 
   /**
@@ -639,7 +645,7 @@ export class Invitation extends Session {
 
     return new Promise((resolve, reject) => {
       this.waitingForPrack = true;
-      return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
+      this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
         .then((offerAnswer) => {
           body = offerAnswer;
           return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
@@ -667,7 +673,8 @@ export class Invitation extends Session {
                   } catch (error) {
                     reject(error);
                   }
-                });
+                })
+                .catch((error: Error) => reject(error));
             }
           };
 
@@ -679,13 +686,9 @@ export class Invitation extends Session {
             this.waitingForPrack = false;
             this.logger.warn("No PRACK received, rejecting INVITE.");
             clearTimeout(rel1xxRetransmissionTimer);
-            try {
-              this.incomingInviteRequest.reject({ statusCode: 504 });
-              this.stateTransition(SessionState.Terminated);
-              reject(new SessionTerminatedError());
-            } catch (error) {
-              reject(error);
-            }
+            this.reject({ statusCode: 504 })
+              .then(() => reject(new SessionTerminatedError()))
+              .catch((error: Error) => reject(error));
           };
           const prackWaitTimeoutTimer = setTimeout(prackWaitTimeout, Timers.T1 * 64);
 
@@ -702,6 +705,10 @@ export class Invitation extends Session {
           };
           let timeout = Timers.T1;
           let rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, timeout);
+        })
+        .catch((error: Error) => {
+          this.waitingForPrack = false;
+          reject(error);
         });
     });
   }
@@ -709,7 +716,7 @@ export class Invitation extends Session {
   /**
    * A version of `progress` which resolves when a 100 Trying provisional response is sent.
    */
-  private sendTrying(): Promise<OutgoingResponse> {
+  private sendProgressTrying(): Promise<OutgoingResponse> {
     return new Promise((resolve, reject) => {
       try {
         const progressResponse = this.incomingInviteRequest.trying();
@@ -738,7 +745,7 @@ export class Invitation extends Session {
   }
 
   /**
-   * Here we are resolving that promise which in turn will cause
+   * Here we are resolving the promise which in turn will cause
    * the accept to proceed (it may still fail for other reasons, but...).
    */
   private prackArrived(): void {
@@ -751,10 +758,7 @@ export class Invitation extends Session {
   }
 
   /**
-   * FIXME: TODO: This needs to get called if in fact the PRACK "never arrives".
-   * Currently a call to accept() never completes in this case (it should reject).
-   *
-   * Here we are rejecting that promise which in turn will cause
+   * Here we are rejecting the promise which in turn will cause
    * the accept to fail and the session to transition to "terminated".
    */
   private prackNeverArrived(): void {
