@@ -27,6 +27,7 @@ The constructor for this class is marked as internal. Third-party code should no
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [accept(options)](./sip.js.invitation.accept.md) |  | Accept the invitation. |
+|  [dispose()](./sip.js.invitation.dispose.md) |  | Destructor. |
 |  [progress(options)](./sip.js.invitation.progress.md) |  | Indicate progress processing the invitation. |
 |  [reject(options)](./sip.js.invitation.reject.md) |  | Reject the invitation. |
 

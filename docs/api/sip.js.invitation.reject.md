@@ -22,3 +22,7 @@ reject(options?: InvitationRejectOptions): Promise<void>;
 
 `Promise<void>`
 
+## Remarks
+
+Replies to the INVITE request with a 4xx, 5xx, or 6xx final response. Resolves once the response sent, otherwise rejects.
+

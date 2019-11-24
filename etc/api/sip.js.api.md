@@ -88,8 +88,7 @@ export class Invitation extends Session {
     readonly autoSendAnInitialProvisionalResponse: boolean;
     // @internal (undocumented)
     body: string | undefined;
-    // @internal
-    protected _close(): void;
+    dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -143,8 +142,7 @@ export class Inviter extends Session {
     // @internal (undocumented)
     body: BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
-    // @internal
-    protected _close(): void;
+    dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
     // @internal (undocumented)
@@ -428,8 +426,6 @@ export abstract class Session {
     abstract body: BodyAndContentType | string | undefined;
     // @internal
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
-    // @internal
-    protected _close(): void;
     // @internal (undocumented)
     contact: string | undefined;
     // @internal (undocumented)
@@ -443,8 +439,6 @@ export abstract class Session {
     protected earlySdp: string | undefined;
     // @internal (undocumented)
     endTime: Date | undefined;
-    // @internal (undocumented)
-    protected expiresTimer: any;
     // @internal (undocumented)
     protected fromTag: string | undefined;
     // Warning: (ae-forgotten-export) The symbol "Body" needs to be exported by the entry point index.d.ts
@@ -549,8 +543,6 @@ export abstract class Session {
     protected stateTransition(newState: SessionState): void;
     // @internal (undocumented)
     userAgent: UserAgent;
-    // @internal (undocumented)
-    protected userNoAnswerTimer: any;
 }
 
 // @public
@@ -613,15 +605,10 @@ export interface SessionOptions {
 
 // @public
 export enum SessionState {
-    // (undocumented)
     Established = "Established",
-    // (undocumented)
     Establishing = "Establishing",
-    // (undocumented)
     Initial = "Initial",
-    // (undocumented)
     Terminated = "Terminated",
-    // (undocumented)
     Terminating = "Terminating"
 }
 

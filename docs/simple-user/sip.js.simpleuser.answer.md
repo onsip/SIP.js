@@ -24,5 +24,5 @@ answer(invitationAcceptOptions?: InvitationAcceptOptions): Promise<void>;
 
 ## Remarks
 
-Accept an incoming INVITE request creating a new Session. Resolves with the response is sent, otherwise rejects. Use `onCallAnswered` delegate method to determine if Session is established.
+Accept an incoming INVITE request creating a new Session. Resolves with the response is sent, otherwise rejects. Use `onCallAnswered` delegate method to determine if and when call is established.
 
