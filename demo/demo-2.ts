@@ -101,7 +101,7 @@ function buildUser(
     onCallHangup: makeCallHangupCallback(user, beginButton, endButton),
     onRegistered: makeRegisteredCallback(user, registerButton, unregisterButton),
     onUnregistered: makeUnregisteredCallback(user, registerButton, unregisterButton),
-    onServerConnect: makeServerConnectCallback(user, connectButton, disconnectButton),
+    onServerConnect: makeServerConnectCallback(user, connectButton, disconnectButton, registerButton, beginButton),
     onServerDisconnect: makeServerDisconnectCallback(user, connectButton, disconnectButton, registerButton, beginButton)
   };
   user.delegate = delegate;
@@ -206,11 +206,15 @@ function makeServerConnectCallback(
   user: SimpleUser,
   connectButton: HTMLButtonElement,
   disconnectButton: HTMLButtonElement,
+  registerButton: HTMLButtonElement,
+  beginButton: HTMLButtonElement
 ): () => void {
   return () => {
     console.log(`[${user.id}] connected`);
     connectButton.disabled = true;
     disconnectButton.disabled = false;
+    registerButton.disabled = false;
+    beginButton.disabled = false;
   };
 }
 
