@@ -132,15 +132,12 @@ export abstract class Session {
   protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
-  /** @internal */
-  protected expiresTimer: any = undefined;
-  /** @internal */
-  protected userNoAnswerTimer: any = undefined;
 
   private _sessionDescriptionHandler: SessionDescriptionHandler | undefined;
   private _state: SessionState = SessionState.Initial;
   private _stateEventEmitter = new EventEmitter();
 
+  private disposed: boolean = false;
   private pendingReinvite: boolean = false;
 
   /**
@@ -152,6 +149,57 @@ export abstract class Session {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
     this.logger = userAgent.getLogger("sip.session");
+  }
+
+  /**
+   * Destructor.
+   */
+  public async dispose(): Promise<void> {
+    this.logger.log("Session.dispose");
+
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
+
+    // Remove from the user agent's session collection
+    if (!this.id) {
+      throw new Error("Session id undefined.");
+    }
+    delete this.userAgent.sessions[this.id];
+
+    if (this._sessionDescriptionHandler) {
+      this._sessionDescriptionHandler.close(); // dispose of media
+
+      // TODO: The SDH needs to remain defined as it will be called after it is closed in cases
+      // where and answer/offer arrives will the session is being torn down. There are a variety
+      // of circumstances where this can happen - sending a BYE during a re-INVITE for example.
+      // The code is currently written such that it lazily makes a new SDH when it needs one
+      // and one is not yet defined. Thus if we undefined it here, it will currently make a
+      // new one which then never gets cleaned up. The downside is that calls this closed SDH
+      // will continue to be made (think setDescription) and those shoud/will fail. These
+      // failures are handled, but it would be nice to have it all coded up in a way where
+      // having an undefined SDH where one is expected throws an error.
+      //
+      // this._sessionDescriptionHandler = undefined;
+    }
+
+    // waiting on pending BYE response?
+
+    switch (this.state) {
+      case SessionState.Initial:
+        break; // expecting the sub class to handle this case
+      case SessionState.Establishing:
+        break; // expecting the sub class to handle this case
+      case SessionState.Established:
+        return this._bye().then(() => { return; });
+      case SessionState.Terminating:
+        return Promise.resolve();
+      case SessionState.Terminated:
+        return Promise.resolve();
+      default:
+        throw new Error("Unknown state.");
+    }
   }
 
   /**
@@ -188,19 +236,6 @@ export abstract class Session {
    */
   get stateChange(): Emitter<SessionState> {
     return makeEmitter(this._stateEventEmitter);
-  }
-
-  /**
-   * Destructor.
-   */
-  public async dispose(): Promise<void> {
-    // TODO: This needs to terminate the session gracefully
-    try {
-      this._close();
-      return Promise.resolve();
-    } catch (error) {
-      return Promise.reject(error);
-    }
   }
 
   /**
@@ -505,37 +540,6 @@ export abstract class Session {
     }
     // Using the dialog session associate with the response (which might not be this.dialog)
     response.session.bye(undefined, { extraHeaders });
-  }
-
-  /**
-   * Called to cleanup session when they are terminated after terminated.
-   * Note that this is overriden.
-   * And it doesn't terminate signaling.
-   * @internal
-   */
-  protected _close(): void {
-    this.logger.log(`Session[${this.id}]._close`);
-
-    // 1st Step. Terminate media.
-    if (this._sessionDescriptionHandler) {
-      this._sessionDescriptionHandler.close();
-    }
-
-    // 2nd Step. Terminate signaling.
-    // TODO: Review
-
-    // Clear session timers
-    if (this.expiresTimer) {
-      clearTimeout(this.expiresTimer);
-    }
-    if (this.userNoAnswerTimer) {
-      clearTimeout(this.userNoAnswerTimer);
-    }
-
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    delete this.userAgent.sessions[this.id];
   }
 
   /**
@@ -1112,13 +1116,17 @@ export abstract class Session {
 
     if (newState === SessionState.Terminated) {
       this.endTime = new Date(); // Deprecated legacy ported behavior
-      this._close();
     }
 
     // Transition
     this._state = newState;
     this.logger.log(`Session ${this.id} transitioned to state ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+
+    // Dispose
+    if (newState === SessionState.Terminated) {
+      this.dispose();
+    }
   }
 
   private getReasonHeaderValue(code: number, reason?: string): string {

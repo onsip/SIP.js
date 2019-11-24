@@ -200,6 +200,33 @@ export class Inviter extends Session {
     this.isCanceled = false;
 
     this.earlyMedia = options.earlyMedia || false;
+
+    // Add to the user agent's session collection.
+    this.userAgent.sessions[this.id] = this;
+  }
+
+  /**
+   * Destructor.
+   */
+  public dispose(): Promise<void> {
+    this.logger.log("Invitation.dispose");
+
+    this.disposeEarlyMedia();
+
+    switch (this.state) {
+      case SessionState.Initial:
+        return this.cancel().then(() => super.dispose());
+      case SessionState.Establishing:
+        return this.cancel().then(() => super.dispose());
+      case SessionState.Established:
+        return super.dispose();
+      case SessionState.Terminating:
+        return super.dispose();
+      case SessionState.Terminated:
+        return super.dispose();
+      default:
+        throw new Error("Unknown state.");
+    }
   }
 
   /**
@@ -225,11 +252,11 @@ export class Inviter extends Session {
     // transition state
     this.stateTransition(SessionState.Terminating);
 
-    // cleanup media as needed
-    this.disposeEarlyMedia();
-    if (this.sessionDescriptionHandler) {
-      this.sessionDescriptionHandler.close();
-    }
+    // // cleanup media as needed
+    // this.disposeEarlyMedia();
+    // if (this.sessionDescriptionHandler) {
+    //   this.sessionDescriptionHandler.close();
+    // }
 
     // helper function
     function getCancelReason(code: number, reason: string): string | undefined {
@@ -349,12 +376,6 @@ export class Inviter extends Session {
       return super.invite(options);
     }
 
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    // save the session into the user agent sessions collection.
-    this.userAgent.sessions[this.id] = this;
-
     // just send an INVITE with no sdp...
     if (options.withoutSdp || this.inviteWithoutSdp) {
       if (this.renderbody && this.rendertype) {
@@ -374,6 +395,7 @@ export class Inviter extends Session {
     };
     return this.getOffer(offerOptions)
       .then((body) => {
+        this.request.body = { body: body.content, contentType: body.contentType };
 
         // TODO: Review error handling...
         // There are some race conditions which can occur, all of which will cause stateTransition() to throw.
@@ -385,8 +407,6 @@ export class Inviter extends Session {
         // transition state
         this.stateTransition(SessionState.Establishing);
 
-        this.request.body = { body: body.content, contentType: body.contentType };
-
         return this.sendInvite(options);
       })
       .catch((error) => {
@@ -394,16 +414,6 @@ export class Inviter extends Session {
         this.stateTransition(SessionState.Terminated);
         throw error;
       });
-  }
-
-  /**
-   * Called to cleanup session after terminated.
-   * Using it here just to dispose of early media.
-   * @internal
-   */
-  protected _close(): void {
-    this.disposeEarlyMedia();
-    super._close();
   }
 
   /**

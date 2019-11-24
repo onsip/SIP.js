@@ -1974,7 +1974,7 @@ describe("API Session", () => {
         .then(() => expect(bob2.isShutdown()).toBe(true));
     });
 
-    describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {
+    describe("Alice constructs a new INVITE targeting 2 Bobs with SDP offer", () => {
       beforeEach(async () => {
         target = bob.uri;
         bob.userAgent.delegate = {
@@ -1997,7 +1997,7 @@ describe("API Session", () => {
       inviteSuiteFork(false);
     });
 
-    describe("Alice constructs a new INVITE client context targeting Bob without SDP offer", () => {
+    describe("Alice constructs a new INVITE targeting 2 Bobs without SDP offer", () => {
       beforeEach(async () => {
         target = bob.uri;
         bob.userAgent.delegate = {

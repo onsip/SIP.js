@@ -56,6 +56,9 @@ export class Invitation extends Session {
    */
   private _canceled = false;
 
+  private expiresTimer: any = undefined;
+  private userNoAnswerTimer: any = undefined;
+
   private rseq = Math.floor(Math.random() * 10000);
 
   private waitingForPrack: boolean = false;
@@ -102,9 +105,6 @@ export class Invitation extends Session {
     // Update logger
     this.logger = userAgent.getLogger("sip.invitation", this.id);
 
-    // Save the session into the ua sessions collection.
-    this.userAgent.sessions[this.id] = this;
-
     // Set 100rel if necessary
     const request = this.request;
     const requireHeader = request.getHeader("require");
@@ -148,6 +148,40 @@ export class Invitation extends Session {
           this.stateTransition(SessionState.Terminated);
         }
       }, expires);
+    }
+
+    // Add to the user agent's session collection.
+    this.userAgent.sessions[this.id] = this;
+  }
+
+  /**
+   * Destructor.
+   */
+  public dispose(): Promise<void> {
+    this.logger.log("Invitation.dispose");
+
+    if (this.expiresTimer) {
+      clearTimeout(this.expiresTimer);
+      this.expiresTimer = undefined;
+    }
+    if (this.userNoAnswerTimer) {
+      clearTimeout(this.userNoAnswerTimer);
+      this.userNoAnswerTimer = undefined;
+    }
+
+    switch (this.state) {
+      case SessionState.Initial:
+        return this.reject().then(() => super.dispose());
+      case SessionState.Establishing:
+        return this.reject().then(() => super.dispose());
+      case SessionState.Established:
+        return super.dispose();
+      case SessionState.Terminating:
+        return super.dispose();
+      case SessionState.Terminated:
+        return super.dispose();
+      default:
+        throw new Error("Unknown state.");
     }
   }
 
@@ -228,6 +262,7 @@ export class Invitation extends Session {
       .catch((error) => {
         this.onContextError(error);
         // FIXME: Assuming error due to async race on CANCEL and eating error.
+        //        However there are other rejection reasons include prack never arrived.
         if (!this._canceled) {
           throw error;
         }
@@ -378,16 +413,6 @@ export class Invitation extends Session {
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
     this.stateTransition(SessionState.Terminated);
-  }
-
-  /**
-   * Called to cleanup session after terminated.
-   * Using it here just for the PRACK timeout.
-   * @internal
-   */
-  protected _close(): void {
-    this.prackNeverArrived();
-    super._close();
   }
 
   /**
@@ -667,6 +692,10 @@ export class Invitation extends Session {
     }
   }
 
+  /**
+   * Here we are resolving that promise which in turn will cause
+   * the accept to proceed (it may still fail for other reasons, but...).
+   */
   private prackArrived(): void {
     if (this.waitingForPrackResolve) {
       this.waitingForPrackResolve();
@@ -676,6 +705,10 @@ export class Invitation extends Session {
     this.waitingForPrackReject = undefined;
   }
 
+  /**
+   * Here we are rejecting that promise which in turn will cause
+   * the accept to fail and the session to transition to "terminated".
+   */
   private prackNeverArrived(): void {
     if (this.waitingForPrackReject) {
       this.waitingForPrackReject(new SessionTerminatedError());
@@ -685,6 +718,12 @@ export class Invitation extends Session {
     this.waitingForPrackReject = undefined;
   }
 
+  /**
+   * When attempting to accept the INVITE, an invitation waits
+   * for any outstanding PRACK to arrive before sending the 200 Ok.
+   * It will be waiting on this Promise to resolve which lets it know
+   * the PRACK has arrived and it may proceed to send the 200 Ok.
+   */
   private waitForArrivalOfPrack(): Promise<void> {
     if (this.waitingForPrackPromise) {
       throw new Error("Already waiting for PRACK");

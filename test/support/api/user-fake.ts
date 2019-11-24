@@ -57,10 +57,12 @@ export async function makeUserFake(
 
     // Confirm any and all session description handlers have been closed
     const sdhClosed = mockSessionDescriptionHandlers.every((mock) => {
-      // TODO: Currently the API does call close() more than once in various
-      // circumstances so we are checking to make sure close() called at least once.
-      // But it  would be nice if the api did never called close() more than once...
       if (mock.close.calls.count() === 0) {
+        // console.error(`${displayName} SDH Not Closed`);
+        return false;
+      }
+      if (mock.close.calls.count() > 1) {
+        // console.error(`${displayName} SDH Closed Multiple Times`);
         return false;
       }
       return true;

@@ -526,14 +526,14 @@ export class UserAgent {
       }
     })();
 
-    // Disconnect the transport
+    // Dispose of the transport (disconnecting)
     await transport.dispose()
       .catch((error: Error) => {
         this.logger.error(error.message);
         throw error;
       });
 
-    // Reset the user agent core
+    // Dispose of the user agent core (resetting)
     try {
       userAgentCore.dispose();
     } catch (e) {
