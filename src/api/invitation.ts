@@ -43,18 +43,6 @@ export class Invitation extends Session {
   /** @internal */
   public remoteIdentity: NameAddrHeader;
 
-  /**
-   * FIXME: TODO:
-   * Used to squelch throwing of errors due to async race condition.
-   * We have an internal race between calling `accept()` and handling
-   * an incoming CANCEL request. As there is no good way currently to
-   * delegate the handling of this async errors to the caller of
-   * `accept()`, we are squelching the throwing of ALL errors when
-   * they occur after receiving a CANCEL to catch the ONE we know
-   * is a "normal" exceptional condition. While this is a completely
-   * reasonable approach, the decision should be left up to the library user.
-   */
-
   private disposed: boolean = false;
   private isCanceled = false;
 
@@ -73,7 +61,7 @@ export class Invitation extends Session {
     super(userAgent);
 
     // ServerContext properties
-    this.logger = userAgent.getLogger("sip.invitation", this.id);
+    this.logger = userAgent.getLogger("sip.Invitation", this.id);
     if (this.request.body) {
       this.body = this.request.body;
     }
@@ -180,7 +168,7 @@ export class Invitation extends Session {
       this.userNoAnswerTimer = undefined;
     }
 
-    // If accept is still waiting for a PRACK, make sure it rejects
+    // If accept() is still waiting for a PRACK, make sure it rejects
     this.prackNeverArrived();
 
     // If the final response for the initial INVITE not yet been sent, reject it
@@ -235,9 +223,11 @@ export class Invitation extends Session {
 
   /**
    * Accept the invitation.
+   *
    * @remarks
    * Accept the incoming INVITE request to start a Session.
    * Replies to the INVITE request with a 200 Ok response.
+   * Resolves once the response sent, otherwise rejects.
    * @param options - Options bucket.
    */
   public accept(options: InvitationAcceptOptions = {}): Promise<void> {
@@ -279,9 +269,11 @@ export class Invitation extends Session {
 
   /**
    * Indicate progress processing the invitation.
+   *
    * @remarks
    * Report progress to the the caller.
    * Replies to the INVITE request with a 1xx provisional response.
+   * Resolves once the response sent, otherwise rejects.
    * @param options - Options bucket.
    */
   public progress(options: InvitationProgressOptions = {}): Promise<void> {
@@ -345,6 +337,10 @@ export class Invitation extends Session {
 
   /**
    * Reject the invitation.
+   *
+   * @remarks
+   * Replies to the INVITE request with a 4xx, 5xx, or 6xx final response.
+   * Resolves once the response sent, otherwise rejects.
    * @param options - Options bucket.
    */
   public reject(options: InvitationRejectOptions = {}): Promise<void> {
@@ -383,6 +379,7 @@ export class Invitation extends Session {
 
   /**
    * Handle CANCEL request.
+   *
    * @param message - CANCEL message.
    * @internal
    */
@@ -497,9 +494,14 @@ export class Invitation extends Session {
       }
     }
 
-    // FIXME: Here we are assuming the error is due to some async race on CANCEL resulting in
-    // an exception which we reasonable wish to handle. However the approach here is to assume
-    // ANY error that occurs after handling a CANCEL is one of those exceptions. As we are eating
+    // FIXME: TODO:
+    // Here we are squelching the throwing of errors due to an async race condition.
+    // We have an internal race between calling `accept()` and handling an incoming
+    // CANCEL request. As there is no good way currently to delegate the handling of
+    // these async errors to the caller of `accept()`, we are squelching the throwing
+    // of ALL errors when/ they occur after receiving a CANCEL to catch the ONE we know
+    // is a "normal" exceptional condition. While this is a completely reasonable approach,
+    // the decision should be left up to the library user. Furthermore, as we are eating
     // ALL errors in this case, we are potentially (likely) hiding "real" errors which occur.
     //
     // Only rethrow error if the session has not been canceled.
@@ -571,7 +573,6 @@ export class Invitation extends Session {
    * @param options - Options bucket.
    */
   private sendProgress(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
-    // Ported
     const statusCode = options.statusCode || 180;
     const reasonPhrase = options.reasonPhrase;
     const extraHeaders = (options.extraHeaders || []).slice();
