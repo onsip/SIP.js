@@ -342,8 +342,8 @@ export class SimpleUser {
   /**
    * Hangup a call.
    * @remarks
-   * Send a BYE request to end the current Session.
-   * Resolves when the BYE request is sent, otherwise rejects.
+   * Send a BYE request, CANCEL request or reject response to end the current Session.
+   * Resolves when the request/response is sent, otherwise rejects.
    * Use `onCallTerminated` delegate method to determine if Session is terminated.
    */
   public hangup(): Promise<void> {
@@ -353,28 +353,42 @@ export class SimpleUser {
       return Promise.reject(new Error("Session does not exist."));
     }
 
-    if (this.session.state === SessionState.Establishing) {
-      if (this.session instanceof Inviter) {
-        // Attempt to CANCEL outgoing sessions that are not yet established
-        return this.session.cancel()
+    switch (this.session.state) {
+      case SessionState.Initial:
+        if (this.session instanceof Inviter) {
+          return this.session.cancel()
+            .then(() => {
+              this.logger.log(`[${this.id}] sent CANCEL (but INVITE was never sent, so...`);
+            });
+        } else if (this.session instanceof Invitation) {
+          return this.session.reject()
+            .then(() => {
+              this.logger.log(`[${this.id}] sent 480`);
+            });
+        }
+      case SessionState.Establishing:
+        if (this.session instanceof Inviter) {
+          return this.session.cancel()
+            .then(() => {
+              this.logger.log(`[${this.id}] sent CANCEL`);
+            });
+        } else if (this.session instanceof Invitation) {
+          return this.session.reject()
+            .then(() => {
+              this.logger.log(`[${this.id}] sent 480`);
+            });
+        }
+      case SessionState.Established:
+        return new Byer(this.session).bye()
           .then(() => {
-            this.logger.log(`[${this.id}] sent CANCEL`);
+            this.logger.log(`[${this.id}] sent BYE`);
           });
-      } else if (this.session instanceof Invitation) {
-        // Attempt to reject incoming sessions that are not yet established
-        return this.session.reject()
-          .then(() => {
-            this.logger.log(`[${this.id}] rejected`);
-          });
-      }
-    }
-
-    // Send BYE
-    if (this.session.state === SessionState.Established) {
-      return new Byer(this.session).bye()
-        .then(() => {
-          this.logger.log(`[${this.id}] sent BYE`);
-        });
+      case SessionState.Terminating:
+        break;
+      case SessionState.Terminated:
+        break;
+      default:
+        throw new Error("Unknown state");
     }
 
     this.logger.log(`[${this.id}] in state ${this.session.state}, no action taken`);
