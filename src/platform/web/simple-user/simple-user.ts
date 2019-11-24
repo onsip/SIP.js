@@ -344,55 +344,11 @@ export class SimpleUser {
    * @remarks
    * Send a BYE request, CANCEL request or reject response to end the current Session.
    * Resolves when the request/response is sent, otherwise rejects.
-   * Use `onCallTerminated` delegate method to determine if Session is terminated.
+   * Use `onCallTerminated` delegate method to determine if and when call is ended.
    */
   public hangup(): Promise<void> {
-    this.logger.log(`[${this.id}] ending Session...`);
-
-    if (!this.session) {
-      return Promise.reject(new Error("Session does not exist."));
-    }
-
-    switch (this.session.state) {
-      case SessionState.Initial:
-        if (this.session instanceof Inviter) {
-          return this.session.cancel()
-            .then(() => {
-              this.logger.log(`[${this.id}] sent CANCEL (but INVITE was never sent, so...`);
-            });
-        } else if (this.session instanceof Invitation) {
-          return this.session.reject()
-            .then(() => {
-              this.logger.log(`[${this.id}] sent 480`);
-            });
-        }
-      case SessionState.Establishing:
-        if (this.session instanceof Inviter) {
-          return this.session.cancel()
-            .then(() => {
-              this.logger.log(`[${this.id}] sent CANCEL`);
-            });
-        } else if (this.session instanceof Invitation) {
-          return this.session.reject()
-            .then(() => {
-              this.logger.log(`[${this.id}] sent 480`);
-            });
-        }
-      case SessionState.Established:
-        return new Byer(this.session).bye()
-          .then(() => {
-            this.logger.log(`[${this.id}] sent BYE`);
-          });
-      case SessionState.Terminating:
-        break;
-      case SessionState.Terminated:
-        break;
-      default:
-        throw new Error("Unknown state");
-    }
-
-    this.logger.log(`[${this.id}] in state ${this.session.state}, no action taken`);
-    return Promise.resolve();
+    this.logger.log(`[${this.id}] hangup...`);
+    return this.terminate();
   }
 
   /**
@@ -400,7 +356,7 @@ export class SimpleUser {
    * @remarks
    * Accept an incoming INVITE request creating a new Session.
    * Resolves with the response is sent, otherwise rejects.
-   * Use `onCallAnswered` delegate method to determine if Session is established.
+   * Use `onCallAnswered` delegate method to determine if and when call is established.
    */
   public answer(
     invitationAcceptOptions?: InvitationAcceptOptions
@@ -434,7 +390,7 @@ export class SimpleUser {
    * @remarks
    * Reject an incoming INVITE request.
    * Resolves with the response is sent, otherwise rejects.
-   * Use `onCallTerminated` delegate method to determine if Session is terminated.
+   * Use `onCallTerminated` delegate method to determine if and when call is ended.
    */
   public decline(): Promise<void> {
     this.logger.log(`[${this.id}] rejecting Invitation...`);
@@ -573,6 +529,28 @@ export class SimpleUser {
       }
     }
     return constraints;
+  }
+
+  /** Helper function to remove media from html elements. */
+  private cleanupMedia(): void {
+    if (this.options.media) {
+      if (this.options.media.local) {
+        if (this.options.media.local.video) {
+          this.options.media.local.video.srcObject = null;
+          this.options.media.local.video.pause();
+        }
+      }
+      if (this.options.media.remote) {
+        if (this.options.media.remote.audio) {
+          this.options.media.remote.audio.srcObject = null;
+          this.options.media.remote.audio.pause();
+        }
+        if (this.options.media.remote.video) {
+          this.options.media.remote.video.srcObject = null;
+          this.options.media.remote.video.pause();
+        }
+      }
+    }
   }
 
   /** Helper function to enable/disable media tracks. */
@@ -781,7 +759,7 @@ export class SimpleUser {
    */
   private setMute(mute: boolean): void {
     if (!this.session) {
-      this.logger.warn(`[${this.id}] an session is required to enabled/disable media tracks`);
+      this.logger.warn(`[${this.id}] a session is required to enabled/disable media tracks`);
       return;
     }
 
@@ -849,25 +827,63 @@ export class SimpleUser {
     }
   }
 
-  /** Helper function to remove media from html elements. */
-  private cleanupMedia(): void {
-    if (this.options.media) {
-      if (this.options.media.local) {
-        if (this.options.media.local.video) {
-          this.options.media.local.video.srcObject = null;
-          this.options.media.local.video.pause();
-        }
-      }
-      if (this.options.media.remote) {
-        if (this.options.media.remote.audio) {
-          this.options.media.remote.audio.srcObject = null;
-          this.options.media.remote.audio.pause();
-        }
-        if (this.options.media.remote.video) {
-          this.options.media.remote.video.srcObject = null;
-          this.options.media.remote.video.pause();
-        }
-      }
+  /**
+   * End a session.
+   * @remarks
+   * Send a BYE request, CANCEL request or reject response to end the current Session.
+   * Resolves when the request/response is sent, otherwise rejects.
+   * Use `onCallTerminated` delegate method to determine if and when Session is terminated.
+   */
+  private terminate(): Promise<void> {
+    this.logger.log(`[${this.id}] terminating...`);
+
+    if (!this.session) {
+      return Promise.reject(new Error("Session does not exist."));
     }
+
+    switch (this.session.state) {
+      case SessionState.Initial:
+        if (this.session instanceof Inviter) {
+          return this.session.cancel()
+            .then(() => {
+              this.logger.log(`[${this.id}] Inviter never sent INVITE (canceled)`);
+            });
+        } else if (this.session instanceof Invitation) {
+          return this.session.reject()
+            .then(() => {
+              this.logger.log(`[${this.id}] Invitation rejected (sent 480)`);
+            });
+        } else {
+          throw new Error("Unknown session type.");
+        }
+      case SessionState.Establishing:
+        if (this.session instanceof Inviter) {
+          return this.session.cancel()
+            .then(() => {
+              this.logger.log(`[${this.id}] Inviter canceled (sent CANCEL)`);
+            });
+        } else if (this.session instanceof Invitation) {
+          return this.session.reject()
+            .then(() => {
+              this.logger.log(`[${this.id}] Invitation rejected (sent 480)`);
+            });
+        } else {
+          throw new Error("Unknown session type.");
+        }
+      case SessionState.Established:
+        return new Byer(this.session).bye()
+          .then(() => {
+            this.logger.log(`[${this.id}] Session ended (sent BYE)`);
+          });
+      case SessionState.Terminating:
+        break;
+      case SessionState.Terminated:
+        break;
+      default:
+        throw new Error("Unknown state");
+    }
+
+    this.logger.log(`[${this.id}] terminating in state ${this.session.state}, no action taken`);
+    return Promise.resolve();
   }
 }
