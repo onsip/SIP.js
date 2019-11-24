@@ -19,8 +19,7 @@ const webSocketServer = "wss://edge.sip.onsip.com";
 serverSpan.innerHTML = webSocketServer;
 
 // Destination URI
-// const target = "sip:welcome@onsip.com";
-const target = "sip:john@junctionnetworks.com";
+const target = "sip:welcome@onsip.com";
 targetSpan.innerHTML = target;
 
 // Name for demo user
