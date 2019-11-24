@@ -348,7 +348,10 @@ export class Invitation extends Session {
     this.logger.log("Invitation.reject");
 
     // validate state
-    if (this.state !== SessionState.Initial) {
+    if (
+      this.state !== SessionState.Initial &&
+      this.state !== SessionState.Establishing
+    ) {
       const error = new Error(`Invalid session state ${this.state}`);
       this.logger.error(error.message);
       return Promise.reject(error);
