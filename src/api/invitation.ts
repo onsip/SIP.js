@@ -1,6 +1,5 @@
 import {
   Body,
-  Exception,
   fromBodyLegacy,
   getBody,
   Grammar,
@@ -11,7 +10,8 @@ import {
   OutgoingResponse,
   OutgoingResponseWithSession,
   SignalingState,
-  Timers
+  Timers,
+  TransactionStateError
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
 import { ContentTypeUnsupportedError, SessionDescriptionHandlerError, SessionTerminatedError } from "./exceptions";
@@ -49,14 +49,15 @@ export class Invitation extends Session {
    * We have an internal race between calling `accept()` and handling
    * an incoming CANCEL request. As there is no good way currently to
    * delegate the handling of this async errors to the caller of
-   * `accept()`, we are squelching the throwing ALL errors when
+   * `accept()`, we are squelching the throwing of ALL errors when
    * they occur after receiving a CANCEL to catch the ONE we know
    * is a "normal" exceptional condition. While this is a completely
-   * reasonable appraoch, the decision should be left up to the library user.
+   * reasonable approach, the decision should be left up to the library user.
    */
-  private _canceled = false;
 
   private disposed: boolean = false;
+  private isCanceled = false;
+
   private expiresTimer: any = undefined;
   private userNoAnswerTimer: any = undefined;
 
@@ -249,7 +250,7 @@ export class Invitation extends Session {
     // transition state
     this.stateTransition(SessionState.Establishing);
 
-    return this._accept(options)
+    return this.sendAccept(options)
       .then(({ message, session }) => {
         session.delegate = {
           onAck: (ackRequest): void => this.onAckRequest(ackRequest),
@@ -270,14 +271,7 @@ export class Invitation extends Session {
           this.replacee._bye();
         }
       })
-      .catch((error) => {
-        this.onContextError(error);
-        // FIXME: Assuming error due to async race on CANCEL and eating error.
-        //        However there are other rejection reasons include prack never arrived.
-        if (!this._canceled) {
-          throw error;
-        }
-      });
+      .catch((error) => this.handleResponseError(error));
   }
 
   /**
@@ -319,21 +313,14 @@ export class Invitation extends Session {
       return Promise.resolve();
     }
 
-    // Ported
+    // Trying provisional response
     if (options.statusCode === 100) {
-      try {
-        this.incomingInviteRequest.trying();
-      } catch (error) {
-        this.onContextError(error);
-        // FIXME: Assuming error due to async race on CANCEL and eating error.
-        if (!this._canceled) {
-          return Promise.reject(error);
-        }
-      }
-      return Promise.resolve();
+      return this.sendTrying()
+        .then((response) => { return; })
+        .catch((error) => this.handleResponseError(error));
     }
 
-    // Standard provisional response.
+    // Standard provisional response
     if (
       !(this.rel100 === "required") &&
       !(this.rel100 === "supported" && options.rel100) &&
@@ -342,27 +329,15 @@ export class Invitation extends Session {
         this.userAgent.configuration.sipExtension100rel === SIPExtension.Required
       )
     ) {
-      return this._progress(options)
+      return this.sendProgress(options)
         .then((response) => { return; })
-        .catch((error) => {
-          this.onContextError(error);
-          // FIXME: Assuming error due to async race on CANCEL and eating error.
-          if (!this._canceled) {
-            throw error;
-          }
-        });
+        .catch((error) => this.handleResponseError(error));
     }
 
-    // Reliable provisional response.
-    return this._progressReliableWaitForPrack(options)
+    // Reliable provisional response
+    return this.sendProgressReliableWaitForPrack(options)
       .then((response) => { return; })
-      .catch((error) => {
-        this.onContextError(error);
-        // FIXME: Assuming error due to async race on CANCEL and eating error.
-        if (!this._canceled) {
-          throw error;
-        }
-      });
+      .catch((error) => this.handleResponseError(error));
   }
 
   /**
@@ -418,7 +393,7 @@ export class Invitation extends Session {
     }
 
     // flag canceled
-    this._canceled = true;
+    this.isCanceled = true;
 
     // reject INVITE with 487 status code
     this.incomingInviteRequest.reject({ statusCode: 487 });
@@ -427,10 +402,129 @@ export class Invitation extends Session {
   }
 
   /**
+   * Helper function to handline offer/answer in a PRACK.
+   */
+  private handlePrackOfferAnswer(
+    request: IncomingPrackRequest,
+    options: {
+      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
+      modifiers?: Array<SessionDescriptionHandlerModifier>
+    }
+  ): Promise<Body | undefined> {
+    if (!this.dialog) {
+      throw new Error("Dialog undefined.");
+    }
+
+    // If the PRACK doesn't have an offer/answer, nothing to be done.
+    const body = getBody(request.message);
+    if (!body || body.contentDisposition !== "session") {
+      return Promise.resolve(undefined);
+    }
+
+    // If the UAC receives a reliable provisional response with an offer
+    // (this would occur if the UAC sent an INVITE without an offer, in
+    // which case the first reliable provisional response will contain the
+    // offer), it MUST generate an answer in the PRACK.  If the UAC receives
+    // a reliable provisional response with an answer, it MAY generate an
+    // additional offer in the PRACK.  If the UAS receives a PRACK with an
+    // offer, it MUST place the answer in the 2xx to the PRACK.
+    // https://tools.ietf.org/html/rfc3262#section-5
+    switch (this.dialog.signalingState) {
+      case SignalingState.Initial:
+        // State should never be reached as first reliable provisional response must have answer/offer.
+        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
+      case SignalingState.Stable:
+        // Receved answer.
+        return this.setAnswer(body, options).then(() => undefined);
+      case SignalingState.HaveLocalOffer:
+        // State should never be reached as local offer would be answered by this PRACK
+        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
+      case SignalingState.HaveRemoteOffer:
+        // Received offer, generate answer.
+        return this.setOfferAndGetAnswer(body, options);
+      case SignalingState.Closed:
+        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
+      default:
+        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
+    }
+  }
+
+  /**
+   * A handler for errors which occur while attempting to send 1xx and 2xx responses.
+   * In all cases, an attempt is made to reject the request if it is still outstanding.
+   * And while there are a variety of things which can go wrong and we log something here
+   * for all errors, there are a handful of common exceptions we pay some extra attention to.
+   * @param error The error which occurred.
+   */
+  private handleResponseError(error: Error): void {
+    let statusCode = 480; // "Temporarily Unavailable"
+
+    // Request was canceled
+    if (this.isCanceled) {
+      this.logger.warn(
+        "An error occurred while attempting to formulate and send a response to an incoming INVITE, however a CANCEL" +
+        "was received and processed while doing so which can (and often does) result in errors occurring (not unexpectedly).");
+    }
+
+    // Log Error message
+    if (error instanceof Error) {
+      this.logger.error(error.message);
+    } else {
+      // We don't actually know what a session description handler implementation might throw our way,
+      // and more generally as a last resort catch all, just assume we are getting an "any" and log it.
+      this.logger.error(error as any);
+    }
+
+    // Log Exception message
+    if (error instanceof ContentTypeUnsupportedError) {
+      this.logger.error("A session description handler occured while sending response (content type unsupported");
+      statusCode = 415; // "Unsupported Media Type"
+    } else if (error instanceof SessionDescriptionHandlerError) {
+      this.logger.error("A session description handler occured while sending response");
+    } else if (error instanceof SessionTerminatedError) {
+      this.logger.error("Session ended before response could be formulated and sent (while waiting for PRACK)");
+    } else if (error instanceof TransactionStateError) {
+      this.logger.error("Session changed state before response could be formulated and sent");
+    }
+
+    // Reject if still in "initial" state.
+    if (this.state === SessionState.Initial) {
+      try {
+        this.incomingInviteRequest.reject({ statusCode });
+        this.stateTransition(SessionState.Terminated);
+      } catch (e) {
+        this.logger.error("An error occurred attempting to reject the request while handling another error");
+        throw e; // This is not a good place to be...
+      }
+    }
+
+    // FIXME: This is assuming the error is due to some expected async race on CANCEL and the eating error.
+    // This is potentially hiding "real" errors which occur after handling a CANCEL.
+    // Only rethrow error if the session has not been canceled.
+    if (!this.isCanceled) {
+      throw error;
+    }
+  }
+
+  /**
+   * Callback for when ACK for a 2xx response is never received.
+   * @param session - Session the ACK never arrived for.
+   */
+  private onAckTimeout(): void {
+    this.logger.log("Invitation.onAckTimeout");
+    if (!this.dialog) {
+      throw new Error("Dialog undefined.");
+    }
+    this.logger.log("No ACK received for an extended period of time, terminating session");
+    this.dialog.bye();
+    this.stateTransition(SessionState.Terminated);
+  }
+
+  /**
    * A version of `accept` which resolves a session when the 200 Ok response is sent.
    * @param options - Options bucket.
    */
-  private _accept(options: InvitationAcceptOptions = {}): Promise<OutgoingResponseWithSession> {
+  private sendAccept(options: InvitationAcceptOptions = {}): Promise<OutgoingResponseWithSession> {
     // FIXME: Ported - callback for in dialog INFO requests.
     // Turns out accept() can be called more than once if we are waiting
     // for a PRACK in which case "options" get completely tossed away.
@@ -467,7 +561,7 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when the provisional response is sent.
    * @param options - Options bucket.
    */
-  private _progress(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
+  private sendProgress(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
     // Ported
     const statusCode = options.statusCode || 180;
     const reasonPhrase = options.reasonPhrase;
@@ -483,7 +577,7 @@ export class Invitation extends Session {
     // It is the de facto industry standard to utilize 183 with SDP to provide "early media".
     // While it is unlikely someone would want to send a 183 without SDP, so it should be an option.
     if (statusCode === 183 && !body) {
-      return this._progressWithSDP(options);
+      return this.sendProgressWithSDP(options);
     }
 
     try {
@@ -499,7 +593,7 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when the provisional response with sdp is sent.
    * @param options - Options bucket.
    */
-  private _progressWithSDP(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
+  private sendProgressWithSDP(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
     const statusCode = options.statusCode || 183;
     const reasonPhrase = options.reasonPhrase;
     const extraHeaders = (options.extraHeaders || []).slice();
@@ -517,18 +611,18 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when the reliable provisional response is sent.
    * @param options - Options bucket.
    */
-  private _progressReliable(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
+  private sendProgressReliable(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
     options.extraHeaders = (options.extraHeaders || []).slice();
     options.extraHeaders.push("Require: 100rel");
     options.extraHeaders.push("RSeq: " + Math.floor(Math.random() * 10000));
-    return this._progressWithSDP(options);
+    return this.sendProgressWithSDP(options);
   }
 
   /**
    * A version of `progress` which resolves when the reliable provisional response is acknowledged.
    * @param options - Options bucket.
    */
-  private _progressReliableWaitForPrack(options: InvitationProgressOptions = {}): Promise<{
+  private sendProgressReliableWaitForPrack(options: InvitationProgressOptions = {}): Promise<{
     prackRequest: IncomingPrackRequest,
     prackResponse: OutgoingResponse,
     progressResponse: OutgoingResponseWithSession,
@@ -609,124 +703,18 @@ export class Invitation extends Session {
     });
   }
 
-  private handlePrackOfferAnswer(
-    request: IncomingPrackRequest,
-    options: {
-      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-      modifiers?: Array<SessionDescriptionHandlerModifier>
-    }
-  ): Promise<Body | undefined> {
-    if (!this.dialog) {
-      throw new Error("Dialog undefined.");
-    }
-
-    // If the PRACK doesn't have an offer/answer, nothing to be done.
-    const body = getBody(request.message);
-    if (!body || body.contentDisposition !== "session") {
-      return Promise.resolve(undefined);
-    }
-
-    // If the UAC receives a reliable provisional response with an offer
-    // (this would occur if the UAC sent an INVITE without an offer, in
-    // which case the first reliable provisional response will contain the
-    // offer), it MUST generate an answer in the PRACK.  If the UAC receives
-    // a reliable provisional response with an answer, it MAY generate an
-    // additional offer in the PRACK.  If the UAS receives a PRACK with an
-    // offer, it MUST place the answer in the 2xx to the PRACK.
-    // https://tools.ietf.org/html/rfc3262#section-5
-    switch (this.dialog.signalingState) {
-      case SignalingState.Initial:
-        // State should never be reached as first reliable provisional response must have answer/offer.
-        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
-      case SignalingState.Stable:
-        // Receved answer.
-        return this.setAnswer(body, options).then(() => undefined);
-      case SignalingState.HaveLocalOffer:
-        // State should never be reached as local offer would be answered by this PRACK
-        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
-      case SignalingState.HaveRemoteOffer:
-        // Received offer, generate answer.
-        return this.setOfferAndGetAnswer(body, options);
-      case SignalingState.Closed:
-        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
-      default:
-        throw new Error(`Invalid signaling state ${this.dialog.signalingState}.`);
-    }
-  }
-
   /**
-   * Callback for when ACK for a 2xx response is never received.
-   * @param session - Session the ACK never arrived for.
+   * A version of `progress` which resolves when a 100 Trying provisional response is sent.
    */
-  private onAckTimeout(): void {
-    this.logger.log("Invitation.onAckTimeout");
-    if (!this.dialog) {
-      throw new Error("Dialog undefined.");
-    }
-    this.logger.log("No ACK received for an extended period of time, terminating session");
-    this.dialog.bye();
-    this.stateTransition(SessionState.Terminated);
-  }
-
-  /**
-   * FIXME: TODO: The current library interface presents async methods without a
-   * proper async error handling mechanism. Arguably a promise based interface
-   * would be an improvement over the pattern of returning `this`. The approach has
-   * been generally along the lines of log a error and terminate.
-   */
-  private onContextError(error: Error): void {
-    let statusCode = 480;
-    if (error instanceof Exception) { // There might be interest in catching these Exceptions.
-      if (error instanceof SessionDescriptionHandlerError) {
-        this.logger.error(error.message);
-      } else if (error instanceof SessionTerminatedError) {
-        // PRACK never arrived, so we timed out waiting for it.
-        this.logger.warn("Incoming session terminated while waiting for PRACK.");
-      } else if (error instanceof ContentTypeUnsupportedError) {
-        statusCode = 415;
-      } else if (error instanceof Exception) {
-        this.logger.error(error.message);
+  private sendTrying(): Promise<OutgoingResponse> {
+    return new Promise((resolve, reject) => {
+      try {
+        const progressResponse = this.incomingInviteRequest.trying();
+        return Promise.resolve(progressResponse);
+      } catch (error) {
+        return Promise.reject(error);
       }
-    } else if (error instanceof Error) { // Other Errors hould go uncaught.
-      this.logger.error(error.message);
-    } else {
-      // We don't actually know what a session description handler implementation might throw
-      // our way, so as a last resort, just assume we are getting an "any" and log it.
-      this.logger.error("An error occurred in the session description handler.");
-      this.logger.error(error as any);
-    }
-    try {
-      this.incomingInviteRequest.reject({ statusCode }); // "Temporarily Unavailable"
-      this.stateTransition(SessionState.Terminated);
-    } catch (error) {
-      return;
-    }
-  }
-
-  /**
-   * Here we are resolving that promise which in turn will cause
-   * the accept to proceed (it may still fail for other reasons, but...).
-   */
-  private prackArrived(): void {
-    if (this.waitingForPrackResolve) {
-      this.waitingForPrackResolve();
-    }
-    this.waitingForPrackPromise = undefined;
-    this.waitingForPrackResolve = undefined;
-    this.waitingForPrackReject = undefined;
-  }
-
-  /**
-   * Here we are rejecting that promise which in turn will cause
-   * the accept to fail and the session to transition to "terminated".
-   */
-  private prackNeverArrived(): void {
-    if (this.waitingForPrackReject) {
-      this.waitingForPrackReject(new SessionTerminatedError());
-    }
-    this.waitingForPrackPromise = undefined;
-    this.waitingForPrackResolve = undefined;
-    this.waitingForPrackReject = undefined;
+    });
   }
 
   /**
@@ -744,5 +732,34 @@ export class Invitation extends Session {
       this.waitingForPrackReject = reject;
     });
     return this.waitingForPrackPromise;
+  }
+
+  /**
+   * Here we are resolving that promise which in turn will cause
+   * the accept to proceed (it may still fail for other reasons, but...).
+   */
+  private prackArrived(): void {
+    if (this.waitingForPrackResolve) {
+      this.waitingForPrackResolve();
+    }
+    this.waitingForPrackPromise = undefined;
+    this.waitingForPrackResolve = undefined;
+    this.waitingForPrackReject = undefined;
+  }
+
+  /**
+   * FIXME: TODO: This needs to get called if in fact the PRACK "never arrives".
+   * Currently a call to accept() never completes in this case (it should reject).
+   *
+   * Here we are rejecting that promise which in turn will cause
+   * the accept to fail and the session to transition to "terminated".
+   */
+  private prackNeverArrived(): void {
+    if (this.waitingForPrackReject) {
+      this.waitingForPrackReject(new SessionTerminatedError());
+    }
+    this.waitingForPrackPromise = undefined;
+    this.waitingForPrackResolve = undefined;
+    this.waitingForPrackReject = undefined;
   }
 }
