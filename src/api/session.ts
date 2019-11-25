@@ -119,8 +119,6 @@ export abstract class Session {
   public userAgent: UserAgent;
 
   /** @internal */
-  protected earlySdp: string | undefined; // FIXME: Needs review. Appears to be unused.
-  /** @internal */
   protected fromTag: string | undefined;
   /** @internal */
   protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
