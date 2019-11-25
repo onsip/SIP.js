@@ -125,8 +125,6 @@ export abstract class Session {
   /** @internal */
   protected passedOptions: any;
   /** @internal */
-  protected rel100: "none" | "required" | "supported" = "none";
-  /** @internal */
   protected renderbody: string | undefined;
   /** @internal */
   protected rendertype: string | undefined;

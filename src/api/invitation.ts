@@ -49,6 +49,8 @@ export class Invitation extends Session {
   private expiresTimer: any = undefined;
   /** True if this Session has been Terminated due to a CANCEL request. */
   private isCanceled = false;
+  /** Are reliable provisional responses required or supported. */
+  private rel100: "none" | "required" | "supported" = "none";
   /** The current RSeq header value. */
   private rseq = Math.floor(Math.random() * 10000);
   /** INVITE will be rejected if final response not sent in a certain period time. */
