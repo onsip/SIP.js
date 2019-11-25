@@ -242,6 +242,16 @@ export class Inviter extends Session {
 
   /**
    * Cancels the INVITE request.
+   *
+   * @remarks
+   * Sends a CANCEL request.
+   * Resolves once the response sent, otherwise rejects.
+   *
+   * After sending a CANCEL request the expectation is that a 487 final response
+   * will be received for the INVITE. However a 200 final response to the INVITE
+   * may nonetheless arrive (it's a race between the CANCEL reaching the UAS before
+   * the UAS sends a 200) in which case an ACK & BYE will be sent. The net effect
+   * is that this method will terminate the session regardless of the race.
    * @param options - Options bucket.
    */
   public cancel(options: InviterCancelOptions = {}): Promise<void> {
@@ -262,12 +272,6 @@ export class Inviter extends Session {
 
     // transition state
     this.stateTransition(SessionState.Terminating);
-
-    // // cleanup media as needed
-    // this.disposeEarlyMedia();
-    // if (this.sessionDescriptionHandler) {
-    //   this.sessionDescriptionHandler.close();
-    // }
 
     // helper function
     function getCancelReason(code: number, reason: string): string | undefined {
@@ -297,6 +301,7 @@ export class Inviter extends Session {
 
   /**
    * Sends the INVITE request.
+   *
    * @remarks
    * TLDR...
    *  1) Only one offer/answer exchange permitted during initial INVITE.
