@@ -119,8 +119,6 @@ export abstract class Session {
   public userAgent: UserAgent;
 
   /** @internal */
-  protected fromTag: string | undefined;
-  /** @internal */
   protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
   /** @internal */
   protected passedOptions: any;

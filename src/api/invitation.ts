@@ -85,8 +85,7 @@ export class Invitation extends Session {
 
     // Session properties
     this.contact = this.userAgent.contact.toString();
-    this.fromTag = this.request.fromTag;
-    this.id = this.request.callId + this.fromTag;
+    this.id = this.request.callId + this.request.fromTag;
     // this.modifiers =
     // this.onInfo =
     // this.passedOptions =

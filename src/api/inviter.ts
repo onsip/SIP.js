@@ -57,6 +57,7 @@ export class Inviter extends Session {
   private earlyMedia: boolean;
   private earlyMediaDialog: SessionDialog | undefined;
   private earlyMediaSessionDescriptionHandlers = new Map<string, SessionDescriptionHandler>();
+  private fromTag: string;
   private inviteWithoutSdp: boolean;
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
 
