@@ -88,11 +88,6 @@ export abstract class Session {
    * @internal
    */
   public id: string | undefined;
-  /**
-   * True if an error caused session termination.
-   * @internal
-   */
-  public isFailed: boolean = false;
   /** @internal */
   public abstract localIdentity: NameAddrHeader;
   /**
@@ -148,7 +143,7 @@ export abstract class Session {
   protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
-    this.logger = userAgent.getLogger("sip.session");
+    this.logger = userAgent.getLogger("sip.Session");
   }
 
   /**
@@ -273,7 +268,6 @@ export abstract class Session {
           this.logger.error("Received 2xx response to re-INVITE without a session description");
           this.ackAndBye(response, 400, "Missing session description");
           this.stateTransition(SessionState.Terminated);
-          this.isFailed = true;
           this.pendingReinvite = false;
           return;
         }
@@ -301,7 +295,6 @@ export abstract class Session {
               } else {
                 this.ackAndBye(response, 488, "Bad Media Description");
                 this.stateTransition(SessionState.Terminated);
-                this.isFailed = true;
               }
             })
             .then(() => {
@@ -332,7 +325,6 @@ export abstract class Session {
               if (this.state !== SessionState.Terminated) {
                 this.ackAndBye(response, 488, "Bad Media Description");
                 this.stateTransition(SessionState.Terminated);
-                this.isFailed = true;
               } else {
                 response.ack();
               }
@@ -375,7 +367,6 @@ export abstract class Session {
                 extraHeaders.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
                 this.dialog.bye(undefined, { extraHeaders });
                 this.stateTransition(SessionState.Terminated);
-                this.isFailed = true;
               }
             })
             .then(() => {
@@ -565,7 +556,6 @@ export abstract class Session {
         // State should never be reached as first reliable response must have answer/offer.
         // So we must have never has sent an offer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
-        this.isFailed = true;
         const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
@@ -595,7 +585,6 @@ export abstract class Session {
         this.setAnswer(body, options)
           .catch((error: Error) => {
             this.logger.error(error.message);
-            this.isFailed = true;
             const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
             dialog.bye(undefined, { extraHeaders });
             this.stateTransition(SessionState.Terminated);
@@ -606,7 +595,6 @@ export abstract class Session {
         // State should never be reached as local offer would be answered by this ACK.
         // So we must have received an ACK without an answer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
-        this.isFailed = true;
         const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
@@ -616,7 +604,6 @@ export abstract class Session {
         // State should never be reached as remote offer would be answered in first reliable response.
         // So we must have never has sent an answer.
         this.logger.error(`Invalid signaling state ${dialog.signalingState}.`);
-        this.isFailed = true;
         const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
@@ -738,7 +725,6 @@ export abstract class Session {
               extraHeadersBye.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
               this.dialog.bye(undefined, { extraHeaders });
               this.stateTransition(SessionState.Terminated);
-              this.isFailed = true;
             }
             if (this.delegate && this.delegate.onInvite) {
               this.delegate.onInvite(request.message, outgoingResponse.message, 488);

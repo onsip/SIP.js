@@ -200,10 +200,6 @@ describe("API Session In-Dialog", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
-
-    it("her session should be failed", () => {
-      expect(inviter.isFailed).toBe(true);
-    });
   }
 
   function reinviteAcceptedOfferAnswerFailure(withoutSdp: boolean): void {
@@ -284,10 +280,6 @@ describe("API Session In-Dialog", () => {
       const spy = invitationStateSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
-    });
-
-    it("her session should be failed", () => {
-      expect(inviter.isFailed).toBe(true);
     });
   }
 
@@ -458,9 +450,6 @@ describe("API Session In-Dialog", () => {
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
 
-    it("her session should be failed", () => {
-      expect(inviter.isFailed).toBe(true);
-    });
   }
 
   function reinviteSuite(withoutSdp: boolean): void {
