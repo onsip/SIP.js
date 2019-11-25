@@ -145,11 +145,11 @@ export class Inviter extends Session {
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
-    // @internal (undocumented)
+    // @internal
     isCanceled: boolean;
     // @internal (undocumented)
     localIdentity: NameAddrHeader;
-    // @internal (undocumented)
+    // @internal
     referred: Session | undefined;
     // @internal (undocumented)
     remoteIdentity: NameAddrHeader;
@@ -437,7 +437,7 @@ export abstract class Session {
     dispose(): Promise<void>;
     // @internal (undocumented)
     protected earlySdp: string | undefined;
-    // @internal (undocumented)
+    // @internal
     endTime: Date | undefined;
     // @internal (undocumented)
     protected fromTag: string | undefined;
@@ -458,12 +458,12 @@ export abstract class Session {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
         sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     }): Promise<Body>;
-    // @internal (undocumented)
+    // @internal
     id: string | undefined;
     // @internal
     _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
-    // @internal (undocumented)
+    // @internal
     isFailed: boolean;
     // @internal (undocumented)
     localHold: boolean;
@@ -471,7 +471,7 @@ export abstract class Session {
     abstract localIdentity: NameAddrHeader;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     // 
-    // @internal (undocumented)
+    // @internal
     logger: Logger;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
@@ -535,7 +535,7 @@ export abstract class Session {
     protected setSessionDescriptionHandler(sdh: SessionDescriptionHandler): void;
     // @internal
     protected setupSessionDescriptionHandler(): SessionDescriptionHandler;
-    // @internal (undocumented)
+    // @internal
     startTime: Date | undefined;
     readonly state: SessionState;
     readonly stateChange: Emitter<SessionState>;

@@ -70,34 +70,36 @@ export abstract class Session {
    */
   public dialog: SessionDialog | undefined;
 
-  // Property overlap with ClientContext & ServerContext Interfaces
-  /** @internal */
-  public userAgent: UserAgent;
-  /** @internal */
-  public logger: Logger;
-  /** @internal */
-  public abstract body: BodyAndContentType | string | undefined;
-  /** @internal */
-  public abstract localIdentity: NameAddrHeader;
-  /** @internal */
-  public abstract remoteIdentity: NameAddrHeader;
-
-  // Property overlap with ClientContext Interface (only)
-
-  // Property overlap with ServerContext Interface (only)
   /** @internal */
   public assertedIdentity: NameAddrHeader | undefined;
   /** @internal */
-  public contentType: string | undefined;
-
-  // Session properties
-  /** @internal */
-  public id: string | undefined;
+  public abstract body: BodyAndContentType | string | undefined;
   /** @internal */
   public contact: string | undefined;
-  /** Terminated time. */
   /** @internal */
+  public contentType: string | undefined;
+  /**
+   * Time Terminated.
+   * @internal
+   */
   public endTime: Date | undefined;
+  /**
+   * Unique identifier for this session.
+   * @internal
+   */
+  public id: string | undefined;
+  /**
+   * True if an error caused session termination.
+   * @internal
+   */
+  public isFailed: boolean = false;
+  /** @internal */
+  public abstract localIdentity: NameAddrHeader;
+  /**
+   * Session logger.
+   * @internal
+   */
+  public logger: Logger;
   /** @internal */
   public localHold = false;
   /** @internal */
@@ -105,14 +107,16 @@ export abstract class Session {
   /** @internal */
   public referrer: Referrer | undefined;
   /** @internal */
+  public abstract remoteIdentity: NameAddrHeader;
+  /** @internal */
   public replacee: Session | undefined;
-  /** Accepted time. */
-  /** @internal */
+  /**
+   * Time Established.
+   * @internal
+   */
   public startTime: Date | undefined;
-
-  /** True if an error caused session termination. */
   /** @internal */
-  public isFailed: boolean = false;
+  public userAgent: UserAgent;
 
   /** @internal */
   protected earlySdp: string | undefined; // FIXME: Needs review. Appears to be unused.
@@ -133,11 +137,14 @@ export abstract class Session {
   /** @internal */
   protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
 
-  private _sessionDescriptionHandler: SessionDescriptionHandler | undefined;
-  private _state: SessionState = SessionState.Initial;
-  private _stateEventEmitter = new EventEmitter();
-
+  /** True if there is a re-INVITE request outstanding. */
   private pendingReinvite: boolean = false;
+  /** Dialogs session description handler. */
+  private _sessionDescriptionHandler: SessionDescriptionHandler | undefined;
+  /** Session state. */
+  private _state: SessionState = SessionState.Initial;
+  /** Session state emitter. */
+  private _stateEventEmitter = new EventEmitter();
 
   /**
    * Constructor.

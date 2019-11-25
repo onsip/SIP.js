@@ -36,20 +36,22 @@ export class Inviter extends Session {
 
   /** @internal */
   public body: BodyAndContentType | undefined = undefined;
+  /**
+   * True if cancel() was called.
+   * @internal
+   */
+  public isCanceled: boolean;
   /** @internal */
   public localIdentity: NameAddrHeader;
+  /**
+   * If this Inviter was created as a result of a REFER, the reffered Session. Otherwise undefined.
+   * @internal
+   */
+  public referred: Session | undefined;
   /** @internal */
   public remoteIdentity: NameAddrHeader;
   /** @internal */
   public request: OutgoingRequestMessage;
-
-  /** True if cancel() was called. */
-  /** @internal */
-  public isCanceled: boolean;
-
-  /** If this Inviter was created as a result of a REFER, the reffered Session. Otherwise undefined. */
-  /** @internal */
-  public referred: Session | undefined;
 
   private disposed: boolean = false;
   private earlyMedia: boolean;

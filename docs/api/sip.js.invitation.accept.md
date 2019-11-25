@@ -26,3 +26,5 @@ accept(options?: InvitationAcceptOptions): Promise<void>;
 
 Accept the incoming INVITE request to start a Session. Replies to the INVITE request with a 200 Ok response. Resolves once the response sent, otherwise rejects.
 
+This method may reject for a variety of reasons including the receipt of a CANCEL request before `accept` is able to construct a response.
+

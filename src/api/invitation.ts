@@ -43,14 +43,17 @@ export class Invitation extends Session {
   /** @internal */
   public remoteIdentity: NameAddrHeader;
 
+  /** True if dispose() has been called. */
   private disposed: boolean = false;
-  private isCanceled = false;
-
+  /** INVITE will be rejected if not accepted within a certain period time. */
   private expiresTimer: any = undefined;
-  private userNoAnswerTimer: any = undefined;
-
+  /** True if this Session has been Terminated due to a CANCEL request. */
+  private isCanceled = false;
+  /** The current RSeq header value. */
   private rseq = Math.floor(Math.random() * 10000);
-
+  /** INVITE will be rejected if final response not sent in a certain period time. */
+  private userNoAnswerTimer: any = undefined;
+  /** True if waiting for a PRACK before sending a 200 Ok. */
   private waitingForPrack: boolean = false;
   private waitingForPrackPromise: Promise<void> | undefined;
   private waitingForPrackResolve: ResolveFunction | undefined;
@@ -467,7 +470,7 @@ export class Invitation extends Session {
    * In all cases, an attempt is made to reject the request if it is still outstanding.
    * And while there are a variety of things which can go wrong and we log something here
    * for all errors, there are a handful of common exceptions we pay some extra attention to.
-   * @param error The error which occurred.
+   * @param error - The error which occurred.
    */
   private handleResponseError(error: Error): void {
     let statusCode = 480; // "Temporarily Unavailable"
