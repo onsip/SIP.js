@@ -1,0 +1,1 @@
+{"version":3,"file":"subscriber-options.d.ts","sourceRoot":"","sources":["../../src/api/subscriber-options.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,MAAM,wBAAwB,CAAC;AAE7D;;;GAGG;AACH,MAAM,WAAW,iBAAkB,SAAQ,mBAAmB;IAC5D,OAAO,CAAC,EAAE,MAAM,CAAC;IACjB,YAAY,CAAC,EAAE,KAAK,CAAC,MAAM,CAAC,CAAC;IAC7B,IAAI,CAAC,EAAE,MAAM,CAAC;IACd,WAAW,CAAC,EAAE,MAAM,CAAC;CACtB"}
