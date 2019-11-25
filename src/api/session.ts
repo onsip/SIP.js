@@ -101,8 +101,6 @@ export abstract class Session {
    */
   public logger: Logger;
   /** @internal */
-  public localHold = false;
-  /** @internal */
   public referral: Inviter | undefined;
   /** @internal */
   public referrer: Referrer | undefined;
