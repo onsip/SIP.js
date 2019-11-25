@@ -23,6 +23,8 @@ eliminating any support of ES5 environments (IE11 being the notable case).
 * [API Reference](./api/sip.js.md)
 * [Core Library Overview](#core-library-overview)
 * [Core Library Reference](./core/sip.js.md)
+* [SimpleUser Class Overview](#simpleuser-class-overview)
+* [SimpleUser Class Reference](./simple-user/sip.js.md)
 
 # API Overview
 
@@ -216,3 +218,8 @@ The `UserAgentCore` class provides the primary external interface with the SIP c
 - `UserAgentServer` implementation (https://tools.ietf.org/html/rfc3261#section-8.2)
 - Method specific extensions 
 
+# SimpleUser Class Overview
+
+Reference Documentation: [SimpleUser Class](./simple-user/sip.js.md)
+
+The `SimpleUser` class is a simplified interface to make getting up and running easier for new users. While it is not intended for advanced use cases, it is perhaps suitable for many simple single page web browser applications. For examples, see the [Demo](../demo/README.md)  page.

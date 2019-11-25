@@ -53,7 +53,6 @@ A core library implementing low level SIP protocol elements.
 |  [SubscriptionDialog](./sip.js.subscriptiondialog.md) | Subscription Dialog. |
 |  [Transaction](./sip.js.transaction.md) | Transaction. |
 |  [TransactionStateError](./sip.js.transactionstateerror.md) | Indicates that the operation could not be completed given the current transaction state. |
-|  [Transport](./sip.js.transport.md) | Transport. |
 |  [TransportError](./sip.js.transporterror.md) | Transport error. |
 |  [URI](./sip.js.uri.md) | URI. |
 |  [UserAgentClient](./sip.js.useragentclient.md) | User Agent Client (UAC). |
@@ -133,6 +132,7 @@ A core library implementing low level SIP protocol elements.
 |  [Subscription](./sip.js.subscription.md) | Subscription. |
 |  [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) | Subscription delegate. |
 |  [TransactionUser](./sip.js.transactionuser.md) | Transaction User (TU). |
+|  [Transport](./sip.js.transport.md) | Transport layer interface expected by the user agent core. |
 |  [UserAgentCoreConfiguration](./sip.js.useragentcoreconfiguration.md) | User Agent Core configuration. |
 |  [UserAgentCoreDelegate](./sip.js.useragentcoredelegate.md) | User Agent Core delegate. |
 

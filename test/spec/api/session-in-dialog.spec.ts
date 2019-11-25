@@ -6,6 +6,7 @@ import {
   Referrer,
   ReferrerOptions,
   ReferrerReferOptions,
+  RequestPendingError,
   Session,
   SessionDescriptionHandler,
   SessionState
@@ -16,7 +17,6 @@ import {
   URI
 } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../support/api/event-emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
 
@@ -200,10 +200,6 @@ describe("API Session In-Dialog", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
-
-    it("her session should be failed", () => {
-      expect(inviter.isFailed).toBe(true);
-    });
   }
 
   function reinviteAcceptedOfferAnswerFailure(withoutSdp: boolean): void {
@@ -285,10 +281,63 @@ describe("API Session In-Dialog", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
+  }
 
-    it("her session should be failed", () => {
-      expect(inviter.isFailed).toBe(true);
+  function reinviteInProgress(withoutSdp: boolean): void {
+    beforeEach(async () => {
+      resetSpies();
+      invitation.delegate = {
+        onInvite: () => { return; } // ignore invite
+      };
+      return inviter.invite({ withoutSdp });
     });
+
+    it("her ua should send INVITE", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+    });
+
+    it("her ua should reject an additional INVITE", () => {
+      inviter.invite({ withoutSdp })
+        .catch((error: Error) => {
+          expect(error).toEqual(jasmine.any(RequestPendingError));
+        });
+    });
+
+    if (withoutSdp) {
+      it("her signaling should be stable", () => {
+        if (!inviter.dialog) {
+          fail("Session dialog undefined");
+          return;
+        }
+        expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+      });
+
+      it("his signaling should be stable", () => {
+        if (!invitation.dialog) {
+          fail("Session dialog undefined");
+          return;
+        }
+        expect(invitation.dialog.signalingState).toEqual(SignalingState.Stable);
+      });
+    } else {
+      it("her signaling should be have local offer", () => {
+        if (!inviter.dialog) {
+          fail("Session dialog undefined");
+          return;
+        }
+        expect(inviter.dialog.signalingState).toEqual(SignalingState.HaveLocalOffer);
+      });
+
+      it("his signaling should be has remote offer", () => {
+        if (!invitation.dialog) {
+          fail("Session dialog undefined");
+          return;
+        }
+        expect(invitation.dialog.signalingState).toEqual(SignalingState.HaveRemoteOffer);
+      });
+    }
   }
 
   function reinviteRejected(withoutSdp: boolean): void {
@@ -401,9 +450,6 @@ describe("API Session In-Dialog", () => {
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
 
-    it("her session should be failed", () => {
-      expect(inviter.isFailed).toBe(true);
-    });
   }
 
   function reinviteSuite(withoutSdp: boolean): void {
@@ -434,6 +480,10 @@ describe("API Session In-Dialog", () => {
     describe("Alice invite() rejected rollback failure", () => {
       reinviteRejectedRollbackFailure(withoutSdp);
     });
+
+    describe("Alice invite() request in progress", () => {
+      reinviteInProgress(withoutSdp);
+    });
   }
 
   function resetSpies(): void {
@@ -452,10 +502,9 @@ describe("API Session In-Dialog", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    bob = makeUserFake("bob", "example.com", "Bob");
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    bob = await makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
-    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(async () => {
@@ -594,7 +643,7 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe("Re-INVITE without SDP sendBYE race...", () => {
+        describe("Re-INVITE without SDP send BYE race...", () => {
 
           describe("Alice invite(), bye()", () => {
             beforeEach(async () => {
@@ -957,9 +1006,8 @@ describe("API Session In-Dialog", () => {
           }
 
           beforeEach(async () => {
-            carol = makeUserFake("carol", "example.com", "Carol");
+            carol = await makeUserFake("carol", "example.com", "Carol");
             connectUserFake(alice, carol);
-            return carol.userAgent.start();
           });
 
           afterEach(async () => {

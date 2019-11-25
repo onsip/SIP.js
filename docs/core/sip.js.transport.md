@@ -2,44 +2,29 @@
 
 [Home](./index.md) &gt; [sip.js](./sip.js.md) &gt; [Transport](./sip.js.transport.md)
 
-## Transport class
+## Transport interface
 
-Transport.
+Transport layer interface expected by the user agent core.
 
 <b>Signature:</b>
 
 ```typescript
-export declare abstract class Transport extends EventEmitter 
+export interface Transport 
 ```
 
 ## Remarks
 
-Abstract transport layer base class.
-
-## Constructors
-
-|  Constructor | Modifiers | Description |
-|  --- | --- | --- |
-|  [(constructor)(logger, options)](./sip.js.transport._constructor_.md) |  | Constructor |
+The transport layer is responsible for the actual transmission of requests and responses over network transports. This includes determination of the connection to use for a request or response in the case of connection-oriented transports. https://tools.ietf.org/html/rfc3261\#section-18
 
 ## Properties
 
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [logger](./sip.js.transport.logger.md) |  | <code>Logger</code> |  |
+|  Property | Type | Description |
+|  --- | --- | --- |
+|  [protocol](./sip.js.transport.protocol.md) | <code>string</code> | The transport protocol. |
 
 ## Methods
 
-|  Method | Modifiers | Description |
-|  --- | --- | --- |
-|  [afterConnected(callback)](./sip.js.transport.afterconnected.md) |  |  |
-|  [connect(options)](./sip.js.transport.connect.md) |  | Returns the promise designated by the child layer then emits a connected event. Automatically emits an event upon resolution, unless overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of connectPromise |
-|  [connectPromise(options)](./sip.js.transport.connectpromise.md) |  | Called by connect, must return a promise promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean |
-|  [disconnect(options)](./sip.js.transport.disconnect.md) |  | Returns the promise designated by the child layer then emits a disconnected event. Automatically emits an event upon resolution, unless overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of disconnectPromise |
-|  [disconnectPromise(options)](./sip.js.transport.disconnectpromise.md) |  | Called by disconnect, must return a promise promise must resolve to an object. object supports 1 parameter: overrideEvent - Boolean |
-|  [isConnected()](./sip.js.transport.isconnected.md) |  | Returns true if the transport is connected |
-|  [onMessage(e)](./sip.js.transport.onmessage.md) |  | To be called when a message is received |
-|  [send(message, options)](./sip.js.transport.send.md) |  | Sends a message then emits a 'messageSent' event. Automatically emits an event upon resolution, unless data.overrideEvent is set. If you override the event in this fashion, you should emit it in your implementation of sendPromise Rejects with an Error if message fails to send. |
-|  [sendPromise(message, options)](./sip.js.transport.sendpromise.md) |  | Called by send. |
-|  [waitForConnected()](./sip.js.transport.waitforconnected.md) |  | Returns a promise which resolves once the UA is connected. DEPRECATION WARNING: just use afterConnected() |
+|  Method | Description |
+|  --- | --- |
+|  [send(message)](./sip.js.transport.send.md) | Send a message. |
 

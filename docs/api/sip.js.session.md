@@ -14,6 +14,8 @@ export declare abstract class Session
 
 ## Remarks
 
+The transport behaves in a deterministic manner according to the the state defined in [SessionState](./sip.js.sessionstate.md)<!-- -->.
+
 The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `Session` class.
 
 ## Properties
@@ -32,5 +34,6 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [dispose()](./sip.js.session.dispose.md) |  | Destructor. |
 |  [invite(options)](./sip.js.session.invite.md) |  | Renegotiate the session. Sends a re-INVITE. |
 

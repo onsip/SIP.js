@@ -74,26 +74,46 @@ const stripMediaDescription = (sdp: string, description: string): string => {
   return sdp;
 };
 
+/**
+ * Modifier.
+ * @public
+ */
 export function stripTcpCandidates(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
   description.sdp = (description.sdp || "").replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
   return Promise.resolve(description);
 }
 
+/**
+ * Modifier.
+ * @public
+ */
 export function stripTelephoneEvent(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
   description.sdp = stripPayload(description.sdp || "", "telephone-event");
   return Promise.resolve(description);
 }
 
+/**
+ * Modifier.
+ * @public
+ */
 export function cleanJitsiSdpImageattr(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
   description.sdp = (description.sdp || "").replace(/^(a=imageattr:.*?)(x|y)=\[0-/gm, "$1$2=[1:");
   return Promise.resolve(description);
 }
 
+/**
+ * Modifier.
+ * @public
+ */
 export function stripG722(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
   description.sdp = stripPayload(description.sdp || "", "G722");
   return Promise.resolve(description);
 }
 
+/**
+ * Modifier.
+ * @public
+ */
 export function stripRtpPayload(payload: string): SessionDescriptionHandlerModifier {
   return (description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> => {
     description.sdp = stripPayload(description.sdp || "", payload);
@@ -101,11 +121,19 @@ export function stripRtpPayload(payload: string): SessionDescriptionHandlerModif
   };
 }
 
+/**
+ * Modifier.
+ * @public
+ */
 export function stripVideo(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
   description.sdp = stripMediaDescription(description.sdp || "", "video");
   return Promise.resolve(description);
 }
 
+/**
+ * Modifier.
+ * @public
+ */
 export function addMidLines(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
   let sdp = description.sdp || "";
   if (sdp.search(/^a=mid.*$/gm) === -1) {

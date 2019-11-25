@@ -45,7 +45,7 @@ const makeMockIncomingResponse = (statusCode: number, toTag: string): jasmine.Sp
 };
 
 type Mutable<T> = { -readonly [P in keyof T ]: T[P] };
-const defaultURI = new URI("sip", "john", "onsip.com");
+const defaultURI = new URI("sip", "example", "onsip.com");
 
 /** Mocked outgoing request factory function. */
 const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<OutgoingRequestMessage> => {
@@ -112,15 +112,9 @@ const makeServerTransactionUser = (): jasmine.SpyObj<Required<ServerTransactionU
 /** Mocked transport factory function. */
 const makeMockTransport = (): jasmine.SpyObj<Transport> => {
   const transport = jasmine.createSpyObj<Transport>("Transport", [
-    "connect",
-    "disconnect",
-    "send",
-    "on",
-    "once",
-    "removeListener"
+    "send"
   ]);
-  transport.connect.and.returnValue(Promise.resolve());
-  transport.disconnect.and.returnValue(Promise.resolve());
+  (transport.protocol as any) = "TEST";
   transport.send.and.returnValue(Promise.resolve());
   return transport;
 };
@@ -140,7 +134,7 @@ type ServerTransactionFactory = (
 
 // https://tools.ietf.org/html/rfc3261#section-17
 describe("Transactions", () => {
-  const ruri = "sip:john@onsip.com";
+  const ruri = "sip:example@onsip.com";
   const _1xxStatusCodesToTest = [100, 180, 183];
   const _2xxStatusCodesToTest = [200, 202];
   const _3xxStatusCodesToTest = [300, 301];
@@ -221,7 +215,7 @@ describe("Transactions", () => {
 
         it("has updated the Via header of its outgoing request with the branch parameter and transport", () => {
           expect(request.setViaHeader).toHaveBeenCalledTimes(1);
-          expect(request.setViaHeader).toHaveBeenCalledWith(transaction.id, undefined);
+          expect(request.setViaHeader).toHaveBeenCalledWith(transaction.id, "TEST");
         });
 
         it("has sent its outgoing request to the transport", () => {

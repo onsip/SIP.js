@@ -1,8 +1,6 @@
-import {
-  Transport,
-  URI
-} from "../core";
+import { URI } from "../core";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
+import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
 
 /**
@@ -141,8 +139,7 @@ export interface UserAgentOptions {
 
   /**
    * A function which will be called everytime a log is generated.
-   * @defaultValue
-   * A noop if not defined.
+   * @defaultValue A noop
    */
   logConnector?: LogConnector;
 
@@ -157,6 +154,24 @@ export interface UserAgentOptions {
    * @defaultValue 60
    */
   noAnswerTimeout?: number;
+
+  /**
+   * Adds a Route header(s) to outgoing requests.
+   * @defaultValue `[]`
+   */
+  preloadedRouteSet?: Array<string>;
+
+  /**
+   * Maximum number of times to attempt to reconnect when the transport connection drops.
+   * @defaultValue 3
+   */
+  reconnectionAttempts?: number;
+
+  /**
+   * Seconds to wait between reconnection attempts when the transport connection drops.
+   * @defaultValue 4
+   */
+  reconnectionDelay?: number;
 
   /**
    * A factory for generating `SessionDescriptionHandler` instances.
@@ -235,12 +250,6 @@ export interface UserAgentOptions {
    * By default, URI is set to `sip:anonymous.X@anonymous.invalid`, where X is a random token generated for each UA.
    */
   uri?: URI;
-
-  /**
-   * Adds a Route header to requests.
-   * @defaultValue `false`
-   */
-  usePreloadedRoute?: boolean;
 
   /**
    * User agent string used in the UserAgent header.

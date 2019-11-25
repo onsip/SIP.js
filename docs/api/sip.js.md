@@ -27,6 +27,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [Session](./sip.js.session.md) | A session provides real time communication between one or more participants. |
 |  [SessionDescriptionHandlerError](./sip.js.sessiondescriptionhandlererror.md) | An exception indicating a session description handler error occured. |
 |  [SessionTerminatedError](./sip.js.sessionterminatederror.md) | An exception indicating the session terminated before the action completed. |
+|  [StateTransitionError](./sip.js.statetransitionerror.md) | An exception indicating an invalid state transition error occured. |
 |  [Subscriber](./sip.js.subscriber.md) | A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SUBSCRIBE). |
 |  [Subscription](./sip.js.subscription.md) | A subscription provides asynchronous [Notification](./sip.js.notification.md) of events. |
 |  [UserAgent](./sip.js.useragent.md) | A user agent sends and receives requests using a <code>Transport</code>. |
@@ -39,6 +40,8 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SessionState](./sip.js.sessionstate.md) | [Session](./sip.js.session.md) state. |
 |  [SIPExtension](./sip.js.sipextension.md) | SIP extension support level. |
 |  [SubscriptionState](./sip.js.subscriptionstate.md) | [Subscription](./sip.js.subscription.md) state. |
+|  [TransportState](./sip.js.transportstate.md) | [Transport](./sip.js.transport.md) state. |
+|  [UserAgentState](./sip.js.useragentstate.md) | [UserAgent](./sip.js.useragent.md) state. |
 
 ## Interfaces
 
@@ -79,6 +82,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SubscriptionOptions](./sip.js.subscriptionoptions.md) | Options for [Subscription](./sip.js.subscription.md) constructor. |
 |  [SubscriptionSubscribeOptions](./sip.js.subscriptionsubscribeoptions.md) | Options for [Subscription.subscribe()](./sip.js.subscription.subscribe.md)<!-- -->. |
 |  [SubscriptionUnsubscribeOptions](./sip.js.subscriptionunsubscribeoptions.md) | Options for [Subscription.unsubscribe()](./sip.js.subscription.unsubscribe.md)<!-- -->. |
+|  [Transport](./sip.js.transport.md) | Transport layer interface expected by the <code>UserAgent</code>. |
 |  [UserAgentDelegate](./sip.js.useragentdelegate.md) | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [UserAgentOptions](./sip.js.useragentoptions.md) | Options for [UserAgent](./sip.js.useragent.md) constructor. |
 

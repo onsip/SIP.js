@@ -16,7 +16,6 @@ import {
   Logger,
   LoggerFactory,
   Parser,
-  Transport,
   TransportError,
   URI,
   UserAgentCore,
@@ -27,11 +26,10 @@ import {
   createRandomToken,
   str_utf8_length
 } from "../core/messages/utils";
-import { LIBRARY_VERSION } from "../version";
-
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
-
+import { LIBRARY_VERSION } from "../version";
+import { Emitter, makeEmitter } from "./emitter";
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
@@ -40,8 +38,8 @@ import { Notification } from "./notification";
 import { Publisher } from "./publisher";
 import { Registerer } from "./registerer";
 import { Session } from "./session";
-import { SessionState } from "./session-state";
 import { Subscription } from "./subscription";
+import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
 import {
   SIPExtension,
@@ -51,18 +49,6 @@ import {
 import { UserAgentState } from "./user-agent-state";
 
 declare var chrome: any;
-
-/**
- * Deprecated
- * @internal
- */
-enum _UAStatus {
-  STATUS_INIT,
-  STATUS_STARTING,
-  STATUS_READY,
-  STATUS_USER_CLOSED,
-  STATUS_NOT_READY
-}
 
 /**
  * A user agent sends and receives requests using a `Transport`.
@@ -125,6 +111,9 @@ export class UserAgent {
     logConnector: () => { /* noop */ },
     logLevel: "log",
     noAnswerTimeout: 60,
+    preloadedRouteSet: [],
+    reconnectionAttempts: 3,
+    reconnectionDelay: 4,
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
     sipExtension100rel: SIPExtension.Unsupported,
@@ -134,7 +123,6 @@ export class UserAgent {
     transportConstructor: WebTransport,
     transportOptions: {},
     uri: new URI("sip", "anonymous", "anonymous.invalid"),
-    usePreloadedRoute: false,
     userAgentString: "SIP.js/" + LIBRARY_VERSION,
     viaHost: ""
   };
@@ -144,24 +132,22 @@ export class UserAgent {
 
   /** @internal */
   public data: any = {};
-  /** @internal */
-  public applicants: {[id: string]: Inviter} = {};
-  /** @internal */
-  public publishers: {[id: string]: Publisher} = {};
-  /** @internal */
-  public registerers: {[id: string]: Registerer } = {};
-  /** @internal */
-  public sessions: {[id: string]: Session } = {};
-  /** @internal */
-  public subscriptions: {[id: string]: Subscription} = {};
-  /** @internal */
-  public transport: Transport;
 
   /** @internal */
-  public contact: Contact;
-
+  public publishers: { [id: string]: Publisher } = {};
   /** @internal */
-  public userAgentCore: UserAgentCore;
+  public registerers: { [id: string]: Registerer } = {};
+  /** @internal */
+  public sessions: { [id: string]: Session } = {};
+  /** @internal */
+  public subscriptions: { [id: string]: Subscription } = {};
+
+  private _contact: Contact;
+  private _state: UserAgentState = UserAgentState.Stopped;
+  private _stateEventEmitter = new EventEmitter();
+  private _stateInitial = true;
+  private _transport: Transport;
+  private _userAgentCore: UserAgentCore;
 
   /** Logger. */
   private logger: Logger;
@@ -169,13 +155,6 @@ export class UserAgent {
   private loggerFactory: LoggerFactory = new LoggerFactory();
   /** Options. */
   private options: Required<UserAgentOptions>;
-
-  private _state: UserAgentState = UserAgentState.Initial;
-  private _stateEventEmitter = new EventEmitter();
-
-  /** @internal */
-  private status: _UAStatus = _UAStatus.STATUS_INIT;
-
   /** Unload listener. */
   private unloadListener = (() => { this.stop(); });
 
@@ -183,7 +162,9 @@ export class UserAgent {
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  constructor(options: Partial<UserAgentOptions> = {}) {
+  constructor(
+    options: Partial<UserAgentOptions> = {}
+  ) {
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -257,17 +238,45 @@ export class UserAgent {
       });
     }
 
-    // initialize transport
-    this.transport = new this.options.transportConstructor(
+    // guard deprecated transport options (remove this in version 16.x)
+    if (this.options.transportOptions) {
+      const optionsDeprecated: any = this.options.transportOptions;
+      const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated.maxReconnectionAttempts;
+      const reconnectionTimeoutDeprecated: number | undefined = optionsDeprecated.reconnectionTimeout;
+      if (maxReconnectionAttemptsDeprecated !== undefined) {
+        const deprecatedMessage =
+          `The transport option "maxReconnectionAttempts" as has apparently been specified and has been deprecated. ` +
+          "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+        this.logger.warn(deprecatedMessage);
+      }
+      if (reconnectionTimeoutDeprecated !== undefined) {
+        const deprecatedMessage =
+          `The transport option "reconnectionTimeout" as has apparently been specified and has been deprecated. ` +
+          "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+        this.logger.warn(deprecatedMessage);
+      }
+
+      // hack
+      if (options.reconnectionDelay === undefined && reconnectionTimeoutDeprecated !== undefined) {
+        this.options.reconnectionDelay = reconnectionTimeoutDeprecated;
+      }
+      if (options.reconnectionAttempts === undefined && maxReconnectionAttemptsDeprecated !== undefined) {
+        this.options.reconnectionAttempts = maxReconnectionAttemptsDeprecated;
+      }
+    }
+
+    // Initialize Transport
+    this._transport = new this.options.transportConstructor(
       this.getLogger("sip.Transport"),
       this.options.transportOptions
     );
+    this.initTransportCallbacks();
 
-    // initialize contact
-    this.contact = this.initContact();
+    // Initialize Contact
+    this._contact = this.initContact();
 
-    // initialize core
-    this.userAgentCore = this.initCore();
+    // Initialize UserAgnetCore
+    this._userAgentCore = this.initCore();
 
     if (this.options.autoStart) {
       this.start();
@@ -282,29 +291,113 @@ export class UserAgent {
   }
 
   /**
-   * Connect user agent to network transport.
-   * @remarks
-   * Connect to the WS server if status = STATUS_INIT.
-   * Resume UA after being closed.
+   * User agent contact.
    */
-  public start(): Promise<void> {
-    this.logger.log("user requested startup...");
-    if (this.status === _UAStatus.STATUS_INIT) {
-      this.status = _UAStatus.STATUS_STARTING;
-      this.setTransportListeners();
-      return this.transport.connect();
-    } else if (this.status === _UAStatus.STATUS_USER_CLOSED) {
-      this.logger.log("resuming");
-      this.status = _UAStatus.STATUS_READY;
-      return this.transport.connect();
-    } else if (this.status === _UAStatus.STATUS_STARTING) {
-      this.logger.log("UA is in STARTING status, not opening new connection");
-    } else if (this.status === _UAStatus.STATUS_READY) {
-      this.logger.log("UA is in READY status, not resuming");
-    } else {
-      this.logger.error("Connection is down. Auto-Recovery system is trying to connect");
+  public get contact(): Contact {
+    return this._contact;
+  }
+
+  /**
+   * User agent state.
+   */
+  public get state(): UserAgentState {
+    return this._state;
+  }
+
+  /**
+   * User agent state change emitter.
+   */
+  public get stateChange(): Emitter<UserAgentState> {
+    return makeEmitter(this._stateEventEmitter);
+  }
+
+  /**
+   * User agent transport.
+   */
+  public get transport(): Transport {
+    return this._transport;
+  }
+
+  /**
+   * User agent core.
+   */
+  public get userAgentCore(): UserAgentCore {
+    return this._userAgentCore;
+  }
+
+  /**
+   * True if transport is connected.
+   */
+  public isConnected(): boolean {
+    return this.transport.isConnected();
+  }
+
+  /**
+   * Reconnect the transport.
+   */
+  public async reconnect(): Promise<void> {
+    if (this.state === UserAgentState.Stopped) {
+      return Promise.reject(new Error("User agent stopped."));
+    }
+    return this.transport.connect();
+  }
+
+  /**
+   * Start the user agent.
+   *
+   * @remarks
+   * Resolves if transport connects, otherwise rejects.
+   *
+   * @example
+   * ```ts
+   * userAgent.start()
+   *   .then(() => {
+   *     // userAgent.isConnected() === true
+   *   })
+   *   .catch((error: Error) => {
+   *     // userAgent.isConnected() === false
+   *   });
+   * ```
+   */
+  public async start(): Promise<void> {
+    if (this.state === UserAgentState.Started) {
+      this.logger.warn(`User agent already started`);
+      return Promise.resolve();
+    }
+    this.logger.log(`Starting ${this.configuration.uri}`);
+
+    // TODO: Make these properties only valid while in "Started" state.
+    // This is hold over of earlier times. Other internal/external code
+    // is depending on these properties existing after construction, so
+    // we construct the first instance of them during construction. We
+    // don't need to remake them the first time start() is called, so
+    // we have this little stateInitial thing going on...
+    if (!this._stateInitial) {
+      this._stateInitial = false;
+
+      // Initialize Transport
+      this._transport = new this.options.transportConstructor(
+        this.getLogger("sip.Transport"),
+        this.options.transportOptions
+      );
+      this.initTransportCallbacks();
+
+      // Initialize Contact
+      this._contact = this.initContact();
+
+      // Initialize UserAgnetCore
+      this._userAgentCore = this.initCore();
     }
 
+    // Transition state
+    this.transitionState(UserAgentState.Started);
+
+    // TODO: Review this as it is not clear it has any benefit and at worst causes additonal load the server.
+    // On unload it may be best to simply in most scenarios to do nothing. Furthermore and regardless, this
+    // kind of behavior seems more appropriate to be managned by the consumer of the API than the API itself.
+    // Should this perhaps be deprecated?
+    //
+    // Add window unload event listener
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
@@ -317,84 +410,29 @@ export class UserAgent {
       }
     }
 
-    return Promise.resolve();
+    return this.transport.connect();
   }
 
   /**
-   * Gracefully close.
-   * Gracefully disconnect from network transport.
+   * Stop the user agent.
+   *
    * @remarks
-   * Unregisters and terminates active sessions/subscriptions.
+   * Resolves when the user agent has completed a graceful shutdown.
+   *
+   * Registerers unregister. Sessions terminate. Subscribers unsubscribe. Publishers unpublish.
    */
   public async stop(): Promise<void> {
-    this.logger.log(`Stopping user agent ${this.configuration.uri}...`);
-
-    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
-      this.logger.warn("UA already closed");
+    if (this.state === UserAgentState.Stopped) {
+      this.logger.warn(`User agent already stopped`);
+      return Promise.resolve();
     }
+    this.logger.log(`Stopping ${this.configuration.uri}`);
 
-    // Dispose of Registerers
-    for (const id in this.registerers) {
-      if (this.registerers[id]) {
-        await this.registerers[id].dispose();
-      }
-    }
+    // Transition state
+    this.transitionState(UserAgentState.Stopped);
 
-    // End every Session
-    for (const id in this.sessions) {
-      if (this.sessions[id]) {
-        this.logger.log("closing session " + id);
-        const session = this.sessions[id];
-        switch (session.state) {
-          case SessionState.Initial:
-          case SessionState.Establishing:
-            if (session instanceof Invitation) {
-              session.reject();
-            }
-            if (session instanceof Inviter) {
-              session.cancel();
-            }
-            break;
-          case SessionState.Established:
-            session._bye();
-            break;
-          case SessionState.Terminating:
-          case SessionState.Terminated:
-          default:
-            break;
-        }
-      }
-    }
-
-    // Run unsubscribe on every Subscription
-    for (const subscription in this.subscriptions) {
-      if (this.subscriptions[subscription]) {
-        this.logger.log("unsubscribe " + subscription);
-        this.subscriptions[subscription].unsubscribe();
-      }
-    }
-
-    // Run close on every Publisher
-    for (const publisher in this.publishers) {
-      if (this.publishers[publisher]) {
-        this.logger.log("unpublish " + publisher);
-        this.publishers[publisher]._close();
-      }
-    }
-
-    // Run close on every applicant
-    for (const applicant in this.applicants) {
-      if (this.applicants[applicant]) {
-        this.applicants[applicant]._close();
-      }
-    }
-
-    this.status = _UAStatus.STATUS_USER_CLOSED;
-
-    // Disconnect the transport and reset user agent core
-    this.transport.disconnect();
-    this.userAgentCore.reset();
-
+    // TODO: See comments with associated complimentary code in start(). Should this perhaps be deprecated?
+    // Remove window unload event listener
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
@@ -407,7 +445,103 @@ export class UserAgent {
       }
     }
 
-    return Promise.resolve();
+    // Be careful here to use a local references as start() can be called
+    // again before we complete and we don't want to touch new clients
+    // and we don't want to step on the new instances (or vice versa).
+    const publishers = { ...this.publishers };
+    const registerers = { ...this.registerers };
+    const sessions = { ...this.sessions };
+    const subscriptions = { ...this.subscriptions };
+    const transport = this.transport;
+    const userAgentCore = this.userAgentCore;
+
+    //
+    // At this point we have completed the state transition and everything
+    // following will effectively run async and MUST NOT cause any issues
+    // if UserAgent.start() is called while the following code continues.
+    //
+
+    // Dispose of active clients and dialogs resovling when complete.
+    await (async (): Promise<void> => {
+      // FIXME: Fixup Subscription and Publisher.
+      // Only Registerer and Session currently have proper dispose() methods.
+      // Subscription and Publisher need to be done.
+      //
+      // TODO: Minor optimization.
+      // Also the disposal in all cases involves, in part, sending messages which
+      // is not worth doing if the transport is not connected as we know attempting
+      // to send messages will be futile. But none of these disposal methods check
+      // if that's is the case and it would be easy for them to do so at this point.
+
+      // Dispose of Registerers
+      this.logger.log(`Dispose of registerers`);
+      for (const id in registerers) {
+        if (registerers[id]) {
+          await registerers[id].dispose()
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              delete this.registerers[id];
+              throw error;
+            });
+        }
+      }
+
+      // Dispose of Sessions
+      this.logger.log(`Dispose of sessions`);
+      for (const id in sessions) {
+        if (sessions[id]) {
+          await sessions[id].dispose()
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              delete this.sessions[id];
+              throw error;
+            });
+        }
+      }
+
+      // Dispose of Subscriptions
+      this.logger.log(`Dispose of subscriptions`);
+      for (const id in subscriptions) {
+        if (subscriptions[id]) {
+          try {
+            this.subscriptions[id]._dispose(); // FIXME: TODO should be dispose
+          } catch (e) {
+            this.logger.error(e);
+            delete this.subscriptions[id];
+            throw e;
+          }
+        }
+      }
+
+      // Dispose of Publishers
+      this.logger.log(`Dispose of publishers`);
+      for (const id in publishers) {
+        if (publishers[id]) {
+          try {
+            this.publishers[id]._close(); // FIXME: TODO should be named dispose and be async
+          } catch (e) {
+            this.logger.error(e);
+            delete this.publishers[id];
+            throw e;
+          }
+        }
+      }
+    })();
+
+    // Dispose of the transport (disconnecting)
+    await transport.dispose()
+      .catch((error: Error) => {
+        this.logger.error(error.message);
+        throw error;
+      });
+
+    // Dispose of the user agent core (resetting)
+    try {
+      userAgentCore.dispose();
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 
   /** @internal */
@@ -448,7 +582,7 @@ export class UserAgent {
     optionTags = optionTags.concat(this.options.sipExtensionExtraSupported || []);
 
     const allowUnregistered = this.options.hackAllowUnregisteredOptionTags || false;
-    const optionTagSet: {[name: string]: boolean} = {};
+    const optionTagSet: { [name: string]: boolean } = {};
     optionTags = optionTags.filter((optionTag) => {
       const registered = UserAgentRegisteredOptionTags[optionTag];
       const unique = !optionTagSet[optionTag];
@@ -459,7 +593,10 @@ export class UserAgent {
     return optionTags;
   }
 
-  /** @internal */
+  /**
+   * Used to avoid circular references.
+   * @internal
+   */
   public makeInviter(
     targetURI: URI,
     options?: InviterOptions
@@ -467,145 +604,36 @@ export class UserAgent {
     return new Inviter(this, targetURI, options);
   }
 
-  // ==============================
-  // Event Handlers
-  // ==============================
+  /**
+   * Attempt reconnection up to `maxReconnectionAttempts` times.
+   * @param reconnectionAttempt - Current attempt number.
+   */
+  private attemptReconnection(reconnectionAttempt: number = 1): void {
+    const reconnectionAttempts = this.options.reconnectionAttempts;
+    const reconnectionDelay = this.options.reconnectionDelay;
 
-  private onTransportError(): void {
-    if (this.status === _UAStatus.STATUS_USER_CLOSED) {
+    if (reconnectionAttempt > reconnectionAttempts) {
+      this.logger.log(`Maximum reconnection attempts reached`);
       return;
     }
-    this.status = _UAStatus.STATUS_NOT_READY;
+
+    this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying`);
+    setTimeout(() => {
+      this.reconnect()
+        .then(() => {
+          this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
+        })
+        .catch((error: Error) => {
+          this.logger.error(error.message);
+          this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
+          this.attemptReconnection(++reconnectionAttempt);
+        });
+    }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
   }
 
   /**
-   * Helper function. Sets transport listeners
+   * Initialize contact.
    */
-  private setTransportListeners(): void {
-    this.transport.on("connected", () => this.onTransportConnected());
-    this.transport.on("message", (message: string) => this.onTransportReceiveMsg(message));
-    this.transport.on("transportError", () => this.onTransportError());
-  }
-
-  /**
-   * Transport connection event.
-   */
-  private onTransportConnected(): void {
-    // if (this.configuration.register) {
-    //   // In an effor to maintain behavior from when we "initialized" an
-    //   // authentication factory, this is in a Promise.then
-    //   Promise.resolve().then(() => this.registerer.register());
-    // }
-  }
-
-  /**
-   * Handle SIP message received from the transport.
-   * @param messageString - The message.
-   */
-  private onTransportReceiveMsg(messageString: string): void {
-    const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
-    if (!message) {
-      this.logger.warn("Failed to parse incoming message. Dropping.");
-      return;
-    }
-
-    if (this.status === _UAStatus.STATUS_USER_CLOSED && message instanceof IncomingRequestMessage) {
-      this.logger.warn(`Received ${message.method} request in state USER_CLOSED. Dropping.`);
-      return;
-    }
-
-    // A valid SIP request formulated by a UAC MUST, at a minimum, contain
-    // the following header fields: To, From, CSeq, Call-ID, Max-Forwards,
-    // and Via; all of these header fields are mandatory in all SIP
-    // requests.
-    // https://tools.ietf.org/html/rfc3261#section-8.1.1
-    const hasMinimumHeaders = (): boolean => {
-      const mandatoryHeaders: Array<string> = ["from", "to", "call_id", "cseq", "via"];
-      for (const header of mandatoryHeaders) {
-        if (!message.hasHeader(header)) {
-          this.logger.warn(`Missing mandatory header field : ${header}.`);
-          return false;
-        }
-      }
-      return true;
-    };
-
-    // Request Checks
-    if (message instanceof IncomingRequestMessage) {
-      // This is port of SanityCheck.minimumHeaders().
-      if (!hasMinimumHeaders()) {
-        this.logger.warn(`Request missing mandatory header field. Dropping.`);
-        return;
-      }
-
-      // FIXME: This is non-standard and should be a configruable behavior (desirable regardless).
-      // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
-      // This is port of SanityCheck.rfc3261_16_3_4().
-      if (!message.toTag && message.callId.substr(0, 5) === this.options.sipjsId) {
-        this.userAgentCore.replyStateless(message, { statusCode: 482 });
-        return;
-      }
-
-      // FIXME: This should be Transport check before we get here (Section 18).
-      // Custom SIP.js check to reject requests if body length wrong.
-      // This is port of SanityCheck.rfc3261_18_3_request().
-      const len: number = str_utf8_length(message.body);
-      const contentLength: string | undefined = message.getHeader("content-length");
-      if (contentLength && len < Number(contentLength)) {
-        this.userAgentCore.replyStateless(message, { statusCode: 400 });
-        return;
-      }
-    }
-
-    // Reponse Checks
-    if (message instanceof IncomingResponseMessage) {
-      // This is port of SanityCheck.minimumHeaders().
-      if (!hasMinimumHeaders()) {
-        this.logger.warn(`Response missing mandatory header field. Dropping.`);
-        return;
-      }
-
-      // Custom SIP.js check to drop responses if multiple Via headers.
-      // This is port of SanityCheck.rfc3261_8_1_3_3().
-      if (message.getHeaders("via").length > 1) {
-        this.logger.warn("More than one Via header field present in the response. Dropping.");
-        return;
-      }
-
-      // FIXME: This should be Transport check before we get here (Section 18).
-      // Custom SIP.js check to drop responses if bad Via header.
-      // This is port of SanityCheck.rfc3261_18_1_2().
-      if (message.via.host !== this.options.viaHost || message.via.port !== undefined) {
-        this.logger.warn("Via sent-by in the response does not match UA Via host value. Dropping.");
-        return;
-      }
-
-      // FIXME: This should be Transport check before we get here (Section 18).
-      // Custom SIP.js check to reject requests if body length wrong.
-      // This is port of SanityCheck.rfc3261_18_3_response().
-      const len: number = str_utf8_length(message.body);
-      const contentLength: string | undefined = message.getHeader("content-length");
-      if (contentLength && len < Number(contentLength)) {
-        this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
-        return;
-      }
-    }
-
-    // Handle Request
-    if (message instanceof IncomingRequestMessage) {
-      this.userAgentCore.receiveIncomingRequestFromTransport(message);
-      return;
-    }
-
-    // Handle Response
-    if (message instanceof IncomingResponseMessage) {
-      this.userAgentCore.receiveIncomingResponseFromTransport(message);
-      return;
-    }
-
-    throw new Error("Invalid message type.");
-  }
-
   private initContact(): Contact {
     const contactName = createRandomToken(8); // FIXME: should be configurable
     const contactTransport =
@@ -633,6 +661,9 @@ export class UserAgent {
     return contact;
   }
 
+  /**
+   * Initialize user agent core.
+   */
   private initCore(): UserAgentCore {
     // supported options
     let supportedOptionTags: Array<string> = [];
@@ -664,10 +695,7 @@ export class UserAgent {
       displayName: this.options.displayName,
       loggerFactory: this.loggerFactory,
       hackViaTcp: this.options.hackViaTcp,
-      routeSet:
-        this.options.usePreloadedRoute && this.transport.server && this.transport.server.sipUri ?
-          [this.transport.server.sipUri] :
-          [],
+      routeSet: this.options.preloadedRouteSet,
       supportedOptionTags,
       supportedOptionTagsResponse,
       sipjsId: this.options.sipjsId,
@@ -856,5 +884,167 @@ export class UserAgent {
     };
 
     return new UserAgentCore(userAgentCoreConfiguration, userAgentCoreDelegate);
+  }
+
+  private initTransportCallbacks(): void {
+    this.transport.onConnect = () => this.onTransportConnect();
+    this.transport.onDisconnect = (error?: Error) => this.onTransportDisconnect(error);
+    this.transport.onMessage = (message: string) => this.onTransportMessage(message);
+  }
+
+  private onTransportConnect(): void {
+    if (this.state === UserAgentState.Stopped) {
+      return;
+    }
+    if (this.delegate && this.delegate.onConnect) {
+      this.delegate.onConnect();
+    }
+  }
+
+  private onTransportDisconnect(error?: Error): void {
+    if (this.state === UserAgentState.Stopped) {
+      return;
+    }
+    if (this.delegate && this.delegate.onDisconnect) {
+      this.delegate.onDisconnect(error);
+    }
+    // Only attempt to reconnect if network/server dropped the connection.
+    if (error && this.options.reconnectionAttempts > 0) {
+      this.attemptReconnection();
+    }
+  }
+
+  private onTransportMessage(messageString: string): void {
+    const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
+    if (!message) {
+      this.logger.warn("Failed to parse incoming message. Dropping.");
+      return;
+    }
+
+    if (this.state === UserAgentState.Stopped && message instanceof IncomingRequestMessage) {
+      this.logger.warn(`Received ${message.method} request while stopped. Dropping.`);
+      return;
+    }
+
+    // A valid SIP request formulated by a UAC MUST, at a minimum, contain
+    // the following header fields: To, From, CSeq, Call-ID, Max-Forwards,
+    // and Via; all of these header fields are mandatory in all SIP
+    // requests.
+    // https://tools.ietf.org/html/rfc3261#section-8.1.1
+    const hasMinimumHeaders = (): boolean => {
+      const mandatoryHeaders: Array<string> = ["from", "to", "call_id", "cseq", "via"];
+      for (const header of mandatoryHeaders) {
+        if (!message.hasHeader(header)) {
+          this.logger.warn(`Missing mandatory header field : ${header}.`);
+          return false;
+        }
+      }
+      return true;
+    };
+
+    // Request Checks
+    if (message instanceof IncomingRequestMessage) {
+      // This is port of SanityCheck.minimumHeaders().
+      if (!hasMinimumHeaders()) {
+        this.logger.warn(`Request missing mandatory header field. Dropping.`);
+        return;
+      }
+
+      // FIXME: This is non-standard and should be a configruable behavior (desirable regardless).
+      // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
+      // This is port of SanityCheck.rfc3261_16_3_4().
+      if (!message.toTag && message.callId.substr(0, 5) === this.options.sipjsId) {
+        this.userAgentCore.replyStateless(message, { statusCode: 482 });
+        return;
+      }
+
+      // FIXME: This should be Transport check before we get here (Section 18).
+      // Custom SIP.js check to reject requests if body length wrong.
+      // This is port of SanityCheck.rfc3261_18_3_request().
+      const len: number = str_utf8_length(message.body);
+      const contentLength: string | undefined = message.getHeader("content-length");
+      if (contentLength && len < Number(contentLength)) {
+        this.userAgentCore.replyStateless(message, { statusCode: 400 });
+        return;
+      }
+    }
+
+    // Reponse Checks
+    if (message instanceof IncomingResponseMessage) {
+      // This is port of SanityCheck.minimumHeaders().
+      if (!hasMinimumHeaders()) {
+        this.logger.warn(`Response missing mandatory header field. Dropping.`);
+        return;
+      }
+
+      // Custom SIP.js check to drop responses if multiple Via headers.
+      // This is port of SanityCheck.rfc3261_8_1_3_3().
+      if (message.getHeaders("via").length > 1) {
+        this.logger.warn("More than one Via header field present in the response. Dropping.");
+        return;
+      }
+
+      // FIXME: This should be Transport check before we get here (Section 18).
+      // Custom SIP.js check to drop responses if bad Via header.
+      // This is port of SanityCheck.rfc3261_18_1_2().
+      if (message.via.host !== this.options.viaHost || message.via.port !== undefined) {
+        this.logger.warn("Via sent-by in the response does not match UA Via host value. Dropping.");
+        return;
+      }
+
+      // FIXME: This should be Transport check before we get here (Section 18).
+      // Custom SIP.js check to reject requests if body length wrong.
+      // This is port of SanityCheck.rfc3261_18_3_response().
+      const len: number = str_utf8_length(message.body);
+      const contentLength: string | undefined = message.getHeader("content-length");
+      if (contentLength && len < Number(contentLength)) {
+        this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
+        return;
+      }
+    }
+
+    // Handle Request
+    if (message instanceof IncomingRequestMessage) {
+      this.userAgentCore.receiveIncomingRequestFromTransport(message);
+      return;
+    }
+
+    // Handle Response
+    if (message instanceof IncomingResponseMessage) {
+      this.userAgentCore.receiveIncomingResponseFromTransport(message);
+      return;
+    }
+
+    throw new Error("Invalid message type.");
+  }
+
+  /**
+   * Transition state.
+   */
+  private transitionState(newState: UserAgentState, error?: Error): void {
+    const invalidTransition = () => {
+      throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
+    };
+
+    // Validate state transition
+    switch (this._state) {
+      case UserAgentState.Started:
+        if (newState !== UserAgentState.Stopped) {
+          invalidTransition();
+        }
+        break;
+      case UserAgentState.Stopped:
+        if (newState !== UserAgentState.Started) {
+          invalidTransition();
+        }
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
+
+    // Update state
+    this.logger.log(`Transitioned from ${this._state} to ${newState}`);
+    this._state = newState;
+    this._stateEventEmitter.emit("event", this._state);
   }
 }

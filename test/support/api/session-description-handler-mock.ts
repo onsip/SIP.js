@@ -26,9 +26,9 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
 
   sdh.close.and.callFake(() => {
     // console.warn(`SDH.close[${name}][${id}]`);
-    // TODO: Currently the API does call close() more than once in various
-    // circumstances so we are checking to make sure close() called at least once.
-    // But it  would be nice if the api did never called close() more than once...
+    // TODO:
+    // Throwing here is only helpful for debugging as it will cause the test to fail.
+    // In the current version of Jasmie It will simple go as an uncaught.
     // if (closed) {
     //   throw new Error(`close[${name}][${id}] Already closed`);
     // }

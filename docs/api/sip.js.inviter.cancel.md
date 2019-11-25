@@ -22,3 +22,9 @@ cancel(options?: InviterCancelOptions): Promise<void>;
 
 `Promise<void>`
 
+## Remarks
+
+Sends a CANCEL request. Resolves once the response sent, otherwise rejects.
+
+After sending a CANCEL request the expectation is that a 487 final response will be received for the INVITE. However a 200 final response to the INVITE may nonetheless arrive (it's a race between the CANCEL reaching the UAS before the UAS sends a 200) in which case an ACK &amp; BYE will be sent. The net effect is that this method will terminate the session regardless of the race.
+

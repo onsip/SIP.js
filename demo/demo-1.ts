@@ -48,6 +48,10 @@ const simpleUserDelegate: SimpleUserDelegate = {
     keypadDisabled(true);
     holdCheckboxDisabled(true);
     muteCheckboxDisabled(true);
+  },
+  onCallHold: (held: boolean): void => {
+    console.log(`[${displayName}] Call hold ${held}`);
+    holdCheckbox.checked = held;
   }
 };
 
@@ -81,6 +85,7 @@ connectButton.addEventListener("click", () => {
       hangupButton.disabled = true;
     })
     .catch((error: Error) => {
+      connectButton.disabled = false;
       console.error(`[${simpleUser.id}] failed to connect`);
       console.error(error);
       alert("Failed to connect.\n" + error);

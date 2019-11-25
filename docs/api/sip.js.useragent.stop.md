@@ -4,7 +4,7 @@
 
 ## UserAgent.stop() method
 
-Gracefully close. Gracefully disconnect from network transport.
+Stop the user agent.
 
 <b>Signature:</b>
 
@@ -17,5 +17,7 @@ stop(): Promise<void>;
 
 ## Remarks
 
-Unregisters and terminates active sessions/subscriptions.
+Resolves when the user agent has completed a graceful shutdown.
+
+Registerers unregister. Sessions terminate. Subscribers unsubscribe. Publishers unpublish.
 

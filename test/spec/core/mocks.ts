@@ -156,15 +156,9 @@ export function makeMockSubscriptionDelegate(): jasmine.SpyObj<Required<Subscrip
 /** Mocked transport factory function. */
 export function makeMockTransport(): jasmine.SpyObj<Transport> {
   const transport = jasmine.createSpyObj<Transport>("Transport", [
-    "connect",
-    "disconnect",
-    "send",
-    "on",
-    "once",
-    "removeListener"
+    "send"
   ]);
-  transport.connect.and.returnValue(Promise.resolve());
-  transport.disconnect.and.returnValue(Promise.resolve());
+  (transport.protocol as any) = "TEST";
   transport.send.and.returnValue(Promise.resolve());
   return transport;
 }
@@ -189,12 +183,10 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
   const viaHost = `${user}Host.invalid`;
   const contactURI = new URI("sip", createRandomToken(8), viaHost, undefined, { transport: "ws" });
   const ua = {
-    applicants: {},
     publishers: {},
     registerers: {},
     sessions: {},
     subscriptions: {},
-    transport,
     contact: {
       pubGruu: undefined,
       tempGruu: undefined,
@@ -210,6 +202,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
       viaHost
     },
     logger: log.getLogger("sip.ua"),
+    transport,
     getLogger: (category: string, label?: string) => log.getLogger(category, label),
     getLoggerFactory: () => log,
     getSupportedResponseOptions: () => ["outbound"]
@@ -255,10 +248,7 @@ export function makeUserAgentCoreConfigurationFromUserAgent(ua: UserAgent): User
       displayName: ua.configuration.displayName,
       loggerFactory: ua.getLoggerFactory(),
       hackViaTcp: ua.configuration.hackViaTcp,
-      routeSet:
-        ua.configuration.usePreloadedRoute && ua.transport.server && ua.transport.server.sipUri ?
-          [ua.transport.server.sipUri] :
-          [],
+      routeSet: ua.configuration.preloadedRouteSet,
       supportedOptionTags,
       supportedOptionTagsResponse,
       sipjsId: ua.configuration.sipjsId,

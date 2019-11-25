@@ -6,6 +6,7 @@ import {
   SessionState
 } from "../../../src/api";
 import {
+  Logger,
   OutgoingRequestDelegate,
   SessionState as SessionDialogState,
   SignalingState,
@@ -883,12 +884,22 @@ describe("API Session", () => {
       });
 
       describe("Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
+        let logger: Logger;
+        let acceptResolve: boolean;
+
         beforeEach(async () => {
+          logger = invitation.userAgent.getLogger("sip.Invitation");
+          acceptResolve = false;
           resetSpies();
-          spyOn(invitation.logger, "error").and.callThrough();
+          spyOn(logger, "error").and.callThrough();
           inviter.cancel();
-          invitation.accept();
-          await inviterStateSpy.wait(SessionState.Terminated);
+          await invitation.accept().then(() => acceptResolve = true);
+        });
+
+        it("his call to accept() should resolve and log an error", async () => {
+          await soon();
+          expect(acceptResolve).toBe(true);
+          expect(logger.error).toHaveBeenCalled();
         });
 
         it("her ua should send CANCEL, ACK", () => {
@@ -917,11 +928,6 @@ describe("API Session", () => {
           expect(spy).toHaveBeenCalledTimes(2);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
-        });
-
-        it("his context should log an error regarding Bob accept() failure", async () => {
-          await soon();
-          expect(invitation.logger.error).toHaveBeenCalled();
         });
       });
 
@@ -1002,6 +1008,69 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
       });
+
+      // These only makes sense in INVITE with SDP case.
+      if (inviteWithoutSdp) {
+        describe("Bob accept(), 200 SDP get fails - SDH Error", () => {
+          let acceptReject: boolean;
+
+          beforeEach(async () => {
+            acceptReject = false;
+            resetSpies();
+            { // Setup hacky thing to cause undefined body returned once
+              if (typeof (invitation as any).setupSessionDescriptionHandler !== "function") {
+                throw new Error("setupSessionDescriptionHandler() undefined.");
+              }
+              (invitation as any).setupSessionDescriptionHandler();
+              if (!invitation.sessionDescriptionHandler) {
+                throw new Error("SDH undefined.");
+              }
+              const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+              (sdh as any).getDescriptionRejectOnce = true;
+            }
+            await invitation.accept().catch((error: Error) => acceptReject = true);
+          });
+
+          it("his call to accept() should reject", async () => {
+            await soon();
+            expect(acceptReject).toBe(true);
+          });
+
+          it("her ua should send ACK", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
+          });
+
+          it("her ua should receive 480", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_480);
+          });
+
+          it("her request delegate should onReject", () => {
+            const spy = inviterRequestDelegateMock;
+            expect(spy.onAccept).toHaveBeenCalledTimes(0);
+            expect(spy.onProgress).toHaveBeenCalledTimes(0);
+            expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+            expect(spy.onReject).toHaveBeenCalledTimes(1);
+            expect(spy.onTrying).toHaveBeenCalledTimes(0);
+          });
+
+          it("her session state should transition 'terminated'", () => {
+            const spy = inviterStateSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
+          });
+
+          it("his session state should transition 'establishing', 'terminated'", () => {
+            const spy = invitationStateSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+            expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+          });
+        });
+      }
 
       describe("Bob accept(), 200 has no SDP - Invalid 200", () => {
         beforeEach(async () => {
@@ -1432,6 +1501,160 @@ describe("API Session", () => {
         }
       });
 
+      describe("Bob progress(), Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
+        let logger: Logger;
+        let progressResolve: boolean;
+        let acceptResolve: boolean;
+
+        beforeEach(async () => {
+          progressResolve = false;
+          acceptResolve = false;
+          logger = invitation.userAgent.getLogger("sip.Invitation");
+          resetSpies();
+          spyOn(logger, "error").and.callThrough();
+          invitation.progress().then(() => progressResolve = true);
+          inviter.cancel();
+          invitation.accept().then(() => acceptResolve = true);
+          await invitationStateSpy.wait(SessionState.Terminated);
+        });
+
+        it("his call to progress(), accept() should resolve and log an error", async () => {
+          await soon();
+          expect(progressResolve).toBe(true);
+          expect(acceptResolve).toBe(true);
+          expect(logger.error).toHaveBeenCalled();
+        });
+
+        it("her ua should send CANCEL, ACK", () => {
+          const spy = alice.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+        });
+
+        it("her ua should receive 180, 200, 487", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(3);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_180);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(2)).toEqual(SIP_487);
+        });
+
+        it("her session state should transition 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminating]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session state should transition 'establishing', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+      });
+
+      describe("Bob progress(reliable), Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
+        let logger: Logger;
+        let progressResolve: boolean;
+        let acceptResolve: boolean;
+
+        beforeEach(async () => {
+          logger = invitation.userAgent.getLogger("sip.Invitation");
+          progressResolve = false;
+          acceptResolve = false;
+          resetSpies();
+          spyOn(logger, "error").and.callThrough();
+          invitation.progress({ rel100: true }).then(() => progressResolve = true);
+          inviter.cancel();
+          await invitation.accept().then(() => acceptResolve = true);
+        });
+
+        it("his call to progress(), accept() should resolve and log an error", async () => {
+          await soon();
+          expect(progressResolve).toBe(true);
+          expect(acceptResolve).toBe(true);
+          expect(logger.error).toHaveBeenCalled();
+        });
+
+        it("her ua should send CANCEL, ACK", () => {
+          const spy = alice.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+        });
+
+        it("her ua should receive 200, 487", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_487);
+        });
+
+        it("her session state should transition 'terminating', 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminating]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session state should transition 'establishing', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+      });
+
+      describe("Bob progress(reliable), Bob accept(), Bob dispose() - an async race condition (dispose wins)", () => {
+        let logger: Logger;
+        let progressReject: boolean;
+        let acceptReject: boolean;
+
+        beforeEach(async () => {
+          logger = invitation.userAgent.getLogger("sip.Invitation");
+          progressReject = false;
+          acceptReject = false;
+          resetSpies();
+          spyOn(logger, "error").and.callThrough();
+          invitation.progress({ rel100: true }).catch(() => progressReject = true);
+          invitation.accept().catch(() => acceptReject = true);
+          await invitation.dispose();
+        });
+
+        it("his call to progress(), accept() should reject", async () => {
+          await soon();
+          expect(progressReject).toBe(true);
+          expect(acceptReject).toBe(true);
+        });
+
+        it("her ua should send ACK", () => {
+          const spy = alice.transportSendSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
+        });
+
+        it("her ua should receive 480", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_480);
+        });
+
+        it("her session state should transition 'terminated'", () => {
+          const spy = inviterStateSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
+        });
+
+        it("his session state should transition 'establishing', 'terminated'", () => {
+          const spy = invitationStateSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+          expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
+        });
+      });
+
       describe("Bob progress()", () => {
         bobProgress();
 
@@ -1582,10 +1805,9 @@ describe("API Session", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    bob = makeUserFake("bob", "example.com", "Bob");
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    bob = await makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
-    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(async () => {
@@ -1966,9 +2188,8 @@ describe("API Session", () => {
     }
 
     beforeEach(async () => {
-      bob2 = makeUserFake("bob", "example.com", "Bob2");
+      bob2 = await makeUserFake("bob", "example.com", "Bob2");
       connectUserFake(alice, bob2);
-      return bob2.userAgent.start();
     });
 
     afterEach(async () => {
@@ -1976,7 +2197,7 @@ describe("API Session", () => {
         .then(() => expect(bob2.isShutdown()).toBe(true));
     });
 
-    describe("Alice constructs a new INVITE client context targeting Bob with SDP offer", () => {
+    describe("Alice constructs a new INVITE targeting 2 Bobs with SDP offer", () => {
       beforeEach(async () => {
         target = bob.uri;
         bob.userAgent.delegate = {
@@ -1999,7 +2220,7 @@ describe("API Session", () => {
       inviteSuiteFork(false);
     });
 
-    describe("Alice constructs a new INVITE client context targeting Bob without SDP offer", () => {
+    describe("Alice constructs a new INVITE targeting 2 Bobs without SDP offer", () => {
       beforeEach(async () => {
         target = bob.uri;
         bob.userAgent.delegate = {

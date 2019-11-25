@@ -78,8 +78,8 @@ describe("UserAgentCore", () => {
     configurationBob = makeUserAgentCoreConfigurationFromUserAgent(uaBob);
     coreAlice = new UserAgentCore(configurationAlice, {});
     coreBob = new UserAgentCore(configurationBob, {});
-    uaAlice.userAgentCore = coreAlice;
-    uaBob.userAgentCore = coreBob;
+    (uaAlice as any).userAgentCore = coreAlice;
+    (uaBob as any).userAgentCore = coreBob;
   });
 
   afterEach(() => {

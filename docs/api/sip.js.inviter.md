@@ -23,5 +23,6 @@ export declare class Inviter extends Session
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [cancel(options)](./sip.js.inviter.cancel.md) |  | Cancels the INVITE request. |
+|  [dispose()](./sip.js.inviter.dispose.md) |  | Destructor. |
 |  [invite(options)](./sip.js.inviter.invite.md) |  | Sends the INVITE request. |
 

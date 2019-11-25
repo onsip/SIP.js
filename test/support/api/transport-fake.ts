@@ -1,9 +1,22 @@
-import { Logger, Transport } from "../../../src/core";
+import { EventEmitter } from "events";
+
+import {
+  Emitter,
+  makeEmitter,
+  Transport,
+  TransportState
+} from "../../../src/api";
+import { Logger } from "../../../src/core";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
-export class TransportFake extends Transport {
+export class TransportFake extends EventEmitter implements Transport {
+
+  public onConnect: (() => void) | undefined;
+  public onDisconnect: ((error?: Error) => void) | undefined;
+  public onMessage: ((message: string) => void) | undefined;
+
   private _id: string = "";
   private peers: Array<TransportFake> = [];
   private waitingForSendPromise: Promise<void> | undefined;
@@ -13,26 +26,55 @@ export class TransportFake extends Transport {
   private waitingForReceiveResolve: ResolveFunction | undefined;
   private waitingForReceiveReject: RejectFunction | undefined;
 
-  private connected: boolean = true;
+  private _state: TransportState = TransportState.Disconnected;
+  private _stateEventEmitter = new EventEmitter();
 
-  constructor(logger: Logger, options: any) {
-    super(logger, options);
+  constructor(private logger: Logger, options: any) {
+    super();
   }
 
-  set id(id: string) {
+  public set id(id: string) {
     this._id = id;
+  }
+
+  public get protocol(): string {
+    return "FAKE";
+  }
+
+  public get state(): TransportState {
+    return this.state;
+  }
+
+  public get stateChange(): Emitter<TransportState> {
+    return makeEmitter(this._stateEventEmitter);
+  }
+
+  public connect(): Promise<void> {
+    return this._connect();
+  }
+
+  public disconnect(): Promise<void> {
+    return  this._disconnect();
+  }
+
+  public dispose(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  public send(message: string): Promise<void> {
+    return this._send(message).then(() => { return; });
+  }
+
+  public isConnected(): boolean {
+    return this._state === TransportState.Connected;
+  }
+
+  public setConnected(connected: boolean): void {
+    this._state = connected ? TransportState.Connected : TransportState.Disconnected;
   }
 
   public addPeer(peer: TransportFake) {
     this.peers.push(peer);
-  }
-
-  public isConnected(): boolean {
-    return this.connected;
-  }
-
-  public setConnected(connected: boolean): void {
-    this.connected = connected;
   }
 
   public receive(msg: string): void {
@@ -41,6 +83,9 @@ export class TransportFake extends Transport {
     message +=  `Receiving...\n${msg}`;
     // this.logger.log(message);
     this.emit("message", msg);
+    if (this.onMessage) {
+      this.onMessage(msg);
+    }
     this.receiveHappened();
   }
 
@@ -66,18 +111,50 @@ export class TransportFake extends Transport {
     return this.waitingForReceivePromise;
   }
 
-  protected connectPromise(options: any): Promise<any> {
-    this.connected = true;
-    return Promise.resolve({});
+  private _connect(): Promise<void> {
+    switch (this._state) {
+      case TransportState.Connecting:
+        this.transitionState(TransportState.Connected);
+        break;
+      case TransportState.Connected:
+        break;
+      case TransportState.Disconnecting:
+        this.transitionState(TransportState.Connecting);
+        this.transitionState(TransportState.Connected);
+        break;
+      case TransportState.Disconnected:
+        this.transitionState(TransportState.Connecting);
+        this.transitionState(TransportState.Connected);
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
+    return Promise.resolve();
   }
 
-  protected disconnectPromise(options: any): Promise<any> {
-    this.connected = false;
-    return Promise.resolve({});
+  private _disconnect(): Promise<void> {
+    switch (this._state) {
+      case TransportState.Connecting:
+        this.transitionState(TransportState.Disconnecting);
+        this.transitionState(TransportState.Disconnected);
+        break;
+      case TransportState.Connected:
+        this.transitionState(TransportState.Disconnecting);
+        this.transitionState(TransportState.Disconnected);
+        break;
+      case TransportState.Disconnecting:
+        this.transitionState(TransportState.Disconnected);
+        break;
+      case TransportState.Disconnected:
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
+    return Promise.resolve();
   }
 
-  protected sendPromise(msg: string, options?: any): Promise<{ msg: string, overrideEvent?: boolean }> {
-    if (!this.connected) {
+  private _send(msg: string, options?: any): Promise<{ msg: string, overrideEvent?: boolean }> {
+    if (!this.isConnected()) {
       return Promise.resolve().then(() => {
         this.sendHappened();
         throw new Error("Not connected.");
@@ -89,14 +166,14 @@ export class TransportFake extends Transport {
     this.logger.log(message);
     return Promise.resolve().then(() => {
       this.peers.forEach((peer) => {
-        peer.onMessage(msg);
+        peer.onReceived(msg);
       });
       this.sendHappened();
       return { msg };
     });
   }
 
-  protected onMessage(msg: string): void {
+  private onReceived(msg: string): void {
     Promise.resolve().then(() => {
       this.receive(msg);
     });
@@ -136,5 +213,95 @@ export class TransportFake extends Transport {
     this.waitingForReceivePromise = undefined;
     this.waitingForReceiveResolve = undefined;
     this.waitingForReceiveReject = undefined;
+  }
+
+  /**
+   * Transition transport state.
+   * @internal
+   */
+  private transitionState(newState: TransportState, error?: Error): void {
+    const invalidTransition = () => {
+      throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
+    };
+
+    // Validate state transition
+    switch (this._state) {
+      case TransportState.Connecting:
+        if (
+          newState !== TransportState.Connected &&
+          newState !== TransportState.Disconnecting &&
+          newState !== TransportState.Disconnected
+        ) {
+          invalidTransition();
+        }
+        break;
+      case TransportState.Connected:
+        if (
+          newState !== TransportState.Disconnecting &&
+          newState !== TransportState.Disconnected
+        ) {
+          invalidTransition();
+        }
+        break;
+      case TransportState.Disconnecting:
+        if (
+          newState !== TransportState.Connecting &&
+          newState !== TransportState.Disconnected
+        ) {
+          invalidTransition();
+        }
+        break;
+      case TransportState.Disconnected:
+        if (
+          newState !== TransportState.Connecting
+        ) {
+          invalidTransition();
+        }
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
+
+    // Update state
+    const oldState = this._state;
+    this._state = newState;
+    this.logger.log(`Transitioned from ${oldState} to ${this._state}`);
+    this._stateEventEmitter.emit("event", this._state);
+
+    //  Transition to Connected
+    if (newState === TransportState.Connected) {
+      if (this.onConnect) {
+        this.onConnect();
+      }
+    }
+
+    //  Transition from Connected
+    if (oldState === TransportState.Connected) {
+      if (this.onDisconnect) {
+        if (error) {
+          this.onDisconnect(error);
+        } else {
+          this.onDisconnect();
+        }
+      }
+    }
+
+    // Legacy behavior
+    switch (this._state) {
+      case TransportState.Connecting:
+        this.emit("connecting");
+        break;
+      case TransportState.Connected:
+        this.emit("connected");
+        break;
+      case TransportState.Disconnecting:
+        this.emit("disconnecting");
+        break;
+      case TransportState.Disconnected:
+        this.emit("disconnected");
+        break;
+      default:
+        throw new Error("Unknown state.");
+    }
   }
 }

@@ -10,6 +10,18 @@ import { Subscription } from "./subscription";
  * @public
  */
 export interface UserAgentDelegate {
+
+  /**
+   * Called upon transport transitioning to connected state.
+   */
+  onConnect?(): void;
+
+  /**
+   * Called upon transport transitioning from connected state.
+   * @param error - An error if disconnect triggered by transport. Otherwise undefined.
+   */
+  onDisconnect?(error?: Error): void;
+
   /**
    * Called upon receipt of an invitation.
    * @remarks
@@ -40,7 +52,7 @@ export interface UserAgentDelegate {
    * Handler for incoming out of dialog REFER requests.
    * @param referral - The referral.
    */
-   onRefer?(referral: Referral): void;
+  onRefer?(referral: Referral): void;
 
   /**
    * Called upon receipt of a subscription.

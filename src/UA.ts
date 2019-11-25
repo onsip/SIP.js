@@ -16,7 +16,6 @@ import {
   Logger,
   LoggerFactory,
   Parser,
-  Transport,
   TransportError,
   URI,
   UserAgentCore,
@@ -39,6 +38,7 @@ import {
   SessionDescriptionHandlerFactoryOptions
 } from "./session-description-handler-factory";
 import { Subscription } from "./Subscription";
+import { Transport } from "./Transport";
 import { Utils } from "./Utils";
 import {
   SessionDescriptionHandler as WebSessionDescriptionHandler
