@@ -17,9 +17,4 @@ export interface InvitationAcceptOptions {
    * Modifiers to pass to SessionDescriptionHandler's getDescription() and setDescription().
    */
   sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
-  /**
-   * @deprecated Use delegate instead.
-   * @internal
-   */
-  onInfo?: ((request: IncomingRequestMessage) => void);
 }

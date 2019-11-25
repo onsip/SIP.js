@@ -13,7 +13,6 @@ import {
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
-  IncomingRequestMessage,
   Logger,
   NameAddrHeader,
   OutgoingByeRequest,
@@ -119,8 +118,6 @@ export abstract class Session {
   /** @internal */
   public userAgent: UserAgent;
 
-  /** @internal */
-  protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
   /**
    * Inviter options to use when following a REFER.
    * FIXME: This is getting in the Inviter constructor, but not by Invitation (thus undefined).

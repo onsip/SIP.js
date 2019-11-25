@@ -192,7 +192,6 @@ export class Inviter extends Session {
     this.contact = contact;
     this.fromTag = fromTag;
     this.id = this.request.callId + this.fromTag;
-    this.onInfo = options.onInfo;
     this.referralInviterOptions = options;
     this.renderbody = options.renderbody || undefined;
     this.rendertype = options.rendertype || "text/plain";

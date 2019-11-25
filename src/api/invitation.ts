@@ -86,8 +86,6 @@ export class Invitation extends Session {
     // Session properties
     this.contact = this.userAgent.contact.toString();
     this.id = this.request.callId + this.request.fromTag;
-    // this.modifiers =
-    // this.onInfo =
     const contentDisposition = this.request.parseHeader("Content-Disposition");
     if (contentDisposition && contentDisposition.type === "render") {
       this.renderbody = this.request.body;
@@ -549,12 +547,6 @@ export class Invitation extends Session {
    * @param options - Options bucket.
    */
   private sendAccept(options: InvitationAcceptOptions = {}): Promise<OutgoingResponseWithSession> {
-    // FIXME: Ported - callback for in dialog INFO requests.
-    // Turns out accept() can be called more than once if we are waiting
-    // for a PRACK in which case "options" get completely tossed away.
-    // So this is broken in that case (and potentially other uses of options).
-    // Tempted to just try to fix it now, but leaving it broken for the moment.
-    this.onInfo = options.onInfo;
 
     // The UAS MAY send a final response to the initial request before
     // having received PRACKs for all unacknowledged reliable provisional
