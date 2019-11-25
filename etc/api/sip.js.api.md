@@ -93,6 +93,10 @@ export class Invitation extends Session {
     // 
     // @internal (undocumented)
     localIdentity: NameAddrHeader;
+    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
+    // 
+    // @internal
+    protected logger: Logger;
     // @internal
     _onCancel(message: IncomingRequestMessage): void;
     progress(options?: InvitationProgressOptions): Promise<void>;
@@ -104,8 +108,6 @@ export class Invitation extends Session {
 
 // @public
 export interface InvitationAcceptOptions {
-    // @internal @deprecated (undocumented)
-    onInfo?: ((request: IncomingRequestMessage) => void);
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
 }
@@ -145,10 +147,10 @@ export class Inviter extends Session {
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
-    // @internal
-    isCanceled: boolean;
     // @internal (undocumented)
     localIdentity: NameAddrHeader;
+    // @internal
+    protected logger: Logger;
     // @internal
     referred: Session | undefined;
     // @internal (undocumented)
@@ -190,8 +192,6 @@ export interface InviterOptions extends SessionOptions {
     earlyMedia?: boolean;
     extraHeaders?: Array<string>;
     inviteWithoutSdp?: boolean;
-    // @deprecated (undocumented)
-    onInfo?: any;
     // @deprecated (undocumented)
     params?: {
         fromDisplayName?: string;
@@ -435,12 +435,6 @@ export abstract class Session {
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
     dialog: Session_2 | undefined;
     dispose(): Promise<void>;
-    // @internal (undocumented)
-    protected earlySdp: string | undefined;
-    // @internal
-    endTime: Date | undefined;
-    // @internal (undocumented)
-    protected fromTag: string | undefined;
     // Warning: (ae-forgotten-export) The symbol "Body" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -463,16 +457,10 @@ export abstract class Session {
     // @internal
     _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
-    // @internal
-    isFailed: boolean;
-    // @internal (undocumented)
-    localHold: boolean;
     // @internal (undocumented)
     abstract localIdentity: NameAddrHeader;
-    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-    // 
     // @internal
-    logger: Logger;
+    protected abstract logger: Logger;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
     // @internal
@@ -481,8 +469,6 @@ export abstract class Session {
     // 
     // @internal
     protected onByeRequest(request: IncomingByeRequest): void;
-    // @internal (undocumented)
-    protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
     // @internal
     protected onInfoRequest(request: IncomingInfoRequest): void;
     // @internal
@@ -495,16 +481,14 @@ export abstract class Session {
     protected onPrackRequest(request: IncomingPrackRequest): void;
     // @internal
     protected onReferRequest(request: IncomingReferRequest): void;
-    // @internal (undocumented)
-    protected passedOptions: any;
     // @internal
     refer(referrer: Referrer, delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
     referral: Inviter | undefined;
+    // @internal
+    protected referralInviterOptions: InviterOptions | undefined;
     // @internal (undocumented)
     referrer: Referrer | undefined;
-    // @internal (undocumented)
-    protected rel100: "none" | "required" | "supported";
     // @internal (undocumented)
     abstract remoteIdentity: NameAddrHeader;
     // @internal (undocumented)
@@ -535,8 +519,6 @@ export abstract class Session {
     protected setSessionDescriptionHandler(sdh: SessionDescriptionHandler): void;
     // @internal
     protected setupSessionDescriptionHandler(): SessionDescriptionHandler;
-    // @internal
-    startTime: Date | undefined;
     readonly state: SessionState;
     readonly stateChange: Emitter<SessionState>;
     // @internal
@@ -742,13 +724,9 @@ export interface Transport extends Transport_2 {
 
 // @public
 export enum TransportState {
-    // (undocumented)
     Connected = "Connected",
-    // (undocumented)
     Connecting = "Connecting",
-    // (undocumented)
     Disconnected = "Disconnected",
-    // (undocumented)
     Disconnecting = "Disconnecting"
 }
 

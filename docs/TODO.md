@@ -40,18 +40,22 @@
 - *Integration* tests are being written high level "api" components (Session, Subscription)
   - port platform web tests
   - flush out api tests
+- Tests using fake transport are currently fragile; much too dependent on timing of promise resolutions
 
 ## API - Misc Open Issues
+- Subscriber needs proper dispose method
+- Session/Inviter/Invitation constructors and properties need to be cleaned up
 - Publisher needs to be converted to new style API, stop events emits, port/write tests
-- Incoming request, accept races cancel. That is, attempt to accept may or may not succeed if cancel arrives.
-- Outgoing request, accept races cancel. That is, attempt to cancel may or may not succeed if accept arrives.
+- A constructed Transport should be passed into the UserAgent constructor as a required argument
+- Session make public methods async; trivial to do but breaks a lot of tests (the fake transport is the problem)
 - Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
 - Public methods and properties should be indicated as public (or not) for consistency.
 - Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
 - Make sure all options buckets are deep copied
 
 ## Core - Misc Open Issues
-- Dialog UACs are creating messages while non-dialog UACs are being handed message.
+- Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
+- Dialog UACs are creating messages while non-dialog UACs are being handed message
 - Extra headers array approach is error prone
 
 ## Grammar
@@ -71,13 +75,6 @@
 - SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
 - Hold sdp offer too large for UDP
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
-
-## Transport
-- Rework core transport to be an interface which implemented. It should not be an abstract class to be extended
-- Port and overhaul transport to implement interface (instead of extending abstract class)
-- A constructed Transport should be passed into the UserAgent constructor as a required argument
-- Make sure Transport is RFC compliant and integrates with core ins compliant fashion
-- Review interface and inner workings
 
 ## URI
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking

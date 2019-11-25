@@ -14,23 +14,13 @@ export interface Transport extends CoreTransport
 
 ## Remarks
 
-The transport behaves in a deterministic manner according to the following Finite State Machine (FSM).
+The transport behaves in a deterministic manner according to the the state defined in [TransportState](./sip.js.transportstate.md)<!-- -->.
 
-```
-                   ______________________________
-                  |    ____________              |
-Transport         v   v            |             |
-Constructed -> Disconnected -> Connecting -> Connected -> Disconnecting
-                    ^            ^    |_____________________^  |  |
-                    |            |_____________________________|  |
-                    |_____________________________________________|
-
-```
-The "Connecting" state is ONLY entered in response to the user calling `connect`<!-- -->. The "Disconnecting" state is ONLY entered in response to the user calling `disconnect`<!-- -->. The `onConnect` callback is ALWAYS called upon transitioning to the "Connected" state. The `onDisconnect` callback is ALWAYS called upon transitioning from the "Connected" state.
+The "Connecting" state is ONLY entered in response to the user calling `connect()`<!-- -->. The "Disconnecting" state is ONLY entered in response to the user calling `disconnect()`<!-- -->. The `onConnect` callback is ALWAYS called upon transitioning to the "Connected" state. The `onDisconnect` callback is ALWAYS called upon transitioning from the "Connected" state.
 
 Adherence to the state machine by the transport implementation is critical as the UserAgent depends on this behavior. Furthermore it is critical that the transport transition to the "Disconnected" state in all instances where network connectivity is lost as the UserAgent, API, and application layer more generally depend on knowing network was lost. For example, from a practical standpoint registrations and subscriptions are invalidated when network is lost - particularly in the case of connection oriented transport protocols such as a secure WebSocket transport.
 
-Proper handling the application level protocol recovery must be left to the application layer, thus the transport MUST NOT attempt to "auto-recover" from or otherwise hide loss of network. Note that callbacks and emitters such as `onConnect` and `onDisconnect` MUST NOT call methods `connect` and `direct` synchronously (state change handlers must not loop back). They may however do so asychronously using a Promise resolution, `setTimeout`<!-- -->, or some other method. For example...
+Proper handling the application level protocol recovery must be left to the application layer, thus the transport MUST NOT attempt to "auto-recover" from or otherwise hide loss of network. Note that callbacks and emitters such as `onConnect` and `onDisconnect` MUST NOT call methods `connect()` and `direct()` synchronously (state change handlers must not loop back). They may however do so asychronously using a Promise resolution, `setTimeout`<!-- -->, or some other method. For example...
 
 ```ts
 transport.onDisconnect = () => {

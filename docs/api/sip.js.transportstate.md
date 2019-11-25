@@ -16,24 +16,23 @@ export declare enum TransportState
 
 |  Member | Value | Description |
 |  --- | --- | --- |
-|  Connected | <code>&quot;Connected&quot;</code> |  |
-|  Connecting | <code>&quot;Connecting&quot;</code> |  |
-|  Disconnected | <code>&quot;Disconnected&quot;</code> |  |
-|  Disconnecting | <code>&quot;Disconnecting&quot;</code> |  |
+|  Connected | <code>&quot;Connected&quot;</code> | The <code>connect()</code> method resovled. |
+|  Connecting | <code>&quot;Connecting&quot;</code> | The <code>connect()</code> method was called. |
+|  Disconnected | <code>&quot;Disconnected&quot;</code> | The <code>connect()</code> method was rejected, or the <code>disconnect()</code> method completed, or network connectivity was lost. |
+|  Disconnecting | <code>&quot;Disconnecting&quot;</code> | The <code>disconnect()</code> method was called. |
 
 ## Remarks
 
-Valid state transitions:
+The [Transport](./sip.js.transport.md) behaves in a deterministic manner according to the following Finite State Machine (FSM).
 
-```
-1. "connecting" --> "connected"       - connect() resolved
-2. "connecting" --> "disconnecting"   - disconnect() was called
-3. "connecting" --> "disconnected"    - connect() rejected
-4. "connected" --> "disconnecting"    - disconnect() was called
-5. "connected" --> "disconnected"     - triggered from network side
-6. "disconnecting" --> "connecting"   - connect() was called
-7. "disconnecting" --> "disconnected" - disconnect() completed
-8. "disconnected" --> "connecting"    - connect() was called
+```txt
+                   ______________________________
+                  |    ____________              |
+Transport         v   v            |             |
+Constructed -> Disconnected -> Connecting -> Connected -> Disconnecting
+                    ^            ^    |_____________________^  |  |
+                    |            |_____________________________|  |
+                    |_____________________________________________|
 
 ```
 
