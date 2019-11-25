@@ -10,7 +10,8 @@ import {
   SessionState as SessionDialogState,
   SignalingState,
   Timers,
-  URI
+  URI,
+  Logger
 } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { TransportFake } from "../../support/api/transport-fake";
@@ -883,12 +884,14 @@ describe("API Session", () => {
       });
 
       describe("Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
+        let logger: Logger;
         let acceptResolve: boolean;
 
         beforeEach(async () => {
+          logger = invitation.userAgent.getLogger("sip.Invitation");
           acceptResolve = false;
           resetSpies();
-          spyOn(invitation.logger, "error").and.callThrough();
+          spyOn(logger, "error").and.callThrough();
           inviter.cancel();
           await invitation.accept().then(() => acceptResolve = true);
         });
@@ -896,7 +899,7 @@ describe("API Session", () => {
         it("his call to accept() should resolve and log an error", async () => {
           await soon();
           expect(acceptResolve).toBe(true);
-          expect(invitation.logger.error).toHaveBeenCalled();
+          expect(logger.error).toHaveBeenCalled();
         });
 
         it("her ua should send CANCEL, ACK", () => {
@@ -1499,14 +1502,16 @@ describe("API Session", () => {
       });
 
       describe("Bob progress(), Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
+        let logger: Logger;
         let progressResolve: boolean;
         let acceptResolve: boolean;
 
         beforeEach(async () => {
           progressResolve = false;
           acceptResolve = false;
+          logger = invitation.userAgent.getLogger("sip.Invitation");
           resetSpies();
-          spyOn(invitation.logger, "error").and.callThrough();
+          spyOn(logger, "error").and.callThrough();
           invitation.progress().then(() => progressResolve = true);
           inviter.cancel();
           invitation.accept().then(() => acceptResolve = true);
@@ -1517,7 +1522,7 @@ describe("API Session", () => {
           await soon();
           expect(progressResolve).toBe(true);
           expect(acceptResolve).toBe(true);
-          expect(invitation.logger.error).toHaveBeenCalled();
+          expect(logger.error).toHaveBeenCalled();
         });
 
         it("her ua should send CANCEL, ACK", () => {
@@ -1551,14 +1556,16 @@ describe("API Session", () => {
       });
 
       describe("Bob progress(reliable), Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
+        let logger: Logger;
         let progressResolve: boolean;
         let acceptResolve: boolean;
 
         beforeEach(async () => {
+          logger = invitation.userAgent.getLogger("sip.Invitation");
           progressResolve = false;
           acceptResolve = false;
           resetSpies();
-          spyOn(invitation.logger, "error").and.callThrough();
+          spyOn(logger, "error").and.callThrough();
           invitation.progress({ rel100: true }).then(() => progressResolve = true);
           inviter.cancel();
           await invitation.accept().then(() => acceptResolve = true);
@@ -1568,7 +1575,7 @@ describe("API Session", () => {
           await soon();
           expect(progressResolve).toBe(true);
           expect(acceptResolve).toBe(true);
-          expect(invitation.logger.error).toHaveBeenCalled();
+          expect(logger.error).toHaveBeenCalled();
         });
 
         it("her ua should send CANCEL, ACK", () => {
@@ -1601,14 +1608,16 @@ describe("API Session", () => {
       });
 
       describe("Bob progress(reliable), Bob accept(), Bob dispose() - an async race condition (dispose wins)", () => {
+        let logger: Logger;
         let progressReject: boolean;
         let acceptReject: boolean;
 
         beforeEach(async () => {
+          logger = invitation.userAgent.getLogger("sip.Invitation");
           progressReject = false;
           acceptReject = false;
           resetSpies();
-          spyOn(invitation.logger, "error").and.callThrough();
+          spyOn(logger, "error").and.callThrough();
           invitation.progress({ rel100: true }).catch(() => progressReject = true);
           invitation.accept().catch(() => acceptReject = true);
           await invitation.dispose();

@@ -6,6 +6,7 @@ import {
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequestMessage,
+  Logger,
   NameAddrHeader,
   OutgoingResponse,
   OutgoingResponseWithSession,
@@ -42,6 +43,12 @@ export class Invitation extends Session {
   public localIdentity: NameAddrHeader;
   /** @internal */
   public remoteIdentity: NameAddrHeader;
+
+  /**
+   * Logger.
+   * @internal
+   */
+  protected logger: Logger;
 
   /** True if dispose() has been called. */
   private disposed: boolean = false;

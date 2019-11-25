@@ -1,4 +1,4 @@
-import { OutgoingByeRequest } from "../core";
+import { Logger, OutgoingByeRequest } from "../core";
 import { ByerByeOptions } from "./byer-bye-options";
 import { ByerOptions } from "./byer-options";
 import { Invitation } from "./invitation";
@@ -13,6 +13,8 @@ import { SessionState } from "./session-state";
  * @public
  */
 export class Byer {
+  /** The logger. */
+  private logger: Logger;
   /** The byer session. */
   private _session: Session;
 
@@ -22,6 +24,7 @@ export class Byer {
    * @param options - An options bucket. See {@link ByerOptions} for details.
    */
   constructor(session: Session, options?: ByerOptions) {
+    this.logger = session.userAgent.getLogger("sip.Byer");
     this._session = session;
   }
 
@@ -73,7 +76,7 @@ export class Byer {
         throw new Error("Unknown state");
     }
 
-    this.session.logger.error(message);
+    this.logger.error(message);
     return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
   }
 }

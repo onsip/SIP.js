@@ -88,11 +88,7 @@ export abstract class Session {
    * @internal
    */
   public id: string | undefined;
-  /**
-   * Session logger.
-   * @internal
-   */
-  public logger: Logger;
+
   /** @internal */
   public referral: Inviter | undefined;
   /** @internal */
@@ -102,6 +98,11 @@ export abstract class Session {
   /** @internal */
   public userAgent: UserAgent;
 
+  /**
+   * Logger.
+   * @internal
+   */
+  protected abstract logger: Logger;
   /**
    * Inviter options to use when following a REFER.
    * FIXME: This is getting in the Inviter constructor, but not by Invitation (thus undefined).
@@ -134,7 +135,6 @@ export abstract class Session {
   protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
     this.userAgent = userAgent;
     this.delegate = options.delegate;
-    this.logger = userAgent.getLogger("sip.Session");
   }
 
   /**

@@ -1,4 +1,4 @@
-import { OutgoingReferRequest, URI } from "../core";
+import { Logger, OutgoingReferRequest, URI } from "../core";
 import { ReferrerDelegate } from "./referrer-delegate";
 import { ReferrerOptions } from "./referrer-options";
 import { ReferrerReferOptions } from "./referrer-refer-options";
@@ -15,6 +15,8 @@ export class Referrer {
   /** The referrer delegate. */
   public delegate: ReferrerDelegate | undefined;
 
+  /** The logger. */
+  private logger: Logger;
   /** The referTo. */
   private _referTo: URI | Session;
   /** The referrer session. */
@@ -27,6 +29,7 @@ export class Referrer {
    * @param options - An options bucket. See {@link ReferrerOptions} for details.
    */
   constructor(session: Session, referTo: URI | Session, options?: ReferrerOptions) {
+    this.logger = session.userAgent.getLogger("sip.Referrer");
     this._session = session;
     this._referTo  = referTo;
   }
@@ -44,7 +47,7 @@ export class Referrer {
     // guard session state
     if (this.session.state !== SessionState.Established) {
       const message = "Referrer.refer() may only be called if established session.";
-      this.session.logger.error(message);
+      this.logger.error(message);
       return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
     }
 

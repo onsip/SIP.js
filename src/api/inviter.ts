@@ -5,6 +5,7 @@ import {
   fromBodyLegacy,
   Grammar,
   IncomingResponse,
+  Logger,
   NameAddrHeader,
   OutgoingInviteRequest,
   OutgoingRequestMessage,
@@ -47,6 +48,12 @@ export class Inviter extends Session {
   public remoteIdentity: NameAddrHeader;
   /** @internal */
   public request: OutgoingRequestMessage;
+
+  /**
+   * Logger.
+   * @internal
+   */
+  protected logger: Logger;
 
   private disposed: boolean = false;
   private earlyMedia: boolean;

@@ -1,4 +1,4 @@
-import { OutgoingInfoRequest } from "../core";
+import { Logger, OutgoingInfoRequest } from "../core";
 import { InfoerInfoOptions } from "./infoer-info-options";
 import { InfoerOptions } from "./infoer-options";
 import { Session } from "./session";
@@ -11,6 +11,8 @@ import { SessionState } from "./session-state";
  * @public
  */
 export class Infoer {
+  /** The logger. */
+  private logger: Logger;
   /** The Infoer session. */
   private _session: Session;
 
@@ -20,6 +22,7 @@ export class Infoer {
    * @param options - An options bucket.
    */
   constructor(session: Session, options?: InfoerOptions) {
+    this.logger = session.userAgent.getLogger("sip.Infoer");
     this._session = session;
   }
 
@@ -36,7 +39,7 @@ export class Infoer {
     // guard session state
     if (this.session.state !== SessionState.Established) {
       const message = "Infoer.info() may only be called if established session.";
-      this.session.logger.error(message);
+      this.logger.error(message);
       return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
     }
 
