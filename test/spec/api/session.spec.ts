@@ -6,12 +6,12 @@ import {
   SessionState
 } from "../../../src/api";
 import {
+  Logger,
   OutgoingRequestDelegate,
   SessionState as SessionDialogState,
   SignalingState,
   Timers,
-  URI,
-  Logger
+  URI
 } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { TransportFake } from "../../support/api/transport-fake";
