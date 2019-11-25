@@ -162,6 +162,18 @@ export interface UserAgentOptions {
   preloadedRouteSet?: Array<string>;
 
   /**
+   * Maximum number of times to attempt to reconnect when the transport connection drops.
+   * @defaultValue 3
+   */
+  reconnectionAttempts?: number;
+
+  /**
+   * Seconds to wait between reconnection attempts when the transport connection drops.
+   * @defaultValue 4
+   */
+  reconnectionDelay?: number;
+
+  /**
    * A factory for generating `SessionDescriptionHandler` instances.
    * @remarks
    * The factory will be passed a `Session` object for the current session

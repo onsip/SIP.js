@@ -45,7 +45,7 @@ const makeMockIncomingResponse = (statusCode: number, toTag: string): jasmine.Sp
 };
 
 type Mutable<T> = { -readonly [P in keyof T ]: T[P] };
-const defaultURI = new URI("sip", "john", "onsip.com");
+const defaultURI = new URI("sip", "example", "onsip.com");
 
 /** Mocked outgoing request factory function. */
 const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<OutgoingRequestMessage> => {
@@ -134,7 +134,7 @@ type ServerTransactionFactory = (
 
 // https://tools.ietf.org/html/rfc3261#section-17
 describe("Transactions", () => {
-  const ruri = "sip:john@onsip.com";
+  const ruri = "sip:example@onsip.com";
   const _1xxStatusCodesToTest = [100, 180, 183];
   const _2xxStatusCodesToTest = [200, 202];
   const _3xxStatusCodesToTest = [300, 301];

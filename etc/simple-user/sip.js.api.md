@@ -22,6 +22,7 @@ export class SimpleUser {
     hold(): Promise<void>;
     // @internal
     readonly id: string;
+    isConnected(): boolean;
     isHeld(): boolean;
     isMuted(): boolean;
     readonly localAudioTrack: MediaStreamTrack | undefined;
@@ -49,6 +50,8 @@ export interface SimpleUserDelegate {
     onCallReceived?(): void;
     onMessageReceived?(message: string): void;
     onRegistered?(): void;
+    onServerConnect?(): void;
+    onServerDisconnect?(error?: Error): void;
     onUnregistered?(): void;
 }
 

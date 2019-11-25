@@ -132,7 +132,7 @@ A core library implementing low level SIP protocol elements.
 |  [Subscription](./sip.js.subscription.md) | Subscription. |
 |  [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) | Subscription delegate. |
 |  [TransactionUser](./sip.js.transactionuser.md) | Transaction User (TU). |
-|  [Transport](./sip.js.transport.md) | Transport. |
+|  [Transport](./sip.js.transport.md) | Transport layer interface expected by the user agent core. |
 |  [UserAgentCoreConfiguration](./sip.js.useragentcoreconfiguration.md) | User Agent Core configuration. |
 |  [UserAgentCoreDelegate](./sip.js.useragentcoredelegate.md) | User Agent Core delegate. |
 

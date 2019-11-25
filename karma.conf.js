@@ -25,7 +25,8 @@ module.exports = function(config) {
       'test/spec/Web/Modifiers.spec.js': 'webpack',
       'test/spec/*.spec.js': ['webpack', 'sourcemap'],
       'test/spec/api/*.js': ['webpack', 'sourcemap'],
-      'test/spec/core/*.js': ['webpack', 'sourcemap']
+      'test/spec/core/*.js': ['webpack', 'sourcemap'],
+      'test/spec/platform/web/*.js': ['webpack', 'sourcemap']
     },
 
     webpack: {

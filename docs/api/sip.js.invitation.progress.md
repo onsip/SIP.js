@@ -24,5 +24,5 @@ progress(options?: InvitationProgressOptions): Promise<void>;
 
 ## Remarks
 
-Report progress to the the caller. Replies to the INVITE request with a 1xx provisional response.
+Report progress to the the caller. Replies to the INVITE request with a 1xx provisional response. Resolves once the response sent, otherwise rejects.
 

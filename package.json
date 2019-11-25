@@ -46,6 +46,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^4.0.2",
+    "mock-socket": "^9.0.2",
     "pegjs": "^0.10.0",
     "ts-loader": "^6.2.1",
     "ts-pegjs": "0.2.6",

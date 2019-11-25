@@ -16,12 +16,12 @@ export interface UserFake {
   isShutdown: () => boolean;
 }
 
-export function makeUserFake(
+export async function makeUserFake(
   user: string | undefined,
   domain: string,
   displayName: string,
   options: UserAgentOptions = {}
-): UserFake {
+): Promise<UserFake> {
   const mockSessionDescriptionHandlers: Array<jasmine.SpyObj<SessionDescriptionHandler>> = [];
   const userHack: any = user; // FIXME: this is because grammar/parser produces undefined on no user
   const uri = new URI("sip", userHack, domain);
@@ -43,7 +43,10 @@ export function makeUserFake(
     },
     ...options
   };
+
   const userAgent = new UserAgent(userAgentOptions);
+  await userAgent.start();
+
   if (!(userAgent.transport instanceof TransportFake)) {
     throw new Error("Transport not TransportFake");
   }
@@ -54,10 +57,12 @@ export function makeUserFake(
 
     // Confirm any and all session description handlers have been closed
     const sdhClosed = mockSessionDescriptionHandlers.every((mock) => {
-      // TODO: Currently the API does call close() more than once in various
-      // circumstances so we are checking to make sure close() called at least once.
-      // But it  would be nice if the api did never called close() more than once...
       if (mock.close.calls.count() === 0) {
+        // console.error(`${displayName} SDH Not Closed`);
+        return false;
+      }
+      if (mock.close.calls.count() > 1) {
+        // console.error(`${displayName} SDH Closed Multiple Times`);
         return false;
       }
       return true;

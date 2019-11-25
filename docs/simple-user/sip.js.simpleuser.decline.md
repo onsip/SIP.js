@@ -17,5 +17,5 @@ decline(): Promise<void>;
 
 ## Remarks
 
-Reject an incoming INVITE request. Resolves with the response is sent, otherwise rejects. Use `onCallTerminated` delegate method to determine if Session is terminated.
+Reject an incoming INVITE request. Resolves with the response is sent, otherwise rejects. Use `onCallTerminated` delegate method to determine if and when call is ended.
 

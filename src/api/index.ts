@@ -54,6 +54,8 @@ export * from "./subscription-subscribe-options";
 export * from "./subscription-unsubscribe-options";
 export * from "./subscription";
 export * from "./transport";
+export * from "./transport-state";
 export * from "./user-agent-delegate";
 export * from "./user-agent-options";
+export * from "./user-agent-state";
 export * from "./user-agent";

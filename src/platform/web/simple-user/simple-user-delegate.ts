@@ -56,4 +56,20 @@ export interface SimpleUserDelegate {
    * Called when user is no longer registered to received calls.
    */
   onUnregistered?(): void;
+
+  /**
+   * Called when user is connected to server.
+   * @remarks
+   * Callback for handling user becomes connected.
+   */
+  onServerConnect?(): void;
+
+  /**
+   * Called when user is no longer connected.
+   * @remarks
+   * Callback for handling user becomes disconnected.
+   *
+   * @param error - An Error if server caused the disconnect. Otherwise undefined.
+   */
+  onServerDisconnect?(error?: Error): void;
 }

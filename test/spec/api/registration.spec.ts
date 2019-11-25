@@ -28,11 +28,9 @@ describe("API Registration", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    alice = makeUserFake("alice", "example.com", "Alice");
-    registrar = makeUserFake(undefined, "example.com", "Registrar");
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    registrar = await makeUserFake(undefined, "example.com", "Registrar");
     connectUserFake(alice, registrar);
-    return alice.userAgent.start()
-      .then(() => registrar.userAgent.start());
   });
 
   afterEach(async () => {

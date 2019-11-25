@@ -26,8 +26,6 @@ export interface InviterOptions extends SessionOptions {
   /** If true, send INVITE without SDP. Default is false. */
   inviteWithoutSdp?: boolean;
   /** @deprecated TODO: provide alternative. */
-  onInfo?: any;
-  /** @deprecated TODO: provide alternative. */
   params?: {
     fromDisplayName?: string;
     fromTag?: string;

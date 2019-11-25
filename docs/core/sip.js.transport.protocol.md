@@ -4,7 +4,7 @@
 
 ## Transport.protocol property
 
-The protocol.
+The transport protocol.
 
 <b>Signature:</b>
 

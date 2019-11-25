@@ -4,7 +4,7 @@
 
 ## Transport interface
 
-Transport.
+Transport layer interface expected by the `UserAgent`<!-- -->.
 
 <b>Signature:</b>
 
@@ -14,7 +14,30 @@ export interface Transport extends CoreTransport
 
 ## Remarks
 
-Transport layer interface expected by the api.
+The transport behaves in a deterministic manner according to the the state defined in [TransportState](./sip.js.transportstate.md)<!-- -->.
+
+The "Connecting" state is ONLY entered in response to the user calling `connect()`<!-- -->. The "Disconnecting" state is ONLY entered in response to the user calling `disconnect()`<!-- -->. The `onConnect` callback is ALWAYS called upon transitioning to the "Connected" state. The `onDisconnect` callback is ALWAYS called upon transitioning from the "Connected" state.
+
+Adherence to the state machine by the transport implementation is critical as the UserAgent depends on this behavior. Furthermore it is critical that the transport transition to the "Disconnected" state in all instances where network connectivity is lost as the UserAgent, API, and application layer more generally depend on knowing network was lost. For example, from a practical standpoint registrations and subscriptions are invalidated when network is lost - particularly in the case of connection oriented transport protocols such as a secure WebSocket transport.
+
+Proper handling the application level protocol recovery must be left to the application layer, thus the transport MUST NOT attempt to "auto-recover" from or otherwise hide loss of network. Note that callbacks and emitters such as `onConnect` and `onDisconnect` MUST NOT call methods `connect()` and `direct()` synchronously (state change handlers must not loop back). They may however do so asychronously using a Promise resolution, `setTimeout`<!-- -->, or some other method. For example...
+
+```ts
+transport.onDisconnect = () => {
+  Promise.resolve().then(() => transport.connect());
+}
+
+```
+
+## Properties
+
+|  Property | Type | Description |
+|  --- | --- | --- |
+|  [onConnect](./sip.js.transport.onconnect.md) | <code>(() =&gt; void) &#124; undefined</code> | Callback on state transition to "Connected". |
+|  [onDisconnect](./sip.js.transport.ondisconnect.md) | <code>((error?: Error) =&gt; void) &#124; undefined</code> | Callback on state transition from "Connected". |
+|  [onMessage](./sip.js.transport.onmessage.md) | <code>((message: string) =&gt; void) &#124; undefined</code> | Callback on receipt of a message. |
+|  [state](./sip.js.transport.state.md) | <code>TransportState</code> | Transport state. |
+|  [stateChange](./sip.js.transport.statechange.md) | <code>Emitter&lt;TransportState&gt;</code> | Transport state change emitter. |
 
 ## Methods
 
@@ -22,7 +45,7 @@ Transport layer interface expected by the api.
 |  --- | --- |
 |  [connect()](./sip.js.transport.connect.md) | Connect to network. |
 |  [disconnect()](./sip.js.transport.disconnect.md) | Disconnect from network. |
-|  [isConnected()](./sip.js.transport.isconnected.md) | Returns true if the transport is connected. |
-|  [on(event, listener)](./sip.js.transport.on.md) | Add listener for connection events. |
-|  [on(event, listener)](./sip.js.transport.on_1.md) | Add listener for message events. |
+|  [dispose()](./sip.js.transport.dispose.md) | Dispose. |
+|  [isConnected()](./sip.js.transport.isconnected.md) | Returns true if the <code>state</code> equals "Connected". |
+|  [send(message)](./sip.js.transport.send.md) | Send a message. |
 

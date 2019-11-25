@@ -5,6 +5,7 @@ import {
   fromBodyLegacy,
   Grammar,
   IncomingResponse,
+  Logger,
   NameAddrHeader,
   OutgoingInviteRequest,
   OutgoingRequestMessage,
@@ -19,7 +20,7 @@ import { getReasonPhrase, newTag } from "../core/messages/utils";
 import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
-import { _SessionStatus, Session } from "./session";
+import { Session } from "./session";
 import {
   BodyAndContentType,
   SessionDescriptionHandler
@@ -38,22 +39,28 @@ export class Inviter extends Session {
   public body: BodyAndContentType | undefined = undefined;
   /** @internal */
   public localIdentity: NameAddrHeader;
+  /**
+   * If this Inviter was created as a result of a REFER, the reffered Session. Otherwise undefined.
+   * @internal
+   */
+  public referred: Session | undefined;
   /** @internal */
   public remoteIdentity: NameAddrHeader;
   /** @internal */
   public request: OutgoingRequestMessage;
 
-  /** True if cancel() was called. */
-  /** @internal */
-  public isCanceled: boolean;
+  /**
+   * Logger.
+   * @internal
+   */
+  protected logger: Logger;
 
-  /** If this Inviter was created as a result of a REFER, the reffered Session. Otherwise undefined. */
-  /** @internal */
-  public referred: Session | undefined;
-
+  private disposed: boolean = false;
   private earlyMedia: boolean;
   private earlyMediaDialog: SessionDialog | undefined;
   private earlyMediaSessionDescriptionHandlers = new Map<string, SessionDescriptionHandler>();
+  private fromTag: string;
+  private isCanceled: boolean = false;
   private inviteWithoutSdp: boolean;
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
 
@@ -73,13 +80,8 @@ export class Inviter extends Session {
     // Default options params
     options.params = options.params || {};
 
-    // Check Session Status
-    if (this.status !== _SessionStatus.STATUS_NULL) {
-      throw new Error(`Invalid status ${this.status}`);
-    }
-
     // ClientContext properties
-    this.logger = userAgent.getLogger("sip.inviter");
+    this.logger = userAgent.getLogger("sip.Inviter");
     if (options.body) {
       this.body = {
         body: options.body,
@@ -193,8 +195,7 @@ export class Inviter extends Session {
     this.contact = contact;
     this.fromTag = fromTag;
     this.id = this.request.callId + this.fromTag;
-    this.onInfo = options.onInfo;
-    this.passedOptions = options; // Save for later to use with refer
+    this.referralInviterOptions = options;
     this.renderbody = options.renderbody || undefined;
     this.rendertype = options.rendertype || "text/plain";
     this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers || [];
@@ -202,15 +203,59 @@ export class Inviter extends Session {
 
     // InviteClientContext properties
     this.inviteWithoutSdp = options.inviteWithoutSdp || false;
-    this.isCanceled = false;
 
     this.earlyMedia = options.earlyMedia || false;
 
-    userAgent.applicants[this.toString()] = this;
+    // Add to the user agent's session collection.
+    this.userAgent.sessions[this.id] = this;
+  }
+
+  /**
+   * Destructor.
+   */
+  public async dispose(): Promise<void> {
+    // Only run through this once. It can and does get called multiple times
+    // depending on the what the sessions state is when first called.
+    // For example, if called when "establishing" it will be called again
+    // at least once when the session transitions to "terminated".
+    // Regardless, running through this more than once is pointless.
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
+
+    // Dispose of early dialog media
+    this.disposeEarlyMedia();
+
+    // If the final response for the initial INVITE not yet been received, cancel it
+    switch (this.state) {
+      case SessionState.Initial:
+        return this.cancel().then(() => super.dispose());
+      case SessionState.Establishing:
+        return this.cancel().then(() => super.dispose());
+      case SessionState.Established:
+        return super.dispose();
+      case SessionState.Terminating:
+        return super.dispose();
+      case SessionState.Terminated:
+        return super.dispose();
+      default:
+        throw new Error("Unknown state.");
+    }
   }
 
   /**
    * Cancels the INVITE request.
+   *
+   * @remarks
+   * Sends a CANCEL request.
+   * Resolves once the response sent, otherwise rejects.
+   *
+   * After sending a CANCEL request the expectation is that a 487 final response
+   * will be received for the INVITE. However a 200 final response to the INVITE
+   * may nonetheless arrive (it's a race between the CANCEL reaching the UAS before
+   * the UAS sends a 200) in which case an ACK & BYE will be sent. The net effect
+   * is that this method will terminate the session regardless of the race.
    * @param options - Options bucket.
    */
   public cancel(options: InviterCancelOptions = {}): Promise<void> {
@@ -223,20 +268,11 @@ export class Inviter extends Session {
       return Promise.reject(error);
     }
 
-    // canceled has some special cases
-    if (this.isCanceled) {
-      throw new Error("Already canceled.");
-    }
+    // flag canceled
     this.isCanceled = true;
 
     // transition state
     this.stateTransition(SessionState.Terminating);
-
-    // cleanup media as needed
-    this.disposeEarlyMedia();
-    if (this.sessionDescriptionHandler) {
-      this.sessionDescriptionHandler.close();
-    }
 
     // helper function
     function getCancelReason(code: number, reason: string): string | undefined {
@@ -266,6 +302,7 @@ export class Inviter extends Session {
 
   /**
    * Sends the INVITE request.
+   *
    * @remarks
    * TLDR...
    *  1) Only one offer/answer exchange permitted during initial INVITE.
@@ -356,12 +393,6 @@ export class Inviter extends Session {
       return super.invite(options);
     }
 
-    if (!this.id) {
-      throw new Error("Session id undefined.");
-    }
-    // save the session into the user agent sessions collection.
-    this.userAgent.sessions[this.id] = this;
-
     // just send an INVITE with no sdp...
     if (options.withoutSdp || this.inviteWithoutSdp) {
       if (this.renderbody && this.rendertype) {
@@ -371,7 +402,6 @@ export class Inviter extends Session {
       // transition state
       this.stateTransition(SessionState.Establishing);
 
-      this.status = _SessionStatus.STATUS_INVITE_SENT;
       return Promise.resolve(this.sendInvite(options));
     }
 
@@ -382,6 +412,7 @@ export class Inviter extends Session {
     };
     return this.getOffer(offerOptions)
       .then((body) => {
+        this.request.body = { body: body.content, contentType: body.contentType };
 
         // TODO: Review error handling...
         // There are some race conditions which can occur, all of which will cause stateTransition() to throw.
@@ -393,8 +424,6 @@ export class Inviter extends Session {
         // transition state
         this.stateTransition(SessionState.Establishing);
 
-        this.status = _SessionStatus.STATUS_INVITE_SENT;
-        this.request.body = { body: body.content, contentType: body.contentType };
         return this.sendInvite(options);
       })
       .catch((error) => {
@@ -402,16 +431,6 @@ export class Inviter extends Session {
         this.stateTransition(SessionState.Terminated);
         throw error;
       });
-  }
-
-  /**
-   * Called to cleanup session after terminated.
-   * Using it here just to dispose of early media.
-   * @internal
-   */
-  public _close(): void {
-    this.disposeEarlyMedia();
-    super._close();
   }
 
   /**
@@ -774,8 +793,7 @@ export class Inviter extends Session {
     }
 
     // We have a confirmed dialog.
-    this.dialog = session;
-    this.dialog.delegate = {
+    session.delegate = {
       onAck: (ackRequest): void => this.onAckRequest(ackRequest),
       onBye: (byeRequest): void => this.onByeRequest(byeRequest),
       onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
@@ -784,6 +802,7 @@ export class Inviter extends Session {
       onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
       onRefer: (referRequest): void => this.onReferRequest(referRequest)
     };
+    this.dialog = session;
 
     const sdhOptions = this.sessionDescriptionHandlerOptions;
     const sdhModifiers = this.sessionDescriptionHandlerModifiers;
@@ -812,7 +831,6 @@ export class Inviter extends Session {
         };
         return this.setOfferAndGetAnswer(this.dialog.offer, options)
           .then((body) => {
-            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
           })
@@ -831,7 +849,6 @@ export class Inviter extends Session {
           }
           this.setSessionDescriptionHandler(sdh);
           this.earlyMediaSessionDescriptionHandlers.delete(session.id);
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -863,7 +880,6 @@ export class Inviter extends Session {
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
-          this.status = _SessionStatus.STATUS_CONFIRMED;
           const ackRequest = inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
@@ -887,7 +903,6 @@ export class Inviter extends Session {
                 body: { contentDisposition: "render", contentType: this.rendertype, content: this.renderbody }
               };
             }
-            this.status = _SessionStatus.STATUS_CONFIRMED;
             const ackRequest = inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
           })
@@ -927,9 +942,6 @@ export class Inviter extends Session {
 
     const response = inviteResponse.message;
     const session = inviteResponse.session;
-
-    // Ported - Set status.
-    this.status = _SessionStatus.STATUS_1XX_RECEIVED;
 
     // Ported - Set assertedIdentity.
     if (response.hasHeader("P-Asserted-Identity")) {
@@ -1014,9 +1026,6 @@ export class Inviter extends Session {
             inviteResponse.prack({ extraHeaders, body });
           })
           .catch((error) => {
-            if (this.status === _SessionStatus.STATUS_TERMINATED) {
-              throw error;
-            }
             this.stateTransition(SessionState.Terminated);
             throw error;
           });
@@ -1039,9 +1048,6 @@ export class Inviter extends Session {
           };
           return this.setAnswer(answer, options)
             .catch((error: Error) => {
-              if (this.status === _SessionStatus.STATUS_TERMINATED) {
-                throw error;
-              }
               this.stateTransition(SessionState.Terminated);
               throw error;
             });

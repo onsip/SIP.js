@@ -17,10 +17,9 @@ describe("API UserAgent", () => {
     const options: UserAgentOptions = {
       autoStart: false
     };
-    alice = makeUserFake("alice", "example.com", "Alice", options);
-    bob = makeUserFake("bob", "example.com", "Bob", options);
+    alice = await makeUserFake("alice", "example.com", "Alice", options);
+    bob = await makeUserFake("bob", "example.com", "Bob", options);
     connectUserFake(alice, bob);
-    return alice.userAgent.start().then(() => bob.userAgent.start());
   });
 
   afterEach(async () => {
