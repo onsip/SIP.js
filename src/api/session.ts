@@ -49,6 +49,10 @@ import { UserAgent } from "./user-agent";
 
 /**
  * A session provides real time communication between one or more participants.
+ *
+ * @remarks
+ * The transport behaves in a deterministic manner according to the
+ * the state defined in {@link SessionState}.
  * @public
  */
 export abstract class Session {

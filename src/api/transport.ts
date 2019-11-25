@@ -6,19 +6,11 @@ import { TransportState } from "./transport-state";
  * Transport layer interface expected by the `UserAgent`.
  *
  * @remarks
- * The transport behaves in a deterministic manner according to the following
- * Finite State Machine (FSM).
- * ```
- *                    ______________________________
- *                   |    ____________              |
- * Transport         v   v            |             |
- * Constructed -> Disconnected -> Connecting -> Connected -> Disconnecting
- *                     ^            ^    |_____________________^  |  |
- *                     |            |_____________________________|  |
- *                     |_____________________________________________|
- * ```
- * The "Connecting" state is ONLY entered in response to the user calling `connect`.
- * The "Disconnecting" state is ONLY entered in response to the user calling `disconnect`.
+ * The transport behaves in a deterministic manner according to the
+ * the state defined in {@link TransportState}.
+ *
+ * The "Connecting" state is ONLY entered in response to the user calling `connect()`.
+ * The "Disconnecting" state is ONLY entered in response to the user calling `disconnect()`.
  * The `onConnect` callback is ALWAYS called upon transitioning to the "Connected" state.
  * The `onDisconnect` callback is ALWAYS called upon transitioning from the "Connected" state.
  *
@@ -33,7 +25,7 @@ import { TransportState } from "./transport-state";
  * Proper handling the application level protocol recovery must be left to the application layer,
  * thus the transport MUST NOT attempt to "auto-recover" from or otherwise hide loss of network.
  * Note that callbacks and emitters such as `onConnect`  and `onDisconnect` MUST NOT call methods
- * `connect` and `direct` synchronously (state change handlers must not loop back). They may
+ * `connect()` and `direct()` synchronously (state change handlers must not loop back). They may
  * however do so asychronously using a Promise resolution, `setTimeout`, or some other method.
  * For example...
  * ```ts
