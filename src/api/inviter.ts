@@ -36,11 +36,6 @@ export class Inviter extends Session {
 
   /** @internal */
   public body: BodyAndContentType | undefined = undefined;
-  /**
-   * True if cancel() was called.
-   * @internal
-   */
-  public isCanceled: boolean;
   /** @internal */
   public localIdentity: NameAddrHeader;
   /**
@@ -58,6 +53,7 @@ export class Inviter extends Session {
   private earlyMediaDialog: SessionDialog | undefined;
   private earlyMediaSessionDescriptionHandlers = new Map<string, SessionDescriptionHandler>();
   private fromTag: string;
+  private isCanceled: boolean = false;
   private inviteWithoutSdp: boolean;
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
 
@@ -200,7 +196,6 @@ export class Inviter extends Session {
 
     // InviteClientContext properties
     this.inviteWithoutSdp = options.inviteWithoutSdp || false;
-    this.isCanceled = false;
 
     this.earlyMedia = options.earlyMedia || false;
 
@@ -266,10 +261,7 @@ export class Inviter extends Session {
       return Promise.reject(error);
     }
 
-    // canceled has some special cases
-    if (this.isCanceled) {
-      throw new Error("Already canceled.");
-    }
+    // flag canceled
     this.isCanceled = true;
 
     // transition state
