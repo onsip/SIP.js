@@ -71,25 +71,23 @@ export abstract class Session {
   public dialog: SessionDialog | undefined;
 
   /** @internal */
-  public assertedIdentity: NameAddrHeader | undefined;
-  /** @internal */
   public abstract body: BodyAndContentType | string | undefined;
+  /** @internal */
+  public abstract localIdentity: NameAddrHeader;
+  /** @internal */
+  public abstract remoteIdentity: NameAddrHeader;
+
+  /** @internal */
+  public assertedIdentity: NameAddrHeader | undefined;
   /** @internal */
   public contact: string | undefined;
   /** @internal */
   public contentType: string | undefined;
   /**
-   * Time Terminated.
-   * @internal
-   */
-  public endTime: Date | undefined;
-  /**
    * Unique identifier for this session.
    * @internal
    */
   public id: string | undefined;
-  /** @internal */
-  public abstract localIdentity: NameAddrHeader;
   /**
    * Session logger.
    * @internal
@@ -100,14 +98,7 @@ export abstract class Session {
   /** @internal */
   public referrer: Referrer | undefined;
   /** @internal */
-  public abstract remoteIdentity: NameAddrHeader;
-  /** @internal */
   public replacee: Session | undefined;
-  /**
-   * Time Established.
-   * @internal
-   */
-  public startTime: Date | undefined;
   /** @internal */
   public userAgent: UserAgent;
 
@@ -1096,14 +1087,6 @@ export abstract class Session {
         break;
       default:
         throw new Error("Unrecognized state.");
-    }
-
-    if (newState === SessionState.Established) {
-      this.startTime = new Date(); // Deprecated legacy ported behavior
-    }
-
-    if (newState === SessionState.Terminated) {
-      this.endTime = new Date(); // Deprecated legacy ported behavior
     }
 
     // Transition
