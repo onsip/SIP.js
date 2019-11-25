@@ -31,6 +31,7 @@ import { Emitter, makeEmitter } from "./emitter";
 import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
+import { InviterOptions } from "./inviter-options";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
 import { Referrer } from "./referrer";
@@ -120,8 +121,12 @@ export abstract class Session {
 
   /** @internal */
   protected onInfo: ((request: IncomingRequestMessage) => void) | undefined;
-  /** @internal */
-  protected passedOptions: any;
+  /**
+   * Inviter options to use when following a REFER.
+   * FIXME: This is getting in the Inviter constructor, but not by Invitation (thus undefined).
+   * @internal
+   */
+  protected referralInviterOptions: InviterOptions | undefined;
   /** @internal */
   protected renderbody: string | undefined;
   /** @internal */
@@ -818,7 +823,7 @@ export abstract class Session {
       referral
         .accept()
         .then(() => referral
-          .makeInviter(this.passedOptions)
+          .makeInviter(this.referralInviterOptions)
           .invite()
         )
         .catch((error: Error) => {

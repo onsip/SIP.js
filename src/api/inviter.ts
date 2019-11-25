@@ -193,7 +193,7 @@ export class Inviter extends Session {
     this.fromTag = fromTag;
     this.id = this.request.callId + this.fromTag;
     this.onInfo = options.onInfo;
-    this.passedOptions = options; // Save for later to use with refer
+    this.referralInviterOptions = options;
     this.renderbody = options.renderbody || undefined;
     this.rendertype = options.rendertype || "text/plain";
     this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers || [];

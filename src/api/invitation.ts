@@ -88,7 +88,6 @@ export class Invitation extends Session {
     this.id = this.request.callId + this.request.fromTag;
     // this.modifiers =
     // this.onInfo =
-    // this.passedOptions =
     const contentDisposition = this.request.parseHeader("Content-Disposition");
     if (contentDisposition && contentDisposition.type === "render") {
       this.renderbody = this.request.body;
