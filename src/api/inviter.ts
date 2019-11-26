@@ -74,57 +74,66 @@ export class Inviter extends Session {
   ) {
     super(userAgent, options);
 
-    // Default options params
-    options.params = options.params || {};
-
     this.logger = userAgent.getLogger("sip.Inviter");
 
-    // Anonymous call
-    const anonymous: boolean = options.anonymous || false;
-    if (anonymous && userAgent.configuration.uri) {
-      options.params.fromDisplayName = "Anonymous";
-      options.params.fromUri = "sip:anonymous@anonymous.invalid";
-    }
+    // Early media
+    this.earlyMedia = options.earlyMedia !== undefined ? options.earlyMedia : this.earlyMedia;
 
-    // From Tag
-    const fromTag = newTag();
+    // From tag
+    this.fromTag = newTag();
+
+    // Invite without SDP
+    this.inviteWithoutSdp = options.inviteWithoutSdp !== undefined ? options.inviteWithoutSdp : this.inviteWithoutSdp;
+
+    // Inviter options (could do better copying these options)
+    const inviterOptions: InviterOptions = { ...options };
+    inviterOptions.params = { ...options.params };
+
+    // Anonymous call
+    const anonymous = options.anonymous || false;
 
     // Contact
-    // Do not add ;ob in initial forming dialog requests if the registration over
-    // the current connection got a GRUU URI.
     const contact = userAgent.contact.toString({
       anonymous,
+      // Do not add ;ob in initial forming dialog requests if the
+      // registration over the current connection got a GRUU URI.
       outbound: anonymous ? !userAgent.contact.tempGruu : !userAgent.contact.pubGruu
     });
 
-    // Params
-    const params: OutgoingRequestMessageOptions = options.params || {};
-    params.fromTag = fromTag;
-
+    // FIXME: TODO: We should not be parsing URIs here as if it fails we have to throw an exception
+    // which is not something we want our constructor to do. URIs should be passed in as params.
     // URIs
+    if (anonymous && userAgent.configuration.uri) {
+      inviterOptions.params.fromDisplayName = "Anonymous";
+      inviterOptions.params.fromUri = "sip:anonymous@anonymous.invalid";
+    }
     let fromURI: URI | undefined = userAgent.userAgentCore.configuration.aor;
-    if (options.params.fromUri) {
+    if (inviterOptions.params.fromUri) {
       fromURI =
-        (typeof options.params.fromUri === "string") ?
-          Grammar.URIParse(options.params.fromUri) :
-          options.params.fromUri;
+        (typeof inviterOptions.params.fromUri === "string") ?
+          Grammar.URIParse(inviterOptions.params.fromUri) :
+          inviterOptions.params.fromUri;
     }
     if (!fromURI) {
-      throw new TypeError("Invalid from URI: " + options.params.fromUri);
+      throw new TypeError("Invalid from URI: " + inviterOptions.params.fromUri);
     }
     let toURI: URI | undefined = targetURI;
-    if (options.params.toUri) {
+    if (inviterOptions.params.toUri) {
       toURI =
-        (typeof options.params.toUri === "string") ?
-          Grammar.URIParse(options.params.toUri) :
-          options.params.toUri;
+        (typeof inviterOptions.params.toUri === "string") ?
+          Grammar.URIParse(inviterOptions.params.toUri) :
+          inviterOptions.params.toUri;
     }
     if (!toURI) {
-      throw new TypeError("Invalid to URI: " + options.params.toUri);
+      throw new TypeError("Invalid to URI: " + inviterOptions.params.toUri);
     }
 
+    // Params
+    const messageOptions: OutgoingRequestMessageOptions = { ...inviterOptions.params };
+    messageOptions.fromTag = this.fromTag;
+
     // Extra headers
-    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
+    const extraHeaders: Array<string> = (inviterOptions.extraHeaders || []).slice();
     if (anonymous && userAgent.configuration.uri) {
       extraHeaders.push("P-Preferred-Identity: " + userAgent.configuration.uri.toString());
       extraHeaders.push("Privacy: id");
@@ -147,6 +156,7 @@ export class Inviter extends Session {
     if (userAgent.configuration.sipExtensionReplaces === SIPExtension.Required) {
       extraHeaders.push("Require: replaces");
     }
+    inviterOptions.extraHeaders = extraHeaders;
 
     // Body
     const body: Body | undefined = undefined;
@@ -157,29 +167,19 @@ export class Inviter extends Session {
       targetURI,
       fromURI,
       toURI,
-      params,
+      messageOptions,
       extraHeaders,
       body
     );
 
-    // Options
-    options.params = params;
-    options.extraHeaders = extraHeaders;
-
-    // Session properties
+    // Session parent properties
     this.contact = contact;
-    this.fromTag = fromTag;
     this.id = this.outgoingRequestMessage.callId + this.fromTag;
-    this.referralInviterOptions = options;
-    this.renderbody = options.renderbody || undefined;
-    this.rendertype = options.rendertype || "text/plain";
-    this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers || [];
-    this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-
-    // InviteClientContext properties
-    this.inviteWithoutSdp = options.inviteWithoutSdp || false;
-
-    this.earlyMedia = options.earlyMedia || false;
+    this.referralInviterOptions = inviterOptions;
+    this.renderbody = options.renderbody;
+    this.rendertype = options.rendertype;
+    this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
 
     // Add to the user agent's session collection.
     this.userAgent.sessions[this.id] = this;

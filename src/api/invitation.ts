@@ -6,6 +6,7 @@ import {
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequestMessage,
+  InviteUserAgentServer,
   Logger,
   NameAddrHeader,
   OutgoingResponse,
@@ -67,46 +68,30 @@ export class Invitation extends Session {
   constructor(userAgent: UserAgent, private incomingInviteRequest: IncomingInviteRequest) {
     super(userAgent);
 
-    this.logger = userAgent.getLogger("sip.Invitation", this.id);
+    this.logger = userAgent.getLogger("sip.Invitation");
 
-    const hasAssertedIdentity = this.request.hasHeader("P-Asserted-Identity");
-    if (hasAssertedIdentity) {
-      const assertedIdentity: string | undefined = this.request.getHeader("P-Asserted-Identity");
-      if (assertedIdentity) {
-        this.assertedIdentity = Grammar.nameAddrHeaderParse(assertedIdentity);
-      }
-    }
-
-    this.contact = this.userAgent.contact.toString();
-    this.id = this.request.callId + this.request.fromTag;
-    const contentDisposition = this.request.parseHeader("Content-Disposition");
-    if (contentDisposition && contentDisposition.type === "render") {
-      this.renderbody = this.request.body;
-      this.rendertype = this.request.getHeader("Content-Type");
-    }
-
-    // FIXME: This is being done twice...
-    // Update logger
-    this.logger = userAgent.getLogger("sip.Invitation", this.id);
+    const incomingRequestMessage = this.incomingInviteRequest.message;
 
     // Set 100rel if necessary
-    const request = this.request;
-    const requireHeader = request.getHeader("require");
+    const requireHeader = incomingRequestMessage.getHeader("require");
     if (requireHeader && requireHeader.toLowerCase().indexOf("100rel") >= 0) {
       this.rel100 = "required";
     }
-    const supportedHeader = request.getHeader("supported");
+    const supportedHeader = incomingRequestMessage.getHeader("supported");
     if (supportedHeader && supportedHeader.toLowerCase().indexOf("100rel") >= 0) {
       this.rel100 = "supported";
     }
 
-    // Set the toTag on the incoming request to the toTag which
+    // Set the toTag on the incoming request messaage to the toTag which
     // will be used in the response to the incoming request!!!
     // FIXME: HACK: This is a hack to port an existing behavior.
     // The behavior being ported appears to be a hack itself,
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
-    this.request.toTag = (incomingInviteRequest as any).toTag;
+    incomingRequestMessage.toTag = (incomingInviteRequest as InviteUserAgentServer as any).toTag;
+    if (typeof incomingRequestMessage.toTag !== "string") {
+      throw new TypeError("toTag should have been a string.");
+    }
 
     // The following mapping values are RECOMMENDED:
     // ...
@@ -124,14 +109,31 @@ export class Invitation extends Session {
     // expires before the UAS has generated a final response, a 487
     // (Request Terminated) response SHOULD be generated.
     // https://tools.ietf.org/html/rfc3261#section-13.3.1
-    if (request.hasHeader("expires")) {
-      const expires: number = Number(request.getHeader("expires") || 0) * 1000;
+    if (incomingRequestMessage.hasHeader("expires")) {
+      const expires: number = Number(incomingRequestMessage.getHeader("expires") || 0) * 1000;
       this.expiresTimer = setTimeout(() => {
         if (this.state === SessionState.Initial) {
           incomingInviteRequest.reject({ statusCode: 487 });
           this.stateTransition(SessionState.Terminated);
         }
       }, expires);
+    }
+
+    const hasAssertedIdentity = this.request.hasHeader("P-Asserted-Identity");
+    if (hasAssertedIdentity) {
+      const assertedIdentity: string | undefined = this.request.getHeader("P-Asserted-Identity");
+      if (assertedIdentity) {
+        this.assertedIdentity = Grammar.nameAddrHeaderParse(assertedIdentity);
+      }
+    }
+
+    // Session parent properties
+    this.contact = this.userAgent.contact.toString();
+    this.id = incomingRequestMessage.callId + incomingRequestMessage.fromTag;
+    const contentDisposition = incomingRequestMessage.parseHeader("Content-Disposition");
+    if (contentDisposition && contentDisposition.type === "render") {
+      this.renderbody = incomingRequestMessage.body;
+      this.rendertype = incomingRequestMessage.getHeader("Content-Type");
     }
 
     // Add to the user agent's session collection.
