@@ -44,6 +44,7 @@
 
 ## API - Misc Open Issues
 - Publisher needs to be converted to new style API, stop events emits, port/write tests
+- UserAgent should support multiple servers. Or more specifically, multiple Transports. Push to 0.16.x?
 - Session make public methods async; trivial to do but breaks a lot of tests (the fake transport is the problem)
 - Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
 - Public methods and properties should be indicated as public (or not) for consistency.
