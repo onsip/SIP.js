@@ -31,6 +31,7 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [dispose()](./sip.js.subscription.dispose.md) |  | Destructor. |
 |  [subscribe(options)](./sip.js.subscription.subscribe.md) |  | Sends a re-SUBSCRIBE request if the subscription is "active". |
 |  [unsubscribe(options)](./sip.js.subscription.unsubscribe.md) |  | Unsubscribe from event notifications. |
 

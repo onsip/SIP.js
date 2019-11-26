@@ -43,9 +43,7 @@
 - Tests using fake transport are currently fragile; much too dependent on timing of promise resolutions
 
 ## API - Misc Open Issues
-- Subscriber needs proper dispose method
 - Publisher needs to be converted to new style API, stop events emits, port/write tests
-- A constructed Transport should be passed into the UserAgent constructor as a required argument, perhaps best release of 0.16.0?
 - Session make public methods async; trivial to do but breaks a lot of tests (the fake transport is the problem)
 - Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
 - Public methods and properties should be indicated as public (or not) for consistency.

@@ -19,5 +19,16 @@ stop(): Promise<void>;
 
 Resolves when the user agent has completed a graceful shutdown.
 
-Registerers unregister. Sessions terminate. Subscribers unsubscribe. Publishers unpublish.
+```txt
+- Registerers unregister.
+- Sessions terminate.
+- Subscribers unsubscribe.
+- Publishers unpublish.
+
+```
+NOTE: While this is a "graceful shutdown", it can also be very slow one if you are waiting for the returned Promise to resolve. The disposal of the clients and dialogs is done serially - waiting on one to finish before moving on to the next. This can be slow if there are lot of subsciptions to unsubscribe for example.
+
+THE SLOW PACE IS INTENTIONAL! While one could spin them all down in parallel, this could slam the remote server. It is bad practice to denial of service attack (DoS attack) servers!!!
+
+If a different approach to disposing is needed, one can implement whatever is needed and execute that prior to calling `stop()`<!-- -->. Alternatively one may simply not wait for the Promise returned by `stop()` to complete.
 

@@ -604,7 +604,7 @@ export class StateTransitionError extends Exception {
 export class Subscriber extends Subscription {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: SubscriberOptions);
     // @internal
-    _dispose(): void;
+    dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponse" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
@@ -647,8 +647,7 @@ export abstract class Subscription {
     // 
     // @internal
     dialog: Subscription_2 | undefined;
-    // @internal
-    _dispose(): void;
+    dispose(): Promise<void>;
     // @internal
     readonly disposed: boolean;
     readonly state: SubscriptionState;
