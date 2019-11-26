@@ -64,7 +64,7 @@ export class Referrer {
   private extraHeaders(referTo: string): Array<string> {
     const extraHeaders: Array<string> = [];
     extraHeaders.push("Referred-By: <" + this._session.userAgent.configuration.uri + ">");
-    extraHeaders.push("Contact: " + this._session.contact);
+    extraHeaders.push("Contact: " + this._session._contact);
     extraHeaders.push("Allow: " + [
       "ACK",
       "CANCEL",

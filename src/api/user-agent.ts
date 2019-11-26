@@ -797,7 +797,7 @@ export class UserAgent {
             if (!targetSession) {
               throw new Error("Session does not exist.");
             }
-            invitation.replacee = targetSession;
+            invitation._replacee = targetSession;
           }
         }
 

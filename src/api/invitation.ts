@@ -43,6 +43,9 @@ export class Invitation extends Session {
    */
   protected logger: Logger;
 
+  /** @internal */
+  protected _id: string;
+
   /** True if dispose() has been called. */
   private disposed: boolean = false;
   /** INVITE will be rejected if not accepted within a certain period time. */
@@ -119,25 +122,23 @@ export class Invitation extends Session {
       }, expires);
     }
 
-    const hasAssertedIdentity = this.request.hasHeader("P-Asserted-Identity");
-    if (hasAssertedIdentity) {
-      const assertedIdentity: string | undefined = this.request.getHeader("P-Asserted-Identity");
-      if (assertedIdentity) {
-        this.assertedIdentity = Grammar.nameAddrHeaderParse(assertedIdentity);
-      }
-    }
-
     // Session parent properties
-    this.contact = this.userAgent.contact.toString();
-    this.id = incomingRequestMessage.callId + incomingRequestMessage.fromTag;
+    const assertedIdentity = this.request.getHeader("P-Asserted-Identity");
+    if (assertedIdentity) {
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(assertedIdentity);
+    }
+    this._contact = this.userAgent.contact.toString();
     const contentDisposition = incomingRequestMessage.parseHeader("Content-Disposition");
     if (contentDisposition && contentDisposition.type === "render") {
-      this.renderbody = incomingRequestMessage.body;
-      this.rendertype = incomingRequestMessage.getHeader("Content-Type");
+      this._renderbody = incomingRequestMessage.body;
+      this._rendertype = incomingRequestMessage.getHeader("Content-Type");
     }
 
+    // Identifier
+    this._id = incomingRequestMessage.callId + incomingRequestMessage.fromTag;
+
     // Add to the user agent's session collection.
-    this.userAgent.sessions[this.id] = this;
+    this.userAgent.sessions[this._id] = this;
   }
 
   /**
@@ -208,7 +209,7 @@ export class Invitation extends Session {
    * to the first call to `progress()` and is unable to do so.
    * @internal
    */
-  get autoSendAnInitialProvisionalResponse(): boolean {
+  public get autoSendAnInitialProvisionalResponse(): boolean {
     return this.rel100 === "required" ? false : true;
   }
 
@@ -229,7 +230,7 @@ export class Invitation extends Session {
   /**
    * Initial incoming INVITE request message.
    */
-  get request(): IncomingRequestMessage {
+  public get request(): IncomingRequestMessage {
     return this.incomingInviteRequest.message;
   }
 
@@ -271,13 +272,13 @@ export class Invitation extends Session {
           onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
           onRefer: (referRequest): void => this.onReferRequest(referRequest)
         };
-        this.dialog = session;
+        this._dialog = session;
         this.stateTransition(SessionState.Established);
 
         // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
         // This behavoir has been ported forward from legacy versions.
-        if (this.replacee) {
-          this.replacee._bye();
+        if (this._replacee) {
+          this._replacee._bye();
         }
       })
       .catch((error) => this.handleResponseError(error));
@@ -608,7 +609,7 @@ export class Invitation extends Session {
 
     try {
       const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
-      this.dialog = progressResponse.session;
+      this._dialog = progressResponse.session;
       return Promise.resolve(progressResponse);
     } catch (error) {
       return Promise.reject(error);
@@ -628,7 +629,7 @@ export class Invitation extends Session {
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
       .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
-        this.dialog = progressResponse.session;
+        this._dialog = progressResponse.session;
         return progressResponse;
       });
   }
@@ -668,7 +669,7 @@ export class Invitation extends Session {
           return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
         })
         .then((progressResponse) => {
-          this.dialog = progressResponse.session;
+          this._dialog = progressResponse.session;
 
           let prackRequest: IncomingPrackRequest;
           let prackResponse: OutgoingResponse;

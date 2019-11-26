@@ -36,7 +36,6 @@ import { Referral } from "./referral";
 import { Referrer } from "./referrer";
 import { SessionDelegate } from "./session-delegate";
 import {
-  BodyAndContentType,
   SessionDescriptionHandler,
   SessionDescriptionHandlerModifier,
   SessionDescriptionHandlerOptions
@@ -70,11 +69,6 @@ export abstract class Session {
   public delegate: SessionDelegate | undefined;
 
   /**
-   * The confirmed session dialog.
-   */
-  public dialog: SessionDialog | undefined;
-
-  /**
    * The identity of the local user.
    */
   public abstract readonly localIdentity: NameAddrHeader;
@@ -84,44 +78,42 @@ export abstract class Session {
    */
   public abstract readonly remoteIdentity: NameAddrHeader;
 
+  //
+  // Public properties for internal use only
+  //
   /** @internal */
-  public assertedIdentity: NameAddrHeader | undefined;
+  public _contact: string | undefined;
   /** @internal */
-  public contact: string | undefined;
-  /**
-   * Unique identifier for this session.
-   * @internal
-   */
-  public id: string | undefined;
-
+  public _referral: Inviter | undefined;
   /** @internal */
-  public referral: Inviter | undefined;
+  public _referrer: Referrer | undefined;
   /** @internal */
-  public referrer: Referrer | undefined;
-  /** @internal */
-  public replacee: Session | undefined;
-  /** @internal */
-  public userAgent: UserAgent;
+  public _replacee: Session | undefined;
 
   /**
    * Logger.
    */
   protected abstract logger: Logger;
 
-  /**
-   * Inviter options to use when following a REFER.
-   * FIXME: This is getting in the Inviter constructor, but not by Invitation (thus undefined).
-   * @internal
-   */
-  protected referralInviterOptions: InviterOptions | undefined;
+  //
+  // Protected properties for internal use only
+  //
   /** @internal */
-  protected renderbody: string | undefined;
+  protected abstract _id: string;
   /** @internal */
-  protected rendertype: string | undefined;
+  protected _assertedIdentity: NameAddrHeader | undefined;
   /** @internal */
-  protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
+  protected _dialog: SessionDialog | undefined;
   /** @internal */
-  protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+  protected _referralInviterOptions: InviterOptions | undefined; // FIXME: This is not getting set by Invitation
+  /** @internal */
+  protected _renderbody: string | undefined;
+  /** @internal */
+  protected _rendertype: string | undefined;
+  /** @internal */
+  protected _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
+  /** @internal */
+  protected _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
 
   /** True if there is a re-INVITE request outstanding. */
   private pendingReinvite: boolean = false;
@@ -131,6 +123,8 @@ export abstract class Session {
   private _state: SessionState = SessionState.Initial;
   /** Session state emitter. */
   private _stateEventEmitter = new EventEmitter();
+  /** User agent. */
+  private _userAgent: UserAgent;
 
   /**
    * Constructor.
@@ -138,8 +132,8 @@ export abstract class Session {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
-    this.userAgent = userAgent;
     this.delegate = options.delegate;
+    this._userAgent = userAgent;
   }
 
   /**
@@ -196,6 +190,27 @@ export abstract class Session {
   }
 
   /**
+   * The asserted identity of the remote user.
+   */
+  public get assertedIdentity(): NameAddrHeader | undefined {
+    return this._assertedIdentity;
+  }
+
+  /**
+   * The confirmed session dialog.
+   */
+  public get dialog(): SessionDialog | undefined {
+    return this._dialog;
+  }
+
+  /**
+   * A unique identifier for this session.
+   */
+  public get id(): string {
+    return this._id;
+  }
+
+  /**
    * Session description handler.
    * @remarks
    * If `this` is an instance of `Invitation`,
@@ -229,6 +244,13 @@ export abstract class Session {
    */
   get stateChange(): Emitter<SessionState> {
     return makeEmitter(this._stateEventEmitter);
+  }
+
+  /**
+   * The user agent.
+   */
+  public get userAgent(): UserAgent {
+    return this._userAgent;
   }
 
   /**
@@ -304,8 +326,8 @@ export abstract class Session {
           // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
           //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
-            sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-            sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+            sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
+            sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
           };
           this.setAnswer(body, answerOptions)
             .then(() => {
@@ -380,7 +402,7 @@ export abstract class Session {
     const requestOptions = options.requestOptions || {};
     requestOptions.extraHeaders = (requestOptions.extraHeaders || []).slice();
     requestOptions.extraHeaders.push("Allow: " + AllowedMethods.toString());
-    requestOptions.extraHeaders.push("Contact: " + this.contact);
+    requestOptions.extraHeaders.push("Contact: " + this._contact);
 
     // Just send an INVITE with no sdp...
     if (options.withoutSdp) {
@@ -501,7 +523,7 @@ export abstract class Session {
       return Promise.reject(new Error("Session dialog undefined."));
     }
     // If the session has a referrer, it will receive any in-dialog NOTIFY requests.
-    this.referrer = referrer;
+    this._referrer = referrer;
     return Promise.resolve(this.dialog.refer(delegate, options));
   }
 
@@ -566,8 +588,8 @@ export abstract class Session {
           return;
         }
         if (body.contentDisposition === "render") {
-          this.renderbody = body.content;
-          this.rendertype = body.contentType;
+          this._renderbody = body.content;
+          this._rendertype = body.contentType;
           return;
         }
         if (body.contentDisposition !== "session") {
@@ -575,8 +597,8 @@ export abstract class Session {
         }
         // Receved answer in ACK.
         const options = {
-          sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-          sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+          sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
+          sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
         };
         this.setAnswer(body, options)
           .catch((error: Error) => {
@@ -658,7 +680,7 @@ export abstract class Session {
 
     // TODO: would be nice to have core track and set the Contact header,
     // but currently the session which is setting it is holding onto it.
-    const extraHeaders = ["Contact: " + this.contact];
+    const extraHeaders = ["Contact: " + this._contact];
 
     // Handle P-Asserted-Identity
     if (request.message.hasHeader("P-Asserted-Identity")) {
@@ -666,14 +688,14 @@ export abstract class Session {
       if (!header) {
         throw new Error("Header undefined.");
       }
-      this.assertedIdentity = Grammar.nameAddrHeaderParse(header);
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(header);
     }
 
     // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
     //        This behavior was ported from legacy code and the issue punted down the road.
     const options = {
-      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+      sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
     };
     this.generateResponseOfferAnswerInDialog(options)
       .then((body) => {
@@ -742,9 +764,9 @@ export abstract class Session {
 
     // If this a NOTIFY associated with the progress of a REFER,
     // look to delegate handling to the associated Referrer.
-    if (this.referrer && this.referrer.delegate && this.referrer.delegate.onNotify) {
+    if (this._referrer && this._referrer.delegate && this._referrer.delegate.onNotify) {
       const notification = new Notification(request);
-      this.referrer.delegate.onNotify(notification);
+      this._referrer.delegate.onNotify(notification);
       return;
     }
 
@@ -800,7 +822,7 @@ export abstract class Session {
       referral
         .accept()
         .then(() => referral
-          .makeInviter(this.referralInviterOptions)
+          .makeInviter(this._referralInviterOptions)
           .invite()
         )
         .catch((error: Error) => {

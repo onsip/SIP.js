@@ -42,6 +42,9 @@ export class Inviter extends Session {
    */
   protected logger: Logger;
 
+  /** @internal */
+  protected _id: string;
+
   /** True if dispose() has been called. */
   private disposed: boolean = false;
   /** True if early media use is enabled. */
@@ -173,16 +176,18 @@ export class Inviter extends Session {
     );
 
     // Session parent properties
-    this.contact = contact;
-    this.id = this.outgoingRequestMessage.callId + this.fromTag;
-    this.referralInviterOptions = inviterOptions;
-    this.renderbody = options.renderbody;
-    this.rendertype = options.rendertype;
-    this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
-    this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
+    this._contact = contact;
+    this._referralInviterOptions = inviterOptions;
+    this._renderbody = options.renderbody;
+    this._rendertype = options.rendertype;
+    this._sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    this._sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
+
+    // Identifier
+    this._id = this.outgoingRequestMessage.callId + this.fromTag;
 
     // Add to the user agent's session collection.
-    this.userAgent.sessions[this.id] = this;
+    this.userAgent.sessions[this._id] = this;
   }
 
   /**
@@ -392,8 +397,8 @@ export class Inviter extends Session {
 
     // just send an INVITE with no sdp...
     if (options.withoutSdp || this.inviteWithoutSdp) {
-      if (this.renderbody && this.rendertype) {
-        this.outgoingRequestMessage.body = { contentType: this.rendertype, body: this.renderbody };
+      if (this._renderbody && this._rendertype) {
+        this.outgoingRequestMessage.body = { contentType: this._rendertype, body: this._renderbody };
       }
 
       // transition state
@@ -404,8 +409,8 @@ export class Inviter extends Session {
 
     // get an offer and send it in an INVITE
     const offerOptions = {
-      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+      sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
     };
     return this.getOffer(offerOptions)
       .then((body) => {
@@ -779,7 +784,7 @@ export class Inviter extends Session {
 
     // Ported behavior.
     if (response.hasHeader("P-Asserted-Identity")) {
-      this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
     }
 
     // We have a confirmed dialog.
@@ -792,10 +797,10 @@ export class Inviter extends Session {
       onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
       onRefer: (referRequest): void => this.onReferRequest(referRequest)
     };
-    this.dialog = session;
+    this._dialog = session;
 
-    const sdhOptions = this.sessionDescriptionHandlerOptions;
-    const sdhModifiers = this.sessionDescriptionHandlerModifiers;
+    const sdhOptions = this._sessionDescriptionHandlerOptions;
+    const sdhModifiers = this._sessionDescriptionHandlerModifiers;
 
     switch (session.signalingState) {
       case SignalingState.Initial:
@@ -812,14 +817,14 @@ export class Inviter extends Session {
         return Promise.reject(new Error("Bad Media Description"));
       case SignalingState.HaveRemoteOffer: {
         // INVITE without offer, received offer in 2xx, so MUST send answer in ACK.
-        if (!this.dialog.offer) {
-          throw new Error(`Session offer undefined in signaling state ${this.dialog.signalingState}.`);
+        if (!this._dialog.offer) {
+          throw new Error(`Session offer undefined in signaling state ${this._dialog.signalingState}.`);
         }
         const options = {
           sessionDescriptionHandlerOptions: sdhOptions,
           sessionDescriptionHandlerModifiers: sdhModifiers
         };
-        return this.setOfferAndGetAnswer(this.dialog.offer, options)
+        return this.setOfferAndGetAnswer(this._dialog.offer, options)
           .then((body) => {
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
@@ -888,9 +893,9 @@ export class Inviter extends Session {
           .then(() => {
             // This session has completed an initial offer/answer exchange...
             let ackOptions: RequestOptions | undefined;
-            if (this.renderbody && this.rendertype) {
+            if (this._renderbody && this._rendertype) {
               ackOptions = {
-                body: { contentDisposition: "render", contentType: this.rendertype, content: this.renderbody }
+                body: { contentDisposition: "render", contentType: this._rendertype, content: this._renderbody }
               };
             }
             const ackRequest = inviteResponse.ack(ackOptions);
@@ -935,7 +940,7 @@ export class Inviter extends Session {
 
     // Ported - Set assertedIdentity.
     if (response.hasHeader("P-Asserted-Identity")) {
-      this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
     }
 
     // If a provisional response is received for an initial request, and
@@ -954,8 +959,8 @@ export class Inviter extends Session {
       extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
     }
 
-    const sdhOptions = this.sessionDescriptionHandlerOptions;
-    const sdhModifiers = this.sessionDescriptionHandlerModifiers;
+    const sdhOptions = this._sessionDescriptionHandlerOptions;
+    const sdhModifiers = this._sessionDescriptionHandlerModifiers;
 
     switch (session.signalingState) {
       case SignalingState.Initial:
