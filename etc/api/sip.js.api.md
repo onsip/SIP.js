@@ -86,23 +86,18 @@ export class Invitation extends Session {
     accept(options?: InvitationAcceptOptions): Promise<void>;
     // @internal
     readonly autoSendAnInitialProvisionalResponse: boolean;
-    // @internal (undocumented)
-    body: string | undefined;
     dispose(): Promise<void>;
-    // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
-    // 
     // @internal (undocumented)
-    localIdentity: NameAddrHeader;
+    protected _id: string;
+    // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
+    readonly localIdentity: NameAddrHeader;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal
     protected logger: Logger;
     // @internal
     _onCancel(message: IncomingRequestMessage): void;
     progress(options?: InvitationProgressOptions): Promise<void>;
     reject(options?: InvitationRejectOptions): Promise<void>;
-    // @internal (undocumented)
-    remoteIdentity: NameAddrHeader;
+    readonly remoteIdentity: NameAddrHeader;
     readonly request: IncomingRequestMessage;
     }
 
@@ -141,24 +136,19 @@ export interface InvitationRejectOptions {
 export class Inviter extends Session {
     // Warning: (ae-forgotten-export) The symbol "URI" needs to be exported by the entry point index.d.ts
     constructor(userAgent: UserAgent, targetURI: URI, options?: InviterOptions);
-    // @internal (undocumented)
-    body: BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
     dispose(): Promise<void>;
+    // @internal (undocumented)
+    protected _id: string;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
-    // @internal (undocumented)
-    localIdentity: NameAddrHeader;
-    // @internal
+    readonly localIdentity: NameAddrHeader;
     protected logger: Logger;
     // @internal
-    referred: Session | undefined;
-    // @internal (undocumented)
-    remoteIdentity: NameAddrHeader;
+    _referred: Session | undefined;
+    readonly remoteIdentity: NameAddrHeader;
     // Warning: (ae-forgotten-export) The symbol "OutgoingRequestMessage" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
-    request: OutgoingRequestMessage;
+    readonly request: OutgoingRequestMessage | undefined;
     }
 
 // @public
@@ -185,10 +175,6 @@ export interface InviterInviteOptions {
 // @public
 export interface InviterOptions extends SessionOptions {
     anonymous?: boolean;
-    // @deprecated (undocumented)
-    body?: string;
-    // @deprecated (undocumented)
-    contentType?: string;
     earlyMedia?: boolean;
     extraHeaders?: Array<string>;
     inviteWithoutSdp?: boolean;
@@ -420,20 +406,20 @@ export abstract class Session {
     // 
     // @internal
     protected ackAndBye(response: AckableIncomingResponseWithSession, statusCode?: number, reasonPhrase?: string): void;
+    readonly assertedIdentity: NameAddrHeader | undefined;
     // @internal (undocumented)
-    assertedIdentity: NameAddrHeader | undefined;
-    // @internal (undocumented)
-    abstract body: BodyAndContentType | string | undefined;
+    protected _assertedIdentity: NameAddrHeader | undefined;
     // @internal
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
-    contact: string | undefined;
-    // @internal (undocumented)
-    contentType: string | undefined;
+    _contact: string | undefined;
     data: any | undefined;
     delegate: SessionDelegate | undefined;
+    readonly dialog: Session_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
-    dialog: Session_2 | undefined;
+    // 
+    // @internal (undocumented)
+    protected _dialog: Session_2 | undefined;
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "Body" needs to be exported by the entry point index.d.ts
     // 
@@ -452,14 +438,13 @@ export abstract class Session {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
         sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     }): Promise<Body>;
-    // @internal
-    id: string | undefined;
+    readonly id: string;
+    // @internal (undocumented)
+    protected abstract _id: string;
     // @internal
     _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
-    // @internal (undocumented)
-    abstract localIdentity: NameAddrHeader;
-    // @internal
+    abstract readonly localIdentity: NameAddrHeader;
     protected abstract logger: Logger;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     // 
@@ -484,27 +469,26 @@ export abstract class Session {
     // @internal
     refer(referrer: Referrer, delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
-    referral: Inviter | undefined;
-    // @internal
-    protected referralInviterOptions: InviterOptions | undefined;
+    _referral: Inviter | undefined;
     // @internal (undocumented)
-    referrer: Referrer | undefined;
+    protected _referralInviterOptions: InviterOptions | undefined;
     // @internal (undocumented)
-    abstract remoteIdentity: NameAddrHeader;
+    _referrer: Referrer | undefined;
+    abstract readonly remoteIdentity: NameAddrHeader;
     // @internal (undocumented)
-    protected renderbody: string | undefined;
+    protected _renderbody: string | undefined;
     // @internal (undocumented)
-    protected rendertype: string | undefined;
+    protected _rendertype: string | undefined;
     // @internal (undocumented)
-    replacee: Session | undefined;
+    _replacee: Session | undefined;
     // @internal
     protected rollbackOffer(): Promise<void>;
     readonly sessionDescriptionHandler: SessionDescriptionHandler | undefined;
     readonly sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
     // @internal (undocumented)
-    protected sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
+    protected _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
     // @internal (undocumented)
-    protected sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+    protected _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
     // @internal
     protected setAnswer(answer: Body, options: {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
@@ -523,9 +507,8 @@ export abstract class Session {
     readonly stateChange: Emitter<SessionState>;
     // @internal
     protected stateTransition(newState: SessionState): void;
-    // @internal (undocumented)
-    userAgent: UserAgent;
-}
+    readonly userAgent: UserAgent;
+    }
 
 // @public
 export interface SessionDelegate {

@@ -17,8 +17,6 @@ export interface InviterOptions extends SessionOptions
 |  Property | Type | Description |
 |  --- | --- | --- |
 |  [anonymous](./sip.js.inviteroptions.anonymous.md) | <code>boolean</code> | If true, an anonymous call. |
-|  [body](./sip.js.inviteroptions.body.md) | <code>string</code> |  |
-|  [contentType](./sip.js.inviteroptions.contenttype.md) | <code>string</code> |  |
 |  [earlyMedia](./sip.js.inviteroptions.earlymedia.md) | <code>boolean</code> | If true, the first answer to the local offer is immediately utilized for media. Requires that the INVITE request MUST NOT fork. Has no effect if <code>inviteWtihoutSdp</code> is true. Default is false. |
 |  [extraHeaders](./sip.js.inviteroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the INVITE. |
 |  [inviteWithoutSdp](./sip.js.inviteroptions.invitewithoutsdp.md) | <code>boolean</code> | If true, send INVITE without SDP. Default is false. |
