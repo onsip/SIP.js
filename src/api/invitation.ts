@@ -38,8 +38,6 @@ type RejectFunction = (reason: Error) => void;
 export class Invitation extends Session {
 
   /** @internal */
-  public body: string | undefined = undefined;
-  /** @internal */
   public localIdentity: NameAddrHeader;
   /** @internal */
   public remoteIdentity: NameAddrHeader;
@@ -64,8 +62,11 @@ export class Invitation extends Session {
   private userNoAnswerTimer: any = undefined;
   /** True if waiting for a PRACK before sending a 200 Ok. */
   private waitingForPrack: boolean = false;
+  /** A Promise providing a defer when waiting for a PRACK. */
   private waitingForPrackPromise: Promise<void> | undefined;
+  /** Function to resolve when PRACK arrives. */
   private waitingForPrackResolve: ResolveFunction | undefined;
+  /** Function to reject when PRACK never arrives. */
   private waitingForPrackReject: RejectFunction | undefined;
 
   /** @internal */
@@ -74,9 +75,6 @@ export class Invitation extends Session {
 
     // ServerContext properties
     this.logger = userAgent.getLogger("sip.Invitation", this.id);
-    if (this.request.body) {
-      this.body = this.request.body;
-    }
     if (this.request.hasHeader("Content-Type")) {
       this.contentType = this.request.getHeader("Content-Type");
     }

@@ -2,7 +2,6 @@ import {
   AckableIncomingResponseWithSession,
   Body,
   C,
-  fromBodyLegacy,
   Grammar,
   IncomingResponse,
   Logger,
@@ -36,11 +35,9 @@ import { SIPExtension } from "./user-agent-options";
 export class Inviter extends Session {
 
   /** @internal */
-  public body: BodyAndContentType | undefined = undefined;
-  /** @internal */
   public localIdentity: NameAddrHeader;
   /**
-   * If this Inviter was created as a result of a REFER, the reffered Session. Otherwise undefined.
+   * If this Inviter was created as a result of a REFER, the referred Session. Otherwise undefined.
    * @internal
    */
   public referred: Session | undefined;
@@ -82,14 +79,7 @@ export class Inviter extends Session {
     // Default options params
     options.params = options.params || {};
 
-    // ClientContext properties
     this.logger = userAgent.getLogger("sip.Inviter");
-    if (options.body) {
-      this.body = {
-        body: options.body,
-        contentType: options.contentType ? options.contentType : "application/sdp"
-      };
-    }
 
     // Anonymous call
     const anonymous: boolean = options.anonymous || false;
@@ -137,14 +127,11 @@ export class Inviter extends Session {
 
     // Extra headers
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
-
     if (anonymous && userAgent.configuration.uri) {
       extraHeaders.push("P-Preferred-Identity: " + userAgent.configuration.uri.toString());
       extraHeaders.push("Privacy: id");
     }
-
     extraHeaders.push("Contact: " + contact);
-
     extraHeaders.push("Allow: " + [
       "ACK",
       "CANCEL",
@@ -156,7 +143,6 @@ export class Inviter extends Session {
       "NOTIFY",
       "REFER"
     ].toString());
-
     if (userAgent.configuration.sipExtension100rel === SIPExtension.Required) {
       extraHeaders.push("Require: 100rel");
     }
@@ -164,10 +150,8 @@ export class Inviter extends Session {
       extraHeaders.push("Require: replaces");
     }
 
-    let body: Body | undefined;
-    if (this.body) {
-      body = fromBodyLegacy(this.body);
-    }
+    // Body
+    const body: Body | undefined = undefined;
 
     // Make initial outgoing request message
     this.outgoingRequestMessage = userAgent.userAgentCore.makeOutgoingRequestMessage(
@@ -184,7 +168,7 @@ export class Inviter extends Session {
       throw new Error("From undefined.");
     }
     if (!this.outgoingRequestMessage.to) {
-      throw new Error("From undefined.");
+      throw new Error("To undefined.");
     }
     this.localIdentity = this.outgoingRequestMessage.from;
     this.remoteIdentity = this.outgoingRequestMessage.to;

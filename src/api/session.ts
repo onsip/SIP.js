@@ -75,8 +75,6 @@ export abstract class Session {
   public dialog: SessionDialog | undefined;
 
   /** @internal */
-  public abstract body: BodyAndContentType | string | undefined;
-  /** @internal */
   public abstract localIdentity: NameAddrHeader;
   /** @internal */
   public abstract remoteIdentity: NameAddrHeader;
