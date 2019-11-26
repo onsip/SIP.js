@@ -105,9 +105,9 @@ export abstract class Session {
 
   /**
    * Logger.
-   * @internal
    */
   protected abstract logger: Logger;
+
   /**
    * Inviter options to use when following a REFER.
    * FIXME: This is getting in the Inviter constructor, but not by Invitation (thus undefined).

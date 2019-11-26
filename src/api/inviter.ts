@@ -35,21 +35,27 @@ export class Inviter extends Session {
    * If this Inviter was created as a result of a REFER, the referred Session. Otherwise undefined.
    * @internal
    */
-  public referred: Session | undefined;
+  public _referred: Session | undefined;
 
   /**
    * Logger.
-   * @internal
    */
   protected logger: Logger;
 
+  /** True if dispose() has been called. */
   private disposed: boolean = false;
-  private earlyMedia: boolean;
+  /** True if early media use is enabled. */
+  private earlyMedia: boolean = false;
+  /** The early media session. */
   private earlyMediaDialog: SessionDialog | undefined;
+  /** The early media session description handlers. */
   private earlyMediaSessionDescriptionHandlers = new Map<string, SessionDescriptionHandler>();
+  /** Our From tag. */
   private fromTag: string;
+  /** True if cancel() was called. */
   private isCanceled: boolean = false;
-  private inviteWithoutSdp: boolean;
+  /** True if initial INVITE without SDP. */
+  private inviteWithoutSdp: boolean = false;
   /** Initial INVITE request sent by core. Undefined until sent. */
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
   /** Initial INVITE message provided to core to send. */
@@ -706,13 +712,13 @@ export class Inviter extends Session {
   }
 
   private notifyReferer(response: IncomingResponse): void {
-    if (!this.referred) {
+    if (!this._referred) {
       return;
     }
-    if (!(this.referred instanceof Session)) {
+    if (!(this._referred instanceof Session)) {
       throw new Error("Referred session not instance of session");
     }
-    if (!this.referred.dialog) {
+    if (!this._referred.dialog) {
       return;
     }
     if (!response.message.statusCode) {
@@ -725,7 +731,7 @@ export class Inviter extends Session {
     const reasonPhrase = response.message.reasonPhrase;
     const body = `SIP/2.0 ${statusCode} ${reasonPhrase}`.trim();
 
-    const outgoingNotifyRequest = this.referred.dialog.notify(undefined, {
+    const outgoingNotifyRequest = this._referred.dialog.notify(undefined, {
       extraHeaders: [
         "Event: refer",
         "Subscription-State: terminated",
@@ -750,7 +756,7 @@ export class Inviter extends Session {
     // If the notify is rejected, stop sending NOTIFY requests.
     outgoingNotifyRequest.delegate = {
       onReject: () => {
-        this.referred = undefined;
+        this._referred = undefined;
       }
     };
   }

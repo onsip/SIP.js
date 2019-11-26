@@ -39,7 +39,6 @@ export class Invitation extends Session {
 
   /**
    * Logger.
-   * @internal
    */
   protected logger: Logger;
 

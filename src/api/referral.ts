@@ -87,7 +87,7 @@ export class Referral {
     }
     options.extraHeaders = extraHeaders;
     this.inviter = this.session.userAgent.makeInviter(targetURI, options);
-    this.inviter.referred = this.session;
+    this.inviter._referred = this.session;
     this.session.referral = this.inviter;
     return this.inviter;
   }
