@@ -11,7 +11,7 @@ import {
   URI
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter } from "./emitter";
 import { PublisherOptions } from "./publisher-options";
 import { PublisherPublishOptions } from "./publisher-publish-options";
 import { PublisherState } from "./publisher-state";
@@ -144,7 +144,7 @@ export class Publisher extends EventEmitter {
 
   /** Emits when the publisher state changes. */
   public get stateChange(): Emitter<PublisherState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**

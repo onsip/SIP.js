@@ -8,7 +8,7 @@ import {
   OutgoingRequestMessage,
   URI
 } from "../core";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
 import { RegistererRegisterOptions } from "./registerer-register-options";
@@ -174,7 +174,7 @@ export class Registerer {
 
   /** Emits when the registerer state changes. */
   public get stateChange(): Emitter<RegistererState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /** Destructor. */
@@ -646,7 +646,7 @@ export class Registerer {
 
   /** Emits when the registerer waiting state changes. */
   private get waitingChange(): Emitter<boolean> {
-    return makeEmitter(this._waitingEventEmitter);
+    return _makeEmitter(this._waitingEventEmitter);
   }
 
   /**

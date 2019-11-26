@@ -26,7 +26,7 @@ import {
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter } from "./emitter";
 import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
@@ -247,7 +247,7 @@ export abstract class Session {
    * Session state change emitter.
    */
   public get stateChange(): Emitter<SessionState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**

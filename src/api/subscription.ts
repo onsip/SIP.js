@@ -4,7 +4,7 @@ import {
   Logger,
   Subscription as SubscriptionDialog
 } from "../core";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter, } from "./emitter";
 import { SubscriptionDelegate } from "./subscription-delegate";
 import { SubscriptionOptions } from "./subscription-options";
 import { SubscriptionState } from "./subscription-state";
@@ -89,7 +89,7 @@ export abstract class Subscription {
    * Emits when the subscription `state` property changes.
    */
   public get stateChange(): Emitter<SubscriptionState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**

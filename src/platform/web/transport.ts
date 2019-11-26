@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 
-import { Emitter, makeEmitter } from "../../api/emitter";
+import { _makeEmitter, Emitter } from "../../api/emitter";
 import { StateTransitionError } from "../../api/exceptions";
 import { Transport as TransportDefinition } from "../../api/transport";
 import { TransportState } from "../../api/transport-state";
@@ -170,7 +170,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
    * Transport state change emitter.
    */
   public get stateChange(): Emitter<TransportState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**

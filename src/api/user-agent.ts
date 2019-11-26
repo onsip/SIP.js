@@ -29,7 +29,7 @@ import {
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
 import { LIBRARY_VERSION } from "../version";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter } from "./emitter";
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
@@ -308,7 +308,7 @@ export class UserAgent {
    * User agent state change emitter.
    */
   public get stateChange(): Emitter<UserAgentState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**
