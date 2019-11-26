@@ -15,7 +15,7 @@ export interface Contact {
   pubGruu: URI | undefined;
   tempGruu: URI | undefined;
   uri: URI;
-  toString: (options?: any) => string;
+  toString: (options?: { anonymous?: boolean, outbound?: boolean }) => string;
 }
 
 /**
