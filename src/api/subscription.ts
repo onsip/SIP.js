@@ -54,7 +54,7 @@ export abstract class Subscription {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
-    this._logger = userAgent.getLogger("sip.subscription");
+    this._logger = userAgent.getLogger("sip.Subscription");
     this.userAgent = userAgent;
     this.delegate = options.delegate;
   }

@@ -66,13 +66,13 @@ export class Subscriber extends Subscription {
   // TODO: Cleanup these internals
   private id: string;
   private body: BodyAndContentType | undefined = undefined;
-  private context: SubscribeClientContext;
   private event: string;
   private expires: number;
   private extraHeaders: Array<string>;
   private logger: Logger;
-  private request: OutgoingRequestMessage;
+  private outgoingRequestMessage: OutgoingRequestMessage;
   private retryAfterTimer: any | undefined;
+  private subscriberRequest: SubscriberRequest;
   private targetURI: URI;
 
   /**
@@ -85,7 +85,7 @@ export class Subscriber extends Subscription {
   constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: SubscriberOptions = {}) {
     super(userAgent, options);
 
-    this.logger = userAgent.getLogger("sip.subscription");
+    this.logger = userAgent.getLogger("sip.Subscriber");
     if (options.body) {
       this.body = {
         body: options.body,
@@ -113,12 +113,12 @@ export class Subscriber extends Subscription {
     this.extraHeaders = (options.extraHeaders || []).slice();
 
     // Subscription context.
-    this.context = this.initContext();
+    this.subscriberRequest = this.initSubscriberRequest();
 
-    this.request = this.context.message;
+    this.outgoingRequestMessage = this.subscriberRequest.message;
 
     // Add to UA's collection
-    this.id = this.request.callId + this.request.from.parameters.tag + this.event;
+    this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
     this.userAgent.subscriptions[this.id] = this;
   }
 
@@ -136,7 +136,7 @@ export class Subscriber extends Subscription {
       clearTimeout(this.retryAfterTimer);
       this.retryAfterTimer = undefined;
     }
-    this.context.dispose();
+    this.subscriberRequest.dispose();
 
     // Remove from userAgent's collection
     delete this.userAgent.subscriptions[this.id];
@@ -151,13 +151,13 @@ export class Subscriber extends Subscription {
    * Sends a re-SUBSCRIBE request if the subscription is "active".
    */
   public subscribe(options: SubscriberSubscribeOptions = {}): Promise<void> {
-    switch (this.context.state) {
+    switch (this.subscriberRequest.state) {
       case SubscriptionDialogState.Initial:
         // we can end up here when retrying so only state transition if in SubscriptionState.Initial state
         if (this.state === SubscriptionState.Initial) {
           this.stateTransition(SubscriptionState.NotifyWait);
         }
-        this.context.subscribe().then((result) => {
+        this.subscriberRequest.subscribe().then((result) => {
           if (result.success) {
             if (result.success.subscription) {
               this.dialog = result.success.subscription;
@@ -202,7 +202,7 @@ export class Subscriber extends Subscription {
     if (this.disposed) {
       return Promise.resolve();
     }
-    switch (this.context.state) {
+    switch (this.subscriberRequest.state) {
       case SubscriptionDialogState.Initial:
         break;
       case SubscriptionDialogState.NotifyWait:
@@ -234,7 +234,7 @@ export class Subscriber extends Subscription {
    * @internal
    */
   public _refresh(): Promise<void> {
-    if (this.context.state === SubscriptionDialogState.Active) {
+    if (this.subscriberRequest.state === SubscriptionDialogState.Active) {
       return this.subscribe();
     }
     return Promise.resolve();
@@ -291,12 +291,12 @@ export class Subscriber extends Subscription {
             switch (subscriptionState.reason) {
               case "deactivated":
               case "timeout":
-                this.initContext();
+                this.initSubscriberRequest();
                 this.subscribe();
                 return;
               case "probation":
               case "giveup":
-                this.initContext();
+                this.initSubscriberRequest();
                 if (subscriptionState.params && subscriptionState.params["retry-after"]) {
                   this.retryAfterTimer = setTimeout(() => this.subscribe(), subscriptionState.params["retry-after"]);
                 } else {
@@ -324,26 +324,26 @@ export class Subscriber extends Subscription {
     };
   }
 
-  private initContext(): SubscribeClientContext {
+  private initSubscriberRequest(): SubscriberRequest {
     const options = {
       extraHeaders: this.extraHeaders,
       body: this.body ? fromBodyLegacy(this.body) : undefined
     };
-    this.context = new SubscribeClientContext(
+    this.subscriberRequest = new SubscriberRequest(
       this.userAgent.userAgentCore,
       this.targetURI,
       this.event,
       this.expires,
       options
     );
-    this.context.delegate = {
+    this.subscriberRequest.delegate = {
       onAccept: ((response) => this.onAccepted(response))
     };
-    return this.context;
+    return this.subscriberRequest;
   }
 }
 
-interface SubscribeClientContextDelegate {
+interface SubscriberRequestDelegate {
   /**
    * This SUBSCRIBE request will be confirmed with a final response.
    * 200-class responses indicate that the subscription has been accepted
@@ -370,8 +370,8 @@ interface SubscribeResult {
 }
 
 // tslint:disable-next-line:max-classes-per-file
-class SubscribeClientContext {
-  public delegate: SubscribeClientContextDelegate | undefined;
+class SubscriberRequest {
+  public delegate: SubscriberRequestDelegate | undefined;
   public message: OutgoingRequestMessage;
 
   private logger: Logger;
@@ -386,9 +386,9 @@ class SubscribeClientContext {
     private event: string,
     private expires: number,
     options: RequestOptions,
-    delegate?: SubscribeClientContextDelegate
+    delegate?: SubscriberRequestDelegate
   ) {
-    this.logger = core.loggerFactory.getLogger("sip.subscription");
+    this.logger = core.loggerFactory.getLogger("sip.Subscriber");
     this.delegate = delegate;
 
     const allowHeader = "Allow: " + AllowedMethods.toString();
