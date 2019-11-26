@@ -44,6 +44,7 @@ export class Registerer {
     return UUID;
   }
 
+  private disposed = false;
   private id: string;
   private expires: number;
   private logger: Logger;
@@ -154,8 +155,10 @@ export class Registerer {
       });
     }
 
-    // Add to UA's collection
+    // Identifier
     this.id = this.request.callId + this.request.from.parameters.tag;
+
+    // Add to the user agent's session collection.
     this.userAgent.registerers[this.id] = this;
   }
 
@@ -176,7 +179,11 @@ export class Registerer {
 
   /** Destructor. */
   public async dispose(): Promise<void> {
-    this.logger.log(`Registerer ${this.id} in state ${this._state} is being disposed`);
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+    this.logger.log(`Registerer ${this.id} in state ${this.state} is being disposed`);
 
     // Remove from the user agent's registerer collection
     delete this.userAgent.registerers[this.id];
@@ -625,6 +632,11 @@ export class Registerer {
     this._state = newState;
     this.logger.log(`Registration transitioned to state ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+
+    // Dispose
+    if (newState === RegistererState.Terminated) {
+      this.dispose();
+    }
   }
 
   /** True if the registerer is currently waiting for final response to a REGISTER request. */
