@@ -1,11 +1,13 @@
 /**
  * {@link Subscription} state.
  * @remarks
- * Valid state transitions:
- * ```
- * 1. "initial" --> "notify-wait" --> "subscribed" --> "terminated"
- * 2. "initial" --> "notify-wait" --> "terminated"
- * 3. "initial" --> "terminated"
+ * The {@link Subscription} behaves in a deterministic manner according to the following
+ * Finite State Machine (FSM).
+ * ```txt
+ *                    _______________________________________
+ * Subscription      |                                       v
+ * Constructed -> Initial -> NotifyWait -> Subscribed -> Terminated
+ *                              |____________________________^
  * ```
  * @public
  */

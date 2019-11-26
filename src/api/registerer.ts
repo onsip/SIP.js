@@ -176,7 +176,9 @@ export class Registerer {
 
   /** Destructor. */
   public async dispose(): Promise<void> {
-    // Remove from UA's collection
+    this.logger.log(`Registerer ${this.id} in state ${this._state} is being disposed`);
+
+    // Remove from the user agent's registerer collection
     delete this.userAgent.registerers[this.id];
 
     // If registered, unregisters and resolves after final response received.
