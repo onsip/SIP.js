@@ -70,7 +70,7 @@ export class Inviter extends Session {
    * @param targetURI - Request URI identifying the target of the message.
    * @param options - Options bucket. See {@link InviterOptions} for details.
    */
-  constructor(
+  public constructor(
     userAgent: UserAgent,
     targetURI: URI,
     options: InviterOptions = {}

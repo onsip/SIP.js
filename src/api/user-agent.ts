@@ -162,7 +162,7 @@ export class UserAgent {
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  constructor(
+  public constructor(
     options: Partial<UserAgentOptions> = {}
   ) {
     // initialize delegate

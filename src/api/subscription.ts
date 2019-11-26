@@ -74,21 +74,21 @@ export abstract class Subscription {
    * True if disposed.
    * @internal
    */
-  get disposed(): boolean {
+  public get disposed(): boolean {
     return this._disposed;
   }
 
   /**
    * Subscription state. See {@link SubscriptionState} for details.
    */
-  get state(): SubscriptionState {
+  public get state(): SubscriptionState {
     return this._state;
   }
 
   /**
    * Emits when the subscription `state` property changes.
    */
-  get stateChange(): Emitter<SubscriptionState> {
+  public get stateChange(): Emitter<SubscriptionState> {
     return makeEmitter(this._stateEventEmitter);
   }
 

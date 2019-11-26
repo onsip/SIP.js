@@ -225,28 +225,28 @@ export abstract class Session {
    * `sessionDescriptionHandler` will be defined when the session state changes to "established".
    * Otherwise `undefined`.
    */
-  get sessionDescriptionHandler(): SessionDescriptionHandler | undefined {
+  public get sessionDescriptionHandler(): SessionDescriptionHandler | undefined {
     return this._sessionDescriptionHandler;
   }
 
   /**
    * Session description handler factory.
    */
-  get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory {
+  public get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory {
     return this.userAgent.configuration.sessionDescriptionHandlerFactory;
   }
 
   /**
    * Session state.
    */
-  get state(): SessionState {
+  public get state(): SessionState {
     return this._state;
   }
 
   /**
    * Session state change emitter.
    */
-  get stateChange(): Emitter<SessionState> {
+  public get stateChange(): Emitter<SessionState> {
     return makeEmitter(this._stateEventEmitter);
   }
 

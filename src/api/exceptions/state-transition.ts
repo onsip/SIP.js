@@ -5,7 +5,7 @@ import { Exception } from "../../core";
  * @public
  */
 export class StateTransitionError extends Exception {
-  constructor(message?: string) {
+  public constructor(message?: string) {
     super(message ? message : "An error occurred during state transition.");
   }
 }

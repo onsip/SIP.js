@@ -11,11 +11,11 @@ import {
 export class Notification {
 
   /** @internal */
-  constructor(private incomingNotifyRequest: IncomingNotifyRequest) {
+  public constructor(private incomingNotifyRequest: IncomingNotifyRequest) {
   }
 
   /** Incoming NOTIFY request message. */
-  get request(): IncomingRequestMessage {
+  public get request(): IncomingRequestMessage {
     return this.incomingNotifyRequest.message;
   }
 

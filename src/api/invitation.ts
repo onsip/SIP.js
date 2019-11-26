@@ -68,7 +68,7 @@ export class Invitation extends Session {
   private waitingForPrackReject: RejectFunction | undefined;
 
   /** @internal */
-  constructor(userAgent: UserAgent, private incomingInviteRequest: IncomingInviteRequest) {
+  public constructor(userAgent: UserAgent, private incomingInviteRequest: IncomingInviteRequest) {
     super(userAgent);
 
     this.logger = userAgent.getLogger("sip.Invitation");

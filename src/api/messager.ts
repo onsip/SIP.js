@@ -29,7 +29,7 @@ export class Messager {
    * @param contentType - Content type of the body of the message.
    * @param options - Options bucket. See {@link MessagerOptions} for details.
    */
-  constructor(
+  public constructor(
     userAgent: UserAgent,
     targetURI: URI,
     content: string,

@@ -73,7 +73,7 @@ export class Registerer {
    * @param userAgent - User agent. See {@link UserAgent} for details.
    * @param options - Options bucket. See {@link RegistererOptions} for details.
    */
-  constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
+  public constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
 
     // Set user agent
     this.userAgent = userAgent;
@@ -163,17 +163,17 @@ export class Registerer {
   }
 
   /** The registered contacts. */
-  get contacts(): Array<string> {
+  public get contacts(): Array<string> {
     return this._contacts.slice();
   }
 
   /** The registration state. */
-  get state(): RegistererState {
+  public get state(): RegistererState {
     return this._state;
   }
 
   /** Emits when the registerer state changes. */
-  get stateChange(): Emitter<RegistererState> {
+  public get stateChange(): Emitter<RegistererState> {
     return makeEmitter(this._stateEventEmitter);
   }
 

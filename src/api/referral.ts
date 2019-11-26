@@ -17,10 +17,10 @@ export class Referral {
   private inviter: Inviter | undefined;
 
   /** @internal */
-  constructor(private incomingReferRequest: IncomingReferRequest, private session: Session) {
+  public constructor(private incomingReferRequest: IncomingReferRequest, private session: Session) {
   }
 
-  get referTo(): NameAddrHeader {
+  public get referTo(): NameAddrHeader {
     const referTo = this.incomingReferRequest.message.parseHeader("refer-to");
     if (!(referTo instanceof NameAddrHeader)) {
       throw new Error("Failed to parse Refer-To header.");
@@ -28,16 +28,16 @@ export class Referral {
     return referTo;
   }
 
-  get referredBy(): string | undefined {
+  public get referredBy(): string | undefined {
     return this.incomingReferRequest.message.getHeader("referred-by");
   }
 
-  get replaces(): string | undefined {
+  public get replaces(): string | undefined {
     return this.referTo.uri.getHeader("replaces");
   }
 
   /** Incoming REFER request message. */
-  get request(): IncomingRequestMessage {
+  public get request(): IncomingRequestMessage {
     return this.incomingReferRequest.message;
   }
 

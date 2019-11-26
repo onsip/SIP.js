@@ -82,7 +82,7 @@ export class Subscriber extends Subscription {
    * @param eventType - The event type identifying the subscribed event.
    * @param options - Options bucket. See {@link SubscriberOptions} for details.
    */
-  constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: SubscriberOptions = {}) {
+  public constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: SubscriberOptions = {}) {
     super(userAgent, options);
 
     this.logger = userAgent.getLogger("sip.Subscriber");
@@ -409,7 +409,7 @@ class SubscriberRequest {
 
   private subscribed = false;
 
-  constructor(
+  public constructor(
     private core: UserAgentCore,
     private target: URI,
     private event: string,
@@ -450,7 +450,7 @@ class SubscriberRequest {
   }
 
   /** Subscription state. */
-  get state(): SubscriptionDialogState {
+  public get state(): SubscriptionDialogState {
     if (this.subscription) {
       return this.subscription.subscriptionState;
     } else if (this.subscribed) {

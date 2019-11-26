@@ -51,7 +51,7 @@ export class Publisher extends EventEmitter {
    * @param eventType - The event type identifying the published document.
    * @param options - Options bucket. See {@link PublisherOptions} for details.
    */
-  constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: PublisherOptions = {}) {
+  public constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: PublisherOptions = {}) {
     super();
     this.userAgent = userAgent;
 
