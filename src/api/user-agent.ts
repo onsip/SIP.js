@@ -418,8 +418,23 @@ export class UserAgent {
    *
    * @remarks
    * Resolves when the user agent has completed a graceful shutdown.
+   * ```txt
+   * - Registerers unregister.
+   * - Sessions terminate.
+   * - Subscribers unsubscribe.
+   * - Publishers unpublish.
+   * ```
+   * NOTE: While this is a "graceful shutdown", it can also be very slow one if you
+   * are waiting for the returned Promise to resolve. The disposal of the clients and
+   * dialogs is done serially - waiting on one to finish before moving on to the next.
+   * This can be slow if there are lot of subsciptions to unsubscribe for example.
    *
-   * Registerers unregister. Sessions terminate. Subscribers unsubscribe. Publishers unpublish.
+   * THE SLOW PACE IS INTENTIONAL! While one could spin them all down in parallel, this could
+   * slam the remote server. It is bad practice to denial of service attack (DoS attack) servers!!!
+   *
+   * If a different approach to disposing is needed, one can implement whatever is
+   * needed and execute that prior to calling `stop()`. Alternatively one may simply
+   * not wait for the Promise returned by `stop()` to complete.
    */
   public async stop(): Promise<void> {
     if (this.state === UserAgentState.Stopped) {
@@ -461,7 +476,7 @@ export class UserAgent {
     // if UserAgent.start() is called while the following code continues.
     //
 
-    // Dispose of active clients and dialogs resovling when complete.
+    // Dispose of active clients and dialogs, resolving when complete.
     await (async (): Promise<void> => {
       // TODO: Minor optimization.
       // The disposal in all cases involves, in part, sending messages which
@@ -499,13 +514,12 @@ export class UserAgent {
       this.logger.log(`Dispose of subscriptions`);
       for (const id in subscriptions) {
         if (subscriptions[id]) {
-          try {
-            this.subscriptions[id].dispose();
-          } catch (e) {
-            this.logger.error(e);
-            delete this.subscriptions[id];
-            throw e;
-          }
+          await subscriptions[id].dispose()
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              delete this.subscriptions[id];
+              throw error;
+            });
         }
       }
 

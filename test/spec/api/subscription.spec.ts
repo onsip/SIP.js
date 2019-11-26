@@ -46,8 +46,8 @@ describe("API Subscription", () => {
 
   const subscriptionDelegateMock =
     jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", [
-    "onNotify"
-  ]);
+      "onNotify"
+    ]);
   subscriptionDelegateMock.onNotify.and.callFake((notification: Notification) => {
     notification.accept();
   });
@@ -79,7 +79,12 @@ describe("API Subscription", () => {
 
   describe("Alice constructs a new subscription targeting Bob", () => {
     beforeEach(() => {
-      subscription = subscriber = new Subscriber(alice.userAgent, target, event, {delegate: subscriptionDelegateMock});
+      subscription = subscriber = new Subscriber(
+        alice.userAgent,
+        target,
+        event,
+        { delegate: subscriptionDelegateMock }
+      );
       subscriptionStateSpy = makeEmitterSpy(subscription.stateChange, alice.userAgent.getLogger("Alice"));
     });
 
@@ -249,7 +254,6 @@ describe("API Subscription", () => {
 
               const dialogState = Dialog.initialDialogStateForUserAgentServer(request.message, toTag);
               notifierDialog = new NotifierDialog(bob.userAgent.userAgentCore, dialogState);
-
               extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
               extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
               const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
@@ -258,6 +262,11 @@ describe("API Subscription", () => {
           };
           await bob.transport.waitReceived();
           await bob.transport.waitReceived();
+        });
+
+        afterEach(() => {
+          // Not waiting for it to resolve as there is no real server to handle the unsubscribe
+          subscription.dispose();
         });
 
         it("the subscriber should send a 200 to the NOTIFY", () => {
@@ -335,7 +344,12 @@ describe("API Subscription", () => {
             }
           };
           await alice.transport.waitReceived();
-       });
+        });
+
+        afterEach(() => {
+          // Not waiting for it to resolve as there is no real server to handle the unsubscribe
+          subscription.dispose();
+        });
 
         it("the subscriber should send nothing", () => {
           const spy = alice.transportSendSpy;

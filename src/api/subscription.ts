@@ -67,7 +67,6 @@ export abstract class Subscription {
       return Promise.resolve();
     }
     this._disposed = true;
-    this.stateTransition(SubscriptionState.Terminated);
     this._stateEventEmitter.removeAllListeners();
     return Promise.resolve();
   }
@@ -148,5 +147,10 @@ export abstract class Subscription {
     this._state = newState;
     this._logger.log(`Subscription ${this.dialog ? this.dialog.id : undefined} transitioned to ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+
+    // Dispose
+    if (newState === SubscriptionState.Terminated) {
+      this.dispose();
+    }
   }
 }

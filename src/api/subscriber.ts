@@ -130,17 +130,45 @@ export class Subscriber extends Subscription {
     if (this.disposed) {
       return Promise.resolve();
     }
-    super.dispose();
+    this.logger.log(`Subscription ${this.id} in state ${this.state} is being disposed`);
 
+    // Remove from the user agent's subscription collection
+    delete this.userAgent.subscriptions[this.id];
+
+    // Clear timers
     if (this.retryAfterTimer) {
       clearTimeout(this.retryAfterTimer);
       this.retryAfterTimer = undefined;
     }
+
+    // Dispose subscriber request
     this.subscriberRequest.dispose();
 
-    // Remove from userAgent's collection
-    delete this.userAgent.subscriptions[this.id];
-    return Promise.resolve();
+    // Make sure to dispose of our parent, then unsubscribe the
+    // subscription dialog (if need be) and resolve when it has terminated.
+    return super.dispose()
+      .then(() => {
+        // If we have never subscribed there is nothing to wait on.
+        // If we are already transitioned to terminated there is no need to unsubscribe again.
+        if (this.state !== SubscriptionState.Subscribed) {
+          return;
+        }
+        if (!this.dialog) {
+          throw new Error("Dialog undefined.");
+        }
+        if (
+          this.dialog.subscriptionState === SubscriptionDialogState.Pending ||
+          this.dialog.subscriptionState === SubscriptionDialogState.Active
+        ) {
+          const dialog = this.dialog;
+          return new Promise((resolve, reject) => {
+            dialog.delegate = {
+              onTerminated: () => resolve()
+            };
+            dialog.unsubscribe();
+          });
+        }
+      });
   }
 
   /**
@@ -164,7 +192,7 @@ export class Subscriber extends Subscription {
               this.dialog.delegate = {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
-                onTerminated: () => this.dispose()
+                onTerminated: () => this.stateTransition(SubscriptionState.Terminated)
               };
             }
             this.onNotify(result.success.request);
@@ -222,9 +250,10 @@ export class Subscriber extends Subscription {
       case SubscriptionDialogState.Terminated:
         break;
       default:
-        break;
+        throw new Error("Unknown state.");
     }
-    this.dispose();
+
+    this.stateTransition(SubscriptionState.Terminated);
     return Promise.resolve();
   }
 
@@ -413,12 +442,10 @@ class SubscriberRequest {
 
   /** Destructor. */
   public dispose(): void {
-    if (this.subscription) {
-      this.subscription.dispose();
-    }
     if (this.request) {
       this.request.waitNotifyStop();
       this.request.dispose();
+      this.request = undefined;
     }
   }
 
