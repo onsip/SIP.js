@@ -463,12 +463,8 @@ export class UserAgent {
 
     // Dispose of active clients and dialogs resovling when complete.
     await (async (): Promise<void> => {
-      // FIXME: Fixup Subscription and Publisher.
-      // Only Registerer and Session currently have proper dispose() methods.
-      // Subscription and Publisher need to be done.
-      //
       // TODO: Minor optimization.
-      // Also the disposal in all cases involves, in part, sending messages which
+      // The disposal in all cases involves, in part, sending messages which
       // is not worth doing if the transport is not connected as we know attempting
       // to send messages will be futile. But none of these disposal methods check
       // if that's is the case and it would be easy for them to do so at this point.
@@ -504,7 +500,7 @@ export class UserAgent {
       for (const id in subscriptions) {
         if (subscriptions[id]) {
           try {
-            this.subscriptions[id]._dispose(); // FIXME: TODO should be dispose
+            this.subscriptions[id].dispose();
           } catch (e) {
             this.logger.error(e);
             delete this.subscriptions[id];
@@ -518,7 +514,8 @@ export class UserAgent {
       for (const id in publishers) {
         if (publishers[id]) {
           try {
-            this.publishers[id]._close(); // FIXME: TODO should be named dispose and be async
+            // FIXME: TODO: should be named dispose, be async and wait on unpublish to complete
+            this.publishers[id]._close();
           } catch (e) {
             this.logger.error(e);
             delete this.publishers[id];

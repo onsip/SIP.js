@@ -60,6 +60,27 @@ export abstract class Subscription {
   }
 
   /**
+   * Destructor.
+   */
+  public dispose(): Promise<void> {
+    if (this._disposed) {
+      return Promise.resolve();
+    }
+    this._disposed = true;
+    this.stateTransition(SubscriptionState.Terminated);
+    this._stateEventEmitter.removeAllListeners();
+    return Promise.resolve();
+  }
+
+  /**
+   * True if disposed.
+   * @internal
+   */
+  get disposed(): boolean {
+    return this._disposed;
+  }
+
+  /**
    * Subscription state. See {@link SubscriptionState} for details.
    */
   get state(): SubscriptionState {
@@ -87,27 +108,6 @@ export abstract class Subscription {
    * Otherwise a noop.
    */
   public abstract unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
-
-  /**
-   * True if disposed.
-   * @internal
-   */
-  get disposed(): boolean {
-    return this._disposed;
-  }
-
-  /**
-   * Destructor.
-   * @internal
-   */
-  public _dispose(): void {
-    if (this._disposed) {
-      return;
-    }
-    this._disposed = true;
-    this.stateTransition(SubscriptionState.Terminated);
-    this._stateEventEmitter.removeAllListeners();
-  }
 
   /** @internal */
   protected stateTransition(newState: SubscriptionState): void {

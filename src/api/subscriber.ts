@@ -123,6 +123,27 @@ export class Subscriber extends Subscription {
   }
 
   /**
+   * Destructor.
+   * @internal
+   */
+  public dispose(): Promise<void> {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    super.dispose();
+
+    if (this.retryAfterTimer) {
+      clearTimeout(this.retryAfterTimer);
+      this.retryAfterTimer = undefined;
+    }
+    this.context.dispose();
+
+    // Remove from userAgent's collection
+    delete this.userAgent.subscriptions[this.id];
+    return Promise.resolve();
+  }
+
+  /**
    * Subscribe to event notifications.
    *
    * @remarks
@@ -143,7 +164,7 @@ export class Subscriber extends Subscription {
               this.dialog.delegate = {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
-                onTerminated: () => this._dispose()
+                onTerminated: () => this.dispose()
               };
             }
             this.onNotify(result.success.request);
@@ -203,28 +224,8 @@ export class Subscriber extends Subscription {
       default:
         break;
     }
-    this._dispose();
+    this.dispose();
     return Promise.resolve();
-  }
-
-  /**
-   * Destructor.
-   * @internal
-   */
-  public _dispose(): void {
-    if (this.disposed) {
-      return;
-    }
-    super._dispose();
-
-    if (this.retryAfterTimer) {
-      clearTimeout(this.retryAfterTimer);
-      this.retryAfterTimer = undefined;
-    }
-    this.context.dispose();
-
-    // Remove from userAgent's collection
-    delete this.userAgent.subscriptions[this.id];
   }
 
   /**
