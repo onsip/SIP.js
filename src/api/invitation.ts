@@ -70,10 +70,6 @@ export class Invitation extends Session {
 
     this.logger = userAgent.getLogger("sip.Invitation", this.id);
 
-    if (this.request.hasHeader("Content-Type")) {
-      this.contentType = this.request.getHeader("Content-Type");
-    }
-
     const hasAssertedIdentity = this.request.hasHeader("P-Asserted-Identity");
     if (hasAssertedIdentity) {
       const assertedIdentity: string | undefined = this.request.getHeader("P-Asserted-Identity");

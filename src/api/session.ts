@@ -88,8 +88,6 @@ export abstract class Session {
   public assertedIdentity: NameAddrHeader | undefined;
   /** @internal */
   public contact: string | undefined;
-  /** @internal */
-  public contentType: string | undefined;
   /**
    * Unique identifier for this session.
    * @internal
