@@ -20,6 +20,7 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
+|  [body](./sip.js.invitation.body.md) |  | <code>string &#124; undefined</code> | Initial incoming INVITE request message body. |
 |  [localIdentity](./sip.js.invitation.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
 |  [logger](./sip.js.invitation.logger.md) |  | <code>Logger</code> | Logger. |
 |  [remoteIdentity](./sip.js.invitation.remoteidentity.md) |  | <code>NameAddrHeader</code> | The identity of the remote user. |

@@ -86,6 +86,7 @@ export class Invitation extends Session {
     accept(options?: InvitationAcceptOptions): Promise<void>;
     // @internal
     readonly autoSendAnInitialProvisionalResponse: boolean;
+    readonly body: string | undefined;
     dispose(): Promise<void>;
     // @internal (undocumented)
     protected _id: string;
@@ -136,6 +137,7 @@ export interface InvitationRejectOptions {
 export class Inviter extends Session {
     // Warning: (ae-forgotten-export) The symbol "URI" needs to be exported by the entry point index.d.ts
     constructor(userAgent: UserAgent, targetURI: URI, options?: InviterOptions);
+    readonly body: BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
     dispose(): Promise<void>;
     // @internal (undocumented)
@@ -148,7 +150,7 @@ export class Inviter extends Session {
     _referred: Session | undefined;
     readonly remoteIdentity: NameAddrHeader;
     // Warning: (ae-forgotten-export) The symbol "OutgoingRequestMessage" needs to be exported by the entry point index.d.ts
-    readonly request: OutgoingRequestMessage | undefined;
+    readonly request: OutgoingRequestMessage;
     }
 
 // @public
@@ -479,6 +481,7 @@ export abstract class Session {
     protected _renderbody: string | undefined;
     // @internal (undocumented)
     protected _rendertype: string | undefined;
+    readonly replacee: Session | undefined;
     // @internal (undocumented)
     _replacee: Session | undefined;
     // @internal

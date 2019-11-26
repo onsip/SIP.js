@@ -4,10 +4,10 @@
 
 ## Inviter.request property
 
-Initial outgoing INVITE request message. Undefined until sent.
+Initial outgoing INVITE request message.
 
 <b>Signature:</b>
 
 ```typescript
-readonly request: OutgoingRequestMessage | undefined;
+readonly request: OutgoingRequestMessage;
 ```
