@@ -74,10 +74,15 @@ export abstract class Session {
    */
   public dialog: SessionDialog | undefined;
 
-  /** @internal */
-  public abstract localIdentity: NameAddrHeader;
-  /** @internal */
-  public abstract remoteIdentity: NameAddrHeader;
+  /**
+   * The identity of the local user.
+   */
+  public abstract readonly localIdentity: NameAddrHeader;
+
+  /**
+   * The identity of the remote user.
+   */
+  public abstract readonly remoteIdentity: NameAddrHeader;
 
   /** @internal */
   public assertedIdentity: NameAddrHeader | undefined;

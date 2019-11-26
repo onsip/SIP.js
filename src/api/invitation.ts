@@ -37,11 +37,6 @@ type RejectFunction = (reason: Error) => void;
  */
 export class Invitation extends Session {
 
-  /** @internal */
-  public localIdentity: NameAddrHeader;
-  /** @internal */
-  public remoteIdentity: NameAddrHeader;
-
   /**
    * Logger.
    * @internal
@@ -73,13 +68,12 @@ export class Invitation extends Session {
   constructor(userAgent: UserAgent, private incomingInviteRequest: IncomingInviteRequest) {
     super(userAgent);
 
-    // ServerContext properties
     this.logger = userAgent.getLogger("sip.Invitation", this.id);
+
     if (this.request.hasHeader("Content-Type")) {
       this.contentType = this.request.getHeader("Content-Type");
     }
-    this.localIdentity = this.request.to;
-    this.remoteIdentity = this.request.from;
+
     const hasAssertedIdentity = this.request.hasHeader("P-Asserted-Identity");
     if (hasAssertedIdentity) {
       const assertedIdentity: string | undefined = this.request.getHeader("P-Asserted-Identity");
@@ -88,7 +82,6 @@ export class Invitation extends Session {
       }
     }
 
-    // Session properties
     this.contact = this.userAgent.contact.toString();
     this.id = this.request.callId + this.request.fromTag;
     const contentDisposition = this.request.parseHeader("Content-Disposition");
@@ -220,6 +213,20 @@ export class Invitation extends Session {
    */
   get autoSendAnInitialProvisionalResponse(): boolean {
     return this.rel100 === "required" ? false : true;
+  }
+
+  /**
+   * The identity of the local user.
+   */
+  public get localIdentity(): NameAddrHeader {
+    return this.request.to;
+  }
+
+  /**
+   * The identity of the remote user.
+   */
+  public get remoteIdentity(): NameAddrHeader {
+    return this.request.from;
   }
 
   /**

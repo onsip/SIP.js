@@ -20,10 +20,7 @@ import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
 import { Session } from "./session";
-import {
-  BodyAndContentType,
-  SessionDescriptionHandler
-} from "./session-description-handler";
+import { SessionDescriptionHandler } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 import { SIPExtension } from "./user-agent-options";
@@ -34,16 +31,11 @@ import { SIPExtension } from "./user-agent-options";
  */
 export class Inviter extends Session {
 
-  /** @internal */
-  public localIdentity: NameAddrHeader;
   /**
    * If this Inviter was created as a result of a REFER, the referred Session. Otherwise undefined.
    * @internal
    */
   public referred: Session | undefined;
-  /** @internal */
-  public remoteIdentity: NameAddrHeader;
-  /** @internal */
 
   /**
    * Logger.
@@ -164,15 +156,6 @@ export class Inviter extends Session {
       body
     );
 
-    if (!this.outgoingRequestMessage.from) {
-      throw new Error("From undefined.");
-    }
-    if (!this.outgoingRequestMessage.to) {
-      throw new Error("To undefined.");
-    }
-    this.localIdentity = this.outgoingRequestMessage.from;
-    this.remoteIdentity = this.outgoingRequestMessage.to;
-
     // Options
     options.params = params;
     options.extraHeaders = extraHeaders;
@@ -228,6 +211,20 @@ export class Inviter extends Session {
       default:
         throw new Error("Unknown state.");
     }
+  }
+
+  /**
+   * The identity of the local user.
+   */
+  public get localIdentity(): NameAddrHeader {
+    return this.outgoingRequestMessage.from;
+  }
+
+  /**
+   * The identity of the remote user.
+   */
+  public get remoteIdentity(): NameAddrHeader {
+    return this.outgoingRequestMessage.to;
   }
 
   /**
