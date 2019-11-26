@@ -178,9 +178,9 @@ export abstract class Session {
           });
         });
       case SessionState.Terminating:
-        return Promise.resolve(); // nothing to be done
+        break; // nothing to be done
       case SessionState.Terminated:
-        return Promise.resolve(); // nothing to be done
+        break; // nothing to be done
       default:
         throw new Error("Unknown state.");
     }

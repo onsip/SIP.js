@@ -392,7 +392,7 @@ export class Registerer {
       }
     });
 
-    return Promise.resolve(outgoingRegisterRequest);
+    return outgoingRegisterRequest;
   }
 
   /**
@@ -494,7 +494,7 @@ export class Registerer {
       }
     });
 
-    return Promise.resolve(outgoingRegisterRequest);
+    return outgoingRegisterRequest;
   }
 
   /**

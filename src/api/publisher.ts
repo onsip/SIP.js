@@ -95,6 +95,29 @@ export class Publisher extends EventEmitter {
   }
 
   /**
+   * Destructor
+   */
+  public async dispose(): Promise<void> {
+    // Send unpublish, if requested
+    if (this.options.unpublishOnClose) {
+      this.unpublish();
+    } else {
+      if (this.publishRefreshTimer) {
+        clearTimeout(this.publishRefreshTimer);
+        this.publishRefreshTimer = undefined;
+      }
+
+      this.pubRequestBody = undefined;
+      this.pubRequestExpires = 0;
+      this.pubRequestEtag = undefined;
+    }
+
+    if (this.userAgent.publishers[this.target.toString() + ":" + this.event]) {
+      delete this.userAgent.publishers[this.target.toString() + ":" + this.event];
+    }
+  }
+
+  /**
    * Publish
    * @param content - Body to publish
    */
@@ -137,30 +160,6 @@ export class Publisher extends EventEmitter {
 
     if (this.pubRequestEtag !== undefined) {
       this.sendPublishRequest();
-    }
-  }
-
-  /**
-   * Close
-   * @internal
-   */
-  public _close(): void {
-    // Send unpublish, if requested
-    if (this.options.unpublishOnClose) {
-      this.unpublish();
-    } else {
-      if (this.publishRefreshTimer) {
-        clearTimeout(this.publishRefreshTimer);
-        this.publishRefreshTimer = undefined;
-      }
-
-      this.pubRequestBody = undefined;
-      this.pubRequestExpires = 0;
-      this.pubRequestEtag = undefined;
-    }
-
-    if (this.userAgent.publishers[this.target.toString() + ":" + this.event]) {
-      delete this.userAgent.publishers[this.target.toString() + ":" + this.event];
     }
   }
 

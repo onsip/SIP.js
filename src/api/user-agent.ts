@@ -527,14 +527,12 @@ export class UserAgent {
       this.logger.log(`Dispose of publishers`);
       for (const id in publishers) {
         if (publishers[id]) {
-          try {
-            // FIXME: TODO: should be named dispose, be async and wait on unpublish to complete
-            this.publishers[id]._close();
-          } catch (e) {
-            this.logger.error(e);
-            delete this.publishers[id];
-            throw e;
-          }
+          await publishers[id].dispose()
+            .catch((error: Error) => {
+              this.logger.error(error.message);
+              delete this.publishers[id];
+              throw error;
+            });
         }
       }
     })();

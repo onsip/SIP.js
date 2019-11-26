@@ -62,13 +62,12 @@ export abstract class Subscription {
   /**
    * Destructor.
    */
-  public dispose(): Promise<void> {
+  public async dispose(): Promise<void> {
     if (this._disposed) {
       return Promise.resolve();
     }
     this._disposed = true;
     this._stateEventEmitter.removeAllListeners();
-    return Promise.resolve();
   }
 
   /**
