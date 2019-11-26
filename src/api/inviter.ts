@@ -200,7 +200,7 @@ export class Inviter extends Session {
     // at least once when the session transitions to "terminated".
     // Regardless, running through this more than once is pointless.
     if (this.disposed) {
-      return Promise.resolve();
+      return;
     }
     this.disposed = true;
 
