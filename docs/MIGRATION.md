@@ -40,7 +40,7 @@ The following `UA.Options` have been modified for use as `UserAgentOptions`...
 - `autostop`
   - renamed to `autoStop` (case changed for consistency)
 - `dtmfType`
-  - use `Session.info()` for "out-of-band" DTMF or `SessionDescriptionHandler` for "in-band" DTMF.
+  - use `Infoer.info()` for "out-of-band" DTMF or `SessionDescriptionHandler` for "in-band" DTMF.
 - `experimentalFeatures`
   - removed (it was a noop)
 - `hostportParams`
@@ -149,6 +149,9 @@ registerer.stateChange.on((newState) => {
       break;
     case RegistererState.Unregistered:
       console.log("Unregistered");
+      break;
+    case RegistererState.Terminated:
+      console.log("Terminated");
       break;
   }
 });

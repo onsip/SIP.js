@@ -224,7 +224,9 @@ export class Invitation extends Session {
     return this.rel100 === "required" ? false : true;
   }
 
-  /** Incoming INVITE request message. */
+  /**
+   * Initial incoming INVITE request message.
+   */
   get request(): IncomingRequestMessage {
     return this.incomingInviteRequest.message;
   }

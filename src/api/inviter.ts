@@ -47,7 +47,6 @@ export class Inviter extends Session {
   /** @internal */
   public remoteIdentity: NameAddrHeader;
   /** @internal */
-  public request: OutgoingRequestMessage;
 
   /**
    * Logger.
@@ -62,7 +61,10 @@ export class Inviter extends Session {
   private fromTag: string;
   private isCanceled: boolean = false;
   private inviteWithoutSdp: boolean;
+  /** Initial INVITE request sent by core. Undefined until sent. */
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
+  /** Initial INVITE message provided to core to send. */
+  private outgoingRequestMessage: OutgoingRequestMessage;
 
   /**
    * Constructs a new instance of the `Inviter` class.
@@ -167,8 +169,8 @@ export class Inviter extends Session {
       body = fromBodyLegacy(this.body);
     }
 
-    // Request
-    this.request = userAgent.userAgentCore.makeOutgoingRequestMessage(
+    // Make initial outgoing request message
+    this.outgoingRequestMessage = userAgent.userAgentCore.makeOutgoingRequestMessage(
       C.INVITE,
       targetURI,
       fromURI,
@@ -178,14 +180,14 @@ export class Inviter extends Session {
       body
     );
 
-    if (!this.request.from) {
+    if (!this.outgoingRequestMessage.from) {
       throw new Error("From undefined.");
     }
-    if (!this.request.to) {
+    if (!this.outgoingRequestMessage.to) {
       throw new Error("From undefined.");
     }
-    this.localIdentity = this.request.from;
-    this.remoteIdentity = this.request.to;
+    this.localIdentity = this.outgoingRequestMessage.from;
+    this.remoteIdentity = this.outgoingRequestMessage.to;
 
     // Options
     options.params = params;
@@ -194,7 +196,7 @@ export class Inviter extends Session {
     // Session properties
     this.contact = contact;
     this.fromTag = fromTag;
-    this.id = this.request.callId + this.fromTag;
+    this.id = this.outgoingRequestMessage.callId + this.fromTag;
     this.referralInviterOptions = options;
     this.renderbody = options.renderbody || undefined;
     this.rendertype = options.rendertype || "text/plain";
@@ -242,6 +244,14 @@ export class Inviter extends Session {
       default:
         throw new Error("Unknown state.");
     }
+  }
+
+  /**
+   * Initial outgoing INVITE request message.
+   * Undefined until sent.
+   */
+  get request(): OutgoingRequestMessage | undefined {
+    return this.outgoingInviteRequest ? this.outgoingInviteRequest.message : undefined;
   }
 
   /**
@@ -396,7 +406,7 @@ export class Inviter extends Session {
     // just send an INVITE with no sdp...
     if (options.withoutSdp || this.inviteWithoutSdp) {
       if (this.renderbody && this.rendertype) {
-        this.request.body = { contentType: this.rendertype, body: this.renderbody };
+        this.outgoingRequestMessage.body = { contentType: this.rendertype, body: this.renderbody };
       }
 
       // transition state
@@ -412,14 +422,7 @@ export class Inviter extends Session {
     };
     return this.getOffer(offerOptions)
       .then((body) => {
-        this.request.body = { body: body.content, contentType: body.contentType };
-
-        // TODO: Review error handling...
-        // There are some race conditions which can occur, all of which will cause stateTransition() to throw.
-        //  - invite() can be called (a)synchronously after invite() is called (second call to invite() fails)
-        //  - cancel() or terminate()) can be called (a)synchronously after invite() (invite() fails)
-        // The caller should avoid the first case, but the second one is common.
-        // For now we are just letting the state transition fail in all cases.
+        this.outgoingRequestMessage.body = { body: body.content, contentType: body.contentType };
 
         // transition state
         this.stateTransition(SessionState.Establishing);
@@ -631,7 +634,7 @@ export class Inviter extends Session {
     ////
 
     // Send the INVITE request.
-    this.outgoingInviteRequest = this.userAgent.userAgentCore.invite(this.request, {
+    this.outgoingInviteRequest = this.userAgent.userAgentCore.invite(this.outgoingRequestMessage, {
       onAccept: (inviteResponse) => {
         // Our transaction layer is "non-standard" in that it will only
         // pass us a 2xx response once per branch, so there is no need to
