@@ -214,6 +214,13 @@ export class Invitation extends Session {
   }
 
   /**
+   * Initial incoming INVITE request message body.
+   */
+  public get body(): string | undefined {
+    return this.incomingInviteRequest.message.body;
+  }
+
+  /**
    * The identity of the local user.
    */
   public get localIdentity(): NameAddrHeader {

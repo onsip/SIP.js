@@ -211,6 +211,13 @@ export abstract class Session {
   }
 
   /**
+   * The sesion being replace by this one.
+   */
+  public get replacee(): Session | undefined {
+    return this._replacee;
+  }
+
+  /**
    * Session description handler.
    * @remarks
    * If `this` is an instance of `Invitation`,

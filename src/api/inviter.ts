@@ -20,7 +20,7 @@ import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
 import { Session } from "./session";
-import { SessionDescriptionHandler } from "./session-description-handler";
+import { BodyAndContentType, SessionDescriptionHandler } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 import { SIPExtension } from "./user-agent-options";
@@ -225,6 +225,13 @@ export class Inviter extends Session {
   }
 
   /**
+   * Initial outgoing INVITE request message body.
+   */
+  public get body(): BodyAndContentType | undefined {
+    return this.outgoingRequestMessage.body;
+  }
+
+  /**
    * The identity of the local user.
    */
   public get localIdentity(): NameAddrHeader {
@@ -240,10 +247,9 @@ export class Inviter extends Session {
 
   /**
    * Initial outgoing INVITE request message.
-   * Undefined until sent.
    */
-  get request(): OutgoingRequestMessage | undefined {
-    return this.outgoingInviteRequest ? this.outgoingInviteRequest.message : undefined;
+  public get request(): OutgoingRequestMessage {
+    return this.outgoingRequestMessage;
   }
 
   /**
