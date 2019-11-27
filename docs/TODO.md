@@ -37,7 +37,6 @@
 
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
-  - Port to core tests: Grammar, NameAddrHeader, SIPMessage, URI
 - *Integration* tests are being written high level "api" components (Session, Subscription)
   - FakeTransport based tests are currently fragile; much too dependent on timing of promise resolutions
   - Port to api tests: Publisher
