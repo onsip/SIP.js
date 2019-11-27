@@ -119,7 +119,7 @@ export class Subscriber extends Subscription {
 
     // Add to UA's collection
     this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
-    this.userAgent.subscriptions[this.id] = this;
+    this.userAgent._subscriptions[this.id] = this;
   }
 
   /**
@@ -133,7 +133,7 @@ export class Subscriber extends Subscription {
     this.logger.log(`Subscription ${this.id} in state ${this.state} is being disposed`);
 
     // Remove from the user agent's subscription collection
-    delete this.userAgent.subscriptions[this.id];
+    delete this.userAgent._subscriptions[this.id];
 
     // Clear timers
     if (this.retryAfterTimer) {

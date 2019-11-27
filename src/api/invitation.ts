@@ -138,7 +138,7 @@ export class Invitation extends Session {
     this._id = incomingRequestMessage.callId + incomingRequestMessage.fromTag;
 
     // Add to the user agent's session collection.
-    this.userAgent.sessions[this._id] = this;
+    this.userAgent._sessions[this._id] = this;
   }
 
   /**

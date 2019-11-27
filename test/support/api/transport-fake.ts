@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 
 import {
+  _makeEmitter,
   Emitter,
-  makeEmitter,
   Transport,
   TransportState
 } from "../../../src/api";
@@ -46,7 +46,7 @@ export class TransportFake extends EventEmitter implements Transport {
   }
 
   public get stateChange(): Emitter<TransportState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   public connect(): Promise<void> {

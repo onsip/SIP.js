@@ -187,7 +187,7 @@ export class Inviter extends Session {
     this._id = this.outgoingRequestMessage.callId + this.fromTag;
 
     // Add to the user agent's session collection.
-    this.userAgent.sessions[this._id] = this;
+    this.userAgent._sessions[this._id] = this;
   }
 
   /**

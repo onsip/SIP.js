@@ -134,13 +134,13 @@ export class UserAgent {
   public data: any = {};
 
   /** @internal */
-  public publishers: { [id: string]: Publisher } = {};
+  public _publishers: { [id: string]: Publisher } = {};
   /** @internal */
-  public registerers: { [id: string]: Registerer } = {};
+  public _registerers: { [id: string]: Registerer } = {};
   /** @internal */
-  public sessions: { [id: string]: Session } = {};
+  public _sessions: { [id: string]: Session } = {};
   /** @internal */
-  public subscriptions: { [id: string]: Subscription } = {};
+  public _subscriptions: { [id: string]: Subscription } = {};
 
   private _contact: Contact;
   private _state: UserAgentState = UserAgentState.Stopped;
@@ -326,6 +326,20 @@ export class UserAgent {
   }
 
   /**
+   * The logger.
+   */
+  public getLogger(category: string, label?: string): Logger {
+    return this.loggerFactory.getLogger(category, label);
+  }
+
+  /**
+   * The logger factory.
+   */
+  public getLoggerFactory(): LoggerFactory {
+    return this.loggerFactory;
+  }
+
+  /**
    * True if transport is connected.
    */
   public isConnected(): boolean {
@@ -463,10 +477,10 @@ export class UserAgent {
     // Be careful here to use a local references as start() can be called
     // again before we complete and we don't want to touch new clients
     // and we don't want to step on the new instances (or vice versa).
-    const publishers = { ...this.publishers };
-    const registerers = { ...this.registerers };
-    const sessions = { ...this.sessions };
-    const subscriptions = { ...this.subscriptions };
+    const publishers = { ...this._publishers };
+    const registerers = { ...this._registerers };
+    const sessions = { ...this._sessions };
+    const subscriptions = { ...this._subscriptions };
     const transport = this.transport;
     const userAgentCore = this.userAgentCore;
 
@@ -491,7 +505,7 @@ export class UserAgent {
           await registerers[id].dispose()
             .catch((error: Error) => {
               this.logger.error(error.message);
-              delete this.registerers[id];
+              delete this._registerers[id];
               throw error;
             });
         }
@@ -504,7 +518,7 @@ export class UserAgent {
           await sessions[id].dispose()
             .catch((error: Error) => {
               this.logger.error(error.message);
-              delete this.sessions[id];
+              delete this._sessions[id];
               throw error;
             });
         }
@@ -517,7 +531,7 @@ export class UserAgent {
           await subscriptions[id].dispose()
             .catch((error: Error) => {
               this.logger.error(error.message);
-              delete this.subscriptions[id];
+              delete this._subscriptions[id];
               throw error;
             });
         }
@@ -530,7 +544,7 @@ export class UserAgent {
           await publishers[id].dispose()
             .catch((error: Error) => {
               this.logger.error(error.message);
-              delete this.publishers[id];
+              delete this._publishers[id];
               throw error;
             });
         }
@@ -553,60 +567,11 @@ export class UserAgent {
     }
   }
 
-  /** @internal */
-  public findSession(
-    request: IncomingRequestMessage
-  ): Session | undefined {
-    return this.sessions[request.callId + request.fromTag] ||
-      this.sessions[request.callId + request.toTag] ||
-      undefined;
-  }
-
-  /** @internal */
-  public getLogger(category: string, label?: string): Logger {
-    return this.loggerFactory.getLogger(category, label);
-  }
-
-  /** @internal */
-  public getLoggerFactory(): LoggerFactory {
-    return this.loggerFactory;
-  }
-
-  /** @internal */
-  public getSupportedResponseOptions(): Array<string> {
-    let optionTags: Array<string> = [];
-
-    if (this.contact.pubGruu || this.contact.tempGruu) {
-      optionTags.push("gruu");
-    }
-    if (this.options.sipExtension100rel === SIPExtension.Supported) {
-      optionTags.push("100rel");
-    }
-    if (this.options.sipExtensionReplaces === SIPExtension.Supported) {
-      optionTags.push("replaces");
-    }
-
-    optionTags.push("outbound");
-
-    optionTags = optionTags.concat(this.options.sipExtensionExtraSupported || []);
-
-    const allowUnregistered = this.options.hackAllowUnregisteredOptionTags || false;
-    const optionTagSet: { [name: string]: boolean } = {};
-    optionTags = optionTags.filter((optionTag) => {
-      const registered = UserAgentRegisteredOptionTags[optionTag];
-      const unique = !optionTagSet[optionTag];
-      optionTagSet[optionTag] = true;
-      return (registered || allowUnregistered) && unique;
-    });
-
-    return optionTags;
-  }
-
   /**
    * Used to avoid circular references.
    * @internal
    */
-  public makeInviter(
+  public _makeInviter(
     targetURI: URI,
     options?: InviterOptions
   ): Inviter {
@@ -802,7 +767,7 @@ export class UserAgent {
             }
 
             // Provide a handle on the session being replaced.
-            const targetSession = this.sessions[callId + fromTag] || this.sessions[callId + toTag] || undefined;
+            const targetSession = this._sessions[callId + fromTag] || this._sessions[callId + toTag] || undefined;
             if (!targetSession) {
               throw new Error("Session does not exist.");
             }
@@ -924,7 +889,7 @@ export class UserAgent {
   }
 
   private onTransportMessage(messageString: string): void {
-    const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
+    const message = Parser.parseMessage(messageString, this.getLogger("sip.Parser"));
     if (!message) {
       this.logger.warn("Failed to parse incoming message. Dropping.");
       return;

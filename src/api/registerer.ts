@@ -159,7 +159,7 @@ export class Registerer {
     this.id = this.request.callId + this.request.from.parameters.tag;
 
     // Add to the user agent's session collection.
-    this.userAgent.registerers[this.id] = this;
+    this.userAgent._registerers[this.id] = this;
   }
 
   /** The registered contacts. */
@@ -186,7 +186,7 @@ export class Registerer {
     this.logger.log(`Registerer ${this.id} in state ${this.state} is being disposed`);
 
     // Remove from the user agent's registerer collection
-    delete this.userAgent.registerers[this.id];
+    delete this.userAgent._registerers[this.id];
 
     // If registered, unregisters and resolves after final response received.
     return new Promise((resolve, reject) => {

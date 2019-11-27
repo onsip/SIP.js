@@ -106,7 +106,7 @@ export class Publisher extends EventEmitter {
     this.id = this.target.toString() + ":" + this.event;
 
     // Add to the user agent's publisher collection.
-    this.userAgent.publishers[this.id] = this;
+    this.userAgent._publishers[this.id] = this;
   }
 
   /**
@@ -120,7 +120,7 @@ export class Publisher extends EventEmitter {
     this.logger.log(`Publisher ${this.id} in state ${this.state} is being disposed`);
 
     // Remove from the user agent's publisher collection
-    delete this.userAgent.publishers[this.id];
+    delete this.userAgent._publishers[this.id];
 
     // Send unpublish, if requested
     if (this.options.unpublishOnClose && this.state === PublisherState.Published) {

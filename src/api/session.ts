@@ -143,7 +143,7 @@ export abstract class Session {
     this.logger.log(`Session ${this.id} in state ${this._state} is being disposed`);
 
     // Remove from the user agent's session collection
-    delete this.userAgent.sessions[this.id];
+    delete this.userAgent._sessions[this.id];
 
     // Dispose of dialog media
     if (this._sessionDescriptionHandler) {
