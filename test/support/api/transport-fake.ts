@@ -166,6 +166,7 @@ export class TransportFake extends EventEmitter implements Transport {
     this.logger.log(message);
     return Promise.resolve().then(() => {
       this.peers.forEach((peer) => {
+        // console.warn("Passing");
         peer.onReceived(msg);
       });
       this.sendHappened();
