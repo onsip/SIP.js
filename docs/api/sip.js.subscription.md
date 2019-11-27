@@ -4,7 +4,7 @@
 
 ## Subscription class
 
-A subscription provides asynchronous [Notification](./sip.js.notification.md) of events.
+A subscription provides [Notification](./sip.js.notification.md) of events.
 
 <b>Signature:</b>
 

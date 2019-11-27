@@ -29,7 +29,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SessionTerminatedError](./sip.js.sessionterminatederror.md) | An exception indicating the session terminated before the action completed. |
 |  [StateTransitionError](./sip.js.statetransitionerror.md) | An exception indicating an invalid state transition error occured. |
 |  [Subscriber](./sip.js.subscriber.md) | A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SUBSCRIBE). |
-|  [Subscription](./sip.js.subscription.md) | A subscription provides asynchronous [Notification](./sip.js.notification.md) of events. |
+|  [Subscription](./sip.js.subscription.md) | A subscription provides [Notification](./sip.js.notification.md) of events. |
 |  [UserAgent](./sip.js.useragent.md) | A user agent sends and receives requests using a <code>Transport</code>. |
 
 ## Enumerations
