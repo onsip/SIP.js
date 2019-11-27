@@ -51,7 +51,7 @@ import {
 
 import { soon } from "../../support/Utils";
 
-describe("UserAgentCore", () => {
+describe("Core UserAgentCore", () => {
   const userAlice = "alice";
   const userBob = "bob";
   const domainAlice = "example.com";

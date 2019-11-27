@@ -133,7 +133,7 @@ type ServerTransactionFactory = (
 ) => ServerTransaction;
 
 // https://tools.ietf.org/html/rfc3261#section-17
-describe("Transactions", () => {
+describe("Core Transactions", () => {
   const ruri = "sip:example@onsip.com";
   const _1xxStatusCodesToTest = [100, 180, 183];
   const _2xxStatusCodesToTest = [200, 202];
