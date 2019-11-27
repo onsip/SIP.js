@@ -202,10 +202,8 @@ export type LogConnector = (level: LogLevel, category: string, label: string | u
 // @public
 export type LogLevel = "debug" | "log" | "warn" | "error";
 
-// Warning: (ae-internal-missing-underscore) The name "makeEmitter" should be prefixed with an underscore because the declaration is marked as @internal
-// 
 // @internal
-export function makeEmitter<T>(eventEmitter: EventEmitter, eventName?: string): Emitter<T>;
+export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName?: string): Emitter<T>;
 
 // @public
 export class Message {
@@ -221,8 +219,6 @@ export class Message {
 // @public
 export class Messager {
     constructor(userAgent: UserAgent, targetURI: URI, content: string, contentType?: string, options?: MessagerOptions);
-    // @internal
-    _dispose(): void;
     // Warning: (ae-forgotten-export) The symbol "MessagerMessageOptions" needs to be exported by the entry point index.d.ts
     message(options?: MessagerMessageOptions): Promise<void>;
     }
@@ -254,16 +250,19 @@ export class Notification {
 // @public
 export class Publisher extends EventEmitter {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: PublisherOptions);
-    // @internal
-    _close(): void;
-    publish(content: string, options?: PublisherPublishOptions): void;
+    dispose(): Promise<void>;
+    publish(content: string, options?: PublisherPublishOptions): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponseMessage" needs to be exported by the entry point index.d.ts
     // 
     // @internal (undocumented)
     protected receiveResponse(response: IncomingResponseMessage): void;
+    // Warning: (ae-forgotten-export) The symbol "OutgoingPublishRequest" needs to be exported by the entry point index.d.ts
+    // 
     // @internal (undocumented)
-    protected send(): this;
-    unpublish(options?: PublisherUnpublishOptions): void;
+    protected send(): OutgoingPublishRequest;
+    readonly state: PublisherState;
+    readonly stateChange: Emitter<PublisherState>;
+    unpublish(options?: PublisherUnpublishOptions): Promise<void>;
     }
 
 // @public
@@ -287,6 +286,18 @@ export interface PublisherOptions {
 
 // @public
 export interface PublisherPublishOptions {
+}
+
+// @public
+export enum PublisherState {
+    // (undocumented)
+    Initial = "Initial",
+    // (undocumented)
+    Published = "Published",
+    // (undocumented)
+    Terminated = "Terminated",
+    // (undocumented)
+    Unpublished = "Unpublished"
 }
 
 // @public
@@ -415,7 +426,7 @@ export abstract class Session {
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
     _contact: string | undefined;
-    data: any | undefined;
+    data: any;
     delegate: SessionDelegate | undefined;
     readonly dialog: Session_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
@@ -641,12 +652,12 @@ export interface SubscriberSubscribeOptions {
 export abstract class Subscription {
     // @internal
     protected constructor(userAgent: UserAgent, options?: SubscriptionOptions);
-    data: any | undefined;
+    data: any;
     delegate: SubscriptionDelegate | undefined;
     // Warning: (ae-forgotten-export) The symbol "Subscription" needs to be exported by the entry point index.d.ts
     // 
     // @internal
-    dialog: Subscription_2 | undefined;
+    protected _dialog: Subscription_2 | undefined;
     dispose(): Promise<void>;
     // @internal
     readonly disposed: boolean;
@@ -656,8 +667,8 @@ export abstract class Subscription {
     protected stateTransition(newState: SubscriptionState): void;
     abstract subscribe(options?: SubscriptionSubscribeOptions): Promise<void>;
     abstract unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
-    // @internal (undocumented)
-    protected userAgent: UserAgent;
+    // @internal
+    protected _userAgent: UserAgent;
 }
 
 // @public
@@ -721,43 +732,34 @@ export class UserAgent {
     readonly configuration: Required<UserAgentOptions>;
     // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
     readonly contact: Contact;
-    // @internal (undocumented)
     data: any;
     delegate: UserAgentDelegate | undefined;
-    // @internal (undocumented)
-    findSession(request: IncomingRequestMessage): Session | undefined;
-    // @internal (undocumented)
     getLogger(category: string, label?: string): Logger;
     // Warning: (ae-forgotten-export) The symbol "LoggerFactory" needs to be exported by the entry point index.d.ts
-    // 
-    // @internal (undocumented)
     getLoggerFactory(): LoggerFactory;
-    // @internal (undocumented)
-    getSupportedResponseOptions(): Array<string>;
     isConnected(): boolean;
     // @internal
-    makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
+    _makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
     static makeURI(uri: string): URI | undefined;
     // @internal (undocumented)
-    publishers: {
+    _publishers: {
         [id: string]: Publisher;
     };
     reconnect(): Promise<void>;
     // @internal (undocumented)
-    registerers: {
+    _registerers: {
         [id: string]: Registerer;
     };
     // @internal (undocumented)
-    sessions: {
+    _sessions: {
         [id: string]: Session;
     };
     start(): Promise<void>;
     readonly state: UserAgentState;
     readonly stateChange: Emitter<UserAgentState>;
     stop(): Promise<void>;
-    protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions>;
     // @internal (undocumented)
-    subscriptions: {
+    _subscriptions: {
         [id: string]: Subscription;
     };
     readonly transport: Transport;

@@ -23,7 +23,7 @@ The constructor for this class is marked as internal. Third-party code should no
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
 |  [assertedIdentity](./sip.js.session.assertedidentity.md) |  | <code>NameAddrHeader &#124; undefined</code> | The asserted identity of the remote user. |
-|  [data](./sip.js.session.data.md) |  | <code>any &#124; undefined</code> | Property reserved for use by instance owner. |
+|  [data](./sip.js.session.data.md) |  | <code>any</code> | Property reserved for use by instance owner. |
 |  [delegate](./sip.js.session.delegate.md) |  | <code>SessionDelegate &#124; undefined</code> | The session delegate. |
 |  [dialog](./sip.js.session.dialog.md) |  | <code>SessionDialog &#124; undefined</code> | The confirmed session dialog. |
 |  [id](./sip.js.session.id.md) |  | <code>string</code> | A unique identifier for this session. |

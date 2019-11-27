@@ -4,12 +4,12 @@
 
 ## Publisher.publish() method
 
-Publish
+Publish.
 
 <b>Signature:</b>
 
 ```typescript
-publish(content: string, options?: PublisherPublishOptions): void;
+publish(content: string, options?: PublisherPublishOptions): Promise<void>;
 ```
 
 ## Parameters
@@ -21,5 +21,5 @@ publish(content: string, options?: PublisherPublishOptions): void;
 
 <b>Returns:</b>
 
-`void`
+`Promise<void>`
 

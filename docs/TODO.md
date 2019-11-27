@@ -23,6 +23,7 @@
 - remove old api
 - remove old tests
 - separate tsconfigs for src/*
+- tighten up tslint and lint api, core, demo and tests
 - review packaging best practices (es7, es6, drop es5)
 - free core and API from DOM and Node dependencies
 - cleanup and update sipjs.com
@@ -36,18 +37,17 @@
 
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
-  - port grammar to core
+  - Port to core tests: Grammar, NameAddrHeader, SIPMessage, URI
 - *Integration* tests are being written high level "api" components (Session, Subscription)
-  - port platform web tests
-  - flush out api tests
-- Tests using fake transport are currently fragile; much too dependent on timing of promise resolutions
+  - FakeTransport based tests are currently fragile; much too dependent on timing of promise resolutions
+  - Port to api tests: Publisher
 
-## API - Misc Open Issues
-- Publisher needs to be converted to new style API, stop events emits, port/write tests
-- UserAgent should support multiple servers. Or more specifically, multiple Transports. Push to 0.16.x?
-- Session make public methods async; trivial to do but breaks a lot of tests (the fake transport is the problem)
-- Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
-- Public methods and properties should be indicated as public (or not) for consistency.
+## API - Misc Open Issues for 0.15.x
+- Make all public async methods `async`; trivial to do but breaks a lot of tests (the fake transport is the problem)
+
+## API - Misc Open Issues for 0.16.x
+- UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
+- Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
 - Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
 - Make sure all options buckets are deep copied
 
@@ -70,9 +70,8 @@
 - Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
 - SDH options & SDH modifiers options are applied somewhat ambiguously
   - This behavior was ported from legacy code and the issue punted down the road.
-- SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
-- Hold sdp offer too large for UDP
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
+- Hold SDP offer too large for UDP
 
 ## URI
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking

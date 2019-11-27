@@ -28,6 +28,7 @@ A user agent (UA) is associated with a user via the user's SIP address of record
 |  --- | --- | --- | --- |
 |  [configuration](./sip.js.useragent.configuration.md) |  | <code>Required&lt;UserAgentOptions&gt;</code> | User agent configuration. |
 |  [contact](./sip.js.useragent.contact.md) |  | <code>Contact</code> | User agent contact. |
+|  [data](./sip.js.useragent.data.md) |  | <code>any</code> | Property reserved for use by instance owner. |
 |  [delegate](./sip.js.useragent.delegate.md) |  | <code>UserAgentDelegate &#124; undefined</code> | Delegate. |
 |  [state](./sip.js.useragent.state.md) |  | <code>UserAgentState</code> | User agent state. |
 |  [stateChange](./sip.js.useragent.statechange.md) |  | <code>Emitter&lt;UserAgentState&gt;</code> | User agent state change emitter. |
@@ -38,10 +39,11 @@ A user agent (UA) is associated with a user via the user's SIP address of record
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [getLogger(category, label)](./sip.js.useragent.getlogger.md) |  | The logger. |
+|  [getLoggerFactory()](./sip.js.useragent.getloggerfactory.md) |  | The logger factory. |
 |  [isConnected()](./sip.js.useragent.isconnected.md) |  | True if transport is connected. |
 |  [makeURI(uri)](./sip.js.useragent.makeuri.md) | <code>static</code> | Create a URI instance from a string. |
 |  [reconnect()](./sip.js.useragent.reconnect.md) |  | Reconnect the transport. |
 |  [start()](./sip.js.useragent.start.md) |  | Start the user agent. |
 |  [stop()](./sip.js.useragent.stop.md) |  | Stop the user agent. |
-|  [stripUndefinedProperties(options)](./sip.js.useragent.stripundefinedproperties.md) | <code>static</code> | Strip properties with undefined values from options. This is a work around while waiting for missing vs undefined to be addressed (or not)... https://github.com/Microsoft/TypeScript/issues/13195 |
 
