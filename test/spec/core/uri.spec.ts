@@ -1,7 +1,8 @@
 import { Grammar, URI } from "../../../src/core";
 
-// These test were ported to typescript verbatim.
-// The next time the URI class gets a work over, these should be reviewed/redone.
+// TODO:
+// These tests were ported to typescript verbatim.
+// The next time the URI class gets a work over, these should be reviewed.
 
 describe("Core URI", () => {
   let uri: any;
