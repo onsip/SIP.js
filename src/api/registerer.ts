@@ -178,9 +178,9 @@ export class Registerer {
   }
 
   /** Destructor. */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     if (this.disposed) {
-      return;
+      return Promise.resolve();
     }
     this.disposed = true;
     this.logger.log(`Registerer ${this.id} in state ${this.state} is being disposed`);
@@ -221,7 +221,7 @@ export class Registerer {
    * If successfull, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
    * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
    */
-  public async register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
+  public register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
     // header field values, as opposed to a retransmission) until they have
     // received a final response from the registrar for the previous one or
@@ -399,14 +399,14 @@ export class Registerer {
       }
     });
 
-    return outgoingRegisterRequest;
+    return Promise.resolve(outgoingRegisterRequest);
   }
 
   /**
    * Sends the REGISTER request with expires equal to zero.
    * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
    */
-  public async unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
+  public unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
     // header field values, as opposed to a retransmission) until they have
     // received a final response from the registrar for the previous one or
@@ -501,7 +501,7 @@ export class Registerer {
       }
     });
 
-    return outgoingRegisterRequest;
+    return Promise.resolve(outgoingRegisterRequest);
   }
 
   /**

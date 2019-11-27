@@ -13,7 +13,7 @@ import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-optio
 import { UserAgent } from "./user-agent";
 
 /**
- * A subscription provides asynchronous {@link Notification} of events.
+ * A subscription provides {@link Notification} of events.
  *
  * @remarks
  * See {@link Subscriber} for details on establishing a subscription.
@@ -65,12 +65,13 @@ export abstract class Subscription {
   /**
    * Destructor.
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     if (this._disposed) {
       return Promise.resolve();
     }
     this._disposed = true;
     this._stateEventEmitter.removeAllListeners();
+    return Promise.resolve();
   }
 
   /**

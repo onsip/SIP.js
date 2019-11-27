@@ -139,7 +139,7 @@ export abstract class Session {
   /**
    * Destructor.
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     this.logger.log(`Session ${this.id} in state ${this._state} is being disposed`);
 
     // Remove from the user agent's session collection
@@ -184,6 +184,8 @@ export abstract class Session {
       default:
         throw new Error("Unknown state.");
     }
+
+    return Promise.resolve();
   }
 
   /**

@@ -125,7 +125,7 @@ export class Subscriber extends Subscription {
    * Destructor.
    * @internal
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     if (this.disposed) {
       return Promise.resolve();
     }

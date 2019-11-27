@@ -38,11 +38,9 @@
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
 - *Integration* tests are being written high level "api" components (Session, Subscription)
-  - FakeTransport based tests are currently fragile; much too dependent on timing of promise resolutions
-  - Port to api tests: Publisher
+  - Need to write more integration tests; Publisher, UserAgent, etc
 
 ## API - Misc Open Issues for 0.15.x
-- Make all public async methods `async`; trivial to do but breaks a lot of tests (the fake transport is the problem)
 
 ## API - Misc Open Issues for 0.16.x
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.

@@ -112,9 +112,9 @@ export class Publisher extends EventEmitter {
   /**
    * Destructor.
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     if (this.disposed) {
-      return;
+      return Promise.resolve();
     }
     this.disposed = true;
     this.logger.log(`Publisher ${this.id} in state ${this.state} is being disposed`);
@@ -124,17 +124,19 @@ export class Publisher extends EventEmitter {
 
     // Send unpublish, if requested
     if (this.options.unpublishOnClose && this.state === PublisherState.Published) {
-      this.unpublish();
-    } else {
-      if (this.publishRefreshTimer) {
-        clearTimeout(this.publishRefreshTimer);
-        this.publishRefreshTimer = undefined;
-      }
-
-      this.pubRequestBody = undefined;
-      this.pubRequestExpires = 0;
-      this.pubRequestEtag = undefined;
+      return this.unpublish();
     }
+
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = undefined;
+    }
+
+    this.pubRequestBody = undefined;
+    this.pubRequestExpires = 0;
+    this.pubRequestEtag = undefined;
+
+    return Promise.resolve();
   }
 
   /** The publication state. */
@@ -151,7 +153,7 @@ export class Publisher extends EventEmitter {
    * Publish.
    * @param content - Body to publish
    */
-  public async publish(content: string, options: PublisherPublishOptions = {}): Promise<void> {
+  public publish(content: string, options: PublisherPublishOptions = {}): Promise<void> {
     // Clean up before the run
     if (this.publishRefreshTimer) {
       clearTimeout(this.publishRefreshTimer);
@@ -169,12 +171,14 @@ export class Publisher extends EventEmitter {
     }
 
     this.sendPublishRequest();
+
+    return Promise.resolve();
   }
 
   /**
    * Unpublish.
    */
-  public async unpublish(options: PublisherUnpublishOptions = {}): Promise<void> {
+  public unpublish(options: PublisherUnpublishOptions = {}): Promise<void> {
     // Clean up before the run
     if (this.publishRefreshTimer) {
       clearTimeout(this.publishRefreshTimer);
@@ -187,6 +191,8 @@ export class Publisher extends EventEmitter {
     if (this.pubRequestEtag !== undefined) {
       this.sendPublishRequest();
     }
+
+    return Promise.resolve();
   }
 
   /** @internal */

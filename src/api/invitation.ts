@@ -144,14 +144,14 @@ export class Invitation extends Session {
   /**
    * Destructor.
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     // Only run through this once. It can and does get called multiple times
     // depending on the what the sessions state is when first called.
     // For example, if called when "establishing" it will be called again
     // at least once when the session transitions to "terminated".
     // Regardless, running through this more than once is pointless.
     if (this.disposed) {
-      return;
+      return Promise.resolve();
     }
     this.disposed = true;
 
@@ -525,11 +525,11 @@ export class Invitation extends Session {
     }
 
     // FIXME: TODO:
-    // Here we are squelching the throwing of errors due to an async race condition.
+    // Here we are squelching the throwing of errors due to an race condition.
     // We have an internal race between calling `accept()` and handling an incoming
     // CANCEL request. As there is no good way currently to delegate the handling of
-    // these async errors to the caller of `accept()`, we are squelching the throwing
-    // of ALL errors when/ they occur after receiving a CANCEL to catch the ONE we know
+    // these race errors to the caller of `accept()`, we are squelching the throwing
+    // of ALL errors when/if they occur after receiving a CANCEL to catch the ONE we know
     // is a "normal" exceptional condition. While this is a completely reasonable approach,
     // the decision should be left up to the library user. Furthermore, as we are eating
     // ALL errors in this case, we are potentially (likely) hiding "real" errors which occur.

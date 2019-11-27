@@ -354,7 +354,7 @@ export class UserAgent {
   /**
    * Reconnect the transport.
    */
-  public async reconnect(): Promise<void> {
+  public reconnect(): Promise<void> {
     if (this.state === UserAgentState.Stopped) {
       return Promise.reject(new Error("User agent stopped."));
     }
@@ -378,7 +378,7 @@ export class UserAgent {
    *   });
    * ```
    */
-  public async start(): Promise<void> {
+  public start(): Promise<void> {
     if (this.state === UserAgentState.Started) {
       this.logger.warn(`User agent already started`);
       return Promise.resolve();
@@ -438,18 +438,23 @@ export class UserAgent {
    * @remarks
    * Resolves when the user agent has completed a graceful shutdown.
    * ```txt
-   * - Registerers unregister.
-   * - Sessions terminate.
-   * - Subscribers unsubscribe.
-   * - Publishers unpublish.
+   * 1) Sessions terminate.
+   * 2) Registerers unregister.
+   * 3) Subscribers unsubscribe.
+   * 4) Publishers unpublish.
+   * 5) Transport disconnects.
+   * 6) User Agent Core resets.
    * ```
    * NOTE: While this is a "graceful shutdown", it can also be very slow one if you
    * are waiting for the returned Promise to resolve. The disposal of the clients and
    * dialogs is done serially - waiting on one to finish before moving on to the next.
    * This can be slow if there are lot of subsciptions to unsubscribe for example.
    *
-   * THE SLOW PACE IS INTENTIONAL! While one could spin them all down in parallel, this could
-   * slam the remote server. It is bad practice to denial of service attack (DoS attack) servers!!!
+   * THE SLOW PACE IS INTENTIONAL!
+   * While one could spin them all down in parallel, this could slam the remote server.
+   * It is bad practice to denial of service attack (DoS attack) servers!!!
+   * Moreover, production servers will automatically blacklist clients which send too
+   * many requests in too short a period of time - dropping any additional requests.
    *
    * If a different approach to disposing is needed, one can implement whatever is
    * needed and execute that prior to calling `stop()`. Alternatively one may simply
@@ -494,69 +499,66 @@ export class UserAgent {
     // following will effectively run async and MUST NOT cause any issues
     // if UserAgent.start() is called while the following code continues.
     //
+    // TODO: Minor optimization.
+    // The disposal in all cases involves, in part, sending messages which
+    // is not worth doing if the transport is not connected as we know attempting
+    // to send messages will be futile. But none of these disposal methods check
+    // if that's is the case and it would be easy for them to do so at this point.
 
-    // Dispose of active clients and dialogs, resolving when complete.
-    await (async (): Promise<void> => {
-      // TODO: Minor optimization.
-      // The disposal in all cases involves, in part, sending messages which
-      // is not worth doing if the transport is not connected as we know attempting
-      // to send messages will be futile. But none of these disposal methods check
-      // if that's is the case and it would be easy for them to do so at this point.
-
-      // Dispose of Registerers
-      this.logger.log(`Dispose of registerers`);
-      for (const id in registerers) {
-        if (registerers[id]) {
-          await registerers[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this._registerers[id];
-              throw error;
-            });
-        }
+    // Dispose of Registerers
+    this.logger.log(`Dispose of registerers`);
+    for (const id in registerers) {
+      if (registerers[id]) {
+        await registerers[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._registerers[id];
+            throw error;
+          });
       }
+    }
 
-      // Dispose of Sessions
-      this.logger.log(`Dispose of sessions`);
-      for (const id in sessions) {
-        if (sessions[id]) {
-          await sessions[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this._sessions[id];
-              throw error;
-            });
-        }
+    // Dispose of Sessions
+    this.logger.log(`Dispose of sessions`);
+    for (const id in sessions) {
+      if (sessions[id]) {
+        await sessions[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._sessions[id];
+            throw error;
+          });
       }
+    }
 
-      // Dispose of Subscriptions
-      this.logger.log(`Dispose of subscriptions`);
-      for (const id in subscriptions) {
-        if (subscriptions[id]) {
-          await subscriptions[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this._subscriptions[id];
-              throw error;
-            });
-        }
+    // Dispose of Subscriptions
+    this.logger.log(`Dispose of subscriptions`);
+    for (const id in subscriptions) {
+      if (subscriptions[id]) {
+        await subscriptions[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._subscriptions[id];
+            throw error;
+          });
       }
+    }
 
-      // Dispose of Publishers
-      this.logger.log(`Dispose of publishers`);
-      for (const id in publishers) {
-        if (publishers[id]) {
-          await publishers[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this._publishers[id];
-              throw error;
-            });
-        }
+    // Dispose of Publishers
+    this.logger.log(`Dispose of publishers`);
+    for (const id in publishers) {
+      if (publishers[id]) {
+        await publishers[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._publishers[id];
+            throw error;
+          });
       }
-    })();
+    }
 
     // Dispose of the transport (disconnecting)
+    this.logger.log(`Dispose of transport`);
     await transport.dispose()
       .catch((error: Error) => {
         this.logger.error(error.message);
@@ -564,12 +566,84 @@ export class UserAgent {
       });
 
     // Dispose of the user agent core (resetting)
-    try {
-      userAgentCore.dispose();
-    } catch (e) {
-      this.logger.error(e);
-      throw e;
-    }
+    this.logger.log(`Dispose of core`);
+    userAgentCore.dispose();
+
+    // // Dispose of active clients and dialogs, resolving when complete.
+    // await (async (): Promise<void> => {
+    //   // TODO: Minor optimization.
+    //   // The disposal in all cases involves, in part, sending messages which
+    //   // is not worth doing if the transport is not connected as we know attempting
+    //   // to send messages will be futile. But none of these disposal methods check
+    //   // if that's is the case and it would be easy for them to do so at this point.
+
+    //   // Dispose of Registerers
+    //   this.logger.log(`Dispose of registerers`);
+    //   for (const id in registerers) {
+    //     if (registerers[id]) {
+    //       await registerers[id].dispose()
+    //         .catch((error: Error) => {
+    //           this.logger.error(error.message);
+    //           delete this._registerers[id];
+    //           throw error;
+    //         });
+    //     }
+    //   }
+
+    //   // Dispose of Sessions
+    //   this.logger.log(`Dispose of sessions`);
+    //   for (const id in sessions) {
+    //     if (sessions[id]) {
+    //       await sessions[id].dispose()
+    //         .catch((error: Error) => {
+    //           this.logger.error(error.message);
+    //           delete this._sessions[id];
+    //           throw error;
+    //         });
+    //     }
+    //   }
+
+    //   // Dispose of Subscriptions
+    //   this.logger.log(`Dispose of subscriptions`);
+    //   for (const id in subscriptions) {
+    //     if (subscriptions[id]) {
+    //       await subscriptions[id].dispose()
+    //         .catch((error: Error) => {
+    //           this.logger.error(error.message);
+    //           delete this._subscriptions[id];
+    //           throw error;
+    //         });
+    //     }
+    //   }
+
+    //   // Dispose of Publishers
+    //   this.logger.log(`Dispose of publishers`);
+    //   for (const id in publishers) {
+    //     if (publishers[id]) {
+    //       await publishers[id].dispose()
+    //         .catch((error: Error) => {
+    //           this.logger.error(error.message);
+    //           delete this._publishers[id];
+    //           throw error;
+    //         });
+    //     }
+    //   }
+    // })();
+
+    // // Dispose of the transport (disconnecting)
+    // await transport.dispose()
+    //   .catch((error: Error) => {
+    //     this.logger.error(error.message);
+    //     throw error;
+    //   });
+
+    // // Dispose of the user agent core (resetting)
+    // try {
+    //   userAgentCore.dispose();
+    // } catch (e) {
+    //   this.logger.error(e);
+    //   throw e;
+    // }
   }
 
   /**
