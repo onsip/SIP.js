@@ -222,4 +222,4 @@ The `UserAgentCore` class provides the primary external interface with the SIP c
 
 Reference Documentation: [SimpleUser Class](./simple-user/sip.js.md)
 
-The `SimpleUser` class is a simplified interface to make getting up and running easier for new users. While it is not intended for advanced use cases, it is perhaps suitable for many simple single page web browser applications. For examples, see the [Demo](../demo/README.md)  page.
+The `SimpleUser` class is a simplified interface to make getting up and running easier for new users. While it is not intended for advanced use cases, it is perhaps suitable for many simple single page web browser applications. For examples, see the [Demo](../demo/README.md) page.
