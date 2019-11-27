@@ -47,7 +47,7 @@ import {
   makeMockUA,
   makeMockUserAgentCoreDelegate,
   makeUserAgentCoreConfigurationFromUserAgent
-} from "./mocks";
+} from "../../support/core/mocks";
 
 import { soon } from "../../support/Utils";
 
