@@ -1,5 +1,9 @@
 import * as Modifiers from "../../../../src/platform/web/modifiers";
 
+// TODO:
+// These old tests were ported from JavaScript to TypesSript verbatim.
+// The next time the Modifiers gets a work over, these should be reviewed.
+
 const offer: RTCSdpType = "offer";
 
 const SessionDescription = {

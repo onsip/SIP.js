@@ -2,18 +2,27 @@
 import { Logger } from "../../../../src/core";
 import { SessionDescriptionHandler } from "../../../../src/platform/web";
 
+// TODO:
+// These old tests were ported from JavaScript to TypesSript verbatim.
+// The next time the SessionDescriptionHandler gets a work over, these should be reviewed.
+
+// Might be helpful, so for reference...
+// https://testrtc.com/manipulating-getusermedia-available-devices/
+
 function setIceGatheringState(pc: any, state: string) {
   pc.iceGatheringState = state;
   pc.onicegatheringstatechange.call(pc);
 }
 
 describe("Web SessionDescriptionHandler", () => {
+  let realGetUserMedia: any;
   let realMediaDevices: any;
   let realRTCPeerConnection: any;
   let handler: any;
 
   beforeEach(() => {
     // stub out WebRTC APIs
+    realGetUserMedia = window.navigator.mediaDevices && window.navigator.mediaDevices.getUserMedia;
     realMediaDevices = window.navigator.mediaDevices;
     realRTCPeerConnection = window.RTCPeerConnection;
     (window as any).RTCPeerConnection = function() {
@@ -27,9 +36,18 @@ describe("Web SessionDescriptionHandler", () => {
       return [];
     };
 
-    (window as any).navigator.mediaDevices = {
-      getUserMedia: () => { /* */ }
-    };
+    // In strict mode
+    //   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode)
+    // window.navigator.mediaDevices is read-only
+    //   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Read-only
+    // which doesn't let us assign to it
+    if (window.navigator.mediaDevices) {
+      (window.navigator.mediaDevices.getUserMedia as any) = () => { /* */ };
+    } else {
+      (window.navigator.mediaDevices as any) = { getUserMedia: () => { /* */ } };
+    }
+
+    (window.navigator.mediaDevices.getUserMedia as any) = () => { /* */ };
 
     handler = new SessionDescriptionHandler(console as any as Logger, {
       peerConnectionOptions: {
@@ -40,8 +58,11 @@ describe("Web SessionDescriptionHandler", () => {
 
   afterEach(() => {
     handler.close();
-
-    (window as any).navigator.mediaDevices = realMediaDevices;
+    if (window.navigator.mediaDevices) {
+      window.navigator.mediaDevices.getUserMedia = realGetUserMedia;
+    } else {
+      (window.navigator.mediaDevices as any) = realMediaDevices;
+    }
     window.RTCPeerConnection = realRTCPeerConnection;
   });
 
