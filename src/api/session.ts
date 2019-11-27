@@ -60,7 +60,7 @@ export abstract class Session {
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
    */
-  public data: any | undefined;
+  public data: any;
 
   /**
    * The session delegate.
@@ -442,6 +442,27 @@ export abstract class Session {
   }
 
   /**
+   * Send REFER.
+   * @param referrer - Referrer.
+   * @param delegate - Request delegate.
+   * @param options - Request options bucket.
+   * @internal
+   */
+  public refer(
+    referrer: Referrer,
+    delegate?: OutgoingRequestDelegate,
+    options?: RequestOptions
+  ): Promise<OutgoingByeRequest> {
+    // Using core session dialog
+    if (!this.dialog) {
+      return Promise.reject(new Error("Session dialog undefined."));
+    }
+    // If the session has a referrer, it will receive any in-dialog NOTIFY requests.
+    this._referrer = referrer;
+    return Promise.resolve(this.dialog.refer(delegate, options));
+  }
+
+  /**
    * Send BYE.
    * @param delegate - Request delegate.
    * @param options - Request options bucket.
@@ -508,27 +529,6 @@ export abstract class Session {
       return Promise.reject(new Error("Session dialog undefined."));
     }
     return Promise.resolve(this.dialog.info(delegate, options));
-  }
-
-  /**
-   * Send REFER.
-   * @param referrer - Referrer.
-   * @param delegate - Request delegate.
-   * @param options - Request options bucket.
-   * @internal
-   */
-  public refer(
-    referrer: Referrer,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ): Promise<OutgoingByeRequest> {
-    // Using core session dialog
-    if (!this.dialog) {
-      return Promise.reject(new Error("Session dialog undefined."));
-    }
-    // If the session has a referrer, it will receive any in-dialog NOTIFY requests.
-    this._referrer = referrer;
-    return Promise.resolve(this.dialog.refer(delegate, options));
   }
 
   /**

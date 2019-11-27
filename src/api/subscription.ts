@@ -26,7 +26,7 @@ export abstract class Subscription {
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
    */
-  public data: any | undefined;
+  public data: any;
 
   /**
    * Subscription delegate. See {@link SubscriptionDelegate} for details.
@@ -38,10 +38,13 @@ export abstract class Subscription {
    * If the subscription state is SubscriptionState.Subscribed, the associated subscription dialog. Otherwise undefined.
    * @internal
    */
-  public dialog: SubscriptionDialog | undefined;
+  protected _dialog: SubscriptionDialog | undefined;
 
-  /** @internal */
-  protected userAgent: UserAgent;
+  /**
+   * Our user agent.
+   * @internal
+   */
+  protected _userAgent: UserAgent;
 
   private _disposed = false;
   private _logger: Logger;
@@ -55,7 +58,7 @@ export abstract class Subscription {
    */
   protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
     this._logger = userAgent.getLogger("sip.Subscription");
-    this.userAgent = userAgent;
+    this._userAgent = userAgent;
     this.delegate = options.delegate;
   }
 
@@ -144,7 +147,7 @@ export abstract class Subscription {
 
     // Transition
     this._state = newState;
-    this._logger.log(`Subscription ${this.dialog ? this.dialog.id : undefined} transitioned to ${this._state}`);
+    this._logger.log(`Subscription ${this._dialog ? this._dialog.id : undefined} transitioned to ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
 
     // Dispose

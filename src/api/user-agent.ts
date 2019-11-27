@@ -76,21 +76,6 @@ export class UserAgent {
     return Grammar.URIParse(uri);
   }
 
-  /**
-   * Strip properties with undefined values from options.
-   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-   * https://github.com/Microsoft/TypeScript/issues/13195
-   * @param options - Options to reduce
-   */
-  protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
-    return Object.keys(options).reduce((object, key) => {
-      if ((options as any)[key] !== undefined) {
-        (object as any)[key] = (options as any)[key];
-      }
-      return object;
-    }, {});
-  }
-
   /** Default user agent options. */
   private static readonly defaultOptions: Required<UserAgentOptions> = {
     allowLegacyNotifications: false,
@@ -127,11 +112,31 @@ export class UserAgent {
     viaHost: ""
   };
 
-  /** Delegate. */
-  public delegate: UserAgentDelegate | undefined;
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      if ((options as any)[key] !== undefined) {
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
+  }
 
-  /** @internal */
-  public data: any = {};
+  /**
+   * Property reserved for use by instance owner.
+   * @defaultValue `undefined`
+   */
+  public data: any;
+
+  /**
+   * Delegate.
+   */
+  public delegate: UserAgentDelegate | undefined;
 
   /** @internal */
   public _publishers: { [id: string]: Publisher } = {};

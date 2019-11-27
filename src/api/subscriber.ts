@@ -93,7 +93,6 @@ export class Subscriber extends Subscription {
       };
     }
 
-    this.userAgent = userAgent;
     this.targetURI = targetURI;
 
     // Subscription event
@@ -119,21 +118,21 @@ export class Subscriber extends Subscription {
 
     // Add to UA's collection
     this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
-    this.userAgent._subscriptions[this.id] = this;
+    this._userAgent._subscriptions[this.id] = this;
   }
 
   /**
    * Destructor.
    * @internal
    */
-  public dispose(): Promise<void> {
+  public async dispose(): Promise<void> {
     if (this.disposed) {
       return Promise.resolve();
     }
     this.logger.log(`Subscription ${this.id} in state ${this.state} is being disposed`);
 
     // Remove from the user agent's subscription collection
-    delete this.userAgent._subscriptions[this.id];
+    delete this._userAgent._subscriptions[this.id];
 
     // Clear timers
     if (this.retryAfterTimer) {
@@ -153,14 +152,14 @@ export class Subscriber extends Subscription {
         if (this.state !== SubscriptionState.Subscribed) {
           return;
         }
-        if (!this.dialog) {
+        if (!this._dialog) {
           throw new Error("Dialog undefined.");
         }
         if (
-          this.dialog.subscriptionState === SubscriptionDialogState.Pending ||
-          this.dialog.subscriptionState === SubscriptionDialogState.Active
+          this._dialog.subscriptionState === SubscriptionDialogState.Pending ||
+          this._dialog.subscriptionState === SubscriptionDialogState.Active
         ) {
-          const dialog = this.dialog;
+          const dialog = this._dialog;
           return new Promise((resolve, reject) => {
             dialog.delegate = {
               onTerminated: () => resolve()
@@ -188,8 +187,8 @@ export class Subscriber extends Subscription {
         this.subscriberRequest.subscribe().then((result) => {
           if (result.success) {
             if (result.success.subscription) {
-              this.dialog = result.success.subscription;
-              this.dialog.delegate = {
+              this._dialog = result.success.subscription;
+              this._dialog.delegate = {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
                 onTerminated: () => this.stateTransition(SubscriptionState.Terminated)
@@ -206,8 +205,8 @@ export class Subscriber extends Subscription {
       case SubscriptionDialogState.Pending:
         break;
       case SubscriptionDialogState.Active:
-        if (this.dialog) {
-          const request = this.dialog.refresh();
+        if (this._dialog) {
+          const request = this._dialog.refresh();
           request.delegate = {
             onAccept: ((response) => this.onAccepted(response)),
             onRedirect: ((response) => this.unsubscribe()),
@@ -236,14 +235,14 @@ export class Subscriber extends Subscription {
       case SubscriptionDialogState.NotifyWait:
         break;
       case SubscriptionDialogState.Pending:
-        if (this.dialog) {
-          this.dialog.unsubscribe();
+        if (this._dialog) {
+          this._dialog.unsubscribe();
           // responses intentionally ignored
         }
         break;
       case SubscriptionDialogState.Active:
-        if (this.dialog) {
-          this.dialog.unsubscribe();
+        if (this._dialog) {
+          this._dialog.unsubscribe();
           // responses intentionally ignored
         }
         break;
@@ -359,7 +358,7 @@ export class Subscriber extends Subscription {
       body: this.body ? fromBodyLegacy(this.body) : undefined
     };
     this.subscriberRequest = new SubscriberRequest(
-      this.userAgent.userAgentCore,
+      this._userAgent.userAgentCore,
       this.targetURI,
       this.event,
       this.expires,
