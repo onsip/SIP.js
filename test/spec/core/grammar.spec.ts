@@ -1,7 +1,7 @@
 import { Grammar, NameAddrHeader, URI } from "../../../src/core";
 
 // TODO:
-// These tests were ported to typescript verbatim.
+// These old tests were ported from JavaScript to TypesSript verbatim.
 // The next time the Grammar gets a work over, these should be reviewed.
 
 describe("Core Grammar", () => {
@@ -178,7 +178,7 @@ describe("Core Grammar", () => {
     viaHas("host_type", "IPv6");
     viaHas("port", 6060);
     viaHas("branch", "1234");
-    viaHas("params", {param1: "Foo", param2: undefined, param3: "Bar"});
+    viaHas("params", { param1: "Foo", param2: undefined, param3: "Bar" });
   });
 
   const cseqString = "123456  CHICKEN";
@@ -224,7 +224,7 @@ describe("Core Grammar", () => {
     const eventHas = itHas.bind(null, () => evt);
 
     eventHas("event", "presence.winfo");
-    eventHas("params", {param1: "QWe", param2: undefined});
+    eventHas("params", { param1: "QWe", param2: undefined });
   });
 
   describe("Content-Disposition", () => {
@@ -251,8 +251,8 @@ describe("Core Grammar", () => {
   describe("Replaces", () => {
     const goods = [
       "98732@sip.example.com\r\n" +
-"          ;from-tag=r33th4x0r\r\n" +
-"          ;to-tag=ff87ff",
+      "          ;from-tag=r33th4x0r\r\n" +
+      "          ;to-tag=ff87ff",
       "12adf2f34456gs5;to-tag=12345;from-tag=54321;early-only", // early
       "12adf2f34456gs5;baz;to-tag=12345;early-only;from-tag=54321", // early
       "87134@171.161.34.23;to-tag=24796;from-tag=0",

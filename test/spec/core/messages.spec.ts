@@ -7,6 +7,10 @@ import {
 } from "../../../src/core";
 import * as Utils from "../../../src/core/messages/utils";
 
+// TODO:
+// These old tests were ported from JavaScript to TypesSript verbatim.
+// The next time the Messages gets a work over, these should be reviewed.
+
 describe("Core Messages", () => {
   describe("OutgoingRequest", () => {
     let outgoingRequest: OutgoingRequest;
@@ -193,7 +197,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
       });
 
       it("adds the header to the array in the headers object if it already exists", () => {
@@ -201,10 +205,10 @@ describe("Core Messages", () => {
         const name = "name";
         const value1 = "value1";
         incomingRequest.addHeader(name, value1);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value1}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }]);
         const value2 = "value2";
         incomingRequest.addHeader(name, value2);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value1}, {raw : value2}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }, { raw: value2 }]);
       });
     });
 
@@ -219,7 +223,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
       });
       it("returns the first header value if multiple values exist", () => {
         expect(incomingRequest.headers).toEqual({});
@@ -228,7 +232,7 @@ describe("Core Messages", () => {
         const value2 = "value2";
         incomingRequest.addHeader(name, value1);
         incomingRequest.addHeader(name, value2);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value1}, {raw : value2}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }, { raw: value2 }]);
         expect(incomingRequest.getHeader(name)).toBe(value1);
         expect(incomingRequest.getHeader(name)).not.toBe(value2);
       });
@@ -246,7 +250,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         expect(incomingRequest.getHeaders(name).length).toEqual(1);
         expect(incomingRequest.getHeaders(name)).toEqual([value]);
       });
@@ -258,7 +262,7 @@ describe("Core Messages", () => {
         incomingRequest.addHeader(name, value1);
         const value2 = "value2";
         incomingRequest.addHeader(name, value2);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value1}, {raw : value2}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }, { raw: value2 }]);
         expect(incomingRequest.getHeaders(name).length).toEqual(2);
         expect(incomingRequest.getHeaders(name)).toEqual([value1, value2]);
       });
@@ -270,7 +274,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         expect(incomingRequest.hasHeader(name)).toBe(true);
       });
       it("returns false if the header does not exist", () => {
@@ -298,7 +302,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         const index = 1;
         expect(incomingRequest.parseHeader(name, index)).toBeUndefined();
         expect(incomingRequest.getHeaders(name).length).toBeGreaterThan(index - 1);
@@ -309,7 +313,7 @@ describe("Core Messages", () => {
         const name = "call-ID";
         const value = "hnds3k17jhd1jank84hq";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         incomingRequest.parseHeader(name, 0);
         expect((Grammar.parse as any).calls.count()).toEqual(1);
         expect((incomingRequest as any).logger.warn).not.toHaveBeenCalled();
@@ -323,7 +327,7 @@ describe("Core Messages", () => {
         const name = "call-ID";
         const value = "hnds3k17jhd1jank84hq";
         incomingRequest.addHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         expect(incomingRequest.headers[Utils.headerize(name)][0].parsed).toBeUndefined();
         expect(incomingRequest.parseHeader(name, 0)).toBe(value);
         expect(incomingRequest.headers[Utils.headerize(name)][0].parsed).toBe(value);
@@ -336,18 +340,18 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingRequest.setHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
       });
       it("replaces a header that already exists", () => {
         expect(incomingRequest.headers).toEqual({});
         const name = "name";
         const value = "value";
         incomingRequest.setHeader(name, value);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         const newValue = "new_value";
         incomingRequest.setHeader(name, newValue);
-        expect(incomingRequest.headers[Utils.headerize(name)]).not.toEqual([{raw : value}]);
-        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{raw : newValue}]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).not.toEqual([{ raw: value }]);
+        expect(incomingRequest.headers[Utils.headerize(name)]).toEqual([{ raw: newValue }]);
       });
     });
 
@@ -392,7 +396,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
       });
 
       it("adds the header to the array in the headers object if it already exists", () => {
@@ -400,10 +404,10 @@ describe("Core Messages", () => {
         const name = "name";
         const value1 = "value1";
         incomingResponse.addHeader(name, value1);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value1}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }]);
         const value2 = "value2";
         incomingResponse.addHeader(name, value2);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value1}, {raw : value2}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }, { raw: value2 }]);
       });
     });
 
@@ -418,7 +422,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
       });
       it("returns the first header value if multiple values exist", () => {
         expect(incomingResponse.headers).toEqual({});
@@ -427,7 +431,7 @@ describe("Core Messages", () => {
         const value2 = "value2";
         incomingResponse.addHeader(name, value1);
         incomingResponse.addHeader(name, value2);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value1}, {raw : value2}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }, { raw: value2 }]);
         expect(incomingResponse.getHeader(name)).toBe(value1);
         expect(incomingResponse.getHeader(name)).not.toBe(value2);
       });
@@ -445,7 +449,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         expect(incomingResponse.getHeaders(name).length).toEqual(1);
         expect(incomingResponse.getHeaders(name)).toEqual([value]);
       });
@@ -457,7 +461,7 @@ describe("Core Messages", () => {
         incomingResponse.addHeader(name, value1);
         const value2 = "value2";
         incomingResponse.addHeader(name, value2);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value1}, {raw : value2}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value1 }, { raw: value2 }]);
         expect(incomingResponse.getHeaders(name).length).toEqual(2);
         expect(incomingResponse.getHeaders(name)).toEqual([value1, value2]);
       });
@@ -469,7 +473,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         expect(incomingResponse.hasHeader(name)).toBe(true);
       });
       it("returns false if the header does not exist", () => {
@@ -494,7 +498,7 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         const index = 1;
         expect(incomingResponse.parseHeader(name, index)).toBeUndefined();
         expect(incomingResponse.getHeaders(name).length).toBeGreaterThan(index - 1);
@@ -505,7 +509,7 @@ describe("Core Messages", () => {
         const name = "call-ID";
         const value = "hnds3k17jhd1jank84hq";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         incomingResponse.parseHeader(name, 0);
         expect((Grammar.parse as any).calls.count()).toEqual(1);
         expect(incomingResponse.headers[Utils.headerize(name)][0].parsed).toBeDefined();
@@ -518,7 +522,7 @@ describe("Core Messages", () => {
         const name = "call-ID";
         const value = "hnds3k17jhd1jank84hq";
         incomingResponse.addHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         expect(incomingResponse.headers[Utils.headerize(name)][0].parsed).toBeUndefined();
         expect(incomingResponse.parseHeader(name, 0)).toBe(value);
         expect(incomingResponse.headers[Utils.headerize(name)][0].parsed).toBe(value);
@@ -531,18 +535,18 @@ describe("Core Messages", () => {
         const name = "name";
         const value = "value";
         incomingResponse.setHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
       });
       it("replaces a header that already exists", () => {
         expect(incomingResponse.headers).toEqual({});
         const name = "name";
         const value = "value";
         incomingResponse.setHeader(name, value);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : value}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: value }]);
         const newValue = "new_value";
         incomingResponse.setHeader(name, newValue);
-        expect(incomingResponse.headers[Utils.headerize(name)]).not.toEqual([{raw : value}]);
-        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{raw : newValue}]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).not.toEqual([{ raw: value }]);
+        expect(incomingResponse.headers[Utils.headerize(name)]).toEqual([{ raw: newValue }]);
       });
     });
 

@@ -5,10 +5,10 @@ import { soon } from "../../support/api/utils";
 
 /**
  * TODO:
- * UserAgent Integration Tests
+ * Publication Integration Tests
  */
 
-describe("API UserAgent", () => {
+describe("API Publication", () => {
   let alice: UserFake;
   let bob: UserFake;
   let target: URI;

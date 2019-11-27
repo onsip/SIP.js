@@ -1,7 +1,7 @@
 import { Grammar, NameAddrHeader, URI } from "../../../src/core";
 
 // TODO:
-// These tests were ported to typescript verbatim.
+// These old tests were ported from JavaScript to TypesSript verbatim.
 // The next time the NameAddrHeader gets a work over, these should be reviewed.
 
 describe("Core NameAddrHeader", () => {
