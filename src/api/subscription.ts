@@ -74,6 +74,13 @@ export abstract class Subscription {
   }
 
   /**
+   * The subscribed subscription dialog.
+   */
+  public get dialog(): SubscriptionDialog | undefined {
+    return this._dialog;
+  }
+
+  /**
    * True if disposed.
    * @internal
    */
