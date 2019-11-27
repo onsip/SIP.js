@@ -654,6 +654,7 @@ export abstract class Subscription {
     protected constructor(userAgent: UserAgent, options?: SubscriptionOptions);
     data: any;
     delegate: SubscriptionDelegate | undefined;
+    readonly dialog: Subscription_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Subscription" needs to be exported by the entry point index.d.ts
     // 
     // @internal
