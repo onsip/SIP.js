@@ -1,4 +1,3 @@
-
 # Release Road Map
 
 ## 0.15.0
@@ -31,29 +30,42 @@
 - more tests
 
 ## 0.16.x
+- more documentation
+- more tests
+- bug fixes
 - 1.0 prep
 
 # Work in Progress
+
+## Documentation
+README.md
+- build
+  - BUILDING.md (move to docs)
+- demo
+- docs
+- etc
+- src
+- test
 
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
 - *Integration* tests are being written high level "api" components (Session, Subscription)
   - Need to write more integration tests; Publisher, UserAgent, etc
 
-## API - Misc Open Issues for 0.15.x
+## Source
 
-## API - Misc Open Issues for 0.16.x
+### API - Miscellaneous
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
 - Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
 - Make sure all options buckets are deep copied
 
-## Core - Misc Open Issues
+### Core - Miscellaneous
 - Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
 - Dialog UACs are creating messages while non-dialog UACs are being handed message
 - Extra headers array approach is error prone
 
-## Grammar
+### Grammar - Refresh
 - grammar.ts has everything typed as any
 - parsed URIs are not able to always be matched to configured URI because of typing issues
 - URI constructor doesn't allow user of type undefined, but grammar passed undefined is no user parsed
@@ -63,14 +75,14 @@
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: *" header fails to parse - there's a test written for it
 
-## SessionDescriptionHandler
+### SessionDescriptionHandler - Refresh
 - Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
 - SDH options & SDH modifiers options are applied somewhat ambiguously
   - This behavior was ported from legacy code and the issue punted down the road.
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
 - Hold SDP offer too large for UDP
 
-## URI
+### URI - Refresh
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
 
 ## REFER handling - it has evolved over time and we are out of date
