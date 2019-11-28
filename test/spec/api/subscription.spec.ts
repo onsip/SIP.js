@@ -1,11 +1,4 @@
 import {
-  C,
-  IncomingRequest as IncomingRequestMessage,
-  Timers,
-  URI,
-  Utils
-} from "../../../src";
-import {
   Notification,
   Subscriber,
   Subscription,
@@ -13,13 +6,18 @@ import {
   SubscriptionState
 } from "../../../src/api";
 import {
+  C,
   Dialog,
   DialogState,
+  IncomingRequestMessage,
   NonInviteClientTransaction,
   ReSubscribeUserAgentServer,
+  Timers,
+  URI,
   UserAgentClient,
   UserAgentCore
 } from "../../../src/core";
+import { newTag } from "../../../src/core/messages/utils";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
@@ -246,7 +244,7 @@ describe("API Subscription", () => {
                 return;
               }
               const statusCode = 200;
-              const toTag = Utils.newTag();
+              const toTag = newTag();
               const extraHeaders = new Array<string>();
               extraHeaders.push(`Event: ${receivedEvent}`);
               // Don't send a 200...
@@ -311,7 +309,7 @@ describe("API Subscription", () => {
                 return;
               }
               const statusCode = 200;
-              const toTag = Utils.newTag();
+              const toTag = newTag();
               const extraHeaders = new Array<string>();
               extraHeaders.push(`Event: ${receivedEvent}`);
               extraHeaders.push(`Expires: ${receivedExpires}`);

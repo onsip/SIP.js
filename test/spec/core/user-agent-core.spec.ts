@@ -49,7 +49,7 @@ import {
   makeUserAgentCoreConfigurationFromUserAgent
 } from "../../support/core/mocks";
 
-import { soon } from "../../support/Utils";
+import { soon } from "../../support/api/utils";
 
 describe("Core UserAgentCore", () => {
   const userAlice = "alice";
