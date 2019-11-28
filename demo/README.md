@@ -5,12 +5,13 @@
 Clone this repository, then...
 
 ```
+npm install
 npm run build-demo
 ```
 
 ## Running
 
-The demos will run in Chrome, Firefox, or other web browsers which support WebRTC.
+The demos will run in Chrome, Firefox, or other web browsers which supports WebRTC.
 
 In your web browser, open the `index.html` file in this directory to run the demos.
 
