@@ -18,16 +18,15 @@
 - more tests
 
 ## 0.16.0
-- new readme
+- new README.md
 - remove old api
 - remove old tests
+- update documentation
 - separate tsconfigs for src/*
 - tighten up tslint and lint api, core, demo and tests
 - review packaging best practices (es7, es6, drop es5)
 - free core and API from DOM and Node dependencies
 - cleanup and update sipjs.com
-- more documentation
-- more tests
 
 ## 0.16.x
 - more documentation

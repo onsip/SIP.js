@@ -14,7 +14,7 @@ Source code? [Building](./BUILDING.md) from source code.
 
 Node module? `npm install sip.js`
 
-Bundle? Download [here](https://sipjs.com/download).
+Bundle? Download UMD [here](https://sipjs.com/download).
 
 ## What is here?
 
