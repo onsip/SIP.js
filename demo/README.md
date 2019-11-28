@@ -23,10 +23,6 @@ Safari requires either...
 
 ## Development
 
-These demonstrations are built on the `SimpleUser` class which provides some basic
-functionality via a simple interface. While `SimpleUser` may be all that is needed
-for some use cases (such as these demos), it is not intended to provide a suitable
-interface for most (much less all) applications. However the `SimpleUser` class is
-arguably a good example of how the SIP.js API can be utilized generally.
+These demonstrations are built on the [`SimpleUser`](../docs/simple-user.md) class which provides some basic functionality via a simple interface. While [`SimpleUser`](../docs/simple-user.md) may be all that is needed for many use cases (such as these demos), it is not intended to provide a suitable interface for most (much less all) applications. However the [`SimpleUser`](../docs/simple-user.md) class is arguably a good example of how the [API](../docs/api.md) can be utilized generally.
 
-See the [Documentation](../docs/README.md) page for more info on `SimpleUser`.
+See the [Documentation](../docs/README.md) page for more info on [`SimpleUser`](../docs/simple-user.md) and the [API](../docs/api.md).
