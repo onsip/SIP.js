@@ -50,10 +50,10 @@ export class SimpleUser {
 
   /**
    * Constructs a new instance of the `SimpleUser` class.
-   * @param webSocketServerURL - SIP WebSocket Server URL.
+   * @param server - SIP WebSocket Server URL.
    * @param options - Options bucket. See {@link SimpleUserOptions} for details.
    */
-  constructor(webSocketServerURL: string, options: SimpleUserOptions = {}) {
+  constructor(server: string, options: SimpleUserOptions = {}) {
     // Delegate
     this.delegate = options.delegate;
 
@@ -73,7 +73,7 @@ export class SimpleUser {
     // TransportOptions
     if (!userAgentOptions.transportOptions) {
       userAgentOptions.transportOptions = {
-        server: webSocketServerURL
+        server
       };
     }
 
