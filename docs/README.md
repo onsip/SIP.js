@@ -2,13 +2,23 @@
 
 Welcome!
 
-TLDR: Start with running the [demo](../demo/README.md) or looking at [this](./simple-user.md) class.
+TLDR: First run the [demo](../demo/README.md). Or look at [this](./simple-user.md) class.
 
-## Orientation
+Looking for documentation on an old version? 0.15 and below are documented [here](https://sipjs.com/api).
 
-What's here?
+Looking for help on how to migrate from an old version? See the [migration guide](./MIGRATION.md).
 
-Herein lies Session Initiation Protocol (SIP) protocol software enabling internet endpoints (called user agents) to carry various forms of real-time multimedia session data such as voice, video, or text messages. Said software is divided into three (3) pieces - each of which provides a different integration point for development...
+TypeScript? Yes. [Compatibility](./compatibility.md) with JavaScript.
+
+Source code? [Building](./BUILDING.md) from source code.
+
+Node module? `npm install sip.js`
+
+Bundle? Download [here](https://sipjs.com/download).
+
+## What is here?
+
+Herein lies software enabling Session Initiation Protocol (SIP) internet endpoints (called user agents) to carry various forms of real-time multimedia session data such as voice, video, or text messages. Said software is organized into three (3) divisions - each of which provides a different integration point for development...
 
 * SimpleUser class
   * [Demo](../demo/README.md)
@@ -33,7 +43,3 @@ The [API](./api.md) framework is intended to provide a complete and suitable fra
 
 The [Core](./core.md) library provides lower level representations of the elements which comprise the SIP protocol. It implements the constructs required by user agents. It strives to be RFC complient. It is intended to provide the foundational building blocks upon which to build a higher level abstraction.
 
-## Other Stuff
-  * [Building](./BUILDING.md) the source code
-  * [Compatibility](./compatibility.md) with JavaScript
-  * [Migration](./MIGRATION.md) from older versions
