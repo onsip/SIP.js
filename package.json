@@ -64,7 +64,7 @@
     "build-reg-bundle": "webpack --progress --config build/webpack.config.js --env.buildType reg",
     "build-min-bundle": "webpack --progress --config build/webpack.config.js --env.buildType min",
     "build-bundles": "npm run build-reg-bundle && npm run build-min-bundle",
-    "build-demo": "webpack --progress --config demo/webpack.config.js",
+    "build-demo": "npm run generate-grammar && webpack --progress --config demo/webpack.config.js",
     "build-lib": "tsc -p src",
     "build-test": "tsc -p test",
     "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js dist/sip-$npm_package_version.min.js",
