@@ -300,7 +300,7 @@ TODO
 
 TODO
 
-## 7. Core replaces...
+## 7. Core library replaces...
 
 - `UA.request()`
 
