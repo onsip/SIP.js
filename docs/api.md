@@ -6,7 +6,7 @@ This API is intended to provide a complete and suitable framework for most end u
 
 The API is implemented on top of the [Core Library](./core.md) which provides lower protocol level access.
 
-A working knowledge of the SIP protocol is a prerequisite for working with this API. The SIP protocol is an internet standard the details of which are well beyond the scope of the documentation herein. However there are many resources available. See: https://tools.ietf.org/html/rfc3261 for the specification (the surface of it anyway).
+A working knowledge of the SIP protocol is a prerequisite for working with this API. The SIP protocol is an internet standard the details of which are well beyond the scope of the documentation herein. However there are many resources available. See: https://tools.ietf.org/html/rfc3261 for the primary specification.
 
 
 ## Reference Documentation
@@ -16,15 +16,28 @@ A working knowledge of the SIP protocol is a prerequisite for working with this 
 ## Getting Started
 
 ```ts
+import {
+  Invitation,
+  Inviter,
+  InviterOptions,
+  Referral,
+  Registerer,
+  RegistererOptions,
+  Session,
+  SessionState,
+  UserAgent,
+  UserAgentOptions
+} from "sip.js/lib/api";
+
 /*
  * Create a user agent
  */
 const uri = UserAgent.makeURI("sip:alice@example.com");
 if (!uri) {
-  // Failed to create URI
+  throw new Error("Failed to create URI");
 }
 const userAgentOptions: UserAgentOptions = {
-  uri: uri,
+  uri,
   /* ... */
 };
 const userAgent = new UserAgent(userAgentOptions);
