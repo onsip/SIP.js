@@ -1,5 +1,5 @@
+import { Grammar } from "../../grammar";
 import { Logger } from "../log/logger";
-import { Grammar } from "./grammar";
 import { IncomingRequestMessage } from "./incoming-request-message";
 import { IncomingResponseMessage } from "./incoming-response-message";
 
