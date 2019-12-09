@@ -94,7 +94,7 @@ Previously...
 const uri = "sip:alice@example.com";
 const options = {
   authenticationUsername: "username",
-  authenticationPassword: "password",
+  password: "password",
   uri: uri
 }
 
