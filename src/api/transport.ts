@@ -26,7 +26,7 @@ import { TransportState } from "./transport-state";
  * thus the transport MUST NOT attempt to "auto-recover" from or otherwise hide loss of network.
  * Note that callbacks and emitters such as `onConnect`  and `onDisconnect` MUST NOT call methods
  * `connect()` and `direct()` synchronously (state change handlers must not loop back). They may
- * however do so asychronously using a Promise resolution, `setTimeout`, or some other method.
+ * however do so asynchronously using a Promise resolution, `setTimeout`, or some other method.
  * For example...
  * ```ts
  * transport.onDisconnect = () => {

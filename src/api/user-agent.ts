@@ -280,7 +280,7 @@ export class UserAgent {
     // Initialize Contact
     this._contact = this.initContact();
 
-    // Initialize UserAgnetCore
+    // Initialize UserAgentCore
     this._userAgentCore = this.initCore();
 
     if (this.options.autoStart) {
@@ -358,7 +358,8 @@ export class UserAgent {
     if (this.state === UserAgentState.Stopped) {
       return Promise.reject(new Error("User agent stopped."));
     }
-    return this.transport.connect();
+    // Make sure we don't call synchronously
+    return Promise.resolve().then(() => this.transport.connect());
   }
 
   /**
@@ -404,16 +405,16 @@ export class UserAgent {
       // Initialize Contact
       this._contact = this.initContact();
 
-      // Initialize UserAgnetCore
+      // Initialize UserAgentCore
       this._userAgentCore = this.initCore();
     }
 
     // Transition state
     this.transitionState(UserAgentState.Started);
 
-    // TODO: Review this as it is not clear it has any benefit and at worst causes additonal load the server.
+    // TODO: Review this as it is not clear it has any benefit and at worst causes additional load the server.
     // On unload it may be best to simply in most scenarios to do nothing. Furthermore and regardless, this
-    // kind of behavior seems more appropriate to be managned by the consumer of the API than the API itself.
+    // kind of behavior seems more appropriate to be managed by the consumer of the API than the API itself.
     // Should this perhaps be deprecated?
     //
     // Add window unload event listener
@@ -448,7 +449,7 @@ export class UserAgent {
    * NOTE: While this is a "graceful shutdown", it can also be very slow one if you
    * are waiting for the returned Promise to resolve. The disposal of the clients and
    * dialogs is done serially - waiting on one to finish before moving on to the next.
-   * This can be slow if there are lot of subsciptions to unsubscribe for example.
+   * This can be slow if there are lot of subscriptions to unsubscribe for example.
    *
    * THE SLOW PACE IS INTENTIONAL!
    * While one could spin them all down in parallel, this could slam the remote server.
@@ -568,82 +569,6 @@ export class UserAgent {
     // Dispose of the user agent core (resetting)
     this.logger.log(`Dispose of core`);
     userAgentCore.dispose();
-
-    // // Dispose of active clients and dialogs, resolving when complete.
-    // await (async (): Promise<void> => {
-    //   // TODO: Minor optimization.
-    //   // The disposal in all cases involves, in part, sending messages which
-    //   // is not worth doing if the transport is not connected as we know attempting
-    //   // to send messages will be futile. But none of these disposal methods check
-    //   // if that's is the case and it would be easy for them to do so at this point.
-
-    //   // Dispose of Registerers
-    //   this.logger.log(`Dispose of registerers`);
-    //   for (const id in registerers) {
-    //     if (registerers[id]) {
-    //       await registerers[id].dispose()
-    //         .catch((error: Error) => {
-    //           this.logger.error(error.message);
-    //           delete this._registerers[id];
-    //           throw error;
-    //         });
-    //     }
-    //   }
-
-    //   // Dispose of Sessions
-    //   this.logger.log(`Dispose of sessions`);
-    //   for (const id in sessions) {
-    //     if (sessions[id]) {
-    //       await sessions[id].dispose()
-    //         .catch((error: Error) => {
-    //           this.logger.error(error.message);
-    //           delete this._sessions[id];
-    //           throw error;
-    //         });
-    //     }
-    //   }
-
-    //   // Dispose of Subscriptions
-    //   this.logger.log(`Dispose of subscriptions`);
-    //   for (const id in subscriptions) {
-    //     if (subscriptions[id]) {
-    //       await subscriptions[id].dispose()
-    //         .catch((error: Error) => {
-    //           this.logger.error(error.message);
-    //           delete this._subscriptions[id];
-    //           throw error;
-    //         });
-    //     }
-    //   }
-
-    //   // Dispose of Publishers
-    //   this.logger.log(`Dispose of publishers`);
-    //   for (const id in publishers) {
-    //     if (publishers[id]) {
-    //       await publishers[id].dispose()
-    //         .catch((error: Error) => {
-    //           this.logger.error(error.message);
-    //           delete this._publishers[id];
-    //           throw error;
-    //         });
-    //     }
-    //   }
-    // })();
-
-    // // Dispose of the transport (disconnecting)
-    // await transport.dispose()
-    //   .catch((error: Error) => {
-    //     this.logger.error(error.message);
-    //     throw error;
-    //   });
-
-    // // Dispose of the user agent core (resetting)
-    // try {
-    //   userAgentCore.dispose();
-    // } catch (e) {
-    //   this.logger.error(e);
-    //   throw e;
-    // }
   }
 
   /**
@@ -786,12 +711,12 @@ export class UserAgent {
             // https://tools.ietf.org/html/rfc6026#section-7.1
 
             // As noted in the comment above, we are to leaving it to the transaction
-            // timers to evenutally cause the transaction to sort itself out in the case
+            // timers to eventually cause the transaction to sort itself out in the case
             // of a transport failure in an invite server transaction. This delegate method
             // is here simply here for completeness and to make it clear that it provides
             // nothing more than informational hook into the core. That is, if you think
             // you should be trying to deal with a transport error here, you are likely wrong.
-            this.logger.error("A transport error has occured while handling an incoming INVITE request.");
+            this.logger.error("A transport error has occurred while handling an incoming INVITE request.");
           }
         };
 
@@ -894,7 +819,7 @@ export class UserAgent {
           const notification = new Notification(incomingNotifyRequest);
           this.delegate.onNotify(notification);
         } else {
-          // Per the above which sbsoletes https://tools.ietf.org/html/rfc3265,
+          // Per the above which obsoletes https://tools.ietf.org/html/rfc3265,
           // the use of out of dialog NOTIFY is obsolete, but...
           if (this.options.allowLegacyNotifications) {
             incomingNotifyRequest.accept(); // Accept the NOTIFY request, but do nothing with it.
@@ -1003,7 +928,7 @@ export class UserAgent {
         return;
       }
 
-      // FIXME: This is non-standard and should be a configruable behavior (desirable regardless).
+      // FIXME: This is non-standard and should be a configurable behavior (desirable regardless).
       // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
       // This is port of SanityCheck.rfc3261_16_3_4().
       if (!message.toTag && message.callId.substr(0, 5) === this.options.sipjsId) {
@@ -1022,7 +947,7 @@ export class UserAgent {
       }
     }
 
-    // Reponse Checks
+    // Response Checks
     if (message instanceof IncomingResponseMessage) {
       // This is port of SanityCheck.minimumHeaders().
       if (!hasMinimumHeaders()) {
