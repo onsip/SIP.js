@@ -44,6 +44,21 @@ export class Registerer {
     return UUID;
   }
 
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<RegistererOptions>): Partial<RegistererOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      if ((options as any)[key] !== undefined) {
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
+  }
+
   private disposed = false;
   private id: string;
   private expires: number;
@@ -89,7 +104,7 @@ export class Registerer {
       // set the appropriate default registrar
       ...{ registrar: defaultUserAgentRegistrar },
       // apply any options passed in via the constructor
-      ...options
+      ...Registerer.stripUndefinedProperties(options)
     };
 
     // Make sure we are not using references to array options
