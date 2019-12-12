@@ -154,10 +154,10 @@ export abstract class Session {
       // of circumstances where this can happen - sending a BYE during a re-INVITE for example.
       // The code is currently written such that it lazily makes a new SDH when it needs one
       // and one is not yet defined. Thus if we undefined it here, it will currently make a
-      // new one which is out of sysnc and then never gets cleaned up.
+      // new one which is out of sync and then never gets cleaned up.
       //
       // The downside of leaving it defined are that calls this closed SDH will continue to be
-      // made (think setDescription) and those shoud/will fail. These failures are handled, but
+      // made (think setDescription) and those should/will fail. These failures are handled, but
       // it would be nice to have it all coded up in a way where having an undefined SDH where
       // one is expected throws an error.
       //
@@ -210,7 +210,7 @@ export abstract class Session {
   }
 
   /**
-   * The sesion being replace by this one.
+   * The session being replace by this one.
    */
   public get replacee(): Session | undefined {
     return this._replacee;
@@ -313,7 +313,7 @@ export abstract class Session {
               this.logger.error("Failed to handle offer in 2xx response to re-INVITE");
               this.logger.error(error.message);
               if (this.state === SessionState.Terminated) {
-                // A BYE should not be sent if alreadly terminated.
+                // A BYE should not be sent if already terminated.
                 // For example, a BYE may be sent/received while re-INVITE is outstanding.
                 response.ack();
               } else {
@@ -343,7 +343,7 @@ export abstract class Session {
               // No way to recover, so terminate session and mark as failed.
               this.logger.error("Failed to handle answer in 2xx response to re-INVITE");
               this.logger.error(error.message);
-              // A BYE should only be sent if session is not alreadly terminated.
+              // A BYE should only be sent if session is not already terminated.
               // For example, a BYE may be sent/received while re-INVITE is outstanding.
               // The ACK needs to be sent regardless as it was not handled by the transaction.
               if (this.state !== SessionState.Terminated) {
@@ -380,7 +380,7 @@ export abstract class Session {
               // No way to recover, so terminate session and mark as failed.
               this.logger.error("Failed to rollback offer on non-2xx response to re-INVITE");
               this.logger.error(error.message);
-              // A BYE should only be sent if session is not alreadly terminated.
+              // A BYE should only be sent if session is not already terminated.
               // For example, a BYE may be sent/received while re-INVITE is outstanding.
               // Note that the ACK was already sent by the transaction, so just need to send BYE.
               if (this.state !== SessionState.Terminated) {
@@ -601,7 +601,7 @@ export abstract class Session {
         if (body.contentDisposition !== "session") {
           return;
         }
-        // Receved answer in ACK.
+        // Received answer in ACK.
         const options = {
           sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
           sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
@@ -738,7 +738,7 @@ export abstract class Session {
             this.logger.error(errorRollback.message);
             this.logger.error("Failed to rollback offer on re-INVITE request");
             const outgoingResponse = request.reject({ statusCode: 488 }); // Not Acceptable Here
-            // A BYE should only be sent if session is not alreadly terminated.
+            // A BYE should only be sent if session is not already terminated.
             // For example, a BYE may be sent/received while re-INVITE is outstanding.
             // Note that the ACK was already sent by the transaction, so just need to send BYE.
             if (this.state !== SessionState.Terminated) {
@@ -1052,7 +1052,7 @@ export abstract class Session {
    */
   protected setSessionDescriptionHandler(sdh: SessionDescriptionHandler): void {
     if (this._sessionDescriptionHandler) {
-      throw new Error("Sessionn description handler defined.");
+      throw new Error("Session description handler defined.");
     }
     this._sessionDescriptionHandler = sdh;
   }

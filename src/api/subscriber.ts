@@ -116,7 +116,7 @@ export class Subscriber extends Subscription {
 
     this.outgoingRequestMessage = this.subscriberRequest.message;
 
-    // Add to UA's collection
+    // Add to UserAgent's collection
     this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
     this._userAgent._subscriptions[this.id] = this;
   }
@@ -391,7 +391,7 @@ interface SubscribeResult {
   failure?: {
     /**
      * The negative final response to the SUBSCRIBE, if one was received.
-     * Otherwise a timeout occured waiting for the initial NOTIFY.
+     * Otherwise a timeout occurred waiting for the initial NOTIFY.
      */
     response?: IncomingResponse;
   };

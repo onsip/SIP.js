@@ -13,7 +13,7 @@ export interface InviterOptions extends SessionOptions {
   /**
    * If true, the first answer to the local offer is immediately utilized for media.
    * Requires that the INVITE request MUST NOT fork.
-   * Has no effect if `inviteWtihoutSdp` is true.
+   * Has no effect if `inviteWithoutSdp` is true.
    * Default is false.
    */
   earlyMedia?: boolean;

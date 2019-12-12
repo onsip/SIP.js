@@ -386,10 +386,10 @@ export class Inviter extends Session {
    *
    * 3) If "early media" and the initial offer is in an INVITE, no INVITE forking.
    *
-   * The default behaviour may be altered and "early media" utilized if the
+   * The default behavior may be altered and "early media" utilized if the
    * initial offer is in the an INVITE by setting the `earlyMedia` options.
    * However in that case the INVITE request MUST NOT fork. This allows for
-   * "early media" in environments where the forking behaviour of the SIP
+   * "early media" in environments where the forking behavior of the SIP
    * servers being utilized is configured to disallow forking.
    */
   public invite(options: InviterInviteOptions = {}): Promise<OutgoingInviteRequest> {
@@ -592,7 +592,7 @@ export class Inviter extends Session {
     // Currently if `earlyMedia` is enabled and the INVITE request forks,
     // the session is terminated if the early dialog does not match the
     // confirmed dialog. This restriction make sense in a WebRTC environment,
-    // but there are other enviroments where this restriction does not hold.
+    // but there are other environments where this restriction does not hold.
     //
     // So while we currently cannot make the offer in INVITE+forking+webrtc
     // case work, we propose doing the following...
@@ -868,7 +868,7 @@ export class Inviter extends Session {
                 "the end point which accepted the INVITE (confirmed dialog) does not match the end point with " +
                 "which early media has been setup (early dialog) and thus this session is unable to proceed. " +
                 "In accordance with the SIP specifications, the SIP servers your end point is connected to " +
-                "determine if an INVITE forks and the forking behaviour of those servers cannot be controlled " +
+                "determine if an INVITE forks and the forking behavior of those servers cannot be controlled " +
                 "by this library. If you wish to use early media with this library you must configure those " +
                 "servers accordingly. Alternatively you may set the 'earlyMedia' to 'false' which will allow " +
                 "this library to function with any INVITE requests which do fork.";

@@ -218,8 +218,8 @@ export class Registerer {
   /**
    * Sends the REGISTER request.
    * @remarks
-   * If successfull, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
-   * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
+   * If successful, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
+   * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
   public register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
@@ -404,7 +404,7 @@ export class Registerer {
 
   /**
    * Sends the REGISTER request with expires equal to zero.
-   * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
+   * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
   public unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
@@ -455,7 +455,7 @@ export class Registerer {
     this.request.cseq++;
     this.request.setHeader("cseq", this.request.cseq + " REGISTER");
 
-    // Pre-emptively clear the registration timer to avoid a race condition where
+    // Pre-emptive clear the registration timer to avoid a race condition where
     // this timer fires while waiting for a final response to the unsubscribe.
     if (this.registrationTimer !== undefined) {
       clearTimeout(this.registrationTimer);

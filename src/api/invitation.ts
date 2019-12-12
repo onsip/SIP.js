@@ -85,7 +85,7 @@ export class Invitation extends Session {
       this.rel100 = "supported";
     }
 
-    // Set the toTag on the incoming request messaage to the toTag which
+    // Set the toTag on the incoming request message to the toTag which
     // will be used in the response to the incoming request!!!
     // FIXME: HACK: This is a hack to port an existing behavior.
     // The behavior being ported appears to be a hack itself,
@@ -283,7 +283,7 @@ export class Invitation extends Session {
         this.stateTransition(SessionState.Established);
 
         // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
-        // This behavoir has been ported forward from legacy versions.
+        // This behavior has been ported forward from legacy versions.
         if (this._replacee) {
           this._replacee._bye();
         }
@@ -435,7 +435,7 @@ export class Invitation extends Session {
   }
 
   /**
-   * Helper function to handline offer/answer in a PRACK.
+   * Helper function to handle offer/answer in a PRACK.
    */
   private handlePrackOfferAnswer(
     request: IncomingPrackRequest,
@@ -503,10 +503,10 @@ export class Invitation extends Session {
 
     // Log Exception message
     if (error instanceof ContentTypeUnsupportedError) {
-      this.logger.error("A session description handler occured while sending response (content type unsupported");
+      this.logger.error("A session description handler occurred while sending response (content type unsupported");
       statusCode = 415; // "Unsupported Media Type"
     } else if (error instanceof SessionDescriptionHandlerError) {
-      this.logger.error("A session description handler occured while sending response");
+      this.logger.error("A session description handler occurred while sending response");
     } else if (error instanceof SessionTerminatedError) {
       this.logger.error("Session ended before response could be formulated and sent (while waiting for PRACK)");
     } else if (error instanceof TransactionStateError) {
