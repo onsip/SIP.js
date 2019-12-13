@@ -208,10 +208,10 @@ export class Registerer {
       const doClose = () => {
         // If we are registered, unregister and resolve after our state changes
         if (!this.waiting && this._state === RegistererState.Registered) {
-          this.stateChange.once(() => {
+          this.stateChange.addListener(() => {
             this.terminated();
             resolve();
-          });
+          }, { once: true });
           this.unregister();
           return;
         }
@@ -223,7 +223,7 @@ export class Registerer {
       // If we are waiting for an outstanding request, wait for it to finish and then try closing.
       // Otherwise just try closing.
       if (this.waiting) {
-        this.waitingChange.once(() => doClose());
+        this.waitingChange.addListener(() => doClose(), { once: true });
       } else {
         doClose();
       }

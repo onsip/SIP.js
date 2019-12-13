@@ -250,7 +250,7 @@ export class SimpleUser {
 
     if (!this.registerer) {
       this.registerer = new Registerer(this.userAgent, registererOptions);
-      this.registerer.stateChange.on((state: RegistererState) => {
+      this.registerer.stateChange.addListener((state: RegistererState) => {
         switch (state) {
           case RegistererState.Initial:
             break;
@@ -638,7 +638,7 @@ export class SimpleUser {
     }
 
     // Setup session state change handler
-    this.session.stateChange.on((state: SessionState) => {
+    this.session.stateChange.addListener((state: SessionState) => {
       if (this.session !== session) {
         return; // if our session has changed, just return
       }

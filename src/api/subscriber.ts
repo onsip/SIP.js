@@ -46,7 +46,7 @@ import { UserAgent } from "./user-agent";
  * };
  *
  * // Monitor subscription state changes.
- * subscriber.stateChange.on((newState: SubscriptionState) => {
+ * subscriber.stateChange.addListener((newState: SubscriptionState) => {
  *   if (newState === SubscriptionState.Terminated) {
  *     // handle state change here
  *   }
