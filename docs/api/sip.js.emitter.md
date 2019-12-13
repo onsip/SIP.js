@@ -16,7 +16,9 @@ export interface Emitter<T>
 
 |  Method | Description |
 |  --- | --- |
+|  [addListener(listener, options)](./sip.js.emitter.addlistener.md) | Sets up a function that will be called whenever the target changes. |
 |  [off(listener)](./sip.js.emitter.off.md) | Unregisters a listener. |
 |  [on(listener)](./sip.js.emitter.on.md) | Registers a listener. |
 |  [once(listener)](./sip.js.emitter.once.md) | Registers a listener then unregisters the listener after one event emission. |
+|  [removeListener(listener)](./sip.js.emitter.removelistener.md) | Removes from the listener previously registered with addListener. |
 

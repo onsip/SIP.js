@@ -4,7 +4,7 @@
 
 ## Session.replacee property
 
-The sesion being replace by this one.
+The session being replace by this one.
 
 <b>Signature:</b>
 

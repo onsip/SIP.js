@@ -60,7 +60,7 @@ userAgent.delegate = {
     };
 
     // Handle incoming session state changes.
-    incomingSession.stateChange.on((newState: SessionState) => {
+    incomingSession.stateChange.addListener((newState: SessionState) => {
       switch (newState) {
         case SessionState.Establishing:
           // Session is establishing.
@@ -114,7 +114,7 @@ userAgent.start().then(() => {
   };
 
   // Handle outgoing session state changes.
-  outgoingSession.stateChange.on((newState: SessionState) => {
+  outgoingSession.stateChange.addListener((newState: SessionState) => {
     switch (newState) {
       case SessionState.Establishing:
         // Session is establishing.

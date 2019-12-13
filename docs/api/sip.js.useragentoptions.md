@@ -31,7 +31,7 @@ export interface UserAgentOptions
 |  [hackWssInTransport](./sip.js.useragentoptions.hackwssintransport.md) | <code>boolean</code> | Hack |
 |  [logBuiltinEnabled](./sip.js.useragentoptions.logbuiltinenabled.md) | <code>boolean</code> | Indicates whether log messages should be written to the browser console. |
 |  [logConfiguration](./sip.js.useragentoptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the user agent configuration. |
-|  [logConnector](./sip.js.useragentoptions.logconnector.md) | <code>LogConnector</code> | A function which will be called everytime a log is generated. |
+|  [logConnector](./sip.js.useragentoptions.logconnector.md) | <code>LogConnector</code> | A function which will be called every time a log is generated. |
 |  [logLevel](./sip.js.useragentoptions.loglevel.md) | <code>LogLevel</code> | Indicates the verbosity level of the log messages. |
 |  [noAnswerTimeout](./sip.js.useragentoptions.noanswertimeout.md) | <code>number</code> | Number of seconds after which an incoming call is rejected if not answered. |
 |  [preloadedRouteSet](./sip.js.useragentoptions.preloadedrouteset.md) | <code>Array&lt;string&gt;</code> | Adds a Route header(s) to outgoing requests. |

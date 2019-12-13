@@ -33,7 +33,7 @@ export interface ByerOptions {
 }
 
 // Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
-// 
+//
 // @public
 export class ContentTypeUnsupportedError extends Exception {
     constructor(message?: string);
@@ -41,15 +41,22 @@ export class ContentTypeUnsupportedError extends Exception {
 
 // @public
 export interface Emitter<T> {
+    addListener(listener: (data: T) => void, options?: {
+        once?: boolean;
+    }): void;
+    // @deprecated
     off(listener: (data: T) => void): void;
+    // @deprecated
     on(listener: (data: T) => void): void;
+    // @deprecated
     once(listener: (data: T) => void): void;
+    removeListener(listener: (data: T) => void): void;
 }
 
 // @public
 export class Info {
     // Warning: (ae-forgotten-export) The symbol "IncomingInfoRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     constructor(incomingInfoRequest: IncomingInfoRequest);
     // Warning: (ae-forgotten-export) The symbol "ResponseOptions" needs to be exported by the entry point index.d.ts
@@ -80,7 +87,7 @@ export interface InfoerOptions {
 // @public
 export class Invitation extends Session {
     // Warning: (ae-forgotten-export) The symbol "IncomingInviteRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     constructor(userAgent: UserAgent, incomingInviteRequest: IncomingInviteRequest);
     accept(options?: InvitationAcceptOptions): Promise<void>;
@@ -208,7 +215,7 @@ export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName?: string):
 // @public
 export class Message {
     // Warning: (ae-forgotten-export) The symbol "IncomingMessageRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     constructor(incomingMessageRequest: IncomingMessageRequest);
     accept(options?: ResponseOptions): Promise<void>;
@@ -239,7 +246,7 @@ export interface MessagerOptions {
 // @public
 export class Notification {
     // Warning: (ae-forgotten-export) The symbol "IncomingNotifyRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     constructor(incomingNotifyRequest: IncomingNotifyRequest);
     accept(options?: ResponseOptions): Promise<void>;
@@ -253,11 +260,11 @@ export class Publisher extends EventEmitter {
     dispose(): Promise<void>;
     publish(content: string, options?: PublisherPublishOptions): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponseMessage" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal (undocumented)
     protected receiveResponse(response: IncomingResponseMessage): void;
     // Warning: (ae-forgotten-export) The symbol "OutgoingPublishRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal (undocumented)
     protected send(): OutgoingPublishRequest;
     readonly state: PublisherState;
@@ -307,7 +314,7 @@ export interface PublisherUnpublishOptions {
 // @public
 export class Referral {
     // Warning: (ae-forgotten-export) The symbol "IncomingReferRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     constructor(incomingReferRequest: IncomingReferRequest, session: Session);
     accept(options?: ResponseOptions): Promise<void>;
@@ -416,7 +423,7 @@ export abstract class Session {
     // @internal
     protected constructor(userAgent: UserAgent, options?: SessionOptions);
     // Warning: (ae-forgotten-export) The symbol "AckableIncomingResponseWithSession" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     protected ackAndBye(response: AckableIncomingResponseWithSession, statusCode?: number, reasonPhrase?: string): void;
     readonly assertedIdentity: NameAddrHeader | undefined;
@@ -430,12 +437,12 @@ export abstract class Session {
     delegate: SessionDelegate | undefined;
     readonly dialog: Session_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal (undocumented)
     protected _dialog: Session_2 | undefined;
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "Body" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     protected generateResponseOfferAnswer(request: IncomingInviteRequest, options: {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
@@ -460,11 +467,11 @@ export abstract class Session {
     abstract readonly localIdentity: NameAddrHeader;
     protected abstract logger: Logger;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     protected onAckRequest(request: IncomingAckRequest): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingByeRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     protected onByeRequest(request: IncomingByeRequest): void;
     // @internal
@@ -474,7 +481,7 @@ export abstract class Session {
     // @internal
     protected onNotifyRequest(request: IncomingNotifyRequest): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingPrackRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     protected onPrackRequest(request: IncomingPrackRequest): void;
     // @internal
@@ -617,13 +624,13 @@ export class Subscriber extends Subscription {
     // @internal
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "IncomingResponse" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal (undocumented)
     protected onAccepted(response: IncomingResponse): void;
     // @internal (undocumented)
     protected onNotify(request: IncomingNotifyRequest): void;
     // Warning: (ae-forgotten-export) The symbol "OutgoingSubscribeRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal (undocumented)
     protected onRefresh(request: OutgoingSubscribeRequest): void;
     // @internal @deprecated
@@ -656,7 +663,7 @@ export abstract class Subscription {
     delegate: SubscriptionDelegate | undefined;
     readonly dialog: Subscription_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Subscription" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     protected _dialog: Subscription_2 | undefined;
     dispose(): Promise<void>;
@@ -704,7 +711,7 @@ export interface SubscriptionUnsubscribeOptions {
 }
 
 // Warning: (ae-forgotten-export) The symbol "Transport" needs to be exported by the entry point index.d.ts
-// 
+//
 // @public
 export interface Transport extends Transport_2 {
     connect(): Promise<void>;
@@ -777,12 +784,12 @@ export interface UserAgentDelegate {
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingRegisterRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     onRegisterRequest?(request: IncomingRegisterRequest): void;
     onSubscribe?(subscription: Subscription): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingSubscribeRequest" needs to be exported by the entry point index.d.ts
-    // 
+    //
     // @internal
     onSubscribeRequest?(request: IncomingSubscribeRequest): void;
 }

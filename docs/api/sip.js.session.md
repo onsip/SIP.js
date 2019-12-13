@@ -30,7 +30,7 @@ The constructor for this class is marked as internal. Third-party code should no
 |  [localIdentity](./sip.js.session.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
 |  [logger](./sip.js.session.logger.md) |  | <code>Logger</code> | Logger. |
 |  [remoteIdentity](./sip.js.session.remoteidentity.md) |  | <code>NameAddrHeader</code> | The identity of the remote user. |
-|  [replacee](./sip.js.session.replacee.md) |  | <code>Session &#124; undefined</code> | The sesion being replace by this one. |
+|  [replacee](./sip.js.session.replacee.md) |  | <code>Session &#124; undefined</code> | The session being replace by this one. |
 |  [sessionDescriptionHandler](./sip.js.session.sessiondescriptionhandler.md) |  | <code>SessionDescriptionHandler &#124; undefined</code> | Session description handler. |
 |  [sessionDescriptionHandlerFactory](./sip.js.session.sessiondescriptionhandlerfactory.md) |  | <code>SessionDescriptionHandlerFactory</code> | Session description handler factory. |
 |  [state](./sip.js.session.state.md) |  | <code>SessionState</code> | Session state. |

@@ -24,7 +24,7 @@ This is equivalent to `state === TransportState.Connected`<!-- -->. It is conven
 
 ```ts
 // Monitor transport connectivity
-userAgent.transport.stateChange.on(() => {
+userAgent.transport.stateChange.addListener(() => {
   if (userAgent.transport.isConnected()) {
     // handle transport connect
   } else {

@@ -4,7 +4,7 @@
 
 ## Registerer.unregister() method
 
-Sends the REGISTER request with expires equal to zero. Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
+Sends the REGISTER request with expires equal to zero. Rejects with `RequestPendingError` if a REGISTER request is already in progress.
 
 <b>Signature:</b>
 

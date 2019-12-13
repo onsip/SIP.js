@@ -131,7 +131,7 @@ const userAgent = new UserAgent(options);
 const registerer = new Registerer(userAgent);
 
 // Setup registerer state change handler
-registerer.stateChange.on((newState) => {
+registerer.stateChange.addListener((newState) => {
   switch (newState) {
     case RegistererState.Registered:
       console.log("Registered");
@@ -239,7 +239,7 @@ const uri = UserAgent.makeURI("sip:alice@example.com");
 const session = new Inviter(userAgent, uri);
 
 // Setup session state change handler
-session.stateChange.on((newState: SessionState) => {
+session.stateChange.addListener((newState: SessionState) => {
   switch (newState) {
     case SessionState.Establishing:
       console.log("Ringing");
