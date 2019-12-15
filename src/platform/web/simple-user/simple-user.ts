@@ -68,9 +68,6 @@ export class SimpleUser {
       ...options.userAgentOptions
     };
 
-    // UserAgentOptions
-    userAgentOptions.reconnectionAttempts = 0;
-
     // Transport
     if  (!userAgentOptions.transportConstructor) {
       userAgentOptions.transportConstructor = Transport;
