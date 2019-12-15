@@ -97,7 +97,7 @@ export class UserAgent {
     logLevel: "log",
     noAnswerTimeout: 60,
     preloadedRouteSet: [],
-    reconnectionAttempts: 3,
+    reconnectionAttempts: 0,
     reconnectionDelay: 4,
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
@@ -268,6 +268,20 @@ export class UserAgent {
       if (options.reconnectionAttempts === undefined && maxReconnectionAttemptsDeprecated !== undefined) {
         this.options.reconnectionAttempts = maxReconnectionAttemptsDeprecated;
       }
+    }
+
+    // guard deprecated user agent options (remove this in version 16.x)
+    if (options.reconnectionDelay !== undefined) {
+      const deprecatedMessage =
+        `The user agent option "reconnectionDelay" as has apparently been specified and has been deprecated. ` +
+        "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+      this.logger.warn(deprecatedMessage);
+    }
+    if (options.reconnectionAttempts !== undefined) {
+      const deprecatedMessage =
+        `The user agent option "reconnectionAttempts" as has apparently been specified and has been deprecated. ` +
+        "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+      this.logger.warn(deprecatedMessage);
     }
 
     // Initialize Transport

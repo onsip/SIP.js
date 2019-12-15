@@ -162,12 +162,14 @@ export interface UserAgentOptions {
   preloadedRouteSet?: Array<string>;
 
   /**
+   * @deprecated
    * Maximum number of times to attempt to reconnect when the transport connection drops.
-   * @defaultValue 3
+   * @defaultValue 0
    */
   reconnectionAttempts?: number;
 
   /**
+   * @deprecated
    * Seconds to wait between reconnection attempts when the transport connection drops.
    * @defaultValue 4
    */
