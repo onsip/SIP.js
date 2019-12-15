@@ -41,10 +41,13 @@ export class SimpleUser {
   /** Delegate. */
   public delegate: SimpleUserDelegate | undefined;
 
+  private attemptingReconnection: boolean = false;
+  private connectRequested: boolean = false;
   private logger: Logger;
   private held: boolean = false;
   private options: SimpleUserOptions;
   private registerer: Registerer | undefined = undefined;
+  private registerRequested: boolean = false;
   private session: Session | undefined = undefined;
   private userAgent: UserAgent;
 
@@ -64,6 +67,9 @@ export class SimpleUser {
     const userAgentOptions: UserAgentOptions = {
       ...options.userAgentOptions
     };
+
+    // UserAgentOptions
+    userAgentOptions.reconnectionAttempts = 0;
 
     // Transport
     if  (!userAgentOptions.transportConstructor) {
@@ -96,45 +102,61 @@ export class SimpleUser {
     this.userAgent.delegate = {
       // Handle connection with server established
       onConnect: () => {
+        this.logger.log(`[${this.id}] Connected`);
         if (this.delegate && this.delegate.onServerConnect) {
           this.delegate.onServerConnect();
+        }
+        if (this.registerer && this.registerRequested) {
+          this.logger.log(`[${this.id}] Registering...`);
+          this.registerer.register()
+            .catch((e: Error) => {
+              this.logger.error(`[${this.id}] An error occured registering after connection with server was obtained.`);
+              this.logger.error(e.toString());
+            });
         }
       },
       // Handle connection with server lost
       onDisconnect: (error?: Error) => {
+        this.logger.log(`[${this.id}] Disconnected`);
         if (this.delegate && this.delegate.onServerDisconnect) {
           this.delegate.onServerDisconnect(error);
         }
         if (this.session) {
+          this.logger.log(`[${this.id}] Hanging up...`);
           this.hangup() // will likely fail, but need to cleanup hung calls
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] an error occured hanging up call after connection with server was lost.`);
+              this.logger.error(`[${this.id}] An error occured hanging up call after connection with server was lost.`);
               this.logger.error(e.toString());
             });
         }
         if (this.registerer) {
-          this.unregister() // will likely fail, but need to cleanup invalid registrations
+          this.logger.log(`[${this.id}] Unregistering...`);
+          this.registerer.unregister() // will likely fail, but need to cleanup invalid registrations
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] an error occured unregistering after connection with server was lost.`);
+              this.logger.error(`[${this.id}] An error occured unregistering after connection with server was lost.`);
               this.logger.error(e.toString());
             });
+        }
+        // Only attempt to reconnect if network/server dropped the connection.
+        if (error) {
+          this.attemptReconnection();
         }
       },
       // Handle incoming invitations
       onInvite: (invitation: Invitation) => {
-        this.logger.log(`[${this.id}] received INVITE`);
+        this.logger.log(`[${this.id}] Received INVITE`);
 
         // Guard against a pre-existing session. This implementation only supports one session at a time.
         // However an incoming INVITE request may be received at any time and/or while in the process
         // of sending an outgoing INVITE request. So we reject any incoming INVITE in those cases.
         if (this.session) {
-          this.logger.warn(`[${this.id}] session already in progress, rejecting INVITE...`);
+          this.logger.warn(`[${this.id}] Session already in progress, rejecting INVITE...`);
           invitation.reject()
             .then(() => {
-              this.logger.log(`[${this.id}] rejected INVITE`);
+              this.logger.log(`[${this.id}] Rejected INVITE`);
             })
             .catch((error: Error) => {
-              this.logger.error(`[${this.id}] failed to reject INVITE`);
+              this.logger.error(`[${this.id}] Failed to reject INVITE`);
               this.logger.error(error.toString());
             });
           return;
@@ -152,13 +174,13 @@ export class SimpleUser {
         if (this.delegate && this.delegate.onCallReceived) {
           this.delegate.onCallReceived();
         } else {
-          this.logger.warn(`[${this.id}] no handler available, rejecting INVITE...`);
+          this.logger.warn(`[${this.id}] No handler available, rejecting INVITE...`);
           invitation.reject()
             .then(() => {
-              this.logger.log(`[${this.id}] rejected INVITE`);
+              this.logger.log(`[${this.id}] Rejected INVITE`);
             })
             .catch((error: Error) => {
-              this.logger.error(`[${this.id}] failed to reject INVITE`);
+              this.logger.error(`[${this.id}] Failed to reject INVITE`);
               this.logger.error(error.toString());
             });
         }
@@ -176,6 +198,12 @@ export class SimpleUser {
 
     // Use the SIP.js logger
     this.logger = this.userAgent.getLogger("sip.SimpleUser");
+
+    // Monitor network connectivity and attempt reconnection when we come online
+    window.addEventListener("online", () => {
+      this.logger.log(`[${this.id}] Online`);
+      this.attemptReconnection();
+    });
   }
 
   /**
@@ -212,7 +240,8 @@ export class SimpleUser {
    * Start the UserAgent's WebSocket Transport.
    */
   public connect(): Promise<void> {
-    this.logger.log(`[${this.id}] connecting UserAgent...`);
+    this.logger.log(`[${this.id}] Connecting UserAgent...`);
+    this.connectRequested = true;
     if (this.userAgent.state !== UserAgentState.Started) {
       return this.userAgent.start();
     }
@@ -225,7 +254,8 @@ export class SimpleUser {
    * Stop the UserAgent's WebSocket Transport.
    */
   public disconnect(): Promise<void> {
-    this.logger.log(`[${this.id}] disconnecting UserAgent...`);
+    this.logger.log(`[${this.id}] Disconnecting UserAgent...`);
+    this.connectRequested = false;
     return this.userAgent.stop();
   }
 
@@ -246,7 +276,8 @@ export class SimpleUser {
     registererOptions?: RegistererOptions,
     registererRegisterOptions?: RegistererRegisterOptions
   ): Promise<void> {
-    this.logger.log(`[${this.id}] registering UserAgent...`);
+    this.logger.log(`[${this.id}] Registering UserAgent...`);
+    this.registerRequested = true;
 
     if (!this.registerer) {
       this.registerer = new Registerer(this.userAgent, registererOptions);
@@ -286,7 +317,8 @@ export class SimpleUser {
   public unregister(
     registererUnregisterOptions?: RegistererUnregisterOptions
   ): Promise<void> {
-    this.logger.log(`[${this.id}] unregistering UserAgent...`);
+    this.logger.log(`[${this.id}] Unregistering UserAgent...`);
+    this.registerRequested = false;
 
     if (!this.registerer) {
       return Promise.resolve();
@@ -309,7 +341,7 @@ export class SimpleUser {
     inviterOptions?: InviterOptions,
     inviterInviteOptions?: InviterInviteOptions
   ): Promise<void> {
-    this.logger.log(`[${this.id}] beginning Session...`);
+    this.logger.log(`[${this.id}] Beginning Session...`);
 
     if (this.session) {
       return Promise.reject(new Error("Session already exists."));
@@ -347,7 +379,7 @@ export class SimpleUser {
    * Use `onCallTerminated` delegate method to determine if and when call is ended.
    */
   public hangup(): Promise<void> {
-    this.logger.log(`[${this.id}] hangup...`);
+    this.logger.log(`[${this.id}] Hangup...`);
     return this.terminate();
   }
 
@@ -361,7 +393,7 @@ export class SimpleUser {
   public answer(
     invitationAcceptOptions?: InvitationAcceptOptions
   ): Promise<void> {
-    this.logger.log(`[${this.id}] accepting Invitation...`);
+    this.logger.log(`[${this.id}] Accepting Invitation...`);
 
     if (!this.session) {
       return Promise.reject(new Error("Session does not exist."));
@@ -489,7 +521,7 @@ export class SimpleUser {
       return Promise.reject(new Error("Session does not exist."));
     }
 
-    this.logger.log("Sending DTMF tone: " + tone);
+    this.logger.log(`[${this.id}] Sending DTMF tone: ${tone}`);
     const dtmf = tone;
     const duration = 2000;
     const body = {
@@ -529,6 +561,58 @@ export class SimpleUser {
       }
     }
     return constraints;
+  }
+
+  /**
+   * Attempt reconnection up to `maxReconnectionAttempts` times.
+   * @param reconnectionAttempt - Current attempt number.
+   */
+  private attemptReconnection(reconnectionAttempt: number = 1): void {
+    if (this.attemptingReconnection) {
+      this.logger.log(`[${this.id}] Reconnection attempt already in progress`);
+    }
+
+    const reconnectionAttempts = this.options.reconnectionAttempts || 3;
+    const reconnectionDelay = this.options.reconnectionDelay || 4;
+    this.attemptingReconnection = true;
+
+    if (!this.connectRequested) {
+      this.logger.log(`[${this.id}] Reconnection not currently desired`);
+      this.attemptingReconnection = false;
+      return; // If intentionally disconnected, don't reconnect.
+    }
+
+    if (reconnectionAttempt > reconnectionAttempts) {
+      this.logger.log(`[${this.id}] Reconnection maximum attempts reached`);
+      this.attemptingReconnection = false;
+      return;
+    }
+
+    if (reconnectionAttempt === 1) {
+      this.logger.log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying`);
+    } else {
+      this.logger.log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying in ${reconnectionDelay} seconds`);
+    }
+    setTimeout(() => {
+      if (!this.connectRequested) {
+        this.logger
+          .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - aborted`);
+        this.attemptingReconnection = false;
+        return; // If intentionally disconnected, don't reconnect.
+      }
+      this.userAgent.reconnect()
+        .then(() => {
+          this.logger
+            .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
+          this.attemptingReconnection = false;
+        })
+        .catch((error: Error) => {
+          this.logger.error(error.message);
+          this.logger
+            .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
+          this.attemptReconnection(++reconnectionAttempt);
+        });
+    }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
   }
 
   /** Helper function to remove media from html elements. */
@@ -747,7 +831,7 @@ export class SimpleUser {
       })
       .catch((error: Error) => {
         if (error instanceof RequestPendingError) {
-          this.logger.error("A hold request is already in progress.");
+          this.logger.error(`[${this.id}] A hold request is already in progress.`);
         }
         throw error;
       });
@@ -759,12 +843,12 @@ export class SimpleUser {
    */
   private setMute(mute: boolean): void {
     if (!this.session) {
-      this.logger.warn(`[${this.id}] a session is required to enabled/disable media tracks`);
+      this.logger.warn(`[${this.id}] A session is required to enabled/disable media tracks`);
       return;
     }
 
     if (this.session.state !== SessionState.Established) {
-      this.logger.warn(`[${this.id}] an established session is required to enable/disable media tracks`);
+      this.logger.warn(`[${this.id}] An established session is required to enable/disable media tracks`);
       return;
     }
 
@@ -810,7 +894,7 @@ export class SimpleUser {
         this.options.media.remote.video.srcObject = remoteStream;
         this.options.media.remote.video.play()
           .catch((error: Error) => {
-            this.logger.error(`[${this.id}] error playing video`);
+            this.logger.error(`[${this.id}] Error playing video`);
             this.logger.error(error.message);
           });
       } else if (this.options.media.remote.audio) {
@@ -819,7 +903,7 @@ export class SimpleUser {
           this.options.media.remote.audio.srcObject = remoteStream;
           this.options.media.remote.audio.play()
             .catch((error: Error) => {
-              this.logger.error(`[${this.id}] error playing audio`);
+              this.logger.error(`[${this.id}] Error playing audio`);
               this.logger.error(error.message);
             });
           }
@@ -835,7 +919,7 @@ export class SimpleUser {
    * Use `onCallTerminated` delegate method to determine if and when Session is terminated.
    */
   private terminate(): Promise<void> {
-    this.logger.log(`[${this.id}] terminating...`);
+    this.logger.log(`[${this.id}] Terminating...`);
 
     if (!this.session) {
       return Promise.reject(new Error("Session does not exist."));
@@ -883,7 +967,7 @@ export class SimpleUser {
         throw new Error("Unknown state");
     }
 
-    this.logger.log(`[${this.id}] terminating in state ${this.session.state}, no action taken`);
+    this.logger.log(`[${this.id}] Terminating in state ${this.session.state}, no action taken`);
     return Promise.resolve();
   }
 }
