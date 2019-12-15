@@ -820,7 +820,9 @@ export interface UserAgentOptions {
     logLevel?: LogLevel;
     noAnswerTimeout?: number;
     preloadedRouteSet?: Array<string>;
+    // @deprecated (undocumented)
     reconnectionAttempts?: number;
+    // @deprecated (undocumented)
     reconnectionDelay?: number;
     sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
     sessionDescriptionHandlerFactoryOptions?: object;

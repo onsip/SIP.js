@@ -84,6 +84,8 @@ export interface SimpleUserOptions {
     aor?: string;
     delegate?: SimpleUserDelegate;
     media?: SimpleUserMedia;
+    reconnectionAttempts?: number;
+    reconnectionDelay?: number;
     // Warning: (ae-forgotten-export) The symbol "UserAgentOptions" needs to be exported by the entry point index.d.ts
     userAgentOptions?: UserAgentOptions;
 }
