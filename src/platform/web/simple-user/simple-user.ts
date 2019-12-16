@@ -571,7 +571,6 @@ export class SimpleUser {
 
     const reconnectionAttempts = this.options.reconnectionAttempts || 3;
     const reconnectionDelay = this.options.reconnectionDelay || 4;
-    this.attemptingReconnection = true;
 
     if (!this.connectRequested) {
       this.logger.log(`[${this.id}] Reconnection not currently desired`);
@@ -590,6 +589,9 @@ export class SimpleUser {
     } else {
       this.logger.log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying in ${reconnectionDelay} seconds`);
     }
+
+    this.attemptingReconnection = true;
+
     setTimeout(() => {
       if (!this.connectRequested) {
         this.logger
@@ -607,6 +609,7 @@ export class SimpleUser {
           this.logger.error(error.message);
           this.logger
             .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
+          this.attemptingReconnection = false;
           this.attemptReconnection(++reconnectionAttempt);
         });
     }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
