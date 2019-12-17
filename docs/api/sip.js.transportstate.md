@@ -16,7 +16,7 @@ export declare enum TransportState
 
 |  Member | Value | Description |
 |  --- | --- | --- |
-|  Connected | <code>&quot;Connected&quot;</code> | The <code>connect()</code> method resovled. |
+|  Connected | <code>&quot;Connected&quot;</code> | The <code>connect()</code> method resolved. |
 |  Connecting | <code>&quot;Connecting&quot;</code> | The <code>connect()</code> method was called. |
 |  Disconnected | <code>&quot;Disconnected&quot;</code> | The <code>connect()</code> method was rejected, or the <code>disconnect()</code> method completed, or network connectivity was lost. |
 |  Disconnecting | <code>&quot;Disconnecting&quot;</code> | The <code>disconnect()</code> method was called. |

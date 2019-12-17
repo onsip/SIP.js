@@ -4,7 +4,7 @@ import {
   Logger,
   Subscription as SubscriptionDialog
 } from "../core";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter, } from "./emitter";
 import { SubscriptionDelegate } from "./subscription-delegate";
 import { SubscriptionOptions } from "./subscription-options";
 import { SubscriptionState } from "./subscription-state";
@@ -13,7 +13,7 @@ import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-optio
 import { UserAgent } from "./user-agent";
 
 /**
- * A subscription provides asynchronous {@link Notification} of events.
+ * A subscription provides {@link Notification} of events.
  *
  * @remarks
  * See {@link Subscriber} for details on establishing a subscription.
@@ -26,7 +26,7 @@ export abstract class Subscription {
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
    */
-  public data: any | undefined;
+  public data: any;
 
   /**
    * Subscription delegate. See {@link SubscriptionDelegate} for details.
@@ -38,10 +38,13 @@ export abstract class Subscription {
    * If the subscription state is SubscriptionState.Subscribed, the associated subscription dialog. Otherwise undefined.
    * @internal
    */
-  public dialog: SubscriptionDialog | undefined;
+  protected _dialog: SubscriptionDialog | undefined;
 
-  /** @internal */
-  protected userAgent: UserAgent;
+  /**
+   * Our user agent.
+   * @internal
+   */
+  protected _userAgent: UserAgent;
 
   private _disposed = false;
   private _logger: Logger;
@@ -54,23 +57,50 @@ export abstract class Subscription {
    * @internal
    */
   protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
-    this._logger = userAgent.getLogger("sip.subscription");
-    this.userAgent = userAgent;
+    this._logger = userAgent.getLogger("sip.Subscription");
+    this._userAgent = userAgent;
     this.delegate = options.delegate;
+  }
+
+  /**
+   * Destructor.
+   */
+  public dispose(): Promise<void> {
+    if (this._disposed) {
+      return Promise.resolve();
+    }
+    this._disposed = true;
+    this._stateEventEmitter.removeAllListeners();
+    return Promise.resolve();
+  }
+
+  /**
+   * The subscribed subscription dialog.
+   */
+  public get dialog(): SubscriptionDialog | undefined {
+    return this._dialog;
+  }
+
+  /**
+   * True if disposed.
+   * @internal
+   */
+  public get disposed(): boolean {
+    return this._disposed;
   }
 
   /**
    * Subscription state. See {@link SubscriptionState} for details.
    */
-  get state(): SubscriptionState {
+  public get state(): SubscriptionState {
     return this._state;
   }
 
   /**
    * Emits when the subscription `state` property changes.
    */
-  get stateChange(): Emitter<SubscriptionState> {
-    return makeEmitter(this._stateEventEmitter);
+  public get stateChange(): Emitter<SubscriptionState> {
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**
@@ -87,27 +117,6 @@ export abstract class Subscription {
    * Otherwise a noop.
    */
   public abstract unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
-
-  /**
-   * True if disposed.
-   * @internal
-   */
-  get disposed(): boolean {
-    return this._disposed;
-  }
-
-  /**
-   * Destructor.
-   * @internal
-   */
-  public _dispose(): void {
-    if (this._disposed) {
-      return;
-    }
-    this._disposed = true;
-    this.stateTransition(SubscriptionState.Terminated);
-    this._stateEventEmitter.removeAllListeners();
-  }
 
   /** @internal */
   protected stateTransition(newState: SubscriptionState): void {
@@ -146,7 +155,12 @@ export abstract class Subscription {
 
     // Transition
     this._state = newState;
-    this._logger.log(`Subscription ${this.dialog ? this.dialog.id : undefined} transitioned to ${this._state}`);
+    this._logger.log(`Subscription ${this._dialog ? this._dialog.id : undefined} transitioned to ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+
+    // Dispose
+    if (newState === SubscriptionState.Terminated) {
+      this.dispose();
+    }
   }
 }

@@ -5,7 +5,7 @@ import { Exception } from "../../core";
  * @public
  */
 export class SessionDescriptionHandlerError extends Exception {
-  constructor(message?: string) {
+  public constructor(message?: string) {
     super(message ? message : "Unspecified session description handler error.");
   }
 }

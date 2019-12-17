@@ -22,13 +22,20 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [data](./sip.js.session.data.md) |  | <code>any &#124; undefined</code> | Property reserved for use by instance owner. |
+|  [assertedIdentity](./sip.js.session.assertedidentity.md) |  | <code>NameAddrHeader &#124; undefined</code> | The asserted identity of the remote user. |
+|  [data](./sip.js.session.data.md) |  | <code>any</code> | Property reserved for use by instance owner. |
 |  [delegate](./sip.js.session.delegate.md) |  | <code>SessionDelegate &#124; undefined</code> | The session delegate. |
 |  [dialog](./sip.js.session.dialog.md) |  | <code>SessionDialog &#124; undefined</code> | The confirmed session dialog. |
+|  [id](./sip.js.session.id.md) |  | <code>string</code> | A unique identifier for this session. |
+|  [localIdentity](./sip.js.session.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
+|  [logger](./sip.js.session.logger.md) |  | <code>Logger</code> | Logger. |
+|  [remoteIdentity](./sip.js.session.remoteidentity.md) |  | <code>NameAddrHeader</code> | The identity of the remote user. |
+|  [replacee](./sip.js.session.replacee.md) |  | <code>Session &#124; undefined</code> | The session being replace by this one. |
 |  [sessionDescriptionHandler](./sip.js.session.sessiondescriptionhandler.md) |  | <code>SessionDescriptionHandler &#124; undefined</code> | Session description handler. |
 |  [sessionDescriptionHandlerFactory](./sip.js.session.sessiondescriptionhandlerfactory.md) |  | <code>SessionDescriptionHandlerFactory</code> | Session description handler factory. |
 |  [state](./sip.js.session.state.md) |  | <code>SessionState</code> | Session state. |
 |  [stateChange](./sip.js.session.statechange.md) |  | <code>Emitter&lt;SessionState&gt;</code> | Session state change emitter. |
+|  [userAgent](./sip.js.session.useragent.md) |  | <code>UserAgent</code> | The user agent. |
 
 ## Methods
 

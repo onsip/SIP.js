@@ -96,7 +96,10 @@ export interface Contact {
     // (undocumented)
     tempGruu: URI | undefined;
     // (undocumented)
-    toString: (options?: any) => string;
+    toString: (options?: {
+        anonymous?: boolean;
+        outbound?: boolean;
+    }) => string;
     // (undocumented)
     uri: URI;
 }

@@ -5,7 +5,7 @@ import { Exception } from "../../core";
  * @public
  */
 export class SessionTerminatedError extends Exception {
-  constructor() {
+  public constructor() {
     super("The session has terminated.");
   }
 }

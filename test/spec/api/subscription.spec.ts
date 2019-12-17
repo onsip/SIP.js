@@ -1,11 +1,4 @@
 import {
-  C,
-  IncomingRequest as IncomingRequestMessage,
-  Timers,
-  URI,
-  Utils
-} from "../../../src";
-import {
   Notification,
   Subscriber,
   Subscription,
@@ -13,13 +6,18 @@ import {
   SubscriptionState
 } from "../../../src/api";
 import {
+  C,
   Dialog,
   DialogState,
+  IncomingRequestMessage,
   NonInviteClientTransaction,
   ReSubscribeUserAgentServer,
+  Timers,
+  URI,
   UserAgentClient,
   UserAgentCore
 } from "../../../src/core";
+import { newTag } from "../../../src/core/messages/utils";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
@@ -46,8 +44,8 @@ describe("API Subscription", () => {
 
   const subscriptionDelegateMock =
     jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", [
-    "onNotify"
-  ]);
+      "onNotify"
+    ]);
   subscriptionDelegateMock.onNotify.and.callFake((notification: Notification) => {
     notification.accept();
   });
@@ -79,7 +77,12 @@ describe("API Subscription", () => {
 
   describe("Alice constructs a new subscription targeting Bob", () => {
     beforeEach(() => {
-      subscription = subscriber = new Subscriber(alice.userAgent, target, event, {delegate: subscriptionDelegateMock});
+      subscription = subscriber = new Subscriber(
+        alice.userAgent,
+        target,
+        event,
+        { delegate: subscriptionDelegateMock }
+      );
       subscriptionStateSpy = makeEmitterSpy(subscription.stateChange, alice.userAgent.getLogger("Alice"));
     });
 
@@ -241,7 +244,7 @@ describe("API Subscription", () => {
                 return;
               }
               const statusCode = 200;
-              const toTag = Utils.newTag();
+              const toTag = newTag();
               const extraHeaders = new Array<string>();
               extraHeaders.push(`Event: ${receivedEvent}`);
               // Don't send a 200...
@@ -249,7 +252,6 @@ describe("API Subscription", () => {
 
               const dialogState = Dialog.initialDialogStateForUserAgentServer(request.message, toTag);
               notifierDialog = new NotifierDialog(bob.userAgent.userAgentCore, dialogState);
-
               extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
               extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
               const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
@@ -258,6 +260,11 @@ describe("API Subscription", () => {
           };
           await bob.transport.waitReceived();
           await bob.transport.waitReceived();
+        });
+
+        afterEach(() => {
+          // Not waiting for it to resolve as there is no real server to handle the unsubscribe
+          subscription.dispose();
         });
 
         it("the subscriber should send a 200 to the NOTIFY", () => {
@@ -302,7 +309,7 @@ describe("API Subscription", () => {
                 return;
               }
               const statusCode = 200;
-              const toTag = Utils.newTag();
+              const toTag = newTag();
               const extraHeaders = new Array<string>();
               extraHeaders.push(`Event: ${receivedEvent}`);
               extraHeaders.push(`Expires: ${receivedExpires}`);
@@ -335,7 +342,12 @@ describe("API Subscription", () => {
             }
           };
           await alice.transport.waitReceived();
-       });
+        });
+
+        afterEach(() => {
+          // Not waiting for it to resolve as there is no real server to handle the unsubscribe
+          subscription.dispose();
+        });
 
         it("the subscriber should send nothing", () => {
           const spy = alice.transportSendSpy;

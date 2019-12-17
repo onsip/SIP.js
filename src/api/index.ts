@@ -25,6 +25,7 @@ export * from "./messager";
 export * from "./notification";
 export * from "./publisher-options";
 export * from "./publisher-publish-options";
+export * from "./publisher-state";
 export * from "./publisher-unpublish-options";
 export * from "./publisher";
 export * from "./referral";

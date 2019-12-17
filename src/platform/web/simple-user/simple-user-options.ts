@@ -74,6 +74,24 @@ export interface SimpleUserOptions {
   media?: SimpleUserMedia;
 
   /**
+   * Maximum number of times to attempt to reconnection.
+   * @remarks
+   * When the transport connection is lost (WebSocket disconnects),
+   * reconnection will be attempted immediately. If that fails,
+   * reconnection will be attempted again when the browser indicates
+   * the application has come online. See:
+   * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorOnLine
+   * @defaultValue 3
+   */
+  reconnectionAttempts?: number;
+
+  /**
+   * Seconds to wait between reconnection attempts.
+   * @defaultValue 4
+   */
+  reconnectionDelay?: number;
+
+  /**
    * Options for UserAgent.
    */
   userAgentOptions?: UserAgentOptions;

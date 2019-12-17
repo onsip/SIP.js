@@ -29,7 +29,7 @@ import {
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
 import { LIBRARY_VERSION } from "../version";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter } from "./emitter";
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
@@ -76,21 +76,6 @@ export class UserAgent {
     return Grammar.URIParse(uri);
   }
 
-  /**
-   * Strip properties with undefined values from options.
-   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-   * https://github.com/Microsoft/TypeScript/issues/13195
-   * @param options - Options to reduce
-   */
-  protected static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
-    return Object.keys(options).reduce((object, key) => {
-      if ((options as any)[key] !== undefined) {
-        (object as any)[key] = (options as any)[key];
-      }
-      return object;
-    }, {});
-  }
-
   /** Default user agent options. */
   private static readonly defaultOptions: Required<UserAgentOptions> = {
     allowLegacyNotifications: false,
@@ -112,7 +97,7 @@ export class UserAgent {
     logLevel: "log",
     noAnswerTimeout: 60,
     preloadedRouteSet: [],
-    reconnectionAttempts: 3,
+    reconnectionAttempts: 0,
     reconnectionDelay: 4,
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
@@ -127,20 +112,40 @@ export class UserAgent {
     viaHost: ""
   };
 
-  /** Delegate. */
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      if ((options as any)[key] !== undefined) {
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
+  }
+
+  /**
+   * Property reserved for use by instance owner.
+   * @defaultValue `undefined`
+   */
+  public data: any;
+
+  /**
+   * Delegate.
+   */
   public delegate: UserAgentDelegate | undefined;
 
   /** @internal */
-  public data: any = {};
-
+  public _publishers: { [id: string]: Publisher } = {};
   /** @internal */
-  public publishers: { [id: string]: Publisher } = {};
+  public _registerers: { [id: string]: Registerer } = {};
   /** @internal */
-  public registerers: { [id: string]: Registerer } = {};
+  public _sessions: { [id: string]: Session } = {};
   /** @internal */
-  public sessions: { [id: string]: Session } = {};
-  /** @internal */
-  public subscriptions: { [id: string]: Subscription } = {};
+  public _subscriptions: { [id: string]: Subscription } = {};
 
   private _contact: Contact;
   private _state: UserAgentState = UserAgentState.Stopped;
@@ -162,7 +167,7 @@ export class UserAgent {
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  constructor(
+  public constructor(
     options: Partial<UserAgentOptions> = {}
   ) {
     // initialize delegate
@@ -265,6 +270,20 @@ export class UserAgent {
       }
     }
 
+    // guard deprecated user agent options (remove this in version 16.x)
+    if (options.reconnectionDelay !== undefined) {
+      const deprecatedMessage =
+        `The user agent option "reconnectionDelay" as has apparently been specified and has been deprecated. ` +
+        "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+      this.logger.warn(deprecatedMessage);
+    }
+    if (options.reconnectionAttempts !== undefined) {
+      const deprecatedMessage =
+        `The user agent option "reconnectionAttempts" as has apparently been specified and has been deprecated. ` +
+        "It will no longer be available starting with SIP.js release 0.16.0. Please update accordingly.";
+      this.logger.warn(deprecatedMessage);
+    }
+
     // Initialize Transport
     this._transport = new this.options.transportConstructor(
       this.getLogger("sip.Transport"),
@@ -275,7 +294,7 @@ export class UserAgent {
     // Initialize Contact
     this._contact = this.initContact();
 
-    // Initialize UserAgnetCore
+    // Initialize UserAgentCore
     this._userAgentCore = this.initCore();
 
     if (this.options.autoStart) {
@@ -308,7 +327,7 @@ export class UserAgent {
    * User agent state change emitter.
    */
   public get stateChange(): Emitter<UserAgentState> {
-    return makeEmitter(this._stateEventEmitter);
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /**
@@ -326,6 +345,20 @@ export class UserAgent {
   }
 
   /**
+   * The logger.
+   */
+  public getLogger(category: string, label?: string): Logger {
+    return this.loggerFactory.getLogger(category, label);
+  }
+
+  /**
+   * The logger factory.
+   */
+  public getLoggerFactory(): LoggerFactory {
+    return this.loggerFactory;
+  }
+
+  /**
    * True if transport is connected.
    */
   public isConnected(): boolean {
@@ -335,11 +368,12 @@ export class UserAgent {
   /**
    * Reconnect the transport.
    */
-  public async reconnect(): Promise<void> {
+  public reconnect(): Promise<void> {
     if (this.state === UserAgentState.Stopped) {
       return Promise.reject(new Error("User agent stopped."));
     }
-    return this.transport.connect();
+    // Make sure we don't call synchronously
+    return Promise.resolve().then(() => this.transport.connect());
   }
 
   /**
@@ -359,7 +393,7 @@ export class UserAgent {
    *   });
    * ```
    */
-  public async start(): Promise<void> {
+  public start(): Promise<void> {
     if (this.state === UserAgentState.Started) {
       this.logger.warn(`User agent already started`);
       return Promise.resolve();
@@ -385,16 +419,16 @@ export class UserAgent {
       // Initialize Contact
       this._contact = this.initContact();
 
-      // Initialize UserAgnetCore
+      // Initialize UserAgentCore
       this._userAgentCore = this.initCore();
     }
 
     // Transition state
     this.transitionState(UserAgentState.Started);
 
-    // TODO: Review this as it is not clear it has any benefit and at worst causes additonal load the server.
+    // TODO: Review this as it is not clear it has any benefit and at worst causes additional load the server.
     // On unload it may be best to simply in most scenarios to do nothing. Furthermore and regardless, this
-    // kind of behavior seems more appropriate to be managned by the consumer of the API than the API itself.
+    // kind of behavior seems more appropriate to be managed by the consumer of the API than the API itself.
     // Should this perhaps be deprecated?
     //
     // Add window unload event listener
@@ -418,8 +452,28 @@ export class UserAgent {
    *
    * @remarks
    * Resolves when the user agent has completed a graceful shutdown.
+   * ```txt
+   * 1) Sessions terminate.
+   * 2) Registerers unregister.
+   * 3) Subscribers unsubscribe.
+   * 4) Publishers unpublish.
+   * 5) Transport disconnects.
+   * 6) User Agent Core resets.
+   * ```
+   * NOTE: While this is a "graceful shutdown", it can also be very slow one if you
+   * are waiting for the returned Promise to resolve. The disposal of the clients and
+   * dialogs is done serially - waiting on one to finish before moving on to the next.
+   * This can be slow if there are lot of subscriptions to unsubscribe for example.
    *
-   * Registerers unregister. Sessions terminate. Subscribers unsubscribe. Publishers unpublish.
+   * THE SLOW PACE IS INTENTIONAL!
+   * While one could spin them all down in parallel, this could slam the remote server.
+   * It is bad practice to denial of service attack (DoS attack) servers!!!
+   * Moreover, production servers will automatically blacklist clients which send too
+   * many requests in too short a period of time - dropping any additional requests.
+   *
+   * If a different approach to disposing is needed, one can implement whatever is
+   * needed and execute that prior to calling `stop()`. Alternatively one may simply
+   * not wait for the Promise returned by `stop()` to complete.
    */
   public async stop(): Promise<void> {
     if (this.state === UserAgentState.Stopped) {
@@ -448,10 +502,10 @@ export class UserAgent {
     // Be careful here to use a local references as start() can be called
     // again before we complete and we don't want to touch new clients
     // and we don't want to step on the new instances (or vice versa).
-    const publishers = { ...this.publishers };
-    const registerers = { ...this.registerers };
-    const sessions = { ...this.sessions };
-    const subscriptions = { ...this.subscriptions };
+    const publishers = { ...this._publishers };
+    const registerers = { ...this._registerers };
+    const sessions = { ...this._sessions };
+    const subscriptions = { ...this._subscriptions };
     const transport = this.transport;
     const userAgentCore = this.userAgentCore;
 
@@ -460,75 +514,66 @@ export class UserAgent {
     // following will effectively run async and MUST NOT cause any issues
     // if UserAgent.start() is called while the following code continues.
     //
+    // TODO: Minor optimization.
+    // The disposal in all cases involves, in part, sending messages which
+    // is not worth doing if the transport is not connected as we know attempting
+    // to send messages will be futile. But none of these disposal methods check
+    // if that's is the case and it would be easy for them to do so at this point.
 
-    // Dispose of active clients and dialogs resovling when complete.
-    await (async (): Promise<void> => {
-      // FIXME: Fixup Subscription and Publisher.
-      // Only Registerer and Session currently have proper dispose() methods.
-      // Subscription and Publisher need to be done.
-      //
-      // TODO: Minor optimization.
-      // Also the disposal in all cases involves, in part, sending messages which
-      // is not worth doing if the transport is not connected as we know attempting
-      // to send messages will be futile. But none of these disposal methods check
-      // if that's is the case and it would be easy for them to do so at this point.
-
-      // Dispose of Registerers
-      this.logger.log(`Dispose of registerers`);
-      for (const id in registerers) {
-        if (registerers[id]) {
-          await registerers[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this.registerers[id];
-              throw error;
-            });
-        }
+    // Dispose of Registerers
+    this.logger.log(`Dispose of registerers`);
+    for (const id in registerers) {
+      if (registerers[id]) {
+        await registerers[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._registerers[id];
+            throw error;
+          });
       }
+    }
 
-      // Dispose of Sessions
-      this.logger.log(`Dispose of sessions`);
-      for (const id in sessions) {
-        if (sessions[id]) {
-          await sessions[id].dispose()
-            .catch((error: Error) => {
-              this.logger.error(error.message);
-              delete this.sessions[id];
-              throw error;
-            });
-        }
+    // Dispose of Sessions
+    this.logger.log(`Dispose of sessions`);
+    for (const id in sessions) {
+      if (sessions[id]) {
+        await sessions[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._sessions[id];
+            throw error;
+          });
       }
+    }
 
-      // Dispose of Subscriptions
-      this.logger.log(`Dispose of subscriptions`);
-      for (const id in subscriptions) {
-        if (subscriptions[id]) {
-          try {
-            this.subscriptions[id]._dispose(); // FIXME: TODO should be dispose
-          } catch (e) {
-            this.logger.error(e);
-            delete this.subscriptions[id];
-            throw e;
-          }
-        }
+    // Dispose of Subscriptions
+    this.logger.log(`Dispose of subscriptions`);
+    for (const id in subscriptions) {
+      if (subscriptions[id]) {
+        await subscriptions[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._subscriptions[id];
+            throw error;
+          });
       }
+    }
 
-      // Dispose of Publishers
-      this.logger.log(`Dispose of publishers`);
-      for (const id in publishers) {
-        if (publishers[id]) {
-          try {
-            this.publishers[id]._close(); // FIXME: TODO should be named dispose and be async
-          } catch (e) {
-            this.logger.error(e);
-            delete this.publishers[id];
-            throw e;
-          }
-        }
+    // Dispose of Publishers
+    this.logger.log(`Dispose of publishers`);
+    for (const id in publishers) {
+      if (publishers[id]) {
+        await publishers[id].dispose()
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            delete this._publishers[id];
+            throw error;
+          });
       }
-    })();
+    }
 
     // Dispose of the transport (disconnecting)
+    this.logger.log(`Dispose of transport`);
     await transport.dispose()
       .catch((error: Error) => {
         this.logger.error(error.message);
@@ -536,68 +581,15 @@ export class UserAgent {
       });
 
     // Dispose of the user agent core (resetting)
-    try {
-      userAgentCore.dispose();
-    } catch (e) {
-      this.logger.error(e);
-      throw e;
-    }
-  }
-
-  /** @internal */
-  public findSession(
-    request: IncomingRequestMessage
-  ): Session | undefined {
-    return this.sessions[request.callId + request.fromTag] ||
-      this.sessions[request.callId + request.toTag] ||
-      undefined;
-  }
-
-  /** @internal */
-  public getLogger(category: string, label?: string): Logger {
-    return this.loggerFactory.getLogger(category, label);
-  }
-
-  /** @internal */
-  public getLoggerFactory(): LoggerFactory {
-    return this.loggerFactory;
-  }
-
-  /** @internal */
-  public getSupportedResponseOptions(): Array<string> {
-    let optionTags: Array<string> = [];
-
-    if (this.contact.pubGruu || this.contact.tempGruu) {
-      optionTags.push("gruu");
-    }
-    if (this.options.sipExtension100rel === SIPExtension.Supported) {
-      optionTags.push("100rel");
-    }
-    if (this.options.sipExtensionReplaces === SIPExtension.Supported) {
-      optionTags.push("replaces");
-    }
-
-    optionTags.push("outbound");
-
-    optionTags = optionTags.concat(this.options.sipExtensionExtraSupported || []);
-
-    const allowUnregistered = this.options.hackAllowUnregisteredOptionTags || false;
-    const optionTagSet: { [name: string]: boolean } = {};
-    optionTags = optionTags.filter((optionTag) => {
-      const registered = UserAgentRegisteredOptionTags[optionTag];
-      const unique = !optionTagSet[optionTag];
-      optionTagSet[optionTag] = true;
-      return (registered || allowUnregistered) && unique;
-    });
-
-    return optionTags;
+    this.logger.log(`Dispose of core`);
+    userAgentCore.dispose();
   }
 
   /**
    * Used to avoid circular references.
    * @internal
    */
-  public makeInviter(
+  public _makeInviter(
     targetURI: URI,
     options?: InviterOptions
   ): Inviter {
@@ -733,12 +725,12 @@ export class UserAgent {
             // https://tools.ietf.org/html/rfc6026#section-7.1
 
             // As noted in the comment above, we are to leaving it to the transaction
-            // timers to evenutally cause the transaction to sort itself out in the case
+            // timers to eventually cause the transaction to sort itself out in the case
             // of a transport failure in an invite server transaction. This delegate method
             // is here simply here for completeness and to make it clear that it provides
             // nothing more than informational hook into the core. That is, if you think
             // you should be trying to deal with a transport error here, you are likely wrong.
-            this.logger.error("A transport error has occured while handling an incoming INVITE request.");
+            this.logger.error("A transport error has occurred while handling an incoming INVITE request.");
           }
         };
 
@@ -793,11 +785,11 @@ export class UserAgent {
             }
 
             // Provide a handle on the session being replaced.
-            const targetSession = this.sessions[callId + fromTag] || this.sessions[callId + toTag] || undefined;
+            const targetSession = this._sessions[callId + fromTag] || this._sessions[callId + toTag] || undefined;
             if (!targetSession) {
               throw new Error("Session does not exist.");
             }
-            invitation.replacee = targetSession;
+            invitation._replacee = targetSession;
           }
         }
 
@@ -841,7 +833,7 @@ export class UserAgent {
           const notification = new Notification(incomingNotifyRequest);
           this.delegate.onNotify(notification);
         } else {
-          // Per the above which sbsoletes https://tools.ietf.org/html/rfc3265,
+          // Per the above which obsoletes https://tools.ietf.org/html/rfc3265,
           // the use of out of dialog NOTIFY is obsolete, but...
           if (this.options.allowLegacyNotifications) {
             incomingNotifyRequest.accept(); // Accept the NOTIFY request, but do nothing with it.
@@ -915,7 +907,7 @@ export class UserAgent {
   }
 
   private onTransportMessage(messageString: string): void {
-    const message = Parser.parseMessage(messageString, this.getLogger("sip.parser"));
+    const message = Parser.parseMessage(messageString, this.getLogger("sip.Parser"));
     if (!message) {
       this.logger.warn("Failed to parse incoming message. Dropping.");
       return;
@@ -950,7 +942,7 @@ export class UserAgent {
         return;
       }
 
-      // FIXME: This is non-standard and should be a configruable behavior (desirable regardless).
+      // FIXME: This is non-standard and should be a configurable behavior (desirable regardless).
       // Custom SIP.js check to reject request from ourself (this instance of SIP.js).
       // This is port of SanityCheck.rfc3261_16_3_4().
       if (!message.toTag && message.callId.substr(0, 5) === this.options.sipjsId) {
@@ -969,7 +961,7 @@ export class UserAgent {
       }
     }
 
-    // Reponse Checks
+    // Response Checks
     if (message instanceof IncomingResponseMessage) {
       // This is port of SanityCheck.minimumHeaders().
       if (!hasMinimumHeaders()) {

@@ -20,7 +20,7 @@ While this class is completely functional for simple use cases, it is not intend
 
 |  Constructor | Modifiers | Description |
 |  --- | --- | --- |
-|  [(constructor)(webSocketServerURL, options)](./sip.js.simpleuser._constructor_.md) |  | Constructs a new instance of the <code>SimpleUser</code> class. |
+|  [(constructor)(server, options)](./sip.js.simpleuser._constructor_.md) |  | Constructs a new instance of the <code>SimpleUser</code> class. |
 
 ## Properties
 

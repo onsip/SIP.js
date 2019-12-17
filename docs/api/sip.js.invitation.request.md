@@ -4,7 +4,7 @@
 
 ## Invitation.request property
 
-Incoming INVITE request message.
+Initial incoming INVITE request message.
 
 <b>Signature:</b>
 

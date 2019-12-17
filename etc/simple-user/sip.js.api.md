@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
 
 // @public
 export class SimpleUser {
-    constructor(webSocketServerURL: string, options?: SimpleUserOptions);
+    constructor(server: string, options?: SimpleUserOptions);
     // Warning: (ae-forgotten-export) The symbol "InvitationAcceptOptions" needs to be exported by the entry point index.d.ts
     answer(invitationAcceptOptions?: InvitationAcceptOptions): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "InviterOptions" needs to be exported by the entry point index.d.ts
@@ -84,6 +84,8 @@ export interface SimpleUserOptions {
     aor?: string;
     delegate?: SimpleUserDelegate;
     media?: SimpleUserMedia;
+    reconnectionAttempts?: number;
+    reconnectionDelay?: number;
     // Warning: (ae-forgotten-export) The symbol "UserAgentOptions" needs to be exported by the entry point index.d.ts
     userAgentOptions?: UserAgentOptions;
 }

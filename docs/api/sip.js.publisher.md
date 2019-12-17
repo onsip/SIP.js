@@ -4,7 +4,7 @@
 
 ## Publisher class
 
-A publisher publishes a document (outgoing PUBLISH).
+A publisher publishes a publication (outgoing PUBLISH).
 
 <b>Signature:</b>
 
@@ -18,10 +18,18 @@ export declare class Publisher extends EventEmitter
 |  --- | --- | --- |
 |  [(constructor)(userAgent, targetURI, eventType, options)](./sip.js.publisher._constructor_.md) |  | Constructs a new instance of the <code>Publisher</code> class. |
 
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [state](./sip.js.publisher.state.md) |  | <code>PublisherState</code> | The publication state. |
+|  [stateChange](./sip.js.publisher.statechange.md) |  | <code>Emitter&lt;PublisherState&gt;</code> | Emits when the publisher state changes. |
+
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [publish(content, options)](./sip.js.publisher.publish.md) |  | Publish |
-|  [unpublish(options)](./sip.js.publisher.unpublish.md) |  | Unpublish |
+|  [dispose()](./sip.js.publisher.dispose.md) |  | Destructor. |
+|  [publish(content, options)](./sip.js.publisher.publish.md) |  | Publish. |
+|  [unpublish(options)](./sip.js.publisher.unpublish.md) |  | Unpublish. |
 

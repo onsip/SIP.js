@@ -14,5 +14,5 @@ sessionDescriptionHandlerFactoryOptions?: object;
 
 ## Remarks
 
-See `Web.SessionDesecriptionHandlerOptions` for details.
+See `Web.SessionDescriptionHandlerOptions` for details.
 

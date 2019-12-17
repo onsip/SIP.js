@@ -4,7 +4,10 @@
 
 ## UserAgentOptions.reconnectionAttempts property
 
-Maximum number of times to attempt to reconnect when the transport connection drops.
+> Warning: This API is now obsolete.
+> 
+> Maximum number of times to attempt to reconnect when the transport connection drops.
+> 
 
 <b>Signature:</b>
 

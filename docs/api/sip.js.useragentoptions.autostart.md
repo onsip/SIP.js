@@ -17,5 +17,5 @@ autoStart?: boolean;
 
 ## Remarks
 
-The call to start() resovles when the user agent connects, so if this option is set to `true` an alternative method of connection detection must be used.
+The call to start() resolves when the user agent connects, so if this option is set to `true` an alternative method of connection detection must be used.
 

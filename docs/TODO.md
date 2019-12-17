@@ -1,4 +1,3 @@
-
 # Release Road Map
 
 ## 0.15.0
@@ -19,46 +18,53 @@
 - more tests
 
 ## 0.16.0
-- new readme
+- new README.md
 - remove old api
 - remove old tests
+- update documentation
 - separate tsconfigs for src/*
+- tighten up tslint and lint api, core, demo and tests
 - review packaging best practices (es7, es6, drop es5)
 - free core and API from DOM and Node dependencies
 - cleanup and update sipjs.com
-- more documentation
-- more tests
 
 ## 0.16.x
+- more documentation
+- more tests
+- bug fixes
 - 1.0 prep
 
 # Work in Progress
 
+## Documentation
+README.md
+- build
+  - BUILDING.md (move to docs)
+- demo
+- docs
+- etc
+- src
+- test
+
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
-  - port grammar to core
 - *Integration* tests are being written high level "api" components (Session, Subscription)
-  - port platform web tests
-  - flush out api tests
-- Tests using fake transport are currently fragile; much too dependent on timing of promise resolutions
+  - Need to write more integration tests; Publisher, UserAgent, etc
 
-## API - Misc Open Issues
-- Subscriber needs proper dispose method
-- Session/Inviter/Invitation constructors and properties need to be cleaned up
-- Publisher needs to be converted to new style API, stop events emits, port/write tests
-- A constructed Transport should be passed into the UserAgent constructor as a required argument
-- Session make public methods async; trivial to do but breaks a lot of tests (the fake transport is the problem)
-- Public @internal methods and properties should be '_' prefixed to clearly indicate they are internal (Session.close, Session.refer, etc)
-- Public methods and properties should be indicated as public (or not) for consistency.
+## Source
+
+### API - Miscellaneous
+- UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
+- Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
 - Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
 - Make sure all options buckets are deep copied
 
-## Core - Misc Open Issues
+### Core - Miscellaneous
 - Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
 - Dialog UACs are creating messages while non-dialog UACs are being handed message
 - Extra headers array approach is error prone
 
-## Grammar
+### Grammar - Refresh
 - grammar.ts has everything typed as any
 - parsed URIs are not able to always be matched to configured URI because of typing issues
 - URI constructor doesn't allow user of type undefined, but grammar passed undefined is no user parsed
@@ -68,15 +74,14 @@
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: *" header fails to parse - there's a test written for it
 
-## SessionDescriptionHandler
+### SessionDescriptionHandler - Refresh
 - Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
 - SDH options & SDH modifiers options are applied somewhat ambiguously
   - This behavior was ported from legacy code and the issue punted down the road.
-- SDH.close() is called more than once in various circumstances (see TODO in user-fake and sdh-mock)
-- Hold sdp offer too large for UDP
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
+- Hold SDP offer too large for UDP
 
-## URI
+### URI - Refresh
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
 
 ## REFER handling - it has evolved over time and we are out of date

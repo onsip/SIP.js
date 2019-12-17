@@ -6,19 +6,21 @@ import {
   fromBodyLegacy,
   IncomingResponseMessage,
   Logger,
+  OutgoingPublishRequest,
   OutgoingRequestMessage,
   URI
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
-
+import { _makeEmitter, Emitter } from "./emitter";
 import { PublisherOptions } from "./publisher-options";
 import { PublisherPublishOptions } from "./publisher-publish-options";
+import { PublisherState } from "./publisher-state";
 import { PublisherUnpublishOptions } from "./publisher-unpublish-options";
 import { BodyAndContentType } from "./session-description-handler";
 import { UserAgent } from "./user-agent";
 
 /**
- * A publisher publishes a document (outgoing PUBLISH).
+ * A publisher publishes a publication (outgoing PUBLISH).
  * @public
  */
 export class Publisher extends EventEmitter {
@@ -30,19 +32,28 @@ export class Publisher extends EventEmitter {
   private pubRequestEtag: string | undefined;
   private publishRefreshTimer: any | undefined;
 
+  private disposed = false;
+  private id: string;
   private logger: Logger;
   private request: OutgoingRequestMessage;
   private userAgent: UserAgent;
 
+  /** The publication state. */
+  private _state: PublisherState = PublisherState.Initial;
+  /** Emits when the registration state changes. */
+  private _stateEventEmitter = new EventEmitter();
+
   /**
    * Constructs a new instance of the `Publisher` class.
+   *
    * @param userAgent - User agent. See {@link UserAgent} for details.
    * @param targetURI - Request URI identifying the target of the message.
    * @param eventType - The event type identifying the published document.
    * @param options - Options bucket. See {@link PublisherOptions} for details.
    */
-  constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: PublisherOptions = {}) {
+  public constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: PublisherOptions = {}) {
     super();
+    this.userAgent = userAgent;
 
     options.extraHeaders = (options.extraHeaders || []).slice();
     options.contentType = (options.contentType || "text/plain");
@@ -62,7 +73,7 @@ export class Publisher extends EventEmitter {
     this.options = options;
     this.pubRequestExpires = this.options.expires;
 
-    this.logger = userAgent.getLogger("sip.publisher");
+    this.logger = userAgent.getLogger("sip.Publisher");
 
     const params = options.params || {};
     const fromURI = params.fromUri ? params.fromUri : userAgent.userAgentCore.configuration.aor;
@@ -91,14 +102,58 @@ export class Publisher extends EventEmitter {
       body
     );
 
-    this.userAgent = userAgent;
+    // Identifier
+    this.id = this.target.toString() + ":" + this.event;
+
+    // Add to the user agent's publisher collection.
+    this.userAgent._publishers[this.id] = this;
   }
 
   /**
-   * Publish
+   * Destructor.
+   */
+  public dispose(): Promise<void> {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
+    this.logger.log(`Publisher ${this.id} in state ${this.state} is being disposed`);
+
+    // Remove from the user agent's publisher collection
+    delete this.userAgent._publishers[this.id];
+
+    // Send unpublish, if requested
+    if (this.options.unpublishOnClose && this.state === PublisherState.Published) {
+      return this.unpublish();
+    }
+
+    if (this.publishRefreshTimer) {
+      clearTimeout(this.publishRefreshTimer);
+      this.publishRefreshTimer = undefined;
+    }
+
+    this.pubRequestBody = undefined;
+    this.pubRequestExpires = 0;
+    this.pubRequestEtag = undefined;
+
+    return Promise.resolve();
+  }
+
+  /** The publication state. */
+  public get state(): PublisherState {
+    return this._state;
+  }
+
+  /** Emits when the publisher state changes. */
+  public get stateChange(): Emitter<PublisherState> {
+    return _makeEmitter(this._stateEventEmitter);
+  }
+
+  /**
+   * Publish.
    * @param content - Body to publish
    */
-  public publish(content: string, options: PublisherPublishOptions = {}): void {
+  public publish(content: string, options: PublisherPublishOptions = {}): Promise<void> {
     // Clean up before the run
     if (this.publishRefreshTimer) {
       clearTimeout(this.publishRefreshTimer);
@@ -115,17 +170,15 @@ export class Publisher extends EventEmitter {
       this.pubRequestEtag = undefined;
     }
 
-    if (!(this.userAgent.publishers[this.target.toString() + ":" + this.event])) {
-      this.userAgent.publishers[this.target.toString() + ":" + this.event] = this;
-    }
-
     this.sendPublishRequest();
+
+    return Promise.resolve();
   }
 
   /**
-   * Unpublish
+   * Unpublish.
    */
-  public unpublish(options: PublisherUnpublishOptions = {}): void {
+  public unpublish(options: PublisherUnpublishOptions = {}): Promise<void> {
     // Clean up before the run
     if (this.publishRefreshTimer) {
       clearTimeout(this.publishRefreshTimer);
@@ -138,30 +191,8 @@ export class Publisher extends EventEmitter {
     if (this.pubRequestEtag !== undefined) {
       this.sendPublishRequest();
     }
-  }
 
-  /**
-   * Close
-   * @internal
-   */
-  public _close(): void {
-    // Send unpublish, if requested
-    if (this.options.unpublishOnClose) {
-      this.unpublish();
-    } else {
-      if (this.publishRefreshTimer) {
-        clearTimeout(this.publishRefreshTimer);
-        this.publishRefreshTimer = undefined;
-      }
-
-      this.pubRequestBody = undefined;
-      this.pubRequestExpires = 0;
-      this.pubRequestEtag = undefined;
-    }
-
-    if (this.userAgent.publishers[this.target.toString() + ":" + this.event]) {
-      delete this.userAgent.publishers[this.target.toString() + ":" + this.event];
-    }
+    return Promise.resolve();
   }
 
   /** @internal */
@@ -173,7 +204,6 @@ export class Publisher extends EventEmitter {
       case /^1[0-9]{2}$/.test(statusCode.toString()):
         this.emit("progress", response, cause);
         break;
-
       case /^2[0-9]{2}$/.test(statusCode.toString()):
         // Set SIP-Etag
         if (response.hasHeader("SIP-ETag")) {
@@ -197,13 +227,11 @@ export class Publisher extends EventEmitter {
         if (this.pubRequestExpires !== 0) {
           // Schedule refresh
           this.publishRefreshTimer = setTimeout(() => this.refreshRequest(), this.pubRequestExpires * 900);
-          this.emit("published", response, cause);
+          this.stateTransition(PublisherState.Published);
         } else {
-          this.emit("unpublished", response, cause);
+          this.stateTransition(PublisherState.Unpublished);
         }
-
         break;
-
       case /^412$/.test(statusCode.toString()):
         // 412 code means no matching ETag - possibly the PUBLISH expired
         // Resubmit as new request, if the current request is not a "remove"
@@ -216,12 +244,10 @@ export class Publisher extends EventEmitter {
         } else {
           this.logger.warn("412 response to PUBLISH, recovery failed");
           this.pubRequestExpires = 0;
-          this.emit("failed", response, cause);
-          this.emit("unpublished", response, cause);
+          this.stateTransition(PublisherState.Unpublished);
+          this.stateTransition(PublisherState.Terminated);
         }
-
         break;
-
       case /^423$/.test(statusCode.toString()):
         // 423 code means we need to adjust the Expires interval up
         if (this.pubRequestExpires !== 0 && response.hasHeader("Min-Expires")) {
@@ -234,23 +260,20 @@ export class Publisher extends EventEmitter {
           } else {
             this.logger.warn("Bad 423 response Min-Expires header received for PUBLISH");
             this.pubRequestExpires = 0;
-            this.emit("failed", response, cause);
-            this.emit("unpublished", response, cause);
+            this.stateTransition(PublisherState.Unpublished);
+            this.stateTransition(PublisherState.Terminated);
           }
         } else {
           this.logger.warn("423 response to PUBLISH, recovery failed");
           this.pubRequestExpires = 0;
-          this.emit("failed", response, cause);
-          this.emit("unpublished", response, cause);
+          this.stateTransition(PublisherState.Unpublished);
+          this.stateTransition(PublisherState.Terminated);
         }
-
         break;
-
       default:
         this.pubRequestExpires = 0;
-        this.emit("failed", response, cause);
-        this.emit("unpublished", response, cause);
-
+        this.stateTransition(PublisherState.Unpublished);
+        this.stateTransition(PublisherState.Terminated);
         break;
     }
 
@@ -267,15 +290,14 @@ export class Publisher extends EventEmitter {
   }
 
   /** @internal */
-  protected send(): this {
-    this.userAgent.userAgentCore.publish(this.request, {
+  protected send(): OutgoingPublishRequest {
+    return this.userAgent.userAgentCore.publish(this.request, {
       onAccept: (response): void => this.receiveResponse(response.message),
       onProgress: (response): void => this.receiveResponse(response.message),
       onRedirect: (response): void => this.receiveResponse(response.message),
       onReject: (response): void => this.receiveResponse(response.message),
       onTrying: (response): void => this.receiveResponse(response.message)
     });
-    return this;
   }
 
   private refreshRequest(): void {
@@ -299,7 +321,7 @@ export class Publisher extends EventEmitter {
     this.sendPublishRequest();
   }
 
-  private sendPublishRequest(): void {
+  private sendPublishRequest(): OutgoingPublishRequest {
     const reqOptions: any = Object.create(this.options || Object.prototype);
     reqOptions.extraHeaders = (this.options.extraHeaders || []).slice();
 
@@ -334,6 +356,59 @@ export class Publisher extends EventEmitter {
       body
     );
 
-    this.send();
+    return this.send();
+  }
+
+  /**
+   * Transition publication state.
+   */
+  private stateTransition(newState: PublisherState): void {
+    const invalidTransition = () => {
+      throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
+    };
+
+    // Validate transition
+    switch (this._state) {
+      case PublisherState.Initial:
+        if (
+          newState !== PublisherState.Published &&
+          newState !== PublisherState.Unpublished &&
+          newState !== PublisherState.Terminated
+        ) {
+          invalidTransition();
+        }
+        break;
+      case PublisherState.Published:
+        if (
+          newState !== PublisherState.Unpublished &&
+          newState !== PublisherState.Terminated
+        ) {
+          invalidTransition();
+        }
+        break;
+      case PublisherState.Unpublished:
+        if (
+          newState !== PublisherState.Published &&
+          newState !== PublisherState.Terminated
+        ) {
+          invalidTransition();
+        }
+        break;
+      case PublisherState.Terminated:
+        invalidTransition();
+        break;
+      default:
+        throw new Error("Unrecognized state.");
+    }
+
+    // Transition
+    this._state = newState;
+    this.logger.log(`Publication transitioned to state ${this._state}`);
+    this._stateEventEmitter.emit("event", this._state);
+
+    // Dispose
+    if (newState === PublisherState.Terminated) {
+      this.dispose();
+    }
   }
 }

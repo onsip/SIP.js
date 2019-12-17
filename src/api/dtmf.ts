@@ -12,7 +12,7 @@ export class DTMF extends Info {
   private _duration: number;
 
   /** @internal */
-  constructor(
+  public constructor(
     incomingInfoRequest: IncomingInfoRequest,
     tone: string,
     duration: number,
@@ -22,11 +22,11 @@ export class DTMF extends Info {
     this._duration = duration;
   }
 
-  get tone(): string {
+  public get tone(): string {
     return this._tone;
   }
 
-  get duration(): number {
+  public get duration(): number {
     return this._duration;
   }
 }

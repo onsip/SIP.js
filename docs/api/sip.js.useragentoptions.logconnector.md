@@ -4,7 +4,7 @@
 
 ## UserAgentOptions.logConnector property
 
-A function which will be called everytime a log is generated.
+A function which will be called every time a log is generated.
 
 <b>Signature:</b>
 

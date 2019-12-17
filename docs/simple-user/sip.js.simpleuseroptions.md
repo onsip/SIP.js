@@ -19,5 +19,7 @@ export interface SimpleUserOptions
 |  [aor](./sip.js.simpleuseroptions.aor.md) | <code>string</code> | User's SIP Address of Record (AOR). |
 |  [delegate](./sip.js.simpleuseroptions.delegate.md) | <code>SimpleUserDelegate</code> | Delegate for SimpleUser. |
 |  [media](./sip.js.simpleuseroptions.media.md) | <code>SimpleUserMedia</code> | Media options. |
+|  [reconnectionAttempts](./sip.js.simpleuseroptions.reconnectionattempts.md) | <code>number</code> | Maximum number of times to attempt to reconnection. |
+|  [reconnectionDelay](./sip.js.simpleuseroptions.reconnectiondelay.md) | <code>number</code> | Seconds to wait between reconnection attempts. |
 |  [userAgentOptions](./sip.js.simpleuseroptions.useragentoptions.md) | <code>UserAgentOptions</code> | Options for UserAgent. |
 

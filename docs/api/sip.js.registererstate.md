@@ -23,16 +23,15 @@ export declare enum RegistererState
 
 ## Remarks
 
-Valid state transitions:
+The [Registerer](./sip.js.registerer.md) behaves in a deterministic manner according to the following Finite State Machine (FSM).
 
-```
-1. "initial" --> "registered"
-2. "initial" --> "unregistered"
-3. "initial" --> "terminated"
-4. "registered" --> "unregistered"
-5. "registered" --> "terminated"
-6. "unregistered" --> "registered"
-7. "unregistered" --> "terminated"
+```txt
+                  __________________________________________
+                 |  __________________________              |
+Registerer       | |                          v             v
+Constructed -> Initial -> Registered -> Unregistered -> Terminated
+                             |   ^____________|             ^
+                             |______________________________|
 
 ```
 

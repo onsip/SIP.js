@@ -23,13 +23,13 @@ export class Byer {
    * @param session - The session the BYE will be sent from. See {@link Session} for details.
    * @param options - An options bucket. See {@link ByerOptions} for details.
    */
-  constructor(session: Session, options?: ByerOptions) {
+  public constructor(session: Session, options?: ByerOptions) {
     this.logger = session.userAgent.getLogger("sip.Byer");
     this._session = session;
   }
 
   /** The byer session. */
-  get session(): Session {
+  public get session(): Session {
     return this._session;
   }
 

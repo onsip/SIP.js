@@ -9,7 +9,7 @@ import { SessionDescriptionHandler } from "./session-description-handler";
  */
 export interface SessionDescriptionHandlerFactory {
   /**
-   * SessionDescriptionHandler factory fucntion.
+   * SessionDescriptionHandler factory function.
    * @remarks
    * The `options` are provided as part of the UserAgent configuration
    * and passed through on every call to SessionDescriptionHandlerFactory's constructor.

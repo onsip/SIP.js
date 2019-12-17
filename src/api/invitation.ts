@@ -6,6 +6,7 @@ import {
   IncomingInviteRequest,
   IncomingPrackRequest,
   IncomingRequestMessage,
+  InviteUserAgentServer,
   Logger,
   NameAddrHeader,
   OutgoingResponse,
@@ -37,18 +38,13 @@ type RejectFunction = (reason: Error) => void;
  */
 export class Invitation extends Session {
 
-  /** @internal */
-  public body: string | undefined = undefined;
-  /** @internal */
-  public localIdentity: NameAddrHeader;
-  /** @internal */
-  public remoteIdentity: NameAddrHeader;
-
   /**
    * Logger.
-   * @internal
    */
   protected logger: Logger;
+
+  /** @internal */
+  protected _id: string;
 
   /** True if dispose() has been called. */
   private disposed: boolean = false;
@@ -64,63 +60,41 @@ export class Invitation extends Session {
   private userNoAnswerTimer: any = undefined;
   /** True if waiting for a PRACK before sending a 200 Ok. */
   private waitingForPrack: boolean = false;
+  /** A Promise providing a defer when waiting for a PRACK. */
   private waitingForPrackPromise: Promise<void> | undefined;
+  /** Function to resolve when PRACK arrives. */
   private waitingForPrackResolve: ResolveFunction | undefined;
+  /** Function to reject when PRACK never arrives. */
   private waitingForPrackReject: RejectFunction | undefined;
 
   /** @internal */
-  constructor(userAgent: UserAgent, private incomingInviteRequest: IncomingInviteRequest) {
+  public constructor(userAgent: UserAgent, private incomingInviteRequest: IncomingInviteRequest) {
     super(userAgent);
 
-    // ServerContext properties
-    this.logger = userAgent.getLogger("sip.Invitation", this.id);
-    if (this.request.body) {
-      this.body = this.request.body;
-    }
-    if (this.request.hasHeader("Content-Type")) {
-      this.contentType = this.request.getHeader("Content-Type");
-    }
-    this.localIdentity = this.request.to;
-    this.remoteIdentity = this.request.from;
-    const hasAssertedIdentity = this.request.hasHeader("P-Asserted-Identity");
-    if (hasAssertedIdentity) {
-      const assertedIdentity: string | undefined = this.request.getHeader("P-Asserted-Identity");
-      if (assertedIdentity) {
-        this.assertedIdentity = Grammar.nameAddrHeaderParse(assertedIdentity);
-      }
-    }
+    this.logger = userAgent.getLogger("sip.Invitation");
 
-    // Session properties
-    this.contact = this.userAgent.contact.toString();
-    this.id = this.request.callId + this.request.fromTag;
-    const contentDisposition = this.request.parseHeader("Content-Disposition");
-    if (contentDisposition && contentDisposition.type === "render") {
-      this.renderbody = this.request.body;
-      this.rendertype = this.request.getHeader("Content-Type");
-    }
-
-    // FIXME: This is being done twice...
-    // Update logger
-    this.logger = userAgent.getLogger("sip.Invitation", this.id);
+    const incomingRequestMessage = this.incomingInviteRequest.message;
 
     // Set 100rel if necessary
-    const request = this.request;
-    const requireHeader = request.getHeader("require");
+    const requireHeader = incomingRequestMessage.getHeader("require");
     if (requireHeader && requireHeader.toLowerCase().indexOf("100rel") >= 0) {
       this.rel100 = "required";
     }
-    const supportedHeader = request.getHeader("supported");
+    const supportedHeader = incomingRequestMessage.getHeader("supported");
     if (supportedHeader && supportedHeader.toLowerCase().indexOf("100rel") >= 0) {
       this.rel100 = "supported";
     }
 
-    // Set the toTag on the incoming request to the toTag which
+    // Set the toTag on the incoming request message to the toTag which
     // will be used in the response to the incoming request!!!
     // FIXME: HACK: This is a hack to port an existing behavior.
     // The behavior being ported appears to be a hack itself,
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
-    this.request.toTag = (incomingInviteRequest as any).toTag;
+    incomingRequestMessage.toTag = (incomingInviteRequest as InviteUserAgentServer as any).toTag;
+    if (typeof incomingRequestMessage.toTag !== "string") {
+      throw new TypeError("toTag should have been a string.");
+    }
 
     // The following mapping values are RECOMMENDED:
     // ...
@@ -138,8 +112,8 @@ export class Invitation extends Session {
     // expires before the UAS has generated a final response, a 487
     // (Request Terminated) response SHOULD be generated.
     // https://tools.ietf.org/html/rfc3261#section-13.3.1
-    if (request.hasHeader("expires")) {
-      const expires: number = Number(request.getHeader("expires") || 0) * 1000;
+    if (incomingRequestMessage.hasHeader("expires")) {
+      const expires: number = Number(incomingRequestMessage.getHeader("expires") || 0) * 1000;
       this.expiresTimer = setTimeout(() => {
         if (this.state === SessionState.Initial) {
           incomingInviteRequest.reject({ statusCode: 487 });
@@ -148,14 +122,29 @@ export class Invitation extends Session {
       }, expires);
     }
 
+    // Session parent properties
+    const assertedIdentity = this.request.getHeader("P-Asserted-Identity");
+    if (assertedIdentity) {
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(assertedIdentity);
+    }
+    this._contact = this.userAgent.contact.toString();
+    const contentDisposition = incomingRequestMessage.parseHeader("Content-Disposition");
+    if (contentDisposition && contentDisposition.type === "render") {
+      this._renderbody = incomingRequestMessage.body;
+      this._rendertype = incomingRequestMessage.getHeader("Content-Type");
+    }
+
+    // Identifier
+    this._id = incomingRequestMessage.callId + incomingRequestMessage.fromTag;
+
     // Add to the user agent's session collection.
-    this.userAgent.sessions[this.id] = this;
+    this.userAgent._sessions[this._id] = this;
   }
 
   /**
    * Destructor.
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     // Only run through this once. It can and does get called multiple times
     // depending on the what the sessions state is when first called.
     // For example, if called when "establishing" it will be called again
@@ -220,12 +209,35 @@ export class Invitation extends Session {
    * to the first call to `progress()` and is unable to do so.
    * @internal
    */
-  get autoSendAnInitialProvisionalResponse(): boolean {
+  public get autoSendAnInitialProvisionalResponse(): boolean {
     return this.rel100 === "required" ? false : true;
   }
 
-  /** Incoming INVITE request message. */
-  get request(): IncomingRequestMessage {
+  /**
+   * Initial incoming INVITE request message body.
+   */
+  public get body(): string | undefined {
+    return this.incomingInviteRequest.message.body;
+  }
+
+  /**
+   * The identity of the local user.
+   */
+  public get localIdentity(): NameAddrHeader {
+    return this.request.to;
+  }
+
+  /**
+   * The identity of the remote user.
+   */
+  public get remoteIdentity(): NameAddrHeader {
+    return this.request.from;
+  }
+
+  /**
+   * Initial incoming INVITE request message.
+   */
+  public get request(): IncomingRequestMessage {
     return this.incomingInviteRequest.message;
   }
 
@@ -267,13 +279,13 @@ export class Invitation extends Session {
           onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
           onRefer: (referRequest): void => this.onReferRequest(referRequest)
         };
-        this.dialog = session;
+        this._dialog = session;
         this.stateTransition(SessionState.Established);
 
         // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
-        // This behavoir has been ported forward from legacy versions.
-        if (this.replacee) {
-          this.replacee._bye();
+        // This behavior has been ported forward from legacy versions.
+        if (this._replacee) {
+          this._replacee._bye();
         }
       })
       .catch((error) => this.handleResponseError(error));
@@ -423,7 +435,7 @@ export class Invitation extends Session {
   }
 
   /**
-   * Helper function to handline offer/answer in a PRACK.
+   * Helper function to handle offer/answer in a PRACK.
    */
   private handlePrackOfferAnswer(
     request: IncomingPrackRequest,
@@ -491,10 +503,10 @@ export class Invitation extends Session {
 
     // Log Exception message
     if (error instanceof ContentTypeUnsupportedError) {
-      this.logger.error("A session description handler occured while sending response (content type unsupported");
+      this.logger.error("A session description handler occurred while sending response (content type unsupported");
       statusCode = 415; // "Unsupported Media Type"
     } else if (error instanceof SessionDescriptionHandlerError) {
-      this.logger.error("A session description handler occured while sending response");
+      this.logger.error("A session description handler occurred while sending response");
     } else if (error instanceof SessionTerminatedError) {
       this.logger.error("Session ended before response could be formulated and sent (while waiting for PRACK)");
     } else if (error instanceof TransactionStateError) {
@@ -513,11 +525,11 @@ export class Invitation extends Session {
     }
 
     // FIXME: TODO:
-    // Here we are squelching the throwing of errors due to an async race condition.
+    // Here we are squelching the throwing of errors due to an race condition.
     // We have an internal race between calling `accept()` and handling an incoming
     // CANCEL request. As there is no good way currently to delegate the handling of
-    // these async errors to the caller of `accept()`, we are squelching the throwing
-    // of ALL errors when/ they occur after receiving a CANCEL to catch the ONE we know
+    // these race errors to the caller of `accept()`, we are squelching the throwing
+    // of ALL errors when/if they occur after receiving a CANCEL to catch the ONE we know
     // is a "normal" exceptional condition. While this is a completely reasonable approach,
     // the decision should be left up to the library user. Furthermore, as we are eating
     // ALL errors in this case, we are potentially (likely) hiding "real" errors which occur.
@@ -604,7 +616,7 @@ export class Invitation extends Session {
 
     try {
       const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
-      this.dialog = progressResponse.session;
+      this._dialog = progressResponse.session;
       return Promise.resolve(progressResponse);
     } catch (error) {
       return Promise.reject(error);
@@ -624,7 +636,7 @@ export class Invitation extends Session {
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
       .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
-        this.dialog = progressResponse.session;
+        this._dialog = progressResponse.session;
         return progressResponse;
       });
   }
@@ -664,7 +676,7 @@ export class Invitation extends Session {
           return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
         })
         .then((progressResponse) => {
-          this.dialog = progressResponse.session;
+          this._dialog = progressResponse.session;
 
           let prackRequest: IncomingPrackRequest;
           let prackResponse: OutgoingResponse;
