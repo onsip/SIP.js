@@ -19,7 +19,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [Message](./sip.js.message.md) | A received message (incoming MESSAGE). |
 |  [Messager](./sip.js.messager.md) | A messager sends a [Message](./sip.js.message.md) (outgoing MESSAGE). |
 |  [Notification](./sip.js.notification.md) | A notification of an event (incoming NOTIFY). |
-|  [Publisher](./sip.js.publisher.md) | A publisher publishes a document (outgoing PUBLISH). |
+|  [Publisher](./sip.js.publisher.md) | A publisher publishes a publication (outgoing PUBLISH). |
 |  [Referral](./sip.js.referral.md) | A request to establish a [Session](./sip.js.session.md) elsewhere (incoming REFER). |
 |  [Referrer](./sip.js.referrer.md) | A referrer sends a [Referral](./sip.js.referral.md) (outgoing REFER). |
 |  [Registerer](./sip.js.registerer.md) | A registerer registers a contact for an address of record (outgoing REGISTER). |
@@ -29,13 +29,14 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [SessionTerminatedError](./sip.js.sessionterminatederror.md) | An exception indicating the session terminated before the action completed. |
 |  [StateTransitionError](./sip.js.statetransitionerror.md) | An exception indicating an invalid state transition error occured. |
 |  [Subscriber](./sip.js.subscriber.md) | A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SUBSCRIBE). |
-|  [Subscription](./sip.js.subscription.md) | A subscription provides asynchronous [Notification](./sip.js.notification.md) of events. |
+|  [Subscription](./sip.js.subscription.md) | A subscription provides [Notification](./sip.js.notification.md) of events. |
 |  [UserAgent](./sip.js.useragent.md) | A user agent sends and receives requests using a <code>Transport</code>. |
 
 ## Enumerations
 
 |  Enumeration | Description |
 |  --- | --- |
+|  [PublisherState](./sip.js.publisherstate.md) | [Publisher](./sip.js.publisher.md) state. |
 |  [RegistererState](./sip.js.registererstate.md) | [Registerer](./sip.js.registerer.md) state. |
 |  [SessionState](./sip.js.sessionstate.md) | [Session](./sip.js.session.md) state. |
 |  [SIPExtension](./sip.js.sipextension.md) | SIP extension support level. |

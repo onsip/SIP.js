@@ -11,11 +11,11 @@ import {
 export class Message {
 
   /** @internal */
-  constructor(private incomingMessageRequest: IncomingMessageRequest) {
+  public constructor(private incomingMessageRequest: IncomingMessageRequest) {
   }
 
   /** Incoming MESSAGE request message. */
-  get request(): IncomingRequestMessage {
+  public get request(): IncomingRequestMessage {
     return this.incomingMessageRequest.message;
   }
 

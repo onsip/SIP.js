@@ -28,14 +28,14 @@ export class Referrer {
    * @param referTo - The referral target. If a `Session`, a REFER w/Replaces is sent.
    * @param options - An options bucket. See {@link ReferrerOptions} for details.
    */
-  constructor(session: Session, referTo: URI | Session, options?: ReferrerOptions) {
+  public constructor(session: Session, referTo: URI | Session, options?: ReferrerOptions) {
     this.logger = session.userAgent.getLogger("sip.Referrer");
     this._session = session;
     this._referTo  = referTo;
   }
 
   /** The referrer session. */
-  get session(): Session {
+  public get session(): Session {
     return this._session;
   }
 
@@ -64,7 +64,7 @@ export class Referrer {
   private extraHeaders(referTo: string): Array<string> {
     const extraHeaders: Array<string> = [];
     extraHeaders.push("Referred-By: <" + this._session.userAgent.configuration.uri + ">");
-    extraHeaders.push("Contact: " + this._session.contact);
+    extraHeaders.push("Contact: " + this._session._contact);
     extraHeaders.push("Allow: " + [
       "ACK",
       "CANCEL",

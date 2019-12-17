@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A simple, intuitive, and powerful JavaScript signaling library",
-  "version": "0.15.8",
+  "version": "0.15.9",
   "license": "MIT",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -31,8 +31,8 @@
     "tslib": "^1.10.0"
   },
   "devDependencies": {
-    "@microsoft/api-documenter": "^7.7.0",
-    "@microsoft/api-extractor": "^7.6.2",
+    "@microsoft/api-documenter": "^7.7.2",
+    "@microsoft/api-extractor": "^7.7.0",
     "@types/crypto-js": "^3.1.43",
     "@types/events": "^3.0.0",
     "@types/jasmine": "^3.5.0",
@@ -51,8 +51,8 @@
     "ts-loader": "^6.2.1",
     "ts-pegjs": "0.2.6",
     "tslint": "^5.20.1",
-    "typescript": "^3.6.4",
-    "webpack": "^4.41.2",
+    "typescript": "^3.7.3",
+    "webpack": "^4.41.3",
     "webpack-cli": "^3.3.10"
   },
   "engines": {
@@ -64,7 +64,7 @@
     "build-reg-bundle": "webpack --progress --config build/webpack.config.js --env.buildType reg",
     "build-min-bundle": "webpack --progress --config build/webpack.config.js --env.buildType min",
     "build-bundles": "npm run build-reg-bundle && npm run build-min-bundle",
-    "build-demo": "webpack --progress --config demo/webpack.config.js",
+    "build-demo": "npm run generate-grammar && webpack --progress --config demo/webpack.config.js",
     "build-lib": "tsc -p src",
     "build-test": "tsc -p test",
     "copy-dist-files": "cp dist/sip.js dist/sip-$npm_package_version.js && cp dist/sip.min.js dist/sip-$npm_package_version.min.js",

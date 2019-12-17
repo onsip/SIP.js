@@ -4,7 +4,7 @@
 
 ## Subscription class
 
-A subscription provides asynchronous [Notification](./sip.js.notification.md) of events.
+A subscription provides [Notification](./sip.js.notification.md) of events.
 
 <b>Signature:</b>
 
@@ -22,8 +22,9 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [data](./sip.js.subscription.data.md) |  | <code>any &#124; undefined</code> | Property reserved for use by instance owner. |
+|  [data](./sip.js.subscription.data.md) |  | <code>any</code> | Property reserved for use by instance owner. |
 |  [delegate](./sip.js.subscription.delegate.md) |  | <code>SubscriptionDelegate &#124; undefined</code> | Subscription delegate. See [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) for details. |
+|  [dialog](./sip.js.subscription.dialog.md) |  | <code>SubscriptionDialog &#124; undefined</code> | The subscribed subscription dialog. |
 |  [state](./sip.js.subscription.state.md) |  | <code>SubscriptionState</code> | Subscription state. See [SubscriptionState](./sip.js.subscriptionstate.md) for details. |
 |  [stateChange](./sip.js.subscription.statechange.md) |  | <code>Emitter&lt;SubscriptionState&gt;</code> | Emits when the subscription <code>state</code> property changes. |
 
@@ -31,6 +32,7 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [dispose()](./sip.js.subscription.dispose.md) |  | Destructor. |
 |  [subscribe(options)](./sip.js.subscription.subscribe.md) |  | Sends a re-SUBSCRIBE request if the subscription is "active". |
 |  [unsubscribe(options)](./sip.js.subscription.unsubscribe.md) |  | Unsubscribe from event notifications. |
 

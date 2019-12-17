@@ -4,12 +4,12 @@
 
 ## Publisher.unpublish() method
 
-Unpublish
+Unpublish.
 
 <b>Signature:</b>
 
 ```typescript
-unpublish(options?: PublisherUnpublishOptions): void;
+unpublish(options?: PublisherUnpublishOptions): Promise<void>;
 ```
 
 ## Parameters
@@ -20,5 +20,5 @@ unpublish(options?: PublisherUnpublishOptions): void;
 
 <b>Returns:</b>
 
-`void`
+`Promise<void>`
 

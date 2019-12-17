@@ -8,7 +8,7 @@ import {
   OutgoingRequestMessage,
   URI
 } from "../core";
-import { Emitter, makeEmitter } from "./emitter";
+import { _makeEmitter, Emitter } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
 import { RegistererRegisterOptions } from "./registerer-register-options";
@@ -44,6 +44,22 @@ export class Registerer {
     return UUID;
   }
 
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<RegistererOptions>): Partial<RegistererOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      if ((options as any)[key] !== undefined) {
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
+  }
+
+  private disposed = false;
   private id: string;
   private expires: number;
   private logger: Logger;
@@ -72,7 +88,7 @@ export class Registerer {
    * @param userAgent - User agent. See {@link UserAgent} for details.
    * @param options - Options bucket. See {@link RegistererOptions} for details.
    */
-  constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
+  public constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
 
     // Set user agent
     this.userAgent = userAgent;
@@ -88,7 +104,7 @@ export class Registerer {
       // set the appropriate default registrar
       ...{ registrar: defaultUserAgentRegistrar },
       // apply any options passed in via the constructor
-      ...options
+      ...Registerer.stripUndefinedProperties(options)
     };
 
     // Make sure we are not using references to array options
@@ -154,40 +170,48 @@ export class Registerer {
       });
     }
 
-    // Add to UA's collection
+    // Identifier
     this.id = this.request.callId + this.request.from.parameters.tag;
-    this.userAgent.registerers[this.id] = this;
+
+    // Add to the user agent's session collection.
+    this.userAgent._registerers[this.id] = this;
   }
 
   /** The registered contacts. */
-  get contacts(): Array<string> {
+  public get contacts(): Array<string> {
     return this._contacts.slice();
   }
 
   /** The registration state. */
-  get state(): RegistererState {
+  public get state(): RegistererState {
     return this._state;
   }
 
   /** Emits when the registerer state changes. */
-  get stateChange(): Emitter<RegistererState> {
-    return makeEmitter(this._stateEventEmitter);
+  public get stateChange(): Emitter<RegistererState> {
+    return _makeEmitter(this._stateEventEmitter);
   }
 
   /** Destructor. */
-  public async dispose(): Promise<void> {
-    // Remove from UA's collection
-    delete this.userAgent.registerers[this.id];
+  public dispose(): Promise<void> {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
+    this.logger.log(`Registerer ${this.id} in state ${this.state} is being disposed`);
+
+    // Remove from the user agent's registerer collection
+    delete this.userAgent._registerers[this.id];
 
     // If registered, unregisters and resolves after final response received.
     return new Promise((resolve, reject) => {
       const doClose = () => {
         // If we are registered, unregister and resolve after our state changes
         if (!this.waiting && this._state === RegistererState.Registered) {
-          this.stateChange.once(() => {
+          this.stateChange.addListener(() => {
             this.terminated();
             resolve();
-          });
+          }, { once: true });
           this.unregister();
           return;
         }
@@ -199,7 +223,7 @@ export class Registerer {
       // If we are waiting for an outstanding request, wait for it to finish and then try closing.
       // Otherwise just try closing.
       if (this.waiting) {
-        this.waitingChange.once(() => doClose());
+        this.waitingChange.addListener(() => doClose(), { once: true });
       } else {
         doClose();
       }
@@ -209,10 +233,10 @@ export class Registerer {
   /**
    * Sends the REGISTER request.
    * @remarks
-   * If successfull, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
-   * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
+   * If successful, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called.
+   * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
-  public async register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
+  public register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
     // header field values, as opposed to a retransmission) until they have
     // received a final response from the registrar for the previous one or
@@ -395,9 +419,9 @@ export class Registerer {
 
   /**
    * Sends the REGISTER request with expires equal to zero.
-   * Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
+   * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
-  public async unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
+  public unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
     // UAs MUST NOT send a new registration (that is, containing new Contact
     // header field values, as opposed to a retransmission) until they have
     // received a final response from the registrar for the previous one or
@@ -446,7 +470,7 @@ export class Registerer {
     this.request.cseq++;
     this.request.setHeader("cseq", this.request.cseq + " REGISTER");
 
-    // Pre-emptively clear the registration timer to avoid a race condition where
+    // Pre-emptive clear the registration timer to avoid a race condition where
     // this timer fires while waiting for a final response to the unsubscribe.
     if (this.registrationTimer !== undefined) {
       clearTimeout(this.registrationTimer);
@@ -623,6 +647,11 @@ export class Registerer {
     this._state = newState;
     this.logger.log(`Registration transitioned to state ${this._state}`);
     this._stateEventEmitter.emit("event", this._state);
+
+    // Dispose
+    if (newState === RegistererState.Terminated) {
+      this.dispose();
+    }
   }
 
   /** True if the registerer is currently waiting for final response to a REGISTER request. */
@@ -632,7 +661,7 @@ export class Registerer {
 
   /** Emits when the registerer waiting state changes. */
   private get waitingChange(): Emitter<boolean> {
-    return makeEmitter(this._waitingEventEmitter);
+    return _makeEmitter(this._waitingEventEmitter);
   }
 
   /**

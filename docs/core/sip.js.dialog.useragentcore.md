@@ -9,5 +9,5 @@ The user agent core servicing this dialog.
 <b>Signature:</b>
 
 ```typescript
-readonly userAgentCore: UserAgentCore;
+get userAgentCore(): UserAgentCore;
 ```

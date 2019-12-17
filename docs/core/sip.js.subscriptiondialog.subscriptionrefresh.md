@@ -9,5 +9,5 @@ Number of seconds until subscription auto refresh.
 <b>Signature:</b>
 
 ```typescript
-readonly subscriptionRefresh: number | undefined;
+get subscriptionRefresh(): number | undefined;
 ```

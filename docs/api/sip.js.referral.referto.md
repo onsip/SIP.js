@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly referTo: NameAddrHeader;
+get referTo(): NameAddrHeader;
 ```

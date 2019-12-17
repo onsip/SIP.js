@@ -11,11 +11,11 @@ import {
 export class Info {
 
   /** @internal */
-  constructor(private incomingInfoRequest: IncomingInfoRequest) {
+  public constructor(private incomingInfoRequest: IncomingInfoRequest) {
   }
 
   /** Incoming MESSAGE request message. */
-  get request(): IncomingRequestMessage {
+  public get request(): IncomingRequestMessage {
     return this.incomingInfoRequest.message;
   }
 

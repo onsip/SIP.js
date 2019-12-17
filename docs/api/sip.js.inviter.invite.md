@@ -58,5 +58,5 @@ The upshot is that if you want "early media", you must not put the initial offer
 
 3) If "early media" and the initial offer is in an INVITE, no INVITE forking.
 
-The default behaviour may be altered and "early media" utilized if the initial offer is in the an INVITE by setting the `earlyMedia` options. However in that case the INVITE request MUST NOT fork. This allows for "early media" in environments where the forking behaviour of the SIP servers being utilized is configured to disallow forking.
+The default behavior may be altered and "early media" utilized if the initial offer is in the an INVITE by setting the `earlyMedia` options. However in that case the INVITE request MUST NOT fork. This allows for "early media" in environments where the forking behavior of the SIP servers being utilized is configured to disallow forking.
 

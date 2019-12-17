@@ -19,8 +19,6 @@ export class Messager {
   private request: OutgoingRequestMessage;
   private userAgent: UserAgent;
 
-  private _disposed = false;
-
   /**
    * Constructs a new instance of the `Messager` class.
    * @param userAgent - User agent. See {@link UserAgent} for details.
@@ -29,7 +27,7 @@ export class Messager {
    * @param contentType - Content type of the body of the message.
    * @param options - Options bucket. See {@link MessagerOptions} for details.
    */
-  constructor(
+  public constructor(
     userAgent: UserAgent,
     targetURI: URI,
     content: string,
@@ -100,16 +98,5 @@ export class Messager {
   public message(options: MessagerMessageOptions = {}): Promise<void> {
     this.userAgent.userAgentCore.request(this.request, options.requestDelegate);
     return Promise.resolve();
-  }
-
-  /**
-   * Destructor.
-   * @internal
-   */
-  public _dispose(): void {
-    if (this._disposed) {
-      return;
-    }
-    this._disposed = true;
   }
 }

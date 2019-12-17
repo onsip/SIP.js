@@ -4,6 +4,11 @@
 
 ## Emitter.once() method
 
+> Warning: This API is now obsolete.
+> 
+> Use addListener.
+> 
+
 Registers a listener then unregisters the listener after one event emission.
 
 <b>Signature:</b>

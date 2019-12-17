@@ -47,11 +47,11 @@ import {
   makeMockUA,
   makeMockUserAgentCoreDelegate,
   makeUserAgentCoreConfigurationFromUserAgent
-} from "./mocks";
+} from "../../support/core/mocks";
 
-import { soon } from "../../support/Utils";
+import { soon } from "../../support/api/utils";
 
-describe("UserAgentCore", () => {
+describe("Core UserAgentCore", () => {
   const userAlice = "alice";
   const userBob = "bob";
   const domainAlice = "example.com";

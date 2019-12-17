@@ -4,6 +4,11 @@
 
 ## Emitter.off() method
 
+> Warning: This API is now obsolete.
+> 
+> Use removeListener.
+> 
+
 Unregisters a listener.
 
 <b>Signature:</b>

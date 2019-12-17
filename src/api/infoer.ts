@@ -21,13 +21,13 @@ export class Infoer {
    * @param session - The session the INFO will be sent from. See {@link Session} for details.
    * @param options - An options bucket.
    */
-  constructor(session: Session, options?: InfoerOptions) {
+  public constructor(session: Session, options?: InfoerOptions) {
     this.logger = session.userAgent.getLogger("sip.Infoer");
     this._session = session;
   }
 
   /** The Infoer session. */
-  get session(): Session {
+  public get session(): Session {
     return this._session;
   }
 

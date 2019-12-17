@@ -24,5 +24,5 @@ register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
 
 ## Remarks
 
-If successfull, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called. Rejects with `RequestPendingError` if a REGISTER request is alreadly in progress.
+If successful, sends re-REGISTER requests prior to registration expiration until `unsubscribe()` is called. Rejects with `RequestPendingError` if a REGISTER request is already in progress.
 

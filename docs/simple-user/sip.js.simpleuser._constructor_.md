@@ -9,13 +9,13 @@ Constructs a new instance of the `SimpleUser` class.
 <b>Signature:</b>
 
 ```typescript
-constructor(webSocketServerURL: string, options?: SimpleUserOptions);
+constructor(server: string, options?: SimpleUserOptions);
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  webSocketServerURL | <code>string</code> | SIP WebSocket Server URL. |
+|  server | <code>string</code> | SIP WebSocket Server URL. |
 |  options | <code>SimpleUserOptions</code> | Options bucket. See [SimpleUserOptions](./sip.js.simpleuseroptions.md) for details. |
 

@@ -6,7 +6,7 @@ import { Exception } from "../../core";
  */
 export class RequestPendingError extends Exception {
   /** @internal */
-  constructor(message?: string) {
+  public constructor(message?: string) {
     super(message ? message : "Request pending.");
   }
 }

@@ -2,7 +2,6 @@ import {
   AckableIncomingResponseWithSession,
   Body,
   C,
-  fromBodyLegacy,
   Grammar,
   IncomingResponse,
   Logger,
@@ -21,10 +20,7 @@ import { InviterCancelOptions } from "./inviter-cancel-options";
 import { InviterInviteOptions } from "./inviter-invite-options";
 import { InviterOptions } from "./inviter-options";
 import { Session } from "./session";
-import {
-  BodyAndContentType,
-  SessionDescriptionHandler
-} from "./session-description-handler";
+import { BodyAndContentType, SessionDescriptionHandler } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 import { SIPExtension } from "./user-agent-options";
@@ -35,34 +31,38 @@ import { SIPExtension } from "./user-agent-options";
  */
 export class Inviter extends Session {
 
-  /** @internal */
-  public body: BodyAndContentType | undefined = undefined;
-  /** @internal */
-  public localIdentity: NameAddrHeader;
   /**
-   * If this Inviter was created as a result of a REFER, the reffered Session. Otherwise undefined.
+   * If this Inviter was created as a result of a REFER, the referred Session. Otherwise undefined.
    * @internal
    */
-  public referred: Session | undefined;
-  /** @internal */
-  public remoteIdentity: NameAddrHeader;
-  /** @internal */
-  public request: OutgoingRequestMessage;
+  public _referred: Session | undefined;
 
   /**
    * Logger.
-   * @internal
    */
   protected logger: Logger;
 
+  /** @internal */
+  protected _id: string;
+
+  /** True if dispose() has been called. */
   private disposed: boolean = false;
-  private earlyMedia: boolean;
+  /** True if early media use is enabled. */
+  private earlyMedia: boolean = false;
+  /** The early media session. */
   private earlyMediaDialog: SessionDialog | undefined;
+  /** The early media session description handlers. */
   private earlyMediaSessionDescriptionHandlers = new Map<string, SessionDescriptionHandler>();
+  /** Our From tag. */
   private fromTag: string;
+  /** True if cancel() was called. */
   private isCanceled: boolean = false;
-  private inviteWithoutSdp: boolean;
+  /** True if initial INVITE without SDP. */
+  private inviteWithoutSdp: boolean = false;
+  /** Initial INVITE request sent by core. Undefined until sent. */
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
+  /** Initial INVITE message provided to core to send. */
+  private outgoingRequestMessage: OutgoingRequestMessage;
 
   /**
    * Constructs a new instance of the `Inviter` class.
@@ -70,79 +70,78 @@ export class Inviter extends Session {
    * @param targetURI - Request URI identifying the target of the message.
    * @param options - Options bucket. See {@link InviterOptions} for details.
    */
-  constructor(
+  public constructor(
     userAgent: UserAgent,
     targetURI: URI,
     options: InviterOptions = {}
   ) {
     super(userAgent, options);
 
-    // Default options params
-    options.params = options.params || {};
-
-    // ClientContext properties
     this.logger = userAgent.getLogger("sip.Inviter");
-    if (options.body) {
-      this.body = {
-        body: options.body,
-        contentType: options.contentType ? options.contentType : "application/sdp"
-      };
-    }
+
+    // Early media
+    this.earlyMedia = options.earlyMedia !== undefined ? options.earlyMedia : this.earlyMedia;
+
+    // From tag
+    this.fromTag = newTag();
+
+    // Invite without SDP
+    this.inviteWithoutSdp = options.inviteWithoutSdp !== undefined ? options.inviteWithoutSdp : this.inviteWithoutSdp;
+
+    // Inviter options (could do better copying these options)
+    const inviterOptions: InviterOptions = { ...options };
+    inviterOptions.params = { ...options.params };
 
     // Anonymous call
-    const anonymous: boolean = options.anonymous || false;
-    if (anonymous && userAgent.configuration.uri) {
-      options.params.fromDisplayName = "Anonymous";
-      options.params.fromUri = "sip:anonymous@anonymous.invalid";
-    }
-
-    // From Tag
-    const fromTag = newTag();
+    const anonymous = options.anonymous || false;
 
     // Contact
-    // Do not add ;ob in initial forming dialog requests if the registration over
-    // the current connection got a GRUU URI.
     const contact = userAgent.contact.toString({
       anonymous,
+      // Do not add ;ob in initial forming dialog requests if the
+      // registration over the current connection got a GRUU URI.
       outbound: anonymous ? !userAgent.contact.tempGruu : !userAgent.contact.pubGruu
     });
 
-    // Params
-    const params: OutgoingRequestMessageOptions = options.params || {};
-    params.fromTag = fromTag;
-
+    // FIXME: TODO: We should not be parsing URIs here as if it fails we have to throw an exception
+    // which is not something we want our constructor to do. URIs should be passed in as params.
     // URIs
+    if (anonymous && userAgent.configuration.uri) {
+      inviterOptions.params.fromDisplayName = "Anonymous";
+      inviterOptions.params.fromUri = "sip:anonymous@anonymous.invalid";
+    }
     let fromURI: URI | undefined = userAgent.userAgentCore.configuration.aor;
-    if (options.params.fromUri) {
+    if (inviterOptions.params.fromUri) {
       fromURI =
-        (typeof options.params.fromUri === "string") ?
-          Grammar.URIParse(options.params.fromUri) :
-          options.params.fromUri;
+        (typeof inviterOptions.params.fromUri === "string") ?
+          Grammar.URIParse(inviterOptions.params.fromUri) :
+          inviterOptions.params.fromUri;
     }
     if (!fromURI) {
-      throw new TypeError("Invalid from URI: " + options.params.fromUri);
+      throw new TypeError("Invalid from URI: " + inviterOptions.params.fromUri);
     }
     let toURI: URI | undefined = targetURI;
-    if (options.params.toUri) {
+    if (inviterOptions.params.toUri) {
       toURI =
-        (typeof options.params.toUri === "string") ?
-          Grammar.URIParse(options.params.toUri) :
-          options.params.toUri;
+        (typeof inviterOptions.params.toUri === "string") ?
+          Grammar.URIParse(inviterOptions.params.toUri) :
+          inviterOptions.params.toUri;
     }
     if (!toURI) {
-      throw new TypeError("Invalid to URI: " + options.params.toUri);
+      throw new TypeError("Invalid to URI: " + inviterOptions.params.toUri);
     }
 
-    // Extra headers
-    const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
+    // Params
+    const messageOptions: OutgoingRequestMessageOptions = { ...inviterOptions.params };
+    messageOptions.fromTag = this.fromTag;
 
+    // Extra headers
+    const extraHeaders: Array<string> = (inviterOptions.extraHeaders || []).slice();
     if (anonymous && userAgent.configuration.uri) {
       extraHeaders.push("P-Preferred-Identity: " + userAgent.configuration.uri.toString());
       extraHeaders.push("Privacy: id");
     }
-
     extraHeaders.push("Contact: " + contact);
-
     extraHeaders.push("Allow: " + [
       "ACK",
       "CANCEL",
@@ -154,66 +153,47 @@ export class Inviter extends Session {
       "NOTIFY",
       "REFER"
     ].toString());
-
     if (userAgent.configuration.sipExtension100rel === SIPExtension.Required) {
       extraHeaders.push("Require: 100rel");
     }
     if (userAgent.configuration.sipExtensionReplaces === SIPExtension.Required) {
       extraHeaders.push("Require: replaces");
     }
+    inviterOptions.extraHeaders = extraHeaders;
 
-    let body: Body | undefined;
-    if (this.body) {
-      body = fromBodyLegacy(this.body);
-    }
+    // Body
+    const body: Body | undefined = undefined;
 
-    // Request
-    this.request = userAgent.userAgentCore.makeOutgoingRequestMessage(
+    // Make initial outgoing request message
+    this.outgoingRequestMessage = userAgent.userAgentCore.makeOutgoingRequestMessage(
       C.INVITE,
       targetURI,
       fromURI,
       toURI,
-      params,
+      messageOptions,
       extraHeaders,
       body
     );
 
-    if (!this.request.from) {
-      throw new Error("From undefined.");
-    }
-    if (!this.request.to) {
-      throw new Error("From undefined.");
-    }
-    this.localIdentity = this.request.from;
-    this.remoteIdentity = this.request.to;
+    // Session parent properties
+    this._contact = contact;
+    this._referralInviterOptions = inviterOptions;
+    this._renderbody = options.renderbody;
+    this._rendertype = options.rendertype;
+    this._sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    this._sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
 
-    // Options
-    options.params = params;
-    options.extraHeaders = extraHeaders;
-
-    // Session properties
-    this.contact = contact;
-    this.fromTag = fromTag;
-    this.id = this.request.callId + this.fromTag;
-    this.referralInviterOptions = options;
-    this.renderbody = options.renderbody || undefined;
-    this.rendertype = options.rendertype || "text/plain";
-    this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers || [];
-    this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions || {};
-
-    // InviteClientContext properties
-    this.inviteWithoutSdp = options.inviteWithoutSdp || false;
-
-    this.earlyMedia = options.earlyMedia || false;
+    // Identifier
+    this._id = this.outgoingRequestMessage.callId + this.fromTag;
 
     // Add to the user agent's session collection.
-    this.userAgent.sessions[this.id] = this;
+    this.userAgent._sessions[this._id] = this;
   }
 
   /**
    * Destructor.
    */
-  public async dispose(): Promise<void> {
+  public dispose(): Promise<void> {
     // Only run through this once. It can and does get called multiple times
     // depending on the what the sessions state is when first called.
     // For example, if called when "establishing" it will be called again
@@ -242,6 +222,34 @@ export class Inviter extends Session {
       default:
         throw new Error("Unknown state.");
     }
+  }
+
+  /**
+   * Initial outgoing INVITE request message body.
+   */
+  public get body(): BodyAndContentType | undefined {
+    return this.outgoingRequestMessage.body;
+  }
+
+  /**
+   * The identity of the local user.
+   */
+  public get localIdentity(): NameAddrHeader {
+    return this.outgoingRequestMessage.from;
+  }
+
+  /**
+   * The identity of the remote user.
+   */
+  public get remoteIdentity(): NameAddrHeader {
+    return this.outgoingRequestMessage.to;
+  }
+
+  /**
+   * Initial outgoing INVITE request message.
+   */
+  public get request(): OutgoingRequestMessage {
+    return this.outgoingRequestMessage;
   }
 
   /**
@@ -378,10 +386,10 @@ export class Inviter extends Session {
    *
    * 3) If "early media" and the initial offer is in an INVITE, no INVITE forking.
    *
-   * The default behaviour may be altered and "early media" utilized if the
+   * The default behavior may be altered and "early media" utilized if the
    * initial offer is in the an INVITE by setting the `earlyMedia` options.
    * However in that case the INVITE request MUST NOT fork. This allows for
-   * "early media" in environments where the forking behaviour of the SIP
+   * "early media" in environments where the forking behavior of the SIP
    * servers being utilized is configured to disallow forking.
    */
   public invite(options: InviterInviteOptions = {}): Promise<OutgoingInviteRequest> {
@@ -395,8 +403,8 @@ export class Inviter extends Session {
 
     // just send an INVITE with no sdp...
     if (options.withoutSdp || this.inviteWithoutSdp) {
-      if (this.renderbody && this.rendertype) {
-        this.request.body = { contentType: this.rendertype, body: this.renderbody };
+      if (this._renderbody && this._rendertype) {
+        this.outgoingRequestMessage.body = { contentType: this._rendertype, body: this._renderbody };
       }
 
       // transition state
@@ -407,19 +415,12 @@ export class Inviter extends Session {
 
     // get an offer and send it in an INVITE
     const offerOptions = {
-      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+      sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
     };
     return this.getOffer(offerOptions)
       .then((body) => {
-        this.request.body = { body: body.content, contentType: body.contentType };
-
-        // TODO: Review error handling...
-        // There are some race conditions which can occur, all of which will cause stateTransition() to throw.
-        //  - invite() can be called (a)synchronously after invite() is called (second call to invite() fails)
-        //  - cancel() or terminate()) can be called (a)synchronously after invite() (invite() fails)
-        // The caller should avoid the first case, but the second one is common.
-        // For now we are just letting the state transition fail in all cases.
+        this.outgoingRequestMessage.body = { body: body.content, contentType: body.contentType };
 
         // transition state
         this.stateTransition(SessionState.Establishing);
@@ -591,7 +592,7 @@ export class Inviter extends Session {
     // Currently if `earlyMedia` is enabled and the INVITE request forks,
     // the session is terminated if the early dialog does not match the
     // confirmed dialog. This restriction make sense in a WebRTC environment,
-    // but there are other enviroments where this restriction does not hold.
+    // but there are other environments where this restriction does not hold.
     //
     // So while we currently cannot make the offer in INVITE+forking+webrtc
     // case work, we propose doing the following...
@@ -631,7 +632,7 @@ export class Inviter extends Session {
     ////
 
     // Send the INVITE request.
-    this.outgoingInviteRequest = this.userAgent.userAgentCore.invite(this.request, {
+    this.outgoingInviteRequest = this.userAgent.userAgentCore.invite(this.outgoingRequestMessage, {
       onAccept: (inviteResponse) => {
         // Our transaction layer is "non-standard" in that it will only
         // pass us a 2xx response once per branch, so there is no need to
@@ -722,13 +723,13 @@ export class Inviter extends Session {
   }
 
   private notifyReferer(response: IncomingResponse): void {
-    if (!this.referred) {
+    if (!this._referred) {
       return;
     }
-    if (!(this.referred instanceof Session)) {
+    if (!(this._referred instanceof Session)) {
       throw new Error("Referred session not instance of session");
     }
-    if (!this.referred.dialog) {
+    if (!this._referred.dialog) {
       return;
     }
     if (!response.message.statusCode) {
@@ -741,7 +742,7 @@ export class Inviter extends Session {
     const reasonPhrase = response.message.reasonPhrase;
     const body = `SIP/2.0 ${statusCode} ${reasonPhrase}`.trim();
 
-    const outgoingNotifyRequest = this.referred.dialog.notify(undefined, {
+    const outgoingNotifyRequest = this._referred.dialog.notify(undefined, {
       extraHeaders: [
         "Event: refer",
         "Subscription-State: terminated",
@@ -766,7 +767,7 @@ export class Inviter extends Session {
     // If the notify is rejected, stop sending NOTIFY requests.
     outgoingNotifyRequest.delegate = {
       onReject: () => {
-        this.referred = undefined;
+        this._referred = undefined;
       }
     };
   }
@@ -789,7 +790,7 @@ export class Inviter extends Session {
 
     // Ported behavior.
     if (response.hasHeader("P-Asserted-Identity")) {
-      this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
     }
 
     // We have a confirmed dialog.
@@ -802,10 +803,10 @@ export class Inviter extends Session {
       onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
       onRefer: (referRequest): void => this.onReferRequest(referRequest)
     };
-    this.dialog = session;
+    this._dialog = session;
 
-    const sdhOptions = this.sessionDescriptionHandlerOptions;
-    const sdhModifiers = this.sessionDescriptionHandlerModifiers;
+    const sdhOptions = this._sessionDescriptionHandlerOptions;
+    const sdhModifiers = this._sessionDescriptionHandlerModifiers;
 
     switch (session.signalingState) {
       case SignalingState.Initial:
@@ -822,14 +823,14 @@ export class Inviter extends Session {
         return Promise.reject(new Error("Bad Media Description"));
       case SignalingState.HaveRemoteOffer: {
         // INVITE without offer, received offer in 2xx, so MUST send answer in ACK.
-        if (!this.dialog.offer) {
-          throw new Error(`Session offer undefined in signaling state ${this.dialog.signalingState}.`);
+        if (!this._dialog.offer) {
+          throw new Error(`Session offer undefined in signaling state ${this._dialog.signalingState}.`);
         }
         const options = {
           sessionDescriptionHandlerOptions: sdhOptions,
           sessionDescriptionHandlerModifiers: sdhModifiers
         };
-        return this.setOfferAndGetAnswer(this.dialog.offer, options)
+        return this.setOfferAndGetAnswer(this._dialog.offer, options)
           .then((body) => {
             const ackRequest = inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
@@ -867,7 +868,7 @@ export class Inviter extends Session {
                 "the end point which accepted the INVITE (confirmed dialog) does not match the end point with " +
                 "which early media has been setup (early dialog) and thus this session is unable to proceed. " +
                 "In accordance with the SIP specifications, the SIP servers your end point is connected to " +
-                "determine if an INVITE forks and the forking behaviour of those servers cannot be controlled " +
+                "determine if an INVITE forks and the forking behavior of those servers cannot be controlled " +
                 "by this library. If you wish to use early media with this library you must configure those " +
                 "servers accordingly. Alternatively you may set the 'earlyMedia' to 'false' which will allow " +
                 "this library to function with any INVITE requests which do fork.";
@@ -898,9 +899,9 @@ export class Inviter extends Session {
           .then(() => {
             // This session has completed an initial offer/answer exchange...
             let ackOptions: RequestOptions | undefined;
-            if (this.renderbody && this.rendertype) {
+            if (this._renderbody && this._rendertype) {
               ackOptions = {
-                body: { contentDisposition: "render", contentType: this.rendertype, content: this.renderbody }
+                body: { contentDisposition: "render", contentType: this._rendertype, content: this._renderbody }
               };
             }
             const ackRequest = inviteResponse.ack(ackOptions);
@@ -945,7 +946,7 @@ export class Inviter extends Session {
 
     // Ported - Set assertedIdentity.
     if (response.hasHeader("P-Asserted-Identity")) {
-      this.assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(response.getHeader("P-Asserted-Identity") as string);
     }
 
     // If a provisional response is received for an initial request, and
@@ -964,8 +965,8 @@ export class Inviter extends Session {
       extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
     }
 
-    const sdhOptions = this.sessionDescriptionHandlerOptions;
-    const sdhModifiers = this.sessionDescriptionHandlerModifiers;
+    const sdhOptions = this._sessionDescriptionHandlerOptions;
+    const sdhModifiers = this._sessionDescriptionHandlerModifiers;
 
     switch (session.signalingState) {
       case SignalingState.Initial:

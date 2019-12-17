@@ -32,5 +32,5 @@ export declare class Registerer
 |  --- | --- | --- |
 |  [dispose()](./sip.js.registerer.dispose.md) |  | Destructor. |
 |  [register(options)](./sip.js.registerer.register.md) |  | Sends the REGISTER request. |
-|  [unregister(options)](./sip.js.registerer.unregister.md) |  | Sends the REGISTER request with expires equal to zero. Rejects with <code>RequestPendingError</code> if a REGISTER request is alreadly in progress. |
+|  [unregister(options)](./sip.js.registerer.unregister.md) |  | Sends the REGISTER request with expires equal to zero. Rejects with <code>RequestPendingError</code> if a REGISTER request is already in progress. |
 

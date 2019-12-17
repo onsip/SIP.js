@@ -4,6 +4,11 @@
 
 ## Emitter.on() method
 
+> Warning: This API is now obsolete.
+> 
+> Use addListener.
+> 
+
 Registers a listener.
 
 <b>Signature:</b>

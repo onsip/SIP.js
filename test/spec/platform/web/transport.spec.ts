@@ -22,7 +22,7 @@ const EVENT_MESSAGE = "message";
  * by considering all paths through the FSM from "Disconnected" which arrive
  * back a "Disconnected" as comprising the entire acyclic graph.
  */
-describe("Secure WebSocket Transport", () => {
+describe("Web Transport", () => {
   const connectionTimeout = 5; // seconds
   // The mock WebSocket implements a 4 ms delay implemented via setTimeout on connect
   // (so the callbacks can get setup before being called), close and send. So we need
@@ -286,7 +286,7 @@ describe("Secure WebSocket Transport", () => {
         if (error instanceof StateTransitionError) {
           return;
         }
-        throw(error);
+        throw (error);
       }
 
       beforeEach(() => {
@@ -319,7 +319,7 @@ describe("Secure WebSocket Transport", () => {
         if (error instanceof StateTransitionError) {
           return;
         }
-        throw(error);
+        throw (error);
       }
 
       beforeEach(() => {
@@ -1153,7 +1153,7 @@ describe("Secure WebSocket Transport", () => {
     let connectError: Error | undefined;
     let disconnectError: Error | undefined;
 
-    beforeEach( () => {
+    beforeEach(() => {
       resetAll();
       disconnectPromise = transport.disconnect()
         .catch((error: Error) => { disconnectError = error; });

@@ -23,12 +23,13 @@ export declare enum SubscriptionState
 
 ## Remarks
 
-Valid state transitions:
+The [Subscription](./sip.js.subscription.md) behaves in a deterministic manner according to the following Finite State Machine (FSM).
 
-```
-1. "initial" --> "notify-wait" --> "subscribed" --> "terminated"
-2. "initial" --> "notify-wait" --> "terminated"
-3. "initial" --> "terminated"
+```txt
+                   _______________________________________
+Subscription      |                                       v
+Constructed -> Initial -> NotifyWait -> Subscribed -> Terminated
+                             |____________________________^
 
 ```
 

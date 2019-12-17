@@ -21,7 +21,7 @@ export enum TransportState {
    */
   Connecting = "Connecting",
   /**
-   * The `connect()` method resovled.
+   * The `connect()` method resolved.
    */
   Connected = "Connected",
   /**

@@ -18,6 +18,16 @@ export declare class Inviter extends Session
 |  --- | --- | --- |
 |  [(constructor)(userAgent, targetURI, options)](./sip.js.inviter._constructor_.md) |  | Constructs a new instance of the <code>Inviter</code> class. |
 
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.inviter.body.md) |  | <code>BodyAndContentType &#124; undefined</code> | Initial outgoing INVITE request message body. |
+|  [localIdentity](./sip.js.inviter.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
+|  [logger](./sip.js.inviter.logger.md) |  | <code>Logger</code> | Logger. |
+|  [remoteIdentity](./sip.js.inviter.remoteidentity.md) |  | <code>NameAddrHeader</code> | The identity of the remote user. |
+|  [request](./sip.js.inviter.request.md) |  | <code>OutgoingRequestMessage</code> | Initial outgoing INVITE request message. |
+
 ## Methods
 
 |  Method | Modifiers | Description |

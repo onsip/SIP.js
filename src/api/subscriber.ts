@@ -46,7 +46,7 @@ import { UserAgent } from "./user-agent";
  * };
  *
  * // Monitor subscription state changes.
- * subscriber.stateChange.on((newState: SubscriptionState) => {
+ * subscriber.stateChange.addListener((newState: SubscriptionState) => {
  *   if (newState === SubscriptionState.Terminated) {
  *     // handle state change here
  *   }
@@ -66,13 +66,13 @@ export class Subscriber extends Subscription {
   // TODO: Cleanup these internals
   private id: string;
   private body: BodyAndContentType | undefined = undefined;
-  private context: SubscribeClientContext;
   private event: string;
   private expires: number;
   private extraHeaders: Array<string>;
   private logger: Logger;
-  private request: OutgoingRequestMessage;
+  private outgoingRequestMessage: OutgoingRequestMessage;
   private retryAfterTimer: any | undefined;
+  private subscriberRequest: SubscriberRequest;
   private targetURI: URI;
 
   /**
@@ -82,10 +82,10 @@ export class Subscriber extends Subscription {
    * @param eventType - The event type identifying the subscribed event.
    * @param options - Options bucket. See {@link SubscriberOptions} for details.
    */
-  constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: SubscriberOptions = {}) {
+  public constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: SubscriberOptions = {}) {
     super(userAgent, options);
 
-    this.logger = userAgent.getLogger("sip.subscription");
+    this.logger = userAgent.getLogger("sip.Subscriber");
     if (options.body) {
       this.body = {
         body: options.body,
@@ -93,7 +93,6 @@ export class Subscriber extends Subscription {
       };
     }
 
-    this.userAgent = userAgent;
     this.targetURI = targetURI;
 
     // Subscription event
@@ -113,13 +112,62 @@ export class Subscriber extends Subscription {
     this.extraHeaders = (options.extraHeaders || []).slice();
 
     // Subscription context.
-    this.context = this.initContext();
+    this.subscriberRequest = this.initSubscriberRequest();
 
-    this.request = this.context.message;
+    this.outgoingRequestMessage = this.subscriberRequest.message;
 
-    // Add to UA's collection
-    this.id = this.request.callId + this.request.from.parameters.tag + this.event;
-    this.userAgent.subscriptions[this.id] = this;
+    // Add to UserAgent's collection
+    this.id = this.outgoingRequestMessage.callId + this.outgoingRequestMessage.from.parameters.tag + this.event;
+    this._userAgent._subscriptions[this.id] = this;
+  }
+
+  /**
+   * Destructor.
+   * @internal
+   */
+  public dispose(): Promise<void> {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.logger.log(`Subscription ${this.id} in state ${this.state} is being disposed`);
+
+    // Remove from the user agent's subscription collection
+    delete this._userAgent._subscriptions[this.id];
+
+    // Clear timers
+    if (this.retryAfterTimer) {
+      clearTimeout(this.retryAfterTimer);
+      this.retryAfterTimer = undefined;
+    }
+
+    // Dispose subscriber request
+    this.subscriberRequest.dispose();
+
+    // Make sure to dispose of our parent, then unsubscribe the
+    // subscription dialog (if need be) and resolve when it has terminated.
+    return super.dispose()
+      .then(() => {
+        // If we have never subscribed there is nothing to wait on.
+        // If we are already transitioned to terminated there is no need to unsubscribe again.
+        if (this.state !== SubscriptionState.Subscribed) {
+          return;
+        }
+        if (!this._dialog) {
+          throw new Error("Dialog undefined.");
+        }
+        if (
+          this._dialog.subscriptionState === SubscriptionDialogState.Pending ||
+          this._dialog.subscriptionState === SubscriptionDialogState.Active
+        ) {
+          const dialog = this._dialog;
+          return new Promise((resolve, reject) => {
+            dialog.delegate = {
+              onTerminated: () => resolve()
+            };
+            dialog.unsubscribe();
+          });
+        }
+      });
   }
 
   /**
@@ -130,20 +178,20 @@ export class Subscriber extends Subscription {
    * Sends a re-SUBSCRIBE request if the subscription is "active".
    */
   public subscribe(options: SubscriberSubscribeOptions = {}): Promise<void> {
-    switch (this.context.state) {
+    switch (this.subscriberRequest.state) {
       case SubscriptionDialogState.Initial:
         // we can end up here when retrying so only state transition if in SubscriptionState.Initial state
         if (this.state === SubscriptionState.Initial) {
           this.stateTransition(SubscriptionState.NotifyWait);
         }
-        this.context.subscribe().then((result) => {
+        this.subscriberRequest.subscribe().then((result) => {
           if (result.success) {
             if (result.success.subscription) {
-              this.dialog = result.success.subscription;
-              this.dialog.delegate = {
+              this._dialog = result.success.subscription;
+              this._dialog.delegate = {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
-                onTerminated: () => this._dispose()
+                onTerminated: () => this.stateTransition(SubscriptionState.Terminated)
               };
             }
             this.onNotify(result.success.request);
@@ -157,8 +205,8 @@ export class Subscriber extends Subscription {
       case SubscriptionDialogState.Pending:
         break;
       case SubscriptionDialogState.Active:
-        if (this.dialog) {
-          const request = this.dialog.refresh();
+        if (this._dialog) {
+          const request = this._dialog.refresh();
           request.delegate = {
             onAccept: ((response) => this.onAccepted(response)),
             onRedirect: ((response) => this.unsubscribe()),
@@ -181,50 +229,31 @@ export class Subscriber extends Subscription {
     if (this.disposed) {
       return Promise.resolve();
     }
-    switch (this.context.state) {
+    switch (this.subscriberRequest.state) {
       case SubscriptionDialogState.Initial:
         break;
       case SubscriptionDialogState.NotifyWait:
         break;
       case SubscriptionDialogState.Pending:
-        if (this.dialog) {
-          this.dialog.unsubscribe();
+        if (this._dialog) {
+          this._dialog.unsubscribe();
           // responses intentionally ignored
         }
         break;
       case SubscriptionDialogState.Active:
-        if (this.dialog) {
-          this.dialog.unsubscribe();
+        if (this._dialog) {
+          this._dialog.unsubscribe();
           // responses intentionally ignored
         }
         break;
       case SubscriptionDialogState.Terminated:
         break;
       default:
-        break;
+        throw new Error("Unknown state.");
     }
-    this._dispose();
+
+    this.stateTransition(SubscriptionState.Terminated);
     return Promise.resolve();
-  }
-
-  /**
-   * Destructor.
-   * @internal
-   */
-  public _dispose(): void {
-    if (this.disposed) {
-      return;
-    }
-    super._dispose();
-
-    if (this.retryAfterTimer) {
-      clearTimeout(this.retryAfterTimer);
-      this.retryAfterTimer = undefined;
-    }
-    this.context.dispose();
-
-    // Remove from userAgent's collection
-    delete this.userAgent.subscriptions[this.id];
   }
 
   /**
@@ -233,7 +262,7 @@ export class Subscriber extends Subscription {
    * @internal
    */
   public _refresh(): Promise<void> {
-    if (this.context.state === SubscriptionDialogState.Active) {
+    if (this.subscriberRequest.state === SubscriptionDialogState.Active) {
       return this.subscribe();
     }
     return Promise.resolve();
@@ -290,12 +319,12 @@ export class Subscriber extends Subscription {
             switch (subscriptionState.reason) {
               case "deactivated":
               case "timeout":
-                this.initContext();
+                this.initSubscriberRequest();
                 this.subscribe();
                 return;
               case "probation":
               case "giveup":
-                this.initContext();
+                this.initSubscriberRequest();
                 if (subscriptionState.params && subscriptionState.params["retry-after"]) {
                   this.retryAfterTimer = setTimeout(() => this.subscribe(), subscriptionState.params["retry-after"]);
                 } else {
@@ -323,26 +352,26 @@ export class Subscriber extends Subscription {
     };
   }
 
-  private initContext(): SubscribeClientContext {
+  private initSubscriberRequest(): SubscriberRequest {
     const options = {
       extraHeaders: this.extraHeaders,
       body: this.body ? fromBodyLegacy(this.body) : undefined
     };
-    this.context = new SubscribeClientContext(
-      this.userAgent.userAgentCore,
+    this.subscriberRequest = new SubscriberRequest(
+      this._userAgent.userAgentCore,
       this.targetURI,
       this.event,
       this.expires,
       options
     );
-    this.context.delegate = {
+    this.subscriberRequest.delegate = {
       onAccept: ((response) => this.onAccepted(response))
     };
-    return this.context;
+    return this.subscriberRequest;
   }
 }
 
-interface SubscribeClientContextDelegate {
+interface SubscriberRequestDelegate {
   /**
    * This SUBSCRIBE request will be confirmed with a final response.
    * 200-class responses indicate that the subscription has been accepted
@@ -362,15 +391,15 @@ interface SubscribeResult {
   failure?: {
     /**
      * The negative final response to the SUBSCRIBE, if one was received.
-     * Otherwise a timeout occured waiting for the initial NOTIFY.
+     * Otherwise a timeout occurred waiting for the initial NOTIFY.
      */
     response?: IncomingResponse;
   };
 }
 
 // tslint:disable-next-line:max-classes-per-file
-class SubscribeClientContext {
-  public delegate: SubscribeClientContextDelegate | undefined;
+class SubscriberRequest {
+  public delegate: SubscriberRequestDelegate | undefined;
   public message: OutgoingRequestMessage;
 
   private logger: Logger;
@@ -379,15 +408,15 @@ class SubscribeClientContext {
 
   private subscribed = false;
 
-  constructor(
+  public constructor(
     private core: UserAgentCore,
     private target: URI,
     private event: string,
     private expires: number,
     options: RequestOptions,
-    delegate?: SubscribeClientContextDelegate
+    delegate?: SubscriberRequestDelegate
   ) {
-    this.logger = core.loggerFactory.getLogger("sip.subscription");
+    this.logger = core.loggerFactory.getLogger("sip.Subscriber");
     this.delegate = delegate;
 
     const allowHeader = "Allow: " + AllowedMethods.toString();
@@ -412,17 +441,15 @@ class SubscribeClientContext {
 
   /** Destructor. */
   public dispose(): void {
-    if (this.subscription) {
-      this.subscription.dispose();
-    }
     if (this.request) {
       this.request.waitNotifyStop();
       this.request.dispose();
+      this.request = undefined;
     }
   }
 
   /** Subscription state. */
-  get state(): SubscriptionDialogState {
+  public get state(): SubscriptionDialogState {
     if (this.subscription) {
       return this.subscription.subscriptionState;
     } else if (this.subscribed) {
