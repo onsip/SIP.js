@@ -312,6 +312,10 @@ TODO
 - `UA.on("message")`
 - `UA.on("notify")`
 - `UA.on("outOfDialogReferRequested")`
+- `UA.transport.on("connected")`
+- `UA.transport.on("connecting")`
+- `UA.transport.on("disconnected")`
+- `UA.transport.on("disconnecting")`
 
 Previously...
 ```
@@ -333,12 +337,25 @@ ua.on("notify", (notify) => {
 ua.on("outOfDialogReferRequested", (refer) => {
   console.log("REFER received");
 });
+
+ua.transport.on("disconnected", () => {
+  console.log("WebSocket disconnected");
+});
 ```
 
 Now...
 ```
 const options = {
   delegate: {
+    onConnect: () => {
+      console.log("Network connectivity established");
+    },
+    onDisconnect: (error?: Error) => {
+      console.log("Network connectivity lost");
+      if (!error) {
+        console.log("User agent stopped");
+      }
+    },
     onInvite: (invitation) => {
       console.log("INVITE received");
       invitation.accept();
@@ -359,4 +376,86 @@ const options = {
 }
 
 const userAgent = new UserAgent(options);
+```
+
+## 9. `UserAgent.reconnect()` method replaces...
+
+- Transport configuration option `maxReconnectionAttempts`
+- Transport configuration options `reconnectionTimeout`
+
+Previously...
+
+By default, the transport would internally reconnect to the WebSocket server in the event of unexpected disconnection. This would attempt to reconnect up to `configuration.maxReconnectionAttempts` times, with a gap of `configuration.reconnectionTimeout` seconds between each request.
+
+Now...
+
+- `SimpleUser` implements a similar internal reconnection strategy which may be configured via `SimpleUserOptions.reconnectionAttempts` and `SimpleUserOptions.reconnectionDelay`
+- The API no longer provides an "internal" reconnection strategy, but coding an "external" reconnection strategy is straightforward
+
+Here is how to implement the 0.15.x reconnection strategy using the 0.16.x API...
+
+```ts
+// Number of times to attempt reconnection before giving up
+const reconnectionAttempts = 3;
+// Number of seconds to wait between reconnection attempts
+const reconnectionDelay = 4;
+
+// Used to guard against overlapping reconnection attempts
+let attemptingReconnection = false;
+// If false, reconnection attempts will be discontinued or otherwise prevented
+let shouldBeConnected = true;
+
+// Function which recursively attempts reconnection
+const attemptReconnection = (reconnectionAttempt = 1): void => {
+  // If not intentionally connected, don't reconnect.
+  if (!shouldBeConnected) {
+    return;
+  }
+
+  // Reconnection attempt already in progress
+  if (attemptingReconnection) {
+    return;
+  }
+
+  // Reconnection maximum attempts reached
+  if (reconnectionAttempt > reconnectionAttempts) {
+    return;
+  }
+
+  // We're attempting a reconnection
+  attemptingReconnection = true;
+
+  setTimeout(() => {
+    // If not intentionally connected, don't reconnect.
+    if (!shouldBeConnected) {
+      attemptingReconnection = false;
+      return;
+    }
+    // Attempt reconnect
+    userAgent.reconnect()
+      .then(() => {
+        // Reconnect attempt succeeded
+        attemptingReconnection = false;
+      })
+      .catch((error: Error) => {
+        // Reconnect attempt failed
+        attemptingReconnection = false;
+        attemptReconnection(++reconnectionAttempt);
+      });
+  }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
+};
+
+// Handle connection with server lost
+userAgent.delegate.onDisconnect = (error?: Error) => {
+  // On disconnect, cleanup invalid registrations
+  // This will likely reject because we are disconnected, but that is expected
+  registerer.unregister()
+    .catch((e: Error) => {
+      // Unregister failed
+    });
+  // Only attempt to reconnect if network/server dropped the connection
+  if (error) {
+    attemptReconnection();
+  }
+};
 ```
