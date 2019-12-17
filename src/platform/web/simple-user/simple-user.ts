@@ -565,22 +565,20 @@ export class SimpleUser {
    * @param reconnectionAttempt - Current attempt number.
    */
   private attemptReconnection(reconnectionAttempt: number = 1): void {
-    if (this.attemptingReconnection) {
-      this.logger.log(`[${this.id}] Reconnection attempt already in progress`);
-    }
-
     const reconnectionAttempts = this.options.reconnectionAttempts || 3;
     const reconnectionDelay = this.options.reconnectionDelay || 4;
 
     if (!this.connectRequested) {
       this.logger.log(`[${this.id}] Reconnection not currently desired`);
-      this.attemptingReconnection = false;
       return; // If intentionally disconnected, don't reconnect.
+    }
+
+    if (this.attemptingReconnection) {
+      this.logger.log(`[${this.id}] Reconnection attempt already in progress`);
     }
 
     if (reconnectionAttempt > reconnectionAttempts) {
       this.logger.log(`[${this.id}] Reconnection maximum attempts reached`);
-      this.attemptingReconnection = false;
       return;
     }
 
@@ -606,9 +604,9 @@ export class SimpleUser {
           this.attemptingReconnection = false;
         })
         .catch((error: Error) => {
-          this.logger.error(error.message);
           this.logger
             .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
+          this.logger.error(error.message);
           this.attemptingReconnection = false;
           this.attemptReconnection(++reconnectionAttempt);
         });
