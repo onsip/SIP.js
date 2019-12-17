@@ -52,6 +52,9 @@ README.md
 
 ## Source
 
+### TypeScript
+- issue updating to TypeScript 3.7 https://github.com/microsoft/TypeScript/issues/33939
+
 ### API - Miscellaneous
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
