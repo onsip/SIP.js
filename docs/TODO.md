@@ -39,7 +39,6 @@
 ## Documentation
 README.md
 - build
-  - BUILDING.md (move to docs)
 - demo
 - docs
 - etc
