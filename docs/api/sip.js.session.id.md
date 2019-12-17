@@ -9,5 +9,5 @@ A unique identifier for this session.
 <b>Signature:</b>
 
 ```typescript
-get id(): string;
+readonly id: string;
 ```

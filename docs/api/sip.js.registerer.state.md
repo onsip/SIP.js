@@ -9,5 +9,5 @@ The registration state.
 <b>Signature:</b>
 
 ```typescript
-get state(): RegistererState;
+readonly state: RegistererState;
 ```

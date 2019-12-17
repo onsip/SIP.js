@@ -9,5 +9,5 @@ The identity of the remote user.
 <b>Signature:</b>
 
 ```typescript
-get remoteIdentity(): NameAddrHeader;
+readonly remoteIdentity: NameAddrHeader;
 ```

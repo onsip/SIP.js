@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-protected get progressable(): boolean;
+protected readonly progressable: boolean;
 ```

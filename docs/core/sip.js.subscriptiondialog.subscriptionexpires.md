@@ -9,7 +9,5 @@ Number of seconds until subscription expires.
 <b>Signature:</b>
 
 ```typescript
-get subscriptionExpires(): number;
-
-set subscriptionExpires(expires: number);
+subscriptionExpires: number;
 ```

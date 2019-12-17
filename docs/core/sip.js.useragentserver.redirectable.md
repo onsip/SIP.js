@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-protected get redirectable(): boolean;
+protected readonly redirectable: boolean;
 ```

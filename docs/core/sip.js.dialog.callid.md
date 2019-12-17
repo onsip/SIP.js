@@ -9,5 +9,5 @@ Call identifier component of the dialog id.
 <b>Signature:</b>
 
 ```typescript
-get callId(): string;
+readonly callId: string;
 ```

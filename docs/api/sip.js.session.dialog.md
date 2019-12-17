@@ -9,5 +9,5 @@ The confirmed session dialog.
 <b>Signature:</b>
 
 ```typescript
-get dialog(): SessionDialog | undefined;
+readonly dialog: SessionDialog | undefined;
 ```

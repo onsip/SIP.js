@@ -9,5 +9,5 @@ Session state change emitter.
 <b>Signature:</b>
 
 ```typescript
-get stateChange(): Emitter<SessionState>;
+readonly stateChange: Emitter<SessionState>;
 ```

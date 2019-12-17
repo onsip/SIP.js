@@ -11,5 +11,5 @@ Note: RFC 3261 is concise on when a dialog is "confirmed", but it can be a point
 <b>Signature:</b>
 
 ```typescript
-get early(): boolean;
+readonly early: boolean;
 ```

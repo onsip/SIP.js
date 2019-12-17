@@ -9,5 +9,5 @@ Transaction kind. Deprecated.
 <b>Signature:</b>
 
 ```typescript
-get kind(): string;
+readonly kind: string;
 ```

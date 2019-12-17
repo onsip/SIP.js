@@ -9,5 +9,5 @@ Local tag component of the dialog id.
 <b>Signature:</b>
 
 ```typescript
-get localTag(): string;
+readonly localTag: string;
 ```

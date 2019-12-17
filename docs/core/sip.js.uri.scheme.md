@@ -7,7 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-get scheme(): string;
-
-set scheme(value: string);
+scheme: string;
 ```

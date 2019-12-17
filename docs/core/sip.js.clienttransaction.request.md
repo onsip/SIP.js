@@ -9,5 +9,5 @@ The outgoing request the transaction handling.
 <b>Signature:</b>
 
 ```typescript
-get request(): OutgoingRequestMessage;
+readonly request: OutgoingRequestMessage;
 ```

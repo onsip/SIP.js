@@ -9,7 +9,7 @@ Session description handler.
 <b>Signature:</b>
 
 ```typescript
-get sessionDescriptionHandler(): SessionDescriptionHandler | undefined;
+readonly sessionDescriptionHandler: SessionDescriptionHandler | undefined;
 ```
 
 ## Remarks

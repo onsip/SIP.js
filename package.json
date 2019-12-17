@@ -51,7 +51,7 @@
     "ts-loader": "^6.2.1",
     "ts-pegjs": "0.2.6",
     "tslint": "^5.20.1",
-    "typescript": "^3.7.3",
+    "typescript": "^3.6.4",
     "webpack": "^4.41.3",
     "webpack-cli": "^3.3.10"
   },

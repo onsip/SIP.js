@@ -9,5 +9,5 @@ The publication state.
 <b>Signature:</b>
 
 ```typescript
-get state(): PublisherState;
+readonly state: PublisherState;
 ```

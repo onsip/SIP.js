@@ -7,7 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-get connector(): ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
-
-set connector(value: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined);
+connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
 ```

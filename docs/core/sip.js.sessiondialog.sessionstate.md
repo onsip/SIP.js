@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-get sessionState(): SessionState;
+readonly sessionState: SessionState;
 ```

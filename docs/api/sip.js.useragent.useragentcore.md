@@ -9,5 +9,5 @@ User agent core.
 <b>Signature:</b>
 
 ```typescript
-get userAgentCore(): UserAgentCore;
+readonly userAgentCore: UserAgentCore;
 ```

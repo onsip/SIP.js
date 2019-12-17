@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-get subscriptionState(): SubscriptionState;
+readonly subscriptionState: SubscriptionState;
 ```

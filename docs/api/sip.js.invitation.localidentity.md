@@ -9,5 +9,5 @@ The identity of the local user.
 <b>Signature:</b>
 
 ```typescript
-get localIdentity(): NameAddrHeader;
+readonly localIdentity: NameAddrHeader;
 ```
