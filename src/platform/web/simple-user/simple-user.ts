@@ -120,7 +120,7 @@ export class SimpleUser {
         }
         if (this.session) {
           this.logger.log(`[${this.id}] Hanging up...`);
-          this.hangup() // will likely fail, but need to cleanup hung calls
+          this.hangup() // cleanup hung calls
             .catch((e: Error) => {
               this.logger.error(`[${this.id}] An error occured hanging up call after connection with server was lost.`);
               this.logger.error(e.toString());
@@ -128,7 +128,7 @@ export class SimpleUser {
         }
         if (this.registerer) {
           this.logger.log(`[${this.id}] Unregistering...`);
-          this.registerer.unregister() // will likely fail, but need to cleanup invalid registrations
+          this.registerer.unregister() // cleanup invalid registrations
             .catch((e: Error) => {
               this.logger.error(`[${this.id}] An error occured unregistering after connection with server was lost.`);
               this.logger.error(e.toString());

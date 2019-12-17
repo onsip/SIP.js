@@ -243,6 +243,7 @@ export class Registerer {
     // the previous REGISTER request has timed out.
     // https://tools.ietf.org/html/rfc3261#section-10.2
     if (this.waiting) {
+      this.waitingWarning();
       const error = new RequestPendingError("REGISTER request already in progress, waiting for final response");
       return Promise.reject(error);
     }
@@ -419,6 +420,7 @@ export class Registerer {
 
   /**
    * Sends the REGISTER request with expires equal to zero.
+   * @remarks
    * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
   public unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
@@ -428,6 +430,7 @@ export class Registerer {
     // the previous REGISTER request has timed out.
     // https://tools.ietf.org/html/rfc3261#section-10.2
     if (this.waiting) {
+      this.waitingWarning();
       const error = new RequestPendingError("REGISTER request already in progress, waiting for final response");
       return Promise.reject(error);
     }
@@ -674,5 +677,15 @@ export class Registerer {
     this._waiting = waiting;
     this.logger.log(`Waiting toggled to ${this._waiting}`);
     this._waitingEventEmitter.emit("event", this._waiting);
+  }
+
+  /** Hopefully helpful as the standard behavior has been found to be unexpected. */
+  private waitingWarning(): void {
+    let message = "An attempt was made to send a REGISTER request while a prior one was still in progress.";
+    message += " RFC 3261 requires UAs MUST NOT send a new registration until they have received a final response";
+    message += " from the registrar for the previous one or the previous REGISTER request has timed out.";
+    message += " Note that if the transport disconnects, you still must wait for the prior request to time out before";
+    message += " sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer.";
+    this.logger.warn(message);
   }
 }
