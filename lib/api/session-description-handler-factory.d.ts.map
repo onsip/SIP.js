@@ -1,1 +1,0 @@
-{"version":3,"file":"session-description-handler-factory.d.ts","sourceRoot":"","sources":["../../src/api/session-description-handler-factory.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AACpC,OAAO,EAAE,yBAAyB,EAAE,MAAM,+BAA+B,CAAC;AAI1E;;;GAGG;AACH,MAAM,WAAW,gCAAgC;IAC/C;;;;;OAKG;IACH,CAAC,OAAO,EAAE,OAAO,EAAE,OAAO,CAAC,EAAE,MAAM,GAAG,yBAAyB,CAAC;CACjE"}
