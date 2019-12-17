@@ -1,0 +1,1 @@
+{"version":3,"file":"messager-message-options.d.ts","sourceRoot":"","sources":["../../src/api/messager-message-options.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,uBAAuB,EAAE,cAAc,EAAE,MAAM,SAAS,CAAC;AAElE;;;GAGG;AACH,MAAM,WAAW,sBAAsB;IACrC,sBAAsB;IACtB,eAAe,CAAC,EAAE,uBAAuB,CAAC;IAC1C,sBAAsB;IACtB,cAAc,CAAC,EAAE,cAAc,CAAC;CACjC"}
