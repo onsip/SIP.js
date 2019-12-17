@@ -9,5 +9,5 @@ The session being replace by this one.
 <b>Signature:</b>
 
 ```typescript
-get replacee(): Session | undefined;
+readonly replacee: Session | undefined;
 ```

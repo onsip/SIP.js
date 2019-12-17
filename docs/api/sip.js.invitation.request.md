@@ -9,5 +9,5 @@ Initial incoming INVITE request message.
 <b>Signature:</b>
 
 ```typescript
-get request(): IncomingRequestMessage;
+readonly request: IncomingRequestMessage;
 ```

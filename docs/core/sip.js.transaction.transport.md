@@ -9,5 +9,5 @@ Transaction transport.
 <b>Signature:</b>
 
 ```typescript
-get transport(): Transport;
+readonly transport: Transport;
 ```

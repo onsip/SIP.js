@@ -9,5 +9,5 @@ Transaction state.
 <b>Signature:</b>
 
 ```typescript
-get state(): TransactionState;
+readonly state: TransactionState;
 ```

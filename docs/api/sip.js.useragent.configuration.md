@@ -9,5 +9,5 @@ User agent configuration.
 <b>Signature:</b>
 
 ```typescript
-get configuration(): Required<UserAgentOptions>;
+readonly configuration: Required<UserAgentOptions>;
 ```

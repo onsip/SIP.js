@@ -9,5 +9,5 @@ Remote tag component of the dialog id.
 <b>Signature:</b>
 
 ```typescript
-get remoteTag(): string;
+readonly remoteTag: string;
 ```

@@ -9,5 +9,5 @@ User agent state change emitter.
 <b>Signature:</b>
 
 ```typescript
-get stateChange(): Emitter<UserAgentState>;
+readonly stateChange: Emitter<UserAgentState>;
 ```

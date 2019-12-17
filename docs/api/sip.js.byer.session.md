@@ -9,5 +9,5 @@ The byer session.
 <b>Signature:</b>
 
 ```typescript
-get session(): Session;
+readonly session: Session;
 ```

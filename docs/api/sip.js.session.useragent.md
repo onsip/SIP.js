@@ -9,5 +9,5 @@ The user agent.
 <b>Signature:</b>
 
 ```typescript
-get userAgent(): UserAgent;
+readonly userAgent: UserAgent;
 ```

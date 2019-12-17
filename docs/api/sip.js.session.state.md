@@ -9,5 +9,5 @@ Session state.
 <b>Signature:</b>
 
 ```typescript
-get state(): SessionState;
+readonly state: SessionState;
 ```

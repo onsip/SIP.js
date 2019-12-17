@@ -9,5 +9,5 @@ Route set, which is an ordered list of URIs. The route set is the list of server
 <b>Signature:</b>
 
 ```typescript
-get routeSet(): Array<string>;
+readonly routeSet: Array<string>;
 ```

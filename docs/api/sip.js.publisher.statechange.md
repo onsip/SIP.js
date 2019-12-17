@@ -9,5 +9,5 @@ Emits when the publisher state changes.
 <b>Signature:</b>
 
 ```typescript
-get stateChange(): Emitter<PublisherState>;
+readonly stateChange: Emitter<PublisherState>;
 ```

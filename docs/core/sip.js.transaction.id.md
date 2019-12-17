@@ -9,5 +9,5 @@ Transaction id.
 <b>Signature:</b>
 
 ```typescript
-get id(): string;
+readonly id: string;
 ```

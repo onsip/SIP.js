@@ -9,5 +9,5 @@ Local URI.
 <b>Signature:</b>
 
 ```typescript
-get localURI(): URI;
+readonly localURI: URI;
 ```

@@ -9,5 +9,5 @@ The registered contacts.
 <b>Signature:</b>
 
 ```typescript
-get contacts(): Array<string>;
+readonly contacts: Array<string>;
 ```

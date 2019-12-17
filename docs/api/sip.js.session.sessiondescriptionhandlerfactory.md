@@ -9,5 +9,5 @@ Session description handler factory.
 <b>Signature:</b>
 
 ```typescript
-get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory;
+readonly sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
 ```

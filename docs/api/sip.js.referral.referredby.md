@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-get referredBy(): string | undefined;
+readonly referredBy: string | undefined;
 ```

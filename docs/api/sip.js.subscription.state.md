@@ -9,5 +9,5 @@ Subscription state. See [SubscriptionState](./sip.js.subscriptionstate.md) for d
 <b>Signature:</b>
 
 ```typescript
-get state(): SubscriptionState;
+readonly state: SubscriptionState;
 ```

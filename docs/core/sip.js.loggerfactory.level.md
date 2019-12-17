@@ -7,7 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-get level(): Levels;
-
-set level(newLevel: Levels);
+level: Levels;
 ```
