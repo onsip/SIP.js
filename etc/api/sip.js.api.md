@@ -17,7 +17,7 @@ export class Byer {
     constructor(session: Session, options?: ByerOptions);
     // Warning: (ae-forgotten-export) The symbol "OutgoingByeRequest" needs to be exported by the entry point index.d.ts
     bye(options?: ByerByeOptions): Promise<OutgoingByeRequest>;
-    readonly session: Session;
+    get session(): Session;
     }
 
 // @public
@@ -63,7 +63,7 @@ export class Info {
     accept(options?: ResponseOptions): Promise<void>;
     reject(options?: ResponseOptions): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "IncomingRequestMessage" needs to be exported by the entry point index.d.ts
-    readonly request: IncomingRequestMessage;
+    get request(): IncomingRequestMessage;
 }
 
 // @public
@@ -71,7 +71,7 @@ export class Infoer {
     constructor(session: Session, options?: InfoerOptions);
     // Warning: (ae-forgotten-export) The symbol "OutgoingInfoRequest" needs to be exported by the entry point index.d.ts
     info(options?: InfoerInfoOptions): Promise<OutgoingInfoRequest>;
-    readonly session: Session;
+    get session(): Session;
     }
 
 // @public
@@ -92,21 +92,21 @@ export class Invitation extends Session {
     constructor(userAgent: UserAgent, incomingInviteRequest: IncomingInviteRequest);
     accept(options?: InvitationAcceptOptions): Promise<void>;
     // @internal
-    readonly autoSendAnInitialProvisionalResponse: boolean;
-    readonly body: string | undefined;
+    get autoSendAnInitialProvisionalResponse(): boolean;
+    get body(): string | undefined;
     dispose(): Promise<void>;
     // @internal (undocumented)
     protected _id: string;
     // Warning: (ae-forgotten-export) The symbol "NameAddrHeader" needs to be exported by the entry point index.d.ts
-    readonly localIdentity: NameAddrHeader;
+    get localIdentity(): NameAddrHeader;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     protected logger: Logger;
     // @internal
     _onCancel(message: IncomingRequestMessage): void;
     progress(options?: InvitationProgressOptions): Promise<void>;
     reject(options?: InvitationRejectOptions): Promise<void>;
-    readonly remoteIdentity: NameAddrHeader;
-    readonly request: IncomingRequestMessage;
+    get remoteIdentity(): NameAddrHeader;
+    get request(): IncomingRequestMessage;
     }
 
 // @public
@@ -144,20 +144,20 @@ export interface InvitationRejectOptions {
 export class Inviter extends Session {
     // Warning: (ae-forgotten-export) The symbol "URI" needs to be exported by the entry point index.d.ts
     constructor(userAgent: UserAgent, targetURI: URI, options?: InviterOptions);
-    readonly body: BodyAndContentType | undefined;
+    get body(): BodyAndContentType | undefined;
     cancel(options?: InviterCancelOptions): Promise<void>;
     dispose(): Promise<void>;
     // @internal (undocumented)
     protected _id: string;
     // Warning: (ae-forgotten-export) The symbol "OutgoingInviteRequest" needs to be exported by the entry point index.d.ts
     invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
-    readonly localIdentity: NameAddrHeader;
+    get localIdentity(): NameAddrHeader;
     protected logger: Logger;
     // @internal
     _referred: Session | undefined;
-    readonly remoteIdentity: NameAddrHeader;
+    get remoteIdentity(): NameAddrHeader;
     // Warning: (ae-forgotten-export) The symbol "OutgoingRequestMessage" needs to be exported by the entry point index.d.ts
-    readonly request: OutgoingRequestMessage;
+    get request(): OutgoingRequestMessage;
     }
 
 // @public
@@ -220,7 +220,7 @@ export class Message {
     constructor(incomingMessageRequest: IncomingMessageRequest);
     accept(options?: ResponseOptions): Promise<void>;
     reject(options?: ResponseOptions): Promise<void>;
-    readonly request: IncomingRequestMessage;
+    get request(): IncomingRequestMessage;
 }
 
 // @public
@@ -251,7 +251,7 @@ export class Notification {
     constructor(incomingNotifyRequest: IncomingNotifyRequest);
     accept(options?: ResponseOptions): Promise<void>;
     reject(options?: ResponseOptions): Promise<void>;
-    readonly request: IncomingRequestMessage;
+    get request(): IncomingRequestMessage;
 }
 
 // @public
@@ -267,8 +267,8 @@ export class Publisher extends EventEmitter {
     //
     // @internal (undocumented)
     protected send(): OutgoingPublishRequest;
-    readonly state: PublisherState;
-    readonly stateChange: Emitter<PublisherState>;
+    get state(): PublisherState;
+    get stateChange(): Emitter<PublisherState>;
     unpublish(options?: PublisherUnpublishOptions): Promise<void>;
     }
 
@@ -320,13 +320,13 @@ export class Referral {
     accept(options?: ResponseOptions): Promise<void>;
     makeInviter(options?: InviterOptions): Inviter;
     // (undocumented)
-    readonly referredBy: string | undefined;
+    get referredBy(): string | undefined;
     // (undocumented)
-    readonly referTo: NameAddrHeader;
+    get referTo(): NameAddrHeader;
     reject(options?: ResponseOptions): Promise<void>;
     // (undocumented)
-    readonly replaces: string | undefined;
-    readonly request: IncomingRequestMessage;
+    get replaces(): string | undefined;
+    get request(): IncomingRequestMessage;
     }
 
 // @public
@@ -335,7 +335,7 @@ export class Referrer {
     delegate: ReferrerDelegate | undefined;
     // Warning: (ae-forgotten-export) The symbol "OutgoingReferRequest" needs to be exported by the entry point index.d.ts
     refer(options?: ReferrerReferOptions): Promise<OutgoingReferRequest>;
-    readonly session: Session;
+    get session(): Session;
     }
 
 // @public
@@ -359,12 +359,12 @@ export interface ReferrerReferOptions {
 // @public
 export class Registerer {
     constructor(userAgent: UserAgent, options?: RegistererOptions);
-    readonly contacts: Array<string>;
+    get contacts(): Array<string>;
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "OutgoingRegisterRequest" needs to be exported by the entry point index.d.ts
     register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
-    readonly state: RegistererState;
-    readonly stateChange: Emitter<RegistererState>;
+    get state(): RegistererState;
+    get stateChange(): Emitter<RegistererState>;
     unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
     }
 
@@ -426,7 +426,7 @@ export abstract class Session {
     //
     // @internal
     protected ackAndBye(response: AckableIncomingResponseWithSession, statusCode?: number, reasonPhrase?: string): void;
-    readonly assertedIdentity: NameAddrHeader | undefined;
+    get assertedIdentity(): NameAddrHeader | undefined;
     // @internal (undocumented)
     protected _assertedIdentity: NameAddrHeader | undefined;
     // @internal
@@ -435,7 +435,7 @@ export abstract class Session {
     _contact: string | undefined;
     data: any;
     delegate: SessionDelegate | undefined;
-    readonly dialog: Session_2 | undefined;
+    get dialog(): Session_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
     //
     // @internal (undocumented)
@@ -458,7 +458,7 @@ export abstract class Session {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
         sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     }): Promise<Body>;
-    readonly id: string;
+    get id(): string;
     // @internal (undocumented)
     protected abstract _id: string;
     // @internal
@@ -499,13 +499,13 @@ export abstract class Session {
     protected _renderbody: string | undefined;
     // @internal (undocumented)
     protected _rendertype: string | undefined;
-    readonly replacee: Session | undefined;
+    get replacee(): Session | undefined;
     // @internal (undocumented)
     _replacee: Session | undefined;
     // @internal
     protected rollbackOffer(): Promise<void>;
-    readonly sessionDescriptionHandler: SessionDescriptionHandler | undefined;
-    readonly sessionDescriptionHandlerFactory: SessionDescriptionHandlerFactory;
+    get sessionDescriptionHandler(): SessionDescriptionHandler | undefined;
+    get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory;
     // @internal (undocumented)
     protected _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
     // @internal (undocumented)
@@ -524,11 +524,11 @@ export abstract class Session {
     protected setSessionDescriptionHandler(sdh: SessionDescriptionHandler): void;
     // @internal
     protected setupSessionDescriptionHandler(): SessionDescriptionHandler;
-    readonly state: SessionState;
-    readonly stateChange: Emitter<SessionState>;
+    get state(): SessionState;
+    get stateChange(): Emitter<SessionState>;
     // @internal
     protected stateTransition(newState: SessionState): void;
-    readonly userAgent: UserAgent;
+    get userAgent(): UserAgent;
     }
 
 // @public
@@ -661,16 +661,16 @@ export abstract class Subscription {
     protected constructor(userAgent: UserAgent, options?: SubscriptionOptions);
     data: any;
     delegate: SubscriptionDelegate | undefined;
-    readonly dialog: Subscription_2 | undefined;
+    get dialog(): Subscription_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Subscription" needs to be exported by the entry point index.d.ts
     //
     // @internal
     protected _dialog: Subscription_2 | undefined;
     dispose(): Promise<void>;
     // @internal
-    readonly disposed: boolean;
-    readonly state: SubscriptionState;
-    readonly stateChange: Emitter<SubscriptionState>;
+    get disposed(): boolean;
+    get state(): SubscriptionState;
+    get stateChange(): Emitter<SubscriptionState>;
     // @internal (undocumented)
     protected stateTransition(newState: SubscriptionState): void;
     abstract subscribe(options?: SubscriptionSubscribeOptions): Promise<void>;
@@ -737,9 +737,9 @@ export enum TransportState {
 // @public
 export class UserAgent {
     constructor(options?: Partial<UserAgentOptions>);
-    readonly configuration: Required<UserAgentOptions>;
+    get configuration(): Required<UserAgentOptions>;
     // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
-    readonly contact: Contact;
+    get contact(): Contact;
     data: any;
     delegate: UserAgentDelegate | undefined;
     getLogger(category: string, label?: string): Logger;
@@ -763,16 +763,16 @@ export class UserAgent {
         [id: string]: Session;
     };
     start(): Promise<void>;
-    readonly state: UserAgentState;
-    readonly stateChange: Emitter<UserAgentState>;
+    get state(): UserAgentState;
+    get stateChange(): Emitter<UserAgentState>;
     stop(): Promise<void>;
     // @internal (undocumented)
     _subscriptions: {
         [id: string]: Subscription;
     };
-    readonly transport: Transport;
+    get transport(): Transport;
     // Warning: (ae-forgotten-export) The symbol "UserAgentCore" needs to be exported by the entry point index.d.ts
-    readonly userAgentCore: UserAgentCore;
+    get userAgentCore(): UserAgentCore;
     }
 
 // @public

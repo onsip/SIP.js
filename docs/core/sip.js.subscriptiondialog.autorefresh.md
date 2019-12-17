@@ -7,5 +7,7 @@
 <b>Signature:</b>
 
 ```typescript
-autoRefresh: boolean;
+get autoRefresh(): boolean;
+
+set autoRefresh(autoRefresh: boolean);
 ```

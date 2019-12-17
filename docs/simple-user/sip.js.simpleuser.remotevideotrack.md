@@ -9,5 +9,5 @@ The remote video track, if available.
 <b>Signature:</b>
 
 ```typescript
-readonly remoteVideoTrack: MediaStreamTrack | undefined;
+get remoteVideoTrack(): MediaStreamTrack | undefined;
 ```

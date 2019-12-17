@@ -9,5 +9,5 @@ The referrer session.
 <b>Signature:</b>
 
 ```typescript
-readonly session: Session;
+get session(): Session;
 ```

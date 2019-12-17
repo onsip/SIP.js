@@ -9,5 +9,5 @@ The current offer. Undefined unless signaling state HaveLocalOffer, HaveRemoteOf
 <b>Signature:</b>
 
 ```typescript
-readonly offer: Body | undefined;
+get offer(): Body | undefined;
 ```

@@ -7,5 +7,7 @@
 <b>Signature:</b>
 
 ```typescript
-user: string | undefined;
+get user(): string | undefined;
+
+set user(value: string | undefined);
 ```

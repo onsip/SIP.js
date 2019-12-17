@@ -7,5 +7,7 @@
 <b>Signature:</b>
 
 ```typescript
-host: string;
+get host(): string;
+
+set host(value: string);
 ```

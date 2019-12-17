@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-protected readonly rejectable: boolean;
+protected get rejectable(): boolean;
 ```

@@ -9,5 +9,5 @@ The current answer. Undefined unless signaling state Stable.
 <b>Signature:</b>
 
 ```typescript
-readonly answer: Body | undefined;
+get answer(): Body | undefined;
 ```
