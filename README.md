@@ -9,11 +9,11 @@
 - Utilize SIP in your web application via [SIP over WebSocket](https://tools.ietf.org/html/rfc7118) 
 - Send instant messages and view presence
 - Support early media, hold and transfers
+- Send DTMF RFC 2833 or SIP INFO
 - Share your screen or desktop
-- Send DTMF with SIP INFO
 - Written in TypeScript
-- Runs in all major web browsers and Node.js
-- Compatible with standards compliant servers including [Asterisk](https://www.asterisk.org/), [FreeSWITCH](https://freeswitch.com/) and [OpenSIPS](https://www.opensips.org/)
+- Runs in all major web browsers
+- Compatible with standards compliant servers including [Asterisk](https://www.asterisk.org/) and [FreeSWITCH](https://freeswitch.com/)
 
 ## Demo
 
@@ -82,7 +82,7 @@ userAgent.start().then(() => {
     throw new Error("Failed to create target URI.");
   }
 
-  // Create a user agent client to send an INVITE request
+  // Create a user agent client to establish a session
   const inviter = new Inviter(userAgent, target, {
     sessionDescriptionHandlerOptions: {
       constraints: { audio: true, video: false }
@@ -106,7 +106,7 @@ userAgent.start().then(() => {
     }
   });
 
-  // Send the INVITE request
+  // Send initial INVITE request
   inviter.invite()
     .then(() => {
       // INVITE sent
@@ -142,6 +142,6 @@ For more info please see the [Documentation](./docs/README.md).
 ## Support
 
 * For migration guides and API reference please see the [Documentation](./docs/README.md).
-* For bug reports or feature requests please open a [GitHub Issue](https://github.com/onsip/sip.js/issues).
+* For bug reports and feature requests please open a [GitHub Issue](https://github.com/onsip/sip.js/issues).
 * For questions or usage problems please use the [Google Group](https://groups.google.com/forum/#!forum/sip_js).
 * For more information see the project website at [SIPjs.com](https://sipjs.com).
