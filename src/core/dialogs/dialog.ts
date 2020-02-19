@@ -456,7 +456,7 @@ export class Dialog {
     const callId = this.callId;
     let cseq: number;
     if (options && options.cseq) {
-      cseq = options.cseq;
+      cseq = this.dialogState.localSequenceNumber = options.cseq;
     } else if (!this.dialogState.localSequenceNumber) {
       cseq = this.dialogState.localSequenceNumber = 1; // https://tools.ietf.org/html/rfc3261#section-8.1.1.5
     } else {
