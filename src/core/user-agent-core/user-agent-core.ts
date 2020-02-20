@@ -593,7 +593,7 @@ export class UserAgentCore {
     // In that case, the UAS first applies the same processing rules for
     // requests outside of a dialog, discussed in Section 8.2.
     // https://tools.ietf.org/html/rfc3261#section-12.2.2
-    if (message.toTag) {
+    if (message.toTag && message.method !== C.MESSAGE) {
       this.receiveInsideDialogRequest(message);
     } else {
       this.receiveOutsideDialogRequest(message);
