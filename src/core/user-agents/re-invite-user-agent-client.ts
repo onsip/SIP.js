@@ -67,6 +67,9 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
         }
         break;
       case /^2[0-9]{2}$/.test(statusCode):
+        // Sync the dialog sequence number in the case of an authorization flow
+        this.dialog.updateDialogSequenceNumber(message);
+
         // Update dialog signaling state with offer/answer in body
         this.dialog.signalingStateTransition(message);
 

@@ -456,7 +456,7 @@ export class Dialog {
     const callId = this.callId;
     let cseq: number;
     if (options && options.cseq) {
-      cseq = this.dialogState.localSequenceNumber = options.cseq;
+      cseq = options.cseq;
     } else if (!this.dialogState.localSequenceNumber) {
       cseq = this.dialogState.localSequenceNumber = 1; // https://tools.ietf.org/html/rfc3261#section-8.1.1.5
     } else {
@@ -576,5 +576,15 @@ export class Dialog {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Used to synchronize the local sequence number of a dialog with an
+   * incoming response message. (Used in the case of a re-invite that
+   * goes through 401 authentication).
+   * @param message - Incoming response message to sync local sequence number.
+   */
+  public updateDialogSequenceNumber(message: IncomingResponseMessage): void {
+    this.dialogState.localSequenceNumber = message.cseq;
   }
 }
