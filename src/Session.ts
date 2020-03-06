@@ -201,7 +201,7 @@ export abstract class Session extends EventEmitter {
       const tonesArray: Array<string> = tones.split("");
       while (tonesArray.length > 0) { dtmfs.push(new DTMF(this, tonesArray.shift() as string, options)); }
 
-      if (this.tones) {
+      if (Array.isArray(this.tones) && this.tones.length) {
         // Tones are already queued, just add to the queue
         this.tones =  this.tones.concat(dtmfs);
         return this;
