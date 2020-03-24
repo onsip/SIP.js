@@ -228,7 +228,8 @@ export class RegisterContext extends ClientContext {
       "OPTIONS",
       "INFO",
       "NOTIFY",
-      "REFER"
+      "REFER",
+      "UPDATE"
     ].toString());
 
     // Save original extraHeaders to be used in .close
