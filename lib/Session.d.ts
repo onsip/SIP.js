@@ -72,6 +72,7 @@ export declare abstract class Session extends EventEmitter {
     reinvite(options?: any, modifiers?: SessionDescriptionHandlerModifiers): void;
     terminate(options?: any): this;
     onTransportError(): void;
+    onUpdateFn(response: IncomingRequestMessage): void;
     onRequestTimeout(): void;
     onDialogError(response: IncomingResponseMessage): void;
     on(event: "dtmf", listener: (request: IncomingRequestMessage | OutgoingRequestMessage, dtmf: DTMF) => void): this;

@@ -812,6 +812,12 @@ export class UA extends EventEmitter {
 
     // Handle Request
     if (message instanceof IncomingRequestMessage) {
+      if (message.method === SIPConstants.UPDATE) {
+        const session = this.findSession(message);
+        if (session) {
+            session.onUpdateFn(message);
+        }
+    }
       this.userAgentCore.receiveIncomingRequestFromTransport(message);
       return;
     }

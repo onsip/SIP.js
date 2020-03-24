@@ -394,6 +394,10 @@ export abstract class Session extends EventEmitter {
     }
   }
 
+  public onUpdateFn(response: IncomingRequestMessage): void {
+    this.emit("update-fn", response);
+  }
+
   public onRequestTimeout(): void {
     if (this.status === SessionStatus.STATUS_CONFIRMED) {
       this.terminated(undefined, C.causes.REQUEST_TIMEOUT);

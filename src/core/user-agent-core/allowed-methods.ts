@@ -14,5 +14,6 @@ export const AllowedMethods = [
   C.OPTIONS,
   C.PRACK, // FIXME: Only if 100rel Supported
   C.REFER,
-  C.SUBSCRIBE
+  C.SUBSCRIBE,
+  C.UPDATE
 ];
