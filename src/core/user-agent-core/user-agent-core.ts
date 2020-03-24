@@ -593,7 +593,7 @@ export class UserAgentCore {
     // In that case, the UAS first applies the same processing rules for
     // requests outside of a dialog, discussed in Section 8.2.
     // https://tools.ietf.org/html/rfc3261#section-12.2.2
-    if (message.toTag && message.method !== C.MESSAGE) {
+    if (message.toTag && message.method !== C.MESSAGE && message.method !== C.UPDATE) {
       this.receiveInsideDialogRequest(message);
     } else {
       this.receiveOutsideDialogRequest(message);
@@ -691,7 +691,7 @@ export class UserAgentCore {
       // received within a dialog (for example, an OPTIONS request).  They are
       // processed as if they had been received outside the dialog.
       // https://tools.ietf.org/html/rfc3261#section-12.2.2
-      if (message.method === C.OPTIONS) {
+      if (message.method === C.OPTIONS || message.method === C.UPDATE) {
         const allowHeader = "Allow: " + AllowedMethods.toString();
         const acceptHeader = "Accept: " + acceptedBodyTypes.toString();
         this.replyStateless(message, {
