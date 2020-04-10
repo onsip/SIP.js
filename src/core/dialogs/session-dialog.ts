@@ -12,6 +12,7 @@ import {
   OutgoingInfoRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
+  OutgoingMessageRequest,
   OutgoingNotifyRequest,
   OutgoingPrackRequest,
   OutgoingReferRequest,
@@ -44,6 +45,8 @@ import { ReInviteUserAgentClient } from "../user-agents/re-invite-user-agent-cli
 import { ReInviteUserAgentServer } from "../user-agents/re-invite-user-agent-server";
 import { ReferUserAgentClient } from "../user-agents/refer-user-agent-client";
 import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server";
+import { MessageUserAgentServer } from "../user-agents/message-user-agent-server";
+import { MessageUserAgentClient } from "../user-agents/message-user-agent-client";
 import { Dialog } from "./dialog";
 import { DialogState } from "./dialog-state";
 
@@ -407,6 +410,22 @@ export class SessionDialog extends Dialog implements Session {
   }
 
   /**
+   * Send a MESSAGE
+   * https://tools.ietf.org/html/rfc3515#section-2.4.1
+   * @param options - Options bucket.
+   */
+  public message(delegate: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest {
+    this.logger.log(`INVITE dialog ${this.id} sending MESSAGE request`);
+    if (this.early) {
+      // FIXME: TODO: This should throw a proper exception.
+      throw new Error("Dialog not confirmed.");
+    }
+    const message =  this.createOutgoingRequestMessage(C.MESSAGE, options);
+
+    return new MessageUserAgentClient(this.core, message, delegate);
+  }
+
+  /**
    * Requests sent within a dialog, as any other requests, are atomic.  If
    * a particular request is accepted by the UAS, all the state changes
    * associated with it are performed.  If the request is rejected, none
@@ -599,6 +618,15 @@ export class SessionDialog extends Dialog implements Session {
           this.delegate && this.delegate.onRefer ?
             this.delegate.onRefer(uas) :
             uas.reject();
+        }
+        break;
+      case C.MESSAGE:
+        {
+          const uas = new MessageUserAgentServer(this.core, message);
+          uas.accept();
+          if (this.delegate && this.delegate.onMessage) {
+            this.delegate.onMessage(uas);
+          }
         }
         break;
       default:

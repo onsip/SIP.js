@@ -8,6 +8,7 @@ import {
   OutgoingPrackRequest,
   OutgoingReferRequest,
   OutgoingRequestDelegate,
+  OutgoingMessageRequest,
   RequestOptions,
   URI
 } from "../messages";
@@ -105,6 +106,12 @@ export interface Session {
    * @param options - Options bucket.
    */
   refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest;
+  /**
+   * Send MESSAGE request (in dialog).
+   * @param delegate - Request delegate.
+   * @param options - Options bucket.
+   */
+  message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
 }
 
 /**

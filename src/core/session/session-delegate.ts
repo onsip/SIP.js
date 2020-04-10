@@ -6,6 +6,7 @@ import {
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
+  IncomingMessageRequest,
 } from "../messages";
 
 /**
@@ -66,4 +67,10 @@ export interface SessionDelegate {
    * @param request - Incoming REFER request.
    */
   onRefer?(request: IncomingReferRequest): void;
+
+  /**
+   * Receive MESSAGE MESSAGE
+   * @param request - Incoming REFER request.
+   */
+  onMessage?(request: IncomingMessageRequest): void;
 }
