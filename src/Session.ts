@@ -16,6 +16,7 @@ import {
   IncomingRequestMessage,
   IncomingResponse,
   IncomingResponseMessage,
+  IncomingMessageRequest,
   InviteServerTransaction,
   Logger,
   NameAddrHeader,
@@ -290,6 +291,9 @@ export abstract class Session extends EventEmitter {
         break;
       case C.REFER:
         request = this.session.refer(delegate, requestOptions);
+        break;
+      case C.MESSAGE:
+        request = this.session.message(delegate, requestOptions);
         break;
       default:
         throw new Error(`Unexpected ${method}. Method not implemented by user agent core.`);
@@ -578,6 +582,10 @@ export abstract class Session extends EventEmitter {
         this.emit("notify", incomingRequest.message);
         break;
     }
+  }
+
+  protected receiveMessage(messageRequest: IncomingMessageRequest) {
+    this.emit("onMessage", messageRequest);
   }
 
   // In dialog INVITE Reception
@@ -1043,7 +1051,8 @@ export class InviteServerContext extends Session implements ServerContext {
           onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest),
           onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest),
           onPrack: (prackRequest): void => this.receiveRequest(prackRequest),
-          onRefer: (referRequest): void => this.receiveRequest(referRequest)
+          onRefer: (referRequest): void => this.receiveRequest(referRequest),
+          onMessage: (messageRequest): void => this.receiveMessage(messageRequest),
         };
         this.session = session;
         this.status = SessionStatus.STATUS_WAITING_FOR_ACK;
@@ -1271,6 +1280,10 @@ export class InviteServerContext extends Session implements ServerContext {
         super.receiveRequest(incomingRequest);
         break;
     }
+  }
+
+  protected receiveMessage(messageRequest: IncomingMessageRequest) {
+    this.emit("onMessage", messageRequest);
   }
 
   // Internal Function to setup the handler consistently
@@ -2361,7 +2374,8 @@ export class InviteClientContext extends Session implements ClientContext {
       onInvite: (inviteRequest): void => this.receiveRequest(inviteRequest),
       onNotify: (notifyRequest): void => this.receiveRequest(notifyRequest),
       onPrack: (prackRequest): void => this.receiveRequest(prackRequest),
-      onRefer: (referRequest): void => this.receiveRequest(referRequest)
+      onRefer: (referRequest): void => this.receiveRequest(referRequest),
+      onMessage: (messageRequest): void => this.receiveMessage(messageRequest),
     };
 
     switch (session.signalingState) {
