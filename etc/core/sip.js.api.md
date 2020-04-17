@@ -121,6 +121,8 @@ export class Dialog {
     dispose(): void;
     readonly early: boolean;
     readonly id: string;
+    // @internal
+    incrementLocalSequenceNumber(): void;
     static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequestMessage, incomingResponseMessage: IncomingResponseMessage): DialogState;
     static initialDialogStateForUserAgentServer(incomingRequestMessage: IncomingRequestMessage, toTag: string, early?: boolean): DialogState;
     readonly localSequenceNumber: number | undefined;
@@ -1152,7 +1154,7 @@ export class URI extends Parameters {
 export class UserAgentClient implements OutgoingRequest {
     // Warning: (ae-forgotten-export) The symbol "ClientTransactionConstructor" needs to be exported by the entry point index.d.ts
     constructor(transactionConstructor: ClientTransactionConstructor, core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate | undefined);
-    protected authenticationGuard(message: IncomingResponseMessage): boolean;
+    protected authenticationGuard(message: IncomingResponseMessage, dialog?: Dialog): boolean;
     cancel(reason?: string, options?: RequestOptions): OutgoingRequestMessage;
     // (undocumented)
     protected core: UserAgentCore;

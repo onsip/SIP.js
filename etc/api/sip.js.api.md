@@ -533,6 +533,8 @@ export abstract class Session {
 
 // @public
 export interface SessionDelegate {
+    // Warning: (ae-forgotten-export) The symbol "Bye" needs to be exported by the entry point index.d.ts
+    onBye?(bye: Bye): void;
     onInfo?(info: Info): void;
     onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
     onNotify?(notification: Notification): void;
