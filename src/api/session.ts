@@ -26,6 +26,7 @@ import {
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
+import { Bye } from "./bye";
 import { _makeEmitter, Emitter } from "./emitter";
 import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
@@ -650,7 +651,12 @@ export abstract class Session {
       this.logger.error(`BYE received while in state ${this.state}, dropping request`);
       return;
     }
-    request.accept();
+    if (this.delegate && this.delegate.onBye) {
+      const bye = new Bye(request);
+      this.delegate.onBye(bye);
+    } else {
+      request.accept();
+    }
     this.stateTransition(SessionState.Terminated);
   }
 

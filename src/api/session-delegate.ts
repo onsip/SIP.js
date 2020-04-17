@@ -1,4 +1,5 @@
 import { IncomingRequestMessage } from "../core";
+import { Bye } from "./bye";
 import { Info } from "./info";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
@@ -8,6 +9,12 @@ import { Referral } from "./referral";
  * @public
  */
 export interface SessionDelegate {
+  /**
+   * Called upon receiving an incoming in dialog BYE request.
+   * @param bye - The bye.
+   */
+  onBye?(bye: Bye): void;
+
   /**
    * Called upon receiving an incoming in dialog INFO request.
    * @param info - The info.
