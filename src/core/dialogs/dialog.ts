@@ -533,13 +533,16 @@ export class Dialog {
   }
 
   /**
-   * Used to synchronize the local sequence number of a dialog with an
-   * incoming response message. (Used in the case of a re-invite that
-   * goes through 401 authentication).
-   * @param message - Incoming response message to sync local sequence number.
+   * Increment the local sequence number by one.
+   * It feels like this should be protected, but the current authentication handling currently
+   * needs this to keep the dialog in sync when "auto re-sends" request messages.
+   * @internal
    */
-  public updateDialogSequenceNumber(message: IncomingResponseMessage): void {
-    this.dialogState.localSequenceNumber = message.cseq;
+  public incrementLocalSequenceNumber(): void {
+    if (!this.dialogState.localSequenceNumber) {
+      throw new Error("Local sequence number undefined.");
+    }
+    this.dialogState.localSequenceNumber += 1;
   }
 
   /**
