@@ -10,6 +10,7 @@ import {
   IncomingByeRequest,
   IncomingInfoRequest,
   IncomingInviteRequest,
+  IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
@@ -19,6 +20,7 @@ import {
   OutgoingInfoRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
+  OutgoingMessageRequest,
   OutgoingRequestDelegate,
   RequestOptions,
   Session as SessionDialog,
@@ -33,6 +35,7 @@ import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
+import { Message } from "./message";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
 import { Referrer } from "./referrer";
@@ -44,6 +47,7 @@ import {
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { SessionInviteOptions } from "./session-invite-options";
+import { SessionMessageOptions } from "./session-message-options";
 import { SessionOptions } from "./session-options";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
@@ -446,6 +450,30 @@ export abstract class Session {
   }
 
   /**
+   * Sends a MESSAGE.
+   * @param options - Options bucket.
+   */
+  public message(options: SessionMessageOptions = {}): Promise<OutgoingMessageRequest> {
+    // guard session state
+    if (this.state !== SessionState.Established) {
+      const message = "Session.message() may only be called if established session.";
+      this.logger.error(message);
+      return Promise.reject(new Error(`Invalid session state ${this.state}`));
+    }
+
+    // copy options
+    const requestOptions = options.requestOptions || {};
+    requestOptions.extraHeaders = (requestOptions.extraHeaders || []).slice();
+    requestOptions.body = {
+      contentDisposition: requestOptions.body && requestOptions.body.contentDisposition || "render",
+      contentType: requestOptions.body && requestOptions.body.contentType || "text/plain",
+      content: requestOptions.body && requestOptions.body.content || ""
+    };
+
+    return this._message(options.requestDelegate, requestOptions);
+  }
+
+  /**
    * Send REFER.
    * @param referrer - Referrer.
    * @param delegate - Request delegate.
@@ -533,6 +561,20 @@ export abstract class Session {
       return Promise.reject(new Error("Session dialog undefined."));
     }
     return Promise.resolve(this.dialog.info(delegate, options));
+  }
+
+  /**
+   * Send MESSAGE.
+   * @param delegate - Request delegate.
+   * @param options - Request options bucket.
+   * @internal
+   */
+  public _message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingMessageRequest> {
+    // Using core session dialog
+    if (!this.dialog) {
+      return Promise.reject(new Error("Session dialog undefined."));
+    }
+    return Promise.resolve(this.dialog.message(delegate, options));
   }
 
   /**
@@ -762,6 +804,25 @@ export abstract class Session {
             }
           });
       });
+  }
+
+  /**
+   * Handle in dialog MESSAGE request.
+   * @internal
+   */
+  protected onMessageRequest(request: IncomingMessageRequest): void {
+    this.logger.log("Session.onMessageRequest");
+    if (this.state !== SessionState.Established) {
+      this.logger.error(`MESSAGE received while in state ${this.state}, dropping request`);
+      return;
+    }
+
+    if (this.delegate && this.delegate.onMessage) {
+      const message = new Message(request);
+      this.delegate.onMessage(message);
+    } else {
+      request.accept();
+    }
   }
 
   /**

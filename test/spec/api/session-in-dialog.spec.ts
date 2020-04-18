@@ -23,6 +23,7 @@ import { soon } from "../../support/api/utils";
 const SIP_ACK = [jasmine.stringMatching(/^ACK/)];
 const SIP_BYE = [jasmine.stringMatching(/^BYE/)];
 const SIP_INVITE = [jasmine.stringMatching(/^INVITE/)];
+const SIP_MESSAGE = [jasmine.stringMatching(/^MESSAGE/)];
 const SIP_NOTIFY = [jasmine.stringMatching(/^NOTIFY/)];
 const SIP_REFER = [jasmine.stringMatching(/^REFER/)];
 const SIP_100 = [jasmine.stringMatching(/^SIP\/2.0 100/)];
@@ -1019,6 +1020,67 @@ describe("API Session In-Dialog", () => {
           });
         });
 
+        describe ("MESSAGE with default handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            inviter.delegate = undefined;
+            invitation.delegate = undefined;
+            inviter.message();
+            await alice.transport.waitSent(); // MESSAGE
+          });
+
+          it("her ua should send MESSAGE", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_MESSAGE);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200); // response to the MESSAGE
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+
+        describe ("MESSAGE with delegated handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            inviter.delegate = undefined;
+            invitation.delegate = {
+              onMessage: (request) => request.accept()
+            };
+            inviter.message();
+            await alice.transport.waitSent(); // MESSAGE
+          });
+
+          it("her ua should send MESSAGE", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_MESSAGE);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200); // response to the MESSAGE
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
       });
     });
   });

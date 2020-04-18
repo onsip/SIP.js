@@ -1,6 +1,7 @@
 import { IncomingRequestMessage } from "../core";
 import { Bye } from "./bye";
 import { Info } from "./info";
+import { Message } from "./message";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
 
@@ -26,6 +27,12 @@ export interface SessionDelegate {
    * @param invite - The invite.
    */
   onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
+
+  /**
+   * Called upon receiving an incoming in dialog MESAGE request.
+   * @param message - The message.
+   */
+  onMessage?(message: Message): void;
 
   /**
    * Called upon receiving an incoming in dialog NOTIFY request.
