@@ -3,10 +3,10 @@ import {
   IncomingByeRequest,
   IncomingInfoRequest,
   IncomingInviteRequest,
+  IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingPrackRequest,
-  IncomingReferRequest,
-  IncomingMessageRequest,
+  IncomingReferRequest
 } from "../messages";
 
 /**
@@ -48,6 +48,13 @@ export interface SessionDelegate {
   onInvite?(request: IncomingInviteRequest): void;
 
   /**
+   * Receive MESSAGE request.
+   * https://tools.ietf.org/html/rfc3428#section-7
+   * @param request - Incoming MESSAGE request.
+   */
+  onMessage?(request: IncomingMessageRequest): void;
+
+  /**
    * Receive NOTIFY request.
    * https://tools.ietf.org/html/rfc6665#section-4.1.3
    * @param request - Incoming NOTIFY request.
@@ -67,10 +74,4 @@ export interface SessionDelegate {
    * @param request - Incoming REFER request.
    */
   onRefer?(request: IncomingReferRequest): void;
-
-  /**
-   * Receive MESSAGE MESSAGE
-   * @param request - Incoming REFER request.
-   */
-  onMessage?(request: IncomingMessageRequest): void;
 }

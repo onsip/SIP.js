@@ -138,6 +138,7 @@ export function makeMockSessionDelegate(): jasmine.SpyObj<Required<SessionDelega
     "onBye",
     "onInfo",
     "onInvite",
+    "onMessage",
     "onNotify",
     "onPrack",
     "onRefer"

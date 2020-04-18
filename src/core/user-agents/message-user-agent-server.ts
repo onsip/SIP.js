@@ -9,7 +9,7 @@ import { UserAgentServer } from "./user-agent-server";
  */
 export class MessageUserAgentServer extends UserAgentServer implements IncomingMessageRequest {
   constructor(
-    protected core: UserAgentCore,
+    core: UserAgentCore,
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {
