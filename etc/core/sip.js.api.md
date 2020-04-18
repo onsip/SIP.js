@@ -498,8 +498,6 @@ export class MessageUserAgentClient extends UserAgentClient implements OutgoingM
 // @public
 export class MessageUserAgentServer extends UserAgentServer implements IncomingMessageRequest {
     constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
-    // (undocumented)
-    protected core: UserAgentCore;
 }
 
 // Warning: (ae-incompatible-release-tags) The symbol "NameAddrHeader" is marked as @public, but its signature references "Parameters" which is marked as @internal
@@ -873,6 +871,7 @@ export interface Session {
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
     readonly localTag: string;
     readonly localURI: URI;
+    message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     readonly offer: Body | undefined;
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
@@ -891,6 +890,7 @@ export interface SessionDelegate {
     onBye?(request: IncomingByeRequest): void;
     onInfo?(request: IncomingInfoRequest): void;
     onInvite?(request: IncomingInviteRequest): void;
+    onMessage?(request: IncomingMessageRequest): void;
     onNotify?(request: IncomingNotifyRequest): void;
     onPrack?(request: IncomingPrackRequest): void;
     onRefer?(request: IncomingReferRequest): void;
@@ -909,6 +909,7 @@ export class SessionDialog extends Dialog implements Session {
     dispose(): void;
     info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfoRequest;
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
+    message(delegate: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     readonly offer: Body | undefined;
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;

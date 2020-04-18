@@ -462,10 +462,15 @@ export abstract class Session {
     // @internal (undocumented)
     protected abstract _id: string;
     // @internal
-    _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
+    _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingInfoRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
     abstract readonly localIdentity: NameAddrHeader;
     protected abstract logger: Logger;
+    // Warning: (ae-forgotten-export) The symbol "SessionMessageOptions" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "OutgoingMessageRequest" needs to be exported by the entry point index.d.ts
+    message(options?: SessionMessageOptions): Promise<OutgoingMessageRequest>;
+    // @internal
+    _message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingMessageRequest>;
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     //
     // @internal
@@ -478,6 +483,8 @@ export abstract class Session {
     protected onInfoRequest(request: IncomingInfoRequest): void;
     // @internal
     protected onInviteRequest(request: IncomingInviteRequest): void;
+    // @internal
+    protected onMessageRequest(request: IncomingMessageRequest): void;
     // @internal
     protected onNotifyRequest(request: IncomingNotifyRequest): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingPrackRequest" needs to be exported by the entry point index.d.ts
@@ -537,6 +544,7 @@ export interface SessionDelegate {
     onBye?(bye: Bye): void;
     onInfo?(info: Info): void;
     onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
+    onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
 }

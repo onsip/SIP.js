@@ -21,6 +21,7 @@ export interface SessionDelegate
 |  [onBye(request)](./sip.js.sessiondelegate.onbye.md) | Receive BYE request. https://tools.ietf.org/html/rfc3261\#section-15.1.2 |
 |  [onInfo(request)](./sip.js.sessiondelegate.oninfo.md) | Receive INFO request. |
 |  [onInvite(request)](./sip.js.sessiondelegate.oninvite.md) | Receive re-INVITE request. https://tools.ietf.org/html/rfc3261\#section-14.2 |
+|  [onMessage(request)](./sip.js.sessiondelegate.onmessage.md) | Receive MESSAGE request. https://tools.ietf.org/html/rfc3428\#section-7 |
 |  [onNotify(request)](./sip.js.sessiondelegate.onnotify.md) | Receive NOTIFY request. https://tools.ietf.org/html/rfc6665\#section-4.1.3 |
 |  [onPrack(request)](./sip.js.sessiondelegate.onprack.md) | Receive PRACK request. https://tools.ietf.org/html/rfc3262\#section-3 |
 |  [onRefer(request)](./sip.js.sessiondelegate.onrefer.md) | Receive REFER request. https://tools.ietf.org/html/rfc3515\#section-2.4.2 |

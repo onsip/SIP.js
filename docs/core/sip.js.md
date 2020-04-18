@@ -27,7 +27,7 @@ A core library implementing low level SIP protocol elements.
 |  [InviteUserAgentServer](./sip.js.inviteuseragentserver.md) | INVITE UAS. |
 |  [Logger](./sip.js.logger.md) | Logger. |
 |  [LoggerFactory](./sip.js.loggerfactory.md) | Logger. |
-|  [MessageUserAgentClient](./sip.js.messageuseragentclient.md) | MESSAGE UAS. |
+|  [MessageUserAgentClient](./sip.js.messageuseragentclient.md) | MESSAGE UAC. |
 |  [MessageUserAgentServer](./sip.js.messageuseragentserver.md) | MESSAGE UAS. |
 |  [NameAddrHeader](./sip.js.nameaddrheader.md) | Name Address SIP header. |
 |  [NonInviteClientTransaction](./sip.js.noninviteclienttransaction.md) | Non-INVITE Client Transaction. |
