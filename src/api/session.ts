@@ -16,6 +16,7 @@ import {
   Logger,
   NameAddrHeader,
   OutgoingByeRequest,
+  OutgoingInfoRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
   OutgoingRequestDelegate,
@@ -526,7 +527,7 @@ export abstract class Session {
    * @param options - Request options bucket.
    * @internal
    */
-  public _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
+  public _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingInfoRequest> {
     // Using core session dialog
     if (!this.dialog) {
       return Promise.reject(new Error("Session dialog undefined."));
