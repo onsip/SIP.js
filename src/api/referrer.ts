@@ -17,6 +17,8 @@ export class Referrer {
 
   /** The logger. */
   private logger: Logger;
+  /** Extra headers. */
+  private _extraHeaders: Array<string>;
   /** The referTo. */
   private _referTo: URI | Session;
   /** The referrer session. */
@@ -32,6 +34,8 @@ export class Referrer {
     this.logger = session.userAgent.getLogger("sip.Referrer");
     this._session = session;
     this._referTo  = referTo;
+    this._extraHeaders = this.extraHeaders(this.referToString(referTo));
+    this._extraHeaders = this._extraHeaders.concat(options && options.extraHeaders || []);
   }
 
   /** The referrer session. */
@@ -53,10 +57,8 @@ export class Referrer {
 
     const requestDelegate = options.requestDelegate;
     const requestOptions = options.requestOptions || {};
-
-    const extraHeaders = this.extraHeaders(this.referToString(this._referTo));
     requestOptions.extraHeaders = requestOptions.extraHeaders || [];
-    requestOptions.extraHeaders = requestOptions.extraHeaders.concat(extraHeaders);
+    requestOptions.extraHeaders = requestOptions.extraHeaders.concat(this._extraHeaders);
 
     return this.session.refer(this, requestDelegate, requestOptions);
   }
