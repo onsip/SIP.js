@@ -3,14 +3,8 @@
  * @packageDocumentation
  */
 export * from "./exceptions";
-export * from "./byer-bye-options";
-export * from "./byer-options";
-export * from "./byer";
 export * from "./emitter";
 export * from "./info";
-export * from "./infoer-info-options";
-export * from "./infoer-options";
-export * from "./infoer";
 export * from "./invitation-accept-options";
 export * from "./invitation-progress-options";
 export * from "./invitation-reject-options";

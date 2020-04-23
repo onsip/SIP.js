@@ -29,7 +29,7 @@ The following `UA.Options` have been modified for use as `UserAgentOptions`...
 - `autostop`
   - renamed to `autoStop` (case changed for consistency)
 - `dtmfType`
-  - use `Infoer.info()` for "out-of-band" DTMF or `SessionDescriptionHandler` for "in-band" DTMF.
+  - use `Session.info()` for "out-of-band" DTMF or `SessionDescriptionHandler` for "in-band" DTMF.
 - `experimentalFeatures`
   - removed (it was a noop)
 - `hostportParams`

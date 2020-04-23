@@ -1,6 +1,4 @@
 import {
-  Byer,
-  Infoer,
   Invitation,
   InvitationAcceptOptions,
   Inviter,
@@ -528,7 +526,7 @@ export class SimpleUser {
     };
     const requestOptions = { body };
 
-    return new Infoer(this.session).info({ requestOptions })
+    return this.session.info({ requestOptions })
       .then(() => { return; });
   }
 
@@ -953,7 +951,7 @@ export class SimpleUser {
           throw new Error("Unknown session type.");
         }
       case SessionState.Established:
-        return new Byer(this.session).bye()
+        return this.session.bye()
           .then(() => {
             this.logger.log(`[${this.id}] Session ended (sent BYE)`);
           });
