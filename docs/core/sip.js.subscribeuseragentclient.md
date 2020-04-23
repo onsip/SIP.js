@@ -16,7 +16,7 @@ export declare class SubscribeUserAgentClient extends UserAgentClient implements
 
 4.1. Subscriber Behavior https://tools.ietf.org/html/rfc6665\#section-4.1
 
-User agent client for installation of a single subscription per SUBSCRIBE request. TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE reqeuests.
+User agent client for installation of a single subscription per SUBSCRIBE request. TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE requests.
 
 ## Constructors
 
@@ -35,7 +35,7 @@ User agent client for installation of a single subscription per SUBSCRIBE reques
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [dispose()](./sip.js.subscribeuseragentclient.dispose.md) |  | Destructor. Note that Timer N may live on waiting for an initial NOTIFY and the delegate may still receive that NOTIFY. If you don't want that behavior then either clear the delegate so the delegate doesn't get called (a 200 will be sent in response to the NOTIFY) or call <code>waitNotifyStop</code> which will clear Timer N and remove this UAC from the core (a 481 will be sent in response to the NOTIFY). |
-|  [onNotify(uas)](./sip.js.subscribeuseragentclient.onnotify.md) |  | Handle out of dialog NOTIFY assoicated with SUBSCRIBE request. This is the first NOTIFY received after the SUBSCRIBE request. |
+|  [onNotify(uas)](./sip.js.subscribeuseragentclient.onnotify.md) |  | Handle out of dialog NOTIFY associated with SUBSCRIBE request. This is the first NOTIFY received after the SUBSCRIBE request. |
 |  [receiveResponse(message)](./sip.js.subscribeuseragentclient.receiveresponse.md) |  | Receive a response from the transaction layer. |
 |  [waitNotifyStart()](./sip.js.subscribeuseragentclient.waitnotifystart.md) |  |  |
 |  [waitNotifyStop()](./sip.js.subscribeuseragentclient.waitnotifystop.md) |  |  |

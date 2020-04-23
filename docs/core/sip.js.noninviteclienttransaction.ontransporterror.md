@@ -4,7 +4,7 @@
 
 ## NonInviteClientTransaction.onTransportError() method
 
-The client transaction SHOULD inform the TU that a transport failure has occurred, and the client transaction SHOULD transition directly to the "Terminated" state. The TU will handle the failover mechanisms described in \[4\]. https://tools.ietf.org/html/rfc3261\#section-17.1.4
+The client transaction SHOULD inform the TU that a transport failure has occurred, and the client transaction SHOULD transition directly to the "Terminated" state. The TU will handle the fail over mechanisms described in \[4\]. https://tools.ietf.org/html/rfc3261\#section-17.1.4
 
 <b>Signature:</b>
 
@@ -16,7 +16,7 @@ protected onTransportError(error: Error): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  error | <code>Error</code> | Trasnsport error |
+|  error | <code>Error</code> | Transport error |
 
 <b>Returns:</b>
 

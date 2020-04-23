@@ -4,7 +4,7 @@
 
 ## UserAgentCoreConfiguration.supportedOptionTags property
 
-Option tags of supported SIP extenstions.
+Option tags of supported SIP extensions.
 
 <b>Signature:</b>
 

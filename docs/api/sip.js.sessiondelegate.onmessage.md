@@ -4,7 +4,7 @@
 
 ## SessionDelegate.onMessage() method
 
-Called upon receiving an incoming in dialog MESAGE request.
+Called upon receiving an incoming in dialog MESSAGE request.
 
 <b>Signature:</b>
 

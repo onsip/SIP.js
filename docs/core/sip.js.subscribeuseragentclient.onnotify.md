@@ -4,7 +4,7 @@
 
 ## SubscribeUserAgentClient.onNotify() method
 
-Handle out of dialog NOTIFY assoicated with SUBSCRIBE request. This is the first NOTIFY received after the SUBSCRIBE request.
+Handle out of dialog NOTIFY associated with SUBSCRIBE request. This is the first NOTIFY received after the SUBSCRIBE request.
 
 <b>Signature:</b>
 
