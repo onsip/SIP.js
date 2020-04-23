@@ -319,12 +319,13 @@ export class Transport extends EventEmitter implements TransportDefinition {
     } catch (error) {
       this._ws = undefined;
       this.logger.error("WebSocket construction failed.");
-      return Promise.resolve()
-        .then(() => {
-          // The `state` MUST transition to "Disconnecting" or "Disconnected" before rejecting
-          this.transitionState(TransportState.Disconnected, error);
-          throw error;
-        });
+      this.logger.error(error);
+      return new Promise((resolve, reject) => {
+        this.connectResolve = resolve;
+        this.connectReject = reject;
+        // The `state` MUST transition to "Disconnecting" or "Disconnected" before rejecting
+        this.transitionState(TransportState.Disconnected, error);
+      });
     }
 
     this.connectPromise = new Promise((resolve, reject) => {
