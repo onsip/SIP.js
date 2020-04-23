@@ -12,26 +12,6 @@ export interface BodyAndContentType {
     contentType: string;
 }
 
-// @public
-export class Byer {
-    constructor(session: Session, options?: ByerOptions);
-    // Warning: (ae-forgotten-export) The symbol "OutgoingByeRequest" needs to be exported by the entry point index.d.ts
-    bye(options?: ByerByeOptions): Promise<OutgoingByeRequest>;
-    readonly session: Session;
-    }
-
-// @public
-export interface ByerByeOptions {
-    // Warning: (ae-forgotten-export) The symbol "OutgoingRequestDelegate" needs to be exported by the entry point index.d.ts
-    requestDelegate?: OutgoingRequestDelegate;
-    // Warning: (ae-forgotten-export) The symbol "RequestOptions" needs to be exported by the entry point index.d.ts
-    requestOptions?: RequestOptions;
-}
-
-// @public
-export interface ByerOptions {
-}
-
 // Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -64,24 +44,6 @@ export class Info {
     reject(options?: ResponseOptions): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "IncomingRequestMessage" needs to be exported by the entry point index.d.ts
     readonly request: IncomingRequestMessage;
-}
-
-// @public
-export class Infoer {
-    constructor(session: Session, options?: InfoerOptions);
-    // Warning: (ae-forgotten-export) The symbol "OutgoingInfoRequest" needs to be exported by the entry point index.d.ts
-    info(options?: InfoerInfoOptions): Promise<OutgoingInfoRequest>;
-    readonly session: Session;
-    }
-
-// @public
-export interface InfoerInfoOptions {
-    requestDelegate?: OutgoingRequestDelegate;
-    requestOptions?: RequestOptions;
-}
-
-// @public
-export interface InfoerOptions {
 }
 
 // @public
@@ -172,7 +134,9 @@ export interface InviterCancelOptions {
 
 // @public
 export interface InviterInviteOptions {
+    // Warning: (ae-forgotten-export) The symbol "OutgoingRequestDelegate" needs to be exported by the entry point index.d.ts
     requestDelegate?: OutgoingRequestDelegate;
+    // Warning: (ae-forgotten-export) The symbol "RequestOptions" needs to be exported by the entry point index.d.ts
     requestOptions?: RequestOptions;
     // (undocumented)
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
@@ -429,6 +393,9 @@ export abstract class Session {
     readonly assertedIdentity: NameAddrHeader | undefined;
     // @internal (undocumented)
     protected _assertedIdentity: NameAddrHeader | undefined;
+    // Warning: (ae-forgotten-export) The symbol "SessionByeOptions" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "OutgoingByeRequest" needs to be exported by the entry point index.d.ts
+    bye(options?: SessionByeOptions): Promise<OutgoingByeRequest>;
     // @internal
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
@@ -461,6 +428,9 @@ export abstract class Session {
     readonly id: string;
     // @internal (undocumented)
     protected abstract _id: string;
+    // Warning: (ae-forgotten-export) The symbol "SessionInfoOptions" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "OutgoingInfoRequest" needs to be exported by the entry point index.d.ts
+    info(options?: SessionInfoOptions): Promise<OutgoingInfoRequest>;
     // @internal
     _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingInfoRequest>;
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;

@@ -10,10 +10,8 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 
 |  Class | Description |
 |  --- | --- |
-|  [Byer](./sip.js.byer.md) | A byer ends a [Session](./sip.js.session.md) (outgoing BYE). |
 |  [ContentTypeUnsupportedError](./sip.js.contenttypeunsupportederror.md) | An exception indicating an unsupported content type prevented execution. |
 |  [Info](./sip.js.info.md) | An exchange of information (incoming INFO). |
-|  [Infoer](./sip.js.infoer.md) | An Infoer sends [Info](./sip.js.info.md) (outgoing INFO). |
 |  [Invitation](./sip.js.invitation.md) | An invitation is an offer to establish a [Session](./sip.js.session.md) (incoming INVITE). |
 |  [Inviter](./sip.js.inviter.md) | An inviter offers to establish a [Session](./sip.js.session.md) (outgoing INVITE). |
 |  [Message](./sip.js.message.md) | A received message (incoming MESSAGE). |
@@ -49,11 +47,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  Interface | Description |
 |  --- | --- |
 |  [BodyAndContentType](./sip.js.bodyandcontenttype.md) | Message body content and type. |
-|  [ByerByeOptions](./sip.js.byerbyeoptions.md) | Options for [Byer.bye()](./sip.js.byer.bye.md)<!-- -->. |
-|  [ByerOptions](./sip.js.byeroptions.md) | Options for [Byer](./sip.js.byer.md) constructor. |
 |  [Emitter](./sip.js.emitter.md) | Generic observable. |
-|  [InfoerInfoOptions](./sip.js.infoerinfooptions.md) | Options for [Infoer.info()](./sip.js.infoer.info.md)<!-- -->. |
-|  [InfoerOptions](./sip.js.infoeroptions.md) | Options for [Infoer](./sip.js.infoer.md) constructor. |
 |  [InvitationAcceptOptions](./sip.js.invitationacceptoptions.md) | Options for [Invitation.accept()](./sip.js.invitation.accept.md)<!-- -->. |
 |  [InvitationProgressOptions](./sip.js.invitationprogressoptions.md) | Options for [Invitation.progress()](./sip.js.invitation.progress.md)<!-- -->. |
 |  [InvitationRejectOptions](./sip.js.invitationrejectoptions.md) | Options for [Invitation.reject()](./sip.js.invitation.reject.md)<!-- -->. |

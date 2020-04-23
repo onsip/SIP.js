@@ -41,7 +41,9 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [bye(options)](./sip.js.session.bye.md) |  | Sends a BYE. |
 |  [dispose()](./sip.js.session.dispose.md) |  | Destructor. |
+|  [info(options)](./sip.js.session.info.md) |  | Sends an INFO. |
 |  [invite(options)](./sip.js.session.invite.md) |  | Renegotiate the session. Sends a re-INVITE. |
 |  [message(options)](./sip.js.session.message.md) |  | Sends a MESSAGE. |
 
