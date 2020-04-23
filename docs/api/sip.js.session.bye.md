@@ -4,7 +4,7 @@
 
 ## Session.bye() method
 
-Sends a BYE.
+End the [Session](./sip.js.session.md)<!-- -->. Sends a BYE.
 
 <b>Signature:</b>
 
@@ -16,7 +16,7 @@ bye(options?: SessionByeOptions): Promise<OutgoingByeRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionByeOptions</code> | Options bucket. |
+|  options | <code>SessionByeOptions</code> | Options bucket. See [SessionByeOptions](./sip.js.sessionbyeoptions.md) for details. |
 
 <b>Returns:</b>
 

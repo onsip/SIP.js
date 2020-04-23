@@ -12,6 +12,19 @@ export interface BodyAndContentType {
     contentType: string;
 }
 
+// @public
+export class Bye {
+    // Warning: (ae-forgotten-export) The symbol "IncomingByeRequest" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    constructor(incomingByeRequest: IncomingByeRequest);
+    // Warning: (ae-forgotten-export) The symbol "ResponseOptions" needs to be exported by the entry point index.d.ts
+    accept(options?: ResponseOptions): Promise<void>;
+    reject(options?: ResponseOptions): Promise<void>;
+    // Warning: (ae-forgotten-export) The symbol "IncomingRequestMessage" needs to be exported by the entry point index.d.ts
+    readonly request: IncomingRequestMessage;
+}
+
 // Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -39,10 +52,8 @@ export class Info {
     //
     // @internal
     constructor(incomingInfoRequest: IncomingInfoRequest);
-    // Warning: (ae-forgotten-export) The symbol "ResponseOptions" needs to be exported by the entry point index.d.ts
     accept(options?: ResponseOptions): Promise<void>;
     reject(options?: ResponseOptions): Promise<void>;
-    // Warning: (ae-forgotten-export) The symbol "IncomingRequestMessage" needs to be exported by the entry point index.d.ts
     readonly request: IncomingRequestMessage;
 }
 
@@ -190,9 +201,14 @@ export class Message {
 // @public
 export class Messager {
     constructor(userAgent: UserAgent, targetURI: URI, content: string, contentType?: string, options?: MessagerOptions);
-    // Warning: (ae-forgotten-export) The symbol "MessagerMessageOptions" needs to be exported by the entry point index.d.ts
     message(options?: MessagerMessageOptions): Promise<void>;
     }
+
+// @public
+export interface MessagerMessageOptions {
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
+}
 
 // @public
 export interface MessagerOptions {
@@ -294,33 +310,6 @@ export class Referral {
     }
 
 // @public
-export class Referrer {
-    constructor(session: Session, referTo: URI | Session, options?: ReferrerOptions);
-    delegate: ReferrerDelegate | undefined;
-    // Warning: (ae-forgotten-export) The symbol "OutgoingReferRequest" needs to be exported by the entry point index.d.ts
-    refer(options?: ReferrerReferOptions): Promise<OutgoingReferRequest>;
-    readonly session: Session;
-    }
-
-// @public
-export interface ReferrerDelegate extends OutgoingRequestDelegate {
-    // (undocumented)
-    onNotify(notification: Notification): void;
-}
-
-// @public
-export interface ReferrerOptions {
-    // (undocumented)
-    extraHeaders?: Array<string>;
-}
-
-// @public
-export interface ReferrerReferOptions {
-    requestDelegate?: ReferrerDelegate;
-    requestOptions?: RequestOptions;
-}
-
-// @public
 export class Registerer {
     constructor(userAgent: UserAgent, options?: RegistererOptions);
     readonly contacts: Array<string>;
@@ -393,7 +382,6 @@ export abstract class Session {
     readonly assertedIdentity: NameAddrHeader | undefined;
     // @internal (undocumented)
     protected _assertedIdentity: NameAddrHeader | undefined;
-    // Warning: (ae-forgotten-export) The symbol "SessionByeOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "OutgoingByeRequest" needs to be exported by the entry point index.d.ts
     bye(options?: SessionByeOptions): Promise<OutgoingByeRequest>;
     // @internal
@@ -428,7 +416,6 @@ export abstract class Session {
     readonly id: string;
     // @internal (undocumented)
     protected abstract _id: string;
-    // Warning: (ae-forgotten-export) The symbol "SessionInfoOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "OutgoingInfoRequest" needs to be exported by the entry point index.d.ts
     info(options?: SessionInfoOptions): Promise<OutgoingInfoRequest>;
     // @internal
@@ -436,7 +423,6 @@ export abstract class Session {
     invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
     abstract readonly localIdentity: NameAddrHeader;
     protected abstract logger: Logger;
-    // Warning: (ae-forgotten-export) The symbol "SessionMessageOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "OutgoingMessageRequest" needs to be exported by the entry point index.d.ts
     message(options?: SessionMessageOptions): Promise<OutgoingMessageRequest>;
     // @internal
@@ -445,8 +431,6 @@ export abstract class Session {
     //
     // @internal
     protected onAckRequest(request: IncomingAckRequest): void;
-    // Warning: (ae-forgotten-export) The symbol "IncomingByeRequest" needs to be exported by the entry point index.d.ts
-    //
     // @internal
     protected onByeRequest(request: IncomingByeRequest): void;
     // @internal
@@ -463,14 +447,14 @@ export abstract class Session {
     protected onPrackRequest(request: IncomingPrackRequest): void;
     // @internal
     protected onReferRequest(request: IncomingReferRequest): void;
+    // Warning: (ae-forgotten-export) The symbol "OutgoingReferRequest" needs to be exported by the entry point index.d.ts
+    refer(referTo: URI | Session, options?: SessionReferOptions): Promise<OutgoingReferRequest>;
     // @internal
-    refer(referrer: Referrer, delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
+    _refer(onNotify?: (notification: Notification) => void, delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
     _referral: Inviter | undefined;
     // @internal (undocumented)
     protected _referralInviterOptions: InviterOptions | undefined;
-    // @internal (undocumented)
-    _referrer: Referrer | undefined;
     abstract readonly remoteIdentity: NameAddrHeader;
     // @internal (undocumented)
     protected _renderbody: string | undefined;
@@ -509,8 +493,13 @@ export abstract class Session {
     }
 
 // @public
+export interface SessionByeOptions {
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
+}
+
+// @public
 export interface SessionDelegate {
-    // Warning: (ae-forgotten-export) The symbol "Bye" needs to be exported by the entry point index.d.ts
     onBye?(bye: Bye): void;
     onInfo?(info: Info): void;
     onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
@@ -553,6 +542,12 @@ export interface SessionDescriptionHandlerOptions {
 }
 
 // @public
+export interface SessionInfoOptions {
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
+}
+
+// @public
 export interface SessionInviteOptions {
     requestDelegate?: OutgoingRequestDelegate;
     requestOptions?: RequestOptions;
@@ -564,9 +559,22 @@ export interface SessionInviteOptions {
 }
 
 // @public
+export interface SessionMessageOptions {
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
+}
+
+// @public
 export interface SessionOptions {
     // (undocumented)
     delegate?: SessionDelegate;
+}
+
+// @public
+export interface SessionReferOptions {
+    onNotify?: (notification: Notification) => void;
+    requestDelegate?: OutgoingRequestDelegate;
+    requestOptions?: RequestOptions;
 }
 
 // @public

@@ -4,7 +4,7 @@
 
 ## Session.info() method
 
-Sends an INFO.
+Share [Info](./sip.js.info.md) with peer. Sends an INFO.
 
 <b>Signature:</b>
 
@@ -16,7 +16,7 @@ info(options?: SessionInfoOptions): Promise<OutgoingInfoRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionInfoOptions</code> | Options bucket. |
+|  options | <code>SessionInfoOptions</code> | Options bucket. See [SessionInfoOptions](./sip.js.sessioninfooptions.md) for details. |
 
 <b>Returns:</b>
 

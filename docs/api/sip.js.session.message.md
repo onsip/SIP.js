@@ -4,7 +4,7 @@
 
 ## Session.message() method
 
-Sends a MESSAGE.
+Deliver a [Message](./sip.js.message.md)<!-- -->. Sends a MESSAGE.
 
 <b>Signature:</b>
 
@@ -16,7 +16,7 @@ message(options?: SessionMessageOptions): Promise<OutgoingMessageRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionMessageOptions</code> | Options bucket. |
+|  options | <code>SessionMessageOptions</code> | Options bucket. See [SessionMessageOptions](./sip.js.sessionmessageoptions.md) for details. |
 
 <b>Returns:</b>
 

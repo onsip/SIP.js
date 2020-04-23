@@ -10,6 +10,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 
 |  Class | Description |
 |  --- | --- |
+|  [Bye](./sip.js.bye.md) | A request to end a [Session](./sip.js.session.md) (incoming BYE). |
 |  [ContentTypeUnsupportedError](./sip.js.contenttypeunsupportederror.md) | An exception indicating an unsupported content type prevented execution. |
 |  [Info](./sip.js.info.md) | An exchange of information (incoming INFO). |
 |  [Invitation](./sip.js.invitation.md) | An invitation is an offer to establish a [Session](./sip.js.session.md) (incoming INVITE). |
@@ -19,7 +20,6 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [Notification](./sip.js.notification.md) | A notification of an event (incoming NOTIFY). |
 |  [Publisher](./sip.js.publisher.md) | A publisher publishes a publication (outgoing PUBLISH). |
 |  [Referral](./sip.js.referral.md) | A request to establish a [Session](./sip.js.session.md) elsewhere (incoming REFER). |
-|  [Referrer](./sip.js.referrer.md) | A referrer sends a [Referral](./sip.js.referral.md) (outgoing REFER). |
 |  [Registerer](./sip.js.registerer.md) | A registerer registers a contact for an address of record (outgoing REGISTER). |
 |  [RequestPendingError](./sip.js.requestpendingerror.md) | An exception indicating an outstanding prior request prevented execution. |
 |  [Session](./sip.js.session.md) | A session provides real time communication between one or more participants. |
@@ -54,23 +54,25 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 |  [InviterCancelOptions](./sip.js.invitercanceloptions.md) | Options for [Inviter.cancel()](./sip.js.inviter.cancel.md)<!-- -->. |
 |  [InviterInviteOptions](./sip.js.inviterinviteoptions.md) | Options for [Inviter.invite()](./sip.js.inviter.invite.md)<!-- -->. |
 |  [InviterOptions](./sip.js.inviteroptions.md) | Options for [Inviter](./sip.js.inviter.md) constructor. |
+|  [MessagerMessageOptions](./sip.js.messagermessageoptions.md) | Options for [Messager.message()](./sip.js.messager.message.md)<!-- -->. |
 |  [MessagerOptions](./sip.js.messageroptions.md) | Options for [Messager](./sip.js.messager.md) constructor. |
 |  [PublisherOptions](./sip.js.publisheroptions.md) | Options for [Publisher](./sip.js.publisher.md) constructor. |
 |  [PublisherPublishOptions](./sip.js.publisherpublishoptions.md) | Options for [Publisher.publish()](./sip.js.publisher.publish.md)<!-- -->. |
 |  [PublisherUnpublishOptions](./sip.js.publisherunpublishoptions.md) | Options for [Publisher.unpublish()](./sip.js.publisher.unpublish.md)<!-- -->. |
-|  [ReferrerDelegate](./sip.js.referrerdelegate.md) | Delegate for [Referrer](./sip.js.referrer.md)<!-- -->. |
-|  [ReferrerOptions](./sip.js.referreroptions.md) | Options for [Referrer](./sip.js.referrer.md) constructor. |
-|  [ReferrerReferOptions](./sip.js.referrerreferoptions.md) | Options for [Referrer.refer()](./sip.js.referrer.refer.md)<!-- -->. |
 |  [RegistererOptions](./sip.js.registereroptions.md) | Options for [Registerer](./sip.js.registerer.md) constructor. |
 |  [RegistererRegisterOptions](./sip.js.registererregisteroptions.md) | Options for [Registerer.register()](./sip.js.registerer.register.md)<!-- -->. |
 |  [RegistererUnregisterOptions](./sip.js.registererunregisteroptions.md) | Options for [Registerer.unregister()](./sip.js.registerer.unregister.md)<!-- -->. |
+|  [SessionByeOptions](./sip.js.sessionbyeoptions.md) | Options for [Session.bye()](./sip.js.session.bye.md)<!-- -->. |
 |  [SessionDelegate](./sip.js.sessiondelegate.md) | Delegate for [Session](./sip.js.session.md)<!-- -->. |
 |  [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) | Delegate for [Session](./sip.js.session.md) offer/answer exchange. |
 |  [SessionDescriptionHandlerFactory](./sip.js.sessiondescriptionhandlerfactory.md) | Factory for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md)<!-- -->. |
 |  [SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md) | Modifier for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) offer/answer. |
 |  [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) methods. |
+|  [SessionInfoOptions](./sip.js.sessioninfooptions.md) | Options for [Session.info()](./sip.js.session.info.md)<!-- -->. |
 |  [SessionInviteOptions](./sip.js.sessioninviteoptions.md) | Options for [Session.invite()](./sip.js.session.invite.md)<!-- -->. |
+|  [SessionMessageOptions](./sip.js.sessionmessageoptions.md) | Options for [Session.message()](./sip.js.session.message.md)<!-- -->. |
 |  [SessionOptions](./sip.js.sessionoptions.md) | Options for [Session](./sip.js.session.md) constructor. |
+|  [SessionReferOptions](./sip.js.sessionreferoptions.md) | Options for [Session.refer()](./sip.js.session.refer.md)<!-- -->. |
 |  [SubscriberOptions](./sip.js.subscriberoptions.md) | Options for [Subscriber](./sip.js.subscriber.md) constructor. |
 |  [SubscriberSubscribeOptions](./sip.js.subscribersubscribeoptions.md) | Options for [Subscriber.subscribe()](./sip.js.subscriber.subscribe.md)<!-- -->. |
 |  [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) | Delegate for [Subscription](./sip.js.subscription.md)<!-- -->. |
