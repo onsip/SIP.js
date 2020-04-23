@@ -38,45 +38,6 @@ export class Byer {
    * @param options - {@link ByerByeOptions} options bucket.
    */
   public bye(options: ByerByeOptions = {}): Promise<OutgoingByeRequest> {
-    let message = "Byer.bye() may only be called if established session.";
-
-    switch (this.session.state) {
-      case SessionState.Initial:
-        if (this.session instanceof Inviter) {
-          message += " However Inviter.invite() has not yet been called.";
-          message += " Perhaps you should have called Inviter.cancel()?";
-        } else if (this.session instanceof Invitation) {
-          message += " However Invitation.accept() has not yet been called.";
-          message += " Perhaps you should have called Invitation.reject()?";
-        }
-        break;
-      case SessionState.Establishing:
-        if (this.session instanceof Inviter) {
-          message += " However a dialog does not yet exist.";
-          message += " Perhaps you should have called Inviter.cancel()?";
-        } else if (this.session instanceof Invitation) {
-          message += " However Invitation.accept() has not yet been called (or not yet resolved).";
-          message += " Perhaps you should have called Invitation.reject()?";
-        }
-        break;
-      case SessionState.Established:
-        return this.session._bye(options.requestDelegate, options.requestOptions);
-      case SessionState.Terminating:
-        message += " However this session is already terminating.";
-        if (this.session instanceof Inviter) {
-          message += " Perhaps you have already called Inviter.cancel()?";
-        } else if (this.session instanceof Invitation) {
-          message += " Perhaps you have already called Byer.bye()?";
-        }
-        break;
-      case SessionState.Terminated:
-        message += " However this session is already terminated.";
-        break;
-      default:
-        throw new Error("Unknown state");
-    }
-
-    this.logger.error(message);
-    return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
+    return this.session.bye(options);
   }
 }

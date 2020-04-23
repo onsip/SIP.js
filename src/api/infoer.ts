@@ -36,13 +36,6 @@ export class Infoer {
    * @param options - {@link InfoerInfoOptions} options bucket.
    */
   public info(options: InfoerInfoOptions = {}): Promise<OutgoingInfoRequest> {
-    // guard session state
-    if (this.session.state !== SessionState.Established) {
-      const message = "Infoer.info() may only be called if established session.";
-      this.logger.error(message);
-      return Promise.reject(new Error(`Invalid session state ${this.session.state}`));
-    }
-
-    return this.session._info(options.requestDelegate, options.requestOptions);
+    return this._session.info(options);
   }
 }

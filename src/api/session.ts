@@ -39,6 +39,7 @@ import { Message } from "./message";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
 import { Referrer } from "./referrer";
+import { SessionByeOptions } from "./session-bye-options";
 import { SessionDelegate } from "./session-delegate";
 import {
   SessionDescriptionHandler,
@@ -46,6 +47,7 @@ import {
   SessionDescriptionHandlerOptions
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
+import { SessionInfoOptions } from "./session-info-options";
 import { SessionInviteOptions } from "./session-invite-options";
 import { SessionMessageOptions } from "./session-message-options";
 import { SessionOptions } from "./session-options";
@@ -263,6 +265,68 @@ export abstract class Session {
    */
   public get userAgent(): UserAgent {
     return this._userAgent;
+  }
+
+  /**
+   * Sends a BYE.
+   * @param options - Options bucket.
+   */
+  public bye(options: SessionByeOptions = {}): Promise<OutgoingByeRequest> {
+    let message = "Session.bye() may only be called if established session.";
+
+    switch (this.state) {
+      case SessionState.Initial:
+        if (typeof (this as any).cancel === "function") {
+          message += " However Inviter.invite() has not yet been called.";
+          message += " Perhaps you should have called Inviter.cancel()?";
+        } else if (typeof (this as any).reject === "function") {
+          message += " However Invitation.accept() has not yet been called.";
+          message += " Perhaps you should have called Invitation.reject()?";
+        }
+        break;
+      case SessionState.Establishing:
+        if (typeof (this as any).cancel === "function") {
+          message += " However a dialog does not yet exist.";
+          message += " Perhaps you should have called Inviter.cancel()?";
+        } else if (typeof (this as any).reject === "function") {
+          message += " However Invitation.accept() has not yet been called (or not yet resolved).";
+          message += " Perhaps you should have called Invitation.reject()?";
+        }
+        break;
+      case SessionState.Established:
+        return this._bye(options.requestDelegate, options.requestOptions);
+      case SessionState.Terminating:
+        message += " However this session is already terminating.";
+        if (typeof (this as any).cancel === "function") {
+          message += " Perhaps you have already called Inviter.cancel()?";
+        } else if (typeof (this as any).reject === "function") {
+          message += " Perhaps you have already called Session.bye()?";
+        }
+        break;
+      case SessionState.Terminated:
+        message += " However this session is already terminated.";
+        break;
+      default:
+        throw new Error("Unknown state");
+    }
+
+    this.logger.error(message);
+    return Promise.reject(new Error(`Invalid session state ${this.state}`));
+  }
+
+  /**
+   * Sends an INFO.
+   * @param options - Options bucket.
+   */
+  public info(options: SessionInfoOptions = {}): Promise<OutgoingInfoRequest> {
+    // guard session state
+    if (this.state !== SessionState.Established) {
+      const message = "Session.info() may only be called if established session.";
+      this.logger.error(message);
+      return Promise.reject(new Error(`Invalid session state ${this.state}`));
+    }
+
+    return this._info(options.requestDelegate, options.requestOptions);
   }
 
   /**
