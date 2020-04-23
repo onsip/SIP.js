@@ -5,7 +5,7 @@ import {
 } from "../core";
 
 /**
- * An exchange of information (incoming INFO).
+ * A request to end a {@link Session} (incoming BYE).
  * @public
  */
 export class Bye {

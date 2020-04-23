@@ -2,9 +2,6 @@ import {
   Invitation,
   Inviter,
   Referral,
-  Referrer,
-  ReferrerOptions,
-  ReferrerReferOptions,
   RequestPendingError,
   Session,
   SessionDescriptionHandler,
@@ -846,10 +843,7 @@ describe("API Session In-Dialog", () => {
             resetSpies();
             inviter.delegate = undefined;
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(invitation, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return invitation.refer(referTo)
               .then(() => alice.transport.waitSent()) // 202
               .then(() => alice.transport.waitSent()) // INVITE
               .then(() => bob.transport.waitSent()); // 200
@@ -895,10 +889,7 @@ describe("API Session In-Dialog", () => {
               }
             };
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(invitation, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return invitation.refer(referTo)
               .then(() => alice.transport.waitSent()) // 202
               .then(() => alice.transport.waitSent()) // INVITE
               .then(() => bob.transport.waitSent()); // 200
@@ -935,10 +926,7 @@ describe("API Session In-Dialog", () => {
             resetSpies();
             invitation.delegate = undefined;
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(inviter, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return inviter.refer(referTo)
               .then(() => bob.transport.waitSent()) // 202
               .then(() => bob.transport.waitSent()) // INVITE
               .then(() => alice.transport.waitSent()); // 200
@@ -984,10 +972,7 @@ describe("API Session In-Dialog", () => {
               }
             };
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(inviter, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return inviter.refer(referTo)
               .then(() => bob.transport.waitSent()) // 202
               .then(() => bob.transport.waitSent()) // INVITE
               .then(() => alice.transport.waitSent()); // 200
