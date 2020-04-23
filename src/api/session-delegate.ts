@@ -29,7 +29,7 @@ export interface SessionDelegate {
   onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
 
   /**
-   * Called upon receiving an incoming in dialog MESAGE request.
+   * Called upon receiving an incoming in dialog MESSAGE request.
    * @param message - The message.
    */
   onMessage?(message: Message): void;

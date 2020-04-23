@@ -107,7 +107,7 @@ export class SimpleUser {
           this.logger.log(`[${this.id}] Registering...`);
           this.registerer.register()
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] An error occured registering after connection with server was obtained.`);
+              this.logger.error(`[${this.id}] Error occurred registering after connection with server was obtained.`);
               this.logger.error(e.toString());
             });
         }
@@ -122,7 +122,7 @@ export class SimpleUser {
           this.logger.log(`[${this.id}] Hanging up...`);
           this.hangup() // cleanup hung calls
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] An error occured hanging up call after connection with server was lost.`);
+              this.logger.error(`[${this.id}] Error occurred hanging up call after connection with server was lost.`);
               this.logger.error(e.toString());
             });
         }
@@ -130,7 +130,7 @@ export class SimpleUser {
           this.logger.log(`[${this.id}] Unregistering...`);
           this.registerer.unregister() // cleanup invalid registrations
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] An error occured unregistering after connection with server was lost.`);
+              this.logger.error(`[${this.id}] Error occurred unregistering after connection with server was lost.`);
               this.logger.error(e.toString());
             });
         }
@@ -326,7 +326,7 @@ export class SimpleUser {
   }
 
   /**
-   * Make an outoing call.
+   * Make an outgoing call.
    * @remarks
    * Send an INVITE request to create a new Session.
    * Resolves when the INVITE request is sent, otherwise rejects.

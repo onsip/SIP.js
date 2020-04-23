@@ -155,9 +155,9 @@ export class NonInviteClientTransaction extends ClientTransaction {
   /**
    * The client transaction SHOULD inform the TU that a transport failure has occurred,
    * and the client transaction SHOULD transition directly to the "Terminated" state.
-   * The TU will handle the failover mechanisms described in [4].
+   * The TU will handle the fail over mechanisms described in [4].
    * https://tools.ietf.org/html/rfc3261#section-17.1.4
-   * @param error - Trasnsport error
+   * @param error - Transport error
    */
   protected onTransportError(error: Error): void {
     if (this.user.onTransportError) {
