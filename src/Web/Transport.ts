@@ -199,6 +199,7 @@ export class Transport extends TransportBase {
       this.disposeWs();
       try {
         this.ws = new WebSocket(this.server.wsUri, "sip");
+        this.ws.binaryType = "arraybuffer"; // set data type of received binary messages
       } catch (e) {
         this.ws = undefined;
         this.statusTransition(TransportStatus.STATUS_CLOSED, true);
