@@ -311,6 +311,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
       // WebSocket()
       // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket
       ws = new WebSocket(this.server, "sip");
+      ws.binaryType = "arraybuffer"; // set data type of received binary messages
       ws.addEventListener("close", (ev: CloseEvent) => this.onWebSocketClose(ev, ws));
       ws.addEventListener("error", (ev: Event) => this.onWebSocketError(ev, ws));
       ws.addEventListener("open", (ev: Event) => this.onWebSocketOpen(ev, ws));
@@ -512,20 +513,24 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
     if (typeof data !== "string") { // WebSocket binary message.
       try {
-        // TODO: UInt8Array is not an Array<number>, so this should be fixed. (It was ported as is.)
-        finishedData = String.fromCharCode.apply(null, (new Uint8Array(data) as unknown as Array<number>));
+        finishedData = new TextDecoder().decode(new Uint8Array(data));
+        // TextDecoder (above) is not supported by old browsers, but it correctly decodes UTF-8.
+        // The line below is an ISO 8859-1 (Latin 1) decoder, so just UTF-8 code points that are 1 byte.
+        // It's old code and works in old browsers (IE), so leaving it here in a comment in case someone needs it.
+        // finishedData = String.fromCharCode.apply(null, (new Uint8Array(data) as unknown as Array<number>));
       } catch (err) {
-        this.logger.warn("Received WebSocket binary message failed to be converted into string, message discarded");
+        this.logger.error(err);
+        this.logger.error("Received WebSocket binary message failed to be converted into string, message discarded");
         return;
       }
       if (this.configuration.traceSip === true) {
-        this.logger.log("Received WebSocket binary message:\n\n" + data + "\n");
+        this.logger.log("Received WebSocket binary message:\n\n" + finishedData + "\n");
       }
     } else { // WebSocket text message.
-      if (this.configuration.traceSip === true) {
-        this.logger.log("Received WebSocket text message:\n\n" + data + "\n");
-      }
       finishedData = data;
+      if (this.configuration.traceSip === true) {
+        this.logger.log("Received WebSocket text message:\n\n" + finishedData + "\n");
+      }
     }
 
     if (this.state !== TransportState.Connected) {
