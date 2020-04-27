@@ -48,7 +48,7 @@ README.md
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
 - *Integration* tests are being written high level "api" components (Session, Subscription)
-  - Need to write more integration tests; Publisher, UserAgent, etc
+  - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
 
 ## Source
 
