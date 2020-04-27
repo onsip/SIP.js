@@ -150,7 +150,6 @@ export class UserAgent {
   private _contact: Contact;
   private _state: UserAgentState = UserAgentState.Stopped;
   private _stateEventEmitter = new EventEmitter();
-  private _stateInitial = true;
   private _transport: Transport;
   private _userAgentCore: UserAgentCore;
 
@@ -399,29 +398,6 @@ export class UserAgent {
       return Promise.resolve();
     }
     this.logger.log(`Starting ${this.configuration.uri}`);
-
-    // TODO: Make these properties only valid while in "Started" state.
-    // This is hold over of earlier times. Other internal/external code
-    // is depending on these properties existing after construction, so
-    // we construct the first instance of them during construction. We
-    // don't need to remake them the first time start() is called, so
-    // we have this little stateInitial thing going on...
-    if (!this._stateInitial) {
-      this._stateInitial = false;
-
-      // Initialize Transport
-      this._transport = new this.options.transportConstructor(
-        this.getLogger("sip.Transport"),
-        this.options.transportOptions
-      );
-      this.initTransportCallbacks();
-
-      // Initialize Contact
-      this._contact = this.initContact();
-
-      // Initialize UserAgentCore
-      this._userAgentCore = this.initCore();
-    }
 
     // Transition state
     this.transitionState(UserAgentState.Started);
