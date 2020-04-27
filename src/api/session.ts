@@ -802,6 +802,14 @@ export abstract class Session {
       const info = new Info(request);
       this.delegate.onInfo(info);
     } else {
+      // FIXME: TODO: We should reject request...
+      //
+      // If a UA receives an INFO request associated with an Info Package that
+      // the UA has not indicated willingness to receive, the UA MUST send a
+      // 469 (Bad Info Package) response (see Section 11.6), which contains a
+      // Recv-Info header field with Info Packages for which the UA is willing
+      // to receive INFO requests.
+      // https://tools.ietf.org/html/rfc6086#section-4.2.2
       request.accept();
     }
   }
