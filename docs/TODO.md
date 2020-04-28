@@ -52,8 +52,8 @@ README.md
 
 ## Source
 
-### TypeScript
-- issue updating to TypeScript 3.7 https://github.com/microsoft/TypeScript/issues/33939
+### api-extracctor
+ - issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
 
 ### API - Miscellaneous
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
