@@ -16,5 +16,5 @@ export interface SubscriptionDelegate
 
 |  Method | Description |
 |  --- | --- |
-|  [onNotify(notification)](./sip.js.subscriptiondelegate.onnotify.md) | Called upon receiving an incoming in dialog NOTIFY request. |
+|  [onNotify(notification)](./sip.js.subscriptiondelegate.onnotify.md) | Called upon receiving an incoming NOTIFY request. |
 
