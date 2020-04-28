@@ -9,5 +9,5 @@ The subscribed subscription dialog.
 <b>Signature:</b>
 
 ```typescript
-readonly dialog: SubscriptionDialog | undefined;
+get dialog(): SubscriptionDialog | undefined;
 ```

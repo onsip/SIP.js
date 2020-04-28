@@ -9,5 +9,5 @@ Remote sequence number (used to order requests from its peer to the UA).
 <b>Signature:</b>
 
 ```typescript
-readonly remoteSequenceNumber: number | undefined;
+get remoteSequenceNumber(): number | undefined;
 ```

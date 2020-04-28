@@ -9,5 +9,5 @@ Remote target.
 <b>Signature:</b>
 
 ```typescript
-readonly remoteTarget: URI;
+get remoteTarget(): URI;
 ```

@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly loggerFactory: LoggerFactory;
+get loggerFactory(): LoggerFactory;
 ```

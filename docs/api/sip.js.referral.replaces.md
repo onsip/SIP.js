@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly replaces: string | undefined;
+get replaces(): string | undefined;
 ```

@@ -9,5 +9,5 @@ The asserted identity of the remote user.
 <b>Signature:</b>
 
 ```typescript
-readonly assertedIdentity: NameAddrHeader | undefined;
+get assertedIdentity(): NameAddrHeader | undefined;
 ```

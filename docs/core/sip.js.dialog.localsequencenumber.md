@@ -9,5 +9,5 @@ Local sequence number (used to order requests from the UA to its peer).
 <b>Signature:</b>
 
 ```typescript
-readonly localSequenceNumber: number | undefined;
+get localSequenceNumber(): number | undefined;
 ```

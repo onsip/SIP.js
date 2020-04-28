@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly subscriptionEvent: string;
+get subscriptionEvent(): string;
 ```

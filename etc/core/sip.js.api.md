@@ -73,7 +73,7 @@ export abstract class ClientTransaction extends Transaction {
     protected constructor(_request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser, state: TransactionState, loggerCategory: string);
     protected onRequestTimeout(): void;
     abstract receiveResponse(response: IncomingResponseMessage): void;
-    readonly request: OutgoingRequestMessage;
+    get request(): OutgoingRequestMessage;
     // (undocumented)
     protected user: ClientTransactionUser;
 }
@@ -107,7 +107,7 @@ export interface Contact {
 // @public
 export class Dialog {
     protected constructor(core: UserAgentCore, dialogState: DialogState);
-    readonly callId: string;
+    get callId(): string;
     confirm(): void;
     // (undocumented)
     protected core: UserAgentCore;
@@ -119,25 +119,25 @@ export class Dialog {
     // (undocumented)
     protected dialogState: DialogState;
     dispose(): void;
-    readonly early: boolean;
-    readonly id: string;
+    get early(): boolean;
+    get id(): string;
     // @internal
     incrementLocalSequenceNumber(): void;
     static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequestMessage, incomingResponseMessage: IncomingResponseMessage): DialogState;
     static initialDialogStateForUserAgentServer(incomingRequestMessage: IncomingRequestMessage, toTag: string, early?: boolean): DialogState;
-    readonly localSequenceNumber: number | undefined;
-    readonly localTag: string;
-    readonly localURI: URI;
+    get localSequenceNumber(): number | undefined;
+    get localTag(): string;
+    get localURI(): URI;
     receiveRequest(message: IncomingRequestMessage): void;
     recomputeRouteSet(message: IncomingResponseMessage): void;
-    readonly remoteSequenceNumber: number | undefined;
-    readonly remoteTag: string;
-    readonly remoteTarget: URI;
-    readonly remoteURI: URI;
-    readonly routeSet: Array<string>;
-    readonly secure: boolean;
+    get remoteSequenceNumber(): number | undefined;
+    get remoteTag(): string;
+    get remoteTarget(): URI;
+    get remoteURI(): URI;
+    get routeSet(): Array<string>;
+    get secure(): boolean;
     protected sequenceGuard(message: IncomingRequestMessage): boolean;
-    readonly userAgentCore: UserAgentCore;
+    get userAgentCore(): UserAgentCore;
 }
 
 // @public
@@ -403,7 +403,7 @@ export class InviteClientTransaction extends ClientTransaction {
     constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser);
     ackResponse(ack: OutgoingRequestMessage): void;
     dispose(): void;
-    readonly kind: string;
+    get kind(): string;
     protected onTransportError(error: TransportError): void;
     receiveResponse(response: IncomingResponseMessage): void;
     protected typeToString(): string;
@@ -413,7 +413,7 @@ export class InviteClientTransaction extends ClientTransaction {
 export class InviteServerTransaction extends ServerTransaction {
     constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser);
     dispose(): void;
-    readonly kind: string;
+    get kind(): string;
     protected onTransportError(error: Error): void;
     receiveRequest(request: IncomingRequestMessage): void;
     receiveResponse(statusCode: number, response: string): void;
@@ -481,13 +481,15 @@ export class LoggerFactory {
     // (undocumented)
     builtinEnabled: boolean;
     // (undocumented)
-    connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+    get connector(): ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+    set connector(value: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined);
     // (undocumented)
     genericLog(levelToLog: Levels, category: string, label: string | undefined, content: any): void;
     // (undocumented)
     getLogger(category: string, label?: string): Logger;
     // (undocumented)
-    level: Levels;
+    get level(): Levels;
+    set level(newLevel: Levels);
     }
 
 // @public
@@ -510,9 +512,10 @@ export class NameAddrHeader extends Parameters {
     // (undocumented)
     clone(): NameAddrHeader;
     // (undocumented)
-    displayName: string;
+    get displayName(): string;
+    set displayName(value: string);
     // (undocumented)
-    readonly friendlyName: string;
+    get friendlyName(): string;
     // (undocumented)
     toString(): string;
     // (undocumented)
@@ -523,7 +526,7 @@ export class NameAddrHeader extends Parameters {
 export class NonInviteClientTransaction extends ClientTransaction {
     constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser);
     dispose(): void;
-    readonly kind: string;
+    get kind(): string;
     protected onTransportError(error: Error): void;
     receiveResponse(response: IncomingResponseMessage): void;
     protected typeToString(): string;
@@ -533,7 +536,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
 export class NonInviteServerTransaction extends ServerTransaction {
     constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser);
     dispose(): void;
-    readonly kind: string;
+    get kind(): string;
     protected onTransportError(error: Error): void;
     receiveRequest(request: IncomingRequestMessage): void;
     receiveResponse(statusCode: number, response: string): void;
@@ -850,7 +853,7 @@ export abstract class ServerTransaction extends Transaction {
     protected constructor(_request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser, state: TransactionState, loggerCategory: string);
     abstract receiveRequest(request: IncomingRequestMessage): void;
     abstract receiveResponse(statusCode: number, response: string): void;
-    readonly request: IncomingRequestMessage;
+    get request(): IncomingRequestMessage;
     // (undocumented)
     protected user: ServerTransactionUser;
 }
@@ -900,7 +903,7 @@ export interface SessionDelegate {
 export class SessionDialog extends Dialog implements Session {
     constructor(initialTransaction: InviteClientTransaction | InviteServerTransaction, core: UserAgentCore, state: DialogState, delegate?: SessionDelegate);
     ack(options?: RequestOptions): OutgoingAckRequest;
-    readonly answer: Body | undefined;
+    get answer(): Body | undefined;
     bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingByeRequest;
     confirm(): void;
     // (undocumented)
@@ -911,7 +914,7 @@ export class SessionDialog extends Dialog implements Session {
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
     message(delegate: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
-    readonly offer: Body | undefined;
+    get offer(): Body | undefined;
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
     receiveRequest(message: IncomingRequestMessage): void;
     reConfirm(): void;
@@ -923,8 +926,8 @@ export class SessionDialog extends Dialog implements Session {
     // (undocumented)
     reliableSequenceGuard(message: IncomingResponseMessage): boolean;
     // (undocumented)
-    readonly sessionState: SessionState;
-    readonly signalingState: SignalingState;
+    get sessionState(): SessionState;
+    get signalingState(): SignalingState;
     signalingStateRollback(): void;
     signalingStateTransition(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): void;
     }
@@ -1002,7 +1005,8 @@ export interface SubscriptionDelegate {
 export class SubscriptionDialog extends Dialog implements Subscription {
     constructor(subscriptionEvent: string, subscriptionExpires: number, subscriptionState: SubscriptionState, core: UserAgentCore, state: DialogState, delegate?: SubscriptionDelegate);
     // (undocumented)
-    autoRefresh: boolean;
+    get autoRefresh(): boolean;
+    set autoRefresh(autoRefresh: boolean);
     // (undocumented)
     delegate: SubscriptionDelegate | undefined;
     // (undocumented)
@@ -1012,13 +1016,14 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     refresh(): OutgoingSubscribeRequest;
     subscribe(delegate?: OutgoingSubscribeRequestDelegate, options?: RequestOptions): OutgoingSubscribeRequest;
     // (undocumented)
-    readonly subscriptionEvent: string;
-    subscriptionExpires: number;
+    get subscriptionEvent(): string;
+    get subscriptionExpires(): number;
+    set subscriptionExpires(expires: number);
     // (undocumented)
-    readonly subscriptionExpiresInitial: number;
-    readonly subscriptionRefresh: number | undefined;
+    get subscriptionExpiresInitial(): number;
+    get subscriptionRefresh(): number | undefined;
     // (undocumented)
-    readonly subscriptionState: SubscriptionState;
+    get subscriptionState(): SubscriptionState;
     terminate(): void;
     unsubscribe(): OutgoingSubscribeRequest;
 }
@@ -1059,8 +1064,8 @@ export const Timers: {
 export abstract class Transaction extends EventEmitter {
     protected constructor(_transport: Transport, _user: TransactionUser, _id: string, _state: TransactionState, loggerCategory: string);
     dispose(): void;
-    readonly id: string;
-    readonly kind: string;
+    get id(): string;
+    get kind(): string;
     // (undocumented)
     protected logger: Logger;
     // (undocumented)
@@ -1071,8 +1076,8 @@ export abstract class Transaction extends EventEmitter {
     protected send(message: string): Promise<void>;
     // (undocumented)
     protected setState(state: TransactionState): void;
-    readonly state: TransactionState;
-    readonly transport: Transport;
+    get state(): TransactionState;
+    get transport(): Transport;
     // (undocumented)
     protected typeToString(): string;
     }
@@ -1124,7 +1129,7 @@ export class TransportError extends Exception {
 export class URI extends Parameters {
     constructor(scheme: string, user: string, host: string, port?: number, parameters?: any, headers?: any);
     // (undocumented)
-    readonly aor: string;
+    get aor(): string;
     // (undocumented)
     clearHeaders(): void;
     // (undocumented)
@@ -1136,11 +1141,14 @@ export class URI extends Parameters {
     // (undocumented)
     hasHeader(name: string): boolean;
     // (undocumented)
-    host: string;
+    get host(): string;
+    set host(value: string);
     // (undocumented)
-    port: number | undefined;
+    get port(): number | undefined;
+    set port(value: number | undefined);
     // (undocumented)
-    scheme: string;
+    get scheme(): string;
+    set scheme(value: string);
     // (undocumented)
     setHeader(name: string, value: any): void;
     // (undocumented)
@@ -1148,7 +1156,8 @@ export class URI extends Parameters {
     // (undocumented)
     toString(): string;
     // (undocumented)
-    user: string | undefined;
+    get user(): string | undefined;
+    set user(value: string | undefined);
 }
 
 // @public
@@ -1166,13 +1175,13 @@ export class UserAgentClient implements OutgoingRequest {
     // (undocumented)
     protected logger: Logger;
     // (undocumented)
-    readonly loggerFactory: LoggerFactory;
+    get loggerFactory(): LoggerFactory;
     // (undocumented)
     message: OutgoingRequestMessage;
     protected onRequestTimeout(): void;
     protected onTransportError(error: TransportError): void;
     protected receiveResponse(message: IncomingResponseMessage): void;
-    readonly transaction: ClientTransaction;
+    get transaction(): ClientTransaction;
     }
 
 // @public
@@ -1183,7 +1192,7 @@ export class UserAgentCore {
     dialogs: Map<string, Dialog>;
     dispose(): void;
     invite(request: OutgoingRequestMessage, delegate?: OutgoingInviteRequestDelegate): OutgoingInviteRequest;
-    readonly loggerFactory: LoggerFactory;
+    get loggerFactory(): LoggerFactory;
     makeOutgoingRequestMessage(method: string, requestURI: URI, fromURI: URI, toURI: URI, options: OutgoingRequestMessageOptions, extraHeaders?: Array<string>, body?: Body): OutgoingRequestMessage;
     message(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingMessageRequest;
     publish(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingPublishRequest;
@@ -1195,7 +1204,7 @@ export class UserAgentCore {
     reset(): void;
     subscribe(request: OutgoingRequestMessage, delegate?: OutgoingSubscribeRequestDelegate): OutgoingSubscribeRequest;
     subscribers: Map<string, SubscribeUserAgentClient>;
-    readonly transport: Transport;
+    get transport(): Transport;
     userAgentClients: Map<string, UserAgentClient>;
     userAgentServers: Map<string, UserAgentServer>;
 }
@@ -1236,7 +1245,7 @@ export class UserAgentServer implements IncomingRequest {
     // (undocumented)
     accept(options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
-    protected readonly acceptable: boolean;
+    protected get acceptable(): boolean;
     // (undocumented)
     protected core: UserAgentCore;
     // (undocumented)
@@ -1246,29 +1255,29 @@ export class UserAgentServer implements IncomingRequest {
     // (undocumented)
     protected logger: Logger;
     // (undocumented)
-    readonly loggerFactory: LoggerFactory;
+    get loggerFactory(): LoggerFactory;
     // (undocumented)
     message: IncomingRequestMessage;
     // (undocumented)
     progress(options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
-    protected readonly progressable: boolean;
+    protected get progressable(): boolean;
     receiveCancel(message: IncomingRequestMessage): void;
     // (undocumented)
     redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
-    protected readonly redirectable: boolean;
+    protected get redirectable(): boolean;
     // (undocumented)
     reject(options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
-    protected readonly rejectable: boolean;
+    protected get rejectable(): boolean;
     // (undocumented)
     protected toTag: string;
-    readonly transaction: ServerTransaction;
+    get transaction(): ServerTransaction;
     // (undocumented)
     trying(options?: ResponseOptions): OutgoingResponse;
     // (undocumented)
-    protected readonly tryingable: boolean;
+    protected get tryingable(): boolean;
 }
 
 
