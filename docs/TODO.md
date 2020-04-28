@@ -55,7 +55,7 @@ README.md
 ### API - Miscellaneous
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
-- Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
+- Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion
 - Make sure all options buckets are deep copied
 
 ### Core - Miscellaneous
