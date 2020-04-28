@@ -165,7 +165,6 @@ registerer.unregister()
 - `UA.invite()`
 
 Previously...
-
 * Setup target and options
 * Call `UA.invite()` to create `Session` and send INVITE
 * Register event listener to `UA` capture sent INVITE request message
@@ -234,6 +233,9 @@ Now...
 ```
 // Target URI
 const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  throw new Error("Failed to create target URI.");
+}
 
 // Create new Session instance in "initial" state
 const session = new Inviter(userAgent, uri);
@@ -286,25 +288,179 @@ session.invite(inviteOptions)
 
 - `UA.message()`
 
-TODO
+Previously...
+
+```
+ua.message("sip:alice@example.com", "Hello");
+```
+
+Now...
+
+```
+// Target URI
+const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  throw new Error("Failed to create target URI.");
+}
+
+// Send MESSAGE
+const messager = new Messager(userAgent, uri, "Hello");
+messager.message()
+  .then(() => {
+    // MESSAGE sent
+  })
+  .catch((error: Error) => {
+    // MESSAGE did not send
+  });
+```
 
 ## 5. `Publisher` class replaces...
 
 - `UA.publish()`
 
-TODO
+Previously...
+
+```
+// Send initial PUBLISH
+var context = ua.publish("sip:alice@example.com", "event-type", "The initial content.", undefined);
+
+// Send re-PUBLISH
+context.publish("The updated content.");
+
+// Send remove PUBLISH
+context.unpublish();
+```
+
+Now...
+
+```
+// Target URI
+const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  throw new Error("Failed to create target URI.");
+}
+
+const publisher = new Publisher(userAgent, uri, "event-type");
+
+// Send initial PUBLISH
+publisher.publish("The initial content.")
+  .then(() => {
+    // PUBLISH sent
+  })
+  .catch((error: Error) => {
+    // PUBLISH did not send
+  });
+
+// Send re-PUBLISH
+publisher.publish("The updated content.")
+  .then(() => {
+    // PUBLISH sent
+  })
+  .catch((error: Error) => {
+    // PUBLISH did not send
+  });
+
+// Send remote PUBLISH
+publisher.unpublish()
+  .then(() => {
+    // PUBLISH sent
+  })
+  .catch((error: Error) => {
+    // PUBLISH did not send
+  });
+```
 
 ## 6. `Subscriber` class replaces...
 
 - `UA.subscribe()`
 
-TODO
+Previously...
+
+```
+// Send initial SUBSCRIBE
+var subscription = ua.subscribe("sip:alice@example.com", "event-type", undefined);
+
+// Send re-PUBLISH
+subscription.subscribe();
+
+// Send un-SUBSCRIBE
+subscription.unsubscribe();
+```
+
+Now...
+
+```
+// Target URI
+const uri = UserAgent.makeURI("sip:alice@example.com");
+if (!uri) {
+  throw new Error("Failed to create target URI.");
+}
+
+const subscription = new Subscriber(userAgent, uri, "event-type");
+
+// Send initial SUBSCRIBE
+subscription.subscribe()
+  .then(() => {
+    // SUBSCRIBE sent
+  })
+  .catch((error: Error) => {
+    // SUBSCRIBE did not send
+  });
+
+// Send re-SUBSCRIBE
+subscription.unsubscribe()
+  .then(() => {
+    // SUBSCRIBE sent
+  })
+  .catch((error: Error) => {
+    // SUBSCRIBE did not send
+  });
+```
 
 ## 7. Core library replaces...
 
 - `UA.request()`
 
-TODO
+Previously...
+
+```
+var context = ua.request(C.OPTIONS, "sip:alice@example.com");
+
+context.on("accepted", (response, cause) => { /* Positive response received */ });
+context.on("rejected", (response, cause) => { /* Negative response received */ });
+```
+
+Now...
+
+```
+// Core
+const core = userAgent.userAgentCore;
+
+// From URI
+const fromURI = UserAgent.makeURI("sip:bob@example.com");
+if (!fromURI) {
+  throw new Error("Failed to create from URI.");
+}
+
+// To URI
+const toURI = UserAgent.makeURI("sip:alice@example.com");
+if (!toURI) {
+  throw new Error("Failed to create to URI.");
+}
+
+// Request URI
+const requestURI = toURI;
+
+// Create message
+const message = core.makeOutgoingRequestMessage("OPTIONS", requestURI, fromURI, toURI, {});
+
+// Send message
+const request = core.request(message, {
+  onAccept: (response) => { /* Positive response received */ },
+  onReject: (response) => { /* Negative response received */ },
+});
+```
+
 
 ## 8. `UserAgentDelegate` interface replaces
 
