@@ -79,7 +79,6 @@ export class UserAgent {
   /** Default user agent options. */
   private static readonly defaultOptions: Required<UserAgentOptions> = {
     allowLegacyNotifications: false,
-    allowOutOfDialogRefers: false,
     authorizationPassword: "",
     authorizationUsername: "",
     autoStart: false,
@@ -819,34 +818,30 @@ export class UserAgent {
         }
       },
       onRefer: (incomingReferRequest: IncomingReferRequest): void => {
-        this.logger.log("Received an out of dialog refer");
-        if (!this.options.allowOutOfDialogRefers) {
+        this.logger.warn("Received an out of dialog REFER request");
+        // TOOD: this.delegate.onRefer(...)
+        if (this.delegate && this.delegate.onReferRequest) {
+          this.delegate.onReferRequest(incomingReferRequest);
+        } else {
           incomingReferRequest.reject({ statusCode: 405 });
         }
-        this.logger.log("Allow out of dialog refers is enabled on the UA");
-        // const referContext = new ReferServerContext(this, incomingReferRequest);
-        // if (this.listeners("outOfDialogReferRequested").length) {
-        //   this.emit("outOfDialogReferRequested", referContext);
-        // } else {
-        //   this.logger.log(
-        //     "No outOfDialogReferRequest listeners, automatically accepting and following the out of dialog refer"
-        //   );
-        //   referContext.accept({ followRefer: true });
-        // }
-        // if (this.delegate && this.delegate.onRefer) {
-        //   this.delegate.onRefer(incomingReferRequest);
-        // }
       },
       onRegister: (incomingRegisterRequest: IncomingRegisterRequest): void => {
+        this.logger.warn("Received an out of dialog REGISTER request");
         // TOOD: this.delegate.onRegister(...)
         if (this.delegate && this.delegate.onRegisterRequest) {
           this.delegate.onRegisterRequest(incomingRegisterRequest);
+        } else {
+          incomingRegisterRequest.reject({ statusCode: 405 });
         }
       },
       onSubscribe: (incomingSubscribeRequest: IncomingSubscribeRequest): void => {
+        this.logger.warn("Received an out of dialog SUBSCRIBE request");
         // TOOD: this.delegate.onSubscribe(...)
         if (this.delegate && this.delegate.onSubscribeRequest) {
           this.delegate.onSubscribeRequest(incomingSubscribeRequest);
+        } else {
+          incomingSubscribeRequest.reject({ statusCode: 405 });
         }
       }
     };
