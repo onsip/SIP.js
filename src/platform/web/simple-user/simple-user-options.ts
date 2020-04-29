@@ -20,7 +20,7 @@ export interface SimpleUserMedia {
 }
 
 /**
- * Contraints for {@link SimpleUserMedia}.
+ * Constraints for {@link SimpleUserMedia}.
  * @public
  */
 export interface SimpleUserMediaConstraints {

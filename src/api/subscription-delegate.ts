@@ -6,7 +6,7 @@ import { Notification } from "./notification";
  */
 export interface SubscriptionDelegate {
   /**
-   * Called upon receiving an incoming in dialog NOTIFY request.
+   * Called upon receiving an incoming NOTIFY request.
    * @param notification - A notification. See {@link Notification} for details.
    */
   onNotify(notification: Notification): void;

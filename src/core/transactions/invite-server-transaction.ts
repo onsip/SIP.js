@@ -311,7 +311,7 @@ export class InviteServerTransaction extends ServerTransaction {
         invalidStateTransition();
     }
 
-    // On any state transition, stop resending provisonal responses
+    // On any state transition, stop resending provisional responses
     this.stopProgressExtensionTimer();
 
     // The purpose of the "Accepted" state is to absorb retransmissions of an accepted INVITE request.

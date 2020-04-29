@@ -1,4 +1,4 @@
-import { IncomingRegisterRequest, IncomingSubscribeRequest } from "../core";
+import { IncomingReferRequest, IncomingRegisterRequest, IncomingSubscribeRequest } from "../core";
 import { Invitation } from "./invitation";
 import { Message } from "./message";
 import { Notification } from "./notification";
@@ -47,6 +47,7 @@ export interface UserAgentDelegate {
   onNotify?(notification: Notification): void;
 
   /**
+   * @alpha
    * Called upon receipt of a referral.
    * @remarks
    * Handler for incoming out of dialog REFER requests.
@@ -55,6 +56,16 @@ export interface UserAgentDelegate {
   onRefer?(referral: Referral): void;
 
   /**
+   * @alpha
+   * Called upon receipt of a registration.
+   * @remarks
+   * Handler for incoming out of dialog REGISTER requests.
+   * @param registration - The registration.
+   */
+  onRegister?(registration: any /* TODO: Registration */): void;
+
+  /**
+   * @alpha
    * Called upon receipt of a subscription.
    * @remarks
    * Handler for incoming out of dialog SUBSCRIBE requests.
@@ -64,14 +75,21 @@ export interface UserAgentDelegate {
 
   /**
    * @internal
-   * Called upon receipt of a registration request. Used by test suite.
+   * Called upon receipt of an out of dialog REFER. Used by test suite.
+   * @param request - The request.
+   */
+  onReferRequest?(request: IncomingReferRequest): void;
+
+  /**
+   * @internal
+   * Called upon receipt of a REGISTER request. Used by test suite.
    * @param request - The request.
    */
   onRegisterRequest?(request: IncomingRegisterRequest): void;
 
   /**
    * @internal
-   * Called upon receipt of a subscription request. Used by test suite.
+   * Called upon receipt of an out of dialog SUBSCRIBE request. Used by test suite.
    * @param request - The request.
    */
   onSubscribeRequest?(request: IncomingSubscribeRequest): void;

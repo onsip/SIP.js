@@ -26,7 +26,7 @@ export interface SimpleUserDelegate {
   onCallReceived?(): void;
 
   /**
-   * Called when a call is hungup.
+   * Called when a call is hung up.
    * @remarks
    * Callback for handling termination of a Session.
    */
@@ -38,6 +38,13 @@ export interface SimpleUserDelegate {
    * Callback for handling re-INVITE responses.
    */
   onCallHold?(held: boolean): void;
+
+  /**
+   * Called when a call receives an incoming DTMF tone.
+   * @remarks
+   * Callback for handling an incoming INFO request with content type application/dtmf-relay.
+   */
+  onCallDTMFReceived?(tone: string, duration: number): void;
 
   /**
    * Called upon receiving a message.

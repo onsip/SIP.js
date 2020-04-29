@@ -4,7 +4,7 @@
 
 ## SimpleUserMediaConstraints interface
 
-Contraints for [SimpleUserMedia](./sip.js.simpleusermedia.md)<!-- -->.
+Constraints for [SimpleUserMedia](./sip.js.simpleusermedia.md)<!-- -->.
 
 <b>Signature:</b>
 

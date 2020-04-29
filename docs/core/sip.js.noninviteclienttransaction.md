@@ -33,7 +33,7 @@ Non-INVITE transactions do not make use of ACK. They are simple request-response
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [dispose()](./sip.js.noninviteclienttransaction.dispose.md) |  | Destructor. |
-|  [onTransportError(error)](./sip.js.noninviteclienttransaction.ontransporterror.md) |  | The client transaction SHOULD inform the TU that a transport failure has occurred, and the client transaction SHOULD transition directly to the "Terminated" state. The TU will handle the failover mechanisms described in \[4\]. https://tools.ietf.org/html/rfc3261\#section-17.1.4 |
+|  [onTransportError(error)](./sip.js.noninviteclienttransaction.ontransporterror.md) |  | The client transaction SHOULD inform the TU that a transport failure has occurred, and the client transaction SHOULD transition directly to the "Terminated" state. The TU will handle the fail over mechanisms described in \[4\]. https://tools.ietf.org/html/rfc3261\#section-17.1.4 |
 |  [receiveResponse(response)](./sip.js.noninviteclienttransaction.receiveresponse.md) |  | Handler for incoming responses from the transport which match this transaction. |
 |  [typeToString()](./sip.js.noninviteclienttransaction.typetostring.md) |  | For logging. |
 

@@ -21,6 +21,4 @@ export interface UserAgentDelegate
 |  [onInvite(invitation)](./sip.js.useragentdelegate.oninvite.md) | Called upon receipt of an invitation. |
 |  [onMessage(message)](./sip.js.useragentdelegate.onmessage.md) | Called upon receipt of a message. |
 |  [onNotify(notification)](./sip.js.useragentdelegate.onnotify.md) | Called upon receipt of a notification. |
-|  [onRefer(referral)](./sip.js.useragentdelegate.onrefer.md) | Called upon receipt of a referral. |
-|  [onSubscribe(subscription)](./sip.js.useragentdelegate.onsubscribe.md) | Called upon receipt of a subscription. |
 

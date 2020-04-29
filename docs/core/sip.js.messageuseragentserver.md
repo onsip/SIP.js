@@ -18,9 +18,3 @@ export declare class MessageUserAgentServer extends UserAgentServer implements I
 |  --- | --- | --- |
 |  [(constructor)(core, message, delegate)](./sip.js.messageuseragentserver._constructor_.md) |  | Constructs a new instance of the <code>MessageUserAgentServer</code> class |
 
-## Properties
-
-|  Property | Modifiers | Type | Description |
-|  --- | --- | --- | --- |
-|  [core](./sip.js.messageuseragentserver.core.md) |  | <code>UserAgentCore</code> |  |
-

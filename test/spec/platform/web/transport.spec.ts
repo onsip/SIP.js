@@ -17,7 +17,7 @@ const EVENT_MESSAGE = "message";
  * Transport Unit Tests
  *
  * The approach here is to traverse all of the possible paths through
- * the finate state machine (FSM) which the transport implements.
+ * the finite state machine (FSM) which the transport implements.
  * We consider the FSM as a directed acyclic graph (even though it is cyclic)
  * by considering all paths through the FSM from "Disconnected" which arrive
  * back a "Disconnected" as comprising the entire acyclic graph.
@@ -73,7 +73,7 @@ describe("Web Transport", () => {
     constructTransport();
 
     // The transport should now be in the Disconnected state, so traverse the FSM.
-    traverseTranspotStateMachine();
+    traverseTransportStateMachine();
   });
 
   function initServer(): void {
@@ -177,10 +177,10 @@ describe("Web Transport", () => {
    * but may continue on recursively for some number of cycles - two (2) by default
    * so that returning to initial state is tested.
    *
-   * @param cycles - The number of times to cycle throught the FSM.
+   * @param cycles - The number of times to cycle through the FSM.
    * @param cyclesCompleted - The number of cycles completed.
    */
-  function traverseTranspotStateMachine(cycles: number = 2, cyclesCompleted: number = 0): void {
+  function traverseTransportStateMachine(cycles: number = 2, cyclesCompleted: number = 0): void {
     if (cyclesCompleted === cycles) {
       return;
     }
@@ -202,7 +202,7 @@ describe("Web Transport", () => {
           // Disconnect network
           serverCloseIn(TransportState.Connecting);
           // TERMINAL: The transport state is now back to Disconnected, so we are at a terminal and may recurse...
-          traverseTranspotStateMachine(cycles, cyclesCompleted + 1);
+          traverseTransportStateMachine(cycles, cyclesCompleted + 1);
         });
 
         // 2. Disconnected -> Connecting -> Disconnecting
@@ -217,7 +217,7 @@ describe("Web Transport", () => {
             // Disconnect network
             serverCloseIn(TransportState.Disconnecting);
             // TERMINAL: The transport state is now back to Disconnected, so we are at a terminal and may recurse...
-            traverseTranspotStateMachine(cycles, cyclesCompleted + 1);
+            traverseTransportStateMachine(cycles, cyclesCompleted + 1);
           });
         });
 
@@ -226,7 +226,7 @@ describe("Web Transport", () => {
           // Disconnect from the network by calling disconnect() but not waiting for promise to resolve
           disconnectAcceptedCompletesIn(TransportState.Connecting);
           // TERMINAL: The transport state is now back to Disconnected, so we are at a terminal and may recurse...
-          traverseTranspotStateMachine(cycles, cyclesCompleted + 1);
+          traverseTransportStateMachine(cycles, cyclesCompleted + 1);
         });
       });
 
@@ -242,7 +242,7 @@ describe("Web Transport", () => {
           // Disconnect network
           serverCloseIn(TransportState.Connected);
           // TERMINAL: The transport state is now back to Disconnected, so we are at a terminal and may recurse...
-          traverseTranspotStateMachine(cycles, cyclesCompleted + 1);
+          traverseTransportStateMachine(cycles, cyclesCompleted + 1);
         });
 
         // 4. Disconnected -> Connecting -> Connected -> Disconnecting
@@ -257,7 +257,7 @@ describe("Web Transport", () => {
             // Disconnect network
             serverCloseIn(TransportState.Disconnecting);
             // TERMINAL: The transport state is now back to Disconnected, so we are at a terminal and may recurse...
-            traverseTranspotStateMachine(cycles, cyclesCompleted + 1);
+            traverseTransportStateMachine(cycles, cyclesCompleted + 1);
           });
         });
 
@@ -266,7 +266,7 @@ describe("Web Transport", () => {
           // Disconnect from the network by calling disconnect() but not waiting for promise to resolve
           disconnectAcceptedCompletesIn(TransportState.Connected);
           // TERMINAL: The transport state is now back to Disconnected, so we are at a terminal and may recurse...
-          traverseTranspotStateMachine(cycles, cyclesCompleted + 1);
+          traverseTransportStateMachine(cycles, cyclesCompleted + 1);
         });
       });
     });

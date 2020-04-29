@@ -93,7 +93,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
 
   /**
    * Receive responses from TU for this transaction.
-   * @param statusCode - Status code of repsonse. 101-199 not allowed per RFC 4320.
+   * @param statusCode - Status code of response. 101-199 not allowed per RFC 4320.
    * @param response - Response to send.
    */
   public receiveResponse(statusCode: number, response: string): void {

@@ -4,6 +4,10 @@ Migrating from `Simple` (documented [here](https://sipjs.com/guides/simple/))
 to `SimpleUser` (documented [here](./simple-user))
 is relatively simple.
 
+Want to see working `SimpleUser` code examples? Run the [demo](../demo/README.md).
+
+Herein are some before and after migration code snippets...
+
 ## HTML
 
 ```html
@@ -14,9 +18,19 @@ is relatively simple.
   <body>
     <video id="localVideo" muted="muted"></video>
     <video id="remoteVideo" muted="muted"></video>
-    <script src="my-javascript.js"></script>
   </body>
 </html>
+```
+
+## Importing Simple/SimpleUser
+
+Before...
+```js
+import { Simple } from "sip.js/lib/Web";
+```
+After...
+```ts
+import { SimpleUser, SimpleUserOptions } from "sip.js/lib/platform/web";
 ```
 
 ## Create an Simple/SimpleUser Instance
@@ -34,15 +48,18 @@ var options = {
       audio: document.getElementById('remoteVideo')
     }
   },
-  ua: {}
+  ua: {
+    wsServers: "wss://sip.example.com"
+  }
 };
-var simple = new SIP.Web.Simple(options);
+
+var simple = new Simple(options);
 ```
 After...
 ```ts
 const server = "wss://sip.example.com";
 
-const options: SIP.Web.SimpleUserOptions = {
+const options: SimpleUserOptions = {
   media: {
     constraints: { 
       audio: true,
@@ -57,7 +74,8 @@ const options: SIP.Web.SimpleUserOptions = {
   },
   userAgentOptions: {}
 };
-const simpleUser = new SIP.Web.SimpleUser(server, options);
+
+const simpleUser = new SimpleUser(server, options);
 ```
 
 ## Starting and Ending a Call
@@ -102,9 +120,11 @@ var options = {
     uri: 'test@example.com',
     authorizationUser: 'test',
     password: 'password',
+    wsServers: "wss://sip.example.com"
   }
 };
-var simple = new SIP.Web.Simple(options);
+
+var simple = new Simple(options);
 
 simple.on('ringing', function () {
   simple.answer();
@@ -114,7 +134,7 @@ After...
 ```ts
 const server = "wss://sip.example.com";
 
-const options: SIP.Web.SimpleUserOptions = {
+const options: SimpleUserOptions = {
   media: {
     constraints: { 
       audio: true,
@@ -133,7 +153,8 @@ const options: SIP.Web.SimpleUserOptions = {
     authorizationPassword: "password"
   }
 };
-const simpleUser = new SIP.Web.SimpleUser(server, options);
+
+const simpleUser = new SimpleUser(server, options);
 
 simpleUser.delegate = {
   onCallReceived: async () => {

@@ -39,7 +39,6 @@
 ## Documentation
 README.md
 - build
-  - BUILDING.md (move to docs)
 - demo
 - docs
 - etc
@@ -49,19 +48,25 @@ README.md
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
 - *Integration* tests are being written high level "api" components (Session, Subscription)
-  - Need to write more integration tests; Publisher, UserAgent, etc
+  - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
 
 ## Source
 
 ### API - Miscellaneous
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
-- Review Allowed Methods and Allow header so configurable/variable in more reasoanble fashion
+- Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion
 - Make sure all options buckets are deep copied
 
 ### Core - Miscellaneous
+- Dialog UACs are creating messages while non-dialog UACs are being handed message in most cases,
+  but not all cases; MessageUserAgentClient is used for both out of dialog and in dialog. 
+  It would be worth it to have the constructor interface be consistent.
+  Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
+- I believe all in and out of dialog requests should be able to be authenticated (confirm this).
+  Currently only INVITE and re-INVITE work. There needs to be a small refactor to make it work for everything.
+  Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
 - Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
-- Dialog UACs are creating messages while non-dialog UACs are being handed message
 - Extra headers array approach is error prone
 
 ### Grammar - Refresh

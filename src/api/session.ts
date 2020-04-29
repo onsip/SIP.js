@@ -10,30 +10,37 @@ import {
   IncomingByeRequest,
   IncomingInfoRequest,
   IncomingInviteRequest,
+  IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
   Logger,
   NameAddrHeader,
   OutgoingByeRequest,
+  OutgoingInfoRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
+  OutgoingMessageRequest,
+  OutgoingReferRequest,
   OutgoingRequestDelegate,
   RequestOptions,
   Session as SessionDialog,
   SessionState as SessionDialogState,
-  SignalingState
+  SignalingState,
+  URI
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
+import { Bye } from "./bye";
 import { _makeEmitter, Emitter } from "./emitter";
 import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
+import { Message } from "./message";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
-import { Referrer } from "./referrer";
+import { SessionByeOptions } from "./session-bye-options";
 import { SessionDelegate } from "./session-delegate";
 import {
   SessionDescriptionHandler,
@@ -41,8 +48,11 @@ import {
   SessionDescriptionHandlerOptions
 } from "./session-description-handler";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
+import { SessionInfoOptions } from "./session-info-options";
 import { SessionInviteOptions } from "./session-invite-options";
+import { SessionMessageOptions } from "./session-message-options";
 import { SessionOptions } from "./session-options";
+import { SessionReferOptions } from "./session-refer-options";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 
@@ -86,8 +96,6 @@ export abstract class Session {
   /** @internal */
   public _referral: Inviter | undefined;
   /** @internal */
-  public _referrer: Referrer | undefined;
-  /** @internal */
   public _replacee: Session | undefined;
 
   /**
@@ -115,6 +123,8 @@ export abstract class Session {
   /** @internal */
   protected _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
 
+  /** If defined, NOTIFYs associated with a REFER subscription are delivered here. */
+  private onNotify: ((notification: Notification) => void) | undefined;
   /** True if there is a re-INVITE request outstanding. */
   private pendingReinvite: boolean = false;
   /** Dialogs session description handler. */
@@ -260,8 +270,74 @@ export abstract class Session {
   }
 
   /**
+   * End the {@link Session}. Sends a BYE.
+   * @param options - Options bucket. See {@link SessionByeOptions} for details.
+   */
+  public bye(options: SessionByeOptions = {}): Promise<OutgoingByeRequest> {
+    let message = "Session.bye() may only be called if established session.";
+
+    switch (this.state) {
+      case SessionState.Initial:
+        if (typeof (this as any).cancel === "function") {
+          message += " However Inviter.invite() has not yet been called.";
+          message += " Perhaps you should have called Inviter.cancel()?";
+        } else if (typeof (this as any).reject === "function") {
+          message += " However Invitation.accept() has not yet been called.";
+          message += " Perhaps you should have called Invitation.reject()?";
+        }
+        break;
+      case SessionState.Establishing:
+        if (typeof (this as any).cancel === "function") {
+          message += " However a dialog does not yet exist.";
+          message += " Perhaps you should have called Inviter.cancel()?";
+        } else if (typeof (this as any).reject === "function") {
+          message += " However Invitation.accept() has not yet been called (or not yet resolved).";
+          message += " Perhaps you should have called Invitation.reject()?";
+        }
+        break;
+      case SessionState.Established:
+        const requestDelegate = options.requestDelegate;
+        const requestOptions = this.copyRequestOptions(options.requestOptions);
+        return this._bye(requestDelegate, requestOptions);
+      case SessionState.Terminating:
+        message += " However this session is already terminating.";
+        if (typeof (this as any).cancel === "function") {
+          message += " Perhaps you have already called Inviter.cancel()?";
+        } else if (typeof (this as any).reject === "function") {
+          message += " Perhaps you have already called Session.bye()?";
+        }
+        break;
+      case SessionState.Terminated:
+        message += " However this session is already terminated.";
+        break;
+      default:
+        throw new Error("Unknown state");
+    }
+
+    this.logger.error(message);
+    return Promise.reject(new Error(`Invalid session state ${this.state}`));
+  }
+
+  /**
+   * Share {@link Info} with peer. Sends an INFO.
+   * @param options - Options bucket. See {@link SessionInfoOptions} for details.
+   */
+  public info(options: SessionInfoOptions = {}): Promise<OutgoingInfoRequest> {
+    // guard session state
+    if (this.state !== SessionState.Established) {
+      const message = "Session.info() may only be called if established session.";
+      this.logger.error(message);
+      return Promise.reject(new Error(`Invalid session state ${this.state}`));
+    }
+
+    const requestDelegate = options.requestDelegate;
+    const requestOptions = this.copyRequestOptions(options.requestOptions);
+    return this._info(requestDelegate, requestOptions);
+  }
+
+  /**
    * Renegotiate the session. Sends a re-INVITE.
-   * @param options - Options bucket.
+   * @param options - Options bucket. See {@link SessionInviteOptions} for details.
    */
   public invite(options: SessionInviteOptions = {}): Promise<OutgoingInviteRequest> {
     this.logger.log("Session.invite");
@@ -444,24 +520,41 @@ export abstract class Session {
   }
 
   /**
-   * Send REFER.
-   * @param referrer - Referrer.
-   * @param delegate - Request delegate.
-   * @param options - Request options bucket.
-   * @internal
+   * Deliver a {@link Message}. Sends a MESSAGE.
+   * @param options - Options bucket. See {@link SessionMessageOptions} for details.
    */
-  public refer(
-    referrer: Referrer,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ): Promise<OutgoingByeRequest> {
-    // Using core session dialog
-    if (!this.dialog) {
-      return Promise.reject(new Error("Session dialog undefined."));
+  public message(options: SessionMessageOptions = {}): Promise<OutgoingMessageRequest> {
+    // guard session state
+    if (this.state !== SessionState.Established) {
+      const message = "Session.message() may only be called if established session.";
+      this.logger.error(message);
+      return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
-    // If the session has a referrer, it will receive any in-dialog NOTIFY requests.
-    this._referrer = referrer;
-    return Promise.resolve(this.dialog.refer(delegate, options));
+
+    const requestDelegate = options.requestDelegate;
+    const requestOptions = this.copyRequestOptions(options.requestOptions);
+    return this._message(requestDelegate, requestOptions);
+  }
+
+  /**
+   * Proffer a {@link Referral}. Send a REFER.
+   * @param referTo - The referral target. If a `Session`, a REFER w/Replaces is sent.
+   * @param options - Options bucket. See {@link SessionReferOptions} for details.
+   */
+  public refer(referTo: URI | Session, options: SessionReferOptions = {}): Promise<OutgoingReferRequest> {
+    // guard session state
+    if (this.state !== SessionState.Established) {
+      const message = "Session.refer() may only be called if established session.";
+      this.logger.error(message);
+      return Promise.reject(new Error(`Invalid session state ${this.state}`));
+    }
+
+    const requestDelegate = options.requestDelegate;
+    const requestOptions = this.copyRequestOptions(options.requestOptions);
+    requestOptions.extraHeaders = requestOptions.extraHeaders ?
+      requestOptions.extraHeaders.concat(this.referExtraHeaders(this.referToString(referTo))) :
+      this.referExtraHeaders(this.referToString(referTo));
+    return this._refer(options.onNotify, requestDelegate, requestOptions);
   }
 
   /**
@@ -525,12 +618,47 @@ export abstract class Session {
    * @param options - Request options bucket.
    * @internal
    */
-  public _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest> {
+  public _info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingInfoRequest> {
     // Using core session dialog
     if (!this.dialog) {
       return Promise.reject(new Error("Session dialog undefined."));
     }
     return Promise.resolve(this.dialog.info(delegate, options));
+  }
+
+  /**
+   * Send MESSAGE.
+   * @param delegate - Request delegate.
+   * @param options - Request options bucket.
+   * @internal
+   */
+  public _message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingMessageRequest> {
+    // Using core session dialog
+    if (!this.dialog) {
+      return Promise.reject(new Error("Session dialog undefined."));
+    }
+    return Promise.resolve(this.dialog.message(delegate, options));
+  }
+
+  /**
+   * Send REFER.
+   * @param onNotify - Notification callback.
+   * @param delegate - Request delegate.
+   * @param options - Request options bucket.
+   * @internal
+   */
+  public _refer(
+    onNotify?: (notification: Notification) => void,
+    delegate?: OutgoingRequestDelegate,
+    options?: RequestOptions
+  ): Promise<OutgoingByeRequest> {
+    // Using core session dialog
+    if (!this.dialog) {
+      return Promise.reject(new Error("Session dialog undefined."));
+    }
+    // If set, deliver any in-dialog NOTIFY requests here...
+    this.onNotify = onNotify;
+    return Promise.resolve(this.dialog.refer(delegate, options));
   }
 
   /**
@@ -650,7 +778,12 @@ export abstract class Session {
       this.logger.error(`BYE received while in state ${this.state}, dropping request`);
       return;
     }
-    request.accept();
+    if (this.delegate && this.delegate.onBye) {
+      const bye = new Bye(request);
+      this.delegate.onBye(bye);
+    } else {
+      request.accept();
+    }
     this.stateTransition(SessionState.Terminated);
   }
 
@@ -669,6 +802,14 @@ export abstract class Session {
       const info = new Info(request);
       this.delegate.onInfo(info);
     } else {
+      // FIXME: TODO: We should reject request...
+      //
+      // If a UA receives an INFO request associated with an Info Package that
+      // the UA has not indicated willingness to receive, the UA MUST send a
+      // 469 (Bad Info Package) response (see Section 11.6), which contains a
+      // Recv-Info header field with Info Packages for which the UA is willing
+      // to receive INFO requests.
+      // https://tools.ietf.org/html/rfc6086#section-4.2.2
       request.accept();
     }
   }
@@ -758,6 +899,25 @@ export abstract class Session {
   }
 
   /**
+   * Handle in dialog MESSAGE request.
+   * @internal
+   */
+  protected onMessageRequest(request: IncomingMessageRequest): void {
+    this.logger.log("Session.onMessageRequest");
+    if (this.state !== SessionState.Established) {
+      this.logger.error(`MESSAGE received while in state ${this.state}, dropping request`);
+      return;
+    }
+
+    if (this.delegate && this.delegate.onMessage) {
+      const message = new Message(request);
+      this.delegate.onMessage(message);
+    } else {
+      request.accept();
+    }
+  }
+
+  /**
    * Handle in dialog NOTIFY request.
    * @internal
    */
@@ -769,10 +929,10 @@ export abstract class Session {
     }
 
     // If this a NOTIFY associated with the progress of a REFER,
-    // look to delegate handling to the associated Referrer.
-    if (this._referrer && this._referrer.delegate && this._referrer.delegate.onNotify) {
+    // look to delegate handling to the associated callback.
+    if (this.onNotify) {
       const notification = new Notification(request);
-      this._referrer.delegate.onNotify(notification);
+      this.onNotify(notification);
       return;
     }
 
@@ -1133,6 +1293,20 @@ export abstract class Session {
     }
   }
 
+  private copyRequestOptions(requestOptions: RequestOptions = {}): RequestOptions {
+    const extraHeaders = requestOptions.extraHeaders ? requestOptions.extraHeaders.slice() : undefined;
+    const body = requestOptions.body ?
+      {
+        contentDisposition: requestOptions.body.contentDisposition || "render",
+        contentType: requestOptions.body.contentType || "text/plain",
+        content: requestOptions.body.content || ""
+      } : undefined;
+    return {
+      extraHeaders,
+      body
+    };
+  }
+
   private getReasonHeaderValue(code: number, reason?: string): string {
     const cause = code;
     let text = getReasonPhrase(code);
@@ -1140,5 +1314,45 @@ export abstract class Session {
       text = reason;
     }
     return "SIP;cause=" + cause + ';text="' + text + '"';
+  }
+
+  private referExtraHeaders(referTo: string): Array<string> {
+    const extraHeaders: Array<string> = [];
+    extraHeaders.push("Referred-By: <" + this.userAgent.configuration.uri + ">");
+    extraHeaders.push("Contact: " + this._contact);
+    extraHeaders.push("Allow: " + [
+      "ACK",
+      "CANCEL",
+      "INVITE",
+      "MESSAGE",
+      "BYE",
+      "OPTIONS",
+      "INFO",
+      "NOTIFY",
+      "REFER"
+    ].toString());
+    extraHeaders.push("Refer-To: " + referTo);
+    return extraHeaders;
+  }
+
+  private referToString(target: URI | Session): string {
+    let referTo: string;
+    if (target instanceof URI) {
+      // REFER without Replaces (Blind Transfer)
+      referTo = target.toString();
+    } else {
+      // REFER with Replaces (Attended Transfer)
+      if (!target.dialog) {
+        throw new Error("Dialog undefined.");
+      }
+      const displayName = target.remoteIdentity.friendlyName;
+      const remoteTarget = target.dialog.remoteTarget.toString();
+      const callId = target.dialog.callId;
+      const remoteTag = target.dialog.remoteTag;
+      const localTag = target.dialog.localTag;
+      const replaces = encodeURIComponent(`${callId};to-tag=${remoteTag};from-tag=${localTag}`);
+      referTo = `"${displayName}" <${remoteTarget}?Replaces=${replaces}>`;
+    }
+    return referTo;
   }
 }

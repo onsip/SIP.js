@@ -6,6 +6,7 @@ import {
   IncomingByeRequest,
   IncomingInfoRequest,
   IncomingInviteRequest,
+  IncomingMessageRequest,
   IncomingNotifyRequest,
   IncomingPrackRequest,
   IncomingReferRequest,
@@ -984,6 +985,52 @@ describe("Core UserAgentCore", () => {
               .toMatch(new RegExp(`^SIP/2.0 491 Request Pending`));
             expect(transportBob.send.calls.all()[5].args[0])
               .toMatch(new RegExp(`^ACK ${uaAlice.contact.uri.toString()} SIP/2.0`));
+          });
+        });
+
+        describe("Alice sends an in dialog MESSAGE", () => {
+          beforeEach((done) => {
+            sessionBobDelegate.onMessage.and.callFake((incomingRequest: IncomingMessageRequest) => {
+              incomingRequest.accept();
+            });
+            sessionAlice.message();
+            setTimeout(() => done(), 10); // transport calls are async, so give it some time
+          });
+
+          it("Alice's UAC sends a MESSAGE", () => {
+            expect(transportAlice.send).toHaveBeenCalledTimes(3);
+            expect(transportAlice.send.calls.mostRecent().args[0])
+              .toMatch(new RegExp(`^MESSAGE ${uaBob.contact.uri.toString()} SIP/2.0`));
+          });
+
+          it("Bob's UAS receives a MESSAGE and sends an 200 Ok", () => {
+            expect(sessionBobDelegate.onMessage).toHaveBeenCalledTimes(1);
+            expect(transportBob.send).toHaveBeenCalledTimes(4);
+            expect(transportBob.send.calls.mostRecent().args[0])
+              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          });
+        });
+
+        describe("Bob sends an in dialog MESSAGE", () => {
+          beforeEach((done) => {
+            sessionAliceDelegate.onMessage.and.callFake((incomingRequest: IncomingMessageRequest) => {
+              incomingRequest.accept();
+            });
+            sessionBob.message();
+            setTimeout(() => done(), 10); // transport calls are async, so give it some time
+          });
+
+          it("Bob's UAC sends a MESSAGE", () => {
+            expect(transportBob.send).toHaveBeenCalledTimes(4);
+            expect(transportBob.send.calls.mostRecent().args[0])
+              .toMatch(new RegExp(`^MESSAGE ${uaAlice.contact.uri.toString()} SIP/2.0`));
+          });
+
+          it("Alice's UAS receives a MESSAGE and sends an 200 Ok", () => {
+            expect(sessionAliceDelegate.onMessage).toHaveBeenCalledTimes(1);
+            expect(transportAlice.send).toHaveBeenCalledTimes(3);
+            expect(transportAlice.send.calls.mostRecent().args[0])
+              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 

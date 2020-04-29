@@ -16,7 +16,7 @@ receiveResponse(statusCode: number, response: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  statusCode | <code>number</code> | Status code of repsonse. 101-199 not allowed per RFC 4320. |
+|  statusCode | <code>number</code> | Status code of response. 101-199 not allowed per RFC 4320. |
 |  response | <code>string</code> | Response to send. |
 
 <b>Returns:</b>

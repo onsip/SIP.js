@@ -4,7 +4,7 @@
 
 ## SubscriptionDelegate.onNotify() method
 
-Called upon receiving an incoming in dialog NOTIFY request.
+Called upon receiving an incoming NOTIFY request.
 
 <b>Signature:</b>
 

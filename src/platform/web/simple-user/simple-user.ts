@@ -1,6 +1,5 @@
 import {
-  Byer,
-  Infoer,
+  Info,
   Invitation,
   InvitationAcceptOptions,
   Inviter,
@@ -107,7 +106,7 @@ export class SimpleUser {
           this.logger.log(`[${this.id}] Registering...`);
           this.registerer.register()
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] An error occured registering after connection with server was obtained.`);
+              this.logger.error(`[${this.id}] Error occurred registering after connection with server was obtained.`);
               this.logger.error(e.toString());
             });
         }
@@ -120,17 +119,17 @@ export class SimpleUser {
         }
         if (this.session) {
           this.logger.log(`[${this.id}] Hanging up...`);
-          this.hangup() // will likely fail, but need to cleanup hung calls
+          this.hangup() // cleanup hung calls
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] An error occured hanging up call after connection with server was lost.`);
+              this.logger.error(`[${this.id}] Error occurred hanging up call after connection with server was lost.`);
               this.logger.error(e.toString());
             });
         }
         if (this.registerer) {
           this.logger.log(`[${this.id}] Unregistering...`);
-          this.registerer.unregister() // will likely fail, but need to cleanup invalid registrations
+          this.registerer.unregister() // cleanup invalid registrations
             .catch((e: Error) => {
-              this.logger.error(`[${this.id}] An error occured unregistering after connection with server was lost.`);
+              this.logger.error(`[${this.id}] Error occurred unregistering after connection with server was lost.`);
               this.logger.error(e.toString());
             });
         }
@@ -326,7 +325,7 @@ export class SimpleUser {
   }
 
   /**
-   * Make an outoing call.
+   * Make an outgoing call.
    * @remarks
    * Send an INVITE request to create a new Session.
    * Resolves when the INVITE request is sent, otherwise rejects.
@@ -509,6 +508,16 @@ export class SimpleUser {
   public sendDTMF(tone: string): Promise<void> {
     this.logger.log(`[${this.id}] sending DTMF...`);
 
+    // As RFC 6086 states, sending DTMF via INFO is not standardized...
+    //
+    // Companies have been using INFO messages in order to transport
+    // Dual-Tone Multi-Frequency (DTMF) tones.  All mechanisms are
+    // proprietary and have not been standardized.
+    // https://tools.ietf.org/html/rfc6086#section-2
+    //
+    // It is however widely supported based on this draft:
+    // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00
+
     // Validate tone
     if (!tone.match(/^[0-9A-D#*,]$/)) {
       return Promise.reject(new Error("Invalid DTMF tone."));
@@ -518,6 +527,14 @@ export class SimpleUser {
       return Promise.reject(new Error("Session does not exist."));
     }
 
+    // The UA MUST populate the "application/dtmf-relay" body, as defined
+    // earlier, with the button pressed and the duration it was pressed
+    // for.  Technically, this actually requires the INFO to be generated
+    // when the user *releases* the button, however if the user has still
+    // not released a button after 5 seconds, which is the maximum duration
+    // supported by this mechanism, the UA should generate the INFO at that
+    // time.
+    // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00#section-5.3
     this.logger.log(`[${this.id}] Sending DTMF tone: ${tone}`);
     const dtmf = tone;
     const duration = 2000;
@@ -528,7 +545,7 @@ export class SimpleUser {
     };
     const requestOptions = { body };
 
-    return new Infoer(this.session).info({ requestOptions })
+    return this.session.info({ requestOptions })
       .then(() => { return; });
   }
 
@@ -753,6 +770,83 @@ export class SimpleUser {
 
     // Setup delegate
     this.session.delegate = {
+      onInfo: (info: Info) => {
+
+        // As RFC 6086 states, sending DTMF via INFO is not standardized...
+        //
+        // Companies have been using INFO messages in order to transport
+        // Dual-Tone Multi-Frequency (DTMF) tones.  All mechanisms are
+        // proprietary and have not been standardized.
+        // https://tools.ietf.org/html/rfc6086#section-2
+        //
+        // It is however widely supported based on this draft:
+        // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00
+
+        // FIXME: TODO: We should reject correctly...
+        //
+        // If a UA receives an INFO request associated with an Info Package that
+        // the UA has not indicated willingness to receive, the UA MUST send a
+        // 469 (Bad Info Package) response (see Section 11.6), which contains a
+        // Recv-Info header field with Info Packages for which the UA is willing
+        // to receive INFO requests.
+        // https://tools.ietf.org/html/rfc6086#section-4.2.2
+
+        // No delegate
+        if (!this.delegate || !this.delegate.onCallDTMFReceived) {
+          info.reject();
+          return;
+        }
+
+        // Invalid content type
+        const contentType = info.request.getHeader("content-type");
+        if (!contentType || !contentType.match(/^application\/dtmf-relay/i)) {
+          info.reject();
+          return;
+        }
+
+        // Invalid body
+        const body = info.request.body.split("\r\n", 2);
+        if (body.length !== 2) {
+          info.reject();
+          return;
+        }
+
+        // Invalid tone
+        let tone: string | undefined;
+        const toneRegExp = /^(Signal\s*?=\s*?)([0-9A-D#*]{1})(\s)?.*/;
+        if (toneRegExp.test(body[0])) {
+          tone = body[0].replace(toneRegExp, "$2");
+        }
+        if (!tone) {
+          info.reject();
+          return;
+        }
+
+        // Invalid duration
+        let duration: number | undefined;
+        const durationRegExp = /^(Duration\s?=\s?)([0-9]{1,4})(\s)?.*/;
+        if (durationRegExp.test(body[1])) {
+          duration = parseInt(body[1].replace(durationRegExp, "$2"), 10);
+        }
+        if (!duration) {
+          info.reject();
+          return;
+        }
+
+        info
+          .accept()
+          .then(() => {
+            if (this.delegate && this.delegate.onCallDTMFReceived) {
+              if (!tone || !duration) {
+                throw new Error("Tone or duration undefined.");
+              }
+              this.delegate.onCallDTMFReceived(tone, duration);
+            }
+          })
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+          });
+      },
       onRefer: (referral: Referral) => {
         referral
           .accept()
@@ -953,7 +1047,7 @@ export class SimpleUser {
           throw new Error("Unknown session type.");
         }
       case SessionState.Established:
-        return new Byer(this.session).bye()
+        return this.session.bye()
           .then(() => {
             this.logger.log(`[${this.id}] Session ended (sent BYE)`);
           });

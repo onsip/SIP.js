@@ -121,6 +121,8 @@ export class Dialog {
     dispose(): void;
     readonly early: boolean;
     readonly id: string;
+    // @internal
+    incrementLocalSequenceNumber(): void;
     static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequestMessage, incomingResponseMessage: IncomingResponseMessage): DialogState;
     static initialDialogStateForUserAgentServer(incomingRequestMessage: IncomingRequestMessage, toTag: string, early?: boolean): DialogState;
     readonly localSequenceNumber: number | undefined;
@@ -496,8 +498,6 @@ export class MessageUserAgentClient extends UserAgentClient implements OutgoingM
 // @public
 export class MessageUserAgentServer extends UserAgentServer implements IncomingMessageRequest {
     constructor(core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate);
-    // (undocumented)
-    protected core: UserAgentCore;
 }
 
 // Warning: (ae-incompatible-release-tags) The symbol "NameAddrHeader" is marked as @public, but its signature references "Parameters" which is marked as @internal
@@ -871,6 +871,7 @@ export interface Session {
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
     readonly localTag: string;
     readonly localURI: URI;
+    message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     readonly offer: Body | undefined;
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
@@ -889,6 +890,7 @@ export interface SessionDelegate {
     onBye?(request: IncomingByeRequest): void;
     onInfo?(request: IncomingInfoRequest): void;
     onInvite?(request: IncomingInviteRequest): void;
+    onMessage?(request: IncomingMessageRequest): void;
     onNotify?(request: IncomingNotifyRequest): void;
     onPrack?(request: IncomingPrackRequest): void;
     onRefer?(request: IncomingReferRequest): void;
@@ -907,6 +909,7 @@ export class SessionDialog extends Dialog implements Session {
     dispose(): void;
     info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfoRequest;
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
+    message(delegate: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     readonly offer: Body | undefined;
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
@@ -1152,7 +1155,7 @@ export class URI extends Parameters {
 export class UserAgentClient implements OutgoingRequest {
     // Warning: (ae-forgotten-export) The symbol "ClientTransactionConstructor" needs to be exported by the entry point index.d.ts
     constructor(transactionConstructor: ClientTransactionConstructor, core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate | undefined);
-    protected authenticationGuard(message: IncomingResponseMessage): boolean;
+    protected authenticationGuard(message: IncomingResponseMessage, dialog?: Dialog): boolean;
     cancel(reason?: string, options?: RequestOptions): OutgoingRequestMessage;
     // (undocumented)
     protected core: UserAgentCore;

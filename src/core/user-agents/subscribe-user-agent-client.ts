@@ -19,7 +19,7 @@ import { UserAgentClient } from "./user-agent-client";
  * https://tools.ietf.org/html/rfc6665#section-4.1
  *
  * User agent client for installation of a single subscription per SUBSCRIBE request.
- * TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE reqeuests.
+ * TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE requests.
  * @public
  */
 export class SubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
@@ -50,7 +50,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
     if (!event) {
       throw new Error("Event undefined");
     }
-    // Get expires from reqeust message.
+    // Get expires from request message.
     const expires = message.getHeader("Expires");
     if (!expires) {
       throw new Error("Expires undefined");
@@ -82,7 +82,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
   }
 
   /**
-   * Handle out of dialog NOTIFY assoicated with SUBSCRIBE request.
+   * Handle out of dialog NOTIFY associated with SUBSCRIBE request.
    * This is the first NOTIFY received after the SUBSCRIBE request.
    * @param uas - User agent server handling the subscription creating NOTIFY.
    */
@@ -186,8 +186,8 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
     // https://tools.ietf.org/html/rfc6665#section-5.4.9
 
     // *** NOTE: This implementation is only for event packages which
-    // do not allow forked requests to install muliple subscriptions.
-    // As such and in accordance with the specificaiton, we stop waiting
+    // do not allow forked requests to install multiple subscriptions.
+    // As such and in accordance with the specification, we stop waiting
     // and any future NOTIFY requests will be rejected with a 481.
     if (this.dialog) {
       throw new Error("Dialog already created. This implementation only supports install of single subscriptions.");
@@ -200,7 +200,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
         Math.min(this.subscriptionExpires, Math.max(subscriptionState.expires, 0)) :
         this.subscriptionExpires;
 
-    // Update subscriptoin state.
+    // Update subscription state.
     switch (state) {
       case "pending":
         this.subscriptionState = SubscriptionState.Pending;
