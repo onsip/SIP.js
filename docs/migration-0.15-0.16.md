@@ -20,6 +20,8 @@ Migrating to the new API entails updating code accordingly.
 ### Configuration Options
 
 The following `UA.Options` have been modified for use as `UserAgentOptions`...
+- `allowOutOfDialogRefers`
+  - removed (it was redundant)
 - `authenticationFactory`
   - removed (it was a noop)
 - `authorizationUser`
@@ -547,10 +549,13 @@ Now...
 - `UA.on("message")`
 - `UA.on("notify")`
 - `UA.on("outOfDialogReferRequested")`
+- `UA.on("subscribe")`
 - `UA.transport.on("connected")`
 - `UA.transport.on("connecting")`
 - `UA.transport.on("disconnected")`
 - `UA.transport.on("disconnecting")`
+
+NOTE: Handling incoming out of dialog REFER and SUBSCRIBE has not yet been implemented (0.16.0).
 
 Previously...
 ```ts
@@ -571,6 +576,10 @@ ua.on("notify", (notify) => {
 
 ua.on("outOfDialogReferRequested", (refer) => {
   console.log("REFER received");
+});
+
+ua.on("subscribe", (subscribe) => {
+  console.log("SUBSCRIBE received");
 });
 
 ua.transport.on("disconnected", () => {
@@ -605,6 +614,10 @@ const options = {
     },
     onRefer: (referral) => {
       console.log("REFER received");
+      referral.accept();
+    },
+    onSubscribe: (subscription) => {
+      console.log("SUBSCRIBE received");
       referral.accept();
     }
   }

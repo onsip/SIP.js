@@ -770,11 +770,17 @@ export interface UserAgentDelegate {
     onInvite?(invitation: Invitation): void;
     onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
+    // @alpha
     onRefer?(referral: Referral): void;
+    // @internal
+    onReferRequest?(request: IncomingReferRequest): void;
+    // @alpha
+    onRegister?(registration: any): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingRegisterRequest" needs to be exported by the entry point index.d.ts
     //
     // @internal
     onRegisterRequest?(request: IncomingRegisterRequest): void;
+    // @alpha
     onSubscribe?(subscription: Subscription): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingSubscribeRequest" needs to be exported by the entry point index.d.ts
     //
@@ -785,7 +791,6 @@ export interface UserAgentDelegate {
 // @public
 export interface UserAgentOptions {
     allowLegacyNotifications?: boolean;
-    allowOutOfDialogRefers?: boolean;
     authorizationPassword?: string;
     authorizationUsername?: string;
     // @deprecated (undocumented)
