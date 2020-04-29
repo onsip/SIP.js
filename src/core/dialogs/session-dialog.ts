@@ -12,6 +12,7 @@ import {
   OutgoingInfoRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
+  OutgoingMessageRequest,
   OutgoingNotifyRequest,
   OutgoingPrackRequest,
   OutgoingReferRequest,
@@ -36,6 +37,8 @@ import { ByeUserAgentClient } from "../user-agents/bye-user-agent-client";
 import { ByeUserAgentServer } from "../user-agents/bye-user-agent-server";
 import { InfoUserAgentClient } from "../user-agents/info-user-agent-client";
 import { InfoUserAgentServer } from "../user-agents/info-user-agent-server";
+import { MessageUserAgentClient } from "../user-agents/message-user-agent-client";
+import { MessageUserAgentServer } from "../user-agents/message-user-agent-server";
 import { NotifyUserAgentClient } from "../user-agents/notify-user-agent-client";
 import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server";
 import { PrackUserAgentClient } from "../user-agents/prack-user-agent-client";
@@ -361,6 +364,23 @@ export class SessionDialog extends Dialog implements Session {
   }
 
   /**
+   * A UAC MAY associate a MESSAGE request with an existing dialog.  If a
+   * MESSAGE request is sent within a dialog, it is "associated" with any
+   * media session or sessions associated with that dialog.
+   * https://tools.ietf.org/html/rfc3428#section-4
+   * @param options - Options bucket.
+   */
+  public message(delegate: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest {
+    this.logger.log(`INVITE dialog ${this.id} sending MESSAGE request`);
+    if (this.early) {
+      // FIXME: TODO: This should throw a proper exception.
+      throw new Error("Dialog not confirmed.");
+    }
+    const message = this.createOutgoingRequestMessage(C.MESSAGE, options);
+    return new MessageUserAgentClient(this.core, message, delegate);
+  }
+
+  /**
    * The NOTIFY mechanism defined in [2] MUST be used to inform the agent
    * sending the REFER of the status of the reference.
    * https://tools.ietf.org/html/rfc3515#section-2.4.4
@@ -572,6 +592,14 @@ export class SessionDialog extends Dialog implements Session {
           this.delegate && this.delegate.onInvite ?
             this.delegate.onInvite(uas) :
             uas.reject({ statusCode: 488 }); // TODO: Warning header field.
+        }
+        break;
+      case C.MESSAGE:
+        {
+          const uas = new MessageUserAgentServer(this.core, message);
+          this.delegate && this.delegate.onMessage ?
+            this.delegate.onMessage(uas) :
+            uas.accept();
         }
         break;
       case C.NOTIFY:

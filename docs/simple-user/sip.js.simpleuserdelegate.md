@@ -18,7 +18,8 @@ export interface SimpleUserDelegate
 |  --- | --- |
 |  [onCallAnswered()](./sip.js.simpleuserdelegate.oncallanswered.md) | Called when a call is answered. |
 |  [onCallCreated()](./sip.js.simpleuserdelegate.oncallcreated.md) | Called when a call is created. |
-|  [onCallHangup()](./sip.js.simpleuserdelegate.oncallhangup.md) | Called when a call is hungup. |
+|  [onCallDTMFReceived(tone, duration)](./sip.js.simpleuserdelegate.oncalldtmfreceived.md) | Called when a call receives an incoming DTMF tone. |
+|  [onCallHangup()](./sip.js.simpleuserdelegate.oncallhangup.md) | Called when a call is hung up. |
 |  [onCallHold(held)](./sip.js.simpleuserdelegate.oncallhold.md) | Called when a call is put on hold or taken off hold. |
 |  [onCallReceived()](./sip.js.simpleuserdelegate.oncallreceived.md) | Called when a call is received. |
 |  [onMessageReceived(message)](./sip.js.simpleuserdelegate.onmessagereceived.md) | Called upon receiving a message. |

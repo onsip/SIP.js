@@ -318,8 +318,8 @@ export class UserAgentCore {
       }
       this.logger.error(`Transport error occurred sending stateless reply to ${message.method} request.`);
       // TODO: Currently there is no hook to provide notification that a transport error occurred
-      // and throwing would result in an uncaught error (in promise), so we siliently eat the error.
-      // Furthermore, silienty eating stateless reply transport errors is arguably what we want to do here.
+      // and throwing would result in an uncaught error (in promise), so we silently eat the error.
+      // Furthermore, silently eating stateless reply transport errors is arguably what we want to do here.
     });
     return response;
   }

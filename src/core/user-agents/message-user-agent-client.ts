@@ -4,7 +4,7 @@ import { UserAgentCore } from "../user-agent-core";
 import { UserAgentClient } from "./user-agent-client";
 
 /**
- * MESSAGE UAS.
+ * MESSAGE UAC.
  * @public
  */
 export class MessageUserAgentClient extends UserAgentClient implements OutgoingMessageRequest {

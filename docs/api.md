@@ -219,7 +219,6 @@ userAgent.delegate.onConnect = () => {
 // Handle connection with server lost
 userAgent.delegate.onDisconnect = (error?: Error) => {
   // On disconnect, cleanup invalid registrations
-  // This will likely reject because we are disconnected, but that is fine
   registerer.unregister()
     .catch((e: Error) => {
       // Unregister failed

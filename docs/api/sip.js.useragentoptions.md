@@ -17,7 +17,6 @@ export interface UserAgentOptions
 |  Property | Type | Description |
 |  --- | --- | --- |
 |  [allowLegacyNotifications](./sip.js.useragentoptions.allowlegacynotifications.md) | <code>boolean</code> | If <code>true</code>, the user agent will accept out of dialog NOTIFY. |
-|  [allowOutOfDialogRefers](./sip.js.useragentoptions.allowoutofdialogrefers.md) | <code>boolean</code> | If <code>true</code>, the user agent will accept out of dialog REFER. |
 |  [authorizationPassword](./sip.js.useragentoptions.authorizationpassword.md) | <code>string</code> | Authorization password. |
 |  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) | <code>string</code> | Authorization username. |
 |  [autoStart](./sip.js.useragentoptions.autostart.md) | <code>boolean</code> |  |

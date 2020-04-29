@@ -1,3 +1,4 @@
+import { Dialog } from "../dialogs";
 import { TransportError } from "../exceptions";
 import { Logger, LoggerFactory } from "../log";
 import {
@@ -170,10 +171,11 @@ export class UserAgentClient implements OutgoingRequest {
    * FIXME: This "guard for and retry the request with credentials"
    * implementation is not complete and at best minimally passable.
    * @param response - The incoming response to guard.
+   * @param dialog - If defined, the dialog within which the response was received.
    * @returns True if the program execution is to continue in the branch in question.
    *          Otherwise the request is retried with credentials and current request processing must stop.
    */
-  protected authenticationGuard(message: IncomingResponseMessage): boolean {
+  protected authenticationGuard(message: IncomingResponseMessage, dialog?: Dialog): boolean {
     const statusCode = message.statusCode;
     if (!statusCode) {
       throw new Error("Response status code undefined.");
@@ -230,7 +232,15 @@ export class UserAgentClient implements OutgoingRequest {
       this.stale = true;
     }
 
-    const cseq = this.message.cseq += 1;
+    // If response to out of dialog request, assume incrementing the CSeq will suffice.
+    let cseq = this.message.cseq += 1;
+
+    // If response to in dialog request, get a valid next CSeq number.
+    if (dialog && dialog.localSequenceNumber) {
+      dialog.incrementLocalSequenceNumber();
+      cseq = this.message.cseq = dialog.localSequenceNumber;
+    }
+
     this.message.setHeader("cseq", cseq + " " + this.message.method);
     this.message.setHeader(authorizationHeaderName, this.credentials.toString());
 

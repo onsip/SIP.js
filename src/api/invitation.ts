@@ -275,6 +275,7 @@ export class Invitation extends Session {
           onBye: (byeRequest): void => this.onByeRequest(byeRequest),
           onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
           onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
+          onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
           onNotify: (notifyRequest): void => this.onNotifyRequest(notifyRequest),
           onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
           onRefer: (referRequest): void => this.onReferRequest(referRequest)

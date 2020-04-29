@@ -4,7 +4,7 @@
 
 ## Registerer.unregister() method
 
-Sends the REGISTER request with expires equal to zero. Rejects with `RequestPendingError` if a REGISTER request is already in progress.
+Sends the REGISTER request with expires equal to zero.
 
 <b>Signature:</b>
 
@@ -21,4 +21,8 @@ unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterReque
 <b>Returns:</b>
 
 `Promise<OutgoingRegisterRequest>`
+
+## Remarks
+
+Rejects with `RequestPendingError` if a REGISTER request is already in progress.
 

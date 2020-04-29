@@ -37,7 +37,7 @@ While this class is completely functional for simple use cases, it is not intend
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
 |  [answer(invitationAcceptOptions)](./sip.js.simpleuser.answer.md) |  | Answer an incoming call. |
-|  [call(destination, inviterOptions, inviterInviteOptions)](./sip.js.simpleuser.call.md) |  | Make an outoing call. |
+|  [call(destination, inviterOptions, inviterInviteOptions)](./sip.js.simpleuser.call.md) |  | Make an outgoing call. |
 |  [connect()](./sip.js.simpleuser.connect.md) |  | Connect. |
 |  [decline()](./sip.js.simpleuser.decline.md) |  | Decline an incoming call. |
 |  [disconnect()](./sip.js.simpleuser.disconnect.md) |  | Disconnect. |

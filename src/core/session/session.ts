@@ -4,6 +4,7 @@ import {
   OutgoingInfoRequest,
   OutgoingInviteRequest,
   OutgoingInviteRequestDelegate,
+  OutgoingMessageRequest,
   OutgoingNotifyRequest,
   OutgoingPrackRequest,
   OutgoingReferRequest,
@@ -78,6 +79,15 @@ export interface Session {
   invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
 
   /**
+   * Send MESSAGE request.
+   * Deliver a message during a session.
+   * https://tools.ietf.org/html/rfc3428#section-4
+   * @param delegate - Request delegate.
+   * @param options - Options bucket.
+   */
+  message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
+
+  /**
    * Send NOTIFY request.
    * Inform referrer of transfer progress.
    * The use of this is limited to the implicit creation of subscription by REFER (historical).
@@ -98,7 +108,7 @@ export interface Session {
   prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
 
   /**
-   * Send REFER request (in dialog).
+   * Send REFER request.
    * Transfer a session.
    * https://tools.ietf.org/html/rfc3515#section-2.4.1
    * @param delegate - Request delegate.

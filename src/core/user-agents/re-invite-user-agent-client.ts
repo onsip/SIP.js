@@ -40,6 +40,10 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
   }
 
   protected receiveResponse(message: IncomingResponseMessage): void {
+    if (!this.authenticationGuard(message, this.dialog)) {
+      return;
+    }
+
     const statusCode = message.statusCode ? message.statusCode.toString() : "";
     if (!statusCode) {
       throw new Error("Response status code undefined.");

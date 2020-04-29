@@ -41,7 +41,8 @@ https://tools.ietf.org/html/rfc3261\#section-13
 |  [dispose()](./sip.js.session.dispose.md) | Destroy session. |
 |  [info(delegate, options)](./sip.js.session.info.md) | Send an INFO request. Exchange information during a session. https://tools.ietf.org/html/rfc6086\#section-4.2.1 |
 |  [invite(delegate, options)](./sip.js.session.invite.md) | Send re-INVITE request. Modifying a session. https://tools.ietf.org/html/rfc3261\#section-14.1 |
+|  [message(delegate, options)](./sip.js.session.message.md) | Send MESSAGE request. Deliver a message during a session. https://tools.ietf.org/html/rfc3428\#section-4 |
 |  [notify(delegate, options)](./sip.js.session.notify.md) | Send NOTIFY request. Inform referrer of transfer progress. The use of this is limited to the implicit creation of subscription by REFER (historical). Otherwise, notifiers MUST NOT create subscriptions except upon receipt of a SUBSCRIBE request. https://tools.ietf.org/html/rfc3515\#section-3.7 |
 |  [prack(delegate, options)](./sip.js.session.prack.md) | Send PRACK request. Acknowledge a reliable provisional response. https://tools.ietf.org/html/rfc3262\#section-4 |
-|  [refer(delegate, options)](./sip.js.session.refer.md) | Send REFER request (in dialog). Transfer a session. https://tools.ietf.org/html/rfc3515\#section-2.4.1 |
+|  [refer(delegate, options)](./sip.js.session.refer.md) | Send REFER request. Transfer a session. https://tools.ietf.org/html/rfc3515\#section-2.4.1 |
 

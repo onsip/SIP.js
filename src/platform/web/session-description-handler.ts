@@ -301,7 +301,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       if (e instanceof SessionDescriptionHandlerError) {
         throw e;
       }
-      let message = "The modifiers did not resolve successfully.";
+      let message = "setRemoteDescription failed.";
       if (e.name) {
         message += " " + e.name;
       }

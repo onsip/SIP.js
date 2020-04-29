@@ -4,7 +4,7 @@
 
 ## Session.refer() method
 
-Send REFER request (in dialog). Transfer a session. https://tools.ietf.org/html/rfc3515\#section-2.4.1
+Send REFER request. Transfer a session. https://tools.ietf.org/html/rfc3515\#section-2.4.1
 
 <b>Signature:</b>
 

@@ -4,7 +4,7 @@
 
 ## UserAgentCoreConfiguration.supportedOptionTagsResponse property
 
-Option tags of supported SIP extenstions. Used in resposnes.
+Option tags of supported SIP extensions. Used in responses.
 
 <b>Signature:</b>
 

@@ -1,11 +1,7 @@
 import {
-  Byer,
   Invitation,
   Inviter,
   Referral,
-  Referrer,
-  ReferrerOptions,
-  ReferrerReferOptions,
   RequestPendingError,
   Session,
   SessionDescriptionHandler,
@@ -23,6 +19,7 @@ import { soon } from "../../support/api/utils";
 const SIP_ACK = [jasmine.stringMatching(/^ACK/)];
 const SIP_BYE = [jasmine.stringMatching(/^BYE/)];
 const SIP_INVITE = [jasmine.stringMatching(/^INVITE/)];
+const SIP_MESSAGE = [jasmine.stringMatching(/^MESSAGE/)];
 const SIP_NOTIFY = [jasmine.stringMatching(/^NOTIFY/)];
 const SIP_REFER = [jasmine.stringMatching(/^REFER/)];
 const SIP_100 = [jasmine.stringMatching(/^SIP\/2.0 100/)];
@@ -30,6 +27,7 @@ const SIP_180 = [jasmine.stringMatching(/^SIP\/2.0 180/)];
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
 const SIP_202 = [jasmine.stringMatching(/^SIP\/2.0 202/)];
 const SIP_404 = [jasmine.stringMatching(/^SIP\/2.0 404/)];
+const SIP_407 = [jasmine.stringMatching(/^SIP\/2.0 407/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
 
@@ -105,6 +103,66 @@ describe("API Session In-Dialog", () => {
       const spy = alice.transportReceiveSpy;
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+    });
+
+    it("her signaling should be stable", () => {
+      if (!inviter.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+    });
+
+    it("his signaling should be stable", () => {
+      if (!invitation.dialog) {
+        fail("Session dialog undefined");
+        return;
+      }
+      expect(invitation.dialog.signalingState).toEqual(SignalingState.Stable);
+    });
+  }
+
+  function reinviteAcceptedAuthenticated(withoutSdp: boolean): void {
+    beforeEach(async () => {
+      resetSpies();
+      invitation.delegate = undefined;
+      { // Setup hacky thing to cause an auth rejection
+        if (!invitation.dialog) {
+          throw new Error("Session dialog undefined.");
+        }
+        const delegate = invitation.dialog.delegate; // save current dialog delegate
+        invitation.dialog.delegate = {
+          onInvite: (request) => {
+            if (!invitation.dialog) {
+              throw new Error("Session dialog undefined.");
+            }
+            invitation.dialog.delegate = delegate; // restore dialog delegate
+            const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
+            request.reject({ statusCode: 407, extraHeaders });
+          }
+        };
+      }
+      const session: Session = inviter;
+      session.invite({ withoutSdp });
+      await alice.transport.waitSent(); // ACK
+      await bob.transport.waitReceived(); // INVITE
+      await alice.transport.waitSent(); // ACK
+    });
+
+    it("her ua should send INVITE, ACK, INVITE, ACK", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+      expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+      expect(spy.calls.argsFor(2)).toEqual(SIP_INVITE);
+      expect(spy.calls.argsFor(3)).toEqual(SIP_ACK);
+    });
+
+    it("her ua should receive 407, 200", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_407);
+      expect(spy.calls.argsFor(1)).toEqual(SIP_200);
     });
 
     it("her signaling should be stable", () => {
@@ -461,6 +519,10 @@ describe("API Session In-Dialog", () => {
       });
     });
 
+    describe("Alice invite() accepted authenticated", () => {
+      reinviteAcceptedAuthenticated(withoutSdp);
+    });
+
     describe("Alice invite() accepted without description failure", () => {
       reinviteAcceptedWithoutDescriptionFailure(withoutSdp);
     });
@@ -606,7 +668,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite()
-                .then(() => new Byer(inviter).bye())
+                .then(() => inviter.bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -650,7 +712,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite({ withoutSdp: true })
-                .then(() => new Byer(inviter).bye())
+                .then(() => inviter.bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -694,7 +756,7 @@ describe("API Session In-Dialog", () => {
               resetSpies();
               invitation.delegate = undefined;
               return inviter.invite()
-                .then(() => new Byer(invitation).bye())
+                .then(() => invitation.bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -739,7 +801,7 @@ describe("API Session In-Dialog", () => {
               invitation.delegate = undefined;
               return inviter.invite({ withoutSdp: true })
                 .then(() => bob.transport.waitSent())
-                .then(() => new Byer(invitation).bye())
+                .then(() => invitation.bye())
                 .then(() => alice.transport.waitSent());
             });
 
@@ -781,10 +843,7 @@ describe("API Session In-Dialog", () => {
             resetSpies();
             inviter.delegate = undefined;
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(invitation, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return invitation.refer(referTo)
               .then(() => alice.transport.waitSent()) // 202
               .then(() => alice.transport.waitSent()) // INVITE
               .then(() => bob.transport.waitSent()); // 200
@@ -830,10 +889,7 @@ describe("API Session In-Dialog", () => {
               }
             };
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(invitation, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return invitation.refer(referTo)
               .then(() => alice.transport.waitSent()) // 202
               .then(() => alice.transport.waitSent()) // INVITE
               .then(() => bob.transport.waitSent()); // 200
@@ -870,10 +926,7 @@ describe("API Session In-Dialog", () => {
             resetSpies();
             invitation.delegate = undefined;
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(inviter, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return inviter.refer(referTo)
               .then(() => bob.transport.waitSent()) // 202
               .then(() => bob.transport.waitSent()) // INVITE
               .then(() => alice.transport.waitSent()); // 200
@@ -919,10 +972,7 @@ describe("API Session In-Dialog", () => {
               }
             };
             const referTo = new URI("sip", "carol", "example.com");
-            const referrerOptions: ReferrerOptions = {};
-            const referrerReferOptions: ReferrerReferOptions = {};
-            const referrer = new Referrer(inviter, referTo, referrerOptions);
-            return referrer.refer(referrerReferOptions)
+            return inviter.refer(referTo)
               .then(() => bob.transport.waitSent()) // 202
               .then(() => bob.transport.waitSent()) // INVITE
               .then(() => alice.transport.waitSent()); // 200
@@ -954,6 +1004,67 @@ describe("API Session In-Dialog", () => {
           });
         });
 
+        describe ("MESSAGE with default handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            inviter.delegate = undefined;
+            invitation.delegate = undefined;
+            inviter.message();
+            await alice.transport.waitSent(); // MESSAGE
+          });
+
+          it("her ua should send MESSAGE", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_MESSAGE);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200); // response to the MESSAGE
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+
+        describe ("MESSAGE with delegated handler", () => {
+          beforeEach(async () => {
+            resetSpies();
+            inviter.delegate = undefined;
+            invitation.delegate = {
+              onMessage: (request) => request.accept()
+            };
+            inviter.message();
+            await alice.transport.waitSent(); // MESSAGE
+          });
+
+          it("her ua should send MESSAGE", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_MESSAGE);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200); // response to the MESSAGE
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
       });
     });
   });

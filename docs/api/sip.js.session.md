@@ -41,6 +41,10 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
+|  [bye(options)](./sip.js.session.bye.md) |  | End the [Session](./sip.js.session.md)<!-- -->. Sends a BYE. |
 |  [dispose()](./sip.js.session.dispose.md) |  | Destructor. |
+|  [info(options)](./sip.js.session.info.md) |  | Share [Info](./sip.js.info.md) with peer. Sends an INFO. |
 |  [invite(options)](./sip.js.session.invite.md) |  | Renegotiate the session. Sends a re-INVITE. |
+|  [message(options)](./sip.js.session.message.md) |  | Deliver a [Message](./sip.js.message.md)<!-- -->. Sends a MESSAGE. |
+|  [refer(referTo, options)](./sip.js.session.refer.md) |  | Proffer a [Referral](./sip.js.referral.md)<!-- -->. Send a REFER. |
 
