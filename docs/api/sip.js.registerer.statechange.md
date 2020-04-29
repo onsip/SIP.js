@@ -9,5 +9,5 @@ Emits when the registerer state changes.
 <b>Signature:</b>
 
 ```typescript
-readonly stateChange: Emitter<RegistererState>;
+get stateChange(): Emitter<RegistererState>;
 ```

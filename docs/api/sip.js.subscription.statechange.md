@@ -9,5 +9,5 @@ Emits when the subscription `state` property changes.
 <b>Signature:</b>
 
 ```typescript
-readonly stateChange: Emitter<SubscriptionState>;
+get stateChange(): Emitter<SubscriptionState>;
 ```

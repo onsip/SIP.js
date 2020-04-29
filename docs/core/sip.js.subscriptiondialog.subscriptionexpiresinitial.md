@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly subscriptionExpiresInitial: number;
+get subscriptionExpiresInitial(): number;
 ```

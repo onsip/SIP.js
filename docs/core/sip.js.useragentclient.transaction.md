@@ -9,5 +9,5 @@ The transaction associated with this request.
 <b>Signature:</b>
 
 ```typescript
-readonly transaction: ClientTransaction;
+get transaction(): ClientTransaction;
 ```

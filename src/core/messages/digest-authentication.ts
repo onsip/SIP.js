@@ -1,8 +1,8 @@
 import MD5 from "crypto-js/md5";
 
+import { URI } from "../../grammar";
 import { Logger, LoggerFactory } from "../log";
 import { OutgoingRequestMessage } from "./outgoing-request-message";
-import { URI } from "./uri";
 import { createRandomToken } from "./utils";
 
 /**

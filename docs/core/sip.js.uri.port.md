@@ -7,5 +7,7 @@
 <b>Signature:</b>
 
 ```typescript
-port: number | undefined;
+get port(): number | undefined;
+
+set port(value: number | undefined);
 ```

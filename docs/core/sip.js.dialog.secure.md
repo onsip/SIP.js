@@ -9,5 +9,5 @@ If the request was sent over TLS, and the Request-URI contained a SIPS URI, the 
 <b>Signature:</b>
 
 ```typescript
-readonly secure: boolean;
+get secure(): boolean;
 ```

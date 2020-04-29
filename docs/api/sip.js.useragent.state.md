@@ -9,5 +9,5 @@ User agent state.
 <b>Signature:</b>
 
 ```typescript
-readonly state: UserAgentState;
+get state(): UserAgentState;
 ```

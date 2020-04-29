@@ -1,5 +1,4 @@
-import { Grammar } from "./grammar";
-import { NameAddrHeader } from "./name-addr-header";
+import { Grammar, NameAddrHeader } from "../../grammar";
 import { headerize } from "./utils";
 
 /**

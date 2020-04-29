@@ -9,5 +9,5 @@ A dialog is identified at each UA with a dialog ID, which consists of a Call-ID 
 <b>Signature:</b>
 
 ```typescript
-readonly id: string;
+get id(): string;
 ```

@@ -9,5 +9,5 @@ The local audio track, if available.
 <b>Signature:</b>
 
 ```typescript
-readonly localAudioTrack: MediaStreamTrack | undefined;
+get localAudioTrack(): MediaStreamTrack | undefined;
 ```

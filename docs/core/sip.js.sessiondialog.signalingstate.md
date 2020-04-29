@@ -9,5 +9,5 @@ The state of the offer/answer exchange.
 <b>Signature:</b>
 
 ```typescript
-readonly signalingState: SignalingState;
+get signalingState(): SignalingState;
 ```

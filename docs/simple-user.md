@@ -44,7 +44,7 @@ For this example, we will assume the `SimpleUser` class is imported as a module.
 #### TypeScript
 
 ```ts
-import { SimpleUser, SimpleUserOptions } from "sip.js/lib/platform/web";
+import { Web } from "sip.js";
 
 // Helper function to get an HTML audio element
 function getAudioElement(id: string): HTMLAudioElement {
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
   // An audio element is needed to play the audio received from the
   // remote end of the call. Once the call is established, a `MediaStream`
   // is attached to the provided audio element's `src` attribute.
-  const options: SimpleUserOptions = {
+  const options: Web.SimpleUserOptions = {
     aor,
     media: {
       remote: {
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
   };
 
   // Construct a SimpleUser instance
-  const simpleUser = new SimpleUser(server, options);
+  const simpleUser = new Web.SimpleUser(server, options);
 
   // Supply delegate to handle inbound calls (optional)
   simpleUser.delegate = {
