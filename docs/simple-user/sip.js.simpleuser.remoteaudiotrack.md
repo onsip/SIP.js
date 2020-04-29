@@ -9,5 +9,5 @@ The remote audio track, if available.
 <b>Signature:</b>
 
 ```typescript
-readonly remoteAudioTrack: MediaStreamTrack | undefined;
+get remoteAudioTrack(): MediaStreamTrack | undefined;
 ```

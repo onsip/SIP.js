@@ -1,4 +1,4 @@
-import * as pegGrammar from "../../grammar/dist/grammar";
+import * as pegGrammar from "./pegjs/dist/grammar";
 
 import { NameAddrHeader } from "./name-addr-header";
 import { URI } from "./uri";

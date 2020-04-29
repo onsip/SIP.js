@@ -9,5 +9,5 @@ The local video track, if available.
 <b>Signature:</b>
 
 ```typescript
-readonly localVideoTrack: MediaStreamTrack | undefined;
+get localVideoTrack(): MediaStreamTrack | undefined;
 ```

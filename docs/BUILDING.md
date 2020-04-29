@@ -18,15 +18,19 @@ Clone a copy of the main SIP.js git repository by running:
 $ git clone https://github.com/onsip/SIP.js.git
 ```
 
-Enter the directory and install the Node.js dependencies:
+Enter the directory
 ```
 $ cd SIP.js
+```
+
+Install the Node.js dependencies:
+```
 $ npm install
 ```
 
 Build and test
 ```
-$ npm run buildAndTest
+$ npm run build-and-test
 ```
 
 The compiled version of SIP.js will be available in the `lib/` folder. The bundled versions of SIP.js will be available in the `dist/` subdirectory in both flavors. There are copies of each file with the version number in the title in that subdirectory as well.
@@ -40,11 +44,11 @@ Run `npm run build-lib` to regenerate the `lib` folder.
 SIP.js includes integration and units implemented using [Jasmine](https://jasmine.github.io/).
 Run the tests as follows:
 ```
-$ npm run commandLineTest
+$ npm run command-line-test
 ```
 or
 ```
-$ npm run browserTest
+$ npm run browser-test
 ```
 
 ## Changes in SIP.js grammar

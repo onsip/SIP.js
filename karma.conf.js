@@ -10,8 +10,6 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/helpers/*.js',
-      'dist/sip.js',
       'test/spec/**/*.js',
     ],
 
@@ -21,12 +19,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/spec/Web/SessionDescriptionHandler.spec.js': 'webpack',
-      'test/spec/Web/Modifiers.spec.js': 'webpack',
-      'test/spec/*.spec.js': ['webpack', 'sourcemap'],
-      'test/spec/api/*.js': ['webpack', 'sourcemap'],
-      'test/spec/core/*.js': ['webpack', 'sourcemap'],
-      'test/spec/platform/web/*.js': ['webpack', 'sourcemap']
+      'test/spec/**/*.js': ['webpack', 'sourcemap']
     },
 
     webpack: {

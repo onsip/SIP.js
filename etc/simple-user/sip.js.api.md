@@ -21,19 +21,19 @@ export class SimpleUser {
     hangup(): Promise<void>;
     hold(): Promise<void>;
     // @internal
-    readonly id: string;
+    get id(): string;
     isConnected(): boolean;
     isHeld(): boolean;
     isMuted(): boolean;
-    readonly localAudioTrack: MediaStreamTrack | undefined;
-    readonly localVideoTrack: MediaStreamTrack | undefined;
+    get localAudioTrack(): MediaStreamTrack | undefined;
+    get localVideoTrack(): MediaStreamTrack | undefined;
     message(destination: string, message: string): Promise<void>;
     mute(): void;
     // Warning: (ae-forgotten-export) The symbol "RegistererOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "RegistererRegisterOptions" needs to be exported by the entry point index.d.ts
     register(registererOptions?: RegistererOptions, registererRegisterOptions?: RegistererRegisterOptions): Promise<void>;
-    readonly remoteAudioTrack: MediaStreamTrack | undefined;
-    readonly remoteVideoTrack: MediaStreamTrack | undefined;
+    get remoteAudioTrack(): MediaStreamTrack | undefined;
+    get remoteVideoTrack(): MediaStreamTrack | undefined;
     sendDTMF(tone: string): Promise<void>;
     unhold(): Promise<void>;
     unmute(): void;

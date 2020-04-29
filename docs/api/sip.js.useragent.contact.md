@@ -9,5 +9,5 @@ User agent contact.
 <b>Signature:</b>
 
 ```typescript
-readonly contact: Contact;
+get contact(): Contact;
 ```

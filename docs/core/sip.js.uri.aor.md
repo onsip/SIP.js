@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly aor: string;
+get aor(): string;
 ```

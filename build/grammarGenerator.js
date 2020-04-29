@@ -4,7 +4,7 @@ const fs = require("fs"),
     pegjs = require("pegjs"),
     tspegjs = require("ts-pegjs");
 
-const thisFolder = "./src/grammar",
+const thisFolder = "./src/grammar/pegjs",
     inputFile = thisFolder + "/src/grammar.pegjs",
     outputFolder = thisFolder + "/dist",
     outputFile = outputFolder + "/grammar.ts";
@@ -53,7 +53,7 @@ const parser = pegjs.generate(grammarContents, {
   plugins: [tspegjs],
   "tspegjs": {
     "tslintIgnores": "interface-name, trailing-comma, object-literal-sort-keys, max-line-length, only-arrow-functions, one-variable-per-declaration, no-consecutive-blank-lines, align, radix, quotemark, semicolon, object-literal-shorthand, variable-name, no-var-keyword, whitespace, curly, prefer-const, object-literal-key-quotes, no-string-literal, one-line, no-unused-expression, space-before-function-paren, arrow-return-shorthand",
-    "customHeader": "import { NameAddrHeader } from \"../../core/messages/name-addr-header\";\nimport { URI } from \"../../core/messages/uri\";"
+    "customHeader": "import { NameAddrHeader } from \"../../name-addr-header\";\nimport { URI } from \"../../uri\";"
   },
   "returnTypes": {
     Contact: "URI | NameAddrHeader",

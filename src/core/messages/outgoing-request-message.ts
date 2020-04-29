@@ -1,6 +1,5 @@
+import { NameAddrHeader, URI } from "../../grammar";
 import { Body } from "./body";
-import { NameAddrHeader } from "./name-addr-header";
-import { URI } from "./uri";
 import {
   createRandomToken,
   headerize,

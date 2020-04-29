@@ -678,6 +678,7 @@ describe("API Session", () => {
         inviter.cancel();
         await soon();
         await soon(); // need an extra promise resolution for tests to play out
+        await soon(); // need an extra promise resolution for tests to play out
       });
 
       if (inviteWithoutSdp) {
@@ -1513,12 +1514,12 @@ describe("API Session", () => {
           spyOn(logger, "error").and.callThrough();
           invitation.progress().then(() => progressResolve = true);
           inviter.cancel();
-          invitation.accept().then(() => acceptResolve = true);
-          await invitationStateSpy.wait(SessionState.Terminated);
+          await invitation.accept().then(() => acceptResolve = true);
+          // await invitationStateSpy.wait(SessionState.Terminated);
+          // await soon();
         });
 
-        it("his call to progress(), accept() should resolve and log an error", async () => {
-          await soon();
+        it("his call to progress(), accept() should resolve and log an error", () => {
           expect(progressResolve).toBe(true);
           expect(acceptResolve).toBe(true);
           expect(logger.error).toHaveBeenCalled();
@@ -1620,10 +1621,12 @@ describe("API Session", () => {
           invitation.progress({ rel100: true }).catch(() => progressReject = true);
           invitation.accept().catch(() => acceptReject = true);
           await invitation.dispose();
+          await soon(); // need an extra promise resolution for tests to play out
+          await soon(); // need an extra promise resolution for tests to play out
+          await soon(); // need an extra promise resolution for tests to play out
         });
 
-        it("his call to progress(), accept() should reject", async () => {
-          await soon();
+        it("his call to progress(), accept() should reject", () => {
           expect(progressReject).toBe(true);
           expect(acceptReject).toBe(true);
         });
@@ -2135,6 +2138,7 @@ describe("API Session", () => {
           resetSpies2();
           inviter.invite({ requestDelegate: inviterRequestDelegateMock });
           await bob.transport.waitSent();
+          await soon(); // need an extra promise resolution for tests to play out
         });
 
         it("her ua should send INVITE", () => {

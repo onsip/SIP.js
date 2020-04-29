@@ -33,7 +33,7 @@ import {
   SessionState,
   UserAgent,
   UserAgentOptions
-} from "sip.js/lib/api";
+} from "sip.js";
 
 /*
  * Create a user agent

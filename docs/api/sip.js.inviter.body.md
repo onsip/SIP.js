@@ -9,5 +9,5 @@ Initial outgoing INVITE request message body.
 <b>Signature:</b>
 
 ```typescript
-readonly body: BodyAndContentType | undefined;
+get body(): BodyAndContentType | undefined;
 ```

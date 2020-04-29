@@ -1,4 +1,4 @@
-import { URI } from "../messages/uri";
+import { URI } from "../../grammar";
 
 /**
  * Dialog state.

@@ -9,5 +9,5 @@ Incoming MESSAGE request message.
 <b>Signature:</b>
 
 ```typescript
-readonly request: IncomingRequestMessage;
+get request(): IncomingRequestMessage;
 ```

@@ -7,5 +7,5 @@
 <b>Signature:</b>
 
 ```typescript
-readonly friendlyName: string;
+get friendlyName(): string;
 ```
