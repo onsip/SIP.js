@@ -50,10 +50,15 @@ README.md
 - *Integration* tests are being written high level "api" components (Session, Subscription)
   - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
 
-## Source
+## Dependencies
 
-### api-extracctor
- - issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
+### api-extractor
+- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
+
+### crypto-js
+- look to remove dependency as we are only using one small function
+
+## Source
 
 ### API - Miscellaneous
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
@@ -66,6 +71,8 @@ README.md
   but not all cases; MessageUserAgentClient is used for both out of dialog and in dialog. 
   It would be worth it to have the constructor interface be consistent.
   Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
+- Dialog UASs are created using a "dialog or core" in some cases when the request can be in dialog
+  or out of dialog but this is not being done consistently. See Message vs Notify vs ReferUAS, etc.
 - I believe all in and out of dialog requests should be able to be authenticated (confirm this).
   Currently only INVITE and re-INVITE work. There needs to be a small refactor to make it work for everything.
   Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
