@@ -2,6 +2,9 @@ build/
 node_modules/
 test/
 src/
+docs/
+demo/
+etc/
 dist/sip-api.d.ts
 dist/sip-api.js
 dist/sip-api.min.js
