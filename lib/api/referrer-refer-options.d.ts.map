@@ -1,1 +1,0 @@
-{"version":3,"file":"referrer-refer-options.d.ts","sourceRoot":"","sources":["../../src/api/referrer-refer-options.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,SAAS,CAAC;AACzC,OAAO,EAAE,gBAAgB,EAAE,MAAM,qBAAqB,CAAC;AAEvD;;;GAGG;AACH,MAAM,WAAW,oBAAoB;IACnC,sBAAsB;IACtB,eAAe,CAAC,EAAE,gBAAgB,CAAC;IACnC,sBAAsB;IACtB,cAAc,CAAC,EAAE,cAAc,CAAC;CACjC"}
