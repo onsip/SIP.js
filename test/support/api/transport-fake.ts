@@ -26,6 +26,7 @@ export class TransportFake extends EventEmitter implements Transport {
   private waitingForReceiveResolve: ResolveFunction | undefined;
   private waitingForReceiveReject: RejectFunction | undefined;
 
+  private _receiveDropOnce = false;
   private _state: TransportState = TransportState.Disconnected;
   private _stateEventEmitter = new EventEmitter();
 
@@ -83,10 +84,17 @@ export class TransportFake extends EventEmitter implements Transport {
     message +=  `Receiving...\n${msg}`;
     // this.logger.log(message);
     this.emit("message", msg);
-    if (this.onMessage) {
+    if (this._receiveDropOnce) {
+      this._receiveDropOnce = false;
+      this.logger.warn((this._id ? `${this._id} ` : "") + "Dropped message");
+    } else if (this.onMessage) {
       this.onMessage(msg);
     }
     this.receiveHappened();
+  }
+
+  public receiveDropOnce(): void {
+    this._receiveDropOnce = true;
   }
 
   public async waitSent(): Promise<void> {

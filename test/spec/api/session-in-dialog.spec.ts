@@ -30,6 +30,8 @@ const SIP_404 = [jasmine.stringMatching(/^SIP\/2.0 404/)];
 const SIP_407 = [jasmine.stringMatching(/^SIP\/2.0 407/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_488 = [jasmine.stringMatching(/^SIP\/2.0 488/)];
+const SIP_500 = [jasmine.stringMatching(/^SIP\/2.0 500/)];
+const SIP_RETRY_AFTER = [jasmine.stringMatching(/Retry-After: /)];
 
 //
 // Simulatineous SIP Request Processing
@@ -591,14 +593,214 @@ describe("API Session In-Dialog", () => {
       await soon();
     });
 
-    describe("Alice invite()", () => {
-      beforeEach(() => {
+    describe("Alice invite() without sdp", () => {
+      beforeEach(async () => {
+        inviter.invite({ withoutSdp: true });
+        await bob.transport.waitSent();
+      });
+
+      describe("Bob accept() ACK dropped", () => {
+        beforeEach(async () => {
+          resetSpies();
+          bob.transport.receiveDropOnce(); // ACK
+          invitation.accept();
+          await alice.transport.waitSent(); // ACK
+        });
+
+        it("her session state should be `established`", () => {
+          expect(inviter.state).toBe(SessionState.Established);
+        });
+
+        it("his session state should be `established`", () => {
+          expect(invitation.state).toBe(SessionState.Established);
+        });
+
+        describe("Re-INVITE race", () => {
+          beforeEach(async () => {
+            resetSpies();
+            invitation.delegate = undefined;
+            inviter.invite();
+            await bob.transport.waitSent(); // 500
+          });
+
+          it("her ua should send INVITE, ACK", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+          });
+
+          it("her ua should receive 500 with Retry-After", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_500);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_RETRY_AFTER);
+          });
+
+          it("her signaling should be stable", () => {
+            if (!inviter.dialog) {
+              fail("Session dialog undefined");
+              return;
+            }
+            expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+          });
+
+          it("his signaling should be have-local-offer", () => {
+            if (!invitation.dialog) {
+              fail("Session dialog undefined");
+              return;
+            }
+            expect(invitation.dialog.signalingState).toEqual(SignalingState.HaveLocalOffer);
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+      });
+
+      describe("Bob accept() ACK processing", () => {
+        beforeEach(async () => {
+          resetSpies();
+          invitation.accept();
+          (invitation.sessionDescriptionHandler as any).setDescriptionWaitOnce = true;
+          await alice.transport.waitSent(); // ACK
+        });
+
+        it("her session state should be `established`", () => {
+          expect(inviter.state).toBe(SessionState.Established);
+        });
+
+        it("his session state should be `established`", () => {
+          expect(invitation.state).toBe(SessionState.Established);
+        });
+
+        describe("Re-INVITE race", () => {
+          beforeEach(async () => {
+            resetSpies();
+            invitation.delegate = undefined;
+            inviter.invite();
+            await bob.transport.waitSent();
+            await soon(1);
+          });
+
+          it("her ua should send INVITE, ACK", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+          });
+
+          it("her ua should receive 500 with Retry-After", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_500);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_RETRY_AFTER);
+          });
+
+          it("her signaling should be stable", () => {
+            if (!inviter.dialog) {
+              fail("Session dialog undefined");
+              return;
+            }
+            expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+          });
+
+          it("his signaling should be stable", () => {
+            if (!invitation.dialog) {
+              fail("Session dialog undefined");
+              return;
+            }
+            expect(invitation.dialog.signalingState).toEqual(SignalingState.Stable);
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+      });
+    });
+
+    describe("Alice invite() with sdp", () => {
+      beforeEach(async () => {
         return inviter.invite()
           .then(() => bob.transport.waitSent());
       });
 
+      describe("Bob accept() ACK dropped", () => {
+        beforeEach(async () => {
+          resetSpies();
+          bob.transport.receiveDropOnce(); // ACK
+          invitation.accept();
+          await alice.transport.waitSent(); // ACK
+        });
+
+        it("her session state should be `established`", () => {
+          expect(inviter.state).toBe(SessionState.Established);
+        });
+
+        it("his session state should be `established`", () => {
+          expect(invitation.state).toBe(SessionState.Established);
+        });
+
+        describe("Re-INVITE race", () => {
+          beforeEach(async () => {
+            resetSpies();
+            invitation.delegate = undefined;
+            inviter.invite();
+            await bob.transport.waitSent();
+            await alice.transport.waitSent();
+          });
+
+          it("her ua should send INVITE, ACK", () => {
+            const spy = alice.transportSendSpy;
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+            expect(spy.calls.argsFor(1)).toEqual(SIP_ACK);
+          });
+
+          it("her ua should receive 200", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+          });
+
+          it("her signaling should be stable", () => {
+            if (!inviter.dialog) {
+              fail("Session dialog undefined");
+              return;
+            }
+            expect(inviter.dialog.signalingState).toEqual(SignalingState.Stable);
+          });
+
+          it("his signaling should be stable", () => {
+            if (!invitation.dialog) {
+              fail("Session dialog undefined");
+              return;
+            }
+            expect(invitation.dialog.signalingState).toEqual(SignalingState.Stable);
+          });
+
+          it("her session state should be `established`", () => {
+            expect(inviter.state).toBe(SessionState.Established);
+          });
+
+          it("his session state should be `established`", () => {
+            expect(invitation.state).toBe(SessionState.Established);
+          });
+        });
+      });
+
       describe("Bob accept()", () => {
-        beforeEach(() => {
+        beforeEach(async () => {
           resetSpies();
           return invitation.accept()
             .then(() => alice.transport.waitSent()); // ACK

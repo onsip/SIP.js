@@ -5,6 +5,7 @@ import {
 } from "../../../src/api";
 import {
   DigestAuthentication,
+  IncomingAckRequest,
   IncomingInviteRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
@@ -143,6 +144,9 @@ export function makeMockSessionDelegate(): jasmine.SpyObj<Required<SessionDelega
     "onPrack",
     "onRefer"
   ]);
+  delegate.onAck.and.callFake((request: IncomingAckRequest) => {
+    return Promise.resolve();
+  });
   return delegate;
 }
 
