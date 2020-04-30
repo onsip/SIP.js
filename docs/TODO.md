@@ -58,6 +58,9 @@ README.md
 ### crypto-js
 - look to remove dependency as we are only using one small function
 
+### karma-jasmine
+- issue updating past 3.0.3 https://github.com/karma-runner/karma-jasmine/issues/256
+
 ## Source
 
 ### API - Miscellaneous
