@@ -795,7 +795,7 @@ export class Inviter extends Session {
 
     // We have a confirmed dialog.
     session.delegate = {
-      onAck: (ackRequest): void => this.onAckRequest(ackRequest),
+      onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
       onBye: (byeRequest): void => this.onByeRequest(byeRequest),
       onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
       onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
