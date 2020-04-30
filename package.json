@@ -41,7 +41,7 @@
     "karma": "^4.4.1",
     "karma-chrome-launcher": "^3.1.0",
     "karma-cli": "^2.0.0",
-    "karma-jasmine": "^3.1.1",
+    "karma-jasmine": "^3.0.3",
     "karma-jasmine-html-reporter": "^1.5.3",
     "karma-mocha-reporter": "^2.2.5",
     "karma-sourcemap-loader": "^0.3.7",
