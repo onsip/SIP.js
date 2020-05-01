@@ -532,7 +532,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
   /**
    * Helper function to generate an Error.
-   * @param state State transitioning to.
+   * @param state - State transitioning to.
    */
   private transitionLoopDetectedError(state: string): StateTransitionError {
     let message = `A state transition loop has been detected.`;
