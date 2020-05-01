@@ -37,13 +37,7 @@
 # Work in Progress
 
 ## Documentation
-README.md
-- build
-- demo
-- docs
-- etc
-- src
-- test
+- Add documentation for "SessionDescriptionHandler - WebRTC"
 
 ## Tests
 - *Unit* tests are being written for low level "core" components (Transaction, Transport)
