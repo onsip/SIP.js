@@ -72,6 +72,14 @@ describe("API Registration", () => {
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Terminated]);
       });
+
+      it("her registerer should throw if register called", () => {
+        expect(() =>registerer.register()).toThrow();
+      });
+
+      it("her registerer should throw if unregister called", () => {
+        expect(() => registerer.unregister()).toThrow();
+      });
     });
 
     describe("Alice dispose(), dispose()", () => {
