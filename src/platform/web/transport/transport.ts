@@ -1,45 +1,11 @@
 import { EventEmitter } from "events";
 
-import { _makeEmitter, Emitter } from "../../api/emitter";
-import { StateTransitionError } from "../../api/exceptions";
-import { Transport as TransportDefinition } from "../../api/transport";
-import { TransportState } from "../../api/transport-state";
-import { Grammar, Logger } from "../../core";
-
-/**
- * Transport options.
- * @public
- */
-export interface TransportOptions {
-  /**
-   * URL of WebSocket server to connect with. For example, "wss://localhost:8080".
-   */
-  server: string;
-
-  /**
-   * Seconds to wait for WebSocket to connect before giving up.
-   * @defaultValue `5`
-   */
-  connectionTimeout?: number;
-
-  /**
-   * Keep alive - needs review.
-   * @internal
-   */
-  keepAliveInterval?: number;
-
-  /**
-   * Keep alive - needs review.
-   * @internal
-   */
-  keepAliveDebounce?: number;
-
-  /**
-   * If true, messages sent and received by the transport are logged.
-   * @defaultValue `true`
-   */
-  traceSip?: boolean;
-}
+import { _makeEmitter, Emitter } from "../../../api/emitter";
+import { StateTransitionError } from "../../../api/exceptions";
+import { Transport as TransportDefinition } from "../../../api/transport";
+import { TransportState } from "../../../api/transport-state";
+import { Grammar, Logger } from "../../../core";
+import { TransportOptions } from "./transport-options";
 
 /**
  * Transport for SIP over secure WebSocket (WSS).

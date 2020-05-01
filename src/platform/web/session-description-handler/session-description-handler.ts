@@ -5,33 +5,12 @@ import {
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions as SessionDescriptionHandlerOptionsDefinition,
-} from "../../api";
-import { SessionDescriptionHandlerError } from "../../api/exceptions";
-
-import { Logger } from "../../core";
-import * as Modifiers from "./modifiers";
-
-/**
- * Options for PeerConnection.
- * @public
- */
-export interface PeerConnectionOptions {
-  iceCheckingTimeout?: number;
-  rtcConfiguration?: RTCConfiguration;
-}
-
-/**
- * Options for {@link SessionDescriptionHandler}.
- * @public
- */
-export interface SessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptionsDefinition {
-  peerConnectionOptions?: PeerConnectionOptions;
-  alwaysAcquireMediaFirst?: boolean;
-  disableAudioFallback?: boolean;
-  RTCOfferOptions?: any;
-  constraints?: MediaStreamConstraints;
-}
+} from "../../../api";
+import { SessionDescriptionHandlerError } from "../../../api/exceptions";
+import { Logger } from "../../../core";
+import * as Modifiers from "../modifiers";
+import { PeerConnectionOptions } from "./peer-connection-options";
+import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
 
 interface Deferred<T> {
   promise: Promise<T>;

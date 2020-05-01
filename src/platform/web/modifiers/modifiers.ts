@@ -1,4 +1,4 @@
-import { SessionDescriptionHandlerModifier } from "../../api";
+import { SessionDescriptionHandlerModifier } from "../../../api";
 
 const stripPayload = (sdp: string, payload: string): string => {
   const mediaDescs: Array<any> = [];
