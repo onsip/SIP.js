@@ -191,7 +191,13 @@ export class Subscriber extends Subscription {
               this._dialog.delegate = {
                 onNotify: (request) => this.onNotify(request),
                 onRefresh: (request) => this.onRefresh(request),
-                onTerminated: () => this.stateTransition(SubscriptionState.Terminated)
+                onTerminated: () => {
+                  // If a call to unsubscribe will state transition to SubscriptionState.Terminated,
+                  // but we can end up here after that if the NOTIFY never arrives and timer N fires.
+                  if (this.state !== SubscriptionState.Terminated) {
+                    this.stateTransition(SubscriptionState.Terminated)
+                  }
+                }
               };
             }
             this.onNotify(result.success.request);

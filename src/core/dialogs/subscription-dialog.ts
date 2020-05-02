@@ -308,6 +308,11 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     }
     this.logger.log(`SUBSCRIBE dialog ${this.id} sending SUBSCRIBE request`);
     const uac = new ReSubscribeUserAgentClient(this, delegate, options);
+    // Abort any outstanding timer (as it would otherwise become guaranteed to terminate us).
+    if (this.N) {
+      clearTimeout(this.N);
+      this.N = undefined;
+    }
     // When refreshing a subscription, a subscriber starts Timer N, set to
     // 64*T1, when it sends the SUBSCRIBE request.
     // https://tools.ietf.org/html/rfc6665#section-4.1.2.2
@@ -538,6 +543,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
    */
   private timer_N(): void {
+    this.logger.warn(`Timer N expired for SUBSCRIBE dialog. Timed out waiting for NOTIFY.`);
     if (this.subscriptionState !== SubscriptionState.Terminated) {
       this.stateTransition(SubscriptionState.Terminated);
       this.onTerminated();

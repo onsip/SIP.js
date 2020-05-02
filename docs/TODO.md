@@ -81,6 +81,7 @@ README.md
   Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
 - Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
 - Extra headers array approach is error prone
+- Timers and some associated timer code doesn't support unreliable transports (UDP for example)
 
 ### Grammar - Refresh
 - grammar.ts has everything typed as any
