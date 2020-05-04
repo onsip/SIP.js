@@ -31,6 +31,12 @@ Herein lies software enabling Session Initiation Protocol (SIP) internet endpoin
   * [Overview](./core.md)
   * [Reference](./core/sip.js.md)
 
+Additional supporting implementations of classes for use with web browser environments are provided...
+
+* Transport - SIP over secure WebSocket
+  * [Overview](./transport.md)
+  * [Reference](./transport/sip.js.md)
+
 ### SimpleUser class
 
 The [SimpleUser](./simple-user.md) class provides a representation of a simple internet endpoint (a simple user agent). It requires an understanding of what a phone call is, but minimal knowledge of SIP. There are working [Demonstrations](../demo/README.md) provided to help get started. It is the recommended interface for many applications. It has its limitations. The [SimpleUser](./simple-user.md) class is implemented on top of the [API](./api.md) framework.
