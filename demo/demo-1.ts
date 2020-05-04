@@ -189,7 +189,7 @@ muteCheckbox.addEventListener("change", () => {
   if (muteCheckbox.checked) {
     // Checkbox is checked..
     simpleUser.mute();
-    if (!simpleUser.isMuted) {
+    if (simpleUser.isMuted() === false) {
       muteCheckbox.checked = false;
       console.error(`[${simpleUser.id}] failed to mute call`);
       alert("Failed to mute call.\n");
@@ -197,7 +197,7 @@ muteCheckbox.addEventListener("change", () => {
   } else {
     // Checkbox is not checked..
     simpleUser.unmute();
-    if (!simpleUser.isMuted) {
+    if (simpleUser.isMuted() === true) {
       muteCheckbox.checked = true;
       console.error(`[${simpleUser.id}] failed to unmute call`);
       alert("Failed to unmute call.\n");
