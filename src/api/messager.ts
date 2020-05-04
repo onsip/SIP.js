@@ -31,7 +31,7 @@ export class Messager {
     userAgent: UserAgent,
     targetURI: URI,
     content: string,
-    contentType: string = "text/plain",
+    contentType = "text/plain",
     options: MessagerOptions = {}
   ) {
 

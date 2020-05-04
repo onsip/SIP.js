@@ -76,7 +76,7 @@ export class SessionDialog extends Dialog implements Session {
   /** True if processing an ACK to the initial transaction 2xx (UAS only). */
   private ackProcessing = false;
   /** Retransmission timer for 2xx response which confirmed the dialog. */
-  private invite2xxTimer: any;
+  private invite2xxTimer: number | undefined;
   /** The rseq of the last reliable response. */
   private rseq: number | undefined;
 
@@ -205,8 +205,11 @@ export class SessionDialog extends Dialog implements Session {
       }
       transaction = this.initialTransaction;
     }
-    (options as any).cseq = transaction.request.cseq; // ACK cseq is INVITE cseq
-    const message = this.createOutgoingRequestMessage(C.ACK, options);
+    const message = this.createOutgoingRequestMessage(C.ACK, {
+      cseq: transaction.request.cseq, // ACK cseq is INVITE cseq
+      extraHeaders: options.extraHeaders,
+      body: options.body
+    });
     transaction.ackResponse(message); // See InviteClientTransaction for details.
     this.signalingStateTransition(message);
     return { message };
@@ -497,7 +500,7 @@ export class SessionDialog extends Dialog implements Session {
     // Handle various INVITE related cross-over, glare and race conditions
     if (message.method === C.INVITE) {
       // Hopefully this message is helpful...
-      const warning = () => {
+      const warning = (): void => {
         const reason = this.ackWait ? "waiting for initial ACK" : "processing initial ACK";
         this.logger.warn(`INVITE dialog ${this.id} received re-INVITE while ${reason}`);
         let msg = "RFC 5407 suggests the following to avoid this race condition... ";
@@ -924,7 +927,7 @@ export class SessionDialog extends Dialog implements Session {
       // protocols are used to send the response.
       // https://tools.ietf.org/html/rfc6026#section-8.1
       let timeout = Timers.T1;
-      const retransmission = () => {
+      const retransmission = (): void => {
         if (!this.ackWait) {
           this.invite2xxTimer = undefined;
           return;
@@ -940,7 +943,7 @@ export class SessionDialog extends Dialog implements Session {
       // receiving an ACK, the dialog is confirmed, but the session SHOULD be
       // terminated.  This is accomplished with a BYE, as described in Section 15.
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-      const stateChanged = () => {
+      const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
           transaction.removeListener("stateChanged", stateChanged);
           if (this.invite2xxTimer) {
@@ -977,7 +980,7 @@ export class SessionDialog extends Dialog implements Session {
       // protocols are used to send the response.
       // https://tools.ietf.org/html/rfc6026#section-8.1
       let timeout = Timers.T1;
-      const retransmission = () => {
+      const retransmission = (): void => {
         if (!this.reinviteUserAgentServer) {
           this.invite2xxTimer = undefined;
           return;
@@ -993,7 +996,7 @@ export class SessionDialog extends Dialog implements Session {
       // receiving an ACK, the dialog is confirmed, but the session SHOULD be
       // terminated.  This is accomplished with a BYE, as described in Section 15.
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-      const stateChanged = () => {
+      const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
           transaction.removeListener("stateChanged", stateChanged);
           if (this.invite2xxTimer) {

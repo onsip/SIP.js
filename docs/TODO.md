@@ -1,34 +1,9 @@
 # Release Road Map
 
-## 0.15.0
-- new API introduction with transition guide
-- deprecation warning message in console log if using legacy UA
-- new generated documentation base
-- review license for correctness
-
-## 0.15.x
-- give entire src/api code a top down once over
-- address transport connect/disconnect auto register issues
-- address user agent tearing down cleanly issues
-- address the outstanding issues with new API
-- address SDH race condition issues
-- port Simple to SimpleUser
-- create demo for new API
-- more documentation
-- more tests
-
-## 0.16.0
-- new README.md
-- remove old api
-- remove old tests
-- update documentation
-- separate tsconfigs for src/*
+## 0.16.x
 - tighten up tslint and lint api, core, demo and tests
 - review packaging best practices (es7, es6, drop es5)
 - free core and API from DOM and Node dependencies
-- cleanup and update sipjs.com
-
-## 0.16.x
 - more documentation
 - more tests
 - bug fixes

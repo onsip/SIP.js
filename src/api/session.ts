@@ -70,23 +70,13 @@ export abstract class Session {
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
    */
-  public data: any;
+  public data: unknown;
 
   /**
    * The session delegate.
    * @defaultValue `undefined`
    */
   public delegate: SessionDelegate | undefined;
-
-  /**
-   * The identity of the local user.
-   */
-  public abstract readonly localIdentity: NameAddrHeader;
-
-  /**
-   * The identity of the remote user.
-   */
-  public abstract readonly remoteIdentity: NameAddrHeader;
 
   //
   // Public properties for internal use only
@@ -98,16 +88,9 @@ export abstract class Session {
   /** @internal */
   public _replacee: Session | undefined;
 
-  /**
-   * Logger.
-   */
-  protected abstract logger: Logger;
-
   //
   // Protected properties for internal use only
   //
-  /** @internal */
-  protected abstract _id: string;
   /** @internal */
   protected _assertedIdentity: NameAddrHeader | undefined;
   /** @internal */
@@ -126,7 +109,7 @@ export abstract class Session {
   /** If defined, NOTIFYs associated with a REFER subscription are delivered here. */
   private onNotify: ((notification: Notification) => void) | undefined;
   /** True if there is a re-INVITE request outstanding. */
-  private pendingReinvite: boolean = false;
+  private pendingReinvite = false;
   /** Dialogs session description handler. */
   private _sessionDescriptionHandler: SessionDescriptionHandler | undefined;
   /** Session state. */
@@ -135,6 +118,24 @@ export abstract class Session {
   private _stateEventEmitter = new EventEmitter();
   /** User agent. */
   private _userAgent: UserAgent;
+
+  /**
+   * The identity of the local user.
+   */
+  public abstract readonly localIdentity: NameAddrHeader;
+
+  /**
+   * The identity of the remote user.
+   */
+  public abstract readonly remoteIdentity: NameAddrHeader;
+
+  /**
+   * Logger.
+   */
+  protected abstract logger: Logger;
+
+  /** @internal */
+  protected abstract _id: string;
 
   /**
    * Constructor.
@@ -180,7 +181,7 @@ export abstract class Session {
       case SessionState.Establishing:
         break; // the Inviter/Invitation sub class dispose method handles this case
       case SessionState.Established:
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           this._bye({ // wait for the response to the BYE before resolving
             onAccept: () => resolve(),
             onRedirect: () => resolve(),
@@ -278,31 +279,39 @@ export abstract class Session {
 
     switch (this.state) {
       case SessionState.Initial:
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof (this as any).cancel === "function") {
           message += " However Inviter.invite() has not yet been called.";
           message += " Perhaps you should have called Inviter.cancel()?";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (this as any).reject === "function") {
           message += " However Invitation.accept() has not yet been called.";
           message += " Perhaps you should have called Invitation.reject()?";
         }
         break;
       case SessionState.Establishing:
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof (this as any).cancel === "function") {
           message += " However a dialog does not yet exist.";
           message += " Perhaps you should have called Inviter.cancel()?";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (this as any).reject === "function") {
           message += " However Invitation.accept() has not yet been called (or not yet resolved).";
           message += " Perhaps you should have called Invitation.reject()?";
         }
         break;
       case SessionState.Established:
-        const requestDelegate = options.requestDelegate;
-        const requestOptions = this.copyRequestOptions(options.requestOptions);
-        return this._bye(requestDelegate, requestOptions);
+        {
+          const requestDelegate = options.requestDelegate;
+          const requestOptions = this.copyRequestOptions(options.requestOptions);
+          return this._bye(requestDelegate, requestOptions);
+        }
       case SessionState.Terminating:
         message += " However this session is already terminating.";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof (this as any).cancel === "function") {
           message += " Perhaps you have already called Inviter.cancel()?";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (typeof (this as any).reject === "function") {
           message += " Perhaps you have already called Session.bye()?";
         }
@@ -437,9 +446,11 @@ export abstract class Session {
             });
         }
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       onProgress: (response): void => {
         return;
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       onRedirect: (response): void => {
         return;
       },
@@ -476,6 +487,7 @@ export abstract class Session {
             });
         }
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       onTrying: (response): void => {
         return;
       }
@@ -583,7 +595,7 @@ export abstract class Session {
         throw new Error(`Invalid dialog state ${dialog.sessionState}`);
       case SessionDialogState.AckWait: { // This state only occurs if we are the callee.
         this.stateTransition(SessionState.Terminating); // We're terminating
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           dialog.delegate = {
             // When ACK shows up, say BYE.
             onAck: (): Promise<void> => {
@@ -949,6 +961,7 @@ export abstract class Session {
    * Handle in dialog PRACK request.
    * @internal
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onPrackRequest(request: IncomingPrackRequest): void {
     this.logger.log("Session.onPrackRequest");
     if (this.state !== SessionState.Established) {
@@ -1008,8 +1021,8 @@ export abstract class Session {
   protected generateResponseOfferAnswer(
     request: IncomingInviteRequest,
     options: {
-      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>
+      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+      sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     }
   ): Promise<Body | undefined> {
     if (this.dialog) {
@@ -1031,8 +1044,8 @@ export abstract class Session {
    */
   protected generateResponseOfferAnswerInDialog(
     options: {
-      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>
+      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+      sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
     }
   ): Promise<Body | undefined> {
     if (!this.dialog) {
@@ -1078,8 +1091,8 @@ export abstract class Session {
    * @internal
    */
   protected getOffer(options: {
-    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>
+    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
   }): Promise<Body> {
     const sdh = this.setupSessionDescriptionHandler();
     const sdhOptions = options.sessionDescriptionHandlerOptions;
@@ -1088,9 +1101,9 @@ export abstract class Session {
     try {
       return sdh.getDescription(sdhOptions, sdhModifiers)
         .then((bodyAndContentType) => fromBodyLegacy(bodyAndContentType))
-        .catch((error: any) => { // don't trust SDH to reject with Error
+        .catch((error: unknown) => { // don't trust SDH to reject with Error
           this.logger.error("Session.getOffer: SDH getDescription rejected...");
-          const e =  error instanceof Error ? error : new Error(error);
+          const e =  error instanceof Error ? error : new Error("Session.getOffer unknown error.");
           this.logger.error(e.message);
           throw e;
         });
@@ -1108,15 +1121,15 @@ export abstract class Session {
    */
   protected rollbackOffer(): Promise<void> {
     const sdh = this.setupSessionDescriptionHandler();
-    if (!sdh.rollbackDescription) {
+    if (sdh.rollbackDescription === undefined) {
       return Promise.resolve();
     }
     // This is intentionally written very defensively. Don't trust SDH to behave.
     try {
       return sdh.rollbackDescription()
-        .catch((error: any) => { // don't trust SDH to reject with Error
+        .catch((error: unknown) => { // don't trust SDH to reject with Error
           this.logger.error("Session.rollbackOffer: SDH rollbackDescription rejected...");
-          const e = error instanceof Error ? error : new Error(error);
+          const e = error instanceof Error ? error : new Error("Session.rollbackOffer unknown error.");
           this.logger.error(e.message);
           throw e;
         });
@@ -1133,8 +1146,8 @@ export abstract class Session {
    * @internal
    */
   protected setAnswer(answer: Body, options: {
-    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>
+    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
   }): Promise<void> {
     const sdh = this.setupSessionDescriptionHandler();
     const sdhOptions = options.sessionDescriptionHandlerOptions;
@@ -1152,9 +1165,9 @@ export abstract class Session {
     }
     try {
       return sdh.setDescription(answer.content, sdhOptions, sdhModifiers)
-        .catch((error: any) => { // don't trust SDH to reject with Error
+        .catch((error: unknown) => { // don't trust SDH to reject with Error
           this.logger.error("Session.setAnswer: SDH setDescription rejected...");
-          const e = error instanceof Error ? error : new Error(error);
+          const e = error instanceof Error ? error : new Error("Session.setAnswer unknown error.");
           this.logger.error(e.message);
           throw e;
         });
@@ -1171,8 +1184,8 @@ export abstract class Session {
    * @internal
    */
   protected setOfferAndGetAnswer(offer: Body, options: {
-    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>
+    sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
   }): Promise<Body> {
     const sdh = this.setupSessionDescriptionHandler();
     const sdhOptions = options.sessionDescriptionHandlerOptions;
@@ -1192,16 +1205,16 @@ export abstract class Session {
       return sdh.setDescription(offer.content, sdhOptions, sdhModifiers)
         .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
         .then((bodyAndContentType) => fromBodyLegacy(bodyAndContentType))
-        .catch((error: any) => { // don't trust SDH to reject with Error
+        .catch((error: unknown) => { // don't trust SDH to reject with Error
           this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription rejected...");
-          const e = error instanceof Error ? error : new Error(error);
+          const e = error instanceof Error ? error : new Error("Session.setOfferAndGetAnswer unknown error.");
           this.logger.error(e.message);
           throw e;
         });
     } catch (error) { // don't trust SDH to throw an Error
       this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription threw...");
       const e = error instanceof Error ? error : new Error(error);
-      this.logger.error(e.message);
+      this.logger.error(e.message)
       return Promise.reject(e);
     }
   }
@@ -1235,7 +1248,7 @@ export abstract class Session {
    * @internal
    */
   protected stateTransition(newState: SessionState): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 

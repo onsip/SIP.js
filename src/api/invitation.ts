@@ -47,9 +47,9 @@ export class Invitation extends Session {
   protected _id: string;
 
   /** True if dispose() has been called. */
-  private disposed: boolean = false;
+  private disposed = false;
   /** INVITE will be rejected if not accepted within a certain period time. */
-  private expiresTimer: any = undefined;
+  private expiresTimer: number | undefined = undefined;
   /** True if this Session has been Terminated due to a CANCEL request. */
   private isCanceled = false;
   /** Are reliable provisional responses required or supported. */
@@ -57,9 +57,9 @@ export class Invitation extends Session {
   /** The current RSeq header value. */
   private rseq = Math.floor(Math.random() * 10000);
   /** INVITE will be rejected if final response not sent in a certain period time. */
-  private userNoAnswerTimer: any = undefined;
+  private userNoAnswerTimer: number | undefined = undefined;
   /** True if waiting for a PRACK before sending a 200 Ok. */
-  private waitingForPrack: boolean = false;
+  private waitingForPrack = false;
   /** A Promise providing a defer when waiting for a PRACK. */
   private waitingForPrackPromise: Promise<void> | undefined;
   /** Function to resolve when PRACK arrives. */
@@ -77,20 +77,21 @@ export class Invitation extends Session {
 
     // Set 100rel if necessary
     const requireHeader = incomingRequestMessage.getHeader("require");
-    if (requireHeader && requireHeader.toLowerCase().indexOf("100rel") >= 0) {
+    if (requireHeader && requireHeader.toLowerCase().includes("100rel")) {
       this.rel100 = "required";
     }
     const supportedHeader = incomingRequestMessage.getHeader("supported");
-    if (supportedHeader && supportedHeader.toLowerCase().indexOf("100rel") >= 0) {
+    if (supportedHeader && supportedHeader.toLowerCase().includes("100rel")) {
       this.rel100 = "supported";
     }
 
+    // FIXME: HACK: This is a hack to port an existing behavior.
     // Set the toTag on the incoming request message to the toTag which
     // will be used in the response to the incoming request!!!
-    // FIXME: HACK: This is a hack to port an existing behavior.
     // The behavior being ported appears to be a hack itself,
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     incomingRequestMessage.toTag = (incomingInviteRequest as InviteUserAgentServer as any).toTag;
     if (typeof incomingRequestMessage.toTag !== "string") {
       throw new TypeError("toTag should have been a string.");
@@ -268,6 +269,7 @@ export class Invitation extends Session {
     this.stateTransition(SessionState.Establishing);
 
     return this.sendAccept(options)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .then(({ message, session }) => {
         session.delegate = {
           onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
@@ -336,7 +338,7 @@ export class Invitation extends Session {
     // Trying provisional response
     if (options.statusCode === 100) {
       return this.sendProgressTrying()
-        .then((response) => { return; })
+        .then(() => { return; })
         .catch((error) => this.handleResponseError(error));
     }
 
@@ -350,13 +352,13 @@ export class Invitation extends Session {
       )
     ) {
       return this.sendProgress(options)
-        .then((response) => { return; })
+        .then(() => { return; })
         .catch((error) => this.handleResponseError(error));
     }
 
     // Reliable provisional response
     return this.sendProgressReliableWaitForPrack(options)
-      .then((response) => { return; })
+      .then(() => { return; })
       .catch((error) => this.handleResponseError(error));
   }
 
@@ -399,7 +401,7 @@ export class Invitation extends Session {
     const body = options.body ? fromBodyLegacy(options.body) : undefined;
 
     // FIXME: Need to redirect to someplace
-    const response = statusCode < 400 ?
+    statusCode < 400 ?
       this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
       this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
 
@@ -414,6 +416,7 @@ export class Invitation extends Session {
    * @param message - CANCEL message.
    * @internal
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public _onCancel(message: IncomingRequestMessage): void {
     this.logger.log("Invitation._onCancel");
 
@@ -441,8 +444,8 @@ export class Invitation extends Session {
   private handlePrackOfferAnswer(
     request: IncomingPrackRequest,
     options: {
-      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions,
-      modifiers?: Array<SessionDescriptionHandlerModifier>
+      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+      modifiers?: Array<SessionDescriptionHandlerModifier>;
     }
   ): Promise<Body | undefined> {
     if (!this.dialog) {
@@ -498,8 +501,8 @@ export class Invitation extends Session {
       this.logger.error(error.message);
     } else {
       // We don't actually know what a session description handler implementation might throw our way,
-      // and more generally as a last resort catch all, just assume we are getting an "any" and log it.
-      this.logger.error(error as any);
+      // and more generally as a last resort catch all, just assume we are getting an "unknown" and log it.
+      this.logger.error(error as unknown as string);
     }
 
     // Log Exception message
@@ -658,9 +661,9 @@ export class Invitation extends Session {
    * @param options - Options bucket.
    */
   private sendProgressReliableWaitForPrack(options: InvitationProgressOptions = {}): Promise<{
-    prackRequest: IncomingPrackRequest,
-    prackResponse: OutgoingResponse,
-    progressResponse: OutgoingResponseWithSession,
+    prackRequest: IncomingPrackRequest;
+    prackResponse: OutgoingResponse;
+    progressResponse: OutgoingResponseWithSession;
   }> {
     const statusCode = options.statusCode || 183;
     const reasonPhrase = options.reasonPhrase;
@@ -684,7 +687,9 @@ export class Invitation extends Session {
           progressResponse.session.delegate = {
             onPrack: (request): void => {
               prackRequest = request;
+              // eslint-disable-next-line @typescript-eslint/no-use-before-define
               clearTimeout(prackWaitTimeoutTimer);
+              // eslint-disable-next-line @typescript-eslint/no-use-before-define
               clearTimeout(rel1xxRetransmissionTimer);
               if (!this.waitingForPrack) {
                 return;
@@ -705,12 +710,13 @@ export class Invitation extends Session {
           };
 
           // https://tools.ietf.org/html/rfc3262#section-3
-          const prackWaitTimeout = () => {
+          const prackWaitTimeout = (): void => {
             if (!this.waitingForPrack) {
               return;
             }
             this.waitingForPrack = false;
             this.logger.warn("No PRACK received, rejecting INVITE.");
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             clearTimeout(rel1xxRetransmissionTimer);
             this.reject({ statusCode: 504 })
               .then(() => reject(new SessionTerminatedError()))
@@ -719,7 +725,7 @@ export class Invitation extends Session {
           const prackWaitTimeoutTimer = setTimeout(prackWaitTimeout, Timers.T1 * 64);
 
           // https://tools.ietf.org/html/rfc3262#section-3
-          const rel1xxRetransmission = () => {
+          const rel1xxRetransmission = (): void => {
             try {
               this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
             } catch (error) {
@@ -727,6 +733,7 @@ export class Invitation extends Session {
               reject(error);
               return;
             }
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, timeout *= 2);
           };
           let timeout = Timers.T1;
@@ -743,14 +750,12 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when a 100 Trying provisional response is sent.
    */
   private sendProgressTrying(): Promise<OutgoingResponse> {
-    return new Promise((resolve, reject) => {
-      try {
-        const progressResponse = this.incomingInviteRequest.trying();
-        return Promise.resolve(progressResponse);
-      } catch (error) {
-        return Promise.reject(error);
-      }
-    });
+    try {
+      const progressResponse = this.incomingInviteRequest.trying();
+      return Promise.resolve(progressResponse);
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   /**

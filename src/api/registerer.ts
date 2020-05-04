@@ -6,7 +6,8 @@ import {
   Logger,
   OutgoingRegisterRequest,
   OutgoingRequestMessage,
-  URI
+  URI,
+  NameAddrHeader
 } from "../core";
 import { _makeEmitter, Emitter } from "./emitter";
 import { RequestPendingError } from "./exceptions";
@@ -34,31 +35,6 @@ export class Registerer {
     registrar: new URI("sip", "anonymous", "anonymous.invalid")
   };
 
-  // http://stackoverflow.com/users/109538/broofa
-  private static newUUID(): string {
-    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r: number = Math.floor(Math.random() * 16);
-      const v: number = c === "x" ? r : (r % 4 + 8);
-      return v.toString(16);
-    });
-    return UUID;
-  }
-
-  /**
-   * Strip properties with undefined values from options.
-   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-   * https://github.com/Microsoft/TypeScript/issues/13195
-   * @param options - Options to reduce
-   */
-  private static stripUndefinedProperties(options: Partial<RegistererOptions>): Partial<RegistererOptions> {
-    return Object.keys(options).reduce((object, key) => {
-      if ((options as any)[key] !== undefined) {
-        (object as any)[key] = (options as any)[key];
-      }
-      return object;
-    }, {});
-  }
-
   private disposed = false;
   private id: string;
   private expires: number;
@@ -67,8 +43,8 @@ export class Registerer {
   private request: OutgoingRequestMessage;
   private userAgent: UserAgent;
 
-  private registrationExpiredTimer: any | undefined;
-  private registrationTimer: any | undefined;
+  private registrationExpiredTimer: number | undefined;
+  private registrationTimer: number | undefined;
 
   /** The contacts returned from the most recent accepted REGISTER request. */
   private _contacts: Array<string> = [];
@@ -162,6 +138,7 @@ export class Registerer {
     if (this.options.logConfiguration) {
       this.logger.log("Configuration:");
       Object.keys(this.options).forEach((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const value = (this.options as any)[key];
         switch (key) {
           case "registrar":
@@ -178,6 +155,33 @@ export class Registerer {
 
     // Add to the user agent's session collection.
     this.userAgent._registerers[this.id] = this;
+  }
+
+  // http://stackoverflow.com/users/109538/broofa
+  private static newUUID(): string {
+    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r: number = Math.floor(Math.random() * 16);
+      const v: number = c === "x" ? r : (r % 4 + 8);
+      return v.toString(16);
+    });
+    return UUID;
+  }
+
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<RegistererOptions>): Partial<RegistererOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((options as any)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
   }
 
   /** The registered contacts. */
@@ -244,8 +248,8 @@ export class Registerer {
     delete this.userAgent._registerers[this.id];
 
     // If registered, unregisters and resolves after final response received.
-    return new Promise((resolve, reject) => {
-      const doClose = () => {
+    return new Promise((resolve) => {
+      const doClose = (): void => {
         // If we are registered, unregister and resolve after our state changes
         if (!this.waiting && this._state === RegistererState.Registered) {
           this.stateChange.addListener(() => {
@@ -365,15 +369,17 @@ export class Registerer {
         // Expires field value.  The UA then issues a REGISTER request for each
         // of its bindings before the expiration interval has elapsed.
         // https://tools.ietf.org/html/rfc3261#section-10.2.4
-        let contact: any;
+        let contact: NameAddrHeader | undefined;
         while (contacts--) {
           contact = response.message.parseHeader("contact", contacts);
-          if (contact.uri.user === this.userAgent.contact.uri.user) {
-            expires = contact.getParam("expires");
-            break;
-          } else {
-            contact = undefined;
+          if (!contact) {
+            throw new Error("Contact undefined");
           }
+          if (contact.uri.user === this.userAgent.contact.uri.user) {
+            expires = Number(contact.getParam("expires"));
+            break;
+          }
+          contact = undefined;
         }
 
         // There must be a matching contact.
@@ -394,10 +400,16 @@ export class Registerer {
 
         // Save gruu values
         if (contact.hasParam("temp-gruu")) {
-          this.userAgent.contact.tempGruu = Grammar.URIParse(contact.getParam("temp-gruu").replace(/"/g, ""));
+          const gruu = contact.getParam("temp-gruu");
+          if (gruu) {
+            this.userAgent.contact.tempGruu = Grammar.URIParse(gruu.replace(/"/g, ""));
+          }
         }
         if (contact.hasParam("pub-gruu")) {
-          this.userAgent.contact.pubGruu = Grammar.URIParse(contact.getParam("pub-gruu").replace(/"/g, ""));
+          const gruu = contact.getParam("pub-gruu");
+          if (gruu) {
+            this.userAgent.contact.pubGruu = Grammar.URIParse(gruu.replace(/"/g, ""));
+          }
         }
 
         this.registered(expires);
@@ -684,7 +696,7 @@ export class Registerer {
    * Transition registration state.
    */
   private stateTransition(newState: RegistererState): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 

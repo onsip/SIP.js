@@ -4,7 +4,7 @@ import {
   createRandomToken,
   headerize,
   newTag,
-  str_utf8_length
+  utf8Length
 } from "./utils";
 
 /**
@@ -33,33 +33,6 @@ export interface OutgoingRequestMessageOptions {
  */
 export class OutgoingRequestMessage {
 
-  /** Get a copy of the default options. */
-  private static getDefaultOptions(): Required<OutgoingRequestMessageOptions> {
-    return {
-      callId: "",
-      callIdPrefix: "",
-      cseq: 1,
-      toDisplayName: "",
-      toTag: "",
-      fromDisplayName: "",
-      fromTag: "",
-      forceRport: false,
-      hackViaTcp: false,
-      optionTags: ["outbound"],
-      routeSet: [],
-      userAgentString: "sip.js",
-      viaHost: ""
-    };
-  }
-
-  private static makeNameAddrHeader(uri: URI, displayName: string, tag: string): NameAddrHeader {
-    const parameters: {[name: string]: string} = {};
-    if (tag) {
-      parameters.tag = tag;
-    }
-    return new NameAddrHeader(uri, displayName, parameters);
-  }
-
   public readonly headers: {[name: string]: Array<string>} = {};
 
   public readonly method: string;
@@ -74,7 +47,7 @@ export class OutgoingRequestMessage {
   public readonly callId: string;
   public cseq: number;
   public extraHeaders: Array<string> = [];
-  public body: { body: string, contentType: string } | undefined;
+  public body: { body: string; contentType: string } | undefined;
 
   private options: Required<OutgoingRequestMessageOptions> = OutgoingRequestMessage.getDefaultOptions();
 
@@ -153,6 +126,33 @@ export class OutgoingRequestMessage {
     this.setHeader("max-forwards", "70");
   }
 
+  /** Get a copy of the default options. */
+  private static getDefaultOptions(): Required<OutgoingRequestMessageOptions> {
+    return {
+      callId: "",
+      callIdPrefix: "",
+      cseq: 1,
+      toDisplayName: "",
+      toTag: "",
+      fromDisplayName: "",
+      fromTag: "",
+      forceRport: false,
+      hackViaTcp: false,
+      optionTags: ["outbound"],
+      routeSet: [],
+      userAgentString: "sip.js",
+      viaHost: ""
+    };
+  }
+
+  private static makeNameAddrHeader(uri: URI, displayName: string, tag: string): NameAddrHeader {
+    const parameters: {[name: string]: string} = {};
+    if (tag) {
+      parameters.tag = tag;
+    }
+    return new NameAddrHeader(uri, displayName, parameters);
+  }
+
   /**
    * Get the value of the given header name at the given position.
    * @param name - header name
@@ -165,7 +165,7 @@ export class OutgoingRequestMessage {
         return header[0];
       }
     } else {
-      const regexp: RegExp = new RegExp("^\\s*" + name + "\\s*:", "i");
+      const regexp = new RegExp("^\\s*" + name + "\\s*:", "i");
       for (const exHeader of this.extraHeaders) {
         if (regexp.test(exHeader)) {
           return exHeader.substring(exHeader.indexOf(":") + 1).trim();
@@ -190,7 +190,7 @@ export class OutgoingRequestMessage {
         result.push(headerPart);
       }
     } else {
-      const regexp: RegExp = new RegExp("^\\s*" + name + "\\s*:", "i");
+      const regexp = new RegExp("^\\s*" + name + "\\s*:", "i");
       for (const exHeader of this.extraHeaders) {
         if (regexp.test(exHeader)) {
           result.push(exHeader.substring(exHeader.indexOf(":") + 1).trim());
@@ -209,7 +209,7 @@ export class OutgoingRequestMessage {
     if (this.headers[headerize(name)]) {
       return true;
     } else {
-      const regexp: RegExp = new RegExp("^\\s*" + name + "\\s*:", "i");
+      const regexp = new RegExp("^\\s*" + name + "\\s*:", "i");
       for (const extraHeader of this.extraHeaders) {
         if (regexp.test(extraHeader)) {
           return true;
@@ -261,7 +261,7 @@ export class OutgoingRequestMessage {
   }
 
   public toString(): string {
-    let msg: string = "";
+    let msg = "";
 
     msg += this.method + " " + this.ruri.toRaw() + " SIP/2.0\r\n";
 
@@ -282,12 +282,12 @@ export class OutgoingRequestMessage {
 
     if (this.body) {
       if (typeof this.body === "string") {
-        msg += "Content-Length: " + str_utf8_length(this.body) + "\r\n\r\n";
+        msg += "Content-Length: " + utf8Length(this.body) + "\r\n\r\n";
         msg += this.body;
       } else {
         if (this.body.body && this.body.contentType) {
           msg += "Content-Type: " + this.body.contentType + "\r\n";
-          msg += "Content-Length: " + str_utf8_length(this.body.body) + "\r\n\r\n";
+          msg += "Content-Length: " + utf8Length(this.body.body) + "\r\n\r\n";
           msg += this.body.body;
         } else {
           msg += "Content-Length: " + 0 + "\r\n\r\n";

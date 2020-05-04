@@ -10,6 +10,7 @@
   "author": "OnSIP <developer@onsip.com> (https://sipjs.com/aboutus/)",
   "contributors": [
     {
+      "name": "Contributors",
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
     }
   ],
@@ -95,7 +96,7 @@
     "build-docs-simple-user": "npm run extract-simple-user && npm run document-simple-user && npm run document-copy-simple-user",
     "build-docs-transport": "npm run extract-transport && npm run document-transport && npm run document-copy-transport",
     "build-docs": "npm run build-lib && npm run build-docs-api && npm run build-docs-core && npm run build-docs-simple-user && npm run build-docs-transport",
-    "lint": "tslint -p tsconfig-base.json -c tslint.json",
+    "lint": "eslint --ext .ts .",
     "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/version.ts"
   }
 }

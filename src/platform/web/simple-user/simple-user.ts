@@ -40,13 +40,13 @@ export class SimpleUser {
   /** Delegate. */
   public delegate: SimpleUserDelegate | undefined;
 
-  private attemptingReconnection: boolean = false;
-  private connectRequested: boolean = false;
+  private attemptingReconnection = false;
+  private connectRequested = false;
   private logger: Logger;
-  private held: boolean = false;
+  private held = false;
   private options: SimpleUserOptions;
   private registerer: Registerer | undefined = undefined;
-  private registerRequested: boolean = false;
+  private registerRequested = false;
   private session: Session | undefined = undefined;
   private userAgent: UserAgent;
 
@@ -97,7 +97,7 @@ export class SimpleUser {
     // UserAgent's delegate
     this.userAgent.delegate = {
       // Handle connection with server established
-      onConnect: () => {
+      onConnect: (): void => {
         this.logger.log(`[${this.id}] Connected`);
         if (this.delegate && this.delegate.onServerConnect) {
           this.delegate.onServerConnect();
@@ -112,7 +112,7 @@ export class SimpleUser {
         }
       },
       // Handle connection with server lost
-      onDisconnect: (error?: Error) => {
+      onDisconnect: (error?: Error): void => {
         this.logger.log(`[${this.id}] Disconnected`);
         if (this.delegate && this.delegate.onServerDisconnect) {
           this.delegate.onServerDisconnect(error);
@@ -139,7 +139,7 @@ export class SimpleUser {
         }
       },
       // Handle incoming invitations
-      onInvite: (invitation: Invitation) => {
+      onInvite: (invitation: Invitation): void => {
         this.logger.log(`[${this.id}] Received INVITE`);
 
         // Guard against a pre-existing session. This implementation only supports one session at a time.
@@ -182,7 +182,7 @@ export class SimpleUser {
         }
       },
       // Handle incoming messages
-      onMessage: (message: Message) => {
+      onMessage: (message: Message): void => {
         message.accept()
           .then(() => {
             if (this.delegate && this.delegate.onMessageReceived) {
@@ -519,7 +519,7 @@ export class SimpleUser {
     // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00
 
     // Validate tone
-    if (!tone.match(/^[0-9A-D#*,]$/)) {
+    if(!/^[0-9A-D#*,]$/.exec(tone)) {
       return Promise.reject(new Error("Invalid DTMF tone."));
     }
 
@@ -566,7 +566,7 @@ export class SimpleUser {
   }
 
   /** Media constraints. */
-  private get constraints(): { audio: boolean, video: boolean } {
+  private get constraints(): { audio: boolean; video: boolean } {
     let constraints = { audio: true, video: false }; // default to audio only calls
     if (this.options.media && this.options.media.constraints) {
       constraints = { ...this.options.media.constraints };
@@ -581,7 +581,7 @@ export class SimpleUser {
    * Attempt reconnection up to `maxReconnectionAttempts` times.
    * @param reconnectionAttempt - Current attempt number.
    */
-  private attemptReconnection(reconnectionAttempt: number = 1): void {
+  private attemptReconnection(reconnectionAttempt = 1): void {
     const reconnectionAttempts = this.options.reconnectionAttempts || 3;
     const reconnectionDelay = this.options.reconnectionDelay || 4;
 
@@ -770,7 +770,7 @@ export class SimpleUser {
 
     // Setup delegate
     this.session.delegate = {
-      onInfo: (info: Info) => {
+      onInfo: (info: Info): void => {
 
         // As RFC 6086 states, sending DTMF via INFO is not standardized...
         //
@@ -792,14 +792,14 @@ export class SimpleUser {
         // https://tools.ietf.org/html/rfc6086#section-4.2.2
 
         // No delegate
-        if (!this.delegate || !this.delegate.onCallDTMFReceived) {
+        if (this.delegate?.onCallDTMFReceived === undefined) {
           info.reject();
           return;
         }
 
         // Invalid content type
         const contentType = info.request.getHeader("content-type");
-        if (!contentType || !contentType.match(/^application\/dtmf-relay/i)) {
+        if (!contentType || !/^application\/dtmf-relay/i.exec(contentType)) {
           info.reject();
           return;
         }
@@ -847,7 +847,7 @@ export class SimpleUser {
             this.logger.error(error.message);
           });
       },
-      onRefer: (referral: Referral) => {
+      onRefer: (referral: Referral): void => {
         referral
           .accept()
           .then(() => this.sendInvite(referral.makeInviter(referralInviterOptions), referralInviterOptions))
@@ -870,7 +870,7 @@ export class SimpleUser {
 
     // Send the INVITE
     return inviter.invite(inviterInviteOptions)
-      .then((request) => {
+      .then(() => {
         this.logger.log(`[${this.id}] sent INVITE`);
       });
   }
@@ -896,13 +896,13 @@ export class SimpleUser {
 
     const options: SessionInviteOptions = {
       requestDelegate: {
-        onAccept: () => {
+        onAccept: (): void => {
           this.held = hold;
           if (this.delegate && this.delegate.onCallHold) {
             this.delegate.onCallHold(this.held);
           }
         },
-        onReject: () => {
+        onReject: (): void => {
           this.logger.warn(`[${this.id}] re-invite request was rejected`);
           if (this.delegate && this.delegate.onCallHold) {
             this.delegate.onCallHold(this.held);
@@ -913,7 +913,9 @@ export class SimpleUser {
 
     // Use hold modifier to produce the appropriate SDP offer to place call on hold
     if (hold) {
-      options.sessionDescriptionHandlerModifiers = [sessionDescriptionHandler.holdModifier];
+      options.sessionDescriptionHandlerModifiers = [
+        (description): Promise<RTCSessionDescriptionInit> => sessionDescriptionHandler.holdModifier(description)
+      ];
     }
 
     // Send re-INVITE

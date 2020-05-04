@@ -1,4 +1,7 @@
-// tslint:disable: no-console
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platform/web";
 import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users";
 import { getButton, getVideo } from "./demo-utils";

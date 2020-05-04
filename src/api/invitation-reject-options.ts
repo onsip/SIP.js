@@ -6,7 +6,7 @@ export interface InvitationRejectOptions {
   /**
    * Body
    */
-  body?: string | { body: string, contentType: string };
+  body?: string | { body: string; contentType: string };
   /**
    * Array of extra headers added to the response.
    */

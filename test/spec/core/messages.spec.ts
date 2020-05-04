@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Grammar,
   IncomingRequestMessage as IncomingRequest,
@@ -20,14 +21,11 @@ describe("Core Messages", () => {
     let to: URI;
 
     beforeEach(() => {
-      const getLogger = jasmine.createSpy("getLogger").and.returnValue("getLogger");
       method = "method";
       ruri = new URI("sip", "ruri", "domain");
       from = new URI("sip", "from", "domain");
       to = new URI("sip", "to", "domain");
-
       outgoingRequest = new OutgoingRequest(method, ruri, from, to);
-
     });
 
     it("sets up instance variables", () => {
@@ -104,7 +102,6 @@ describe("Core Messages", () => {
         expect(outgoingRequest.getHeaders(name)).toEqual(value);
       });
 
-      // tslint:disable-next-line:max-line-length
       it("returns all the headers in an array with the given name from extraHeaders if the header is not in headers", () => {
         outgoingRequest.extraHeaders = [];
         outgoingRequest.extraHeaders.push("Event: " + "extraEvent");
@@ -112,7 +109,6 @@ describe("Core Messages", () => {
         expect(outgoingRequest.getHeaders("event")).toEqual(["extraEvent"]);
       });
 
-      // tslint:disable-next-line:max-line-length
       it("returns an empty array if the header is not found in headers and the header is not found in extraHeaders", () => {
         outgoingRequest.extraHeaders = [];
         outgoingRequest.extraHeaders.push("Event: " + "extraEvent");
@@ -149,19 +145,19 @@ describe("Core Messages", () => {
       it("calculates the correct Content-lenght for a given body", () => {
         let body = "a";
 
-        let length = Utils.str_utf8_length(body);
+        let length = Utils.utf8Length(body);
         expect(length).toBe(1);
 
         body = "ä";
-        length = Utils.str_utf8_length(body);
+        length = Utils.utf8Length(body);
         expect(length).toBe(2);
 
         body = "test€";
-        length = Utils.str_utf8_length(body);
+        length = Utils.utf8Length(body);
         expect(length).toBe(7);
 
         body = "test€fantasticääüüöööööö€€€";
-        length = Utils.str_utf8_length(body);
+        length = Utils.utf8Length(body);
         expect(length).toBe(45);
       });
     });
@@ -171,7 +167,6 @@ describe("Core Messages", () => {
     let incomingRequest: IncomingRequest;
 
     beforeEach(() => {
-      const getLogger = jasmine.createSpy("getLogger").and.returnValue("logger");
       incomingRequest = new IncomingRequest();
     });
 
@@ -369,7 +364,6 @@ describe("Core Messages", () => {
     let incomingResponse: IncomingResponse;
 
     beforeEach(() => {
-      const getLogger = jasmine.createSpy("getLogger").and.returnValue("logger");
       incomingResponse = new IncomingResponse();
     });
 

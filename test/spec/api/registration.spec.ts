@@ -85,7 +85,7 @@ describe("API Registration", () => {
     });
 
     describe("Alice dispose(), dispose()", () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         resetSpies();
         registerer.dispose();
         registerer.dispose();
@@ -109,7 +109,7 @@ describe("API Registration", () => {
         statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             const expires = contact.getParam("expires");
@@ -119,7 +119,7 @@ describe("API Registration", () => {
         };
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
-            onAccept: (response) => {
+            onAccept: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -170,7 +170,7 @@ describe("API Registration", () => {
       beforeEach(async () => {
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toEqual("*");
             const expires = request.message.parseHeader("expires");
@@ -204,13 +204,10 @@ describe("API Registration", () => {
     });
 
     describe("Alice unregister(), dispose()", () => {
-      let threw: boolean;
-
       beforeEach(async () => {
-        threw = false;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.accept();
           }
         };
@@ -239,13 +236,13 @@ describe("API Registration", () => {
         threw = false;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.accept();
           }
         };
         registerer.unregister();
         registerer.unregister()
-          .catch((error) => {
+          .catch(() => {
             threw = true;
           });
         await alice.transport.waitReceived(); // 200
@@ -280,7 +277,7 @@ describe("API Registration", () => {
         resetSpies();
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -316,13 +313,14 @@ describe("API Registration", () => {
         resetSpies();
         statusCode = undefined;
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onRegisterRequest: (request): void => {
             return;
           }
         };
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -355,7 +353,7 @@ describe("API Registration", () => {
         statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             cseq = request.message.cseq;
@@ -369,7 +367,7 @@ describe("API Registration", () => {
         };
         const options: RegistererRegisterOptions = {
           requestDelegate: {
-            onAccept: (response) => {
+            onAccept: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -428,7 +426,7 @@ describe("API Registration", () => {
         beforeEach(async () => {
           resetSpies();
           registrar.userAgent.delegate = {
-            onRegisterRequest: (request) => {
+            onRegisterRequest: (request): void => {
               const contact = request.message.parseHeader("contact");
               expect(contact).toBeDefined();
               cseq++;
@@ -467,7 +465,7 @@ describe("API Registration", () => {
         beforeEach(async () => {
           resetSpies();
           registrar.userAgent.delegate = {
-            onRegisterRequest: (request) => {
+            onRegisterRequest: (request): void => {
               const contact = request.message.parseHeader("contact");
               expect(contact).toBeDefined();
               expires = contact.getParam("expires");
@@ -505,7 +503,7 @@ describe("API Registration", () => {
         beforeEach(async () => {
           resetSpies();
           registrar.userAgent.delegate = {
-            onRegisterRequest: (request) => {
+            onRegisterRequest: (request): void => {
               const contact = request.message.parseHeader("contact");
               expect(contact).toBeDefined();
               cseq++;
@@ -545,7 +543,7 @@ describe("API Registration", () => {
         count = 0;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             if (count === 0) {
@@ -594,7 +592,7 @@ describe("API Registration", () => {
         threw = false;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             request.accept({
@@ -646,7 +644,7 @@ describe("API Registration", () => {
         resetSpies();
         const options: RegistererRegisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -682,13 +680,14 @@ describe("API Registration", () => {
         resetSpies();
         statusCode = undefined;
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onRegisterRequest: (request): void => {
             return;
           }
         };
         const options: RegistererRegisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -716,7 +715,7 @@ describe("API Registration", () => {
       beforeEach(async () => {
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.reject({ statusCode: 423 });
           }
         };
@@ -745,7 +744,7 @@ describe("API Registration", () => {
         count = 0;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             count++;
             if (count === 1) {
               request.reject({
@@ -804,7 +803,7 @@ describe("API Registration", () => {
       beforeEach(async () => {
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.reject({
               extraHeaders: [`Retry-After: ${retryAfter}`],
               statusCode: 500
@@ -855,7 +854,7 @@ describe("API Registration", () => {
       beforeEach(async () => {
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.reject({
               extraHeaders: [`Retry-After: ${retryAfter}`],
               statusCode: 503

@@ -60,6 +60,7 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
           this.delegate.onProgress({
             message,
             session: this.dialog,
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             prack: (options?: RequestOptions): OutgoingPrackRequest => {
               throw new Error("Unimplemented.");
             }

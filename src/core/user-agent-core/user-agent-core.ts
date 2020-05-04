@@ -490,7 +490,7 @@ export class UserAgentCore {
     // header field MUST list the set of methods supported by the UAS
     // generating the message.
     // https://tools.ietf.org/html/rfc3261#section-8.2.1
-    if (AllowedMethods.indexOf(message.method) === -1) {
+    if (!AllowedMethods.includes(message.method)) {
       const allowHeader = "Allow: " + AllowedMethods.toString();
       this.replyStateless(message, {
         statusCode: 405,
@@ -520,7 +520,7 @@ export class UserAgentCore {
     // the request with a 404 (Not Found) response.
     // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
     const ruri = message.ruri;
-    const ruriMatches = (uri: URI | undefined) => {
+    const ruriMatches = (uri: URI | undefined): boolean => {
       return !!uri && uri.user === ruri.user;
     };
     if (

@@ -91,6 +91,7 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
    * @param contacts - Contacts to redirect to.
    * @param options - Redirect options bucket.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
     this.dialog.signalingStateRollback();
     this.dialog.reinviteUserAgentServer = undefined; // ACK will be handled by transaction

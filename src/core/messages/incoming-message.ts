@@ -15,8 +15,9 @@ export class IncomingMessage {
   public from!: NameAddrHeader;
   public callId!: string;
   public cseq!: number;
-  public via!: {host: string, port: number};
-  public headers: {[name: string]: Array<{ parsed?: any, raw: string }>} = {};
+  public via!: {host: string; port: number};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public headers: {[name: string]: Array<{ parsed?: any; raw: string }>} = {};
   public referTo: string | undefined;
   public data!: string;
 
@@ -60,6 +61,7 @@ export class IncomingMessage {
    * @returns Array - with all the headers of the specified name.
    */
   public getHeaders(name: string): Array<string> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const header: Array<any> = this.headers[headerize(name)];
     const result: Array<string> = [];
 
@@ -88,7 +90,8 @@ export class IncomingMessage {
    * @returns Parsed header object, undefined if the
    *   header is not present or in case of a parsing error.
    */
-  public parseHeader(name: string, idx: number = 0): any | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public parseHeader(name: string, idx = 0): any | undefined {
     name = headerize(name);
 
     if (!this.headers[name]) {
@@ -129,7 +132,8 @@ export class IncomingMessage {
    * @example
    * message.s('via',3).port
    */
-  public s(name: string, idx: number = 0): any | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public s(name: string, idx = 0): any | undefined {
     return this.parseHeader(name, idx);
   }
 

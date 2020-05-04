@@ -20,16 +20,6 @@ import { ClientTransactionUser } from "./transaction-user";
  * @public
  */
 export abstract class ClientTransaction extends Transaction {
-  private static makeId(request: OutgoingRequestMessage): string {
-    if (request.method === "CANCEL") {
-      if (!request.branch) {
-        throw new Error("Outgoing CANCEL request without a branch.");
-      }
-      return request.branch;
-    } else {
-      return "z9hG4bK" + Math.floor(Math.random() * 10000000);
-    }
-  }
 
   protected constructor(
     private _request: OutgoingRequestMessage,
@@ -54,17 +44,21 @@ export abstract class ClientTransaction extends Transaction {
     _request.setViaHeader(this.id, transport.protocol);
   }
 
+  private static makeId(request: OutgoingRequestMessage): string {
+    if (request.method === "CANCEL") {
+      if (!request.branch) {
+        throw new Error("Outgoing CANCEL request without a branch.");
+      }
+      return request.branch;
+    } else {
+      return "z9hG4bK" + Math.floor(Math.random() * 10000000);
+    }
+  }
+
   /** The outgoing request the transaction handling. */
   get request(): OutgoingRequestMessage {
     return this._request;
   }
-
-  /**
-   * Receive incoming responses from the transport which match this transaction.
-   * Responses will be delivered to the transaction user as necessary.
-   * @param response - The incoming response.
-   */
-  public abstract receiveResponse(response: IncomingResponseMessage): void;
 
   /**
    * A 408 to non-INVITE will always arrive too late to be useful ([3]),
@@ -81,4 +75,11 @@ export abstract class ClientTransaction extends Transaction {
       this.user.onRequestTimeout();
     }
   }
+
+  /**
+   * Receive incoming responses from the transport which match this transaction.
+   * Responses will be delivered to the transaction user as necessary.
+   * @param response - The incoming response.
+   */
+  public abstract receiveResponse(response: IncomingResponseMessage): void;
 }

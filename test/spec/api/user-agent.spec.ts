@@ -11,6 +11,7 @@ import { soon } from "../../support/api/utils";
 describe("API UserAgent", () => {
   let alice: UserFake;
   let bob: UserFake;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let target: URI;
 
   beforeEach(async () => {

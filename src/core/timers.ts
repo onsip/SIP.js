@@ -1,6 +1,6 @@
-const T1: number = 500;
-const T2: number = 4000;
-const T4: number = 5000;
+const T1 = 500;
+const T2 = 4000;
+const T4 = 5000;
 
 /**
  * Timers.

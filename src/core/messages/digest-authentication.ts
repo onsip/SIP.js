@@ -18,7 +18,7 @@ export class DigestAuthentication {
   private cnonce: string | undefined;
   private nc: number;
   private ncHex: string;
-  private response: any | undefined; // CryptoJS.WordArray
+  private response: CryptoJS.WordArray | undefined;
   private algorithm: string | undefined;
   private realm: string | undefined;
   private nonce: string | undefined;
@@ -48,6 +48,7 @@ export class DigestAuthentication {
    * @param challenge -
    * @returns true if credentials were successfully generated, false otherwise.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean {
     // Inspect and validate the challenge.
 
@@ -117,7 +118,7 @@ export class DigestAuthentication {
   public toString(): string {
     const authParams: Array<string> = [];
 
-    if (! this.response) {
+    if (!this.response) {
       throw new Error("response field does not exist, cannot generate Authorization header");
     }
 
@@ -158,7 +159,7 @@ export class DigestAuthentication {
     if (this.qop === "auth") {
       // HA2 = MD5(A2) = MD5(method:digestURI)
       ha2 = MD5(this.method + ":" + this.uri);
-      // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)
+      // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)`
       this.response = MD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth:" + ha2);
 
     } else if (this.qop === "auth-int") {

@@ -1,4 +1,4 @@
-import { URI } from "../core";
+import { Logger, URI } from "../core";
 import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
 import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
@@ -223,7 +223,8 @@ export interface UserAgentOptions {
    * For more information about creating your own transport see `Transport`.
    * @defaultValue `WebSocketTransport`
    */
-  transportConstructor?: new (logger: any, options: any) => Transport;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transportConstructor?: new (logger: Logger, options: any) => Transport;
 
   /**
    * An options bucket object passed to `transportConstructor` when instantiated.
@@ -231,7 +232,7 @@ export interface UserAgentOptions {
    * See WebSocket Transport Configuration Parameters for the full list of options for the default transport.
    * @defaultValue `{}`
    */
-  transportOptions?: any;
+  transportOptions?: unknown;
 
   /**
    * SIP Addresses-of-Record URI associated with the user agent.

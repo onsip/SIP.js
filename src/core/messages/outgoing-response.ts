@@ -1,6 +1,6 @@
 import { Body } from "./body";
 import { IncomingRequestMessage } from "./incoming-request-message";
-import { getReasonPhrase, newTag, str_utf8_length } from "./utils";
+import { getReasonPhrase, newTag, utf8Length } from "./utils";
 
 /**
  * A SIP message sent from a local server to a remote client.
@@ -167,7 +167,7 @@ export function constructOutgoingResponse(
 
   if (options.body) {
     response += "Content-Type: " + options.body.contentType + CRLF;
-    response += "Content-Length: " + str_utf8_length(options.body.content) + CRLF + CRLF;
+    response += "Content-Length: " + utf8Length(options.body.content) + CRLF + CRLF;
     response += options.body.content;
   } else {
     response += "Content-Length: " + 0 + CRLF + CRLF;

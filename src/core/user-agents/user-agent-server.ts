@@ -133,6 +133,7 @@ export class UserAgentServer implements IncomingRequest {
     return response;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public trying(options?: ResponseOptions): OutgoingResponse {
     if (!this.tryingable) {
       throw new TransactionStateError(
@@ -265,6 +266,7 @@ export class UserAgentServer implements IncomingRequest {
       onStateChange: (newState) => {
         if (newState === TransactionState.Terminated) {
           // Remove the terminated transaction from the core.
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           this.core.userAgentServers.delete(userAgentServerId);
           this.dispose();
         }

@@ -6,8 +6,6 @@ import { OutgoingResponse, ResponseOptions } from "../outgoing-response";
 import { OutgoingAckRequest } from "./ack";
 import { OutgoingPrackRequest } from "./prack";
 
-// tslint:disable:no-empty-interface
-
 ////////////////////
 // Incoming INVITE
 //

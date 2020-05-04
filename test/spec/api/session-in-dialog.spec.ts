@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   Invitation,
   Inviter,
@@ -134,11 +135,12 @@ describe("API Session In-Dialog", () => {
         }
         const delegate = invitation.dialog.delegate; // save current dialog delegate
         invitation.dialog.delegate = {
-          onInvite: (request) => {
+          onInvite: (request): void => {
             if (!invitation.dialog) {
               throw new Error("Session dialog undefined.");
             }
             invitation.dialog.delegate = delegate; // restore dialog delegate
+            // eslint-disable-next-line max-len
             const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
             request.reject({ statusCode: 407, extraHeaders });
           }
@@ -192,6 +194,7 @@ describe("API Session In-Dialog", () => {
           throw new Error("SDH undefined.");
         }
         const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sdh as any).getDescriptionUndefinedBodyOnce = true;
       }
       const session: Session = inviter;
@@ -347,7 +350,7 @@ describe("API Session In-Dialog", () => {
     beforeEach(async () => {
       resetSpies();
       invitation.delegate = {
-        onInvite: () => { return; } // ignore invite
+        onInvite: (): void => { return; } // ignore invite
       };
       return inviter.invite({ withoutSdp });
     });
@@ -408,6 +411,7 @@ describe("API Session In-Dialog", () => {
           throw new Error("SDH undefined.");
         }
         const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sdh as any).getDescriptionRejectOnce = true;
       }
       const session: Session = inviter;
@@ -445,6 +449,7 @@ describe("API Session In-Dialog", () => {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function reinviteRejectedRollbackFailure(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
@@ -453,6 +458,7 @@ describe("API Session In-Dialog", () => {
           throw new Error("SDH undefined.");
         }
         const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sdh as any).getDescriptionRejectOnce = true;
       }
       const session: Session = inviter;
@@ -583,7 +589,7 @@ describe("API Session In-Dialog", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.delegate = {
-        onInvite: (session) => {
+        onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
@@ -667,6 +673,7 @@ describe("API Session In-Dialog", () => {
         beforeEach(async () => {
           resetSpies();
           invitation.accept();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (invitation.sessionDescriptionHandler as any).setDescriptionWaitOnce = true;
           await alice.transport.waitSent(); // ACK
         });
@@ -835,7 +842,7 @@ describe("API Session In-Dialog", () => {
               const sdh = sessionDescriptionHandler as jasmine.SpyObj<Required<SessionDescriptionHandler>>;
               sdh.getDescription.and.callFake(() => Promise.reject(new Error("Failed to get description.")));
               return session.invite()
-                .catch((error) => {
+                .catch(() => {
                   return;
                 });
             });
@@ -1241,7 +1248,7 @@ describe("API Session In-Dialog", () => {
             resetSpies();
             inviter.delegate = undefined;
             invitation.delegate = {
-              onMessage: (request) => request.accept()
+              onMessage: (request): Promise<void> => request.accept()
             };
             inviter.message();
             await alice.transport.waitSent(); // MESSAGE
@@ -1276,7 +1283,7 @@ describe("API Session In-Dialog", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.delegate = {
-        onInvite: (session) => {
+        onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
@@ -1332,7 +1339,7 @@ describe("API Session In-Dialog", () => {
             beforeEach(async () => {
               resetSpies3();
               alice.userAgent.delegate = {
-                onInvite: (session) => {
+                onInvite: (session): void => {
                   replacesInvitation = session;
                 }
               };
@@ -1345,7 +1352,7 @@ describe("API Session In-Dialog", () => {
               };
               replacesInviter = new Inviter(carol.userAgent, alice.uri, options);
               return replacesInviter.invite()
-                .catch((error) => {
+                .catch(() => {
                   return;
                 });
             });
@@ -1373,7 +1380,7 @@ describe("API Session In-Dialog", () => {
             beforeEach(async () => {
               resetSpies3();
               alice.userAgent.delegate = {
-                onInvite: (session) => {
+                onInvite: (session): void => {
                   replacesInvitation = session;
                 }
               };
@@ -1387,7 +1394,7 @@ describe("API Session In-Dialog", () => {
               replacesInviter = new Inviter(carol.userAgent, alice.uri, options);
               return replacesInviter.invite()
                 .then(() => alice.transport.waitSent()) // provisional response
-                .catch((error) => {
+                .catch(() => {
                   return;
                 });
             });

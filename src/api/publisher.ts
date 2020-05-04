@@ -10,7 +10,6 @@ import {
   OutgoingRequestMessage,
   URI
 } from "../core";
-import { getReasonPhrase } from "../core/messages/utils";
 import { _makeEmitter, Emitter } from "./emitter";
 import { PublisherOptions } from "./publisher-options";
 import { PublisherPublishOptions } from "./publisher-publish-options";
@@ -23,14 +22,14 @@ import { UserAgent } from "./user-agent";
  * A publisher publishes a publication (outgoing PUBLISH).
  * @public
  */
-export class Publisher extends EventEmitter {
+export class Publisher {
   private event: string;
-  private options: any;
+  private options: PublisherOptions;
   private target: URI;
-  private pubRequestBody: any;
+  private pubRequestBody: string | undefined;
   private pubRequestExpires: number;
   private pubRequestEtag: string | undefined;
-  private publishRefreshTimer: any | undefined;
+  private publishRefreshTimer: number | undefined;
 
   private disposed = false;
   private id: string;
@@ -52,7 +51,6 @@ export class Publisher extends EventEmitter {
    * @param options - Options bucket. See {@link PublisherOptions} for details.
    */
   public constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options: PublisherOptions = {}) {
-    super();
     this.userAgent = userAgent;
 
     options.extraHeaders = (options.extraHeaders || []).slice();
@@ -71,7 +69,7 @@ export class Publisher extends EventEmitter {
     this.target = targetURI;
     this.event = eventType;
     this.options = options;
-    this.pubRequestExpires = this.options.expires;
+    this.pubRequestExpires = options.expires;
 
     this.logger = userAgent.getLogger("sip.Publisher");
 
@@ -81,8 +79,8 @@ export class Publisher extends EventEmitter {
     let body: Body | undefined;
     if (options.body && options.contentType) {
       const contentDisposition = "render";
-      const contentType = options.contentType as string;
-      const content = options.body as string;
+      const contentType = options.contentType;
+      const content = options.body;
       body = {
         contentDisposition,
         contentType,
@@ -153,6 +151,7 @@ export class Publisher extends EventEmitter {
    * Publish.
    * @param content - Body to publish
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public publish(content: string, options: PublisherPublishOptions = {}): Promise<void> {
     // Clean up before the run
     if (this.publishRefreshTimer) {
@@ -166,6 +165,9 @@ export class Publisher extends EventEmitter {
 
     if (this.pubRequestExpires === 0) {
       // This is Initial request after unpublish
+      if (this.options.expires === undefined) {
+        throw new Error("Expires undefined.");
+      }
       this.pubRequestExpires = this.options.expires;
       this.pubRequestEtag = undefined;
     }
@@ -178,6 +180,7 @@ export class Publisher extends EventEmitter {
   /**
    * Unpublish.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public unpublish(options: PublisherUnpublishOptions = {}): Promise<void> {
     // Clean up before the run
     if (this.publishRefreshTimer) {
@@ -198,11 +201,9 @@ export class Publisher extends EventEmitter {
   /** @internal */
   protected receiveResponse(response: IncomingResponseMessage): void {
     const statusCode: number = response.statusCode || 0;
-    const cause: string = getReasonPhrase(statusCode);
 
     switch (true) {
       case /^1[0-9]{2}$/.test(statusCode.toString()):
-        this.emit("progress", response, cause);
         break;
       case /^2[0-9]{2}$/.test(statusCode.toString()):
         // Set SIP-Etag
@@ -214,7 +215,7 @@ export class Publisher extends EventEmitter {
 
         // Update Expire
         if (response.hasHeader("Expires")) {
-          const expires: number = Number(response.getHeader("Expires"));
+          const expires = Number(response.getHeader("Expires"));
           if (typeof expires === "number" && expires >= 0 && expires <= this.pubRequestExpires) {
             this.pubRequestExpires = expires;
           } else {
@@ -239,7 +240,9 @@ export class Publisher extends EventEmitter {
         if (this.pubRequestEtag !== undefined && this.pubRequestExpires !== 0) {
           this.logger.warn("412 response to PUBLISH, recovering");
           this.pubRequestEtag = undefined;
-          this.emit("progress", response, cause);
+          if (this.options.body === undefined) {
+            throw new Error("Body undefined.");
+          }
           this.publish(this.options.body);
         } else {
           this.logger.warn("412 response to PUBLISH, recovery failed");
@@ -251,11 +254,13 @@ export class Publisher extends EventEmitter {
       case /^423$/.test(statusCode.toString()):
         // 423 code means we need to adjust the Expires interval up
         if (this.pubRequestExpires !== 0 && response.hasHeader("Min-Expires")) {
-          const minExpires: number = Number(response.getHeader("Min-Expires"));
+          const minExpires = Number(response.getHeader("Min-Expires"));
           if (typeof minExpires === "number" || minExpires > this.pubRequestExpires) {
             this.logger.warn("423 code in response to PUBLISH, adjusting the Expires value and trying to recover");
             this.pubRequestExpires = minExpires;
-            this.emit("progress", response, cause);
+            if (this.options.body === undefined) {
+              throw new Error("Body undefined.");
+            }
             this.publish(this.options.body);
           } else {
             this.logger.warn("Bad 423 response Min-Expires header received for PUBLISH");
@@ -322,7 +327,8 @@ export class Publisher extends EventEmitter {
   }
 
   private sendPublishRequest(): OutgoingPublishRequest {
-    const reqOptions: any = Object.create(this.options || Object.prototype);
+    const reqOptions = { ...this.options };
+
     reqOptions.extraHeaders = (this.options.extraHeaders || []).slice();
 
     reqOptions.extraHeaders.push("Event: " + this.event);
@@ -336,6 +342,9 @@ export class Publisher extends EventEmitter {
     const params = this.options.params || {};
     let bodyAndContentType: BodyAndContentType | undefined;
     if (this.pubRequestBody !== undefined) {
+      if (this.options.contentType === undefined) {
+        throw new Error("Content type undefined.");
+      }
       bodyAndContentType = {
         body: this.pubRequestBody,
         contentType: this.options.contentType
@@ -363,7 +372,7 @@ export class Publisher extends EventEmitter {
    * Transition publication state.
    */
   private stateTransition(newState: PublisherState): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 

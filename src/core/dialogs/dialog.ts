@@ -25,6 +25,18 @@ import { DialogState } from "./dialog-state";
 export class Dialog {
 
   /**
+   * Dialog constructor.
+   * @param core - User agent core.
+   * @param dialogState - Initial dialog state.
+   */
+  protected constructor(
+    protected core: UserAgentCore,
+    protected dialogState: DialogState,
+  ) {
+    this.core.dialogs.set(this.id, this);
+   }
+
+  /**
    * When a UAC receives a response that establishes a dialog, it
    * constructs the state of the dialog.  This state MUST be maintained
    * for the duration of the dialog.
@@ -137,7 +149,7 @@ export class Dialog {
   public static initialDialogStateForUserAgentServer(
     incomingRequestMessage: IncomingRequestMessage,
     toTag: string,
-    early: boolean = false
+    early = false
   ): DialogState {
     // If the request arrived over TLS, and the Request-URI contained a SIPS
     // URI, the "secure" flag is set to TRUE.
@@ -205,18 +217,6 @@ export class Dialog {
     };
     return dialogState;
   }
-
-  /**
-   * Dialog constructor.
-   * @param core - User agent core.
-   * @param dialogState - Initial dialog state.
-   */
-  protected constructor(
-    protected core: UserAgentCore,
-    protected dialogState: DialogState,
-  ) {
-    this.core.dialogs.set(this.id, this);
-   }
 
   /** Destructor. */
   public dispose(): void {

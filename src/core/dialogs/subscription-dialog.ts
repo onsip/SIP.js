@@ -46,6 +46,43 @@ import { DialogState } from "./dialog-state";
  */
 export class SubscriptionDialog extends Dialog implements Subscription {
 
+  public delegate: SubscriptionDelegate | undefined;
+
+  private _autoRefresh: boolean;
+  private _subscriptionEvent: string;
+  private _subscriptionExpires: number;
+  private _subscriptionExpiresInitial: number;
+  private _subscriptionExpiresLastSet: number;
+  private _subscriptionRefresh: number | undefined;
+  private _subscriptionRefreshLastSet: number | undefined;
+  private _subscriptionState: SubscriptionState;
+
+  private logger: Logger;
+  private N: number | undefined;
+  private refreshTimer: number | undefined;
+
+  constructor(
+    subscriptionEvent: string,
+    subscriptionExpires: number,
+    subscriptionState: SubscriptionState,
+    core: UserAgentCore,
+    state: DialogState,
+    delegate?: SubscriptionDelegate
+  ) {
+    super(core, state);
+    this.delegate = delegate;
+    this._autoRefresh = false;
+    this._subscriptionEvent = subscriptionEvent;
+    this._subscriptionExpires = subscriptionExpires;
+    this._subscriptionExpiresInitial = subscriptionExpires;
+    this._subscriptionExpiresLastSet = Math.floor(Date.now() / 1000);
+    this._subscriptionRefresh = undefined;
+    this._subscriptionRefreshLastSet = undefined;
+    this._subscriptionState = subscriptionState;
+    this.logger = core.loggerFactory.getLogger("sip.subscribe-dialog");
+    this.logger.log(`SUBSCRIBE dialog ${this.id} constructed`);
+  }
+
   /**
    * When a UAC receives a response that establishes a dialog, it
    * constructs the state of the dialog.  This state MUST be maintained
@@ -144,43 +181,6 @@ export class SubscriptionDialog extends Dialog implements Subscription {
       secure
     };
     return dialogState;
-  }
-
-  public delegate: SubscriptionDelegate | undefined;
-
-  private _autoRefresh: boolean;
-  private _subscriptionEvent: string;
-  private _subscriptionExpires: number;
-  private _subscriptionExpiresInitial: number;
-  private _subscriptionExpiresLastSet: number;
-  private _subscriptionRefresh: number | undefined;
-  private _subscriptionRefreshLastSet: number | undefined;
-  private _subscriptionState: SubscriptionState;
-
-  private logger: Logger;
-  private N: any | undefined;
-  private refreshTimer: any | undefined;
-
-  constructor(
-    subscriptionEvent: string,
-    subscriptionExpires: number,
-    subscriptionState: SubscriptionState,
-    core: UserAgentCore,
-    state: DialogState,
-    delegate?: SubscriptionDelegate
-  ) {
-    super(core, state);
-    this.delegate = delegate;
-    this._autoRefresh = false;
-    this._subscriptionEvent = subscriptionEvent;
-    this._subscriptionExpires = subscriptionExpires;
-    this._subscriptionExpiresInitial = subscriptionExpires;
-    this._subscriptionExpiresLastSet = Math.floor(Date.now() / 1000);
-    this._subscriptionRefresh = undefined;
-    this._subscriptionRefreshLastSet = undefined;
-    this._subscriptionState = subscriptionState;
-    this.logger = core.loggerFactory.getLogger("sip.subscribe-dialog");
-    this.logger.log(`SUBSCRIBE dialog ${this.id} constructed`);
   }
 
   public dispose(): void {
@@ -316,7 +316,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     // When refreshing a subscription, a subscriber starts Timer N, set to
     // 64*T1, when it sends the SUBSCRIBE request.
     // https://tools.ietf.org/html/rfc6665#section-4.1.2.2
-    this.N = setTimeout(() => this.timer_N(), Timers.TIMER_N);
+    this.N = setTimeout(() => this.timerN(), Timers.TIMER_N);
     return uac;
   }
 
@@ -445,7 +445,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
 
   private stateTransition(newState: SubscriptionState, newExpires?: number): void {
     // Assert valid state transitions.
-    const invalidStateTransition = () => {
+    const invalidStateTransition = (): void => {
       this.logger.warn(`Invalid subscription state transition from ${this.subscriptionState} to ${newState}`);
     };
 
@@ -542,7 +542,7 @@ export class SubscriptionDialog extends Dialog implements Subscription {
    * cancel Timer N.
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
    */
-  private timer_N(): void {
+  private timerN(): void {
     this.logger.warn(`Timer N expired for SUBSCRIBE dialog. Timed out waiting for NOTIFY.`);
     if (this.subscriptionState !== SubscriptionState.Terminated) {
       this.stateTransition(SubscriptionState.Terminated);

@@ -6,11 +6,13 @@ import { Logger } from "./logger";
  * @public
  */
 export class LoggerFactory {
-  public builtinEnabled: boolean = true;
+  public builtinEnabled = true;
 
   private _level: Levels = Levels.log;
-  private _connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private loggers: any = {};
   private logger: Logger;
 
@@ -24,6 +26,7 @@ export class LoggerFactory {
       this._level = newLevel;
     } else if (newLevel > 3) {
       this._level = 3;
+    // eslint-disable-next-line no-prototype-builtins
     } else if (Levels.hasOwnProperty(newLevel)) {
       this._level = newLevel;
     } else {
@@ -31,10 +34,12 @@ export class LoggerFactory {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get connector(): ((level: string, category: string, label: string | undefined, content: any) => void) | undefined {
     return this._connector;
   }
   set connector(value: (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (level: string, category: string, label: string | undefined, content: any) => void
   ) | undefined) {
     if (!value) {
@@ -58,6 +63,7 @@ export class LoggerFactory {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public genericLog(levelToLog: Levels, category: string, label: string | undefined, content: any): void {
     if (this.level >= levelToLog) {
       if (this.builtinEnabled) {
@@ -70,8 +76,10 @@ export class LoggerFactory {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private print(levelToLog: Levels, category: string, label: string | undefined, content: any): void {
     if (typeof content === "string") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const prefix: Array<any> = [new Date(), category];
       if (label) {
         prefix.push(label);
@@ -80,19 +88,19 @@ export class LoggerFactory {
     }
     switch (levelToLog) {
       case Levels.error:
-        // tslint:disable-next-line:no-console
+        // eslint-disable-next-line no-console
         console.error(content);
         break;
       case Levels.warn:
-        // tslint:disable-next-line:no-console
+        // eslint-disable-next-line no-console
         console.warn(content);
         break;
       case Levels.log:
-        // tslint:disable-next-line:no-console
+        // eslint-disable-next-line no-console
         console.log(content);
         break;
       case Levels.debug:
-        // tslint:disable-next-line:no-console
+        // eslint-disable-next-line no-console
         console.debug(content);
         break;
       default:

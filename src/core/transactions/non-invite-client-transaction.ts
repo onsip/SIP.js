@@ -15,8 +15,8 @@ import { ClientTransactionUser } from "./transaction-user";
  * @public
  */
 export class NonInviteClientTransaction extends ClientTransaction {
-  private F: any | undefined;
-  private K: any | undefined;
+  private F: number | undefined;
+  private K: number | undefined;
 
   /**
    * Constructor
@@ -44,7 +44,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
     // transaction SHOULD set timer F to fire in 64*T1 seconds. The request
     // MUST be passed to the transport layer for transmission.
     // https://tools.ietf.org/html/rfc3261#section-17.1.2.2
-    this.F = setTimeout(() => this.timer_F(), Timers.TIMER_F);
+    this.F = setTimeout(() => this.timerF(), Timers.TIMER_F);
     this.send(request.toString()).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send initial outgoing request.");
     });
@@ -133,6 +133,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
           }
           return;
         }
+        break;
       case TransactionState.Completed:
         // The "Completed" state exists to buffer any additional response
         // retransmissions that may be received (which is why the client
@@ -177,7 +178,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    */
   private stateTransition(newState: TransactionState, dueToTransportError = false): void {
     // Assert valid state transitions.
-    const invalidStateTransition = () => {
+    const invalidStateTransition = (): void => {
       throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
     };
 
@@ -224,7 +225,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
         clearTimeout(this.F);
         this.F = undefined;
       }
-      this.K = setTimeout(() => this.timer_K(), Timers.TIMER_K);
+      this.K = setTimeout(() => this.timerK(), Timers.TIMER_K);
     }
 
     // Once the transaction is in the terminated state, it MUST be destroyed immediately.
@@ -245,7 +246,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * a timeout, and the client transaction MUST transition to the terminated state.
    * https://tools.ietf.org/html/rfc3261#section-17.1.2.2
    */
-  private timer_F(): void {
+  private timerF(): void {
     this.logger.debug(`Timer F expired for non-INVITE client transaction ${this.id}.`);
     if (this.state === TransactionState.Trying || this.state === TransactionState.Proceeding) {
       this.onRequestTimeout();
@@ -258,7 +259,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * MUST transition to the "Terminated" state.
    * https://tools.ietf.org/html/rfc3261#section-17.1.2.2
    */
-  private timer_K(): void {
+  private timerK(): void {
     if (this.state === TransactionState.Completed) {
       this.stateTransition(TransactionState.Terminated);
     }

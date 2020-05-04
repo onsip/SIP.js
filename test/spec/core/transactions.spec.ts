@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import {
   ClientTransaction,
   ClientTransactionUser,
@@ -69,10 +70,12 @@ const makeMockOutgoingRequest = (ruri: URI = defaultURI): jasmine.SpyObj<Outgoin
     }
     return `[${name}]`;
   });
-  request.setViaHeader.and.callFake((branch: string, scheme: string = "WSS") => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  request.setViaHeader.and.callFake((branch: string, scheme = "WSS") => {
     request.headers.via = [branch];
   });
   request.headers = {};
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return request as jasmine.SpyObj<OutgoingRequestMessage>;
 };
 
@@ -114,6 +117,7 @@ const makeMockTransport = (): jasmine.SpyObj<Transport> => {
   const transport = jasmine.createSpyObj<Transport>("Transport", [
     "send"
   ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (transport.protocol as any) = "TEST";
   transport.send.and.returnValue(Promise.resolve());
   return transport;
@@ -142,7 +146,7 @@ describe("Core Transactions", () => {
   const _5xxStatusCodesToTest = [500, 503];
   const _6xxStatusCodesToTest = [603, 699];
 
-  const executeTransactionTests = (transactionFactory: TransactionFactory) => {
+  const executeTransactionTests = (transactionFactory: TransactionFactory): void => {
     let transport: jasmine.SpyObj<Transport>;
     let user: jasmine.SpyObj<Required<TransactionUser>>;
     let transaction: Transaction;
@@ -191,7 +195,7 @@ describe("Core Transactions", () => {
   // https://tools.ietf.org/html/rfc3261#section-17.1
   describe("ClientTransactions", () => {
 
-    const executeClientTransactionTests = (clientTransactionFactory: ClientTransactionFactory) => {
+    const executeClientTransactionTests = (clientTransactionFactory: ClientTransactionFactory): void => {
       let request: jasmine.SpyObj<OutgoingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ClientTransactionUser>>;
@@ -271,7 +275,7 @@ describe("Core Transactions", () => {
 
       // TODO: These tests are weak. They could/should use real ACK messages.
       // https://tools.ietf.org/html/rfc3261#section-17.1.1.3
-      const non2xxAckTests = (requestsSent: number) => {
+      const non2xxAckTests = (requestsSent: number): void => {
         it("it MUST generate an ACK and pass it to the transport", () => {
           expect(transport.send).toHaveBeenCalledTimes(requestsSent);
           expect(transport.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
@@ -849,7 +853,7 @@ describe("Core Transactions", () => {
 
   // https://tools.ietf.org/html/rfc3261#section-17.2
   describe("ServerTransactions", () => {
-    const executeServerTransactionTests = (serverTransactionFactory: ServerTransactionFactory) => {
+    const executeServerTransactionTests = (serverTransactionFactory: ServerTransactionFactory): void => {
       let request: jasmine.SpyObj<IncomingRequestMessage>;
       let transport: jasmine.SpyObj<Transport>;
       let user: jasmine.SpyObj<Required<ServerTransactionUser>>;

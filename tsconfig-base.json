@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "CommonJS",
+    "target": "es2016",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
     "lib": [
-      "es2015",
+      "es2016",
       "dom"
-    ]
+    ],
+    "types" : ["crypto-js", "events"] // white list to avoid the unexpected like @types/node which brings in esnext)
   },
   "include": [
     "**/*.ts"

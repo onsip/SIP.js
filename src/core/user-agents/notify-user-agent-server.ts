@@ -4,6 +4,11 @@ import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function instanceOfDialog(object: any): object is Dialog {
+  return object.userAgentCore !== undefined;
+}
+
 /**
  * NOTIFY UAS.
  * @public
@@ -25,8 +30,4 @@ export class NotifyUserAgentServer extends UserAgentServer implements IncomingNo
         dialogOrCore;
     super(NonInviteServerTransaction, userAgentCore, message, delegate);
   }
-}
-
-function instanceOfDialog(object: any): object is Dialog {
-  return object.userAgentCore !== undefined;
 }

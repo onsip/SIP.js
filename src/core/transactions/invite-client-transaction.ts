@@ -17,9 +17,9 @@ import { ClientTransactionUser } from "./transaction-user";
  * @public
  */
 export class InviteClientTransaction extends ClientTransaction {
-  private B: any | undefined;
-  private D: any | undefined;
-  private M: any | undefined;
+  private B: number | undefined;
+  private D: number | undefined;
+  private M: number | undefined;
 
   /**
    * Map of 2xx to-tag to ACK.
@@ -60,7 +60,7 @@ export class InviteClientTransaction extends ClientTransaction {
     // While not spelled out in the RFC, Timer B is the maximum amount of time that a sender
     // will wait for an INVITE message to be acknowledged (a SIP response message is received).
     // So Timer B should be cleared when the transaction state proceeds from "Calling".
-    this.B = setTimeout(() => this.timer_B(), Timers.TIMER_B);
+    this.B = setTimeout(() => this.timerB(), Timers.TIMER_B);
     this.send(request.toString()).catch((error: TransportError) => {
       this.logTransportError(error, "Failed to send initial outgoing request.");
     });
@@ -380,7 +380,7 @@ export class InviteClientTransaction extends ClientTransaction {
    */
   private stateTransition(newState: TransactionState, dueToTransportError = false): void {
     // Assert valid state transitions.
-    const invalidStateTransition = () => {
+    const invalidStateTransition = (): void => {
       throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
     };
 
@@ -437,14 +437,14 @@ export class InviteClientTransaction extends ClientTransaction {
     // and a value of zero seconds for reliable transports.
     // https://tools.ietf.org/html/rfc6026#section-8.4
     if (newState === TransactionState.Completed) {
-      this.D = setTimeout(() => this.timer_D(), Timers.TIMER_D);
+      this.D = setTimeout(() => this.timerD(), Timers.TIMER_D);
     }
 
     // The client transaction MUST transition to the "Accepted" state,
     // and Timer M MUST be started with a value of 64*T1.
     // https://tools.ietf.org/html/rfc6026#section-8.4
     if (newState === TransactionState.Accepted) {
-      this.M = setTimeout(() => this.timer_M(), Timers.TIMER_M);
+      this.M = setTimeout(() => this.timerM(), Timers.TIMER_M);
     }
 
     // Once the transaction is in the "Terminated" state, it MUST be destroyed immediately.
@@ -469,7 +469,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * transaction is in the "Calling" state.
    * https://tools.ietf.org/html/rfc3261#section-17.1.1.2
    */
-  private timer_A(): void {
+  private timerA(): void {
     // TODO
   }
 
@@ -479,7 +479,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * has occurred.  The client transaction MUST NOT generate an ACK.
    * https://tools.ietf.org/html/rfc3261#section-17.1.1.2
    */
-  private timer_B(): void {
+  private timerB(): void {
     this.logger.debug(`Timer B expired for INVITE client transaction ${this.id}.`);
     if (this.state === TransactionState.Calling) {
       this.onRequestTimeout();
@@ -492,7 +492,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * the client transaction MUST move to the "Terminated" state.
    * https://tools.ietf.org/html/rfc6026#section-8.4
    */
-  private timer_D(): void {
+  private timerD(): void {
     this.logger.debug(`Timer D expired for INVITE client transaction ${this.id}.`);
     if (this.state === TransactionState.Completed) {
       this.stateTransition(TransactionState.Terminated);
@@ -504,7 +504,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * state, the client transaction MUST move to the "Terminated" state.
    * https://tools.ietf.org/html/rfc6026#section-8.4
    */
-  private timer_M(): void {
+  private timerM(): void {
     this.logger.debug(`Timer M expired for INVITE client transaction ${this.id}.`);
     if (this.state === TransactionState.Accepted) {
       this.stateTransition(TransactionState.Terminated);

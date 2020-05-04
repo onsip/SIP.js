@@ -1,4 +1,3 @@
-import { IncomingRequestMessage } from "../core";
 import {
   SessionDescriptionHandlerModifier,
   SessionDescriptionHandlerOptions

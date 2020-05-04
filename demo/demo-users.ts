@@ -3,6 +3,7 @@
 // users with these token suffixes. So, you still might run into a user besides yourself.
 
 function getCookie(key: string): string {
+  // eslint-disable-next-line no-useless-escape
   const re = new RegExp("(?:(?:^|.*;\s*) ?" + key + "\s*\=\s*([^;]*).*$)|^.*$");
   return document.cookie.replace(re, "$1");
 }

@@ -2,6 +2,18 @@ import { IncomingRequestMessage } from "./incoming-request-message";
 import { IncomingResponseMessage } from "./incoming-response-message";
 import { OutgoingRequestMessage } from "./outgoing-request-message";
 
+// If the Content-Disposition header field is missing, bodies of
+// Content-Type application/sdp imply the disposition "session", while
+// other content types imply "render".
+// https://tools.ietf.org/html/rfc3261#section-13.2.1
+function contentTypeToContentDisposition(contentType: string): string {
+  if (contentType === "application/sdp") {
+    return "session";
+  } else {
+    return "render";
+  }
+}
+
 /**
  * Message body.
  * @remarks
@@ -49,12 +61,25 @@ export interface Body {
  * @param bodyLegacy - Body Object
  * @internal
  */
-export function fromBodyLegacy(bodyLegacy: string | { body: string, contentType: string }): Body {
+export function fromBodyLegacy(bodyLegacy: string | { body: string; contentType: string }): Body {
   const content = (typeof bodyLegacy === "string") ? bodyLegacy : bodyLegacy.body;
   const contentType = (typeof bodyLegacy === "string") ? "application/sdp" : bodyLegacy.contentType;
   const contentDisposition = contentTypeToContentDisposition(contentType);
   const body: Body = { contentDisposition, contentType, content };
   return body;
+}
+
+/**
+ * User-Defined Type Guard for Body.
+ * @param body - Body to check.
+ * @internal
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isBody(body: any): body is Body {
+  return body &&
+    typeof body.content === "string" &&
+    typeof body.contentType === "string" &&
+    body.contentDisposition === undefined ? true : typeof body.contentDisposition === "string";
 }
 
 /**
@@ -141,28 +166,4 @@ export function getBody(
     contentType,
     content
   };
-}
-
-/**
- * User-Defined Type Guard for Body.
- * @param body - Body to check.
- * @internal
- */
-export function isBody(body: any): body is Body {
-  return body &&
-    typeof body.content === "string" &&
-    typeof body.contentType === "string" &&
-    body.contentDisposition === undefined ? true : typeof body.contentDisposition === "string";
-}
-
-// If the Content-Disposition header field is missing, bodies of
-// Content-Type application/sdp imply the disposition "session", while
-// other content types imply "render".
-// https://tools.ietf.org/html/rfc3261#section-13.2.1
-function contentTypeToContentDisposition(contentType: string): string {
-  if (contentType === "application/sdp") {
-    return "session";
-  } else {
-    return "render";
-  }
 }

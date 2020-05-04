@@ -35,17 +35,17 @@ export class Transport extends EventEmitter implements TransportDefinition {
   private connectPromise: Promise<void> | undefined;
   private connectResolve: (() => void) | undefined;
   private connectReject: ((error: Error) => void) | undefined;
-  private connectTimeout: any | undefined;
+  private connectTimeout: number | undefined;
 
   private disconnectPromise: Promise<void> | undefined;
   private disconnectResolve: (() => void) | undefined;
   private disconnectReject: ((error?: Error) => void) | undefined;
 
-  private keepAliveInterval: any | undefined;
-  private keepAliveDebounceTimeout: any | undefined;
+  private keepAliveInterval: number | undefined;
+  private keepAliveDebounceTimeout: number | undefined;
 
   private logger: Logger;
-  private transitioningState: boolean = false;
+  private transitioningState = false;
 
   constructor(logger: Logger, options?: TransportOptions) {
     super();
@@ -55,9 +55,10 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
     // guard deprecated options (remove this in version 16.x)
     if (options) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const optionsDeprecated: any = options;
-      const wsServersDeprecated: string | Array<string> | undefined = optionsDeprecated.wsServers;
-      const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated.maxReconnectionAttempts;
+      const wsServersDeprecated: string | Array<string> | undefined = optionsDeprecated?.wsServers;
+      const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated?.maxReconnectionAttempts;
       if (wsServersDeprecated !== undefined) {
         const deprecatedMessage =
           `The transport option "wsServers" as has apparently been specified and has been deprecated. ` +
@@ -91,12 +92,12 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
     // validate server URL
     const url = this.configuration.server;
-    const parsed: any | -1 = Grammar.parse(url, "absoluteURI");
+    const parsed: { scheme: string } | -1 = Grammar.parse(url, "absoluteURI");
     if (parsed === -1) {
       this.logger.error(`Invalid WebSocket Server URL "${url}"`);
       throw new Error("Invalid WebSocket Server URL");
     }
-    if (["wss", "ws", "udp"].indexOf(parsed.scheme) < 0) {
+    if (!["wss", "ws", "udp"].includes(parsed.scheme)) {
       this.logger.error(`Invalid scheme in WebSocket Server URL "${url}"`);
       throw new Error("Invalid scheme in WebSocket Server URL");
     }
@@ -209,6 +210,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
   /**
    * @internal
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public on(name: string, callback: (...args: any[]) => void): this {
     const deprecatedMessage =
       `A listener has been registered for the transport event "${name}". ` +
@@ -460,7 +462,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
       return;
     }
 
-    const data: any = ev.data;
+    const data = ev.data;
     let finishedData: string;
 
     // CRLF Keep Alive response from server. Clear our keep alive timeout.
@@ -547,7 +549,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
    * @internal
    */
   private transitionState(newState: TransportState, error?: Error): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): Error => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 
@@ -599,6 +601,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
     this._state = newState;
 
     // Local copies of connect promises (guarding against callbacks changing them indirectly)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const connectPromise = this.connectPromise;
     const connectResolve = this.connectResolve;
     const connectReject = this.connectReject;
@@ -611,6 +614,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
     }
 
     // Local copies of disconnect promises (guarding against callbacks changing them indirectly)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const disconnectPromise = this.disconnectPromise;
     const disconnectResolve = this.disconnectResolve;
     const disconnectReject = this.disconnectReject;

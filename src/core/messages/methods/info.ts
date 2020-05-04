@@ -1,8 +1,7 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
 import { IncomingRequest } from "../incoming-request";
 import { IncomingResponse } from "../incoming-response";
 import { OutgoingRequest } from "../outgoing-request";
-
-// tslint:disable:no-empty-interface
 
 /**
  * Incoming INFO request.

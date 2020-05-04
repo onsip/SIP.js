@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import * as Modifiers from "../../../../src/platform/web/modifiers";
 
 // TODO:

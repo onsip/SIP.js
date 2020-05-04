@@ -1,4 +1,4 @@
-// tslint:disable:no-empty-interface
+/* eslint-disable @typescript-eslint/no-empty-interface */
 /**
  * Options for {@link Publisher.unpublish}.
  * @public

@@ -38,7 +38,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
   /** Subscription state. */
   private subscriptionState: SubscriptionState;
   /** Timer N Id. */
-  private N: any | undefined;
+  private N: number | undefined;
 
   constructor(
     core: UserAgentCore,
@@ -252,7 +252,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
       // Add ourselves to the core's subscriber map.
       // This allows the core to route out of dialog NOTIFY messages to us.
       this.core.subscribers.set(this.subscriberId, this);
-      this.N = setTimeout(() => this.timer_N(), Timers.TIMER_N);
+      this.N = setTimeout(() => this.timerN(), Timers.TIMER_N);
     }
   }
 
@@ -336,7 +336,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
    * subscription attempt.
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.4
    */
-  private timer_N(): void {
+  private timerN(): void {
     this.logger.warn(`Timer N expired for SUBSCRIBE user agent client. Timed out waiting for NOTIFY.`);
     this.waitNotifyStop();
     if (this.delegate && this.delegate.onNotifyTimeout) {

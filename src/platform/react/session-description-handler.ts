@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/member-ordering */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { EventEmitter } from "events";
 import {
   mediaDevices,
@@ -9,8 +13,7 @@ import {
   BodyAndContentType,
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
-  SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions as SessionDescriptionHandlerOptionsDefinition,
+  SessionDescriptionHandlerModifier
 } from "../../api";
 import { SessionDescriptionHandlerError } from "../../api/exceptions";
 
@@ -637,6 +640,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   private setDirection(sdp: string): void {
+    // eslint-disable-next-line @typescript-eslint/prefer-regexp-exec
     const match = sdp.match(/a=(sendrecv|sendonly|recvonly|inactive)/);
     if (match === null) {
       this.direction = this.C.DIRECTION.NULL;
