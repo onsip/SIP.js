@@ -235,7 +235,7 @@ export class UserAgentClient implements OutgoingRequest {
     }
 
     // If response to out of dialog request, assume incrementing the CSeq will suffice.
-    let cseq = this.message.cseq += 1;
+    let cseq = (this.message.cseq += 1);
 
     // If response to in dialog request, get a valid next CSeq number.
     if (dialog && dialog.localSequenceNumber) {
@@ -289,7 +289,7 @@ export class UserAgentClient implements OutgoingRequest {
    * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
    * @param error - Transport error
    */
-   protected onTransportError(error: TransportError): void {
+  protected onTransportError(error: TransportError): void {
     this.logger.error(error.message);
     this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
     const message = new IncomingResponseMessage();

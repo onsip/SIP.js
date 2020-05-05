@@ -20,21 +20,14 @@ import { ClientTransactionUser } from "./transaction-user";
  * @public
  */
 export abstract class ClientTransaction extends Transaction {
-
   protected constructor(
     private _request: OutgoingRequestMessage,
     transport: Transport,
     protected user: ClientTransactionUser,
     state: TransactionState,
-    loggerCategory: string,
+    loggerCategory: string
   ) {
-    super(
-      transport,
-      user,
-      ClientTransaction.makeId(_request),
-      state,
-      loggerCategory
-    );
+    super(transport, user, ClientTransaction.makeId(_request), state, loggerCategory);
     // The Via header field indicates the transport used for the transaction
     // and identifies the location where the response is to be sent.  A Via
     // header field value is added only after the transport that will be

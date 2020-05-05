@@ -23,13 +23,7 @@ export abstract class ServerTransaction extends Transaction {
     state: TransactionState,
     loggerCategory: string
   ) {
-    super(
-      transport,
-      user,
-      _request.viaBranch,
-      state,
-      loggerCategory
-    );
+    super(transport, user, _request.viaBranch, state, loggerCategory);
   }
 
   /** The incoming request the transaction handling. */

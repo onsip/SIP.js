@@ -78,7 +78,8 @@ function buildUser(
   const options: SimpleUserOptions = {
     aor,
     media: {
-      constraints: { // This demo is making "video only" calls
+      constraints: {
+        // This demo is making "video only" calls
         audio: false,
         video: true
       },
@@ -111,12 +112,14 @@ function buildUser(
 
   // Setup connect button click listeners
   connectButton.addEventListener(
-    "click", makeConnectButtonClickListener(user, connectButton, disconnectButton, registerButton, beginButton)
+    "click",
+    makeConnectButtonClickListener(user, connectButton, disconnectButton, registerButton, beginButton)
   );
 
   // Setup disconnect button click listeners
   disconnectButton.addEventListener(
-    "click", makeDisconnectButtonClickListener(user, connectButton, disconnectButton, registerButton, beginButton)
+    "click",
+    makeDisconnectButtonClickListener(user, connectButton, disconnectButton, registerButton, beginButton)
   );
 
   // Setup register button click listeners
@@ -138,17 +141,14 @@ function buildUser(
 }
 
 // Helper function to create call received callback
-function makeCallReceivedCallback(
-  user: SimpleUser,
-): () => void {
+function makeCallReceivedCallback(user: SimpleUser): () => void {
   return () => {
     console.log(`[${user.id}] call received`);
-    user.answer()
-      .catch((error: Error) => {
-        console.error(`[${user.id}] failed to answer call`);
-        console.error(error);
-        alert(`[${user.id}] Failed to answer call.\n` + error);
-      });
+    user.answer().catch((error: Error) => {
+      console.error(`[${user.id}] failed to answer call`);
+      console.error(error);
+      alert(`[${user.id}] Failed to answer call.\n` + error);
+    });
   };
 }
 
@@ -250,7 +250,8 @@ function makeConnectButtonClickListener(
   beginButton: HTMLButtonElement
 ): () => void {
   return () => {
-    user.connect()
+    user
+      .connect()
       .then(() => {
         connectButton.disabled = true;
         disconnectButton.disabled = false;
@@ -274,7 +275,8 @@ function makeDisconnectButtonClickListener(
   beginButton: HTMLButtonElement
 ): () => void {
   return () => {
-    user.disconnect()
+    user
+      .disconnect()
       .then(() => {
         connectButton.disabled = false;
         disconnectButton.disabled = true;
@@ -290,14 +292,11 @@ function makeDisconnectButtonClickListener(
 }
 
 // Helper function to setup click handler for register button
-function makeRegisterButtonClickListener(
-  user: SimpleUser,
-  registerButton: HTMLButtonElement,
-): () => void {
+function makeRegisterButtonClickListener(user: SimpleUser, registerButton: HTMLButtonElement): () => void {
   return () => {
-    user.register(
-      undefined,
-      { // An example of how to get access to a SIP response message for custom handling
+    user
+      .register(undefined, {
+        // An example of how to get access to a SIP response message for custom handling
         requestDelegate: {
           onReject: (response) => {
             console.warn(`[${user.id}] REGISTER rejected`);
@@ -319,12 +318,10 @@ function makeRegisterButtonClickListener(
 }
 
 // Helper function to setup click handler for unregister button
-function makeUnregisterButtonClickListener(
-  user: SimpleUser,
-  unregisterButton: HTMLButtonElement
-): () => void {
+function makeUnregisterButtonClickListener(user: SimpleUser, unregisterButton: HTMLButtonElement): () => void {
   return () => {
-    user.unregister()
+    user
+      .unregister()
       .then(() => {
         unregisterButton.disabled = true;
       })
@@ -337,16 +334,11 @@ function makeUnregisterButtonClickListener(
 }
 
 // Helper function to setup click handler for begin button
-function makeBeginButtonClickListener(
-  user: SimpleUser,
-  target: string,
-  targetDisplay: string
-): () => void {
+function makeBeginButtonClickListener(user: SimpleUser, target: string, targetDisplay: string): () => void {
   return () => {
-    user.call(
-      target,
-      undefined,
-      { // An example of how to get access to a SIP response message for custom handling
+    user
+      .call(target, undefined, {
+        // An example of how to get access to a SIP response message for custom handling
         requestDelegate: {
           onReject: (response) => {
             console.warn(`[${user.id}] INVITE rejected`);
@@ -367,15 +359,12 @@ function makeBeginButtonClickListener(
 }
 
 // Helper function to setup click handler for begin button
-function makeEndButtonClickListener(
-  user: SimpleUser
-): () => void {
+function makeEndButtonClickListener(user: SimpleUser): () => void {
   return () => {
-    user.hangup()
-      .catch((error: Error) => {
-        console.error(`[${user.id}] failed to end session`);
-        console.error(error);
-        alert(`[${user.id}] Failed to end session.\n` + error);
-      });
+    user.hangup().catch((error: Error) => {
+      console.error(`[${user.id}] failed to end session`);
+      console.error(error);
+      alert(`[${user.id}] Failed to end session.\n` + error);
+    });
   };
 }

@@ -1,8 +1,4 @@
-import {
-  OutgoingSubscribeRequest,
-  OutgoingSubscribeRequestDelegate,
-  RequestOptions
-} from "../messages";
+import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate, RequestOptions } from "../messages";
 import { SubscriptionDelegate } from "./subscription-delegate";
 
 /**

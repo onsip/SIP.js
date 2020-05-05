@@ -1,18 +1,12 @@
-import {
-  IncomingMessageRequest,
-  IncomingRequestMessage,
-  ResponseOptions
-} from "../core";
+import { IncomingMessageRequest, IncomingRequestMessage, ResponseOptions } from "../core";
 
 /**
  * A received message (incoming MESSAGE).
  * @public
  */
 export class Message {
-
   /** @internal */
-  public constructor(private incomingMessageRequest: IncomingMessageRequest) {
-  }
+  public constructor(private incomingMessageRequest: IncomingMessageRequest) {}
 
   /** Incoming MESSAGE request message. */
   public get request(): IncomingRequestMessage {

@@ -30,7 +30,6 @@ import { SIPExtension } from "./user-agent-options";
  * @public
  */
 export class Inviter extends Session {
-
   /**
    * If this Inviter was created as a result of a REFER, the referred Session. Otherwise undefined.
    * @internal
@@ -70,11 +69,7 @@ export class Inviter extends Session {
    * @param targetURI - Request URI identifying the target of the message.
    * @param options - Options bucket. See {@link InviterOptions} for details.
    */
-  public constructor(
-    userAgent: UserAgent,
-    targetURI: URI,
-    options: InviterOptions = {}
-  ) {
+  public constructor(userAgent: UserAgent, targetURI: URI, options: InviterOptions = {}) {
     super(userAgent, options);
 
     this.logger = userAgent.getLogger("sip.Inviter");
@@ -113,9 +108,9 @@ export class Inviter extends Session {
     let fromURI: URI | undefined = userAgent.userAgentCore.configuration.aor;
     if (inviterOptions.params.fromUri) {
       fromURI =
-        (typeof inviterOptions.params.fromUri === "string") ?
-          Grammar.URIParse(inviterOptions.params.fromUri) :
-          inviterOptions.params.fromUri;
+        typeof inviterOptions.params.fromUri === "string"
+          ? Grammar.URIParse(inviterOptions.params.fromUri)
+          : inviterOptions.params.fromUri;
     }
     if (!fromURI) {
       throw new TypeError("Invalid from URI: " + inviterOptions.params.fromUri);
@@ -123,9 +118,9 @@ export class Inviter extends Session {
     let toURI: URI | undefined = targetURI;
     if (inviterOptions.params.toUri) {
       toURI =
-        (typeof inviterOptions.params.toUri === "string") ?
-          Grammar.URIParse(inviterOptions.params.toUri) :
-          inviterOptions.params.toUri;
+        typeof inviterOptions.params.toUri === "string"
+          ? Grammar.URIParse(inviterOptions.params.toUri)
+          : inviterOptions.params.toUri;
     }
     if (!toURI) {
       throw new TypeError("Invalid to URI: " + inviterOptions.params.toUri);
@@ -142,17 +137,9 @@ export class Inviter extends Session {
       extraHeaders.push("Privacy: id");
     }
     extraHeaders.push("Contact: " + contact);
-    extraHeaders.push("Allow: " + [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ].toString());
+    extraHeaders.push(
+      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString()
+    );
     if (userAgent.configuration.sipExtension100rel === SIPExtension.Required) {
       extraHeaders.push("Require: 100rel");
     }
@@ -284,7 +271,7 @@ export class Inviter extends Session {
 
     // helper function
     function getCancelReason(code: number, reason: string): string | undefined {
-      if (code && code < 200 || code > 699) {
+      if ((code && code < 200) || code > 699) {
         throw new TypeError("Invalid statusCode: " + code);
       } else if (code) {
         const cause = code;
@@ -743,10 +730,7 @@ export class Inviter extends Session {
     const body = `SIP/2.0 ${statusCode} ${reasonPhrase}`.trim();
 
     const outgoingNotifyRequest = this._referred.dialog.notify(undefined, {
-      extraHeaders: [
-        "Event: refer",
-        "Subscription-State: terminated",
-      ],
+      extraHeaders: ["Event: refer", "Subscription-State: terminated"],
       body: {
         contentDisposition: "render",
         contentType: "message/sipfrag",
@@ -931,9 +915,7 @@ export class Inviter extends Session {
     this.logger.log("Inviter.onProgress");
 
     // validate state
-    if (
-      this.state !== SessionState.Establishing
-    ) {
+    if (this.state !== SessionState.Establishing) {
       this.logger.error(`Progress received while in state ${this.state}, dropping response`);
       return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
@@ -1024,7 +1006,9 @@ export class Inviter extends Session {
             .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
             .then((description) => {
               const body: Body = {
-                contentDisposition: "session", contentType: description.contentType, content: description.body
+                contentDisposition: "session",
+                contentType: description.contentType,
+                content: description.body
               };
               inviteResponse.prack({ extraHeaders, body });
             })
@@ -1050,11 +1034,10 @@ export class Inviter extends Session {
             sessionDescriptionHandlerOptions: sdhOptions,
             sessionDescriptionHandlerModifiers: sdhModifiers
           };
-          return this.setAnswer(answer, options)
-            .catch((error: Error) => {
-              this.stateTransition(SessionState.Terminated);
-              throw error;
-            });
+          return this.setAnswer(answer, options).catch((error: Error) => {
+            this.stateTransition(SessionState.Terminated);
+            throw error;
+          });
         }
         return Promise.resolve();
       case SignalingState.Closed:
@@ -1074,10 +1057,7 @@ export class Inviter extends Session {
     this.logger.log("Inviter.onRedirect");
 
     // validate state
-    if (
-      this.state !== SessionState.Establishing &&
-      this.state !== SessionState.Terminating
-    ) {
+    if (this.state !== SessionState.Establishing && this.state !== SessionState.Terminating) {
       this.logger.error(`Redirect received while in state ${this.state}, dropping response`);
       return;
     }
@@ -1095,10 +1075,7 @@ export class Inviter extends Session {
     this.logger.log("Inviter.onReject");
 
     // validate state
-    if (
-      this.state !== SessionState.Establishing &&
-      this.state !== SessionState.Terminating
-    ) {
+    if (this.state !== SessionState.Establishing && this.state !== SessionState.Terminating) {
       this.logger.error(`Reject received while in state ${this.state}, dropping response`);
       return;
     }

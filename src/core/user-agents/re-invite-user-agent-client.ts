@@ -25,11 +25,7 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
 
   private dialog: SessionDialog;
 
-  constructor(
-    dialog: SessionDialog,
-    delegate?: OutgoingInviteRequestDelegate,
-    options?: RequestOptions
-  ) {
+  constructor(dialog: SessionDialog, delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions) {
     const message = dialog.createOutgoingRequestMessage(C.INVITE, options);
     super(InviteClientTransaction, dialog.userAgentCore, message, delegate);
     this.delegate = delegate;
@@ -121,7 +117,6 @@ export class ReInviteUserAgentClient extends UserAgentClient implements Outgoing
           // example, if the call was already hung up with a BYE, the re-INVITE
           // would not take place.
           // https://tools.ietf.org/html/rfc3261#section-14.1
-
           // FIXME: TODO: The above.
         }
         break;

@@ -15,9 +15,9 @@ export class IncomingMessage {
   public from!: NameAddrHeader;
   public callId!: string;
   public cseq!: number;
-  public via!: {host: string; port: number};
+  public via!: { host: string; port: number };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public headers: {[name: string]: Array<{ parsed?: any; raw: string }>} = {};
+  public headers: { [name: string]: Array<{ parsed?: any; raw: string }> } = {};
   public referTo: string | undefined;
   public data!: string;
 

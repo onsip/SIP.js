@@ -15,7 +15,7 @@
  */
 export enum PublisherState {
   Initial = "Initial",
-  Published =  "Published",
+  Published = "Published",
   Unpublished = "Unpublished",
   Terminated = "Terminated"
 }

@@ -1,18 +1,12 @@
-import {
-  IncomingNotifyRequest,
-  IncomingRequestMessage,
-  ResponseOptions
-} from "../core";
+import { IncomingNotifyRequest, IncomingRequestMessage, ResponseOptions } from "../core";
 
 /**
  * A notification of an event (incoming NOTIFY).
  * @public
  */
 export class Notification {
-
   /** @internal */
-  public constructor(private incomingNotifyRequest: IncomingNotifyRequest) {
-  }
+  public constructor(private incomingNotifyRequest: IncomingNotifyRequest) {}
 
   /** Incoming NOTIFY request message. */
   public get request(): IncomingRequestMessage {

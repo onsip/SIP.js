@@ -30,13 +30,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
    * @param user - The transaction user.
    */
   constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser) {
-    super(
-      request,
-      transport,
-      user,
-      TransactionState.Trying,
-      "sip.transaction.nict"
-    );
+    super(request, transport, user, TransactionState.Trying, "sip.transaction.nict");
     // FIXME: Timer E for unreliable transports not implemented.
     //
     // The "Trying" state is entered when the TU initiates a new client
@@ -147,8 +141,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `Non-INVITE client transaction received unexpected ${statusCode} response while in state ${this.state}.`;
+    const message = `Non-INVITE client transaction received unexpected ${statusCode} response while in state ${this.state}.`;
     this.logger.warn(message);
     return;
   }
@@ -192,10 +185,7 @@ export class NonInviteClientTransaction extends ClientTransaction {
         }
         break;
       case TransactionState.Completed:
-        if (
-          this.state !== TransactionState.Trying &&
-          this.state !== TransactionState.Proceeding
-        ) {
+        if (this.state !== TransactionState.Trying && this.state !== TransactionState.Proceeding) {
           invalidStateTransition();
         }
         break;

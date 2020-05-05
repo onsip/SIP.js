@@ -1,7 +1,4 @@
-import {
-  SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions
-} from "./session-description-handler";
+import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler";
 
 /**
  * Options for {@link Invitation.progress}.

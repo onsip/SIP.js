@@ -68,7 +68,7 @@ export class SimpleUser {
     };
 
     // Transport
-    if  (!userAgentOptions.transportConstructor) {
+    if (!userAgentOptions.transportConstructor) {
       userAgentOptions.transportConstructor = Transport;
     }
 
@@ -104,11 +104,10 @@ export class SimpleUser {
         }
         if (this.registerer && this.registerRequested) {
           this.logger.log(`[${this.id}] Registering...`);
-          this.registerer.register()
-            .catch((e: Error) => {
-              this.logger.error(`[${this.id}] Error occurred registering after connection with server was obtained.`);
-              this.logger.error(e.toString());
-            });
+          this.registerer.register().catch((e: Error) => {
+            this.logger.error(`[${this.id}] Error occurred registering after connection with server was obtained.`);
+            this.logger.error(e.toString());
+          });
         }
       },
       // Handle connection with server lost
@@ -127,7 +126,8 @@ export class SimpleUser {
         }
         if (this.registerer) {
           this.logger.log(`[${this.id}] Unregistering...`);
-          this.registerer.unregister() // cleanup invalid registrations
+          this.registerer
+            .unregister() // cleanup invalid registrations
             .catch((e: Error) => {
               this.logger.error(`[${this.id}] Error occurred unregistering after connection with server was lost.`);
               this.logger.error(e.toString());
@@ -147,7 +147,8 @@ export class SimpleUser {
         // of sending an outgoing INVITE request. So we reject any incoming INVITE in those cases.
         if (this.session) {
           this.logger.warn(`[${this.id}] Session already in progress, rejecting INVITE...`);
-          invitation.reject()
+          invitation
+            .reject()
             .then(() => {
               this.logger.log(`[${this.id}] Rejected INVITE`);
             })
@@ -171,7 +172,8 @@ export class SimpleUser {
           this.delegate.onCallReceived();
         } else {
           this.logger.warn(`[${this.id}] No handler available, rejecting INVITE...`);
-          invitation.reject()
+          invitation
+            .reject()
             .then(() => {
               this.logger.log(`[${this.id}] Rejected INVITE`);
             })
@@ -183,12 +185,11 @@ export class SimpleUser {
       },
       // Handle incoming messages
       onMessage: (message: Message): void => {
-        message.accept()
-          .then(() => {
-            if (this.delegate && this.delegate.onMessageReceived) {
-              this.delegate.onMessageReceived(message.request.body);
-            }
-          });
+        message.accept().then(() => {
+          if (this.delegate && this.delegate.onMessageReceived) {
+            this.delegate.onMessageReceived(message.request.body);
+          }
+        });
       }
     };
 
@@ -300,8 +301,9 @@ export class SimpleUser {
       });
     }
 
-    return this.registerer.register(registererRegisterOptions)
-      .then(() => { return; });
+    return this.registerer.register(registererRegisterOptions).then(() => {
+      return;
+    });
   }
 
   /**
@@ -310,9 +312,7 @@ export class SimpleUser {
    * Send an un-REGISTER request for the UserAgent's AOR.
    * Resolves when the un-REGISTER request is sent, otherwise rejects.
    */
-  public unregister(
-    registererUnregisterOptions?: RegistererUnregisterOptions
-  ): Promise<void> {
+  public unregister(registererUnregisterOptions?: RegistererUnregisterOptions): Promise<void> {
     this.logger.log(`[${this.id}] Unregistering UserAgent...`);
     this.registerRequested = false;
 
@@ -320,8 +320,9 @@ export class SimpleUser {
       return Promise.resolve();
     }
 
-    return this.registerer.unregister(registererUnregisterOptions)
-      .then(() => { return; });
+    return this.registerer.unregister(registererUnregisterOptions).then(() => {
+      return;
+    });
   }
 
   /**
@@ -363,8 +364,9 @@ export class SimpleUser {
     const inviter = new Inviter(this.userAgent, target, inviterOptions);
 
     // Send INVITE
-    return this.sendInvite(inviter, inviterOptions, inviterInviteOptions)
-      .then(() => { return; });
+    return this.sendInvite(inviter, inviterOptions, inviterInviteOptions).then(() => {
+      return;
+    });
   }
 
   /**
@@ -386,9 +388,7 @@ export class SimpleUser {
    * Resolves with the response is sent, otherwise rejects.
    * Use `onCallAnswered` delegate method to determine if and when call is established.
    */
-  public answer(
-    invitationAcceptOptions?: InvitationAcceptOptions
-  ): Promise<void> {
+  public answer(invitationAcceptOptions?: InvitationAcceptOptions): Promise<void> {
     this.logger.log(`[${this.id}] Accepting Invitation...`);
 
     if (!this.session) {
@@ -519,7 +519,7 @@ export class SimpleUser {
     // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00
 
     // Validate tone
-    if(!/^[0-9A-D#*,]$/.exec(tone)) {
+    if (!/^[0-9A-D#*,]$/.exec(tone)) {
       return Promise.reject(new Error("Invalid DTMF tone."));
     }
 
@@ -545,8 +545,9 @@ export class SimpleUser {
     };
     const requestOptions = { body };
 
-    return this.session.info({ requestOptions })
-      .then(() => { return; });
+    return this.session.info({ requestOptions }).then(() => {
+      return;
+    });
   }
 
   /**
@@ -602,32 +603,41 @@ export class SimpleUser {
     if (reconnectionAttempt === 1) {
       this.logger.log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying`);
     } else {
-      this.logger.log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying in ${reconnectionDelay} seconds`);
+      this.logger.log(
+        `[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying in ${reconnectionDelay} seconds`
+      );
     }
 
     this.attemptingReconnection = true;
 
-    setTimeout(() => {
-      if (!this.connectRequested) {
-        this.logger
-          .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - aborted`);
-        this.attemptingReconnection = false;
-        return; // If intentionally disconnected, don't reconnect.
-      }
-      this.userAgent.reconnect()
-        .then(() => {
-          this.logger
-            .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
+    setTimeout(
+      () => {
+        if (!this.connectRequested) {
+          this.logger.log(
+            `[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - aborted`
+          );
           this.attemptingReconnection = false;
-        })
-        .catch((error: Error) => {
-          this.logger
-            .log(`[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
-          this.logger.error(error.message);
-          this.attemptingReconnection = false;
-          this.attemptReconnection(++reconnectionAttempt);
-        });
-    }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
+          return; // If intentionally disconnected, don't reconnect.
+        }
+        this.userAgent
+          .reconnect()
+          .then(() => {
+            this.logger.log(
+              `[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`
+            );
+            this.attemptingReconnection = false;
+          })
+          .catch((error: Error) => {
+            this.logger.log(
+              `[${this.id}] Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`
+            );
+            this.logger.error(error.message);
+            this.attemptingReconnection = false;
+            this.attemptReconnection(++reconnectionAttempt);
+          });
+      },
+      reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000
+    );
   }
 
   /** Helper function to remove media from html elements. */
@@ -724,10 +734,7 @@ export class SimpleUser {
    * @param session - Session to setup
    * @param referralInviterOptions - Options for any Inviter created as result of a REFER.
    */
-  private initSession(
-    session: Session,
-    referralInviterOptions?: InviterOptions,
-  ): void {
+  private initSession(session: Session, referralInviterOptions?: InviterOptions): void {
     // Set session
     this.session = session;
 
@@ -755,7 +762,7 @@ export class SimpleUser {
           }
           break;
         case SessionState.Terminating:
-          // fall through
+        // fall through
         case SessionState.Terminated:
           this.session = undefined;
           this.cleanupMedia();
@@ -771,7 +778,6 @@ export class SimpleUser {
     // Setup delegate
     this.session.delegate = {
       onInfo: (info: Info): void => {
-
         // As RFC 6086 states, sending DTMF via INFO is not standardized...
         //
         // Companies have been using INFO messages in order to transport
@@ -864,15 +870,13 @@ export class SimpleUser {
     inviterOptions?: InviterOptions,
     inviterInviteOptions?: InviterInviteOptions
   ): Promise<void> {
-
     // Initialize our session
     this.initSession(inviter, inviterOptions);
 
     // Send the INVITE
-    return inviter.invite(inviterInviteOptions)
-      .then(() => {
-        this.logger.log(`[${this.id}] sent INVITE`);
-      });
+    return inviter.invite(inviterInviteOptions).then(() => {
+      this.logger.log(`[${this.id}] sent INVITE`);
+    });
   }
 
   /**
@@ -919,7 +923,8 @@ export class SimpleUser {
     }
 
     // Send re-INVITE
-    return this.session.invite(options)
+    return this.session
+      .invite(options)
       .then(() => {
         this.enableSenderTracks(!hold); // mute/unmute
       })
@@ -986,21 +991,19 @@ export class SimpleUser {
           remoteStream.addTrack(remoteVideoTrack);
         }
         this.options.media.remote.video.srcObject = remoteStream;
-        this.options.media.remote.video.play()
-          .catch((error: Error) => {
-            this.logger.error(`[${this.id}] Error playing video`);
-            this.logger.error(error.message);
-          });
+        this.options.media.remote.video.play().catch((error: Error) => {
+          this.logger.error(`[${this.id}] Error playing video`);
+          this.logger.error(error.message);
+        });
       } else if (this.options.media.remote.audio) {
         if (remoteAudioTrack) {
           remoteStream.addTrack(remoteAudioTrack);
           this.options.media.remote.audio.srcObject = remoteStream;
-          this.options.media.remote.audio.play()
-            .catch((error: Error) => {
-              this.logger.error(`[${this.id}] Error playing audio`);
-              this.logger.error(error.message);
-            });
-          }
+          this.options.media.remote.audio.play().catch((error: Error) => {
+            this.logger.error(`[${this.id}] Error playing audio`);
+            this.logger.error(error.message);
+          });
+        }
       }
     }
   }
@@ -1022,37 +1025,32 @@ export class SimpleUser {
     switch (this.session.state) {
       case SessionState.Initial:
         if (this.session instanceof Inviter) {
-          return this.session.cancel()
-            .then(() => {
-              this.logger.log(`[${this.id}] Inviter never sent INVITE (canceled)`);
-            });
+          return this.session.cancel().then(() => {
+            this.logger.log(`[${this.id}] Inviter never sent INVITE (canceled)`);
+          });
         } else if (this.session instanceof Invitation) {
-          return this.session.reject()
-            .then(() => {
-              this.logger.log(`[${this.id}] Invitation rejected (sent 480)`);
-            });
+          return this.session.reject().then(() => {
+            this.logger.log(`[${this.id}] Invitation rejected (sent 480)`);
+          });
         } else {
           throw new Error("Unknown session type.");
         }
       case SessionState.Establishing:
         if (this.session instanceof Inviter) {
-          return this.session.cancel()
-            .then(() => {
-              this.logger.log(`[${this.id}] Inviter canceled (sent CANCEL)`);
-            });
+          return this.session.cancel().then(() => {
+            this.logger.log(`[${this.id}] Inviter canceled (sent CANCEL)`);
+          });
         } else if (this.session instanceof Invitation) {
-          return this.session.reject()
-            .then(() => {
-              this.logger.log(`[${this.id}] Invitation rejected (sent 480)`);
-            });
+          return this.session.reject().then(() => {
+            this.logger.log(`[${this.id}] Invitation rejected (sent 480)`);
+          });
         } else {
           throw new Error("Unknown session type.");
         }
       case SessionState.Established:
-        return this.session.bye()
-          .then(() => {
-            this.logger.log(`[${this.id}] Session ended (sent BYE)`);
-          });
+        return this.session.bye().then(() => {
+          this.logger.log(`[${this.id}] Session ended (sent BYE)`);
+        });
       case SessionState.Terminating:
         break;
       case SessionState.Terminated:

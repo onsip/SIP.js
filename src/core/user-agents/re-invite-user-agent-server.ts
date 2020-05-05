@@ -23,11 +23,7 @@ import { UserAgentServer } from "./user-agent-server";
 export class ReInviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
   private dialog: SessionDialog;
 
-  constructor(
-    dialog: SessionDialog,
-    message: IncomingRequestMessage,
-    delegate?: IncomingRequestDelegate
-  ) {
+  constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate) {
     super(InviteServerTransaction, dialog.userAgentCore, message, delegate);
     dialog.reinviteUserAgentServer = this;
     this.dialog = dialog;
@@ -38,7 +34,6 @@ export class ReInviteUserAgentServer extends UserAgentServer implements Incoming
    * @param options - Options bucket.
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponseWithSession {
-
     // FIXME: The next two lines SHOULD go away, but I suppose it's technically harmless...
     // These are here because some versions of SIP.js prior to 0.13.8 set the route set
     // of all in dialog ACKs based on the Record-Route headers in the associated 2xx

@@ -45,7 +45,6 @@ import { DialogState } from "./dialog-state";
  * @public
  */
 export class SubscriptionDialog extends Dialog implements Subscription {
-
   public delegate: SubscriptionDelegate | undefined;
 
   private _autoRefresh: boolean;
@@ -110,7 +109,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     // https://tools.ietf.org/html/rfc3261#section-12.1.2
     const routeSet = incomingNotifyRequestMessage.getHeaders("record-route");
     const contact = incomingNotifyRequestMessage.parseHeader("contact");
-    if (!contact) { // TODO: Review to make sure this will never happen
+    if (!contact) {
+      // TODO: Review to make sure this will never happen
       throw new Error("Contact undefined.");
     }
     if (!(contact instanceof NameAddrHeader)) {
@@ -138,23 +138,28 @@ export class SubscriptionDialog extends Dialog implements Subscription {
     const callId = outgoingSubscribeRequestMessage.callId;
     const localTag = outgoingSubscribeRequestMessage.fromTag;
     const remoteTag = incomingNotifyRequestMessage.fromTag;
-    if (!callId) { // TODO: Review to make sure this will never happen
+    if (!callId) {
+      // TODO: Review to make sure this will never happen
       throw new Error("Call id undefined.");
     }
-    if (!localTag) { // TODO: Review to make sure this will never happen
+    if (!localTag) {
+      // TODO: Review to make sure this will never happen
       throw new Error("From tag undefined.");
     }
-    if (!remoteTag) { // TODO: Review to make sure this will never happen
+    if (!remoteTag) {
+      // TODO: Review to make sure this will never happen
       throw new Error("To tag undefined."); // FIXME: No backwards compatibility with RFC 2543
     }
 
     // The remote URI MUST be set to the URI in the To field, and the local
     // URI MUST be set to the URI in the From field.
     // https://tools.ietf.org/html/rfc3261#section-12.1.2
-    if (!outgoingSubscribeRequestMessage.from) { // TODO: Review to make sure this will never happen
+    if (!outgoingSubscribeRequestMessage.from) {
+      // TODO: Review to make sure this will never happen
       throw new Error("From undefined.");
     }
-    if (!outgoingSubscribeRequestMessage.to) { // TODO: Review to make sure this will never happen
+    if (!outgoingSubscribeRequestMessage.to) {
+      // TODO: Review to make sure this will never happen
       throw new Error("To undefined.");
     }
     const localURI = outgoingSubscribeRequestMessage.from.uri;

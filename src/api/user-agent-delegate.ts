@@ -10,7 +10,6 @@ import { Subscription } from "./subscription";
  * @public
  */
 export interface UserAgentDelegate {
-
   /**
    * Called upon transport transitioning to connected state.
    */

@@ -26,13 +26,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * @param user - The transaction user.
    */
   constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
-    super(
-      request,
-      transport,
-      user,
-      TransactionState.Trying,
-      "sip.transaction.nist"
-    );
+    super(request, transport, user, TransactionState.Trying, "sip.transaction.nist");
   }
 
   /**
@@ -163,8 +157,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `Non-INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
+    const message = `Non-INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
     this.logger.error(message);
     throw new Error(message);
   }

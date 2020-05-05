@@ -1,14 +1,6 @@
 import { EventEmitter } from "events";
 
-import {
-  C,
-  Grammar,
-  Logger,
-  OutgoingRegisterRequest,
-  OutgoingRequestMessage,
-  URI,
-  NameAddrHeader
-} from "../core";
+import { C, Grammar, Logger, OutgoingRegisterRequest, OutgoingRequestMessage, URI, NameAddrHeader } from "../core";
 import { _makeEmitter, Emitter } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
@@ -22,7 +14,6 @@ import { UserAgent } from "./user-agent";
  * @public
  */
 export class Registerer {
-
   /** Default registerer options. */
   private static readonly defaultOptions: Required<RegistererOptions> = {
     expires: 600,
@@ -68,7 +59,6 @@ export class Registerer {
    * @param options - Options bucket. See {@link RegistererOptions} for details.
    */
   public constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
-
     // Set user agent
     this.userAgent = userAgent;
 
@@ -161,7 +151,7 @@ export class Registerer {
   private static newUUID(): string {
     const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r: number = Math.floor(Math.random() * 16);
-      const v: number = c === "x" ? r : (r % 4 + 8);
+      const v: number = c === "x" ? r : (r % 4) + 8;
       return v.toString(16);
     });
     return UUID;
@@ -252,10 +242,13 @@ export class Registerer {
       const doClose = (): void => {
         // If we are registered, unregister and resolve after our state changes
         if (!this.waiting && this._state === RegistererState.Registered) {
-          this.stateChange.addListener(() => {
-            this.terminated();
-            resolve();
-          }, { once: true });
+          this.stateChange.addListener(
+            () => {
+              this.terminated();
+              resolve();
+            },
+            { once: true }
+          );
           this.unregister();
           return;
         }
@@ -304,24 +297,16 @@ export class Registerer {
 
     // Options
     if (options.requestOptions) {
-      this.options = {...this.options, ...options.requestOptions};
+      this.options = { ...this.options, ...options.requestOptions };
     }
 
     // Extra headers
     const extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push("Contact: " + this.generateContactHeader(this.expires));
     // this is UA.C.ALLOWED_METHODS, removed to get around circular dependency
-    extraHeaders.push("Allow: " + [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ].toString());
+    extraHeaders.push(
+      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString()
+    );
 
     // Call-ID: All registrations from a UAC SHOULD use the same Call-ID
     // header field value for registrations sent to a particular
@@ -506,7 +491,8 @@ export class Registerer {
     }
 
     if (this.disposed) {
-      if (this.state !== RegistererState.Registered) { // allows unregister while disposing and registered
+      if (this.state !== RegistererState.Registered) {
+        // allows unregister while disposing and registered
         this.stateError();
         throw new Error("Registerer disposed. Unable to register.");
       }
@@ -528,7 +514,7 @@ export class Registerer {
     }
 
     // Extra headers
-    const extraHeaders = (options.requestOptions && options.requestOptions.extraHeaders || []).slice();
+    const extraHeaders = ((options.requestOptions && options.requestOptions.extraHeaders) || []).slice();
     this.request.extraHeaders = extraHeaders;
 
     // Registrations are soft state and expire unless refreshed, but can
@@ -657,7 +643,7 @@ export class Registerer {
     this.registrationTimer = setTimeout(() => {
       this.registrationTimer = undefined;
       this.register();
-    }, (expires * 1000) - 3000);
+    }, expires * 1000 - 3000);
 
     // We are unregistered if the registration expires.
     this.registrationExpiredTimer = setTimeout(() => {
@@ -712,18 +698,12 @@ export class Registerer {
         }
         break;
       case RegistererState.Registered:
-        if (
-          newState !== RegistererState.Unregistered &&
-          newState !== RegistererState.Terminated
-        ) {
+        if (newState !== RegistererState.Unregistered && newState !== RegistererState.Terminated) {
           invalidTransition();
         }
         break;
       case RegistererState.Unregistered:
-        if (
-          newState !== RegistererState.Registered &&
-          newState !== RegistererState.Terminated
-        ) {
+        if (newState !== RegistererState.Registered && newState !== RegistererState.Terminated) {
           invalidTransition();
         }
         break;
@@ -773,7 +753,8 @@ export class Registerer {
     message += " RFC 3261 requires UAs MUST NOT send a new registration until they have received a final response";
     message += " from the registrar for the previous one or the previous REGISTER request has timed out.";
     message += " Note that if the transport disconnects, you still must wait for the prior request to time out before";
-    message += " sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer.";
+    message +=
+      " sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer.";
     this.logger.warn(message);
   }
 

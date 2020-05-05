@@ -24,10 +24,7 @@ export class NotifyUserAgentServer extends UserAgentServer implements IncomingNo
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {
-    const userAgentCore =
-      instanceOfDialog(dialogOrCore) ?
-        dialogOrCore.userAgentCore :
-        dialogOrCore;
+    const userAgentCore = instanceOfDialog(dialogOrCore) ? dialogOrCore.userAgentCore : dialogOrCore;
     super(NonInviteServerTransaction, userAgentCore, message, delegate);
   }
 }

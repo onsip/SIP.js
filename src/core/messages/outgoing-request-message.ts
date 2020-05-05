@@ -1,11 +1,6 @@
 import { NameAddrHeader, URI } from "../../grammar";
 import { Body } from "./body";
-import {
-  createRandomToken,
-  headerize,
-  newTag,
-  utf8Length
-} from "./utils";
+import { createRandomToken, headerize, newTag, utf8Length } from "./utils";
 
 /**
  * Outgoing request message options.
@@ -32,8 +27,7 @@ export interface OutgoingRequestMessageOptions {
  * @public
  */
 export class OutgoingRequestMessage {
-
-  public readonly headers: {[name: string]: Array<string>} = {};
+  public readonly headers: { [name: string]: Array<string> } = {};
 
   public readonly method: string;
   public readonly ruri: URI;
@@ -146,7 +140,7 @@ export class OutgoingRequestMessage {
   }
 
   private static makeNameAddrHeader(uri: URI, displayName: string, tag: string): NameAddrHeader {
-    const parameters: {[name: string]: string} = {};
+    const parameters: { [name: string]: string } = {};
     if (tag) {
       parameters.tag = tag;
     }
@@ -226,7 +220,7 @@ export class OutgoingRequestMessage {
    * @param value - header value
    */
   public setHeader(name: string, value: string | Array<string>): void {
-    this.headers[headerize(name)] = (value instanceof Array) ? value : [value];
+    this.headers[headerize(name)] = value instanceof Array ? value : [value];
   }
 
   /**

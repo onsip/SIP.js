@@ -22,10 +22,7 @@ import {
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "../core";
-import {
-  createRandomToken,
-  utf8Length
-} from "../core/messages/utils";
+import { createRandomToken, utf8Length } from "../core/messages/utils";
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
 import { LIBRARY_VERSION } from "../version";
@@ -41,11 +38,7 @@ import { Session } from "./session";
 import { Subscription } from "./subscription";
 import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
-import {
-  SIPExtension,
-  UserAgentOptions,
-  UserAgentRegisteredOptionTags
-} from "./user-agent-options";
+import { SIPExtension, UserAgentOptions, UserAgentRegisteredOptionTags } from "./user-agent-options";
 import { UserAgentState } from "./user-agent-state";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,7 +56,6 @@ declare const chrome: any;
  * @public
  */
 export class UserAgent {
-
   /** Default user agent options. */
   private static readonly defaultOptions: Required<UserAgentOptions> = {
     allowLegacyNotifications: false,
@@ -80,7 +72,9 @@ export class UserAgent {
     hackWssInTransport: false,
     logBuiltinEnabled: true,
     logConfiguration: true,
-    logConnector: () => { /* noop */ },
+    logConnector: () => {
+      /* noop */
+    },
     logLevel: "log",
     noAnswerTimeout: 60,
     preloadedRouteSet: [],
@@ -137,9 +131,7 @@ export class UserAgent {
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  public constructor(
-    options: Partial<UserAgentOptions> = {}
-  ) {
+  public constructor(options: Partial<UserAgentOptions> = {}) {
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -173,8 +165,12 @@ export class UserAgent {
     // initialize logger & logger factory
     this.logger = this.loggerFactory.getLogger("sip.UserAgent");
     this.loggerFactory.builtinEnabled = this.options.logBuiltinEnabled;
-    this.loggerFactory.connector = this.options.logConnector as
-      (level: string, category: string, label: string | undefined, content: string) => void;
+    this.loggerFactory.connector = this.options.logConnector as (
+      level: string,
+      category: string,
+      label: string | undefined,
+      content: string
+    ) => void;
     switch (this.options.logLevel) {
       case "error":
         this.loggerFactory.level = Levels.error;
@@ -414,11 +410,7 @@ export class UserAgent {
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (
-        typeof window !== "undefined" &&
-        typeof window.addEventListener === "function" &&
-        !googleChromePackagedApp
-      ) {
+      if (typeof window !== "undefined" && typeof window.addEventListener === "function" && !googleChromePackagedApp) {
         window.addEventListener("unload", this.unloadListener);
       }
     }
@@ -469,11 +461,7 @@ export class UserAgent {
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (
-        typeof window !== "undefined" &&
-        window.removeEventListener &&
-        !googleChromePackagedApp
-      ) {
+      if (typeof window !== "undefined" && window.removeEventListener && !googleChromePackagedApp) {
         window.removeEventListener("unload", this.unloadListener);
       }
     }
@@ -503,12 +491,11 @@ export class UserAgent {
     this.logger.log(`Dispose of registerers`);
     for (const id in registerers) {
       if (registerers[id]) {
-        await registerers[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._registerers[id];
-            throw error;
-          });
+        await registerers[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._registerers[id];
+          throw error;
+        });
       }
     }
 
@@ -516,12 +503,11 @@ export class UserAgent {
     this.logger.log(`Dispose of sessions`);
     for (const id in sessions) {
       if (sessions[id]) {
-        await sessions[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._sessions[id];
-            throw error;
-          });
+        await sessions[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._sessions[id];
+          throw error;
+        });
       }
     }
 
@@ -529,12 +515,11 @@ export class UserAgent {
     this.logger.log(`Dispose of subscriptions`);
     for (const id in subscriptions) {
       if (subscriptions[id]) {
-        await subscriptions[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._subscriptions[id];
-            throw error;
-          });
+        await subscriptions[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._subscriptions[id];
+          throw error;
+        });
       }
     }
 
@@ -542,22 +527,20 @@ export class UserAgent {
     this.logger.log(`Dispose of publishers`);
     for (const id in publishers) {
       if (publishers[id]) {
-        await publishers[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._publishers[id];
-            throw error;
-          });
+        await publishers[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._publishers[id];
+          throw error;
+        });
       }
     }
 
     // Dispose of the transport (disconnecting)
     this.logger.log(`Dispose of transport`);
-    await transport.dispose()
-      .catch((error: Error) => {
-        this.logger.error(error.message);
-        throw error;
-      });
+    await transport.dispose().catch((error: Error) => {
+      this.logger.error(error.message);
+      throw error;
+    });
 
     // Dispose of the user agent core (resetting)
     this.logger.log(`Dispose of core`);
@@ -568,10 +551,7 @@ export class UserAgent {
    * Used to avoid circular references.
    * @internal
    */
-  public _makeInviter(
-    targetURI: URI,
-    options?: InviterOptions
-  ): Inviter {
+  public _makeInviter(targetURI: URI, options?: InviterOptions): Inviter {
     return new Inviter(this, targetURI, options);
   }
 
@@ -589,17 +569,20 @@ export class UserAgent {
     }
 
     this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying`);
-    setTimeout(() => {
-      this.reconnect()
-        .then(() => {
-          this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
-        })
-        .catch((error: Error) => {
-          this.logger.error(error.message);
-          this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
-          this.attemptReconnection(++reconnectionAttempt);
-        });
-    }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
+    setTimeout(
+      () => {
+        this.reconnect()
+          .then(() => {
+            this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
+          })
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
+            this.attemptReconnection(++reconnectionAttempt);
+          });
+      },
+      reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000
+    );
   }
 
   /**
@@ -607,8 +590,7 @@ export class UserAgent {
    */
   private initContact(): Contact {
     const contactName = createRandomToken(8); // FIXME: should be configurable
-    const contactTransport =
-      this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
+    const contactTransport = this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
     const contact = {
       pubGruu: undefined,
       tempGruu: undefined,
@@ -674,14 +656,10 @@ export class UserAgent {
       viaForceRport: this.options.forceRport,
       viaHost: this.options.viaHost,
       authenticationFactory: () => {
-        const username =
-          this.options.authorizationUsername ?
-            this.options.authorizationUsername :
-            this.options.uri.user; // if authorization username not provided, use uri user as username
-        const password =
-          this.options.authorizationPassword ?
-            this.options.authorizationPassword :
-            undefined;
+        const username = this.options.authorizationUsername
+          ? this.options.authorizationUsername
+          : this.options.uri.user; // if authorization username not provided, use uri user as username
+        const password = this.options.authorizationPassword ? this.options.authorizationPassword : undefined;
         return new DigestAuthentication(this.getLoggerFactory(), username, password);
       },
       transportAccessor: () => this.transport
@@ -776,13 +754,12 @@ export class UserAgent {
         // Delegate invitation handling.
         if (this.delegate?.onInvite) {
           if (invitation.autoSendAnInitialProvisionalResponse) {
-            invitation.progress()
-              .then(() => {
-                if (this.delegate?.onInvite === undefined) {
-                  throw new Error("onInvite undefined.");
-                }
-                this.delegate.onInvite(invitation);
-              });
+            invitation.progress().then(() => {
+              if (this.delegate?.onInvite === undefined) {
+                throw new Error("onInvite undefined.");
+              }
+              this.delegate.onInvite(invitation);
+            });
             return;
           }
           this.delegate.onInvite(invitation);
@@ -1022,5 +999,7 @@ export class UserAgent {
   }
 
   /** Unload listener. */
-  private unloadListener = ((): void => { this.stop(); });
+  private unloadListener = (): void => {
+    this.stop();
+  };
 }

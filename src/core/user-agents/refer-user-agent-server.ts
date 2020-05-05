@@ -24,10 +24,7 @@ export class ReferUserAgentServer extends UserAgentServer implements IncomingRef
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {
-    const userAgentCore =
-      instanceOfSessionDialog(dialogOrCore) ?
-        dialogOrCore.userAgentCore :
-        dialogOrCore;
+    const userAgentCore = instanceOfSessionDialog(dialogOrCore) ? dialogOrCore.userAgentCore : dialogOrCore;
     super(NonInviteServerTransaction, userAgentCore, message, delegate);
   }
 }

@@ -7,19 +7,16 @@ import { OutgoingRequest } from "../outgoing-request";
  * Incoming INFO request.
  * @public
  */
-export interface IncomingInfoRequest extends IncomingRequest {
-}
+export interface IncomingInfoRequest extends IncomingRequest {}
 
 /**
  * Incoming INFO response.
  * @public
  */
-export interface IncomingInfoResponse extends IncomingResponse {
-}
+export interface IncomingInfoResponse extends IncomingResponse {}
 
 /**
  * Outgoing INFO request.
  * @public
  */
-export interface OutgoingInfoRequest extends OutgoingRequest {
-}
+export interface OutgoingInfoRequest extends OutgoingRequest {}

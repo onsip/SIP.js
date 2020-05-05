@@ -40,11 +40,7 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
   /** Timer N Id. */
   private N: number | undefined;
 
-  constructor(
-    core: UserAgentCore,
-    message: OutgoingRequestMessage,
-    delegate?: OutgoingSubscribeRequestDelegate
-  ) {
+  constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingSubscribeRequestDelegate) {
     // Get event from request message.
     const event = message.getHeader("Event");
     if (!event) {
@@ -195,10 +191,9 @@ export class SubscribeUserAgentClient extends UserAgentClient implements Outgoin
     this.waitNotifyStop();
 
     // Update expires.
-    this.subscriptionExpires =
-      subscriptionState.expires ?
-        Math.min(this.subscriptionExpires, Math.max(subscriptionState.expires, 0)) :
-        this.subscriptionExpires;
+    this.subscriptionExpires = subscriptionState.expires
+      ? Math.min(this.subscriptionExpires, Math.max(subscriptionState.expires, 0))
+      : this.subscriptionExpires;
 
     // Update subscription state.
     switch (state) {

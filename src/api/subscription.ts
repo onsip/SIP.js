@@ -1,10 +1,7 @@
 import { EventEmitter } from "events";
 
-import {
-  Logger,
-  Subscription as SubscriptionDialog
-} from "../core";
-import { _makeEmitter, Emitter, } from "./emitter";
+import { Logger, Subscription as SubscriptionDialog } from "../core";
+import { _makeEmitter, Emitter } from "./emitter";
 import { SubscriptionDelegate } from "./subscription-delegate";
 import { SubscriptionOptions } from "./subscription-options";
 import { SubscriptionState } from "./subscription-state";
@@ -21,7 +18,6 @@ import { UserAgent } from "./user-agent";
  * @public
  */
 export abstract class Subscription {
-
   /**
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`

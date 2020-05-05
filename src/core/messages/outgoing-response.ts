@@ -43,10 +43,7 @@ export interface ResponseOptions {
  * https://tools.ietf.org/html/rfc3261#section-8.2.6
  * @internal
  */
-export function constructOutgoingResponse(
-  message: IncomingRequestMessage,
-  options: ResponseOptions
-): OutgoingResponse {
+export function constructOutgoingResponse(message: IncomingRequestMessage, options: ResponseOptions): OutgoingResponse {
   const CRLF = "\r\n";
 
   if (options.statusCode < 100 || options.statusCode > 699) {

@@ -7,19 +7,16 @@ import { OutgoingRequest } from "../outgoing-request";
  * Incoming REGISTER request.
  * @public
  */
-export interface IncomingRegisterRequest extends IncomingRequest {
-}
+export interface IncomingRegisterRequest extends IncomingRequest {}
 
 /**
  * Incoming REGISTER response.
  * @public
  */
-export interface IncomingRegisterResponse extends IncomingResponse {
-}
+export interface IncomingRegisterResponse extends IncomingResponse {}
 
 /**
  * Outgoing REGISTER request.
  * @public
  */
-export interface OutgoingRegisterRequest extends OutgoingRequest {
-}
+export interface OutgoingRegisterRequest extends OutgoingRequest {}

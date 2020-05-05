@@ -97,6 +97,7 @@
     "build-docs-transport": "npm run extract-transport && npm run document-transport && npm run document-copy-transport",
     "build-docs": "npm run build-lib && npm run build-docs-api && npm run build-docs-core && npm run build-docs-simple-user && npm run build-docs-transport",
     "lint": "eslint --ext .ts .",
+    "lint-fix": "eslint --ext .ts --fix .",
     "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/version.ts"
   }
 }

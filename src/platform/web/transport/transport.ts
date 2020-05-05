@@ -12,7 +12,6 @@ import { TransportOptions } from "./transport-options";
  * @public
  */
 export class Transport extends EventEmitter implements TransportDefinition {
-
   private static defaultOptions: Required<TransportOptions> = {
     server: "",
     connectionTimeout: 5,
@@ -304,7 +303,9 @@ export class Transport extends EventEmitter implements TransportDefinition {
       this.connectTimeout = setTimeout(() => {
         this.logger.warn(
           "Connect timed out. " +
-          "Exceeded time set in configuration.connectionTimeout: " + this.configuration.connectionTimeout + "s."
+            "Exceeded time set in configuration.connectionTimeout: " +
+            this.configuration.connectionTimeout +
+            "s."
         );
         ws.close(1000); // careful here to use a local reference instead of this._ws
       }, this.configuration.connectionTimeout * 1000);
@@ -479,7 +480,8 @@ export class Transport extends EventEmitter implements TransportDefinition {
       return;
     }
 
-    if (typeof data !== "string") { // WebSocket binary message.
+    if (typeof data !== "string") {
+      // WebSocket binary message.
       try {
         finishedData = new TextDecoder().decode(new Uint8Array(data));
         // TextDecoder (above) is not supported by old browsers, but it correctly decodes UTF-8.
@@ -494,7 +496,8 @@ export class Transport extends EventEmitter implements TransportDefinition {
       if (this.configuration.traceSip === true) {
         this.logger.log("Received WebSocket binary message:\n\n" + finishedData + "\n");
       }
-    } else { // WebSocket text message.
+    } else {
+      // WebSocket text message.
       finishedData = data;
       if (this.configuration.traceSip === true) {
         this.logger.log("Received WebSocket text message:\n\n" + finishedData + "\n");
@@ -570,25 +573,17 @@ export class Transport extends EventEmitter implements TransportDefinition {
         }
         break;
       case TransportState.Connected:
-        if (
-          newState !== TransportState.Disconnecting &&
-          newState !== TransportState.Disconnected
-        ) {
+        if (newState !== TransportState.Disconnecting && newState !== TransportState.Disconnected) {
           invalidTransition();
         }
         break;
       case TransportState.Disconnecting:
-        if (
-          newState !== TransportState.Connecting &&
-          newState !== TransportState.Disconnected
-        ) {
+        if (newState !== TransportState.Connecting && newState !== TransportState.Disconnected) {
           invalidTransition();
         }
         break;
       case TransportState.Disconnected:
-        if (
-          newState !== TransportState.Connecting
-        ) {
+        if (newState !== TransportState.Connecting) {
           invalidTransition();
         }
         break;
@@ -704,7 +699,9 @@ export class Transport extends EventEmitter implements TransportDefinition {
       if (!disconnectReject) {
         throw new Error("Disconnect reject undefined.");
       }
-      newState === TransportState.Disconnected ? disconnectResolve() : disconnectReject(error || new Error("Disconnect aborted."));
+      newState === TransportState.Disconnected
+        ? disconnectResolve()
+        : disconnectReject(error || new Error("Disconnect aborted."));
     }
 
     this.transitioningState = false;

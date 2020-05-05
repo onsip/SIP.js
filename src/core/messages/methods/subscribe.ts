@@ -9,15 +9,13 @@ import { IncomingNotifyRequest } from "./notify";
  * Incoming SUBSCRIBE request.
  * @public
  */
-export interface IncomingSubscribeRequest extends IncomingRequest {
-}
+export interface IncomingSubscribeRequest extends IncomingRequest {}
 
 /**
  * Incoming SUBSCRIBE response.
  * @public
  */
-export interface IncomingSubscribeResponse extends IncomingResponse {
-}
+export interface IncomingSubscribeResponse extends IncomingResponse {}
 
 /**
  * Outgoing SUBSCRIBE request.

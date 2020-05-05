@@ -10,7 +10,6 @@ import { IncomingResponseMessage } from "./incoming-response-message";
  * @internal
  */
 export namespace Parser {
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function getHeader(data: any, headerStart: number): number {
     // 'start' position of the header.
@@ -34,8 +33,10 @@ export namespace Parser {
         return partialEnd;
       }
 
-      if (!data.substring(partialEnd + 2, partialEnd + 4).match(/(^\r\n)/) &&
-        data.charAt(partialEnd + 2).match(/(^\s+)/)) {
+      if (
+        !data.substring(partialEnd + 2, partialEnd + 4).match(/(^\r\n)/) &&
+        data.charAt(partialEnd + 2).match(/(^\s+)/)
+      ) {
         // Not the end of the message. Continue from the next position.
         start = partialEnd + 2;
       } else {

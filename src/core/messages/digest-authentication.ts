@@ -72,7 +72,7 @@ export class DigestAuthentication {
       return false;
     }
 
-    if (! this.nonce) {
+    if (!this.nonce) {
       this.logger.warn("challenge without Digest nonce, authentication aborted");
       return false;
     }
@@ -161,13 +161,11 @@ export class DigestAuthentication {
       ha2 = MD5(this.method + ":" + this.uri);
       // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)`
       this.response = MD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth:" + ha2);
-
     } else if (this.qop === "auth-int") {
       // HA2 = MD5(A2) = MD5(method:digestURI:MD5(entityBody))
       ha2 = MD5(this.method + ":" + this.uri + ":" + MD5(body ? body : ""));
       // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)
       this.response = MD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth-int:" + ha2);
-
     } else if (this.qop === undefined) {
       // HA2 = MD5(A2) = MD5(method:digestURI)
       ha2 = MD5(this.method + ":" + this.uri);

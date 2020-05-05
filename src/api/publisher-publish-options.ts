@@ -3,5 +3,4 @@
  * Options for {@link Publisher.publish}.
  * @public
  */
-export interface PublisherPublishOptions {
-}
+export interface PublisherPublishOptions {}

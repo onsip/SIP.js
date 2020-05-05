@@ -54,15 +54,15 @@ export class Publisher {
     this.userAgent = userAgent;
 
     options.extraHeaders = (options.extraHeaders || []).slice();
-    options.contentType = (options.contentType || "text/plain");
+    options.contentType = options.contentType || "text/plain";
 
-    if (typeof options.expires !== "number" || (options.expires % 1) !== 0) {
+    if (typeof options.expires !== "number" || options.expires % 1 !== 0) {
       options.expires = 3600;
     } else {
       options.expires = Number(options.expires);
     }
 
-    if (typeof(options.unpublishOnClose) !== "boolean") {
+    if (typeof options.unpublishOnClose !== "boolean") {
       options.unpublishOnClose = true;
     }
 
@@ -84,7 +84,7 @@ export class Publisher {
       body = {
         contentDisposition,
         contentType,
-        content,
+        content
       };
     }
     const extraHeaders = (options.extraHeaders || []).slice();
@@ -388,18 +388,12 @@ export class Publisher {
         }
         break;
       case PublisherState.Published:
-        if (
-          newState !== PublisherState.Unpublished &&
-          newState !== PublisherState.Terminated
-        ) {
+        if (newState !== PublisherState.Unpublished && newState !== PublisherState.Terminated) {
           invalidTransition();
         }
         break;
       case PublisherState.Unpublished:
-        if (
-          newState !== PublisherState.Published &&
-          newState !== PublisherState.Terminated
-        ) {
+        if (newState !== PublisherState.Published && newState !== PublisherState.Terminated) {
           invalidTransition();
         }
         break;

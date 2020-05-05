@@ -41,13 +41,7 @@ export class InviteClientTransaction extends ClientTransaction {
    * @param user - The transaction user.
    */
   constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser) {
-    super(
-      request,
-      transport,
-      user,
-      TransactionState.Calling,
-      "sip.transaction.ict"
-    );
+    super(request, transport, user, TransactionState.Calling, "sip.transaction.ict");
     // FIXME: Timer A for unreliable transport not implemented
     //
     // If an unreliable transport is being used, the client transaction
@@ -395,10 +389,7 @@ export class InviteClientTransaction extends ClientTransaction {
         break;
       case TransactionState.Accepted:
       case TransactionState.Completed:
-        if (
-          this.state !== TransactionState.Calling &&
-          this.state !== TransactionState.Proceeding
-        ) {
+        if (this.state !== TransactionState.Calling && this.state !== TransactionState.Proceeding) {
           invalidStateTransition();
         }
         break;

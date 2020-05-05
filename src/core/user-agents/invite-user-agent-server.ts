@@ -27,17 +27,12 @@ import { UserAgentServer } from "./user-agent-server";
  * @public
  */
 export class InviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
-
   /** The confirmed dialog, if any. */
   private confirmedDialog: SessionDialog | undefined;
   /** The early dialog, if any. */
   private earlyDialog: SessionDialog | undefined;
 
-  constructor(
-    protected core: UserAgentCore,
-    message: IncomingRequestMessage,
-    delegate?: IncomingRequestDelegate
-  ) {
+  constructor(protected core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate) {
     super(InviteServerTransaction, core, message, delegate);
   }
 
@@ -58,9 +53,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    */
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponseWithSession {
     if (!this.acceptable) {
-      throw new TransactionStateError(
-        `${this.message.method} not acceptable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not acceptable in state ${this.transaction.state}.`);
     }
 
     // This response establishes a dialog...
@@ -101,9 +94,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
     // limited to this dialog either.  It can therefore be used in messages
     // to the UAC even outside this dialog.
     // https://tools.ietf.org/html/rfc3261#section-12.1.1
-    const recordRouteHeader = this.message
-      .getHeaders("record-route")
-      .map((header) => `Record-Route: ${header}`);
+    const recordRouteHeader = this.message.getHeaders("record-route").map((header) => `Record-Route: ${header}`);
     const contactHeader = `Contact: ${this.core.configuration.contact.toString()}`;
 
     // A 2xx response to an INVITE SHOULD contain the Allow header field and
@@ -186,9 +177,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
    */
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponseWithSession {
     if (!this.progressable) {
-      throw new TransactionStateError(
-        `${this.message.method} not progressable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not progressable in state ${this.transaction.state}.`);
     }
 
     // This response establishes a dialog...
@@ -223,9 +212,7 @@ export class InviteUserAgentServer extends UserAgentServer implements IncomingIn
     // limited to this dialog either.  It can therefore be used in messages
     // to the UAC even outside this dialog.
     // https://tools.ietf.org/html/rfc3261#section-12.1.1
-    const recordRouteHeader = this.message
-      .getHeaders("record-route")
-      .map((header) => `Record-Route: ${header}`);
+    const recordRouteHeader = this.message.getHeaders("record-route").map((header) => `Record-Route: ${header}`);
     const contactHeader = `Contact: ${this.core.configuration.contact}`;
 
     options.extraHeaders = options.extraHeaders || [];

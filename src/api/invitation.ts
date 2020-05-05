@@ -21,10 +21,7 @@ import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
 import { InvitationRejectOptions } from "./invitation-reject-options";
 import { Session } from "./session";
-import {
-  SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions
-} from "./session-description-handler";
+import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 import { SIPExtension } from "./user-agent-options";
@@ -37,7 +34,6 @@ type RejectFunction = (reason: Error) => void;
  * @public
  */
 export class Invitation extends Session {
-
   /**
    * Logger.
    */
@@ -92,7 +88,7 @@ export class Invitation extends Session {
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    incomingRequestMessage.toTag = (incomingInviteRequest as InviteUserAgentServer as any).toTag;
+    incomingRequestMessage.toTag = ((incomingInviteRequest as InviteUserAgentServer) as any).toTag;
     if (typeof incomingRequestMessage.toTag !== "string") {
       throw new TypeError("toTag should have been a string.");
     }
@@ -101,10 +97,13 @@ export class Invitation extends Session {
     // ...
     // 19 no answer from the user              480 Temporarily unavailable
     // https://tools.ietf.org/html/rfc3398#section-7.2.4.1
-    this.userNoAnswerTimer = setTimeout(() => {
-      incomingInviteRequest.reject({ statusCode: 480 });
-      this.stateTransition(SessionState.Terminated);
-    }, this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000);
+    this.userNoAnswerTimer = setTimeout(
+      () => {
+        incomingInviteRequest.reject({ statusCode: 480 });
+        this.stateTransition(SessionState.Terminated);
+      },
+      this.userAgent.configuration.noAnswerTimeout ? this.userAgent.configuration.noAnswerTimeout * 1000 : 60000
+    );
 
     // 1. If the request is an INVITE that contains an Expires header
     // field, the UAS core sets a timer for the number of seconds
@@ -268,30 +267,32 @@ export class Invitation extends Session {
     // transition state
     this.stateTransition(SessionState.Establishing);
 
-    return this.sendAccept(options)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .then(({ message, session }) => {
-        session.delegate = {
-          onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
-          onAckTimeout: (): void => this.onAckTimeout(),
-          onBye: (byeRequest): void => this.onByeRequest(byeRequest),
-          onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
-          onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
-          onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
-          onNotify: (notifyRequest): void => this.onNotifyRequest(notifyRequest),
-          onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
-          onRefer: (referRequest): void => this.onReferRequest(referRequest)
-        };
-        this._dialog = session;
-        this.stateTransition(SessionState.Established);
+    return (
+      this.sendAccept(options)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .then(({ message, session }) => {
+          session.delegate = {
+            onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
+            onAckTimeout: (): void => this.onAckTimeout(),
+            onBye: (byeRequest): void => this.onByeRequest(byeRequest),
+            onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
+            onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
+            onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
+            onNotify: (notifyRequest): void => this.onNotifyRequest(notifyRequest),
+            onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
+            onRefer: (referRequest): void => this.onReferRequest(referRequest)
+          };
+          this._dialog = session;
+          this.stateTransition(SessionState.Established);
 
-        // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
-        // This behavior has been ported forward from legacy versions.
-        if (this._replacee) {
-          this._replacee._bye();
-        }
-      })
-      .catch((error) => this.handleResponseError(error));
+          // TODO: Reconsider this "automagic" send of a BYE to replacee behavior.
+          // This behavior has been ported forward from legacy versions.
+          if (this._replacee) {
+            this._replacee._bye();
+          }
+        })
+        .catch((error) => this.handleResponseError(error))
+    );
   }
 
   /**
@@ -338,7 +339,9 @@ export class Invitation extends Session {
     // Trying provisional response
     if (options.statusCode === 100) {
       return this.sendProgressTrying()
-        .then(() => { return; })
+        .then(() => {
+          return;
+        })
         .catch((error) => this.handleResponseError(error));
     }
 
@@ -346,19 +349,20 @@ export class Invitation extends Session {
     if (
       !(this.rel100 === "required") &&
       !(this.rel100 === "supported" && options.rel100) &&
-      !(
-        this.rel100 === "supported" &&
-        this.userAgent.configuration.sipExtension100rel === SIPExtension.Required
-      )
+      !(this.rel100 === "supported" && this.userAgent.configuration.sipExtension100rel === SIPExtension.Required)
     ) {
       return this.sendProgress(options)
-        .then(() => { return; })
+        .then(() => {
+          return;
+        })
         .catch((error) => this.handleResponseError(error));
     }
 
     // Reliable provisional response
     return this.sendProgressReliableWaitForPrack(options)
-      .then(() => { return; })
+      .then(() => {
+        return;
+      })
       .catch((error) => this.handleResponseError(error));
   }
 
@@ -380,10 +384,7 @@ export class Invitation extends Session {
     this.logger.log("Invitation.reject");
 
     // validate state
-    if (
-      this.state !== SessionState.Initial &&
-      this.state !== SessionState.Establishing
-    ) {
+    if (this.state !== SessionState.Initial && this.state !== SessionState.Establishing) {
       const error = new Error(`Invalid session state ${this.state}`);
       this.logger.error(error.message);
       return Promise.reject(error);
@@ -391,7 +392,7 @@ export class Invitation extends Session {
 
     const statusCode = options.statusCode || 480;
 
-    const reasonPhrase = options.reasonPhrase ? options.reasonPhrase  : getReasonPhrase(statusCode);
+    const reasonPhrase = options.reasonPhrase ? options.reasonPhrase : getReasonPhrase(statusCode);
     const extraHeaders = options.extraHeaders || [];
 
     if (statusCode < 300 || statusCode > 699) {
@@ -401,9 +402,9 @@ export class Invitation extends Session {
     const body = options.body ? fromBodyLegacy(options.body) : undefined;
 
     // FIXME: Need to redirect to someplace
-    statusCode < 400 ?
-      this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body }) :
-      this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
+    statusCode < 400
+      ? this.incomingInviteRequest.redirect([], { statusCode, reasonPhrase, extraHeaders, body })
+      : this.incomingInviteRequest.reject({ statusCode, reasonPhrase, extraHeaders, body });
 
     this.stateTransition(SessionState.Terminated);
 
@@ -421,10 +422,7 @@ export class Invitation extends Session {
     this.logger.log("Invitation._onCancel");
 
     // validate state
-    if (
-      this.state !== SessionState.Initial &&
-      this.state !== SessionState.Establishing
-    ) {
+    if (this.state !== SessionState.Initial && this.state !== SessionState.Establishing) {
       this.logger.error(`CANCEL received while in state ${this.state}, dropping request`);
       return;
     }
@@ -502,7 +500,7 @@ export class Invitation extends Session {
     } else {
       // We don't actually know what a session description handler implementation might throw our way,
       // and more generally as a last resort catch all, just assume we are getting an "unknown" and log it.
-      this.logger.error(error as unknown as string);
+      this.logger.error((error as unknown) as string);
     }
 
     // Log Exception message
@@ -519,7 +517,7 @@ export class Invitation extends Session {
 
     // Reject if still in "initial" or "establishing" state.
     if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
-     try {
+      try {
         this.incomingInviteRequest.reject({ statusCode });
         this.stateTransition(SessionState.Terminated);
       } catch (e) {
@@ -542,8 +540,8 @@ export class Invitation extends Session {
     if (this.isCanceled) {
       this.logger.warn(
         "An error occurred while attempting to formulate and send a response to an incoming INVITE." +
-        " However a CANCEL was received and processed while doing so which can (and often does) result" +
-        " in errors occurring as the session terminates in the meantime. Said error is being ignored."
+          " However a CANCEL was received and processed while doing so which can (and often does) result" +
+          " in errors occurring as the session terminates in the meantime. Said error is being ignored."
       );
       return;
     }
@@ -570,7 +568,6 @@ export class Invitation extends Session {
    * @param options - Options bucket.
    */
   private sendAccept(options: InvitationAcceptOptions = {}): Promise<OutgoingResponseWithSession> {
-
     // The UAS MAY send a final response to the initial request before
     // having received PRACKs for all unacknowledged reliable provisional
     // responses, unless the final response is 2xx and any of the
@@ -592,8 +589,9 @@ export class Invitation extends Session {
     }
 
     clearTimeout(this.userNoAnswerTimer); // Ported
-    return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
-      .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
+    return this.generateResponseOfferAnswer(this.incomingInviteRequest, options).then((body) =>
+      this.incomingInviteRequest.accept({ statusCode: 200, body })
+    );
   }
 
   /**
@@ -660,7 +658,9 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when the reliable provisional response is acknowledged.
    * @param options - Options bucket.
    */
-  private sendProgressReliableWaitForPrack(options: InvitationProgressOptions = {}): Promise<{
+  private sendProgressReliableWaitForPrack(
+    options: InvitationProgressOptions = {}
+  ): Promise<{
     prackRequest: IncomingPrackRequest;
     prackResponse: OutgoingResponse;
     progressResponse: OutgoingResponseWithSession;
@@ -734,7 +734,7 @@ export class Invitation extends Session {
               return;
             }
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, timeout *= 2);
+            rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, (timeout *= 2));
           };
           let timeout = Timers.T1;
           let rel1xxRetransmissionTimer = setTimeout(rel1xxRetransmission, timeout);

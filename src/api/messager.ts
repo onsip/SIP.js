@@ -1,11 +1,4 @@
-import {
-  Body,
-  C,
-  Grammar,
-  Logger,
-  OutgoingRequestMessage,
-  URI
-} from "../core";
+import { Body, C, Grammar, Logger, OutgoingRequestMessage, URI } from "../core";
 import { MessagerMessageOptions } from "./messager-message-options";
 import { MessagerOptions } from "./messager-options";
 import { UserAgent } from "./user-agent";
@@ -34,7 +27,6 @@ export class Messager {
     contentType = "text/plain",
     options: MessagerOptions = {}
   ) {
-
     // Logger
     this.logger = userAgent.getLogger("sip.Messager");
 
@@ -45,19 +37,14 @@ export class Messager {
     let fromURI: URI | undefined = userAgent.userAgentCore.configuration.aor;
     if (options.params.fromUri) {
       fromURI =
-        (typeof options.params.fromUri === "string") ?
-          Grammar.URIParse(options.params.fromUri) :
-          options.params.fromUri;
+        typeof options.params.fromUri === "string" ? Grammar.URIParse(options.params.fromUri) : options.params.fromUri;
     }
     if (!fromURI) {
       throw new TypeError("Invalid from URI: " + options.params.fromUri);
     }
     let toURI: URI | undefined = targetURI;
     if (options.params.toUri) {
-      toURI =
-        (typeof options.params.toUri === "string") ?
-          Grammar.URIParse(options.params.toUri) :
-          options.params.toUri;
+      toURI = typeof options.params.toUri === "string" ? Grammar.URIParse(options.params.toUri) : options.params.toUri;
     }
     if (!toURI) {
       throw new TypeError("Invalid to URI: " + options.params.toUri);

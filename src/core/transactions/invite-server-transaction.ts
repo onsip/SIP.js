@@ -50,13 +50,7 @@ export class InviteServerTransaction extends ServerTransaction {
    * @param user - The transaction user.
    */
   constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
-    super(
-      request,
-      transport,
-      user,
-      TransactionState.Proceeding,
-      "sip.transaction.ist"
-    );
+    super(request, transport, user, TransactionState.Proceeding, "sip.transaction.ist");
   }
 
   /**
@@ -153,8 +147,7 @@ export class InviteServerTransaction extends ServerTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `INVITE server transaction received unexpected ${request.method} request while in state ${this.state}.`;
+    const message = `INVITE server transaction received unexpected ${request.method} request while in state ${this.state}.`;
     this.logger.warn(message);
     return;
   }
@@ -239,8 +232,7 @@ export class InviteServerTransaction extends ServerTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
+    const message = `INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
     this.logger.error(message);
     throw new Error(message);
   }

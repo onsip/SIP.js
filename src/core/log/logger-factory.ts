@@ -20,13 +20,15 @@ export class LoggerFactory {
     this.logger = this.getLogger("sip:loggerfactory");
   }
 
-  get level(): Levels { return this._level; }
+  get level(): Levels {
+    return this._level;
+  }
   set level(newLevel: Levels) {
     if (newLevel >= 0 && newLevel <= 3) {
       this._level = newLevel;
     } else if (newLevel > 3) {
       this._level = 3;
-    // eslint-disable-next-line no-prototype-builtins
+      // eslint-disable-next-line no-prototype-builtins
     } else if (Levels.hasOwnProperty(newLevel)) {
       this._level = newLevel;
     } else {
@@ -38,10 +40,17 @@ export class LoggerFactory {
   get connector(): ((level: string, category: string, label: string | undefined, content: any) => void) | undefined {
     return this._connector;
   }
-  set connector(value: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (level: string, category: string, label: string | undefined, content: any) => void
-  ) | undefined) {
+  set connector(
+    value:
+      | ((
+          level: string,
+          category: string,
+          label: string | undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          content: any
+        ) => void)
+      | undefined
+  ) {
     if (!value) {
       this._connector = undefined;
     } else if (typeof value === "function") {

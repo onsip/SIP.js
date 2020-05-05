@@ -4,16 +4,17 @@ module.exports = {
   parserOptions: {
     "ecmaVersion": 2016,
     "sourceType": "module",
-    "project": './tsconfig-base.json',
+    "project": './tsconfig-base.json'
   },
   plugins: [
-    '@typescript-eslint',
+    '@typescript-eslint'
   ],
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
+    "plugin:prettier/recommended"
   ],
   rules: {
     "no-console": "error",

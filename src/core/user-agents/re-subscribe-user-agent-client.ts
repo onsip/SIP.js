@@ -16,11 +16,7 @@ import { UserAgentClient } from "./user-agent-client";
 export class ReSubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
   private dialog: SubscriptionDialog;
 
-  constructor(
-    dialog: SubscriptionDialog,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ) {
+  constructor(dialog: SubscriptionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions) {
     const message = dialog.createOutgoingRequestMessage(C.SUBSCRIBE, options);
     super(NonInviteClientTransaction, dialog.userAgentCore, message, delegate);
     this.dialog = dialog;

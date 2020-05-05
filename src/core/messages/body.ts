@@ -62,8 +62,8 @@ export interface Body {
  * @internal
  */
 export function fromBodyLegacy(bodyLegacy: string | { body: string; contentType: string }): Body {
-  const content = (typeof bodyLegacy === "string") ? bodyLegacy : bodyLegacy.body;
-  const contentType = (typeof bodyLegacy === "string") ? "application/sdp" : bodyLegacy.contentType;
+  const content = typeof bodyLegacy === "string" ? bodyLegacy : bodyLegacy.body;
+  const contentType = typeof bodyLegacy === "string" ? "application/sdp" : bodyLegacy.contentType;
   const contentDisposition = contentTypeToContentDisposition(contentType);
   const body: Body = { contentDisposition, contentType, content };
   return body;
@@ -79,7 +79,9 @@ export function isBody(body: any): body is Body {
   return body &&
     typeof body.content === "string" &&
     typeof body.contentType === "string" &&
-    body.contentDisposition === undefined ? true : typeof body.contentDisposition === "string";
+    body.contentDisposition === undefined
+    ? true
+    : typeof body.contentDisposition === "string";
 }
 
 /**

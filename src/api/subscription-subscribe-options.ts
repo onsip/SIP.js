@@ -3,5 +3,4 @@
  * Options for {@link Subscription.subscribe}.
  * @public
  */
-export interface SubscriptionSubscribeOptions {
-}
+export interface SubscriptionSubscribeOptions {}
