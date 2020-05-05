@@ -9,7 +9,7 @@ Send DTMF via RTP (RFC 4733). Returns true if DTMF send is successful, false oth
 <b>Signature:</b>
 
 ```typescript
-sendDtmf(tones: string, options?: any): boolean;
+sendDtmf(tones: string, options?: unknown): boolean;
 ```
 
 ## Parameters
@@ -17,7 +17,7 @@ sendDtmf(tones: string, options?: any): boolean;
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  tones | <code>string</code> | A string containing DTMF digits. |
-|  options | <code>any</code> | Options object to be used by sendDtmf. |
+|  options | <code>unknown</code> | Options object to be used by sendDtmf. |
 
 <b>Returns:</b>
 
