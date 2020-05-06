@@ -29,8 +29,11 @@ class NotifierDialog extends Dialog {
   }
 }
 
+const SIP_NOTIFY = [jasmine.stringMatching(/^NOTIFY/)];
 const SIP_SUBSCRIBE = [jasmine.stringMatching(/^SUBSCRIBE/)];
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
+const SIP_407 = [jasmine.stringMatching(/^SIP\/2.0 407/)];
+const SIP_480 = [jasmine.stringMatching(/^SIP\/2.0 480/)];
 const SIP_481 = [jasmine.stringMatching(/^SIP\/2.0 481/)];
 const SIP_489 = [jasmine.stringMatching(/^SIP\/2.0 489/)];
 
@@ -41,6 +44,9 @@ describe("API Subscription", () => {
   let subscriber: Subscriber;
   let subscription: Subscription;
   let subscriptionStateSpy: EmitterSpy<SubscriptionState>;
+  let notifierDialog: Dialog;
+  let receivedEvent: string;
+  let receivedExpires: number;
 
   const subscriptionDelegateMock =
     jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", [
@@ -51,6 +57,119 @@ describe("API Subscription", () => {
   });
 
   const event = "foo";
+
+  function aliceResubscribe() {
+    beforeEach(async () => {
+      resetSpies();
+      subscriber.subscribe();
+      await alice.transport.waitReceived();
+    });
+
+    it("the subscriber should receive a 200", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+    });
+
+    it("the subscriber should send an SUBSCRIBE", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_SUBSCRIBE);
+    });
+
+    it("the subscription delegate should not be called", () => {
+      const spy = subscriptionDelegateMock;
+      expect(spy.onNotify).toHaveBeenCalledTimes(0);
+    });
+
+    it("the subscription state should not change", () => {
+      expect(subscriptionStateSpy).not.toHaveBeenCalled();
+    });
+
+    it("the subscription state should transition to 'terminated' after timeout", async () => {
+      await soon(Timers.TIMER_F + 1);
+      const spy = subscriptionStateSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Terminated]);
+    });
+  }
+
+  function aliceUnsubscribe() {
+    beforeEach(async () => {
+      resetSpies();
+      subscription.unsubscribe();
+      await alice.transport.waitReceived();
+    });
+
+    it("the subscriber should receive a 200", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+    });
+
+    it("the subscriber should send an un-SUBSCRIBE", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_SUBSCRIBE);
+    });
+
+    it("the subscription delegate should not be called", () => {
+      const spy = subscriptionDelegateMock;
+      expect(spy.onNotify).toHaveBeenCalledTimes(0);
+    });
+
+    it("the subscription state should transition to 'terminated'", () => {
+      const spy = subscriptionStateSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Terminated]);
+    });
+
+    it("the subscription state should be the same after timeout", async () => {
+      await soon(Timers.TIMER_F + 1);
+      const spy = subscriptionStateSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Terminated]);
+    });
+  }
+
+  function bobNotifyActive() {
+    beforeEach(async () => {
+      resetSpies();
+      const extraHeaders = new Array<string>();
+      extraHeaders.push(`Event: ${receivedEvent}`);
+      extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
+      extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
+      const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
+      const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+      await bob.transport.waitReceived();
+    });
+
+    it("the subscriber should receive a NOTIFY", () => {
+      const spy = alice.transportReceiveSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
+    });
+
+    it("the subscriber should send a 200 to the NOTIFY", () => {
+      const spy = alice.transportSendSpy;
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+    });
+
+    it("the subscription delegate should onNotify()", () => {
+      const spy = subscriptionDelegateMock;
+      expect(spy.onNotify).toHaveBeenCalledTimes(1);
+    });
+
+    it("the subscription state should not change", () => {
+      expect(subscriptionStateSpy).not.toHaveBeenCalled();
+    });
+
+    it("the subscription state should not change after timeout", async () => {
+      await soon(Timers.TIMER_F + 1);
+      expect(subscriptionStateSpy).not.toHaveBeenCalled();
+    });
+  }
 
   function resetSpies(): void {
     alice.transportReceiveSpy.calls.reset();
@@ -165,13 +284,24 @@ describe("API Subscription", () => {
           resetSpies();
           bob.userAgent.delegate = {
             onSubscribeRequest: (request) => {
-              // tslint:disable-next-line:max-line-length
-              const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
-              request.reject({ statusCode: 407, extraHeaders });
+              if (request.message.hasHeader("Proxy-Authorization")) {
+                request.accept();
+              } else {
+                // tslint:disable-next-line:max-line-length
+                const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
+                request.reject({ statusCode: 407, extraHeaders });
+              }
             }
           };
           await bob.transport.waitReceived();
           await bob.transport.waitReceived();
+        });
+
+        it("the subscriber should receive a 407, 200", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(2);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_407);
+          expect(spy.calls.argsFor(1)).toEqual(SIP_200);
         });
 
         it("the subscriber should send an SUBSCRIBE", () => {
@@ -185,10 +315,8 @@ describe("API Subscription", () => {
           expect(spy.onNotify).toHaveBeenCalledTimes(0);
         });
 
-        it("the subscription state should transition to 'terminated'", () => {
-          const spy = subscriptionStateSpy;
-          expect(spy).toHaveBeenCalledTimes(1);
-          expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Terminated]);
+        it("the subscription state should not change", () => {
+          expect(subscriptionStateSpy).not.toHaveBeenCalled();
         });
       });
 
@@ -201,6 +329,12 @@ describe("API Subscription", () => {
             }
           };
           await alice.transport.waitReceived();
+        });
+
+        it("the subscriber should receive a 480", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_480);
         });
 
         it("the subscriber should send nothing", () => {
@@ -221,10 +355,6 @@ describe("API Subscription", () => {
       });
 
       describe("Bob sends initial NOTIFY before responding to the request", () => {
-        let notifierDialog: Dialog;
-        let receivedEvent: string;
-        let receivedExpires: number;
-
         beforeEach(async () => {
           resetSpies();
           bob.userAgent.delegate = {
@@ -267,6 +397,12 @@ describe("API Subscription", () => {
           subscription.dispose();
         });
 
+        it("the subscriber should receive a NOTIFY", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
+        });
+
         it("the subscriber should send a 200 to the NOTIFY", () => {
           const spy = alice.transportSendSpy;
           expect(spy).toHaveBeenCalledTimes(1);
@@ -286,10 +422,6 @@ describe("API Subscription", () => {
       });
 
       describe("Bob accepts the request", () => {
-        let notifierDialog: Dialog;
-        let receivedEvent: string;
-        let receivedExpires: number;
-
         beforeEach(async () => {
           resetSpies();
           bob.userAgent.delegate = {
@@ -349,6 +481,12 @@ describe("API Subscription", () => {
           subscription.dispose();
         });
 
+        it("the subscriber should receive a 200", () => {
+          const spy = alice.transportReceiveSpy;
+          expect(spy).toHaveBeenCalledTimes(1);
+          expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+        });
+
         it("the subscriber should send nothing", () => {
           const spy = alice.transportSendSpy;
           expect(spy).not.toHaveBeenCalled();
@@ -366,6 +504,11 @@ describe("API Subscription", () => {
         describe("Bob never sends an initial NOTIFY request", () => {
           beforeEach(async () => {
             resetSpies();
+          });
+
+          it("the subscriber should receive nothing", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).not.toHaveBeenCalled();
           });
 
           it("the subscriber should send nothing", () => {
@@ -396,6 +539,12 @@ describe("API Subscription", () => {
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
+          });
+
+          it("the subscriber should receive a NOTIFY", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
           });
 
           it("the subscriber should send a 481 to the NOTIFY", () => {
@@ -432,6 +581,12 @@ describe("API Subscription", () => {
             await alice.transport.waitReceived();
           });
 
+          it("the subscriber should receive a NOTIFY", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
+          });
+
           it("the subscriber should send a 489 to the NOTIFY", () => {
             const spy = alice.transportSendSpy;
             expect(spy).toHaveBeenCalledTimes(1);
@@ -464,6 +619,12 @@ describe("API Subscription", () => {
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
+          });
+
+          it("the subscriber should receive a NOTIFY", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
           });
 
           it("the subscriber should send a 489 to the NOTIFY", () => {
@@ -500,6 +661,12 @@ describe("API Subscription", () => {
             await alice.transport.waitReceived();
           });
 
+          it("the subscriber should receive a NOTIFY", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
+          });
+
           it("the subscriber should send a 200 to the NOTIFY", () => {
             const spy = alice.transportSendSpy;
             expect(spy).toHaveBeenCalledTimes(1);
@@ -529,6 +696,12 @@ describe("API Subscription", () => {
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
             const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await bob.transport.waitReceived();
+          });
+
+          it("the subscriber should receive a NOTIFY", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
           });
 
           it("the subscriber should send a 200 to the NOTIFY", () => {
@@ -582,6 +755,12 @@ describe("API Subscription", () => {
             await bob.transport.waitReceived();
           });
 
+          it("the subscriber should receive a NOTIFY", () => {
+            const spy = alice.transportReceiveSpy;
+            expect(spy).toHaveBeenCalledTimes(1);
+            expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
+          });
+
           it("the subscriber should send a 200 to the NOTIFY", () => {
             const spy = alice.transportSendSpy;
             expect(spy).toHaveBeenCalledTimes(1);
@@ -599,54 +778,6 @@ describe("API Subscription", () => {
             expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Subscribed]);
           });
 
-          describe("Alice re-subscribes", () => {
-            beforeEach(async () => {
-              resetSpies();
-              subscriber.subscribe();
-              await alice.transport.waitReceived();
-            });
-
-            it("the subscriber should send an SUBSCRIBE", () => {
-              const spy = alice.transportSendSpy;
-              expect(spy).toHaveBeenCalledTimes(1);
-              expect(spy.calls.argsFor(0)).toEqual(SIP_SUBSCRIBE);
-            });
-
-            it("the subscription delegate should not be called", () => {
-              const spy = subscriptionDelegateMock;
-              expect(spy.onNotify).toHaveBeenCalledTimes(0);
-            });
-
-            it("the subscription state should not change", () => {
-              expect(subscriptionStateSpy).not.toHaveBeenCalled();
-            });
-          });
-
-          describe("Alice unsubscribes", () => {
-            beforeEach(async () => {
-              resetSpies();
-              subscription.unsubscribe();
-              await alice.transport.waitReceived();
-            });
-
-            it("the subscriber should send an un-SUBSCRIBE", () => {
-              const spy = alice.transportSendSpy;
-              expect(spy).toHaveBeenCalledTimes(1);
-              expect(spy.calls.argsFor(0)).toEqual(SIP_SUBSCRIBE);
-            });
-
-            it("the subscription delegate should not be called", () => {
-              const spy = subscriptionDelegateMock;
-              expect(spy.onNotify).toHaveBeenCalledTimes(0);
-            });
-
-            it("the subscription state should transition to 'terminated'", () => {
-              const spy = subscriptionStateSpy;
-              expect(spy).toHaveBeenCalledTimes(1);
-              expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Terminated]);
-            });
-          });
-
           describe("Bob terminates with no reason code", () => {
             beforeEach(async () => {
               resetSpies();
@@ -656,6 +787,12 @@ describe("API Subscription", () => {
               const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
               const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
               await bob.transport.waitReceived();
+            });
+
+            it("the subscriber should receive a NOTIFY", () => {
+              const spy = alice.transportReceiveSpy;
+              expect(spy).toHaveBeenCalledTimes(1);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
             });
 
             it("the subscriber should send a 200 to the NOTIFY", () => {
@@ -687,6 +824,13 @@ describe("API Subscription", () => {
               await bob.transport.waitReceived();
             });
 
+            it("the subscriber should receive a NOTIFY, 200", () => {
+              const spy = alice.transportReceiveSpy;
+              expect(spy).toHaveBeenCalledTimes(2);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_NOTIFY);
+              expect(spy.calls.argsFor(1)).toEqual(SIP_200);
+            });
+
             it("the subscriber should send a 200 to the NOTIFY and then a SUBSCRIBE", () => {
               const spy = alice.transportSendSpy;
               expect(spy).toHaveBeenCalledTimes(2);
@@ -710,6 +854,12 @@ describe("API Subscription", () => {
               await soon(3600 * 900);
             });
 
+            it("the subscriber should receive a 200", () => {
+              const spy = alice.transportReceiveSpy;
+              expect(spy).toHaveBeenCalledTimes(1);
+              expect(spy.calls.argsFor(0)).toEqual(SIP_200);
+            });
+
             it("the subscriber should send a re-SUBSCRIBE", () => {
               const spy = alice.transportSendSpy;
               expect(spy).toHaveBeenCalledTimes(1);
@@ -724,6 +874,30 @@ describe("API Subscription", () => {
             it("the subscription state should not change", () => {
               expect(subscriptionStateSpy).not.toHaveBeenCalled();
             });
+          });
+
+          describe("Alice re-subscribes", () => {
+            aliceResubscribe();
+
+            describe("Alice re-subscribes", () => {
+              aliceResubscribe();
+
+              describe("Bob sends a NOTIFY with subscription state 'active'", () => {
+                bobNotifyActive();
+              });
+            });
+
+            describe("Bob sends a NOTIFY with subscription state 'active'", () => {
+              bobNotifyActive();
+            });
+
+            describe("Alice unsubscribes", () => {
+              aliceUnsubscribe();
+            });
+          });
+
+          describe("Alice unsubscribes", () => {
+            aliceUnsubscribe();
           });
         });
       });
