@@ -237,6 +237,16 @@ export class Registerer {
    * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
   public register(options: RegistererRegisterOptions = {}): Promise<OutgoingRegisterRequest> {
+    if (this.state === RegistererState.Terminated) {
+      this.stateError();
+      throw new Error("Registerer terminated. Unable to register.");
+    }
+
+    if (this.disposed) {
+      this.stateError();
+      throw new Error("Registerer disposed. Unable to register.");
+    }
+
     // UAs MUST NOT send a new registration (that is, containing new Contact
     // header field values, as opposed to a retransmission) until they have
     // received a final response from the registrar for the previous one or
@@ -424,6 +434,18 @@ export class Registerer {
    * Rejects with `RequestPendingError` if a REGISTER request is already in progress.
    */
   public unregister(options: RegistererUnregisterOptions = {}): Promise<OutgoingRegisterRequest> {
+    if (this.state === RegistererState.Terminated) {
+      this.stateError();
+      throw new Error("Registerer terminated. Unable to register.");
+    }
+
+    if (this.disposed) {
+      if (this.state !== RegistererState.Registered) { // allows unregister while disposing and registered
+        this.stateError();
+        throw new Error("Registerer disposed. Unable to register.");
+      }
+    }
+
     // UAs MUST NOT send a new registration (that is, containing new Contact
     // header field values, as opposed to a retransmission) until they have
     // received a final response from the registrar for the previous one or
@@ -687,5 +709,14 @@ export class Registerer {
     message += " Note that if the transport disconnects, you still must wait for the prior request to time out before";
     message += " sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer.";
     this.logger.warn(message);
+  }
+
+  /** Hopefully helpful as the standard behavior has been found to be unexpected. */
+  private stateError(): void {
+    const reason = this.state === RegistererState.Terminated ? "is in 'Terminated' state" : "has been disposed";
+    let message = `An attempt was made to send a REGISTER request when the Registerer ${reason}.`;
+    message += " The Registerer transitions to 'Terminated' when Registerer.dispose() is called.";
+    message += " Perhaps you called UserAgent.stop() which dipsoses of all Registerers?";
+    this.logger.error(message);
   }
 }
