@@ -9,6 +9,8 @@ const SIP_REGISTER = [jasmine.stringMatching(/^REGISTER/)];
 
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
 const SIP_423 = [jasmine.stringMatching(/^SIP\/2.0 423/)];
+const SIP_500 = [jasmine.stringMatching(/^SIP\/2.0 500/)];
+const SIP_503 = [jasmine.stringMatching(/^SIP\/2.0 503/)];
 
 /**
  * Registration Integration Tests
@@ -792,6 +794,108 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
+      });
+    });
+
+    describe("Alice register(), Registrar responds with 500 Server Internal Error with Retry-After", () => {
+      const retryAfter = 600;
+      let retryAfterReceived: number | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            request.reject({
+              extraHeaders: [`Retry-After: ${retryAfter}`],
+              statusCode: 500
+            });
+          }
+        };
+        registerer.stateChange.addListener((newState) => {
+          if (newState === RegistererState.Unregistered) {
+            retryAfterReceived = registerer.retryAfter;
+          }
+        });
+        registerer.register();
+        await alice.transport.waitReceived(); // 503
+      });
+
+      it("her ua should send REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 500", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_500);
+      });
+
+      it("her registerer state should transition 'unregistered'", () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+        expect(registerer.retryAfter).toEqual(undefined);
+      });
+
+      it("her registerer retry after should have been set on state transition", () => {
+        expect(retryAfterReceived).toEqual(retryAfter);
+      });
+
+      it("her registerer retry after should be `undefined'", () => {
+        expect(registerer.retryAfter).toEqual(undefined);
+      });
+    });
+
+    describe("Alice register(), Registrar responds with 503 Service Unavailable with Retry-After", () => {
+      const retryAfter = 600;
+      let retryAfterReceived: number | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request) => {
+            request.reject({
+              extraHeaders: [`Retry-After: ${retryAfter}`],
+              statusCode: 503
+            });
+          }
+        };
+        registerer.stateChange.addListener((newState) => {
+          if (newState === RegistererState.Unregistered) {
+            retryAfterReceived = registerer.retryAfter;
+          }
+        });
+        registerer.register();
+        await alice.transport.waitReceived(); // 503
+      });
+
+      it("her ua should send REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 503", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_503);
+      });
+
+      it("her registerer state should transition 'unregistered'", () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+        expect(registerer.retryAfter).toEqual(undefined);
+      });
+
+      it("her registerer retry after should have been set on state transition", () => {
+        expect(retryAfterReceived).toEqual(retryAfter);
+      });
+
+      it("her registerer retry after should be `undefined'", () => {
+        expect(registerer.retryAfter).toEqual(undefined);
       });
     });
   });

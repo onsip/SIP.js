@@ -316,6 +316,7 @@ export class Registerer {
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "OutgoingRegisterRequest" needs to be exported by the entry point index.d.ts
     register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
+    get retryAfter(): number | undefined;
     get state(): RegistererState;
     get stateChange(): Emitter<RegistererState>;
     unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;

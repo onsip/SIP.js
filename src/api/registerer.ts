@@ -73,6 +73,9 @@ export class Registerer {
   /** The contacts returned from the most recent accepted REGISTER request. */
   private _contacts: Array<string> = [];
 
+  /** The number of seconds to wait before retrying to register. */
+  private _retryAfter: number | undefined = undefined;
+
   /** The registration state. */
   private _state: RegistererState = RegistererState.Initial;
   /** Emits when the registration state changes. */
@@ -180,6 +183,43 @@ export class Registerer {
   /** The registered contacts. */
   public get contacts(): Array<string> {
     return this._contacts.slice();
+  }
+
+  /**
+   * The number of seconds to wait before retrying to register.
+   * @defaultValue `undefined`
+   * @remarks
+   * When the server rejects a registration request, if it provides a suggested
+   * duration to wait before retrying, that value is available here when and if
+   * the state transitions to `Unsubscribed`. It is also available during the
+   * callback to `onReject` after a call to `register`. (Note that if the state
+   * if already `Unsubscribed`, a rejected request created by `register` will
+   * not cause the state to transition to `Unsubscribed`. One way to avoid this
+   * case is to dispose of `Registerer` when unregistered and create a new
+   * `Registerer` for any attempts to retry registering.)
+   * @example
+   * ```ts
+   * // Checking for retry after on state change
+   * registerer.stateChange.addListener((newState) => {
+   *   switch (newState) {
+   *     case RegistererState.Unregistered:
+   *       const retryAfter = registerer.retryAfter;
+   *       break;
+   *   }
+   * });
+   *
+   * // Checking for retry after on request rejection
+   * registerer.register({
+   *   requestDelegate: {
+   *     onReject: () => {
+   *       const retryAfter = registerer.retryAfter;
+   *     }
+   *   }
+   * });
+   * ```
+   */
+  public get retryAfter(): number | undefined {
+    return this._retryAfter;
   }
 
   /** The registration state. */
@@ -412,10 +452,24 @@ export class Registerer {
           return;
         }
         this.logger.warn(`Failed to register, status code ${response.message.statusCode}`);
+        // The Retry-After header field can be used with a 500 (Server Internal
+        // Error) or 503 (Service Unavailable) response to indicate how long the
+        // service is expected to be unavailable to the requesting client...
+        // https://tools.ietf.org/html/rfc3261#section-20.33
+        let retryAfterDuration = NaN;
+        if (response.message.statusCode === 500 || response.message.statusCode === 503) {
+          const header = response.message.getHeader("retry-after");
+          if (header) {
+            retryAfterDuration = Number.parseInt(header, undefined);
+          }
+        }
+        // Set for the state change (if any) and the delegate callback (if any)
+        this._retryAfter = isNaN(retryAfterDuration) ? undefined : retryAfterDuration;
         this.unregistered();
         if (options.requestDelegate && options.requestDelegate.onReject) {
           options.requestDelegate.onReject(response);
         }
+        this._retryAfter = undefined;
         this.waitingToggle(false);
       },
       onTrying: (response): void => {
