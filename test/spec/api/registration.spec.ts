@@ -799,7 +799,7 @@ describe("API Registration", () => {
 
     describe("Alice register(), Registrar responds with 500 Server Internal Error with Retry-After", () => {
       const retryAfter = 600;
-      let retryAfterReceived: number | undefined = undefined;
+      let retryAfterReceived: number | undefined;
 
       beforeEach(async () => {
         resetSpies();
@@ -850,7 +850,7 @@ describe("API Registration", () => {
 
     describe("Alice register(), Registrar responds with 503 Service Unavailable with Retry-After", () => {
       const retryAfter = 600;
-      let retryAfterReceived: number | undefined = undefined;
+      let retryAfterReceived: number | undefined;
 
       beforeEach(async () => {
         resetSpies();
