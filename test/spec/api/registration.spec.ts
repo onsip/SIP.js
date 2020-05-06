@@ -799,7 +799,7 @@ describe("API Registration", () => {
 
     describe("Alice register(), Registrar responds with 500 Server Internal Error with Retry-After", () => {
       const retryAfter = 600;
-      let retryAfterReceived = NaN;
+      let retryAfterReceived: number | undefined = undefined;
 
       beforeEach(async () => {
         resetSpies();
@@ -836,21 +836,21 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-        expect(registerer.retryAfter).toEqual(NaN);
+        expect(registerer.retryAfter).toEqual(undefined);
       });
 
       it("her registerer retry after should have been set on state transition", () => {
         expect(retryAfterReceived).toEqual(retryAfter);
       });
 
-      it("her registerer retry after should be `NaN'", () => {
-        expect(registerer.retryAfter).toEqual(NaN);
+      it("her registerer retry after should be `undefined'", () => {
+        expect(registerer.retryAfter).toEqual(undefined);
       });
     });
 
     describe("Alice register(), Registrar responds with 503 Service Unavailable with Retry-After", () => {
       const retryAfter = 600;
-      let retryAfterReceived = NaN;
+      let retryAfterReceived: number | undefined = undefined;
 
       beforeEach(async () => {
         resetSpies();
@@ -887,15 +887,15 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
-        expect(registerer.retryAfter).toEqual(NaN);
+        expect(registerer.retryAfter).toEqual(undefined);
       });
 
       it("her registerer retry after should have been set on state transition", () => {
         expect(retryAfterReceived).toEqual(retryAfter);
       });
 
-      it("her registerer retry after should be `NaN'", () => {
-        expect(registerer.retryAfter).toEqual(NaN);
+      it("her registerer retry after should be `undefined'", () => {
+        expect(registerer.retryAfter).toEqual(undefined);
       });
     });
   });
