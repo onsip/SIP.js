@@ -23,6 +23,7 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
   obj.getDescriptionRejectOnce = undefined;
   obj.getDescriptionUndefinedBodyOnce = undefined;
   obj.setDescriptionRejectOnce = undefined;
+  obj.setDescriptionWaitOnce = undefined;
 
   sdh.close.and.callFake(() => {
     // console.warn(`SDH.close[${name}][${id}]`);
@@ -109,7 +110,7 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     });
   });
 
-  sdh.setDescription.and.callFake(() => {
+  sdh.setDescription.and.callFake((sdp: string) => {
     if (closed) {
       throw new Error(`SDH.setDescription[${name}][${id}] SDH closed`);
     }
@@ -119,12 +120,28 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       return Promise.reject(new Error(`SDH.setDescription[${name}][${id}] SDH test failure`));
     }
 
+    if ((sdh as any).setDescriptionWaitOnce) { // hacky
+      const timeout = 1;
+      (sdh as any).setDescriptionWaitOnce = undefined;
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          (sdh as any).setDescription().then(() => resolve());
+        }, timeout);
+      });
+    }
+
     const fromState = state;
     switch (state) {
       case "stable":
+        if (sdp === "SDP ANSWER") {
+          throw new Error(`SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition - expected offer`);
+        }
         state = "has-remote-offer";
         break;
       case "has-local-offer":
+        if (sdp === "SDP OFFER") {
+          throw new Error(`SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition - expected answer`);
+        }
         state = "stable";
         break;
       case "has-remote-offer":

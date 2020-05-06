@@ -888,7 +888,7 @@ export interface Session {
 
 // @public
 export interface SessionDelegate {
-    onAck?(request: IncomingAckRequest): void;
+    onAck?(request: IncomingAckRequest): Promise<void> | void;
     onAckTimeout?(): void;
     onBye?(request: IncomingByeRequest): void;
     onInfo?(request: IncomingInfoRequest): void;

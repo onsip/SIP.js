@@ -430,7 +430,7 @@ export abstract class Session {
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     //
     // @internal
-    protected onAckRequest(request: IncomingAckRequest): void;
+    protected onAckRequest(request: IncomingAckRequest): Promise<void>;
     // @internal
     protected onByeRequest(request: IncomingByeRequest): void;
     // @internal

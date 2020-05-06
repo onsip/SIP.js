@@ -270,7 +270,7 @@ export class Invitation extends Session {
     return this.sendAccept(options)
       .then(({ message, session }) => {
         session.delegate = {
-          onAck: (ackRequest): void => this.onAckRequest(ackRequest),
+          onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
           onAckTimeout: (): void => this.onAckTimeout(),
           onBye: (byeRequest): void => this.onByeRequest(byeRequest),
           onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),

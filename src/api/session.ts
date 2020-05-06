@@ -586,10 +586,11 @@ export abstract class Session {
         return new Promise((resolve, reject) => {
           dialog.delegate = {
             // When ACK shows up, say BYE.
-            onAck: (): void => {
+            onAck: (): Promise<void> => {
               const request = dialog.bye(delegate, options);
               this.stateTransition(SessionState.Terminated);
               resolve(request);
+              return Promise.resolve();
             },
             // Or the server transaction times out before the ACK arrives.
             onAckTimeout: (): void => {
@@ -691,11 +692,11 @@ export abstract class Session {
    * Handle in dialog ACK request.
    * @internal
    */
-  protected onAckRequest(request: IncomingAckRequest): void {
+  protected onAckRequest(request: IncomingAckRequest): Promise<void> {
     this.logger.log("Session.onAckRequest");
     if (this.state !== SessionState.Established && this.state !== SessionState.Terminating) {
       this.logger.error(`ACK received while in state ${this.state}, dropping request`);
-      return;
+      return Promise.resolve();
     }
 
     const dialog = this.dialog;
@@ -711,7 +712,7 @@ export abstract class Session {
         const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
-        return;
+        return Promise.resolve();
       }
       case SignalingState.Stable: {
         // State we should be in.
@@ -719,29 +720,28 @@ export abstract class Session {
         const body = getBody(request.message);
         // If the ACK doesn't have an answer, nothing to be done.
         if (!body) {
-          return;
+          return Promise.resolve();
         }
         if (body.contentDisposition === "render") {
           this._renderbody = body.content;
           this._rendertype = body.contentType;
-          return;
+          return Promise.resolve();
         }
         if (body.contentDisposition !== "session") {
-          return;
+          return Promise.resolve();
         }
         // Received answer in ACK.
         const options = {
           sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
           sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
         };
-        this.setAnswer(body, options)
+        return this.setAnswer(body, options)
           .catch((error: Error) => {
             this.logger.error(error.message);
             const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
             dialog.bye(undefined, { extraHeaders });
             this.stateTransition(SessionState.Terminated);
           });
-        return;
       }
       case SignalingState.HaveLocalOffer: {
         // State should never be reached as local offer would be answered by this ACK.
@@ -750,7 +750,7 @@ export abstract class Session {
         const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
-        return;
+        return Promise.resolve();
       }
       case SignalingState.HaveRemoteOffer: {
         // State should never be reached as remote offer would be answered in first reliable response.
@@ -759,7 +759,7 @@ export abstract class Session {
         const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
         dialog.bye(undefined, { extraHeaders });
         this.stateTransition(SessionState.Terminated);
-        return;
+        return Promise.resolve();
       }
       case SignalingState.Closed:
         throw new Error(`Invalid signaling state ${dialog.signalingState}.`);
