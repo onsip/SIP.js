@@ -6,14 +6,8 @@
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
-    "lib": [
-      "es2017",
-      "dom"
-    ],
-    "types" : ["crypto-js", "events"] // white list to avoid the unexpected like @types/node which brings in esnext)
+    "lib": ["es2017", "dom"],
+    "types": ["crypto-js", "events"] // white list to avoid the unexpected like @types/node which brings in esnext)
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }
