@@ -65,7 +65,7 @@
   },
   "scripts": {
     "prebuild": "npm run lint",
-    "generate-grammar": "node --experimental-modules build/grammarGenerator.js",
+    "generate-grammar": "node build/grammarGenerator.cjs",
     "build-reg-bundle": "webpack --progress --config build/webpack.config.cjs --env.buildType reg",
     "build-min-bundle": "webpack --progress --config build/webpack.config.cjs --env.buildType min",
     "build-bundles": "npm run build-reg-bundle && npm run build-min-bundle",
