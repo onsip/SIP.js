@@ -4,10 +4,10 @@
     "module": "es2015",
     "moduleResolution": "node",
     "strict": true,
-    "esModuleInterop": true,
+    "esModuleInterop": true, // so we can import crypto-js (CommonJS modules) in compliance with es6 modules spec
     "forceConsistentCasingInFileNames": true,
     "lib": ["es2017", "dom"],
-    "types": ["crypto-js", "events"] // white list to avoid the unexpected like @types/node which brings in esnext)
+    "types": ["crypto-js", "events"] // white list to avoid the unexpected like @types/node which brings in esnext
   },
   "include": ["**/*.ts"]
 }
