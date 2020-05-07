@@ -1,8 +1,7 @@
 "use strict";
-
-const fs = require("fs"),
-    pegjs = require("pegjs"),
-    tspegjs = require("ts-pegjs");
+import fs from "fs";
+import pegjs from "pegjs";
+import tspegjs from "ts-pegjs";
 
 const thisFolder = "./src/grammar/pegjs",
     inputFile = thisFolder + "/src/grammar.pegjs",
