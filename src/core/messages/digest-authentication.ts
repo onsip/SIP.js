@@ -1,9 +1,13 @@
-import MD5 from "crypto-js/md5";
+import { Md5 } from "./md5";
 
 import { URI } from "../../grammar";
 import { Logger, LoggerFactory } from "../log";
 import { OutgoingRequestMessage } from "./outgoing-request-message";
 import { createRandomToken } from "./utils";
+
+function MD5(s: string): string {
+  return Md5.hashStr(s);
+}
 
 /**
  * Digest Authentication.
@@ -18,7 +22,7 @@ export class DigestAuthentication {
   private cnonce: string | undefined;
   private nc: number;
   private ncHex: string;
-  private response: CryptoJS.WordArray | undefined;
+  private response: string | undefined;
   private algorithm: string | undefined;
   private realm: string | undefined;
   private nonce: string | undefined;

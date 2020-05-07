@@ -29,13 +29,11 @@
     "typescript"
   ],
   "dependencies": {
-    "crypto-js": "^3.3.0",
     "events": "^3.1.0"
   },
   "devDependencies": {
     "@microsoft/api-documenter": "7.7.20",
     "@microsoft/api-extractor": "7.7.11",
-    "@types/crypto-js": "^3.1.45",
     "@types/events": "^3.0.0",
     "@types/jasmine": "^3.5.10",
     "@typescript-eslint/eslint-plugin": "^2.30.0",
