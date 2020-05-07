@@ -5,6 +5,7 @@
   "version": "0.16.0",
   "license": "MIT",
   "main": "./lib/index.js",
+  "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "homepage": "https://sipjs.com",
   "author": "OnSIP <developer@onsip.com> (https://sipjs.com/aboutus/)",
