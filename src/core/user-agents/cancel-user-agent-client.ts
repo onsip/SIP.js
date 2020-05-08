@@ -8,11 +8,7 @@ import { UserAgentClient } from "./user-agent-client";
  * @public
  */
 export class CancelUserAgentClient extends UserAgentClient implements OutgoingCancelRequest {
-  constructor(
-    core: UserAgentCore,
-    message: OutgoingRequestMessage,
-    delegate?: OutgoingRequestDelegate
-  ) {
+  constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate) {
     super(NonInviteClientTransaction, core, message, delegate);
   }
 }

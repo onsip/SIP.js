@@ -23,6 +23,7 @@ export async function makeUserFake(
   options: UserAgentOptions = {}
 ): Promise<UserFake> {
   const mockSessionDescriptionHandlers: Array<jasmine.SpyObj<SessionDescriptionHandler>> = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userHack: any = user; // FIXME: this is because grammar/parser produces undefined on no user
   const uri = new URI("sip", userHack, domain);
   const userAgentOptions: UserAgentOptions = {

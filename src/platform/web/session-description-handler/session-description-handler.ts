@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/member-ordering */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EventEmitter } from "events";
 
 import {
@@ -5,33 +7,12 @@ import {
   Session,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions as SessionDescriptionHandlerOptionsDefinition,
-} from "../../api";
-import { SessionDescriptionHandlerError } from "../../api/exceptions";
-
-import { Logger } from "../../core";
-import * as Modifiers from "./modifiers";
-
-/**
- * Options for PeerConnection.
- * @public
- */
-export interface PeerConnectionOptions {
-  iceCheckingTimeout?: number;
-  rtcConfiguration?: RTCConfiguration;
-}
-
-/**
- * Options for {@link SessionDescriptionHandler}.
- * @public
- */
-export interface SessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptionsDefinition {
-  peerConnectionOptions?: PeerConnectionOptions;
-  alwaysAcquireMediaFirst?: boolean;
-  disableAudioFallback?: boolean;
-  RTCOfferOptions?: any;
-  constraints?: MediaStreamConstraints;
-}
+} from "../../../api";
+import { SessionDescriptionHandlerError } from "../../../api/exceptions";
+import { Logger } from "../../../core";
+import * as Modifiers from "../modifiers";
+import { PeerConnectionOptions } from "./peer-connection-options";
+import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -381,17 +362,14 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   public on(event: "confirmed", listener: (sessionDescriptionHandler: SessionDescriptionHandler) => void): this;
 
   public on(
-    // tslint:disable-next-line:unified-signatures
     event: "peerConnection-createAnswerFailed" | "peerConnection-createOfferFailed",
     listener: (error: any) => void
   ): this; // TODO:
-  // tslint:disable-next-line:unified-signatures
   public on(event: "peerConnection-SetLocalDescriptionFailed", listener: (error: any) => void): this;
   public on(event: "addTrack", listener: (track: MediaStreamTrack) => void): this;
   public on(event: "addStream", listener: (track: MediaStream) => void): this;
   public on(event: "iceCandidate", listener: (candidate: RTCIceCandidate) => void): this;
   public on(
-    // tslint:disable-next-line:unified-signatures
     event:
     "iceConnection" |
     "iceConnectionChecking" |
@@ -409,7 +387,6 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
 
   public on(event: "userMediaRequest", listener: (constraints: MediaStreamConstraints) => void): this;
   public on(event: "userMedia", listener: (streams: MediaStream) => void): this;
-  // tslint:disable-next-line:unified-signatures
   public on(event: "userMediaFailed", listener: (error: any) => void): this;
   public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
 
@@ -426,6 +403,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
     const pc = this.peerConnection;
 
     this.logger.log(methodName);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const method = this.hasOffer("remote") ? pc.createAnswer : pc.createOffer;
 
     return method.apply(pc, RTCOfferOptions).catch((e: any) => {
@@ -529,10 +507,12 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   private hasBrowserTrackSupport(): boolean {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     return Boolean(this.peerConnection.addTrack);
   }
 
   private hasBrowserGetSenderSupport(): boolean {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     return Boolean(this.peerConnection.getSenders);
   }
 
@@ -560,13 +540,14 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       });
     } else {
       this.logger.warn("Using onaddstream which is deprecated");
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       (this.peerConnection as any).onaddstream = (e: any) => {
         this.logger.log("stream added");
         this.emit("addStream", e);
       };
     }
 
-    this.peerConnection.onicecandidate = (e: any) => {
+    this.peerConnection.onicecandidate = (e: RTCPeerConnectionIceEvent): void => {
       this.emit("iceCandidate", e);
       if (e.candidate) {
         this.logger.log("ICE candidate received: " +
@@ -578,7 +559,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       }
     };
 
-    this.peerConnection.onicegatheringstatechange = () => {
+    this.peerConnection.onicegatheringstatechange = (): void => {
       this.logger.log("RTCIceGatheringState changed: " + this.peerConnection.iceGatheringState);
       switch (this.peerConnection.iceGatheringState) {
       case "gathering":
@@ -598,7 +579,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
       }
     };
 
-    this.peerConnection.oniceconnectionstatechange = () => {
+    this.peerConnection.oniceconnectionstatechange = (): void => {
       let stateEvent: string;
 
       switch (this.peerConnection.iceConnectionState) {
@@ -751,6 +732,7 @@ export class SessionDescriptionHandler extends EventEmitter implements SessionDe
   }
 
   private setDirection(sdp: string): void {
+    // eslint-disable-next-line @typescript-eslint/prefer-regexp-exec
     const match = sdp.match(/a=(sendrecv|sendonly|recvonly|inactive)/);
     if (match === null) {
       this.direction = this.C.DIRECTION.NULL;

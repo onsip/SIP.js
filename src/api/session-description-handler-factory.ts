@@ -1,8 +1,6 @@
 import { Session } from "./session";
 import { SessionDescriptionHandler } from "./session-description-handler";
 
-// tslint:disable:callable-types
-
 /**
  * Factory for {@link SessionDescriptionHandler}.
  * @public

@@ -1,15 +1,15 @@
 # Compatibility
 
-## ES2015 (ES6)
-SimpleUser, the API framework and core libraries are compatible with ES2015 or later.
+SimpleUser, the API framework and core libraries are published...
+- as standard ES2017 using standard modules (ES2015)
+- not bundled, not minified, not using .mjs file extensions
 
-## Polyfills Required - none
-No polyfills are needed. The libraries only use features from ES2015 and below.
+## Can you provide an ES5 UMD minified bundle?
+No. There are a number of build tools available which can transform what's published to whatever single format is needed - for example, Babel and Webpack.
 
-Note that TypeScript [does not auto-polyfill](https://github.com/microsoft/TypeScript/issues/3101).
-For example, if the compiled target output is ES2015 (the `target` compiler setting) but the libraries require and utilize ES2017 features (as constrained by the `lib` compiler setting), an ES2017 polyfill would be needed to run in an environment which supports ES2015 but not ES2017.
+## Is IE11 supported (it's an old web browser)?
+No. If you need to make it work in IE, you might try changing the compile target to ES5 and using an ES2017 shim. However only WebRTC based media is currently supported and as IE11 does not support WebRTC you would need to provide a custom `SessionDescriptionHandler`.
 
-## IE11 (it's an old web browser) - not supported
-If you need to make it work in IE, you might try changing the compile target to ES5 and use an ES6 shim.
-No attempt is currently being made to support using with an ES6 shim.
-So again, not supported.
+## If I download the source can I change the TypeScript build target?
+Yes. But note that TypeScript [does not auto-polyfill](https://github.com/microsoft/TypeScript/issues/3101).
+For example, if the compiled target output is ES5 (the `target` compiler setting) but the libraries require and utilize ES2017 features (as constrained by the `lib` compiler setting), an ES2017 polyfill would be needed to run in an environment which supports ES5 but not ES2017.

@@ -1,16 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "CommonJS",
+    "target": "es2017",
+    "module": "es2015",
+    "moduleResolution": "node",
     "strict": true,
-    "esModuleInterop": true,
-    "importHelpers": true,
-    "lib": [
-      "es2015",
-      "dom"
-    ]
+    "lib": ["es2017", "dom"],
+    "types": ["events"] // white list to avoid the unexpected like @types/node which brings in esnext
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }

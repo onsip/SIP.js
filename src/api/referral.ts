@@ -1,9 +1,4 @@
-import {
-  IncomingReferRequest,
-  IncomingRequestMessage,
-  NameAddrHeader,
-  ResponseOptions
-} from "../core";
+import { IncomingReferRequest, IncomingRequestMessage, NameAddrHeader, ResponseOptions } from "../core";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
 import { Session } from "./session";
@@ -13,12 +8,10 @@ import { Session } from "./session";
  * @public
  */
 export class Referral {
-
   private inviter: Inviter | undefined;
 
   /** @internal */
-  public constructor(private incomingReferRequest: IncomingReferRequest, private session: Session) {
-  }
+  public constructor(private incomingReferRequest: IncomingReferRequest, private session: Session) {}
 
   public get referTo(): NameAddrHeader {
     const referTo = this.incomingReferRequest.message.parseHeader("refer-to");
@@ -66,9 +59,7 @@ export class Referral {
    * @param options - Options bucket.
    * @param modifiers - Session description handler modifiers.
    */
-  public makeInviter(
-    options?: InviterOptions
-  ): Inviter {
+  public makeInviter(options?: InviterOptions): Inviter {
     if (this.inviter) {
       return this.inviter;
     }

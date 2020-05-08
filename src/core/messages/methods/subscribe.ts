@@ -1,24 +1,21 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
 import { Subscription } from "../../subscription";
 import { IncomingRequest } from "../incoming-request";
 import { IncomingResponse } from "../incoming-response";
 import { OutgoingRequest, OutgoingRequestDelegate } from "../outgoing-request";
 import { IncomingNotifyRequest } from "./notify";
 
-// tslint:disable:no-empty-interface
-
 /**
  * Incoming SUBSCRIBE request.
  * @public
  */
-export interface IncomingSubscribeRequest extends IncomingRequest {
-}
+export interface IncomingSubscribeRequest extends IncomingRequest {}
 
 /**
  * Incoming SUBSCRIBE response.
  * @public
  */
-export interface IncomingSubscribeResponse extends IncomingResponse {
-}
+export interface IncomingSubscribeResponse extends IncomingResponse {}
 
 /**
  * Outgoing SUBSCRIBE request.

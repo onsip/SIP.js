@@ -17,8 +17,19 @@ export interface SessionDelegate {
   /**
    * Receive ACK request.
    * @param request - Incoming ACK request.
+   * @returns
+   * The callback MUST return a promise if it asynchronously handles answers.
+   * For example, an ACK with an answer (offer in the 200 Ok) may require
+   * asynchronous processing in which case the callback MUST return a Promise
+   * which resolves when the answer handling is complete.
+   * @privateRemarks
+   * Unlike INVITE handling where we can rely on the generation of a response
+   * to indicate when offer/answer processing has been completed, ACK handling
+   * requires some indication from the handler that answer processing is complete
+   * so that we can avoid some race conditions (see comments in code for more details).
+   * Having the handler return a Promise provides said indication.
    */
-  onAck?(request: IncomingAckRequest): void;
+  onAck?(request: IncomingAckRequest): Promise<void> | void;
 
   /**
    * Timeout waiting for ACK request.

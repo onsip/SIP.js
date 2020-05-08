@@ -5,6 +5,7 @@ import {
 } from "../../../src/api";
 import {
   DigestAuthentication,
+  IncomingAckRequest,
   IncomingInviteRequest,
   IncomingRequestMessage,
   IncomingResponseMessage,
@@ -55,7 +56,7 @@ export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, u
         throw new Error("Request-URI undefined.");
       }
       const ruri = incomingMessage.ruri;
-      const ruriMatches = (uri: URI | undefined) => {
+      const ruriMatches = (uri: URI | undefined): boolean => {
         return !!uri && uri.user === ruri.user;
       };
       if (
@@ -143,6 +144,10 @@ export function makeMockSessionDelegate(): jasmine.SpyObj<Required<SessionDelega
     "onPrack",
     "onRefer"
   ]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  delegate.onAck.and.callFake((request: IncomingAckRequest) => {
+    return Promise.resolve();
+  });
   return delegate;
 }
 
@@ -159,6 +164,7 @@ export function makeMockTransport(): jasmine.SpyObj<Transport> {
   const transport = jasmine.createSpyObj<Transport>("Transport", [
     "send"
   ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (transport.protocol as any) = "TEST";
   transport.send.and.returnValue(Promise.resolve());
   return transport;
@@ -192,7 +198,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
       pubGruu: undefined,
       tempGruu: undefined,
       uri: contactURI,
-      toString: () => "<" + contactURI.toString() + ">"
+      toString: (): string => "<" + contactURI.toString() + ">"
     },
     configuration: {
       displayName,

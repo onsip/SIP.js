@@ -9,6 +9,8 @@ const SIP_REGISTER = [jasmine.stringMatching(/^REGISTER/)];
 
 const SIP_200 = [jasmine.stringMatching(/^SIP\/2.0 200/)];
 const SIP_423 = [jasmine.stringMatching(/^SIP\/2.0 423/)];
+const SIP_500 = [jasmine.stringMatching(/^SIP\/2.0 500/)];
+const SIP_503 = [jasmine.stringMatching(/^SIP\/2.0 503/)];
 
 /**
  * Registration Integration Tests
@@ -72,10 +74,18 @@ describe("API Registration", () => {
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Terminated]);
       });
+
+      it("her registerer should throw if register called", () => {
+        expect(() =>registerer.register()).toThrow();
+      });
+
+      it("her registerer should throw if unregister called", () => {
+        expect(() => registerer.unregister()).toThrow();
+      });
     });
 
     describe("Alice dispose(), dispose()", () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         resetSpies();
         registerer.dispose();
         registerer.dispose();
@@ -99,7 +109,7 @@ describe("API Registration", () => {
         statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             const expires = contact.getParam("expires");
@@ -109,7 +119,7 @@ describe("API Registration", () => {
         };
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
-            onAccept: (response) => {
+            onAccept: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -160,7 +170,7 @@ describe("API Registration", () => {
       beforeEach(async () => {
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toEqual("*");
             const expires = request.message.parseHeader("expires");
@@ -194,13 +204,10 @@ describe("API Registration", () => {
     });
 
     describe("Alice unregister(), dispose()", () => {
-      let threw: boolean;
-
       beforeEach(async () => {
-        threw = false;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.accept();
           }
         };
@@ -229,13 +236,13 @@ describe("API Registration", () => {
         threw = false;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.accept();
           }
         };
         registerer.unregister();
         registerer.unregister()
-          .catch((error) => {
+          .catch(() => {
             threw = true;
           });
         await alice.transport.waitReceived(); // 200
@@ -270,7 +277,7 @@ describe("API Registration", () => {
         resetSpies();
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -306,13 +313,14 @@ describe("API Registration", () => {
         resetSpies();
         statusCode = undefined;
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onRegisterRequest: (request): void => {
             return;
           }
         };
         const options: RegistererUnregisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -345,7 +353,7 @@ describe("API Registration", () => {
         statusCode = undefined;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             cseq = request.message.cseq;
@@ -359,7 +367,7 @@ describe("API Registration", () => {
         };
         const options: RegistererRegisterOptions = {
           requestDelegate: {
-            onAccept: (response) => {
+            onAccept: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -418,7 +426,7 @@ describe("API Registration", () => {
         beforeEach(async () => {
           resetSpies();
           registrar.userAgent.delegate = {
-            onRegisterRequest: (request) => {
+            onRegisterRequest: (request): void => {
               const contact = request.message.parseHeader("contact");
               expect(contact).toBeDefined();
               cseq++;
@@ -457,7 +465,7 @@ describe("API Registration", () => {
         beforeEach(async () => {
           resetSpies();
           registrar.userAgent.delegate = {
-            onRegisterRequest: (request) => {
+            onRegisterRequest: (request): void => {
               const contact = request.message.parseHeader("contact");
               expect(contact).toBeDefined();
               expires = contact.getParam("expires");
@@ -495,7 +503,7 @@ describe("API Registration", () => {
         beforeEach(async () => {
           resetSpies();
           registrar.userAgent.delegate = {
-            onRegisterRequest: (request) => {
+            onRegisterRequest: (request): void => {
               const contact = request.message.parseHeader("contact");
               expect(contact).toBeDefined();
               cseq++;
@@ -535,7 +543,7 @@ describe("API Registration", () => {
         count = 0;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             if (count === 0) {
@@ -584,7 +592,7 @@ describe("API Registration", () => {
         threw = false;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             const contact = request.message.parseHeader("contact");
             expect(contact).toBeDefined();
             request.accept({
@@ -636,7 +644,7 @@ describe("API Registration", () => {
         resetSpies();
         const options: RegistererRegisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -672,13 +680,14 @@ describe("API Registration", () => {
         resetSpies();
         statusCode = undefined;
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onRegisterRequest: (request): void => {
             return;
           }
         };
         const options: RegistererRegisterOptions = {
           requestDelegate: {
-            onReject: (response) => {
+            onReject: (response): void => {
               statusCode = response.message.statusCode;
             }
           }
@@ -706,7 +715,7 @@ describe("API Registration", () => {
       beforeEach(async () => {
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             request.reject({ statusCode: 423 });
           }
         };
@@ -735,7 +744,7 @@ describe("API Registration", () => {
         count = 0;
         resetSpies();
         registrar.userAgent.delegate = {
-          onRegisterRequest: (request) => {
+          onRegisterRequest: (request): void => {
             count++;
             if (count === 1) {
               request.reject({
@@ -784,6 +793,108 @@ describe("API Registration", () => {
         const spy = registererStateSpy;
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.calls.argsFor(0)).toEqual([RegistererState.Registered]);
+      });
+    });
+
+    describe("Alice register(), Registrar responds with 500 Server Internal Error with Retry-After", () => {
+      const retryAfter = 600;
+      let retryAfterReceived: number | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request): void => {
+            request.reject({
+              extraHeaders: [`Retry-After: ${retryAfter}`],
+              statusCode: 500
+            });
+          }
+        };
+        registerer.stateChange.addListener((newState) => {
+          if (newState === RegistererState.Unregistered) {
+            retryAfterReceived = registerer.retryAfter;
+          }
+        });
+        registerer.register();
+        await alice.transport.waitReceived(); // 503
+      });
+
+      it("her ua should send REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 500", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_500);
+      });
+
+      it("her registerer state should transition 'unregistered'", () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+        expect(registerer.retryAfter).toEqual(undefined);
+      });
+
+      it("her registerer retry after should have been set on state transition", () => {
+        expect(retryAfterReceived).toEqual(retryAfter);
+      });
+
+      it("her registerer retry after should be `undefined'", () => {
+        expect(registerer.retryAfter).toEqual(undefined);
+      });
+    });
+
+    describe("Alice register(), Registrar responds with 503 Service Unavailable with Retry-After", () => {
+      const retryAfter = 600;
+      let retryAfterReceived: number | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        registrar.userAgent.delegate = {
+          onRegisterRequest: (request): void => {
+            request.reject({
+              extraHeaders: [`Retry-After: ${retryAfter}`],
+              statusCode: 503
+            });
+          }
+        };
+        registerer.stateChange.addListener((newState) => {
+          if (newState === RegistererState.Unregistered) {
+            retryAfterReceived = registerer.retryAfter;
+          }
+        });
+        registerer.register();
+        await alice.transport.waitReceived(); // 503
+      });
+
+      it("her ua should send REGISTER", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_REGISTER);
+      });
+
+      it("her ua should receive 503", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_503);
+      });
+
+      it("her registerer state should transition 'unregistered'", () => {
+        const spy = registererStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([RegistererState.Unregistered]);
+        expect(registerer.retryAfter).toEqual(undefined);
+      });
+
+      it("her registerer retry after should have been set on state transition", () => {
+        expect(retryAfterReceived).toEqual(retryAfter);
+      });
+
+      it("her registerer retry after should be `undefined'", () => {
+        expect(registerer.retryAfter).toEqual(undefined);
       });
     });
   });

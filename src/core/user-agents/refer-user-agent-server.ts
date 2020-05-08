@@ -4,6 +4,11 @@ import { NonInviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function instanceOfSessionDialog(object: any): object is SessionDialog {
+  return object.userAgentCore !== undefined;
+}
+
 /**
  * REFER UAS.
  * @public
@@ -19,14 +24,7 @@ export class ReferUserAgentServer extends UserAgentServer implements IncomingRef
     message: IncomingRequestMessage,
     delegate?: IncomingRequestDelegate
   ) {
-    const userAgentCore =
-      instanceOfSessionDialog(dialogOrCore) ?
-        dialogOrCore.userAgentCore :
-        dialogOrCore;
+    const userAgentCore = instanceOfSessionDialog(dialogOrCore) ? dialogOrCore.userAgentCore : dialogOrCore;
     super(NonInviteServerTransaction, userAgentCore, message, delegate);
   }
-}
-
-function instanceOfSessionDialog(object: any): object is SessionDialog {
-  return object.userAgentCore !== undefined;
 }

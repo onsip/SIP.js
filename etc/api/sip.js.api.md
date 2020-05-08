@@ -235,7 +235,7 @@ export class Notification {
 }
 
 // @public
-export class Publisher extends EventEmitter {
+export class Publisher {
     constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: PublisherOptions);
     dispose(): Promise<void>;
     publish(content: string, options?: PublisherPublishOptions): Promise<void>;
@@ -316,6 +316,7 @@ export class Registerer {
     dispose(): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "OutgoingRegisterRequest" needs to be exported by the entry point index.d.ts
     register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
+    get retryAfter(): number | undefined;
     get state(): RegistererState;
     get stateChange(): Emitter<RegistererState>;
     unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterRequest>;
@@ -388,7 +389,7 @@ export abstract class Session {
     _bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): Promise<OutgoingByeRequest>;
     // @internal (undocumented)
     _contact: string | undefined;
-    data: any;
+    data: unknown;
     delegate: SessionDelegate | undefined;
     get dialog(): Session_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Session" needs to be exported by the entry point index.d.ts
@@ -430,7 +431,7 @@ export abstract class Session {
     // Warning: (ae-forgotten-export) The symbol "IncomingAckRequest" needs to be exported by the entry point index.d.ts
     //
     // @internal
-    protected onAckRequest(request: IncomingAckRequest): void;
+    protected onAckRequest(request: IncomingAckRequest): Promise<void>;
     // @internal
     protected onByeRequest(request: IncomingByeRequest): void;
     // @internal
@@ -515,7 +516,7 @@ export interface SessionDescriptionHandler {
     hasDescription(contentType: string): boolean;
     holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
     rollbackDescription?(): Promise<void>;
-    sendDtmf(tones: string, options?: any): boolean;
+    sendDtmf(tones: string, options?: unknown): boolean;
     setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<void>;
 }
 
@@ -647,7 +648,7 @@ export interface SubscriberSubscribeOptions {
 export abstract class Subscription {
     // @internal
     protected constructor(userAgent: UserAgent, options?: SubscriptionOptions);
-    data: any;
+    data: unknown;
     delegate: SubscriptionDelegate | undefined;
     get dialog(): Subscription_2 | undefined;
     // Warning: (ae-forgotten-export) The symbol "Subscription" needs to be exported by the entry point index.d.ts
@@ -728,7 +729,7 @@ export class UserAgent {
     get configuration(): Required<UserAgentOptions>;
     // Warning: (ae-forgotten-export) The symbol "Contact" needs to be exported by the entry point index.d.ts
     get contact(): Contact;
-    data: any;
+    data: unknown;
     delegate: UserAgentDelegate | undefined;
     getLogger(category: string, label?: string): Logger;
     // Warning: (ae-forgotten-export) The symbol "LoggerFactory" needs to be exported by the entry point index.d.ts
@@ -775,7 +776,7 @@ export interface UserAgentDelegate {
     // @internal
     onReferRequest?(request: IncomingReferRequest): void;
     // @alpha
-    onRegister?(registration: any): void;
+    onRegister?(registration: unknown): void;
     // Warning: (ae-forgotten-export) The symbol "IncomingRegisterRequest" needs to be exported by the entry point index.d.ts
     //
     // @internal
@@ -823,8 +824,8 @@ export interface UserAgentOptions {
     sipExtensionExtraSupported?: Array<string>;
     sipExtensionReplaces?: SIPExtension;
     sipjsId?: string;
-    transportConstructor?: new (logger: any, options: any) => Transport;
-    transportOptions?: any;
+    transportConstructor?: new (logger: Logger, options: any) => Transport;
+    transportOptions?: unknown;
     uri?: URI;
     userAgentString?: string;
     viaHost?: string;

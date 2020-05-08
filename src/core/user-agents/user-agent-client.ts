@@ -43,6 +43,7 @@ export class UserAgentClient implements OutgoingRequest {
 
   private _transaction: ClientTransaction | undefined;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private credentials: any;
   private challenged = false;
   private stale = false;
@@ -141,11 +142,11 @@ export class UserAgentClient implements OutgoingRequest {
     // requests that have already generated a final response.
     // https://tools.ietf.org/html/rfc3261#section-9.1
     if (this.transaction.state === TransactionState.Proceeding) {
-      const uac = new UserAgentClient(NonInviteClientTransaction, this.core, message);
+      new UserAgentClient(NonInviteClientTransaction, this.core, message);
     } else {
       this.transaction.once("stateChanged", () => {
         if (this.transaction && this.transaction.state === TransactionState.Proceeding) {
-          const uac = new UserAgentClient(NonInviteClientTransaction, this.core, message);
+          new UserAgentClient(NonInviteClientTransaction, this.core, message);
         }
       });
     }
@@ -191,6 +192,7 @@ export class UserAgentClient implements OutgoingRequest {
     }
 
     // Get and parse the appropriate WWW-Authenticate or Proxy-Authenticate header.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let challenge: any;
     let authorizationHeaderName: string;
     if (statusCode === 401) {
@@ -233,7 +235,7 @@ export class UserAgentClient implements OutgoingRequest {
     }
 
     // If response to out of dialog request, assume incrementing the CSeq will suffice.
-    let cseq = this.message.cseq += 1;
+    let cseq = (this.message.cseq += 1);
 
     // If response to in dialog request, get a valid next CSeq number.
     if (dialog && dialog.localSequenceNumber) {
@@ -287,7 +289,7 @@ export class UserAgentClient implements OutgoingRequest {
    * https://tools.ietf.org/html/rfc3261#section-8.1.3.1
    * @param error - Transport error
    */
-   protected onTransportError(error: TransportError): void {
+  protected onTransportError(error: TransportError): void {
     this.logger.error(error.message);
     this.logger.error("User agent client request transport error. Generating internal 503 Service Unavailable.");
     const message = new IncomingResponseMessage();
@@ -349,10 +351,12 @@ export class UserAgentClient implements OutgoingRequest {
       onStateChange: (newState) => {
         if (newState === TransactionState.Terminated) {
           // Remove the terminated transaction from the core.
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           this.core.userAgentClients.delete(userAgentClientId);
           // FIXME: HACK: Our transaction may have been swapped out with a new one
           // post authentication (see above), so make sure to only to dispose of
           // ourselves if this terminating transaction is our current transaction.
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           if (transaction === this._transaction) {
             this.dispose();
           }

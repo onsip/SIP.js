@@ -20,18 +20,9 @@ import {
   OutgoingRequestMessage,
   RequestOptions
 } from "../messages";
-import {
-  Session,
-  SessionDelegate,
-  SessionState,
-  SignalingState
-} from "../session";
+import { Session, SessionDelegate, SessionState, SignalingState } from "../session";
 import { Timers } from "../timers";
-import {
-  InviteClientTransaction,
-  InviteServerTransaction,
-  TransactionState
-} from "../transactions";
+import { InviteClientTransaction, InviteServerTransaction, TransactionState } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { ByeUserAgentClient } from "../user-agents/bye-user-agent-client";
 import { ByeUserAgentServer } from "../user-agents/bye-user-agent-server";
@@ -73,8 +64,10 @@ export class SessionDialog extends Dialog implements Session {
 
   /** True if waiting for an ACK to the initial transaction 2xx (UAS only). */
   private ackWait = false;
+  /** True if processing an ACK to the initial transaction 2xx (UAS only). */
+  private ackProcessing = false;
   /** Retransmission timer for 2xx response which confirmed the dialog. */
-  private invite2xxTimer: any;
+  private invite2xxTimer: number | undefined;
   /** The rseq of the last reliable response. */
   private rseq: number | undefined;
 
@@ -203,8 +196,11 @@ export class SessionDialog extends Dialog implements Session {
       }
       transaction = this.initialTransaction;
     }
-    (options as any).cseq = transaction.request.cseq; // ACK cseq is INVITE cseq
-    const message = this.createOutgoingRequestMessage(C.ACK, options);
+    const message = this.createOutgoingRequestMessage(C.ACK, {
+      cseq: transaction.request.cseq, // ACK cseq is INVITE cseq
+      extraHeaders: options.extraHeaders,
+      body: options.body
+    });
     transaction.ackResponse(message); // See InviteClientTransaction for details.
     this.signalingStateTransition(message);
     return { message };
@@ -267,8 +263,8 @@ export class SessionDialog extends Dialog implements Session {
         // FIXME: TODO: This should throw a proper exception.
         throw new Error(
           "UAS MUST NOT send a BYE on a confirmed dialog " +
-          "until it has received an ACK for its 2xx response " +
-          "or until the server transaction times out."
+            "until it has received an ACK for its 2xx response " +
+            "or until the server transaction times out."
         );
       }
     }
@@ -470,7 +466,11 @@ export class SessionDialog extends Dialog implements Session {
       }
       this.signalingStateTransition(message);
       if (this.delegate && this.delegate.onAck) {
-        this.delegate.onAck({ message });
+        const promiseOrVoid = this.delegate.onAck({ message });
+        if (promiseOrVoid instanceof Promise) {
+          this.ackProcessing = true; // make sure this is always reset to false
+          promiseOrVoid.then(() => (this.ackProcessing = false)).catch(() => (this.ackProcessing = false));
+        }
       }
       return;
     }
@@ -482,7 +482,90 @@ export class SessionDialog extends Dialog implements Session {
       return;
     }
 
+    // Request within a dialog common processing.
+    // https://tools.ietf.org/html/rfc3261#section-12.2.2
+    super.receiveRequest(message);
+
+    // Handle various INVITE related cross-over, glare and race conditions
     if (message.method === C.INVITE) {
+      // Hopefully this message is helpful...
+      const warning = (): void => {
+        const reason = this.ackWait ? "waiting for initial ACK" : "processing initial ACK";
+        this.logger.warn(`INVITE dialog ${this.id} received re-INVITE while ${reason}`);
+        let msg = "RFC 5407 suggests the following to avoid this race condition... ";
+        msg += " Note: Implementation issues are outside the scope of this document,";
+        msg += " but the following tip is provided for avoiding race conditions of";
+        msg += " this type.  The caller can delay sending re-INVITE F6 for some period";
+        msg += " of time (2 seconds, perhaps), after which the caller can reasonably";
+        msg += " assume that its ACK has been received.  Implementors can decouple the";
+        msg += " actions of the user (e.g., pressing the hold button) from the actions";
+        msg += " of the protocol (the sending of re-INVITE F6), so that the UA can";
+        msg += " behave like this.  In this case, it is the implementor's choice as to";
+        msg += " how long to wait.  In most cases, such an implementation may be";
+        msg += " useful to prevent the type of race condition shown in this section.";
+        msg += " This document expresses no preference about whether or not they";
+        msg += " should wait for an ACK to be delivered.  After considering the impact";
+        msg += " on user experience, implementors should decide whether or not to wait";
+        msg += " for a while, because the user experience depends on the";
+        msg += " implementation and has no direct bearing on protocol behavior.";
+        this.logger.warn(msg);
+        return; // drop re-INVITE request message
+      };
+
+      // A UAS that receives a second INVITE before it sends the final
+      // response to a first INVITE with a lower CSeq sequence number on the
+      // same dialog MUST return a 500 (Server Internal Error) response to the
+      // second INVITE and MUST include a Retry-After header field with a
+      // randomly chosen value of between 0 and 10 seconds.
+      // https://tools.ietf.org/html/rfc3261#section-14.2
+      const retryAfter = Math.floor(Math.random() * 10) + 1;
+      const extraHeaders = [`Retry-After: ${retryAfter}`];
+
+      // There may be ONLY ONE offer/answer negotiation in progress for a
+      // single dialog at any point in time.  Section 4 explains how to ensure
+      // this.
+      // https://tools.ietf.org/html/rfc6337#section-2.2
+      if (this.ackProcessing) {
+        // UAS-IsI:  While an INVITE server transaction is incomplete or ACK
+        //           transaction associated with an offer/answer is incomplete,
+        //           a UA must reject another INVITE request with a 500
+        //           response.
+        // https://tools.ietf.org/html/rfc6337#section-4.3
+        this.core.replyStateless(message, { statusCode: 500, extraHeaders });
+        warning();
+        return;
+      }
+
+      // 3.1.4.  Callee Receives re-INVITE (Established State)  While in the
+      // Moratorium State (Case 1)
+      // https://tools.ietf.org/html/rfc5407#section-3.1.4
+      // 3.1.5.  Callee Receives re-INVITE (Established State) While in the
+      // Moratorium State (Case 2)
+      // https://tools.ietf.org/html/rfc5407#section-3.1.5
+      if (this.ackWait && this.signalingState !== SignalingState.Stable) {
+        // This scenario is basically the same as that of Section 3.1.4, but
+        // differs in sending an offer in the 200 and an answer in the ACK.  In
+        // contrast to the previous case, the offer in the 200 (F3) and the
+        // offer in the re-INVITE (F6) collide with each other.
+        //
+        // Bob sends a 491 to the re-INVITE (F6) since he is not able to
+        // properly handle a new request until he receives an answer.  (Note:
+        // 500 with a Retry-After header may be returned if the 491 response is
+        // understood to indicate request collision.  However, 491 is
+        // recommended here because 500 applies to so many cases that it is
+        // difficult to determine what the real problem was.)
+        // https://tools.ietf.org/html/rfc5407#section-3.1.5
+
+        // UAS-IsI:  While an INVITE server transaction is incomplete or ACK
+        //           transaction associated with an offer/answer is incomplete,
+        //           a UA must reject another INVITE request with a 500
+        //           response.
+        // https://tools.ietf.org/html/rfc6337#section-4.3
+        this.core.replyStateless(message, { statusCode: 500, extraHeaders });
+        warning();
+        return;
+      }
+
       // A UAS that receives a second INVITE before it sends the final
       // response to a first INVITE with a lower CSeq sequence number on the
       // same dialog MUST return a 500 (Server Internal Error) response to the
@@ -490,9 +573,6 @@ export class SessionDialog extends Dialog implements Session {
       // randomly chosen value of between 0 and 10 seconds.
       // https://tools.ietf.org/html/rfc3261#section-14.2
       if (this.reinviteUserAgentServer) {
-        // https://tools.ietf.org/html/rfc3261#section-20.33
-        const retryAfter = Math.floor((Math.random() * 10)) + 1;
-        const extraHeaders = [`Retry-After: ${retryAfter}`];
         this.core.replyStateless(message, { statusCode: 500, extraHeaders });
         return;
       }
@@ -506,10 +586,6 @@ export class SessionDialog extends Dialog implements Session {
         return;
       }
     }
-
-    // Request within a dialog common processing.
-    // https://tools.ietf.org/html/rfc3261#section-12.2.2
-    super.receiveRequest(message);
 
     // Requests within a dialog MAY contain Record-Route and Contact header
     // fields.  However, these requests do not cause the dialog's route set
@@ -531,7 +607,8 @@ export class SessionDialog extends Dialog implements Session {
     if (message.method === C.INVITE) {
       // FIXME: parser needs to be typed...
       const contact = message.parseHeader("contact");
-      if (!contact) { // TODO: Review to make sure this will never happen
+      if (!contact) {
+        // TODO: Review to make sure this will never happen
         throw new Error("Contact undefined.");
       }
       if (!(contact instanceof NameAddrHeader)) {
@@ -559,9 +636,7 @@ export class SessionDialog extends Dialog implements Session {
         // https://tools.ietf.org/html/rfc3261#section-15.1.2
         {
           const uas = new ByeUserAgentServer(this, message);
-          this.delegate && this.delegate.onBye ?
-            this.delegate.onBye(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onBye ? this.delegate.onBye(uas) : uas.accept();
           this.dispose();
         }
         break;
@@ -573,12 +648,12 @@ export class SessionDialog extends Dialog implements Session {
         // to receive INFO requests.
         {
           const uas = new InfoUserAgentServer(this, message);
-          this.delegate && this.delegate.onInfo ?
-            this.delegate.onInfo(uas) :
-            uas.reject({
-              statusCode: 469,
-              extraHeaders: ["Recv-Info :"]
-            });
+          this.delegate && this.delegate.onInfo
+            ? this.delegate.onInfo(uas)
+            : uas.reject({
+                statusCode: 469,
+                extraHeaders: ["Recv-Info :"]
+              });
         }
         break;
       case C.INVITE:
@@ -589,44 +664,34 @@ export class SessionDialog extends Dialog implements Session {
         {
           const uas = new ReInviteUserAgentServer(this, message);
           this.signalingStateTransition(message);
-          this.delegate && this.delegate.onInvite ?
-            this.delegate.onInvite(uas) :
-            uas.reject({ statusCode: 488 }); // TODO: Warning header field.
+          this.delegate && this.delegate.onInvite ? this.delegate.onInvite(uas) : uas.reject({ statusCode: 488 }); // TODO: Warning header field.
         }
         break;
       case C.MESSAGE:
         {
           const uas = new MessageUserAgentServer(this.core, message);
-          this.delegate && this.delegate.onMessage ?
-            this.delegate.onMessage(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onMessage ? this.delegate.onMessage(uas) : uas.accept();
         }
         break;
       case C.NOTIFY:
         // https://tools.ietf.org/html/rfc3515#section-2.4.4
         {
           const uas = new NotifyUserAgentServer(this, message);
-          this.delegate && this.delegate.onNotify ?
-            this.delegate.onNotify(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onNotify ? this.delegate.onNotify(uas) : uas.accept();
         }
         break;
       case C.PRACK:
         // https://tools.ietf.org/html/rfc3262#section-4
         {
           const uas = new PrackUserAgentServer(this, message);
-          this.delegate && this.delegate.onPrack ?
-            this.delegate.onPrack(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onPrack ? this.delegate.onPrack(uas) : uas.accept();
         }
         break;
       case C.REFER:
         // https://tools.ietf.org/html/rfc3515#section-2.4.2
         {
           const uas = new ReferUserAgentServer(this, message);
-          this.delegate && this.delegate.onRefer ?
-            this.delegate.onRefer(uas) :
-            uas.reject();
+          this.delegate && this.delegate.onRefer ? this.delegate.onRefer(uas) : uas.reject();
         }
         break;
       default:
@@ -694,7 +759,8 @@ export class SessionDialog extends Dialog implements Session {
   public signalingStateRollback(): void {
     if (
       this._signalingState === SignalingState.HaveLocalOffer ||
-      this.signalingState === SignalingState.HaveRemoteOffer) {
+      this.signalingState === SignalingState.HaveRemoteOffer
+    ) {
       if (this._rollbackOffer && this._rollbackAnswer) {
         this._signalingState = SignalingState.Stable;
         this._offer = this._rollbackOffer;
@@ -840,7 +906,7 @@ export class SessionDialog extends Dialog implements Session {
       // protocols are used to send the response.
       // https://tools.ietf.org/html/rfc6026#section-8.1
       let timeout = Timers.T1;
-      const retransmission = () => {
+      const retransmission = (): void => {
         if (!this.ackWait) {
           this.invite2xxTimer = undefined;
           return;
@@ -856,7 +922,7 @@ export class SessionDialog extends Dialog implements Session {
       // receiving an ACK, the dialog is confirmed, but the session SHOULD be
       // terminated.  This is accomplished with a BYE, as described in Section 15.
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-      const stateChanged = () => {
+      const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
           transaction.removeListener("stateChanged", stateChanged);
           if (this.invite2xxTimer) {
@@ -878,7 +944,7 @@ export class SessionDialog extends Dialog implements Session {
 
   // FIXME: Refactor
   private startReInvite2xxRetransmissionTimer(): void {
-    if (this.reinviteUserAgentServer  && this.reinviteUserAgentServer.transaction instanceof InviteServerTransaction) {
+    if (this.reinviteUserAgentServer && this.reinviteUserAgentServer.transaction instanceof InviteServerTransaction) {
       const transaction = this.reinviteUserAgentServer.transaction;
 
       // Once the response has been constructed, it is passed to the INVITE
@@ -893,7 +959,7 @@ export class SessionDialog extends Dialog implements Session {
       // protocols are used to send the response.
       // https://tools.ietf.org/html/rfc6026#section-8.1
       let timeout = Timers.T1;
-      const retransmission = () => {
+      const retransmission = (): void => {
         if (!this.reinviteUserAgentServer) {
           this.invite2xxTimer = undefined;
           return;
@@ -909,7 +975,7 @@ export class SessionDialog extends Dialog implements Session {
       // receiving an ACK, the dialog is confirmed, but the session SHOULD be
       // terminated.  This is accomplished with a BYE, as described in Section 15.
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-      const stateChanged = () => {
+      const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
           transaction.removeListener("stateChanged", stateChanged);
           if (this.invite2xxTimer) {

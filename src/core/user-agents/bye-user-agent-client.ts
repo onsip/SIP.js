@@ -8,11 +8,7 @@ import { UserAgentClient } from "./user-agent-client";
  * @public
  */
 export class ByeUserAgentClient extends UserAgentClient implements OutgoingByeRequest {
-  constructor(
-    dialog: SessionDialog,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ) {
+  constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions) {
     const message = dialog.createOutgoingRequestMessage(C.BYE, options);
     super(NonInviteClientTransaction, dialog.userAgentCore, message, delegate);
     dialog.dispose();

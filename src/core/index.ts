@@ -3,7 +3,7 @@
  * @packageDocumentation
  */
 
- // Directories
+// Directories
 export * from "./dialogs";
 export * from "./exceptions";
 export * from "./log";

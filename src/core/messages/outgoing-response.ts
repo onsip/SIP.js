@@ -1,6 +1,6 @@
 import { Body } from "./body";
 import { IncomingRequestMessage } from "./incoming-request-message";
-import { getReasonPhrase, newTag, str_utf8_length } from "./utils";
+import { getReasonPhrase, newTag, utf8Length } from "./utils";
 
 /**
  * A SIP message sent from a local server to a remote client.
@@ -43,10 +43,7 @@ export interface ResponseOptions {
  * https://tools.ietf.org/html/rfc3261#section-8.2.6
  * @internal
  */
-export function constructOutgoingResponse(
-  message: IncomingRequestMessage,
-  options: ResponseOptions
-): OutgoingResponse {
+export function constructOutgoingResponse(message: IncomingRequestMessage, options: ResponseOptions): OutgoingResponse {
   const CRLF = "\r\n";
 
   if (options.statusCode < 100 || options.statusCode > 699) {
@@ -167,7 +164,7 @@ export function constructOutgoingResponse(
 
   if (options.body) {
     response += "Content-Type: " + options.body.contentType + CRLF;
-    response += "Content-Length: " + str_utf8_length(options.body.content) + CRLF + CRLF;
+    response += "Content-Length: " + utf8Length(options.body.content) + CRLF + CRLF;
     response += options.body.content;
   } else {
     response += "Content-Length: " + 0 + CRLF + CRLF;

@@ -79,7 +79,9 @@ describe("Core UserAgentCore", () => {
     configurationBob = makeUserAgentCoreConfigurationFromUserAgent(uaBob);
     coreAlice = new UserAgentCore(configurationAlice, {});
     coreBob = new UserAgentCore(configurationBob, {});
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (uaAlice as any).userAgentCore = coreAlice;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (uaBob as any).userAgentCore = coreBob;
   });
 
@@ -150,7 +152,7 @@ describe("Core UserAgentCore", () => {
               // Automatically send 100 Trying to mirror current UA behavior
               incomingRequest.trying();
               incomingRequest.delegate = {
-                onCancel: () => {
+                onCancel: (): void => {
                   incomingRequest.reject({ statusCode: 487 });
                 }
               };
@@ -870,7 +872,9 @@ describe("Core UserAgentCore", () => {
               extraHeaders,
               body: { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
             }).delegate = {
-                onAccept: (response) => response.ack()
+                onAccept: (response): void => {
+                  response.ack();
+                }
               };
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
@@ -911,7 +915,9 @@ describe("Core UserAgentCore", () => {
               extraHeaders,
               body: { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
             }).delegate = {
-                onAccept: (response) => response.ack()
+                onAccept: (response): void => {
+                  response.ack()
+                }
               };
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
@@ -942,7 +948,9 @@ describe("Core UserAgentCore", () => {
               extraHeaders: [`Contact: ${uaAlice.contact.toString()}`],
               body: { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
             }).delegate = {
-                onAccept: (response) => response.ack()
+                onAccept: (response): void => {
+                  response.ack();
+                }
               };
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
@@ -1340,6 +1348,7 @@ describe("Core UserAgentCore", () => {
         let subscriptionAliceMessage: IncomingRequestMessage;
 
         beforeEach((done) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           transportAlice.send.and.callFake((msg: string) => {
             // console.log(`${displayNameAlice} sending...`);
             // console.log(msg);

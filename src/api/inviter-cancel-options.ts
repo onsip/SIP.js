@@ -1,4 +1,3 @@
-// tslint:disable:no-empty-interface
 /**
  * Options for {@link Inviter.cancel}.
  * @public

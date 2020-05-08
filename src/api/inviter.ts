@@ -30,7 +30,6 @@ import { SIPExtension } from "./user-agent-options";
  * @public
  */
 export class Inviter extends Session {
-
   /**
    * If this Inviter was created as a result of a REFER, the referred Session. Otherwise undefined.
    * @internal
@@ -46,9 +45,9 @@ export class Inviter extends Session {
   protected _id: string;
 
   /** True if dispose() has been called. */
-  private disposed: boolean = false;
+  private disposed = false;
   /** True if early media use is enabled. */
-  private earlyMedia: boolean = false;
+  private earlyMedia = false;
   /** The early media session. */
   private earlyMediaDialog: SessionDialog | undefined;
   /** The early media session description handlers. */
@@ -56,9 +55,9 @@ export class Inviter extends Session {
   /** Our From tag. */
   private fromTag: string;
   /** True if cancel() was called. */
-  private isCanceled: boolean = false;
+  private isCanceled = false;
   /** True if initial INVITE without SDP. */
-  private inviteWithoutSdp: boolean = false;
+  private inviteWithoutSdp = false;
   /** Initial INVITE request sent by core. Undefined until sent. */
   private outgoingInviteRequest: OutgoingInviteRequest | undefined;
   /** Initial INVITE message provided to core to send. */
@@ -70,11 +69,7 @@ export class Inviter extends Session {
    * @param targetURI - Request URI identifying the target of the message.
    * @param options - Options bucket. See {@link InviterOptions} for details.
    */
-  public constructor(
-    userAgent: UserAgent,
-    targetURI: URI,
-    options: InviterOptions = {}
-  ) {
+  public constructor(userAgent: UserAgent, targetURI: URI, options: InviterOptions = {}) {
     super(userAgent, options);
 
     this.logger = userAgent.getLogger("sip.Inviter");
@@ -113,9 +108,9 @@ export class Inviter extends Session {
     let fromURI: URI | undefined = userAgent.userAgentCore.configuration.aor;
     if (inviterOptions.params.fromUri) {
       fromURI =
-        (typeof inviterOptions.params.fromUri === "string") ?
-          Grammar.URIParse(inviterOptions.params.fromUri) :
-          inviterOptions.params.fromUri;
+        typeof inviterOptions.params.fromUri === "string"
+          ? Grammar.URIParse(inviterOptions.params.fromUri)
+          : inviterOptions.params.fromUri;
     }
     if (!fromURI) {
       throw new TypeError("Invalid from URI: " + inviterOptions.params.fromUri);
@@ -123,9 +118,9 @@ export class Inviter extends Session {
     let toURI: URI | undefined = targetURI;
     if (inviterOptions.params.toUri) {
       toURI =
-        (typeof inviterOptions.params.toUri === "string") ?
-          Grammar.URIParse(inviterOptions.params.toUri) :
-          inviterOptions.params.toUri;
+        typeof inviterOptions.params.toUri === "string"
+          ? Grammar.URIParse(inviterOptions.params.toUri)
+          : inviterOptions.params.toUri;
     }
     if (!toURI) {
       throw new TypeError("Invalid to URI: " + inviterOptions.params.toUri);
@@ -142,17 +137,9 @@ export class Inviter extends Session {
       extraHeaders.push("Privacy: id");
     }
     extraHeaders.push("Contact: " + contact);
-    extraHeaders.push("Allow: " + [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ].toString());
+    extraHeaders.push(
+      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString()
+    );
     if (userAgent.configuration.sipExtension100rel === SIPExtension.Required) {
       extraHeaders.push("Require: 100rel");
     }
@@ -284,7 +271,7 @@ export class Inviter extends Session {
 
     // helper function
     function getCancelReason(code: number, reason: string): string | undefined {
-      if (code && code < 200 || code > 699) {
+      if ((code && code < 200) || code > 699) {
         throw new TypeError("Invalid statusCode: " + code);
       } else if (code) {
         const cause = code;
@@ -664,7 +651,7 @@ export class Inviter extends Session {
           .then(() => {
             this.disposeEarlyMedia();
           })
-          .catch((error: Error) => {
+          .catch(() => {
             this.disposeEarlyMedia();
           })
           .then(() => {
@@ -680,7 +667,7 @@ export class Inviter extends Session {
         }
         this.notifyReferer(inviteResponse);
         this.onProgress(inviteResponse)
-          .catch((error: Error) => {
+          .catch(() => {
             this.disposeEarlyMedia();
           })
           .then(() => {
@@ -743,10 +730,7 @@ export class Inviter extends Session {
     const body = `SIP/2.0 ${statusCode} ${reasonPhrase}`.trim();
 
     const outgoingNotifyRequest = this._referred.dialog.notify(undefined, {
-      extraHeaders: [
-        "Event: refer",
-        "Subscription-State: terminated",
-      ],
+      extraHeaders: ["Event: refer", "Subscription-State: terminated"],
       body: {
         contentDisposition: "render",
         contentType: "message/sipfrag",
@@ -766,7 +750,7 @@ export class Inviter extends Session {
     // FIXME: TODO: This should be done in a subscribe dialog to satisfy the above.
     // If the notify is rejected, stop sending NOTIFY requests.
     outgoingNotifyRequest.delegate = {
-      onReject: () => {
+      onReject: (): void => {
         this._referred = undefined;
       }
     };
@@ -795,7 +779,7 @@ export class Inviter extends Session {
 
     // We have a confirmed dialog.
     session.delegate = {
-      onAck: (ackRequest): void => this.onAckRequest(ackRequest),
+      onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
       onBye: (byeRequest): void => this.onByeRequest(byeRequest),
       onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
       onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
@@ -833,7 +817,7 @@ export class Inviter extends Session {
         };
         return this.setOfferAndGetAnswer(this._dialog.offer, options)
           .then((body) => {
-            const ackRequest = inviteResponse.ack({ body });
+            inviteResponse.ack({ body });
             this.stateTransition(SessionState.Established);
           })
           .catch((error: Error) => {
@@ -851,7 +835,7 @@ export class Inviter extends Session {
           }
           this.setSessionDescriptionHandler(sdh);
           this.earlyMediaSessionDescriptionHandlers.delete(session.id);
-          const ackRequest = inviteResponse.ack();
+          inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
         }
@@ -882,7 +866,7 @@ export class Inviter extends Session {
             return Promise.reject(error);
           }
           // Otherwise we are good to go.
-          const ackRequest = inviteResponse.ack();
+          inviteResponse.ack();
           this.stateTransition(SessionState.Established);
           return Promise.resolve();
         }
@@ -905,7 +889,7 @@ export class Inviter extends Session {
                 body: { contentDisposition: "render", contentType: this._rendertype, content: this._renderbody }
               };
             }
-            const ackRequest = inviteResponse.ack(ackOptions);
+            inviteResponse.ack(ackOptions);
             this.stateTransition(SessionState.Established);
           })
           .catch((error: Error) => {
@@ -931,9 +915,7 @@ export class Inviter extends Session {
     this.logger.log("Inviter.onProgress");
 
     // validate state
-    if (
-      this.state !== SessionState.Establishing
-    ) {
+    if (this.state !== SessionState.Establishing) {
       this.logger.error(`Progress received while in state ${this.state}, dropping response`);
       return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
@@ -1010,27 +992,31 @@ export class Inviter extends Session {
           this.logger.warn("Non-reliable provisional response MUST NOT contain an initial offer, discarding response.");
           return Promise.resolve();
         }
-        // If the initial offer is in the first reliable non-failure
-        // message from the UAS back to UAC, the answer MUST be in the
-        // acknowledgement for that message
-        const sdh = this.sessionDescriptionHandlerFactory(
-          this,
-          this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions || {}
-        );
-        this.earlyMediaSessionDescriptionHandlers.set(session.id, sdh);
-        return sdh
-          .setDescription(response.body, sdhOptions, sdhModifiers)
-          .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
-          .then((description) => {
-            const body: Body = {
-              contentDisposition: "session", contentType: description.contentType, content: description.body
-            };
-            inviteResponse.prack({ extraHeaders, body });
-          })
-          .catch((error) => {
-            this.stateTransition(SessionState.Terminated);
-            throw error;
-          });
+        {
+          // If the initial offer is in the first reliable non-failure
+          // message from the UAS back to UAC, the answer MUST be in the
+          // acknowledgement for that message
+          const sdh = this.sessionDescriptionHandlerFactory(
+            this,
+            this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions || {}
+          );
+          this.earlyMediaSessionDescriptionHandlers.set(session.id, sdh);
+          return sdh
+            .setDescription(response.body, sdhOptions, sdhModifiers)
+            .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
+            .then((description) => {
+              const body: Body = {
+                contentDisposition: "session",
+                contentType: description.contentType,
+                content: description.body
+              };
+              inviteResponse.prack({ extraHeaders, body });
+            })
+            .catch((error) => {
+              this.stateTransition(SessionState.Terminated);
+              throw error;
+            });
+        }
       case SignalingState.Stable:
         // This session has completed an initial offer/answer exchange, so...
         // - INVITE with SDP and this provisional response MAY be reliable
@@ -1048,11 +1034,10 @@ export class Inviter extends Session {
             sessionDescriptionHandlerOptions: sdhOptions,
             sessionDescriptionHandlerModifiers: sdhModifiers
           };
-          return this.setAnswer(answer, options)
-            .catch((error: Error) => {
-              this.stateTransition(SessionState.Terminated);
-              throw error;
-            });
+          return this.setAnswer(answer, options).catch((error: Error) => {
+            this.stateTransition(SessionState.Terminated);
+            throw error;
+          });
         }
         return Promise.resolve();
       case SignalingState.Closed:
@@ -1067,14 +1052,12 @@ export class Inviter extends Session {
    * Handle final response to initial INVITE.
    * @param inviteResponse - 3xx response.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private onRedirect(inviteResponse: IncomingResponse): void {
     this.logger.log("Inviter.onRedirect");
 
     // validate state
-    if (
-      this.state !== SessionState.Establishing &&
-      this.state !== SessionState.Terminating
-    ) {
+    if (this.state !== SessionState.Establishing && this.state !== SessionState.Terminating) {
       this.logger.error(`Redirect received while in state ${this.state}, dropping response`);
       return;
     }
@@ -1087,14 +1070,12 @@ export class Inviter extends Session {
    * Handle final response to initial INVITE.
    * @param inviteResponse - 4xx, 5xx, or 6xx response.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private onReject(inviteResponse: IncomingResponse): void {
     this.logger.log("Inviter.onReject");
 
     // validate state
-    if (
-      this.state !== SessionState.Establishing &&
-      this.state !== SessionState.Terminating
-    ) {
+    if (this.state !== SessionState.Establishing && this.state !== SessionState.Terminating) {
       this.logger.error(`Reject received while in state ${this.state}, dropping response`);
       return;
     }
@@ -1107,6 +1088,7 @@ export class Inviter extends Session {
    * Handle final response to initial INVITE.
    * @param inviteResponse - 100 response.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private onTrying(inviteResponse: IncomingResponse): void {
     this.logger.log("Inviter.onTrying");
 

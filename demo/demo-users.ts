@@ -3,7 +3,7 @@
 // users with these token suffixes. So, you still might run into a user besides yourself.
 
 function getCookie(key: string): string {
-  const re = new RegExp("(?:(?:^|.*;\s*) ?" + key + "\s*\=\s*([^;]*).*$)|^.*$");
+  const re = new RegExp("(?:(?:^|.*;\\s*) ?" + key + "\\s*=\\s*([^;]*).*$)|^.*$");
   return document.cookie.replace(re, "$1");
 }
 
@@ -24,7 +24,7 @@ if (token === "") {
   token = randomString(32, ["0123456789", "abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"].join(""));
   const d = new Date();
   d.setTime(d.getTime() + 1000 * 60 * 60 * 24); // expires in 1 day
-  document.cookie = ("onsipToken=" + token + ";" + "expires=" + d.toUTCString() + ";");
+  document.cookie = "onsipToken=" + token + ";" + "expires=" + d.toUTCString() + ";";
 }
 
 // The demos uses unauthenticated users on the "sipjs.onsip.com" demo domain.

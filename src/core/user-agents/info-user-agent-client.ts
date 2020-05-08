@@ -8,11 +8,7 @@ import { UserAgentClient } from "./user-agent-client";
  * @public
  */
 export class InfoUserAgentClient extends UserAgentClient implements OutgoingInfoRequest {
-  constructor(
-    dialog: SessionDialog,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ) {
+  constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions) {
     const message = dialog.createOutgoingRequestMessage(C.INFO, options);
     super(NonInviteClientTransaction, dialog.userAgentCore, message, delegate);
   }

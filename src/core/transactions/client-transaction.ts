@@ -20,6 +20,23 @@ import { ClientTransactionUser } from "./transaction-user";
  * @public
  */
 export abstract class ClientTransaction extends Transaction {
+  protected constructor(
+    private _request: OutgoingRequestMessage,
+    transport: Transport,
+    protected user: ClientTransactionUser,
+    state: TransactionState,
+    loggerCategory: string
+  ) {
+    super(transport, user, ClientTransaction.makeId(_request), state, loggerCategory);
+    // The Via header field indicates the transport used for the transaction
+    // and identifies the location where the response is to be sent.  A Via
+    // header field value is added only after the transport that will be
+    // used to reach the next hop has been selected (which may involve the
+    // usage of the procedures in [4]).
+    // https://tools.ietf.org/html/rfc3261#section-8.1.1.7
+    _request.setViaHeader(this.id, transport.protocol);
+  }
+
   private static makeId(request: OutgoingRequestMessage): string {
     if (request.method === "CANCEL") {
       if (!request.branch) {
@@ -31,40 +48,10 @@ export abstract class ClientTransaction extends Transaction {
     }
   }
 
-  protected constructor(
-    private _request: OutgoingRequestMessage,
-    transport: Transport,
-    protected user: ClientTransactionUser,
-    state: TransactionState,
-    loggerCategory: string,
-  ) {
-    super(
-      transport,
-      user,
-      ClientTransaction.makeId(_request),
-      state,
-      loggerCategory
-    );
-    // The Via header field indicates the transport used for the transaction
-    // and identifies the location where the response is to be sent.  A Via
-    // header field value is added only after the transport that will be
-    // used to reach the next hop has been selected (which may involve the
-    // usage of the procedures in [4]).
-    // https://tools.ietf.org/html/rfc3261#section-8.1.1.7
-    _request.setViaHeader(this.id, transport.protocol);
-  }
-
   /** The outgoing request the transaction handling. */
   get request(): OutgoingRequestMessage {
     return this._request;
   }
-
-  /**
-   * Receive incoming responses from the transport which match this transaction.
-   * Responses will be delivered to the transaction user as necessary.
-   * @param response - The incoming response.
-   */
-  public abstract receiveResponse(response: IncomingResponseMessage): void;
 
   /**
    * A 408 to non-INVITE will always arrive too late to be useful ([3]),
@@ -81,4 +68,11 @@ export abstract class ClientTransaction extends Transaction {
       this.user.onRequestTimeout();
     }
   }
+
+  /**
+   * Receive incoming responses from the transport which match this transaction.
+   * Responses will be delivered to the transaction user as necessary.
+   * @param response - The incoming response.
+   */
+  public abstract receiveResponse(response: IncomingResponseMessage): void;
 }

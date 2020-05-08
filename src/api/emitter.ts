@@ -44,7 +44,7 @@ export interface Emitter<T> {
  * @param eventName - Event name.
  * @internal
  */
-export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName: string = "event"): Emitter<T> {
+export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName = "event"): Emitter<T> {
   return {
     addListener: (listener: (data: T) => void, options: { once?: boolean } = {}): void => {
       if (options.once) {

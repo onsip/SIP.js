@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Grammar, NameAddrHeader, URI } from "../../../src/core";
 
 // TODO:
@@ -97,6 +98,7 @@ describe("Core NameAddrHeader", () => {
     });
   });
 
+  // eslint-disable-next-line max-len
   const toParse = '"Iñaki ðđøþ" <SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2>;QWE=QWE;ASd';
 
   describe("when calling NameAddrHeader.parse('" + toParse + "')", () => {
@@ -114,7 +116,7 @@ describe("Core NameAddrHeader", () => {
       expect(header.displayName).toEqual("Iñaki ðđøþ");
     });
 
-    function itsMethod(testName: string, methodName: string, methodArg: string, expected: any) {
+    function itsMethod(testName: string, methodName: string, methodArg: string, expected: any): void {
       it(testName, () => {
         expect(header[methodName](methodArg)).toEqual(expected);
       });
@@ -136,11 +138,12 @@ describe("Core NameAddrHeader", () => {
     it("can set the display name to " + newDispName2, () => {
       header.displayName = newDispName2;
       expect(header.displayName).toEqual(newDispName2);
+      // eslint-disable-next-line max-len
       expect(header.toString()).toEqual("<sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd");
     });
 
     describe("its URI:", () => {
-      function itsUriParses(property: string, expected: any) {
+      function itsUriParses(property: string, expected: any): void {
         it("parses the " + property, () => {
           expect(header.uri[property]).toEqual(expected);
         });
@@ -151,7 +154,7 @@ describe("Core NameAddrHeader", () => {
       itsUriParses("host", "versatica.com");
       itsUriParses("port", 6060);
 
-      function itsUriMethod(methodName: string, methodArg: string, expected: any) {
+      function itsUriMethod(methodName: string, methodArg: string, expected: any): void {
         const testName = methodName + '("' + methodArg + '") is ' + JSON.stringify(expected);
         it(testName, () => {
           expect(header.uri[methodName](methodArg)).toEqual(expected);

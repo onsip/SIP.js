@@ -1,10 +1,12 @@
-import { SessionDescriptionHandlerModifier } from "../../api";
+import { SessionDescriptionHandlerModifier } from "../../../api";
 
 const stripPayload = (sdp: string, payload: string): string => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mediaDescs: Array<any> = [];
 
   const lines: Array<string> = sdp.split(/\r\n/);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let currentMediaDesc: any;
   for (let i = 0; i < lines.length;) {
     const line: string = lines[i];
@@ -66,6 +68,7 @@ const stripMediaDescription = (sdp: string, description: string): string => {
     const groupLine = sdp.match(groupRegExp);
     if (groupLine && groupLine.length === 1) {
       let groupLinePortion = groupLine[0];
+      // eslint-disable-next-line no-useless-escape
       const groupRegExpReplace = new RegExp("\ *" + midLineToRemove + "[^\ ]*", "g");
       groupLinePortion = groupLinePortion.replace(groupRegExpReplace, "");
       sdp = sdp.split(groupRegExp).join(groupLinePortion);

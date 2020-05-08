@@ -22,10 +22,7 @@ import {
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
 } from "../core";
-import {
-  createRandomToken,
-  str_utf8_length
-} from "../core/messages/utils";
+import { createRandomToken, utf8Length } from "../core/messages/utils";
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
 import { LIBRARY_VERSION } from "../version";
@@ -41,14 +38,11 @@ import { Session } from "./session";
 import { Subscription } from "./subscription";
 import { Transport } from "./transport";
 import { UserAgentDelegate } from "./user-agent-delegate";
-import {
-  SIPExtension,
-  UserAgentOptions,
-  UserAgentRegisteredOptionTags
-} from "./user-agent-options";
+import { SIPExtension, UserAgentOptions, UserAgentRegisteredOptionTags } from "./user-agent-options";
 import { UserAgentState } from "./user-agent-state";
 
-declare var chrome: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const chrome: any;
 
 /**
  * A user agent sends and receives requests using a `Transport`.
@@ -62,20 +56,6 @@ declare var chrome: any;
  * @public
  */
 export class UserAgent {
-
-  /**
-   * Create a URI instance from a string.
-   * @param uri - The string to parse.
-   *
-   * @example
-   * ```ts
-   * const uri = UserAgent.makeURI("sip:edgar@example.com");
-   * ```
-   */
-  public static makeURI(uri: string): URI | undefined {
-    return Grammar.URIParse(uri);
-  }
-
   /** Default user agent options. */
   private static readonly defaultOptions: Required<UserAgentOptions> = {
     allowLegacyNotifications: false,
@@ -92,12 +72,15 @@ export class UserAgent {
     hackWssInTransport: false,
     logBuiltinEnabled: true,
     logConfiguration: true,
-    logConnector: () => { /* noop */ },
+    logConnector: () => {
+      /* noop */
+    },
     logLevel: "log",
     noAnswerTimeout: 60,
     preloadedRouteSet: [],
     reconnectionAttempts: 0,
     reconnectionDelay: 4,
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
     sessionDescriptionHandlerFactoryOptions: {},
     sipExtension100rel: SIPExtension.Unsupported,
@@ -112,25 +95,10 @@ export class UserAgent {
   };
 
   /**
-   * Strip properties with undefined values from options.
-   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-   * https://github.com/Microsoft/TypeScript/issues/13195
-   * @param options - Options to reduce
-   */
-  private static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
-    return Object.keys(options).reduce((object, key) => {
-      if ((options as any)[key] !== undefined) {
-        (object as any)[key] = (options as any)[key];
-      }
-      return object;
-    }, {});
-  }
-
-  /**
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
    */
-  public data: any;
+  public data: unknown;
 
   /**
    * Delegate.
@@ -158,16 +126,12 @@ export class UserAgent {
   private loggerFactory: LoggerFactory = new LoggerFactory();
   /** Options. */
   private options: Required<UserAgentOptions>;
-  /** Unload listener. */
-  private unloadListener = (() => { this.stop(); });
 
   /**
    * Constructs a new instance of the `UserAgent` class.
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
-  public constructor(
-    options: Partial<UserAgentOptions> = {}
-  ) {
+  public constructor(options: Partial<UserAgentOptions> = {}) {
     // initialize delegate
     this.delegate = options.delegate;
 
@@ -188,8 +152,8 @@ export class UserAgent {
     // viaHost is hack
     if (this.options.hackIpInContact) {
       if (typeof this.options.hackIpInContact === "boolean" && this.options.hackIpInContact) {
-        const from: number = 1;
-        const to: number = 254;
+        const from = 1;
+        const to = 254;
         const octet: number = Math.floor(Math.random() * (to - from + 1) + from);
         // random Test-Net IP (http://tools.ietf.org/html/rfc5735)
         this.options.viaHost = "192.0.2." + octet;
@@ -201,8 +165,12 @@ export class UserAgent {
     // initialize logger & logger factory
     this.logger = this.loggerFactory.getLogger("sip.UserAgent");
     this.loggerFactory.builtinEnabled = this.options.logBuiltinEnabled;
-    this.loggerFactory.connector = this.options.logConnector as
-      (level: string, category: string, label: string | undefined, content: string) => void;
+    this.loggerFactory.connector = this.options.logConnector as (
+      level: string,
+      category: string,
+      label: string | undefined,
+      content: string
+    ) => void;
     switch (this.options.logLevel) {
       case "error":
         this.loggerFactory.level = Levels.error;
@@ -223,6 +191,7 @@ export class UserAgent {
     if (this.options.logConfiguration) {
       this.logger.log("Configuration:");
       Object.keys(this.options).forEach((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const value = (this.options as any)[key];
         switch (key) {
           case "uri":
@@ -243,6 +212,7 @@ export class UserAgent {
 
     // guard deprecated transport options (remove this in version 16.x)
     if (this.options.transportOptions) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const optionsDeprecated: any = this.options.transportOptions;
       const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated.maxReconnectionAttempts;
       const reconnectionTimeoutDeprecated: number | undefined = optionsDeprecated.reconnectionTimeout;
@@ -298,6 +268,36 @@ export class UserAgent {
     if (this.options.autoStart) {
       this.start();
     }
+  }
+
+  /**
+   * Create a URI instance from a string.
+   * @param uri - The string to parse.
+   *
+   * @example
+   * ```ts
+   * const uri = UserAgent.makeURI("sip:edgar@example.com");
+   * ```
+   */
+  public static makeURI(uri: string): URI | undefined {
+    return Grammar.URIParse(uri);
+  }
+
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<UserAgentOptions>): Partial<UserAgentOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((options as any)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
   }
 
   /**
@@ -410,11 +410,7 @@ export class UserAgent {
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (
-        typeof window !== "undefined" &&
-        typeof window.addEventListener === "function" &&
-        !googleChromePackagedApp
-      ) {
+      if (typeof window !== "undefined" && typeof window.addEventListener === "function" && !googleChromePackagedApp) {
         window.addEventListener("unload", this.unloadListener);
       }
     }
@@ -465,11 +461,7 @@ export class UserAgent {
     if (this.options.autoStop) {
       // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
       const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (
-        typeof window !== "undefined" &&
-        window.removeEventListener &&
-        !googleChromePackagedApp
-      ) {
+      if (typeof window !== "undefined" && window.removeEventListener && !googleChromePackagedApp) {
         window.removeEventListener("unload", this.unloadListener);
       }
     }
@@ -499,12 +491,11 @@ export class UserAgent {
     this.logger.log(`Dispose of registerers`);
     for (const id in registerers) {
       if (registerers[id]) {
-        await registerers[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._registerers[id];
-            throw error;
-          });
+        await registerers[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._registerers[id];
+          throw error;
+        });
       }
     }
 
@@ -512,12 +503,11 @@ export class UserAgent {
     this.logger.log(`Dispose of sessions`);
     for (const id in sessions) {
       if (sessions[id]) {
-        await sessions[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._sessions[id];
-            throw error;
-          });
+        await sessions[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._sessions[id];
+          throw error;
+        });
       }
     }
 
@@ -525,12 +515,11 @@ export class UserAgent {
     this.logger.log(`Dispose of subscriptions`);
     for (const id in subscriptions) {
       if (subscriptions[id]) {
-        await subscriptions[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._subscriptions[id];
-            throw error;
-          });
+        await subscriptions[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._subscriptions[id];
+          throw error;
+        });
       }
     }
 
@@ -538,22 +527,20 @@ export class UserAgent {
     this.logger.log(`Dispose of publishers`);
     for (const id in publishers) {
       if (publishers[id]) {
-        await publishers[id].dispose()
-          .catch((error: Error) => {
-            this.logger.error(error.message);
-            delete this._publishers[id];
-            throw error;
-          });
+        await publishers[id].dispose().catch((error: Error) => {
+          this.logger.error(error.message);
+          delete this._publishers[id];
+          throw error;
+        });
       }
     }
 
     // Dispose of the transport (disconnecting)
     this.logger.log(`Dispose of transport`);
-    await transport.dispose()
-      .catch((error: Error) => {
-        this.logger.error(error.message);
-        throw error;
-      });
+    await transport.dispose().catch((error: Error) => {
+      this.logger.error(error.message);
+      throw error;
+    });
 
     // Dispose of the user agent core (resetting)
     this.logger.log(`Dispose of core`);
@@ -564,10 +551,7 @@ export class UserAgent {
    * Used to avoid circular references.
    * @internal
    */
-  public _makeInviter(
-    targetURI: URI,
-    options?: InviterOptions
-  ): Inviter {
+  public _makeInviter(targetURI: URI, options?: InviterOptions): Inviter {
     return new Inviter(this, targetURI, options);
   }
 
@@ -575,7 +559,7 @@ export class UserAgent {
    * Attempt reconnection up to `maxReconnectionAttempts` times.
    * @param reconnectionAttempt - Current attempt number.
    */
-  private attemptReconnection(reconnectionAttempt: number = 1): void {
+  private attemptReconnection(reconnectionAttempt = 1): void {
     const reconnectionAttempts = this.options.reconnectionAttempts;
     const reconnectionDelay = this.options.reconnectionDelay;
 
@@ -585,17 +569,20 @@ export class UserAgent {
     }
 
     this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - trying`);
-    setTimeout(() => {
-      this.reconnect()
-        .then(() => {
-          this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
-        })
-        .catch((error: Error) => {
-          this.logger.error(error.message);
-          this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
-          this.attemptReconnection(++reconnectionAttempt);
-        });
-    }, reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000);
+    setTimeout(
+      () => {
+        this.reconnect()
+          .then(() => {
+            this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - succeeded`);
+          })
+          .catch((error: Error) => {
+            this.logger.error(error.message);
+            this.logger.log(`Reconnection attempt ${reconnectionAttempt} of ${reconnectionAttempts} - failed`);
+            this.attemptReconnection(++reconnectionAttempt);
+          });
+      },
+      reconnectionAttempt === 1 ? 0 : reconnectionDelay * 1000
+    );
   }
 
   /**
@@ -603,16 +590,15 @@ export class UserAgent {
    */
   private initContact(): Contact {
     const contactName = createRandomToken(8); // FIXME: should be configurable
-    const contactTransport =
-      this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
+    const contactTransport = this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
     const contact = {
       pubGruu: undefined,
       tempGruu: undefined,
       uri: new URI("sip", contactName, this.options.viaHost, undefined, { transport: contactTransport }),
-      toString: (contactToStringOptions: { anonymous?: boolean, outbound?: boolean } = {}) => {
+      toString: (contactToStringOptions: { anonymous?: boolean; outbound?: boolean } = {}): string => {
         const anonymous = contactToStringOptions.anonymous || false;
         const outbound = contactToStringOptions.outbound || false;
-        let contactString: string = "<";
+        let contactString = "<";
         if (anonymous) {
           contactString += this.contact.tempGruu || `sip:anonymous@anonymous.invalid;transport=${contactTransport}`;
         } else {
@@ -670,14 +656,10 @@ export class UserAgent {
       viaForceRport: this.options.forceRport,
       viaHost: this.options.viaHost,
       authenticationFactory: () => {
-        const username =
-          this.options.authorizationUsername ?
-            this.options.authorizationUsername :
-            this.options.uri.user; // if authorization username not provided, use uri user as username
-        const password =
-          this.options.authorizationPassword ?
-            this.options.authorizationPassword :
-            undefined;
+        const username = this.options.authorizationUsername
+          ? this.options.authorizationUsername
+          : this.options.uri.user; // if authorization username not provided, use uri user as username
+        const password = this.options.authorizationPassword ? this.options.authorizationPassword : undefined;
         return new DigestAuthentication(this.getLoggerFactory(), username, password);
       },
       transportAccessor: () => this.transport
@@ -691,6 +673,7 @@ export class UserAgent {
           onCancel: (cancel: IncomingRequestMessage): void => {
             invitation._onCancel(cancel);
           },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           onTransportError: (error: TransportError): void => {
             // A server transaction MUST NOT discard transaction state based only on
             // encountering a non-recoverable transport error when sending a
@@ -768,23 +751,26 @@ export class UserAgent {
           }
         }
 
+        // Delegate invitation handling.
+        if (this.delegate?.onInvite) {
+          if (invitation.autoSendAnInitialProvisionalResponse) {
+            invitation.progress().then(() => {
+              if (this.delegate?.onInvite === undefined) {
+                throw new Error("onInvite undefined.");
+              }
+              this.delegate.onInvite(invitation);
+            });
+            return;
+          }
+          this.delegate.onInvite(invitation);
+          return;
+        }
+
         // A common scenario occurs when the callee is currently not willing or
         // able to take additional calls at this end system.  A 486 (Busy Here)
         // SHOULD be returned in such a scenario.
         // https://tools.ietf.org/html/rfc3261#section-13.3.1.3
-        if (!this.delegate || !this.delegate.onInvite) {
-          invitation.reject({ statusCode: 486 });
-          return;
-        }
-
-        // Delegate invitation handling.
-        if (!invitation.autoSendAnInitialProvisionalResponse) {
-          this.delegate.onInvite(invitation);
-        } else {
-          const onInvite = this.delegate.onInvite;
-          invitation.progress()
-            .then(() => onInvite(invitation));
-        }
+        invitation.reject({ statusCode: 486 });
       },
       onMessage: (incomingMessageRequest: IncomingMessageRequest): void => {
         if (this.delegate && this.delegate.onMessage) {
@@ -850,9 +836,9 @@ export class UserAgent {
   }
 
   private initTransportCallbacks(): void {
-    this.transport.onConnect = () => this.onTransportConnect();
-    this.transport.onDisconnect = (error?: Error) => this.onTransportDisconnect(error);
-    this.transport.onMessage = (message: string) => this.onTransportMessage(message);
+    this.transport.onConnect = (): void => this.onTransportConnect();
+    this.transport.onDisconnect = (error?: Error): void => this.onTransportDisconnect(error);
+    this.transport.onMessage = (message: string): void => this.onTransportMessage(message);
   }
 
   private onTransportConnect(): void {
@@ -924,7 +910,7 @@ export class UserAgent {
       // FIXME: This should be Transport check before we get here (Section 18).
       // Custom SIP.js check to reject requests if body length wrong.
       // This is port of SanityCheck.rfc3261_18_3_request().
-      const len: number = str_utf8_length(message.body);
+      const len: number = utf8Length(message.body);
       const contentLength: string | undefined = message.getHeader("content-length");
       if (contentLength && len < Number(contentLength)) {
         this.userAgentCore.replyStateless(message, { statusCode: 400 });
@@ -958,7 +944,7 @@ export class UserAgent {
       // FIXME: This should be Transport check before we get here (Section 18).
       // Custom SIP.js check to reject requests if body length wrong.
       // This is port of SanityCheck.rfc3261_18_3_response().
-      const len: number = str_utf8_length(message.body);
+      const len: number = utf8Length(message.body);
       const contentLength: string | undefined = message.getHeader("content-length");
       if (contentLength && len < Number(contentLength)) {
         this.logger.warn("Message body length is lower than the value in Content-Length header field. Dropping.");
@@ -984,8 +970,9 @@ export class UserAgent {
   /**
    * Transition state.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private transitionState(newState: UserAgentState, error?: Error): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 
@@ -1010,4 +997,9 @@ export class UserAgent {
     this._state = newState;
     this._stateEventEmitter.emit("event", this._state);
   }
+
+  /** Unload listener. */
+  private unloadListener = (): void => {
+    this.stop();
+  };
 }

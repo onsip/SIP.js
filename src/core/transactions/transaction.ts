@@ -29,7 +29,7 @@ export abstract class Transaction extends EventEmitter {
     private _user: TransactionUser,
     private _id: string,
     private _state: TransactionState,
-    loggerCategory: string,
+    loggerCategory: string
   ) {
     super();
     this.logger = _user.loggerFactory.getLogger(loggerCategory, _id);
@@ -72,15 +72,16 @@ export abstract class Transaction extends EventEmitter {
 
   /** Subscribe to 'stateChanged' event. */
   public on(name: "stateChanged", callback: () => void): this;
-  public on(name: string, callback: (...args: any[]) => void): this  { return super.on(name, callback); }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public on(name: string, callback: (...args: any[]) => void): this {
+    return super.on(name, callback);
+  }
 
   protected logTransportError(error: TransportError, message: string): void {
     this.logger.error(error.message);
     this.logger.error(`Transport error occurred in ${this.typeToString()} with id ${this.id}.`);
     this.logger.error(message);
   }
-
-  protected abstract onTransportError(error: TransportError): void;
 
   /**
    * Pass message to transport for transmission. If transport fails,
@@ -120,4 +121,6 @@ export abstract class Transaction extends EventEmitter {
   protected typeToString(): string {
     return "UnknownType";
   }
+
+  protected abstract onTransportError(error: TransportError): void;
 }

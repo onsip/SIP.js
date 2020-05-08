@@ -17,7 +17,7 @@ export class TransportFake extends EventEmitter implements Transport {
   public onDisconnect: ((error?: Error) => void) | undefined;
   public onMessage: ((message: string) => void) | undefined;
 
-  private _id: string = "";
+  private _id = "";
   private peers: Array<TransportFake> = [];
   private waitingForSendPromise: Promise<void> | undefined;
   private waitingForSendResolve: ResolveFunction | undefined;
@@ -26,10 +26,11 @@ export class TransportFake extends EventEmitter implements Transport {
   private waitingForReceiveResolve: ResolveFunction | undefined;
   private waitingForReceiveReject: RejectFunction | undefined;
 
+  private _receiveDropOnce = false;
   private _state: TransportState = TransportState.Disconnected;
   private _stateEventEmitter = new EventEmitter();
 
-  constructor(private logger: Logger, options: any) {
+  constructor(private logger: Logger) {
     super();
   }
 
@@ -73,20 +74,28 @@ export class TransportFake extends EventEmitter implements Transport {
     this._state = connected ? TransportState.Connected : TransportState.Disconnected;
   }
 
-  public addPeer(peer: TransportFake) {
+  public addPeer(peer: TransportFake): void {
     this.peers.push(peer);
   }
 
   public receive(msg: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let message = "";
     message += this._id ? `${this._id} ` : "";
     message +=  `Receiving...\n${msg}`;
     // this.logger.log(message);
     this.emit("message", msg);
-    if (this.onMessage) {
+    if (this._receiveDropOnce) {
+      this._receiveDropOnce = false;
+      this.logger.warn((this._id ? `${this._id} ` : "") + "Dropped message");
+    } else if (this.onMessage) {
       this.onMessage(msg);
     }
     this.receiveHappened();
+  }
+
+  public receiveDropOnce(): void {
+    this._receiveDropOnce = true;
   }
 
   public async waitSent(): Promise<void> {
@@ -153,7 +162,7 @@ export class TransportFake extends EventEmitter implements Transport {
     return Promise.resolve();
   }
 
-  private _send(msg: string, options?: any): Promise<{ msg: string, overrideEvent?: boolean }> {
+  private _send(msg: string): Promise<{ msg: string; overrideEvent?: boolean }> {
     if (!this.isConnected()) {
       return Promise.resolve().then(() => {
         this.sendHappened();
@@ -221,7 +230,7 @@ export class TransportFake extends EventEmitter implements Transport {
    * @internal
    */
   private transitionState(newState: TransportState, error?: Error): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 

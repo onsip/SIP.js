@@ -1,9 +1,8 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
 import { TransportError } from "../exceptions";
 import { LoggerFactory } from "../log";
 import { IncomingResponseMessage } from "../messages";
 import { TransactionState } from "./transaction-state";
-
-// tslint:disable:no-empty-interface
 
 /**
  * Transaction User (TU).

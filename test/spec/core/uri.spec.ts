@@ -5,6 +5,7 @@ import { Grammar, URI } from "../../../src/core";
 // The next time the URI class gets a work over, these should be reviewed.
 
 describe("Core URI", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let uri: any;
   let scheme: string;
   let user: string;
@@ -326,7 +327,7 @@ describe("Core URI", () => {
       expect(uri instanceof URI).toBe(true);
     });
 
-    function itParses(property: string, expected: string | number) {
+    function itParses(property: string, expected: string | number): void {
       it("parses the " + property, () => {
         expect(uri[property]).toEqual(expected);
       });
@@ -347,7 +348,8 @@ describe("Core URI", () => {
       expect(uri.getParam("nooo")).toEqual(undefined);
     });
 
-    function itsMethod(testName: string, methodName: string, methodArg: any, expected: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function itsMethod(testName: string, methodName: string, methodArg: any, expected: any): void {
       it(testName, () => {
         expect(uri[methodName](methodArg)).toEqual(expected);
       });
@@ -358,7 +360,9 @@ describe("Core URI", () => {
     itsMethod("parses header list x-header-1", "getHeader", "x-header-1", ["AaA1", "AAA2"]);
     itsMethod("parses header X-HEADER-2", "getHeader", "X-HEADER-2", ["BbB"]);
     itsMethod('doesn\'t parse missing header "nooo"', "getHeader", "nooo", undefined);
+    // eslint-disable-next-line max-len
     itsMethod("correctly toString()s itself", "toString", undefined, "sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB");
+    // eslint-disable-next-line max-len
     itsMethod("correctly toRaw()s itself", "toRaw", undefined, "SIP:aliCE@versaTICA.Com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB");
 
     const newUser = "Iñaki:PASSWD";

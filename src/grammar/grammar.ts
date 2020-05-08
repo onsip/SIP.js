@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable no-inner-declarations */
 import * as pegGrammar from "./pegjs/dist/grammar";
 
 import { NameAddrHeader } from "./name-addr-header";
@@ -14,7 +16,9 @@ export namespace Grammar {
    * @param input -
    * @param startRule -
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function parse(input: string, startRule: string): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = {startRule};
 
     try {
@@ -31,6 +35,7 @@ export namespace Grammar {
    * @param name_addr_header -
    */
   export function nameAddrHeaderParse(nameAddrHeader: string): NameAddrHeader | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedNameAddrHeader: any = Grammar.parse(nameAddrHeader, "Name_Addr_Header");
 
     return parsedNameAddrHeader !== -1 ? (parsedNameAddrHeader as NameAddrHeader) : undefined;
@@ -42,6 +47,7 @@ export namespace Grammar {
    * @param uri -
    */
   export function URIParse(uri: string): URI | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedUri: any = Grammar.parse(uri, "SIP_URI");
 
     return parsedUri !== -1 ? (parsedUri as URI) : undefined;

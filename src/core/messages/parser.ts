@@ -1,3 +1,5 @@
+/* eslint-disable no-inner-declarations */
+/* eslint-disable @typescript-eslint/no-namespace */
 import { Grammar } from "../../grammar";
 import { Logger } from "../log/logger";
 import { IncomingRequestMessage } from "./incoming-request-message";
@@ -8,14 +10,14 @@ import { IncomingResponseMessage } from "./incoming-response-message";
  * @internal
  */
 export namespace Parser {
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function getHeader(data: any, headerStart: number): number {
     // 'start' position of the header.
     let start: number = headerStart;
     // 'end' position of the header.
-    let end: number = 0;
+    let end = 0;
     // 'partial end' position of the header.
-    let partialEnd: number = 0;
+    let partialEnd = 0;
 
     // End of message.
     if (data.substring(start, start + 2).match(/(^\r\n)/)) {
@@ -31,8 +33,10 @@ export namespace Parser {
         return partialEnd;
       }
 
-      if (!data.substring(partialEnd + 2, partialEnd + 4).match(/(^\r\n)/) &&
-        data.charAt(partialEnd + 2).match(/(^\s+)/)) {
+      if (
+        !data.substring(partialEnd + 2, partialEnd + 4).match(/(^\r\n)/) &&
+        data.charAt(partialEnd + 2).match(/(^\s+)/)
+      ) {
         // Not the end of the message. Continue from the next position.
         start = partialEnd + 2;
       } else {
@@ -45,6 +49,7 @@ export namespace Parser {
 
   export function parseHeader(
     message: IncomingRequestMessage | IncomingResponseMessage,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any,
     headerStart: number,
     headerEnd: number
@@ -53,6 +58,7 @@ export namespace Parser {
     const headerName: string = data.substring(headerStart, hcolonIndex).trim();
     const headerValue: string = data.substring(hcolonIndex + 1, headerEnd).trim();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let parsed: any;
     // If header-field is well-known, parse it.
     switch (headerName.toLowerCase()) {
@@ -189,7 +195,7 @@ export namespace Parser {
     data: string,
     logger: Logger
   ): IncomingRequestMessage | IncomingResponseMessage | undefined {
-    let headerStart: number = 0;
+    let headerStart = 0;
     let headerEnd: number = data.indexOf("\r\n");
 
     if (headerEnd === -1) {
@@ -199,7 +205,7 @@ export namespace Parser {
 
     // Parse first line. Check if it is a Request or a Reply.
     const firstLine: string = data.substring(0, headerEnd);
-    const parsed: any = Grammar.parse(firstLine, "Request_Response");
+    const parsed = Grammar.parse(firstLine, "Request_Response");
     let message: IncomingRequestMessage | IncomingResponseMessage;
 
     if (parsed === -1) {
@@ -221,6 +227,7 @@ export namespace Parser {
     // Loop over every line in data. Detect the end of each header and parse
     // it or simply add to the headers collection.
     let bodyStart: number;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       headerEnd = getHeader(data, headerStart);
 
@@ -234,7 +241,7 @@ export namespace Parser {
         return;
       }
 
-      const parsedHeader: any = parseHeader(message, data, headerStart, headerEnd);
+      const parsedHeader = parseHeader(message, data, headerStart, headerEnd);
 
       if (parsedHeader !== true) {
         logger.error(parsed.error);

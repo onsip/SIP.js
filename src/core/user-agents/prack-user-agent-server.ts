@@ -16,11 +16,7 @@ import { UserAgentServer } from "./user-agent-server";
 export class PrackUserAgentServer extends UserAgentServer implements IncomingPrackRequest {
   private dialog: SessionDialog;
 
-  constructor(
-    dialog: SessionDialog,
-    message: IncomingRequestMessage,
-    delegate?: IncomingRequestDelegate
-  ) {
+  constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate) {
     super(NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
     // Update dialog signaling state with offer/answer in body
     dialog.signalingStateTransition(message);

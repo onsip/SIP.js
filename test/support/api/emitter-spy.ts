@@ -33,6 +33,7 @@ export function makeEmitterSpy<T>(emitter: Emitter<T>, logger: Logger): EmitterS
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const emitTimeout = (): void => {
     if (waitingForEmitReject) {
       waitingForEmitReject(new Error("Timed out waiting for emit."));

@@ -1,5 +1,3 @@
-// tslint:disable:callable-types
-
 /**
  * Delegate for {@link Session} offer/answer exchange.
  * @public
@@ -66,7 +64,7 @@ export interface SessionDescriptionHandler {
    * @param options - Options object to be used by sendDtmf.
    * @returns True if DTMF send is successful, false otherwise.
    */
-  sendDtmf(tones: string, options?: any): boolean;
+  sendDtmf(tones: string, options?: unknown): boolean;
 }
 
 /**

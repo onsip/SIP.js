@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Logger } from "../../../../src/core";
 import { SessionDescriptionHandler } from "../../../../src/platform/web";
@@ -9,7 +10,7 @@ import { SessionDescriptionHandler } from "../../../../src/platform/web";
 // Might be helpful, so for reference...
 // https://testrtc.com/manipulating-getusermedia-available-devices/
 
-function setIceGatheringState(pc: any, state: string) {
+function setIceGatheringState(pc: any, state: string): void {
   pc.iceGatheringState = state;
   pc.onicegatheringstatechange.call(pc);
 }
@@ -22,17 +23,18 @@ describe("Web SessionDescriptionHandler", () => {
 
   beforeEach(() => {
     // stub out WebRTC APIs
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     realGetUserMedia = window.navigator.mediaDevices && window.navigator.mediaDevices.getUserMedia;
     realMediaDevices = window.navigator.mediaDevices;
     realRTCPeerConnection = window.RTCPeerConnection;
-    (window as any).RTCPeerConnection = function() {
+    (window as any).RTCPeerConnection = function(): void {
       this.iceGatheringState = "new";
     };
-    window.RTCPeerConnection.prototype.close = () => { /* */ };
-    window.RTCPeerConnection.prototype.getReceivers = () => {
+    window.RTCPeerConnection.prototype.close = (): void => { /* */ };
+    window.RTCPeerConnection.prototype.getReceivers = (): Array<RTCRtpReceiver> => {
       return [];
     };
-    window.RTCPeerConnection.prototype.getSenders = () => {
+    window.RTCPeerConnection.prototype.getSenders = ():  Array<RTCRtpSender> => {
       return [];
     };
 
@@ -42,12 +44,12 @@ describe("Web SessionDescriptionHandler", () => {
     //   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Read-only
     // which doesn't let us assign to it
     if (window.navigator.mediaDevices) {
-      (window.navigator.mediaDevices.getUserMedia as any) = () => { /* */ };
+      (window.navigator.mediaDevices.getUserMedia as any) = (): any => { /* */ };
     } else {
-      (window.navigator.mediaDevices as any) = { getUserMedia: () => { /* */ } };
+      (window.navigator.mediaDevices as any) = { getUserMedia: (): any => { /* */ } };
     }
 
-    (window.navigator.mediaDevices.getUserMedia as any) = () => { /* */ };
+    (window.navigator.mediaDevices.getUserMedia as any) = (): any => { /* */ };
 
     handler = new SessionDescriptionHandler(console as any as Logger, {
       peerConnectionOptions: {

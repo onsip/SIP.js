@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Parameters } from "./parameters";
 
 interface URIObject {
@@ -43,6 +44,7 @@ export class URI extends Parameters {
     scheme = scheme || "sip";
 
     for (const header in headers) {
+      // eslint-disable-next-line no-prototype-builtins
       if (headers.hasOwnProperty(header)) {
         this.setHeader(header, headers[header]);
       }
@@ -100,12 +102,14 @@ export class URI extends Parameters {
   }
 
   public hasHeader(name: string): boolean {
+    // eslint-disable-next-line no-prototype-builtins
     return !!name && !!this.headers.hasOwnProperty(this.headerize(name));
   }
 
   public deleteHeader(header: string): any {
     header = this.headerize(header);
 
+    // eslint-disable-next-line no-prototype-builtins
     if (this.headers.hasOwnProperty(header)) {
       const value: any = this.headers[header];
       delete this.headers[header];
@@ -154,6 +158,7 @@ export class URI extends Parameters {
     }
 
     for (const parameter in this.parameters) {
+      // eslint-disable-next-line no-prototype-builtins
       if (this.parameters.hasOwnProperty(parameter)) {
         uriString += ";" + parameter;
 
@@ -165,8 +170,10 @@ export class URI extends Parameters {
 
     const headers: Array<string> = [];
     for (const header in this.headers) {
+      // eslint-disable-next-line no-prototype-builtins
       if (this.headers.hasOwnProperty(header)) {
         for (const idx in this.headers[header]) {
+          // eslint-disable-next-line no-prototype-builtins
           if (this.headers[header].hasOwnProperty(idx)) {
             headers.push(header + "=" + this.headers[header][idx]);
           }
@@ -195,6 +202,7 @@ export class URI extends Parameters {
     // fixed so that decodeURIComponent is not called at this point (in toString).
     // The user should be decoded when the URI is constructor or some other
     // place where we can catch the error before the URI is created or somesuch.
+    // eslint-disable-next-line no-useless-catch
     try {
       decodedUser = decodeURIComponent(user);
     } catch (error) {
@@ -220,7 +228,7 @@ export class URI extends Parameters {
     };
     const name: Array<string> = str.toLowerCase().replace(/_/g, "-").split("-");
     const parts: number = name.length;
-    let hname: string = "";
+    let hname = "";
 
     for (let part = 0; part < parts; part++) {
       if (part !== 0) {

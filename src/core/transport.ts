@@ -11,7 +11,6 @@
  * @public
  */
 export interface Transport {
-
   /**
    * The transport protocol.
    *
@@ -29,5 +28,5 @@ export interface Transport {
    *
    * @param message - Message to send.
    */
-   send(message: string): Promise<void>;
+  send(message: string): Promise<void>;
 }

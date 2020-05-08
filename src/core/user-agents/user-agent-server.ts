@@ -76,9 +76,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public accept(options: ResponseOptions = { statusCode: 200 }): OutgoingResponse {
     if (!this.acceptable) {
-      throw new TransactionStateError(
-        `${this.message.method} not acceptable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not acceptable in state ${this.transaction.state}.`);
     }
     const statusCode = options.statusCode;
     if (statusCode < 200 || statusCode > 299) {
@@ -90,9 +88,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public progress(options: ResponseOptions = { statusCode: 180 }): OutgoingResponse {
     if (!this.progressable) {
-      throw new TransactionStateError(
-        `${this.message.method} not progressable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not progressable in state ${this.transaction.state}.`);
     }
     const statusCode = options.statusCode;
     if (statusCode < 101 || statusCode > 199) {
@@ -104,9 +100,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public redirect(contacts: Array<URI>, options: ResponseOptions = { statusCode: 302 }): OutgoingResponse {
     if (!this.redirectable) {
-      throw new TransactionStateError(
-        `${this.message.method} not redirectable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not redirectable in state ${this.transaction.state}.`);
     }
     const statusCode = options.statusCode;
     if (statusCode < 300 || statusCode > 399) {
@@ -121,9 +115,7 @@ export class UserAgentServer implements IncomingRequest {
 
   public reject(options: ResponseOptions = { statusCode: 480 }): OutgoingResponse {
     if (!this.rejectable) {
-      throw new TransactionStateError(
-        `${this.message.method} not rejectable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not rejectable in state ${this.transaction.state}.`);
     }
     const statusCode = options.statusCode;
     if (statusCode < 400 || statusCode > 699) {
@@ -133,11 +125,10 @@ export class UserAgentServer implements IncomingRequest {
     return response;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public trying(options?: ResponseOptions): OutgoingResponse {
     if (!this.tryingable) {
-      throw new TransactionStateError(
-        `${this.message.method} not tryingable in state ${this.transaction.state}.`
-      );
+      throw new TransactionStateError(`${this.message.method} not tryingable in state ${this.transaction.state}.`);
     }
     const response = this.reply({ statusCode: 100 });
     return response;
@@ -175,14 +166,12 @@ export class UserAgentServer implements IncomingRequest {
   protected get acceptable(): boolean {
     if (this.transaction instanceof InviteServerTransaction) {
       return (
-        this.transaction.state === TransactionState.Proceeding ||
-        this.transaction.state === TransactionState.Accepted
+        this.transaction.state === TransactionState.Proceeding || this.transaction.state === TransactionState.Accepted
       );
     }
     if (this.transaction instanceof NonInviteServerTransaction) {
       return (
-        this.transaction.state === TransactionState.Trying ||
-        this.transaction.state === TransactionState.Proceeding
+        this.transaction.state === TransactionState.Trying || this.transaction.state === TransactionState.Proceeding
       );
     }
     throw new Error("Unknown transaction type.");
@@ -204,8 +193,7 @@ export class UserAgentServer implements IncomingRequest {
     }
     if (this.transaction instanceof NonInviteServerTransaction) {
       return (
-        this.transaction.state === TransactionState.Trying ||
-        this.transaction.state === TransactionState.Proceeding
+        this.transaction.state === TransactionState.Trying || this.transaction.state === TransactionState.Proceeding
       );
     }
     throw new Error("Unknown transaction type.");
@@ -217,8 +205,7 @@ export class UserAgentServer implements IncomingRequest {
     }
     if (this.transaction instanceof NonInviteServerTransaction) {
       return (
-        this.transaction.state === TransactionState.Trying ||
-        this.transaction.state === TransactionState.Proceeding
+        this.transaction.state === TransactionState.Trying || this.transaction.state === TransactionState.Proceeding
       );
     }
     throw new Error("Unknown transaction type.");
@@ -265,6 +252,7 @@ export class UserAgentServer implements IncomingRequest {
       onStateChange: (newState) => {
         if (newState === TransactionState.Terminated) {
           // Remove the terminated transaction from the core.
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           this.core.userAgentServers.delete(userAgentServerId);
           this.dispose();
         }

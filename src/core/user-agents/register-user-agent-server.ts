@@ -8,11 +8,7 @@ import { UserAgentServer } from "./user-agent-server";
  * @public
  */
 export class RegisterUserAgentServer extends UserAgentServer implements IncomingRegisterRequest {
-  constructor(
-    protected core: UserAgentCore,
-    message: IncomingRequestMessage,
-    delegate?: IncomingRequestDelegate
-  ) {
+  constructor(protected core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate) {
     super(NonInviteServerTransaction, core, message, delegate);
   }
 }

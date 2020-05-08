@@ -5,7 +5,6 @@ import { URI } from "../core";
  * @public
  */
 export interface RegistererOptions {
-
   /** Registration expiration time in seconds. */
   expires?: number;
 

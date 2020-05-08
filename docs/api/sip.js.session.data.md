@@ -9,5 +9,5 @@ Property reserved for use by instance owner.
 <b>Signature:</b>
 
 ```typescript
-data: any;
+data: unknown;
 ```

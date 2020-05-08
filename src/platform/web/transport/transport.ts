@@ -1,52 +1,17 @@
 import { EventEmitter } from "events";
 
-import { _makeEmitter, Emitter } from "../../api/emitter";
-import { StateTransitionError } from "../../api/exceptions";
-import { Transport as TransportDefinition } from "../../api/transport";
-import { TransportState } from "../../api/transport-state";
-import { Grammar, Logger } from "../../core";
-
-/**
- * Transport options.
- * @public
- */
-export interface TransportOptions {
-  /**
-   * URL of WebSocket server to connect with. For example, "wss://localhost:8080".
-   */
-  server: string;
-
-  /**
-   * Seconds to wait for WebSocket to connect before giving up.
-   * @defaultValue `5`
-   */
-  connectionTimeout?: number;
-
-  /**
-   * Keep alive - needs review.
-   * @internal
-   */
-  keepAliveInterval?: number;
-
-  /**
-   * Keep alive - needs review.
-   * @internal
-   */
-  keepAliveDebounce?: number;
-
-  /**
-   * If true, messages sent and received by the transport are logged.
-   * @defaultValue `true`
-   */
-  traceSip?: boolean;
-}
+import { _makeEmitter, Emitter } from "../../../api/emitter";
+import { StateTransitionError } from "../../../api/exceptions";
+import { Transport as TransportDefinition } from "../../../api/transport";
+import { TransportState } from "../../../api/transport-state";
+import { Grammar, Logger } from "../../../core";
+import { TransportOptions } from "./transport-options";
 
 /**
  * Transport for SIP over secure WebSocket (WSS).
  * @public
  */
 export class Transport extends EventEmitter implements TransportDefinition {
-
   private static defaultOptions: Required<TransportOptions> = {
     server: "",
     connectionTimeout: 5,
@@ -69,17 +34,17 @@ export class Transport extends EventEmitter implements TransportDefinition {
   private connectPromise: Promise<void> | undefined;
   private connectResolve: (() => void) | undefined;
   private connectReject: ((error: Error) => void) | undefined;
-  private connectTimeout: any | undefined;
+  private connectTimeout: number | undefined;
 
   private disconnectPromise: Promise<void> | undefined;
   private disconnectResolve: (() => void) | undefined;
   private disconnectReject: ((error?: Error) => void) | undefined;
 
-  private keepAliveInterval: any | undefined;
-  private keepAliveDebounceTimeout: any | undefined;
+  private keepAliveInterval: number | undefined;
+  private keepAliveDebounceTimeout: number | undefined;
 
   private logger: Logger;
-  private transitioningState: boolean = false;
+  private transitioningState = false;
 
   constructor(logger: Logger, options?: TransportOptions) {
     super();
@@ -89,9 +54,10 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
     // guard deprecated options (remove this in version 16.x)
     if (options) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const optionsDeprecated: any = options;
-      const wsServersDeprecated: string | Array<string> | undefined = optionsDeprecated.wsServers;
-      const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated.maxReconnectionAttempts;
+      const wsServersDeprecated: string | Array<string> | undefined = optionsDeprecated?.wsServers;
+      const maxReconnectionAttemptsDeprecated: number | undefined = optionsDeprecated?.maxReconnectionAttempts;
       if (wsServersDeprecated !== undefined) {
         const deprecatedMessage =
           `The transport option "wsServers" as has apparently been specified and has been deprecated. ` +
@@ -125,12 +91,12 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
     // validate server URL
     const url = this.configuration.server;
-    const parsed: any | -1 = Grammar.parse(url, "absoluteURI");
+    const parsed: { scheme: string } | -1 = Grammar.parse(url, "absoluteURI");
     if (parsed === -1) {
       this.logger.error(`Invalid WebSocket Server URL "${url}"`);
       throw new Error("Invalid WebSocket Server URL");
     }
-    if (["wss", "ws", "udp"].indexOf(parsed.scheme) < 0) {
+    if (!["wss", "ws", "udp"].includes(parsed.scheme)) {
       this.logger.error(`Invalid scheme in WebSocket Server URL "${url}"`);
       throw new Error("Invalid scheme in WebSocket Server URL");
     }
@@ -243,6 +209,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
   /**
    * @internal
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public on(name: string, callback: (...args: any[]) => void): this {
     const deprecatedMessage =
       `A listener has been registered for the transport event "${name}". ` +
@@ -336,7 +303,9 @@ export class Transport extends EventEmitter implements TransportDefinition {
       this.connectTimeout = setTimeout(() => {
         this.logger.warn(
           "Connect timed out. " +
-          "Exceeded time set in configuration.connectionTimeout: " + this.configuration.connectionTimeout + "s."
+            "Exceeded time set in configuration.connectionTimeout: " +
+            this.configuration.connectionTimeout +
+            "s."
         );
         ws.close(1000); // careful here to use a local reference instead of this._ws
       }, this.configuration.connectionTimeout * 1000);
@@ -494,7 +463,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
       return;
     }
 
-    const data: any = ev.data;
+    const data = ev.data;
     let finishedData: string;
 
     // CRLF Keep Alive response from server. Clear our keep alive timeout.
@@ -511,7 +480,8 @@ export class Transport extends EventEmitter implements TransportDefinition {
       return;
     }
 
-    if (typeof data !== "string") { // WebSocket binary message.
+    if (typeof data !== "string") {
+      // WebSocket binary message.
       try {
         finishedData = new TextDecoder().decode(new Uint8Array(data));
         // TextDecoder (above) is not supported by old browsers, but it correctly decodes UTF-8.
@@ -526,7 +496,8 @@ export class Transport extends EventEmitter implements TransportDefinition {
       if (this.configuration.traceSip === true) {
         this.logger.log("Received WebSocket binary message:\n\n" + finishedData + "\n");
       }
-    } else { // WebSocket text message.
+    } else {
+      // WebSocket text message.
       finishedData = data;
       if (this.configuration.traceSip === true) {
         this.logger.log("Received WebSocket text message:\n\n" + finishedData + "\n");
@@ -566,7 +537,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
   /**
    * Helper function to generate an Error.
-   * @param state State transitioning to.
+   * @param state - State transitioning to.
    */
   private transitionLoopDetectedError(state: string): StateTransitionError {
     let message = `A state transition loop has been detected.`;
@@ -581,7 +552,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
    * @internal
    */
   private transitionState(newState: TransportState, error?: Error): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): Error => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 
@@ -602,25 +573,17 @@ export class Transport extends EventEmitter implements TransportDefinition {
         }
         break;
       case TransportState.Connected:
-        if (
-          newState !== TransportState.Disconnecting &&
-          newState !== TransportState.Disconnected
-        ) {
+        if (newState !== TransportState.Disconnecting && newState !== TransportState.Disconnected) {
           invalidTransition();
         }
         break;
       case TransportState.Disconnecting:
-        if (
-          newState !== TransportState.Connecting &&
-          newState !== TransportState.Disconnected
-        ) {
+        if (newState !== TransportState.Connecting && newState !== TransportState.Disconnected) {
           invalidTransition();
         }
         break;
       case TransportState.Disconnected:
-        if (
-          newState !== TransportState.Connecting
-        ) {
+        if (newState !== TransportState.Connecting) {
           invalidTransition();
         }
         break;
@@ -633,6 +596,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
     this._state = newState;
 
     // Local copies of connect promises (guarding against callbacks changing them indirectly)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const connectPromise = this.connectPromise;
     const connectResolve = this.connectResolve;
     const connectReject = this.connectReject;
@@ -645,6 +609,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
     }
 
     // Local copies of disconnect promises (guarding against callbacks changing them indirectly)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const disconnectPromise = this.disconnectPromise;
     const disconnectResolve = this.disconnectResolve;
     const disconnectReject = this.disconnectReject;
@@ -734,7 +699,9 @@ export class Transport extends EventEmitter implements TransportDefinition {
       if (!disconnectReject) {
         throw new Error("Disconnect reject undefined.");
       }
-      newState === TransportState.Disconnected ? disconnectResolve() : disconnectReject(error || new Error("Disconnect aborted."));
+      newState === TransportState.Disconnected
+        ? disconnectResolve()
+        : disconnectReject(error || new Error("Disconnect aborted."));
     }
 
     this.transitioningState = false;

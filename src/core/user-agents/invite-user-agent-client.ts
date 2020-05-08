@@ -32,11 +32,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
   private confirmedDialogs = new Map<string, SessionDialog>();
   private earlyDialogs = new Map<string, SessionDialog>();
 
-  constructor(
-    core: UserAgentCore,
-    message: OutgoingRequestMessage,
-    delegate?: OutgoingInviteRequestDelegate
-  ) {
+  constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingInviteRequestDelegate) {
     super(InviteClientTransaction, core, message, delegate);
     this.delegate = delegate;
   }

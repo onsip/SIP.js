@@ -20,7 +20,6 @@ export function getButtons(id: string): Array<HTMLButtonElement> {
     throw new Error(`Elements "${id}" not found.`);
   }
   const buttons: Array<HTMLButtonElement> = [];
-  // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < els.length; i++) {
     const el = els[i];
     if (!(el instanceof HTMLButtonElement)) {
