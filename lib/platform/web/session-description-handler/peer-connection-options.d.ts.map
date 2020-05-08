@@ -1,0 +1,1 @@
+{"version":3,"file":"peer-connection-options.d.ts","sourceRoot":"","sources":["../../../../src/platform/web/session-description-handler/peer-connection-options.ts"],"names":[],"mappings":"AAAA;;;GAGG;AACH,MAAM,WAAW,qBAAqB;IACpC,kBAAkB,CAAC,EAAE,MAAM,CAAC;IAC5B,gBAAgB,CAAC,EAAE,gBAAgB,CAAC;CACrC"}
