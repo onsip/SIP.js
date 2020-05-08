@@ -9,6 +9,7 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
   peerConnectionOptions?: PeerConnectionOptions;
   alwaysAcquireMediaFirst?: boolean;
   disableAudioFallback?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   RTCOfferOptions?: any;
   constraints?: MediaStreamConstraints;
 }

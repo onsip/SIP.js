@@ -1,5 +1,4 @@
 "use strict";
-
 const fs = require("fs"),
     pegjs = require("pegjs"),
     tspegjs = require("ts-pegjs");

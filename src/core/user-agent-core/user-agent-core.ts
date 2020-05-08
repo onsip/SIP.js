@@ -21,11 +21,7 @@ import {
   ResponseOptions,
   URI
 } from "../messages";
-import {
-  InviteServerTransaction,
-  NonInviteClientTransaction,
-  TransactionState
-} from "../transactions";
+import { InviteServerTransaction, NonInviteClientTransaction, TransactionState } from "../transactions";
 import { Transport } from "../transport";
 import {
   InviteUserAgentClient,
@@ -49,10 +45,7 @@ import { UserAgentCoreDelegate } from "./user-agent-core-delegate";
  * This is ported from UA.C.ACCEPTED_BODY_TYPES.
  * FIXME: TODO: Should be configurable/variable.
  */
-const acceptedBodyTypes = [
-  "application/sdp",
-  "application/dtmf-relay"
-];
+const acceptedBodyTypes = ["application/sdp", "application/dtmf-relay"];
 
 /**
  * User Agent Core.
@@ -93,10 +86,7 @@ export class UserAgentCore {
    * @param configuration - Configuration.
    * @param delegate - Delegate.
    */
-  constructor(
-    configuration: UserAgentCoreConfiguration,
-    delegate: UserAgentCoreDelegate = {}
-  ) {
+  constructor(configuration: UserAgentCoreConfiguration, delegate: UserAgentCoreDelegate = {}) {
     this.configuration = configuration;
     this.delegate = delegate;
     this.dialogs = new Map<string, Dialog>();
@@ -140,10 +130,7 @@ export class UserAgentCore {
    * @param request - Outgoing request.
    * @param delegate - Request delegate.
    */
-  public invite(
-    request: OutgoingRequestMessage,
-    delegate?: OutgoingInviteRequestDelegate
-  ): OutgoingInviteRequest {
+  public invite(request: OutgoingRequestMessage, delegate?: OutgoingInviteRequestDelegate): OutgoingInviteRequest {
     return new InviteUserAgentClient(this, request, delegate);
   }
 
@@ -152,10 +139,7 @@ export class UserAgentCore {
    * @param request - Outgoing request.
    * @param delegate - Request delegate.
    */
-  public message(
-    request: OutgoingRequestMessage,
-    delegate?: OutgoingRequestDelegate
-  ): OutgoingMessageRequest {
+  public message(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingMessageRequest {
     return new MessageUserAgentClient(this, request, delegate);
   }
 
@@ -164,10 +148,7 @@ export class UserAgentCore {
    * @param request - Outgoing request.
    * @param delegate - Request delegate.
    */
-  public publish(
-    request: OutgoingRequestMessage,
-    delegate?: OutgoingRequestDelegate
-  ): OutgoingPublishRequest {
+  public publish(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingPublishRequest {
     return new PublishUserAgentClient(this, request, delegate);
   }
 
@@ -176,10 +157,7 @@ export class UserAgentCore {
    * @param request - Outgoing request.
    * @param delegate - Request delegate.
    */
-  public register(
-    request: OutgoingRequestMessage,
-    delegate?: OutgoingRequestDelegate
-  ): OutgoingRegisterRequest {
+  public register(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingRegisterRequest {
     return new RegisterUserAgentClient(this, request, delegate);
   }
 
@@ -200,10 +178,7 @@ export class UserAgentCore {
    * @param request - Outgoing request.
    * @param delegate - Request delegate.
    */
-  public request(
-    request: OutgoingRequestMessage,
-    delegate?: OutgoingRequestDelegate
-  ): OutgoingRequest {
+  public request(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): OutgoingRequest {
     return new UserAgentClient(NonInviteClientTransaction, this, request, delegate);
   }
 
@@ -226,7 +201,6 @@ export class UserAgentCore {
     extraHeaders?: Array<string>,
     body?: Body
   ): OutgoingRequestMessage {
-
     // default values from user agent configuration
     const callIdPrefix = this.configuration.sipjsId;
     const fromDisplayName = this.configuration.displayName;
@@ -251,7 +225,7 @@ export class UserAgentCore {
       optionTags,
       routeSet,
       userAgentString,
-      viaHost,
+      viaHost
     };
 
     // merge provided options with default options
@@ -260,14 +234,7 @@ export class UserAgentCore {
       ...options
     };
 
-    return new OutgoingRequestMessage(
-      method,
-      requestURI,
-      fromURI,
-      toURI,
-      requestOptions,
-      extraHeaders,
-      body);
+    return new OutgoingRequestMessage(method, requestURI, fromURI, toURI, requestOptions, extraHeaders, body);
   }
 
   /**
@@ -302,10 +269,7 @@ export class UserAgentCore {
    * @param message - Incoming request message to reply to.
    * @param statusCode - Status code to reply with.
    */
-  public replyStateless(
-    message: IncomingRequestMessage,
-    options: ResponseOptions
-  ): OutgoingResponse {
+  public replyStateless(message: IncomingRequestMessage, options: ResponseOptions): OutgoingResponse {
     const userAgent = this.configuration.userAgentHeaderFieldValue;
     const supported = this.configuration.supportedOptionTagsResponse;
     options = { ...options, userAgent, supported };
@@ -392,9 +356,7 @@ export class UserAgentCore {
           // but is apparently how RFC 2543 user agents do things.
           // We are not currently supporting this case.
           // NOTE: Not backwards compatible with RFC 2543 (no support for strict-routing).
-          this.logger.warn(
-            `Discarding out of dialog ACK after 2xx response sent on transaction ${transactionId}.`
-          );
+          this.logger.warn(`Discarding out of dialog ACK after 2xx response sent on transaction ${transactionId}.`);
           return;
         }
       }
@@ -472,7 +434,6 @@ export class UserAgentCore {
    * @param message - Incoming request message.
    */
   private receiveRequest(message: IncomingRequestMessage): void {
-
     // 8.2 UAS Behavior
     // UASs SHOULD process the requests in the order of the steps that
     // follow in this section (that is, starting with authentication, then
@@ -490,7 +451,7 @@ export class UserAgentCore {
     // header field MUST list the set of methods supported by the UAS
     // generating the message.
     // https://tools.ietf.org/html/rfc3261#section-8.2.1
-    if (AllowedMethods.indexOf(message.method) === -1) {
+    if (!AllowedMethods.includes(message.method)) {
       const allowHeader = "Allow: " + AllowedMethods.toString();
       this.replyStateless(message, {
         statusCode: 405,
@@ -501,7 +462,8 @@ export class UserAgentCore {
 
     // 8.2.2 Header Inspection
     // https://tools.ietf.org/html/rfc3261#section-8.2.2
-    if (!message.ruri) { // FIXME: A request message should always have an ruri
+    if (!message.ruri) {
+      // FIXME: A request message should always have an ruri
       throw new Error("Request-URI undefined.");
     }
 
@@ -520,7 +482,7 @@ export class UserAgentCore {
     // the request with a 404 (Not Found) response.
     // https://tools.ietf.org/html/rfc3261#section-8.2.2.1
     const ruri = message.ruri;
-    const ruriMatches = (uri: URI | undefined) => {
+    const ruriMatches = (uri: URI | undefined): boolean => {
       return !!uri && uri.user === ruri.user;
     };
     if (
@@ -570,12 +532,12 @@ export class UserAgentCore {
     if (!message.toTag) {
       const transactionId = message.viaBranch;
       if (!this.userAgentServers.has(transactionId)) {
-        const mergedRequest =
-          Array.from(this.userAgentServers.values())
-            .some((uas) =>
-              uas.transaction.request.fromTag === message.fromTag &&
-              uas.transaction.request.callId === message.callId &&
-              uas.transaction.request.cseq === message.cseq);
+        const mergedRequest = Array.from(this.userAgentServers.values()).some(
+          (uas) =>
+            uas.transaction.request.fromTag === message.fromTag &&
+            uas.transaction.request.callId === message.callId &&
+            uas.transaction.request.cseq === message.cseq
+        );
         if (mergedRequest) {
           this.replyStateless(message, { statusCode: 482 });
           return;
@@ -626,7 +588,6 @@ export class UserAgentCore {
    * @param message - Incoming request message.
    */
   private receiveInsideDialogRequest(message: IncomingRequestMessage): void {
-
     // NOTIFY requests are matched to such SUBSCRIBE requests if they
     // contain the same "Call-ID", a "To" header field "tag" parameter that
     // matches the "From" header field "tag" parameter of the SUBSCRIBE
@@ -766,7 +727,6 @@ export class UserAgentCore {
    * @param message - Incoming request message.
    */
   private receiveOutsideDialogRequest(message: IncomingRequestMessage): void {
-
     switch (message.method) {
       case C.ACK:
         // Absorb stray out of dialog ACKs
@@ -794,9 +754,7 @@ export class UserAgentCore {
         // https://tools.ietf.org/html/rfc3261#section-13.3.1
         {
           const uas = new InviteUserAgentServer(this, message);
-          this.delegate.onInvite ?
-            this.delegate.onInvite(uas) :
-            uas.reject();
+          this.delegate.onInvite ? this.delegate.onInvite(uas) : uas.reject();
         }
         break;
       case C.MESSAGE:
@@ -807,9 +765,7 @@ export class UserAgentCore {
         // https://tools.ietf.org/html/rfc5057#section-5.3
         {
           const uas = new MessageUserAgentServer(this, message);
-          this.delegate.onMessage ?
-            this.delegate.onMessage(uas) :
-            uas.accept();
+          this.delegate.onMessage ? this.delegate.onMessage(uas) : uas.accept();
         }
         break;
       case C.NOTIFY:
@@ -838,9 +794,7 @@ export class UserAgentCore {
         // https://tools.ietf.org/html/rfc6665#section-3.2
         {
           const uas = new NotifyUserAgentServer(this, message);
-          this.delegate.onNotify ?
-            this.delegate.onNotify(uas) :
-            uas.reject({ statusCode: 405 });
+          this.delegate.onNotify ? this.delegate.onNotify(uas) : uas.reject({ statusCode: 405 });
         }
         break;
       case C.OPTIONS:
@@ -850,7 +804,7 @@ export class UserAgentCore {
           const acceptHeader = "Accept: " + acceptedBodyTypes.toString();
           this.replyStateless(message, {
             statusCode: 200,
-            extraHeaders: [ allowHeader, acceptHeader ]
+            extraHeaders: [allowHeader, acceptHeader]
           });
         }
         break;
@@ -858,27 +812,21 @@ export class UserAgentCore {
         // https://tools.ietf.org/html/rfc3515#section-2.4.2
         {
           const uas = new ReferUserAgentServer(this, message);
-          this.delegate.onRefer ?
-            this.delegate.onRefer(uas) :
-            uas.reject({ statusCode: 405 });
+          this.delegate.onRefer ? this.delegate.onRefer(uas) : uas.reject({ statusCode: 405 });
         }
         break;
       case C.REGISTER:
         // https://tools.ietf.org/html/rfc3261#section-10.3
         {
           const uas = new RegisterUserAgentServer(this, message);
-          this.delegate.onRegister ?
-            this.delegate.onRegister(uas) :
-            uas.reject({ statusCode: 405 });
+          this.delegate.onRegister ? this.delegate.onRegister(uas) : uas.reject({ statusCode: 405 });
         }
         break;
       case C.SUBSCRIBE:
         // https://tools.ietf.org/html/rfc6665#section-4.2
         {
           const uas = new SubscribeUserAgentServer(this, message);
-          this.delegate.onSubscribe ?
-            this.delegate.onSubscribe(uas) :
-            uas.reject({ statusCode: 480 });
+          this.delegate.onSubscribe ? this.delegate.onSubscribe(uas) : uas.reject({ statusCode: 480 });
         }
         break;
       default:
@@ -897,7 +845,6 @@ export class UserAgentCore {
    * @param message - Incoming response message from transport layer.
    */
   private receiveResponseFromTransport(message: IncomingResponseMessage): void {
-
     // 8.1.3.1 Transaction Layer Errors
     // https://tools.ietf.org/html/rfc3261#section-8.1.3.1
     // Handled by transaction layer callbacks.

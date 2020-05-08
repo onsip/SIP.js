@@ -29,6 +29,7 @@ export function makeEventEmitterEmitSpy(emitter: EventEmitter, logger: Logger): 
     return true;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const emitTimeout = (): void => {
     if (waitingForEmitReject) {
       waitingForEmitReject(new Error("Timed out waiting for emit."));
@@ -41,7 +42,8 @@ export function makeEventEmitterEmitSpy(emitter: EventEmitter, logger: Logger): 
 
   const spy = Object.assign(
     spyOn(emitter, "emit").and.callFake(
-      (name: string | symbol, ...args: any[]): boolean => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (name: string | number, ...args: any[]): boolean => {
         const event = String(name);
         logger.log(`Emitted ${event} [${args.length}]`);
         return emitHappened(event);

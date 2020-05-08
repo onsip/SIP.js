@@ -20,18 +20,9 @@ import {
   OutgoingRequestMessage,
   RequestOptions
 } from "../messages";
-import {
-  Session,
-  SessionDelegate,
-  SessionState,
-  SignalingState
-} from "../session";
+import { Session, SessionDelegate, SessionState, SignalingState } from "../session";
 import { Timers } from "../timers";
-import {
-  InviteClientTransaction,
-  InviteServerTransaction,
-  TransactionState
-} from "../transactions";
+import { InviteClientTransaction, InviteServerTransaction, TransactionState } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
 import { ByeUserAgentClient } from "../user-agents/bye-user-agent-client";
 import { ByeUserAgentServer } from "../user-agents/bye-user-agent-server";
@@ -76,7 +67,7 @@ export class SessionDialog extends Dialog implements Session {
   /** True if processing an ACK to the initial transaction 2xx (UAS only). */
   private ackProcessing = false;
   /** Retransmission timer for 2xx response which confirmed the dialog. */
-  private invite2xxTimer: any;
+  private invite2xxTimer: number | undefined;
   /** The rseq of the last reliable response. */
   private rseq: number | undefined;
 
@@ -205,8 +196,11 @@ export class SessionDialog extends Dialog implements Session {
       }
       transaction = this.initialTransaction;
     }
-    (options as any).cseq = transaction.request.cseq; // ACK cseq is INVITE cseq
-    const message = this.createOutgoingRequestMessage(C.ACK, options);
+    const message = this.createOutgoingRequestMessage(C.ACK, {
+      cseq: transaction.request.cseq, // ACK cseq is INVITE cseq
+      extraHeaders: options.extraHeaders,
+      body: options.body
+    });
     transaction.ackResponse(message); // See InviteClientTransaction for details.
     this.signalingStateTransition(message);
     return { message };
@@ -269,8 +263,8 @@ export class SessionDialog extends Dialog implements Session {
         // FIXME: TODO: This should throw a proper exception.
         throw new Error(
           "UAS MUST NOT send a BYE on a confirmed dialog " +
-          "until it has received an ACK for its 2xx response " +
-          "or until the server transaction times out."
+            "until it has received an ACK for its 2xx response " +
+            "or until the server transaction times out."
         );
       }
     }
@@ -475,9 +469,7 @@ export class SessionDialog extends Dialog implements Session {
         const promiseOrVoid = this.delegate.onAck({ message });
         if (promiseOrVoid instanceof Promise) {
           this.ackProcessing = true; // make sure this is always reset to false
-          promiseOrVoid
-            .then(() => this.ackProcessing = false)
-            .catch(() => this.ackProcessing = false);
+          promiseOrVoid.then(() => (this.ackProcessing = false)).catch(() => (this.ackProcessing = false));
         }
       }
       return;
@@ -497,7 +489,7 @@ export class SessionDialog extends Dialog implements Session {
     // Handle various INVITE related cross-over, glare and race conditions
     if (message.method === C.INVITE) {
       // Hopefully this message is helpful...
-      const warning = () => {
+      const warning = (): void => {
         const reason = this.ackWait ? "waiting for initial ACK" : "processing initial ACK";
         this.logger.warn(`INVITE dialog ${this.id} received re-INVITE while ${reason}`);
         let msg = "RFC 5407 suggests the following to avoid this race condition... ";
@@ -526,7 +518,7 @@ export class SessionDialog extends Dialog implements Session {
       // second INVITE and MUST include a Retry-After header field with a
       // randomly chosen value of between 0 and 10 seconds.
       // https://tools.ietf.org/html/rfc3261#section-14.2
-      const retryAfter = Math.floor((Math.random() * 10)) + 1;
+      const retryAfter = Math.floor(Math.random() * 10) + 1;
       const extraHeaders = [`Retry-After: ${retryAfter}`];
 
       // There may be ONLY ONE offer/answer negotiation in progress for a
@@ -615,7 +607,8 @@ export class SessionDialog extends Dialog implements Session {
     if (message.method === C.INVITE) {
       // FIXME: parser needs to be typed...
       const contact = message.parseHeader("contact");
-      if (!contact) { // TODO: Review to make sure this will never happen
+      if (!contact) {
+        // TODO: Review to make sure this will never happen
         throw new Error("Contact undefined.");
       }
       if (!(contact instanceof NameAddrHeader)) {
@@ -643,9 +636,7 @@ export class SessionDialog extends Dialog implements Session {
         // https://tools.ietf.org/html/rfc3261#section-15.1.2
         {
           const uas = new ByeUserAgentServer(this, message);
-          this.delegate && this.delegate.onBye ?
-            this.delegate.onBye(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onBye ? this.delegate.onBye(uas) : uas.accept();
           this.dispose();
         }
         break;
@@ -657,12 +648,12 @@ export class SessionDialog extends Dialog implements Session {
         // to receive INFO requests.
         {
           const uas = new InfoUserAgentServer(this, message);
-          this.delegate && this.delegate.onInfo ?
-            this.delegate.onInfo(uas) :
-            uas.reject({
-              statusCode: 469,
-              extraHeaders: ["Recv-Info :"]
-            });
+          this.delegate && this.delegate.onInfo
+            ? this.delegate.onInfo(uas)
+            : uas.reject({
+                statusCode: 469,
+                extraHeaders: ["Recv-Info :"]
+              });
         }
         break;
       case C.INVITE:
@@ -673,44 +664,34 @@ export class SessionDialog extends Dialog implements Session {
         {
           const uas = new ReInviteUserAgentServer(this, message);
           this.signalingStateTransition(message);
-          this.delegate && this.delegate.onInvite ?
-            this.delegate.onInvite(uas) :
-            uas.reject({ statusCode: 488 }); // TODO: Warning header field.
+          this.delegate && this.delegate.onInvite ? this.delegate.onInvite(uas) : uas.reject({ statusCode: 488 }); // TODO: Warning header field.
         }
         break;
       case C.MESSAGE:
         {
           const uas = new MessageUserAgentServer(this.core, message);
-          this.delegate && this.delegate.onMessage ?
-            this.delegate.onMessage(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onMessage ? this.delegate.onMessage(uas) : uas.accept();
         }
         break;
       case C.NOTIFY:
         // https://tools.ietf.org/html/rfc3515#section-2.4.4
         {
           const uas = new NotifyUserAgentServer(this, message);
-          this.delegate && this.delegate.onNotify ?
-            this.delegate.onNotify(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onNotify ? this.delegate.onNotify(uas) : uas.accept();
         }
         break;
       case C.PRACK:
         // https://tools.ietf.org/html/rfc3262#section-4
         {
           const uas = new PrackUserAgentServer(this, message);
-          this.delegate && this.delegate.onPrack ?
-            this.delegate.onPrack(uas) :
-            uas.accept();
+          this.delegate && this.delegate.onPrack ? this.delegate.onPrack(uas) : uas.accept();
         }
         break;
       case C.REFER:
         // https://tools.ietf.org/html/rfc3515#section-2.4.2
         {
           const uas = new ReferUserAgentServer(this, message);
-          this.delegate && this.delegate.onRefer ?
-            this.delegate.onRefer(uas) :
-            uas.reject();
+          this.delegate && this.delegate.onRefer ? this.delegate.onRefer(uas) : uas.reject();
         }
         break;
       default:
@@ -778,7 +759,8 @@ export class SessionDialog extends Dialog implements Session {
   public signalingStateRollback(): void {
     if (
       this._signalingState === SignalingState.HaveLocalOffer ||
-      this.signalingState === SignalingState.HaveRemoteOffer) {
+      this.signalingState === SignalingState.HaveRemoteOffer
+    ) {
       if (this._rollbackOffer && this._rollbackAnswer) {
         this._signalingState = SignalingState.Stable;
         this._offer = this._rollbackOffer;
@@ -924,7 +906,7 @@ export class SessionDialog extends Dialog implements Session {
       // protocols are used to send the response.
       // https://tools.ietf.org/html/rfc6026#section-8.1
       let timeout = Timers.T1;
-      const retransmission = () => {
+      const retransmission = (): void => {
         if (!this.ackWait) {
           this.invite2xxTimer = undefined;
           return;
@@ -940,7 +922,7 @@ export class SessionDialog extends Dialog implements Session {
       // receiving an ACK, the dialog is confirmed, but the session SHOULD be
       // terminated.  This is accomplished with a BYE, as described in Section 15.
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-      const stateChanged = () => {
+      const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
           transaction.removeListener("stateChanged", stateChanged);
           if (this.invite2xxTimer) {
@@ -962,7 +944,7 @@ export class SessionDialog extends Dialog implements Session {
 
   // FIXME: Refactor
   private startReInvite2xxRetransmissionTimer(): void {
-    if (this.reinviteUserAgentServer  && this.reinviteUserAgentServer.transaction instanceof InviteServerTransaction) {
+    if (this.reinviteUserAgentServer && this.reinviteUserAgentServer.transaction instanceof InviteServerTransaction) {
       const transaction = this.reinviteUserAgentServer.transaction;
 
       // Once the response has been constructed, it is passed to the INVITE
@@ -977,7 +959,7 @@ export class SessionDialog extends Dialog implements Session {
       // protocols are used to send the response.
       // https://tools.ietf.org/html/rfc6026#section-8.1
       let timeout = Timers.T1;
-      const retransmission = () => {
+      const retransmission = (): void => {
         if (!this.reinviteUserAgentServer) {
           this.invite2xxTimer = undefined;
           return;
@@ -993,7 +975,7 @@ export class SessionDialog extends Dialog implements Session {
       // receiving an ACK, the dialog is confirmed, but the session SHOULD be
       // terminated.  This is accomplished with a BYE, as described in Section 15.
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-      const stateChanged = () => {
+      const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
           transaction.removeListener("stateChanged", stateChanged);
           if (this.invite2xxTimer) {

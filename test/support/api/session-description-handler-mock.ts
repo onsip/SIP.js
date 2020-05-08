@@ -19,6 +19,7 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
   ]);
 
   // Hacky properties to test failure cases...
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const obj = sdh as any;
   obj.getDescriptionRejectOnce = undefined;
   obj.getDescriptionUndefinedBodyOnce = undefined;
@@ -42,7 +43,9 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       throw new Error(`SDH.getDescription[${name}][${id}] SDH closed`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((sdh as any).getDescriptionRejectOnce) { // hacky
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).getDescriptionRejectOnce = undefined;
       return Promise.reject(new Error(`SDH.getDescription[${name}][${id}] SDH test failure`));
     }
@@ -67,7 +70,9 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     // console.warn(`getDescription[${name}] ${fromState} => ${state}`);
     const bodyObj: BodyAndContentType = { contentType, body};
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((sdh as any).getDescriptionUndefinedBodyOnce) {  // hacky
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).getDescriptionUndefinedBodyOnce = undefined;
       bodyObj.body = "";
     }
@@ -88,10 +93,10 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     if (closed) {
       throw new Error(`SDH.rollbackDescription[${name}][${id}] SDH closed`);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const fromState = state;
     switch (state) {
       case "stable":
-        // tslint:disable-next-line:max-line-length
         // throw new Error(`SDH.rollbackDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition`);
         state = "stable";
         break;
@@ -115,16 +120,21 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
       throw new Error(`SDH.setDescription[${name}][${id}] SDH closed`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((sdh as any).setDescriptionRejectOnce) { // hacky
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).setDescriptionRejectOnce = undefined;
       return Promise.reject(new Error(`SDH.setDescription[${name}][${id}] SDH test failure`));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((sdh as any).setDescriptionWaitOnce) { // hacky
       const timeout = 1;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).setDescriptionWaitOnce = undefined;
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         setTimeout(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (sdh as any).setDescription().then(() => resolve());
         }, timeout);
       });
@@ -161,10 +171,12 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
 
 export function makeMockSessionDescriptionHandlerFactory(
   name: string,
-  id: number = 0,
+  id = 0,
   store?: Array<jasmine.SpyObj<SessionDescriptionHandler>>): SessionDescriptionHandlerFactory {
   const factory = (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     session: Session,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     options?: object
   ): jasmine.SpyObj<SessionDescriptionHandler> => {
     const mock = makeMockSessionDescriptionHandler(name, id++);

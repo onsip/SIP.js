@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { Server, WebSocket } from "mock-socket";
 
 import { StateTransitionError, TransportState } from "../../../../src/api";
@@ -83,7 +85,7 @@ describe("Web Transport", () => {
     }
     mockServer = new Server(
       server,
-      { selectProtocol: (protocols: Array<string>) => "sip" }
+      { selectProtocol: (protocols: Array<string>): string => "sip" }
     );
     mockServer.on("connection", (socket) => {
       logger.log("Mock WebSocket Server: incoming connection");
@@ -180,7 +182,7 @@ describe("Web Transport", () => {
    * @param cycles - The number of times to cycle through the FSM.
    * @param cyclesCompleted - The number of cycles completed.
    */
-  function traverseTransportStateMachine(cycles: number = 2, cyclesCompleted: number = 0): void {
+  function traverseTransportStateMachine(cycles = 2, cyclesCompleted = 0): void {
     if (cyclesCompleted === cycles) {
       return;
     }
@@ -652,7 +654,8 @@ describe("Web Transport", () => {
     beforeEach(async () => {
       resetAll();
       // Server rejects connection
-      (mockServer.options as any) = { selectProtocol: (protocols: Array<string>) => "invalid" };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mockServer.options as any) = { selectProtocol: (protocols: Array<string>): string => "invalid" };
       connectPromise = transport.connect()
         .catch((error: Error) => { connectError = error; });
       await soon(serverDelay);
@@ -773,6 +776,7 @@ describe("Web Transport", () => {
       openBlocked = false;
       resetAll();
       // HACK: prevent the transport from processing the WebSocket.onopen callback
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (transport as any).onWebSocketOpen = (ev: Event, ws: WebSocket): void => {
         openBlocked = true;
         return;

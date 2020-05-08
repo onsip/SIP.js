@@ -1,13 +1,6 @@
 import { EventEmitter } from "events";
 
-import {
-  C,
-  Grammar,
-  Logger,
-  OutgoingRegisterRequest,
-  OutgoingRequestMessage,
-  URI
-} from "../core";
+import { C, Grammar, Logger, OutgoingRegisterRequest, OutgoingRequestMessage, URI, NameAddrHeader } from "../core";
 import { _makeEmitter, Emitter } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
@@ -21,7 +14,6 @@ import { UserAgent } from "./user-agent";
  * @public
  */
 export class Registerer {
-
   /** Default registerer options. */
   private static readonly defaultOptions: Required<RegistererOptions> = {
     expires: 600,
@@ -34,31 +26,6 @@ export class Registerer {
     registrar: new URI("sip", "anonymous", "anonymous.invalid")
   };
 
-  // http://stackoverflow.com/users/109538/broofa
-  private static newUUID(): string {
-    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r: number = Math.floor(Math.random() * 16);
-      const v: number = c === "x" ? r : (r % 4 + 8);
-      return v.toString(16);
-    });
-    return UUID;
-  }
-
-  /**
-   * Strip properties with undefined values from options.
-   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
-   * https://github.com/Microsoft/TypeScript/issues/13195
-   * @param options - Options to reduce
-   */
-  private static stripUndefinedProperties(options: Partial<RegistererOptions>): Partial<RegistererOptions> {
-    return Object.keys(options).reduce((object, key) => {
-      if ((options as any)[key] !== undefined) {
-        (object as any)[key] = (options as any)[key];
-      }
-      return object;
-    }, {});
-  }
-
   private disposed = false;
   private id: string;
   private expires: number;
@@ -67,8 +34,8 @@ export class Registerer {
   private request: OutgoingRequestMessage;
   private userAgent: UserAgent;
 
-  private registrationExpiredTimer: any | undefined;
-  private registrationTimer: any | undefined;
+  private registrationExpiredTimer: number | undefined;
+  private registrationTimer: number | undefined;
 
   /** The contacts returned from the most recent accepted REGISTER request. */
   private _contacts: Array<string> = [];
@@ -92,7 +59,6 @@ export class Registerer {
    * @param options - Options bucket. See {@link RegistererOptions} for details.
    */
   public constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
-
     // Set user agent
     this.userAgent = userAgent;
 
@@ -162,6 +128,7 @@ export class Registerer {
     if (this.options.logConfiguration) {
       this.logger.log("Configuration:");
       Object.keys(this.options).forEach((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const value = (this.options as any)[key];
         switch (key) {
           case "registrar":
@@ -178,6 +145,33 @@ export class Registerer {
 
     // Add to the user agent's session collection.
     this.userAgent._registerers[this.id] = this;
+  }
+
+  // http://stackoverflow.com/users/109538/broofa
+  private static newUUID(): string {
+    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r: number = Math.floor(Math.random() * 16);
+      const v: number = c === "x" ? r : (r % 4) + 8;
+      return v.toString(16);
+    });
+    return UUID;
+  }
+
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<RegistererOptions>): Partial<RegistererOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((options as any)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
   }
 
   /** The registered contacts. */
@@ -244,14 +238,17 @@ export class Registerer {
     delete this.userAgent._registerers[this.id];
 
     // If registered, unregisters and resolves after final response received.
-    return new Promise((resolve, reject) => {
-      const doClose = () => {
+    return new Promise((resolve) => {
+      const doClose = (): void => {
         // If we are registered, unregister and resolve after our state changes
         if (!this.waiting && this._state === RegistererState.Registered) {
-          this.stateChange.addListener(() => {
-            this.terminated();
-            resolve();
-          }, { once: true });
+          this.stateChange.addListener(
+            () => {
+              this.terminated();
+              resolve();
+            },
+            { once: true }
+          );
           this.unregister();
           return;
         }
@@ -300,24 +297,16 @@ export class Registerer {
 
     // Options
     if (options.requestOptions) {
-      this.options = {...this.options, ...options.requestOptions};
+      this.options = { ...this.options, ...options.requestOptions };
     }
 
     // Extra headers
     const extraHeaders = (this.options.extraHeaders || []).slice();
     extraHeaders.push("Contact: " + this.generateContactHeader(this.expires));
     // this is UA.C.ALLOWED_METHODS, removed to get around circular dependency
-    extraHeaders.push("Allow: " + [
-      "ACK",
-      "CANCEL",
-      "INVITE",
-      "MESSAGE",
-      "BYE",
-      "OPTIONS",
-      "INFO",
-      "NOTIFY",
-      "REFER"
-    ].toString());
+    extraHeaders.push(
+      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString()
+    );
 
     // Call-ID: All registrations from a UAC SHOULD use the same Call-ID
     // header field value for registrations sent to a particular
@@ -365,15 +354,17 @@ export class Registerer {
         // Expires field value.  The UA then issues a REGISTER request for each
         // of its bindings before the expiration interval has elapsed.
         // https://tools.ietf.org/html/rfc3261#section-10.2.4
-        let contact: any;
+        let contact: NameAddrHeader | undefined;
         while (contacts--) {
           contact = response.message.parseHeader("contact", contacts);
-          if (contact.uri.user === this.userAgent.contact.uri.user) {
-            expires = contact.getParam("expires");
-            break;
-          } else {
-            contact = undefined;
+          if (!contact) {
+            throw new Error("Contact undefined");
           }
+          if (contact.uri.user === this.userAgent.contact.uri.user) {
+            expires = Number(contact.getParam("expires"));
+            break;
+          }
+          contact = undefined;
         }
 
         // There must be a matching contact.
@@ -394,10 +385,16 @@ export class Registerer {
 
         // Save gruu values
         if (contact.hasParam("temp-gruu")) {
-          this.userAgent.contact.tempGruu = Grammar.URIParse(contact.getParam("temp-gruu").replace(/"/g, ""));
+          const gruu = contact.getParam("temp-gruu");
+          if (gruu) {
+            this.userAgent.contact.tempGruu = Grammar.URIParse(gruu.replace(/"/g, ""));
+          }
         }
         if (contact.hasParam("pub-gruu")) {
-          this.userAgent.contact.pubGruu = Grammar.URIParse(contact.getParam("pub-gruu").replace(/"/g, ""));
+          const gruu = contact.getParam("pub-gruu");
+          if (gruu) {
+            this.userAgent.contact.pubGruu = Grammar.URIParse(gruu.replace(/"/g, ""));
+          }
         }
 
         this.registered(expires);
@@ -494,7 +491,8 @@ export class Registerer {
     }
 
     if (this.disposed) {
-      if (this.state !== RegistererState.Registered) { // allows unregister while disposing and registered
+      if (this.state !== RegistererState.Registered) {
+        // allows unregister while disposing and registered
         this.stateError();
         throw new Error("Registerer disposed. Unable to register.");
       }
@@ -516,7 +514,7 @@ export class Registerer {
     }
 
     // Extra headers
-    const extraHeaders = (options.requestOptions && options.requestOptions.extraHeaders || []).slice();
+    const extraHeaders = ((options.requestOptions && options.requestOptions.extraHeaders) || []).slice();
     this.request.extraHeaders = extraHeaders;
 
     // Registrations are soft state and expire unless refreshed, but can
@@ -645,7 +643,7 @@ export class Registerer {
     this.registrationTimer = setTimeout(() => {
       this.registrationTimer = undefined;
       this.register();
-    }, (expires * 1000) - 3000);
+    }, expires * 1000 - 3000);
 
     // We are unregistered if the registration expires.
     this.registrationExpiredTimer = setTimeout(() => {
@@ -684,7 +682,7 @@ export class Registerer {
    * Transition registration state.
    */
   private stateTransition(newState: RegistererState): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 
@@ -700,18 +698,12 @@ export class Registerer {
         }
         break;
       case RegistererState.Registered:
-        if (
-          newState !== RegistererState.Unregistered &&
-          newState !== RegistererState.Terminated
-        ) {
+        if (newState !== RegistererState.Unregistered && newState !== RegistererState.Terminated) {
           invalidTransition();
         }
         break;
       case RegistererState.Unregistered:
-        if (
-          newState !== RegistererState.Registered &&
-          newState !== RegistererState.Terminated
-        ) {
+        if (newState !== RegistererState.Registered && newState !== RegistererState.Terminated) {
           invalidTransition();
         }
         break;
@@ -761,7 +753,8 @@ export class Registerer {
     message += " RFC 3261 requires UAs MUST NOT send a new registration until they have received a final response";
     message += " from the registrar for the previous one or the previous REGISTER request has timed out.";
     message += " Note that if the transport disconnects, you still must wait for the prior request to time out before";
-    message += " sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer.";
+    message +=
+      " sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer.";
     this.logger.warn(message);
   }
 

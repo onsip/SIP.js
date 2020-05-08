@@ -9,7 +9,7 @@ An options bucket object passed to `transportConstructor` when instantiated.
 <b>Signature:</b>
 
 ```typescript
-transportOptions?: any;
+transportOptions?: unknown;
 ```
 
 ## Remarks

@@ -1,7 +1,4 @@
-import {
-  SessionDescriptionHandlerModifier,
-  SessionDescriptionHandlerOptions
-} from "./session-description-handler";
+import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler";
 
 /**
  * Options for {@link Invitation.progress}.
@@ -11,7 +8,7 @@ export interface InvitationProgressOptions {
   /**
    * Body
    */
-  body?: string | { body: string, contentType: string };
+  body?: string | { body: string; contentType: string };
   /**
    * Array of extra headers added to the response.
    */

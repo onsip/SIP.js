@@ -14,7 +14,7 @@ import { ServerTransactionUser } from "./transaction-user";
  */
 export class NonInviteServerTransaction extends ServerTransaction {
   private lastResponse: string | undefined;
-  private J: any | undefined;
+  private J: number | undefined;
 
   /**
    * Constructor.
@@ -26,13 +26,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * @param user - The transaction user.
    */
   constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
-    super(
-      request,
-      transport,
-      user,
-      TransactionState.Trying,
-      "sip.transaction.nist"
-    );
+    super(request, transport, user, TransactionState.Trying, "sip.transaction.nist");
   }
 
   /**
@@ -55,6 +49,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * Receive requests from transport matching this transaction.
    * @param request - Request matching this transaction.
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public receiveRequest(request: IncomingRequestMessage): void {
     switch (this.state) {
       case TransactionState.Trying:
@@ -162,8 +157,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `Non-INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
+    const message = `Non-INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
     this.logger.error(message);
     throw new Error(message);
   }
@@ -188,7 +182,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
 
   private stateTransition(newState: TransactionState, dueToTransportError = false): void {
     // Assert valid state transitions.
-    const invalidStateTransition = () => {
+    const invalidStateTransition = (): void => {
       throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
     };
 
@@ -221,7 +215,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
     // in 64*T1 seconds for unreliable transports, and zero seconds for reliable transports.
     // https://tools.ietf.org/html/rfc3261#section-17.2.2
     if (newState === TransactionState.Completed) {
-      this.J = setTimeout(() => this.timer_J(), Timers.TIMER_J);
+      this.J = setTimeout(() => this.timerJ(), Timers.TIMER_J);
     }
 
     // The server transaction MUST be destroyed the instant it enters the "Terminated" state.
@@ -238,7 +232,7 @@ export class NonInviteServerTransaction extends ServerTransaction {
    * at which point it MUST transition to the "Terminated" state.
    * https://tools.ietf.org/html/rfc3261#section-17.2.2
    */
-  private timer_J(): void {
+  private timerJ(): void {
     this.logger.debug(`Timer J expired for NON-INVITE server transaction ${this.id}.`);
     if (this.state === TransactionState.Completed) {
       this.stateTransition(TransactionState.Terminated);

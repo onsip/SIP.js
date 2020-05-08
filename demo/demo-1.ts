@@ -1,6 +1,7 @@
-// tslint:disable: no-console
+/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable no-console */
 import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platform/web";
-import { getAudio, getButton,  getButtons, getInput, getSpan } from "./demo-utils";
+import { getAudio, getButton, getButtons, getInput, getSpan } from "./demo-utils";
 
 const serverSpan = getSpan("server");
 const targetSpan = getSpan("target");
@@ -77,7 +78,8 @@ connectButton.addEventListener("click", () => {
   disconnectButton.disabled = true;
   callButton.disabled = true;
   hangupButton.disabled = true;
-  simpleUser.connect()
+  simpleUser
+    .connect()
     .then(() => {
       connectButton.disabled = true;
       disconnectButton.disabled = false;
@@ -96,24 +98,22 @@ connectButton.addEventListener("click", () => {
 callButton.addEventListener("click", () => {
   callButton.disabled = true;
   hangupButton.disabled = true;
-  simpleUser.call(target)
-    .catch((error: Error) => {
-      console.error(`[${simpleUser.id}] failed to place call`);
-      console.error(error);
-      alert("Failed to place call.\n" + error);
-    });
+  simpleUser.call(target).catch((error: Error) => {
+    console.error(`[${simpleUser.id}] failed to place call`);
+    console.error(error);
+    alert("Failed to place call.\n" + error);
+  });
 });
 
 // Add click listener to hangup button
 hangupButton.addEventListener("click", () => {
   callButton.disabled = true;
   hangupButton.disabled = true;
-  simpleUser.hangup()
-    .catch((error: Error) => {
-      console.error(`[${simpleUser.id}] failed to hangup call`);
-      console.error(error);
-      alert("Failed to hangup call.\n" + error);
-    });
+  simpleUser.hangup().catch((error: Error) => {
+    console.error(`[${simpleUser.id}] failed to hangup call`);
+    console.error(error);
+    alert("Failed to hangup call.\n" + error);
+  });
 });
 
 // Add click listener to disconnect button
@@ -122,7 +122,8 @@ disconnectButton.addEventListener("click", () => {
   disconnectButton.disabled = true;
   callButton.disabled = true;
   hangupButton.disabled = true;
-  simpleUser.disconnect()
+  simpleUser
+    .disconnect()
     .then(() => {
       connectButton.disabled = false;
       disconnectButton.disabled = true;
@@ -141,17 +142,16 @@ keypad.forEach((button) => {
   button.addEventListener("click", () => {
     const tone = button.textContent;
     if (tone) {
-      simpleUser.sendDTMF(tone)
-        .then(() => {
-          dtmfSpan.innerHTML += tone;
-        });
+      simpleUser.sendDTMF(tone).then(() => {
+        dtmfSpan.innerHTML += tone;
+      });
     }
   });
 });
 
 // Keypad helper function
 const keypadDisabled = (disabled: boolean): void => {
-  keypad.forEach((button) => button.disabled = disabled);
+  keypad.forEach((button) => (button.disabled = disabled));
   dtmfSpan.innerHTML = "";
 };
 
@@ -159,22 +159,20 @@ const keypadDisabled = (disabled: boolean): void => {
 holdCheckbox.addEventListener("change", () => {
   if (holdCheckbox.checked) {
     // Checkbox is checked..
-    simpleUser.hold()
-      .catch((error: Error) => {
-        holdCheckbox.checked = false;
-        console.error(`[${simpleUser.id}] failed to hold call`);
-        console.error(error);
-        alert("Failed to hold call.\n" + error);
-      });
+    simpleUser.hold().catch((error: Error) => {
+      holdCheckbox.checked = false;
+      console.error(`[${simpleUser.id}] failed to hold call`);
+      console.error(error);
+      alert("Failed to hold call.\n" + error);
+    });
   } else {
     // Checkbox is not checked..
-    simpleUser.unhold()
-      .catch((error: Error) => {
-        holdCheckbox.checked = true;
-        console.error(`[${simpleUser.id}] failed to unhold call`);
-        console.error(error);
-        alert("Failed to unhold call.\n" + error);
-      });
+    simpleUser.unhold().catch((error: Error) => {
+      holdCheckbox.checked = true;
+      console.error(`[${simpleUser.id}] failed to unhold call`);
+      console.error(error);
+      alert("Failed to unhold call.\n" + error);
+    });
   }
 });
 

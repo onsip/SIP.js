@@ -1,18 +1,12 @@
-import {
-  IncomingByeRequest,
-  IncomingRequestMessage,
-  ResponseOptions
-} from "../core";
+import { IncomingByeRequest, IncomingRequestMessage, ResponseOptions } from "../core";
 
 /**
  * A request to end a {@link Session} (incoming BYE).
  * @public
  */
 export class Bye {
-
   /** @internal */
-  public constructor(private incomingByeRequest: IncomingByeRequest) {
-  }
+  public constructor(private incomingByeRequest: IncomingByeRequest) {}
 
   /** Incoming BYE request message. */
   public get request(): IncomingRequestMessage {

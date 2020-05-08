@@ -36,7 +36,6 @@ import { TransportState } from "./transport-state";
  * @public
  */
 export interface Transport extends CoreTransport {
-
   /**
    * Transport state.
    *

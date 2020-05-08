@@ -8,11 +8,7 @@ import { UserAgentClient } from "./user-agent-client";
  * @public
  */
 export class PrackUserAgentClient extends UserAgentClient implements OutgoingPrackRequest {
-  constructor(
-    dialog: SessionDialog,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ) {
+  constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions) {
     const message = dialog.createOutgoingRequestMessage(C.PRACK, options);
     super(NonInviteClientTransaction, dialog.userAgentCore, message, delegate);
     dialog.signalingStateTransition(message);

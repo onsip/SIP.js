@@ -150,8 +150,8 @@ export enum SessionState {
  * @public
  */
 export enum SignalingState {
-  Initial = "Initial",                 // Initial state
-  HaveLocalOffer = "HaveLocalOffer",   // Patterns 1, 3, 5, 6
+  Initial = "Initial", // Initial state
+  HaveLocalOffer = "HaveLocalOffer", // Patterns 1, 3, 5, 6
   HaveRemoteOffer = "HaveRemoteOffer", // Patterns 2, 4
   Stable = "Stable",
   Closed = "Closed"

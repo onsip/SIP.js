@@ -1,19 +1,22 @@
 class WebSocket {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(url: string, protocols: string) {
     throw new Error("TEST ERROR");
   }
 }
 
-let originalWebSocket: any = null;
+let originalWebSocket: unknown = null;
 
-function retrieveGlobalObject(this: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function retrieveGlobalObject(this: unknown): any {
   if (typeof window !== "undefined") {
     return window;
   }
-  return typeof process === "object" && typeof require === "function" && typeof global === "object" ? global : this;
+  // return typeof process === "object" && typeof require === "function" && typeof global === "object" ? global : this;
+  return typeof this === 'object' ? this : Function('return this')();
 }
 
-function start() {
+function start(): void {
   const globalObj = retrieveGlobalObject();
 
   if (globalObj.WebSocket) {
@@ -22,7 +25,7 @@ function start() {
   globalObj.WebSocket = WebSocket;
 }
 
-function stop() {
+function stop(): void {
   const globalObj = retrieveGlobalObject();
 
   if (originalWebSocket) {

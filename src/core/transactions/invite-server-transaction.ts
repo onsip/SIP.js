@@ -15,9 +15,9 @@ import { ServerTransactionUser } from "./transaction-user";
 export class InviteServerTransaction extends ServerTransaction {
   private lastFinalResponse: string | undefined;
   private lastProvisionalResponse: string | undefined;
-  private H: any | undefined;
-  private I: any | undefined;
-  private L: any | undefined;
+  private H: number | undefined;
+  private I: number | undefined;
+  private L: number | undefined;
 
   /**
    * FIXME: This should not be here. It should be in the UAS.
@@ -37,7 +37,7 @@ export class InviteServerTransaction extends ServerTransaction {
    *   systems.
    * https://tools.ietf.org/html/rfc3261#section-13.3.1.1
    */
-  private progressExtensionTimer: any | undefined;
+  private progressExtensionTimer: number | undefined;
 
   /**
    * Constructor.
@@ -50,13 +50,7 @@ export class InviteServerTransaction extends ServerTransaction {
    * @param user - The transaction user.
    */
   constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) {
-    super(
-      request,
-      transport,
-      user,
-      TransactionState.Proceeding,
-      "sip.transaction.ist"
-    );
+    super(request, transport, user, TransactionState.Proceeding, "sip.transaction.ist");
   }
 
   /**
@@ -153,8 +147,7 @@ export class InviteServerTransaction extends ServerTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `INVITE server transaction received unexpected ${request.method} request while in state ${this.state}.`;
+    const message = `INVITE server transaction received unexpected ${request.method} request while in state ${this.state}.`;
     this.logger.warn(message);
     return;
   }
@@ -239,8 +232,7 @@ export class InviteServerTransaction extends ServerTransaction {
         throw new Error(`Invalid state ${this.state}`);
     }
 
-    const message =
-      `INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
+    const message = `INVITE server transaction received unexpected ${statusCode} response from TU while in state ${this.state}.`;
     this.logger.error(message);
     throw new Error(message);
   }
@@ -279,7 +271,7 @@ export class InviteServerTransaction extends ServerTransaction {
    */
   private stateTransition(newState: TransactionState): void {
     // Assert valid state transitions.
-    const invalidStateTransition = () => {
+    const invalidStateTransition = (): void => {
       throw new Error(`Invalid state transition from ${this.state} to ${newState}`);
     };
 
@@ -320,7 +312,7 @@ export class InviteServerTransaction extends ServerTransaction {
     // taken responsibility for reliability and will already retransmit their 2xx responses if necessary.
     // https://tools.ietf.org/html/rfc6026#section-8.7
     if (newState === TransactionState.Accepted) {
-      this.L = setTimeout(() => this.timer_L(), Timers.TIMER_L);
+      this.L = setTimeout(() => this.timerL(), Timers.TIMER_L);
     }
 
     // When the "Completed" state is entered, timer H MUST be set to fire in 64*T1 seconds for all transports.
@@ -330,7 +322,7 @@ export class InviteServerTransaction extends ServerTransaction {
     // https://tools.ietf.org/html/rfc3261#section-17.2.1
     if (newState === TransactionState.Completed) {
       // FIXME: Missing timer G for unreliable transports.
-      this.H = setTimeout(() => this.timer_H(), Timers.TIMER_H);
+      this.H = setTimeout(() => this.timerH(), Timers.TIMER_H);
     }
 
     // The purpose of the "Confirmed" state is to absorb any additional ACK messages that arrive,
@@ -340,7 +332,7 @@ export class InviteServerTransaction extends ServerTransaction {
     // https://tools.ietf.org/html/rfc3261#section-17.2.1
     if (newState === TransactionState.Confirmed) {
       // FIXME: This timer is not getting set correctly for unreliable transports.
-      this.I = setTimeout(() => this.timer_I(), Timers.TIMER_I);
+      this.I = setTimeout(() => this.timerI(), Timers.TIMER_I);
     }
 
     // Once the transaction is in the "Terminated" state, it MUST be destroyed immediately.
@@ -395,7 +387,7 @@ export class InviteServerTransaction extends ServerTransaction {
    * it is reset with the value of T2.
    * https://tools.ietf.org/html/rfc3261#section-17.2.1
    */
-  private timer_G(): void {
+  private timerG(): void {
     // TODO
   }
 
@@ -405,7 +397,7 @@ export class InviteServerTransaction extends ServerTransaction {
    * indicate to the TU that a transaction failure has occurred.
    * https://tools.ietf.org/html/rfc3261#section-17.2.1
    */
-  private timer_H(): void {
+  private timerH(): void {
     this.logger.debug(`Timer H expired for INVITE server transaction ${this.id}.`);
     if (this.state === TransactionState.Completed) {
       this.logger.warn("ACK to negative final response was never received, terminating transaction.");
@@ -417,7 +409,7 @@ export class InviteServerTransaction extends ServerTransaction {
    * Once timer I fires, the server MUST transition to the "Terminated" state.
    * https://tools.ietf.org/html/rfc3261#section-17.2.1
    */
-  private timer_I(): void {
+  private timerI(): void {
     this.logger.debug(`Timer I expired for INVITE server transaction ${this.id}.`);
     this.stateTransition(TransactionState.Terminated);
   }
@@ -431,7 +423,7 @@ export class InviteServerTransaction extends ServerTransaction {
    * https://tools.ietf.org/html/rfc6026#section-7.1
    * https://tools.ietf.org/html/rfc6026#section-8.7
    */
-  private timer_L(): void {
+  private timerL(): void {
     this.logger.debug(`Timer L expired for INVITE server transaction ${this.id}.`);
     if (this.state === TransactionState.Accepted) {
       this.stateTransition(TransactionState.Terminated);

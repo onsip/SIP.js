@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Grammar, NameAddrHeader, URI } from "../../../src/core";
 
 // TODO:
@@ -195,6 +197,7 @@ describe("Core Grammar", () => {
     cseqHas("method", "CHICKEN");
   });
 
+  // eslint-disable-next-line max-len
   const challengeString = 'Digest realm =  "[1:ABCD::abc]", nonce =  "31d0a89ed7781ce6877de5cb032bf114", qop="AUTH,autH-INt", algorithm =  md5  ,  stale =  TRUE , opaque = "00000188"';
   describe("challenge parsed from '" + challengeString + "'", () => {
     let challenge: any;
@@ -302,7 +305,6 @@ describe("Core Grammar", () => {
     });
 
     it("rejects the bad examples", () => {
-      // tslint:disable-next-line:prefer-for-of
       for (let i = 0; i < bads.length; i++) {
         expect(Grammar.parse(bads[i], "Replaces")).toEqual(-1);
       }

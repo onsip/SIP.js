@@ -62,7 +62,6 @@ import { UserAgent } from "./user-agent";
  * @public
  */
 export class Subscriber extends Subscription {
-
   // TODO: Cleanup these internals
   private id: string;
   private body: BodyAndContentType | undefined = undefined;
@@ -71,7 +70,7 @@ export class Subscriber extends Subscription {
   private extraHeaders: Array<string>;
   private logger: Logger;
   private outgoingRequestMessage: OutgoingRequestMessage;
-  private retryAfterTimer: any | undefined;
+  private retryAfterTimer: number | undefined;
   private subscriberRequest: SubscriberRequest;
   private targetURI: URI;
 
@@ -101,7 +100,8 @@ export class Subscriber extends Subscription {
     // Subscription expires
     if (options.expires === undefined) {
       this.expires = 3600;
-    } else if (typeof options.expires !== "number") { // pre-typescript type guard
+    } else if (typeof options.expires !== "number") {
+      // pre-typescript type guard
       this.logger.warn(`Option "expires" must be a number. Using default of 3600.`);
       this.expires = 3600;
     } else {
@@ -145,29 +145,29 @@ export class Subscriber extends Subscription {
 
     // Make sure to dispose of our parent, then unsubscribe the
     // subscription dialog (if need be) and resolve when it has terminated.
-    return super.dispose()
-      .then(() => {
-        // If we have never subscribed there is nothing to wait on.
-        // If we are already transitioned to terminated there is no need to unsubscribe again.
-        if (this.state !== SubscriptionState.Subscribed) {
-          return;
-        }
-        if (!this._dialog) {
-          throw new Error("Dialog undefined.");
-        }
-        if (
-          this._dialog.subscriptionState === SubscriptionDialogState.Pending ||
-          this._dialog.subscriptionState === SubscriptionDialogState.Active
-        ) {
-          const dialog = this._dialog;
-          return new Promise((resolve, reject) => {
-            dialog.delegate = {
-              onTerminated: () => resolve()
-            };
-            dialog.unsubscribe();
-          });
-        }
-      });
+    return super.dispose().then(() => {
+      // If we have never subscribed there is nothing to wait on.
+      // If we are already transitioned to terminated there is no need to unsubscribe again.
+      if (this.state !== SubscriptionState.Subscribed) {
+        return;
+      }
+      if (!this._dialog) {
+        throw new Error("Dialog undefined.");
+      }
+      if (
+        this._dialog.subscriptionState === SubscriptionDialogState.Pending ||
+        this._dialog.subscriptionState === SubscriptionDialogState.Active
+      ) {
+        const dialog = this._dialog;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        return new Promise((resolve, reject) => {
+          dialog.delegate = {
+            onTerminated: (): void => resolve()
+          };
+          dialog.unsubscribe();
+        });
+      }
+    });
   }
 
   /**
@@ -177,6 +177,7 @@ export class Subscriber extends Subscription {
    * Send an initial SUBSCRIBE request if no subscription as been established.
    * Sends a re-SUBSCRIBE request if the subscription is "active".
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public subscribe(options: SubscriberSubscribeOptions = {}): Promise<void> {
     switch (this.subscriberRequest.state) {
       case SubscriptionDialogState.Initial:
@@ -189,13 +190,13 @@ export class Subscriber extends Subscription {
             if (result.success.subscription) {
               this._dialog = result.success.subscription;
               this._dialog.delegate = {
-                onNotify: (request) => this.onNotify(request),
-                onRefresh: (request) => this.onRefresh(request),
-                onTerminated: () => {
+                onNotify: (request): void => this.onNotify(request),
+                onRefresh: (request): void => this.onRefresh(request),
+                onTerminated: (): void => {
                   // If a call to unsubscribe will state transition to SubscriptionState.Terminated,
                   // but we can end up here after that if the NOTIFY never arrives and timer N fires.
                   if (this.state !== SubscriptionState.Terminated) {
-                    this.stateTransition(SubscriptionState.Terminated)
+                    this.stateTransition(SubscriptionState.Terminated);
                   }
                 }
               };
@@ -214,9 +215,11 @@ export class Subscriber extends Subscription {
         if (this._dialog) {
           const request = this._dialog.refresh();
           request.delegate = {
-            onAccept: ((response) => this.onAccepted(response)),
-            onRedirect: ((response) => this.unsubscribe()),
-            onReject: ((response) => this.unsubscribe()),
+            onAccept: (response): void => this.onAccepted(response),
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onRedirect: (response): Promise<void> => this.unsubscribe(),
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onReject: (response): Promise<void> => this.unsubscribe()
           };
         }
         break;
@@ -231,6 +234,7 @@ export class Subscriber extends Subscription {
   /**
    * {@inheritDoc Subscription.unsubscribe}
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public unsubscribe(options: SubscriptionUnsubscribeOptions = {}): Promise<void> {
     if (this.disposed) {
       return Promise.resolve();
@@ -275,6 +279,7 @@ export class Subscriber extends Subscription {
   }
 
   /** @internal */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onAccepted(response: IncomingResponse): void {
     // NOTE: If you think you should do something with this response,
     // please make sure you understand what it is you are doing and why.
@@ -332,7 +337,9 @@ export class Subscriber extends Subscription {
               case "giveup":
                 this.initSubscriberRequest();
                 if (subscriptionState.params && subscriptionState.params["retry-after"]) {
-                  this.retryAfterTimer = setTimeout(() => this.subscribe(), subscriptionState.params["retry-after"]);
+                  this.retryAfterTimer = setTimeout(() => {
+                    this.subscribe();
+                  }, subscriptionState.params["retry-after"]);
                 } else {
                   this.subscribe();
                 }
@@ -354,7 +361,7 @@ export class Subscriber extends Subscription {
   /** @internal */
   protected onRefresh(request: OutgoingSubscribeRequest): void {
     request.delegate = {
-      onAccept: (response) => this.onAccepted(response)
+      onAccept: (response): void => this.onAccepted(response)
     };
   }
 
@@ -363,6 +370,7 @@ export class Subscriber extends Subscription {
       extraHeaders: this.extraHeaders,
       body: this.body ? fromBodyLegacy(this.body) : undefined
     };
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     this.subscriberRequest = new SubscriberRequest(
       this._userAgent.userAgentCore,
       this.targetURI,
@@ -371,7 +379,7 @@ export class Subscriber extends Subscription {
       options
     );
     this.subscriberRequest.delegate = {
-      onAccept: ((response) => this.onAccepted(response))
+      onAccept: (response): void => this.onAccepted(response)
     };
     return this.subscriberRequest;
   }
@@ -403,7 +411,6 @@ interface SubscribeResult {
   };
 }
 
-// tslint:disable-next-line:max-classes-per-file
 class SubscriberRequest {
   public delegate: SubscriberRequestDelegate | undefined;
   public message: OutgoingRequestMessage;
@@ -426,7 +433,7 @@ class SubscriberRequest {
     this.delegate = delegate;
 
     const allowHeader = "Allow: " + AllowedMethods.toString();
-    const extraHeaders = (options && options.extraHeaders || []).slice();
+    const extraHeaders = ((options && options.extraHeaders) || []).slice();
     extraHeaders.push(allowHeader);
     extraHeaders.push("Event: " + this.event);
     extraHeaders.push("Expires: " + this.expires);
@@ -475,7 +482,7 @@ class SubscriberRequest {
     }
     this.subscribed = true;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!this.message) {
         throw new Error("Message undefined.");
       }

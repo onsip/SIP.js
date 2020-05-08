@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   Notification,
   Subscriber,
@@ -22,7 +23,6 @@ import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
 
-// tslint:disable-next-line:max-classes-per-file
 class NotifierDialog extends Dialog {
   constructor(protected core: UserAgentCore, protected dialogState: DialogState) {
     super(core, dialogState);
@@ -58,7 +58,7 @@ describe("API Subscription", () => {
 
   const event = "foo";
 
-  function aliceResubscribe() {
+  function aliceResubscribe(): void {
     beforeEach(async () => {
       resetSpies();
       subscriber.subscribe();
@@ -94,7 +94,7 @@ describe("API Subscription", () => {
     });
   }
 
-  function aliceUnsubscribe() {
+  function aliceUnsubscribe(): void {
     beforeEach(async () => {
       resetSpies();
       subscription.unsubscribe();
@@ -132,7 +132,7 @@ describe("API Subscription", () => {
     });
   }
 
-  function bobNotifyActive() {
+  function bobNotifyActive(): void {
     beforeEach(async () => {
       resetSpies();
       const extraHeaders = new Array<string>();
@@ -140,7 +140,7 @@ describe("API Subscription", () => {
       extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
       extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
       const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-      const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+      new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
       await bob.transport.waitReceived();
     });
 
@@ -242,7 +242,7 @@ describe("API Subscription", () => {
         beforeEach(() => {
           resetSpies();
           bob.userAgent.delegate = {
-            onSubscribeRequest: (request) => {
+            onSubscribeRequest: (): void => {
               return;
             }
           };
@@ -283,11 +283,10 @@ describe("API Subscription", () => {
         beforeEach(async () => {
           resetSpies();
           bob.userAgent.delegate = {
-            onSubscribeRequest: (request) => {
+            onSubscribeRequest: (request): void => {
               if (request.message.hasHeader("Proxy-Authorization")) {
                 request.accept();
               } else {
-                // tslint:disable-next-line:max-line-length
                 const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
                 request.reject({ statusCode: 407, extraHeaders });
               }
@@ -324,7 +323,7 @@ describe("API Subscription", () => {
         beforeEach(async () => {
           resetSpies();
           bob.userAgent.delegate = {
-            onSubscribeRequest: (request) => {
+            onSubscribeRequest: (request): void => {
               request.reject();
             }
           };
@@ -358,7 +357,7 @@ describe("API Subscription", () => {
         beforeEach(async () => {
           resetSpies();
           bob.userAgent.delegate = {
-            onSubscribeRequest: (request) => {
+            onSubscribeRequest: (request): void => {
               receivedEvent = request.message.parseHeader("Event").event;
               if (!receivedEvent || receivedEvent !== event) {
                 request.reject({ statusCode: 489 });
@@ -373,19 +372,16 @@ describe("API Subscription", () => {
                 request.reject({ statusCode: 489 });
                 return;
               }
-              const statusCode = 200;
               const toTag = newTag();
               const extraHeaders = new Array<string>();
               extraHeaders.push(`Event: ${receivedEvent}`);
-              // Don't send a 200...
-              // request.accept({ statusCode, toTag, extraHeaders });
 
               const dialogState = Dialog.initialDialogStateForUserAgentServer(request.message, toTag);
               notifierDialog = new NotifierDialog(bob.userAgent.userAgentCore, dialogState);
               extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
               extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
               const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-              const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+              new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             }
           };
           await bob.transport.waitReceived();
@@ -425,7 +421,7 @@ describe("API Subscription", () => {
         beforeEach(async () => {
           resetSpies();
           bob.userAgent.delegate = {
-            onSubscribeRequest: (request) => {
+            onSubscribeRequest: (request): void => {
               receivedEvent = request.message.parseHeader("Event").event;
               if (!receivedEvent || receivedEvent !== event) {
                 request.reject({ statusCode: 489 });
@@ -452,6 +448,7 @@ describe("API Subscription", () => {
               notifierDialog = new NotifierDialog(bob.userAgent.userAgentCore, dialogState);
               // FIXME: As we don't currently have a real notifiation dialog, hack in what we need for these test
               // TODO: Should just write a proper one
+              // eslint-disable-next-line @typescript-eslint/unbound-method
               const receiveRequestOriginal = notifierDialog.receiveRequest;
               notifierDialog.receiveRequest = (message: IncomingRequestMessage): void => {
                 receiveRequestOriginal.call(notifierDialog, message);
@@ -502,7 +499,7 @@ describe("API Subscription", () => {
         });
 
         describe("Bob never sends an initial NOTIFY request", () => {
-          beforeEach(async () => {
+          beforeEach(() => {
             resetSpies();
           });
 
@@ -537,7 +534,7 @@ describe("API Subscription", () => {
             extraHeaders.push(`Subscription-State: terminated`);
             extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-            const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+            new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
           });
 
@@ -577,7 +574,7 @@ describe("API Subscription", () => {
             extraHeaders.push(`Subscription-State: terminated`);
             extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-            const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+            new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
           });
 
@@ -617,7 +614,7 @@ describe("API Subscription", () => {
             extraHeaders.push(`Event: ${receivedEvent}`);
             extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-            const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+            new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
           });
 
@@ -657,7 +654,7 @@ describe("API Subscription", () => {
             extraHeaders.push(`Event: ${receivedEvent}`);
             extraHeaders.push(`Subscription-State: terminated`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-            const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+            new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await alice.transport.waitReceived();
           });
 
@@ -694,7 +691,7 @@ describe("API Subscription", () => {
             extraHeaders.push(`Subscription-State: pending;expires=${receivedExpires}`);
             extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-            const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+            new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await bob.transport.waitReceived();
           });
 
@@ -751,7 +748,7 @@ describe("API Subscription", () => {
             extraHeaders.push(`Subscription-State: active;expires=${receivedExpires}`);
             extraHeaders.push(`Contact: ${bob.userAgent.contact.uri.toString()}`);
             const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-            const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+            new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
             await bob.transport.waitReceived();
           });
 
@@ -785,7 +782,7 @@ describe("API Subscription", () => {
               extraHeaders.push(`Event: ${receivedEvent}`);
               extraHeaders.push(`Subscription-State: terminated`);
               const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-              const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+              new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
               await bob.transport.waitReceived();
             });
 
@@ -820,7 +817,7 @@ describe("API Subscription", () => {
               extraHeaders.push(`Event: ${receivedEvent}`);
               extraHeaders.push(`Subscription-State: terminated;reason=timeout`);
               const message = notifierDialog.createOutgoingRequestMessage(C.NOTIFY, { extraHeaders });
-              const uac = new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
+              new UserAgentClient(NonInviteClientTransaction, notifierDialog.userAgentCore, message);
               await bob.transport.waitReceived();
             });
 

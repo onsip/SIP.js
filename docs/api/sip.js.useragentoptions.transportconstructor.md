@@ -9,7 +9,7 @@ A constructor function for the user agent's `Transport`<!-- -->.
 <b>Signature:</b>
 
 ```typescript
-transportConstructor?: new (logger: any, options: any) => Transport;
+transportConstructor?: new (logger: Logger, options: any) => Transport;
 ```
 
 ## Remarks

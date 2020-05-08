@@ -15,7 +15,7 @@
  */
 export enum RegistererState {
   Initial = "Initial",
-  Registered =  "Registered",
+  Registered = "Registered",
   Unregistered = "Unregistered",
   Terminated = "Terminated"
 }

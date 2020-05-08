@@ -1,26 +1,22 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
 import { IncomingRequest } from "../incoming-request";
 import { IncomingResponse } from "../incoming-response";
 import { OutgoingRequest } from "../outgoing-request";
-
-// tslint:disable:no-empty-interface
 
 /**
  * Incoming CANCEL request.
  * @public
  */
-export interface IncomingCancelRequest extends IncomingRequest {
-}
+export interface IncomingCancelRequest extends IncomingRequest {}
 
 /**
  * Incoming CANCEL response.
  * @public
  */
-export interface IncomingCancelResponse extends IncomingResponse {
-}
+export interface IncomingCancelResponse extends IncomingResponse {}
 
 /**
  * Outgoing CANCEL request.
  * @public
  */
-export interface OutgoingCancelRequest extends OutgoingRequest {
-}
+export interface OutgoingCancelRequest extends OutgoingRequest {}

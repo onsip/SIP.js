@@ -9,7 +9,7 @@ A publisher publishes a publication (outgoing PUBLISH).
 <b>Signature:</b>
 
 ```typescript
-export declare class Publisher extends EventEmitter 
+export declare class Publisher 
 ```
 
 ## Constructors

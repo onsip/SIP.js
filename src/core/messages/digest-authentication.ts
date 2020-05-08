@@ -1,9 +1,13 @@
-import MD5 from "crypto-js/md5";
+import { Md5 } from "./md5";
 
 import { URI } from "../../grammar";
 import { Logger, LoggerFactory } from "../log";
 import { OutgoingRequestMessage } from "./outgoing-request-message";
 import { createRandomToken } from "./utils";
+
+function MD5(s: string): string {
+  return Md5.hashStr(s);
+}
 
 /**
  * Digest Authentication.
@@ -18,7 +22,7 @@ export class DigestAuthentication {
   private cnonce: string | undefined;
   private nc: number;
   private ncHex: string;
-  private response: any | undefined; // CryptoJS.WordArray
+  private response: string | undefined;
   private algorithm: string | undefined;
   private realm: string | undefined;
   private nonce: string | undefined;
@@ -48,6 +52,7 @@ export class DigestAuthentication {
    * @param challenge -
    * @returns true if credentials were successfully generated, false otherwise.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean {
     // Inspect and validate the challenge.
 
@@ -71,7 +76,7 @@ export class DigestAuthentication {
       return false;
     }
 
-    if (! this.nonce) {
+    if (!this.nonce) {
       this.logger.warn("challenge without Digest nonce, authentication aborted");
       return false;
     }
@@ -117,7 +122,7 @@ export class DigestAuthentication {
   public toString(): string {
     const authParams: Array<string> = [];
 
-    if (! this.response) {
+    if (!this.response) {
       throw new Error("response field does not exist, cannot generate Authorization header");
     }
 
@@ -158,15 +163,13 @@ export class DigestAuthentication {
     if (this.qop === "auth") {
       // HA2 = MD5(A2) = MD5(method:digestURI)
       ha2 = MD5(this.method + ":" + this.uri);
-      // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)
+      // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)`
       this.response = MD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth:" + ha2);
-
     } else if (this.qop === "auth-int") {
       // HA2 = MD5(A2) = MD5(method:digestURI:MD5(entityBody))
       ha2 = MD5(this.method + ":" + this.uri + ":" + MD5(body ? body : ""));
       // response = MD5(HA1:nonce:nonceCount:credentialsNonce:qop:HA2)
       this.response = MD5(ha1 + ":" + this.nonce + ":" + this.ncHex + ":" + this.cnonce + ":auth-int:" + ha2);
-
     } else if (this.qop === undefined) {
       // HA2 = MD5(A2) = MD5(method:digestURI)
       ha2 = MD5(this.method + ":" + this.uri);

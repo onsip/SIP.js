@@ -23,6 +23,14 @@ import { DialogState } from "./dialog-state";
  * @public
  */
 export class Dialog {
+  /**
+   * Dialog constructor.
+   * @param core - User agent core.
+   * @param dialogState - Initial dialog state.
+   */
+  protected constructor(protected core: UserAgentCore, protected dialogState: DialogState) {
+    this.core.dialogs.set(this.id, this);
+  }
 
   /**
    * When a UAC receives a response that establishes a dialog, it
@@ -51,7 +59,8 @@ export class Dialog {
     // https://tools.ietf.org/html/rfc3261#section-12.1.2
     const routeSet = incomingResponseMessage.getHeaders("record-route").reverse();
     const contact = incomingResponseMessage.parseHeader("contact");
-    if (!contact) { // TODO: Review to make sure this will never happen
+    if (!contact) {
+      // TODO: Review to make sure this will never happen
       throw new Error("Contact undefined.");
     }
     if (!(contact instanceof NameAddrHeader)) {
@@ -79,23 +88,28 @@ export class Dialog {
     const callId = outgoingRequestMessage.callId;
     const localTag = outgoingRequestMessage.fromTag;
     const remoteTag = incomingResponseMessage.toTag;
-    if (!callId) { // TODO: Review to make sure this will never happen
+    if (!callId) {
+      // TODO: Review to make sure this will never happen
       throw new Error("Call id undefined.");
     }
-    if (!localTag) { // TODO: Review to make sure this will never happen
+    if (!localTag) {
+      // TODO: Review to make sure this will never happen
       throw new Error("From tag undefined.");
     }
-    if (!remoteTag) { // TODO: Review to make sure this will never happen
+    if (!remoteTag) {
+      // TODO: Review to make sure this will never happen
       throw new Error("To tag undefined."); // FIXME: No backwards compatibility with RFC 2543
     }
 
     // The remote URI MUST be set to the URI in the To field, and the local
     // URI MUST be set to the URI in the From field.
     // https://tools.ietf.org/html/rfc3261#section-12.1.2
-    if (!outgoingRequestMessage.from) { // TODO: Review to make sure this will never happen
+    if (!outgoingRequestMessage.from) {
+      // TODO: Review to make sure this will never happen
       throw new Error("From undefined.");
     }
-    if (!outgoingRequestMessage.to) { // TODO: Review to make sure this will never happen
+    if (!outgoingRequestMessage.to) {
+      // TODO: Review to make sure this will never happen
       throw new Error("To undefined.");
     }
     const localURI = outgoingRequestMessage.from.uri;
@@ -137,7 +151,7 @@ export class Dialog {
   public static initialDialogStateForUserAgentServer(
     incomingRequestMessage: IncomingRequestMessage,
     toTag: string,
-    early: boolean = false
+    early = false
   ): DialogState {
     // If the request arrived over TLS, and the Request-URI contained a SIPS
     // URI, the "secure" flag is set to TRUE.
@@ -154,7 +168,8 @@ export class Dialog {
     // https://tools.ietf.org/html/rfc3261#section-12.1.1
     const routeSet = incomingRequestMessage.getHeaders("record-route");
     const contact = incomingRequestMessage.parseHeader("contact");
-    if (!contact) { // TODO: Review to make sure this will never happen
+    if (!contact) {
+      // TODO: Review to make sure this will never happen
       throw new Error("Contact undefined.");
     }
     if (!(contact instanceof NameAddrHeader)) {
@@ -205,18 +220,6 @@ export class Dialog {
     };
     return dialogState;
   }
-
-  /**
-   * Dialog constructor.
-   * @param core - User agent core.
-   * @param dialogState - Initial dialog state.
-   */
-  protected constructor(
-    protected core: UserAgentCore,
-    protected dialogState: DialogState,
-  ) {
-    this.core.dialogs.set(this.id, this);
-   }
 
   /** Destructor. */
   public dispose(): void {

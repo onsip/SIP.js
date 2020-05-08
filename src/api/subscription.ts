@@ -1,10 +1,7 @@
 import { EventEmitter } from "events";
 
-import {
-  Logger,
-  Subscription as SubscriptionDialog
-} from "../core";
-import { _makeEmitter, Emitter, } from "./emitter";
+import { Logger, Subscription as SubscriptionDialog } from "../core";
+import { _makeEmitter, Emitter } from "./emitter";
 import { SubscriptionDelegate } from "./subscription-delegate";
 import { SubscriptionOptions } from "./subscription-options";
 import { SubscriptionState } from "./subscription-state";
@@ -21,12 +18,11 @@ import { UserAgent } from "./user-agent";
  * @public
  */
 export abstract class Subscription {
-
   /**
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
    */
-  public data: any;
+  public data: unknown;
 
   /**
    * Subscription delegate. See {@link SubscriptionDelegate} for details.
@@ -103,24 +99,9 @@ export abstract class Subscription {
     return _makeEmitter(this._stateEventEmitter);
   }
 
-  /**
-   * Sends a re-SUBSCRIBE request if the subscription is "active".
-   */
-  public abstract subscribe(options?: SubscriptionSubscribeOptions): Promise<void>;
-
-  /**
-   * Unsubscribe from event notifications.
-   *
-   * @remarks
-   * If the subscription state is SubscriptionState.Subscribed, sends an in dialog SUBSCRIBE request
-   * with expires time of zero (an un-subscribe) and terminates the subscription.
-   * Otherwise a noop.
-   */
-  public abstract unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
-
   /** @internal */
   protected stateTransition(newState: SubscriptionState): void {
-    const invalidTransition = () => {
+    const invalidTransition = (): void => {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 
@@ -163,4 +144,19 @@ export abstract class Subscription {
       this.dispose();
     }
   }
+
+  /**
+   * Sends a re-SUBSCRIBE request if the subscription is "active".
+   */
+  public abstract subscribe(options?: SubscriptionSubscribeOptions): Promise<void>;
+
+  /**
+   * Unsubscribe from event notifications.
+   *
+   * @remarks
+   * If the subscription state is SubscriptionState.Subscribed, sends an in dialog SUBSCRIBE request
+   * with expires time of zero (an un-subscribe) and terminates the subscription.
+   * Otherwise a noop.
+   */
+  public abstract unsubscribe(options?: SubscriptionUnsubscribeOptions): Promise<void>;
 }

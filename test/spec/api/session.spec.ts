@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   Invitation,
   Inviter,
@@ -67,7 +69,7 @@ describe("API Session", () => {
     "onTrying"
   ]);
 
-  function bobAccept() {
+  function bobAccept(): void {
 
     beforeEach(async () => {
       resetSpies();
@@ -467,7 +469,7 @@ describe("API Session", () => {
       resetSpies();
       invitation.reject();
       invitation.reject()
-        .catch((error) => {
+        .catch(() => {
           threw = true;
         });
       await inviterStateSpy.wait(SessionState.Terminated);
@@ -586,7 +588,7 @@ describe("API Session", () => {
       resetSpies();
       terminate(invitation);
       terminate(invitation)
-        .catch((error) => {
+        .catch(() => {
           threw = true;
         });
       await inviterStateSpy.wait(SessionState.Terminated);
@@ -674,7 +676,7 @@ describe("API Session", () => {
       beforeEach(async () => {
         resetSpies();
         inviter.invite()
-          .catch((error) => { return; });
+          .catch(() => { return; });
         inviter.cancel();
         await soon();
         await soon(); // need an extra promise resolution for tests to play out
@@ -958,7 +960,7 @@ describe("API Session", () => {
         });
 
         if (inviteWithoutSdp) {
-          it("her ua should send CANCEL, ACK, BYE, 481", async () => {
+          it("her ua should send CANCEL, ACK, BYE, 481", () => {
             const spy = alice.transportSendSpy;
             expect(spy).toHaveBeenCalledTimes(4);
             expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
@@ -976,7 +978,7 @@ describe("API Session", () => {
             expect(spy.calls.argsFor(3)).toEqual(SIP_481);
           });
         } else {
-          it("her ua should send CANCEL, ACK, BYE", async () => {
+          it("her ua should send CANCEL, ACK, BYE", () => {
             const spy = alice.transportSendSpy;
             expect(spy).toHaveBeenCalledTimes(3);
             expect(spy.calls.argsFor(0)).toEqual(SIP_CANCEL);
@@ -1018,17 +1020,20 @@ describe("API Session", () => {
             acceptReject = false;
             resetSpies();
             { // Setup hacky thing to cause undefined body returned once
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               if (typeof (invitation as any).setupSessionDescriptionHandler !== "function") {
                 throw new Error("setupSessionDescriptionHandler() undefined.");
               }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (invitation as any).setupSessionDescriptionHandler();
               if (!invitation.sessionDescriptionHandler) {
                 throw new Error("SDH undefined.");
               }
               const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (sdh as any).getDescriptionRejectOnce = true;
             }
-            await invitation.accept().catch((error: Error) => acceptReject = true);
+            await invitation.accept().catch(() => acceptReject = true);
           });
 
           it("his call to accept() should reject", async () => {
@@ -1076,14 +1081,17 @@ describe("API Session", () => {
         beforeEach(async () => {
           resetSpies();
           { // Setup hacky thing to cause undefined body returned once
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (typeof (invitation as any).setupSessionDescriptionHandler !== "function") {
               throw new Error("setupSessionDescriptionHandler() undefined.");
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (invitation as any).setupSessionDescriptionHandler();
             if (!invitation.sessionDescriptionHandler) {
               throw new Error("SDH undefined.");
             }
             const sdh = invitation.sessionDescriptionHandler as jasmine.SpyObj<SessionDescriptionHandler>;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (sdh as any).getDescriptionUndefinedBodyOnce = true;
           }
           return invitation.accept()
@@ -1146,13 +1154,16 @@ describe("API Session", () => {
         beforeEach(async () => {
           resetSpies();
           { // Setup hacky thing to cause a rejection once
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (typeof (inviter as any).setupSessionDescriptionHandler !== "function") {
               throw new Error("setupSessionDescriptionHandler() undefined.");
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (inviter as any).setupSessionDescriptionHandler();
             if (!inviter.sessionDescriptionHandler) {
               throw new Error("SDH undefined.");
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (inviter.sessionDescriptionHandler as any).setDescriptionRejectOnce = true;
           }
           return invitation.accept()
@@ -1267,13 +1278,16 @@ describe("API Session", () => {
           beforeEach(async () => {
             resetSpies();
             { // Setup hacky thing to cause undefined body returned once
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               if (typeof (inviter as any).setupSessionDescriptionHandler !== "function") {
                 throw new Error("setupSessionDescriptionHandler() undefined.");
               }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (inviter as any).setupSessionDescriptionHandler();
               if (!inviter.sessionDescriptionHandler) {
                 throw new Error("SDH undefined.");
               }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (inviter.sessionDescriptionHandler as any).getDescriptionUndefinedBodyOnce = true;
             }
             return invitation.accept()
@@ -1300,13 +1314,16 @@ describe("API Session", () => {
           beforeEach(async () => {
             resetSpies();
             { // Setup hacky thing to cause a rejection once
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               if (typeof (invitation as any).setupSessionDescriptionHandler !== "function") {
                 throw new Error("setupSessionDescriptionHandler() undefined.");
               }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (invitation as any).setupSessionDescriptionHandler();
               if (!invitation.sessionDescriptionHandler) {
                 throw new Error("SDH undefined.");
               }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (invitation.sessionDescriptionHandler as any).setDescriptionRejectOnce = true;
             }
             return invitation.accept()
@@ -1357,7 +1374,7 @@ describe("API Session", () => {
           alice.userAgent.transport.setConnected(true);
         });
 
-        it("his ua should send 200, BYE", async () => {
+        it("his ua should send 200, BYE", () => {
           const spy = bob.transportSendSpy;
           expect(spy).toHaveBeenCalledTimes(12); // 11 retransmissions of the 200
           expect(spy.calls.argsFor(0)).toEqual(SIP_200);
@@ -1423,7 +1440,7 @@ describe("API Session", () => {
           alice.userAgent.transport.setConnected(true);
         });
 
-        it("his ua should send 480", async () => {
+        it("his ua should send 480", () => {
           const spy = bob.transportSendSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual(SIP_480);
@@ -1452,7 +1469,7 @@ describe("API Session", () => {
           await soon(noAnswerTimeout);
         });
 
-        it("her ua should send ACK", async () => {
+        it("her ua should send ACK", () => {
           const spy = alice.transportSendSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual(SIP_ACK);
@@ -1824,7 +1841,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.delegate = {
-        onInvite: (session) => {
+        onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
@@ -1841,7 +1858,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.delegate = {
-        onInvite: (session) => {
+        onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
@@ -1858,7 +1875,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.delegate = {
-        onInvite: (session) => {
+        onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
@@ -1961,7 +1978,7 @@ describe("API Session", () => {
     beforeEach(async () => {
       target = bob.uri;
       bob.userAgent.delegate = {
-        onInvite: (session) => {
+        onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
@@ -2065,7 +2082,7 @@ describe("API Session", () => {
     let invitation2: Invitation;
     let invitationStateSpy2: EmitterSpy<SessionState>;
 
-    function bobsAccept(answerInAck: boolean) {
+    function bobsAccept(answerInAck: boolean): void {
       const SIP_ACK_OR_BYE = [jasmine.stringMatching(/^ACK|^BYE/)];
 
       beforeEach(async () => {
@@ -2204,13 +2221,13 @@ describe("API Session", () => {
       beforeEach(async () => {
         target = bob.uri;
         bob.userAgent.delegate = {
-          onInvite: (session) => {
+          onInvite: (session): void => {
             invitation = session;
             invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
           }
         };
         bob2.userAgent.delegate = {
-          onInvite: (session) => {
+          onInvite: (session): void => {
             invitation2 = session;
             invitationStateSpy2 = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob2"));
           }
@@ -2227,13 +2244,13 @@ describe("API Session", () => {
       beforeEach(async () => {
         target = bob.uri;
         bob.userAgent.delegate = {
-          onInvite: (session) => {
+          onInvite: (session): void => {
             invitation = session;
             invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
           }
         };
         bob2.userAgent.delegate = {
-          onInvite: (session) => {
+          onInvite: (session): void => {
             invitation2 = session;
             invitationStateSpy2 = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob2"));
           }

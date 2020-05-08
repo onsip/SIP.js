@@ -8,11 +8,7 @@ import { UserAgentServer } from "./user-agent-server";
  * @public
  */
 export class ByeUserAgentServer extends UserAgentServer implements IncomingByeRequest {
-  constructor(
-    dialog: SessionDialog,
-    message: IncomingRequestMessage,
-    delegate?: IncomingRequestDelegate
-  ) {
+  constructor(dialog: SessionDialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate) {
     super(NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
   }
 }

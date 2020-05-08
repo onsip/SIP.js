@@ -10,7 +10,6 @@ import { Subscription } from "./subscription";
  * @public
  */
 export interface UserAgentDelegate {
-
   /**
    * Called upon transport transitioning to connected state.
    */
@@ -62,7 +61,7 @@ export interface UserAgentDelegate {
    * Handler for incoming out of dialog REGISTER requests.
    * @param registration - The registration.
    */
-  onRegister?(registration: any /* TODO: Registration */): void;
+  onRegister?(registration: unknown /* TODO: Registration */): void;
 
   /**
    * @alpha

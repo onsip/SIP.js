@@ -8,11 +8,7 @@ import { UserAgentClient } from "./user-agent-client";
  * @public
  */
 export class NotifyUserAgentClient extends UserAgentClient implements OutgoingNotifyRequest {
-  constructor(
-    dialog: SessionDialog,
-    delegate?: OutgoingRequestDelegate,
-    options?: RequestOptions
-  ) {
+  constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?: RequestOptions) {
     const message = dialog.createOutgoingRequestMessage(C.NOTIFY, options);
     super(NonInviteClientTransaction, dialog.userAgentCore, message, delegate);
   }

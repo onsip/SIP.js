@@ -13,7 +13,7 @@
  */
 export enum SubscriptionState {
   Initial = "Initial",
-  NotifyWait =  "NotifyWait",
+  NotifyWait = "NotifyWait",
   Subscribed = "Subscribed",
   Terminated = "Terminated"
 }

@@ -26,7 +26,7 @@ export class NameAddrHeader extends Parameters {
     return this.displayName || this.uri.aor;
   }
 
-  get displayName() { return this._displayName; }
+  get displayName(): string { return this._displayName; }
   set displayName(value: string) {
     this._displayName = value;
   }
@@ -43,6 +43,7 @@ export class NameAddrHeader extends Parameters {
     body += "<" + this.uri.toString() + ">";
 
     for (const parameter in this.parameters) {
+      // eslint-disable-next-line no-prototype-builtins
       if (this.parameters.hasOwnProperty(parameter)) {
         body += ";" + parameter;
 

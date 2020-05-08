@@ -8,11 +8,7 @@ import { UserAgentServer } from "./user-agent-server";
  * @public
  */
 export class ReSubscribeUserAgentServer extends UserAgentServer implements IncomingSubscribeRequest {
-    constructor(
-    dialog: Dialog,
-    message: IncomingRequestMessage,
-    delegate?: IncomingRequestDelegate
-  ) {
+  constructor(dialog: Dialog, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate) {
     super(NonInviteServerTransaction, dialog.userAgentCore, message, delegate);
   }
 }

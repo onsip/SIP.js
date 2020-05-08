@@ -8,11 +8,7 @@ import { UserAgentClient } from "./user-agent-client";
  * @public
  */
 export class PublishUserAgentClient extends UserAgentClient implements OutgoingPublishRequest {
-  constructor(
-    core: UserAgentCore,
-    message: OutgoingRequestMessage,
-    delegate?: OutgoingRequestDelegate
-  ) {
+  constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate) {
     super(NonInviteClientTransaction, core, message, delegate);
   }
 }

@@ -1,18 +1,12 @@
-import {
-  IncomingInfoRequest,
-  IncomingRequestMessage,
-  ResponseOptions
-} from "../core";
+import { IncomingInfoRequest, IncomingRequestMessage, ResponseOptions } from "../core";
 
 /**
  * An exchange of information (incoming INFO).
  * @public
  */
 export class Info {
-
   /** @internal */
-  public constructor(private incomingInfoRequest: IncomingInfoRequest) {
-  }
+  public constructor(private incomingInfoRequest: IncomingInfoRequest) {}
 
   /** Incoming MESSAGE request message. */
   public get request(): IncomingRequestMessage {

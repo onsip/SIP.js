@@ -42,8 +42,8 @@ export interface UserAgentOptions
 |  [sipExtensionExtraSupported](./sip.js.useragentoptions.sipextensionextrasupported.md) | <code>Array&lt;string&gt;</code> | Extra option tags to claim support for. |
 |  [sipExtensionReplaces](./sip.js.useragentoptions.sipextensionreplaces.md) | <code>SIPExtension</code> | Replaces header. https://tools.ietf.org/html/rfc3891 |
 |  [sipjsId](./sip.js.useragentoptions.sipjsid.md) | <code>string</code> | An id uniquely identify this user agent instance. |
-|  [transportConstructor](./sip.js.useragentoptions.transportconstructor.md) | <code>new (logger: any, options: any) =&gt; Transport</code> | A constructor function for the user agent's <code>Transport</code>. |
-|  [transportOptions](./sip.js.useragentoptions.transportoptions.md) | <code>any</code> | An options bucket object passed to <code>transportConstructor</code> when instantiated. |
+|  [transportConstructor](./sip.js.useragentoptions.transportconstructor.md) | <code>new (logger: Logger, options: any) =&gt; Transport</code> | A constructor function for the user agent's <code>Transport</code>. |
+|  [transportOptions](./sip.js.useragentoptions.transportoptions.md) | <code>unknown</code> | An options bucket object passed to <code>transportConstructor</code> when instantiated. |
 |  [uri](./sip.js.useragentoptions.uri.md) | <code>URI</code> | SIP Addresses-of-Record URI associated with the user agent. |
 |  [userAgentString](./sip.js.useragentoptions.useragentstring.md) | <code>string</code> | User agent string used in the UserAgent header. |
 |  [viaHost](./sip.js.useragentoptions.viahost.md) | <code>string</code> | Hostname to use in Via header. |
