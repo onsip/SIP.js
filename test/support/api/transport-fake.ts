@@ -1,12 +1,10 @@
-import { EventEmitter } from "events";
-
-import { _makeEmitter, Emitter, Transport, TransportState } from "../../../src/api";
+import { Emitter, EmitterImpl, Transport, TransportState } from "../../../src/api";
 import { Logger } from "../../../src/core";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
-export class TransportFake extends EventEmitter implements Transport {
+export class TransportFake implements Transport {
   public onConnect: (() => void) | undefined;
   public onDisconnect: ((error?: Error) => void) | undefined;
   public onMessage: ((message: string) => void) | undefined;
@@ -22,11 +20,9 @@ export class TransportFake extends EventEmitter implements Transport {
 
   private _receiveDropOnce = false;
   private _state: TransportState = TransportState.Disconnected;
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter = new EmitterImpl<TransportState>();
 
-  constructor(private logger: Logger) {
-    super();
-  }
+  constructor(private logger: Logger) {}
 
   public set id(id: string) {
     this._id = id;
@@ -41,7 +37,7 @@ export class TransportFake extends EventEmitter implements Transport {
   }
 
   public get stateChange(): Emitter<TransportState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   public connect(): Promise<void> {
@@ -80,7 +76,6 @@ export class TransportFake extends EventEmitter implements Transport {
     message += this._id ? `${this._id} ` : "";
     message += `Receiving...\n${msg}`;
     // this.logger.log(message);
-    this.emit("message", msg);
     if (this._receiveDropOnce) {
       this._receiveDropOnce = false;
       this.logger.warn((this._id ? `${this._id} ` : "") + "Dropped message");
@@ -264,7 +259,7 @@ export class TransportFake extends EventEmitter implements Transport {
     const oldState = this._state;
     this._state = newState;
     this.logger.log(`Transitioned from ${oldState} to ${this._state}`);
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
 
     //  Transition to Connected
     if (newState === TransportState.Connected) {
@@ -282,24 +277,6 @@ export class TransportFake extends EventEmitter implements Transport {
           this.onDisconnect();
         }
       }
-    }
-
-    // Legacy behavior
-    switch (this._state) {
-      case TransportState.Connecting:
-        this.emit("connecting");
-        break;
-      case TransportState.Connected:
-        this.emit("connected");
-        break;
-      case TransportState.Disconnecting:
-        this.emit("disconnecting");
-        break;
-      case TransportState.Disconnected:
-        this.emit("disconnected");
-        break;
-      default:
-        throw new Error("Unknown state.");
     }
   }
 }
