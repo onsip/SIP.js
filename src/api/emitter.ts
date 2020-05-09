@@ -1,5 +1,3 @@
-import { EventEmitter } from "events";
-
 /**
  * Generic observable.
  * @public
@@ -53,12 +51,11 @@ export class EmitterImpl<T> implements Emitter<T> {
    *                  If once true, the listener would be automatically removed when invoked.
    */
   public addListener(listener: (data: T) => void, options?: { once?: boolean }): void {
-    options?.once === true
-      ? this.listeners.push((data: T): void => {
-          this.removeListener(listener);
-          listener(data);
-        })
-      : this.listeners.push(listener);
+    const onceWrapper = (data: T): void => {
+      this.removeListener(onceWrapper);
+      listener(data);
+    };
+    options?.once === true ? this.listeners.push(onceWrapper) : this.listeners.push(listener);
   }
 
   /**
@@ -110,34 +107,4 @@ export class EmitterImpl<T> implements Emitter<T> {
   public once(listener: (data: T) => void): void {
     return this.addListener(listener, { once: true });
   }
-}
-
-/**
- * Creates an {@link Emitter}.
- * @param eventEmitter - An event emitter.
- * @param eventName - Event name.
- * @internal
- */
-export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName = "event"): Emitter<T> {
-  return {
-    addListener: (listener: (data: T) => void, options: { once?: boolean } = {}): void => {
-      if (options.once) {
-        eventEmitter.once(eventName, listener);
-      } else {
-        eventEmitter.addListener(eventName, listener);
-      }
-    },
-    removeListener: (listener: (data: T) => void): void => {
-      eventEmitter.removeListener(eventName, listener);
-    },
-    on: (listener: (data: T) => void): void => {
-      eventEmitter.on(eventName, listener);
-    },
-    off: (listener: (data: T) => void): void => {
-      eventEmitter.removeListener(eventName, listener);
-    },
-    once: (listener: (data: T) => void): void => {
-      eventEmitter.once(eventName, listener);
-    }
-  };
 }

@@ -1,5 +1,3 @@
-import { EventEmitter } from "events";
-
 import {
   Contact,
   DigestAuthentication,
@@ -26,7 +24,7 @@ import { createRandomToken, utf8Length } from "../core/messages/utils";
 import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
 import { LIBRARY_VERSION } from "../version";
-import { _makeEmitter, Emitter } from "./emitter";
+import { Emitter, EmitterImpl } from "./emitter";
 import { Invitation } from "./invitation";
 import { Inviter } from "./inviter";
 import { InviterOptions } from "./inviter-options";
@@ -56,44 +54,6 @@ declare const chrome: any;
  * @public
  */
 export class UserAgent {
-  /** Default user agent options. */
-  private static readonly defaultOptions: Required<UserAgentOptions> = {
-    allowLegacyNotifications: false,
-    authorizationPassword: "",
-    authorizationUsername: "",
-    autoStart: false,
-    autoStop: true,
-    delegate: {},
-    displayName: "",
-    forceRport: false,
-    hackAllowUnregisteredOptionTags: false,
-    hackIpInContact: false,
-    hackViaTcp: false,
-    hackWssInTransport: false,
-    logBuiltinEnabled: true,
-    logConfiguration: true,
-    logConnector: () => {
-      /* noop */
-    },
-    logLevel: "log",
-    noAnswerTimeout: 60,
-    preloadedRouteSet: [],
-    reconnectionAttempts: 0,
-    reconnectionDelay: 4,
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
-    sessionDescriptionHandlerFactoryOptions: {},
-    sipExtension100rel: SIPExtension.Unsupported,
-    sipExtensionReplaces: SIPExtension.Unsupported,
-    sipExtensionExtraSupported: [],
-    sipjsId: "",
-    transportConstructor: WebTransport,
-    transportOptions: {},
-    uri: new URI("sip", "anonymous", "anonymous.invalid"),
-    userAgentString: "SIP.js/" + LIBRARY_VERSION,
-    viaHost: ""
-  };
-
   /**
    * Property reserved for use by instance owner.
    * @defaultValue `undefined`
@@ -116,14 +76,14 @@ export class UserAgent {
 
   private _contact: Contact;
   private _state: UserAgentState = UserAgentState.Stopped;
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter: EmitterImpl<UserAgentState>;
   private _transport: Transport;
   private _userAgentCore: UserAgentCore;
 
   /** Logger. */
   private logger: Logger;
   /** LoggerFactory. */
-  private loggerFactory: LoggerFactory = new LoggerFactory();
+  private loggerFactory: LoggerFactory;
   /** Options. */
   private options: Required<UserAgentOptions>;
 
@@ -132,13 +92,16 @@ export class UserAgent {
    * @param options - Options bucket. See {@link UserAgentOptions} for details.
    */
   public constructor(options: Partial<UserAgentOptions> = {}) {
+    // state emitter
+    this._stateEventEmitter = new EmitterImpl<UserAgentState>();
+
     // initialize delegate
     this.delegate = options.delegate;
 
     // initialize configuration
     this.options = {
       // start with the default option values
-      ...UserAgent.defaultOptions,
+      ...UserAgent.defaultOptions(),
       // add a unique sipjs id for each instance
       ...{ sipjsId: createRandomToken(5) },
       // add a unique anonymous uri for each instance
@@ -163,6 +126,7 @@ export class UserAgent {
     }
 
     // initialize logger & logger factory
+    this.loggerFactory = new LoggerFactory();
     this.logger = this.loggerFactory.getLogger("sip.UserAgent");
     this.loggerFactory.builtinEnabled = this.options.logBuiltinEnabled;
     this.loggerFactory.connector = this.options.logConnector as (
@@ -283,6 +247,46 @@ export class UserAgent {
     return Grammar.URIParse(uri);
   }
 
+  /** Default user agent options. */
+  private static defaultOptions(): Required<UserAgentOptions> {
+    return {
+      allowLegacyNotifications: false,
+      authorizationPassword: "",
+      authorizationUsername: "",
+      autoStart: false,
+      autoStop: true,
+      delegate: {},
+      displayName: "",
+      forceRport: false,
+      hackAllowUnregisteredOptionTags: false,
+      hackIpInContact: false,
+      hackViaTcp: false,
+      hackWssInTransport: false,
+      logBuiltinEnabled: true,
+      logConfiguration: true,
+      logConnector: (): void => {
+        /* noop */
+      },
+      logLevel: "log",
+      noAnswerTimeout: 60,
+      preloadedRouteSet: [],
+      reconnectionAttempts: 0,
+      reconnectionDelay: 4,
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
+      sessionDescriptionHandlerFactoryOptions: {},
+      sipExtension100rel: SIPExtension.Unsupported,
+      sipExtensionReplaces: SIPExtension.Unsupported,
+      sipExtensionExtraSupported: [],
+      sipjsId: "",
+      transportConstructor: WebTransport,
+      transportOptions: {},
+      uri: new URI("sip", "anonymous", "anonymous.invalid"),
+      userAgentString: "SIP.js/" + LIBRARY_VERSION,
+      viaHost: ""
+    };
+  }
+
   /**
    * Strip properties with undefined values from options.
    * This is a work around while waiting for missing vs undefined to be addressed (or not)...
@@ -325,7 +329,7 @@ export class UserAgent {
    * User agent state change emitter.
    */
   public get stateChange(): Emitter<UserAgentState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   /**
@@ -995,7 +999,7 @@ export class UserAgent {
     // Update state
     this.logger.log(`Transitioned from ${this._state} to ${newState}`);
     this._state = newState;
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
   }
 
   /** Unload listener. */

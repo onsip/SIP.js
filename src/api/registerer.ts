@@ -1,7 +1,5 @@
-import { EventEmitter } from "events";
-
 import { C, Grammar, Logger, OutgoingRegisterRequest, OutgoingRequestMessage, URI, NameAddrHeader } from "../core";
-import { _makeEmitter, Emitter } from "./emitter";
+import { Emitter, EmitterImpl } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
 import { RegistererRegisterOptions } from "./registerer-register-options";
@@ -14,17 +12,7 @@ import { UserAgent } from "./user-agent";
  * @public
  */
 export class Registerer {
-  /** Default registerer options. */
-  private static readonly defaultOptions: Required<RegistererOptions> = {
-    expires: 600,
-    extraContactHeaderParams: [],
-    extraHeaders: [],
-    logConfiguration: true,
-    instanceId: "",
-    params: {},
-    regId: 0,
-    registrar: new URI("sip", "anonymous", "anonymous.invalid")
-  };
+  private static readonly defaultExpires = 600;
 
   private disposed = false;
   private id: string;
@@ -46,12 +34,12 @@ export class Registerer {
   /** The registration state. */
   private _state: RegistererState = RegistererState.Initial;
   /** Emits when the registration state changes. */
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter: EmitterImpl<RegistererState>;
 
   /** True is waiting for final response to outstanding REGISTER request. */
   private _waiting = false;
   /** Emits when waiting changes. */
-  private _waitingEventEmitter = new EventEmitter();
+  private _waitingEventEmitter: EmitterImpl<boolean>;
 
   /**
    * Constructs a new instance of the `Registerer` class.
@@ -59,6 +47,12 @@ export class Registerer {
    * @param options - Options bucket. See {@link RegistererOptions} for details.
    */
   public constructor(userAgent: UserAgent, options: RegistererOptions = {}) {
+    // state emitter
+    this._stateEventEmitter = new EmitterImpl<RegistererState>();
+
+    // waiting emitter
+    this._waitingEventEmitter = new EmitterImpl<boolean>();
+
     // Set user agent
     this.userAgent = userAgent;
 
@@ -69,7 +63,7 @@ export class Registerer {
     // Initialize configuration
     this.options = {
       // start with the default option values
-      ...Registerer.defaultOptions,
+      ...Registerer.defaultOptions(),
       // set the appropriate default registrar
       ...{ registrar: defaultUserAgentRegistrar },
       // apply any options passed in via the constructor
@@ -117,7 +111,7 @@ export class Registerer {
     );
 
     // Registration expires
-    this.expires = this.options.expires || Registerer.defaultOptions.expires;
+    this.expires = this.options.expires || Registerer.defaultExpires;
     if (this.expires < 0) {
       throw new Error("Invalid expires.");
     }
@@ -145,6 +139,20 @@ export class Registerer {
 
     // Add to the user agent's session collection.
     this.userAgent._registerers[this.id] = this;
+  }
+
+  /** Default registerer options. */
+  private static defaultOptions(): Required<RegistererOptions> {
+    return {
+      expires: Registerer.defaultExpires,
+      extraContactHeaderParams: [],
+      extraHeaders: [],
+      logConfiguration: true,
+      instanceId: "",
+      params: {},
+      regId: 0,
+      registrar: new URI("sip", "anonymous", "anonymous.invalid")
+    };
   }
 
   // http://stackoverflow.com/users/109538/broofa
@@ -223,7 +231,7 @@ export class Registerer {
 
   /** Emits when the registerer state changes. */
   public get stateChange(): Emitter<RegistererState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   /** Destructor. */
@@ -260,7 +268,12 @@ export class Registerer {
       // If we are waiting for an outstanding request, wait for it to finish and then try closing.
       // Otherwise just try closing.
       if (this.waiting) {
-        this.waitingChange.addListener(() => doClose(), { once: true });
+        this.waitingChange.addListener(
+          () => {
+            doClose();
+          },
+          { once: true }
+        );
       } else {
         doClose();
       }
@@ -717,7 +730,7 @@ export class Registerer {
     // Transition
     this._state = newState;
     this.logger.log(`Registration transitioned to state ${this._state}`);
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
 
     // Dispose
     if (newState === RegistererState.Terminated) {
@@ -732,7 +745,7 @@ export class Registerer {
 
   /** Emits when the registerer waiting state changes. */
   private get waitingChange(): Emitter<boolean> {
-    return _makeEmitter(this._waitingEventEmitter);
+    return this._waitingEventEmitter;
   }
 
   /**
@@ -744,7 +757,7 @@ export class Registerer {
     }
     this._waiting = waiting;
     this.logger.log(`Waiting toggled to ${this._waiting}`);
-    this._waitingEventEmitter.emit("event", this._waiting);
+    this._waitingEventEmitter.emit(this._waiting);
   }
 
   /** Hopefully helpful as the standard behavior has been found to be unexpected. */

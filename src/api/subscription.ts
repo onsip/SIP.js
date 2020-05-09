@@ -1,7 +1,5 @@
-import { EventEmitter } from "events";
-
 import { Logger, Subscription as SubscriptionDialog } from "../core";
-import { _makeEmitter, Emitter } from "./emitter";
+import { Emitter, EmitterImpl } from "./emitter";
 import { SubscriptionDelegate } from "./subscription-delegate";
 import { SubscriptionOptions } from "./subscription-options";
 import { SubscriptionState } from "./subscription-state";
@@ -45,7 +43,7 @@ export abstract class Subscription {
   private _disposed = false;
   private _logger: Logger;
   private _state: SubscriptionState = SubscriptionState.Initial;
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter: EmitterImpl<SubscriptionState>;
 
   /**
    * Constructor.
@@ -54,6 +52,7 @@ export abstract class Subscription {
    */
   protected constructor(userAgent: UserAgent, options: SubscriptionOptions = {}) {
     this._logger = userAgent.getLogger("sip.Subscription");
+    this._stateEventEmitter = new EmitterImpl<SubscriptionState>();
     this._userAgent = userAgent;
     this.delegate = options.delegate;
   }
@@ -96,7 +95,7 @@ export abstract class Subscription {
    * Emits when the subscription `state` property changes.
    */
   public get stateChange(): Emitter<SubscriptionState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   /** @internal */
@@ -137,7 +136,7 @@ export abstract class Subscription {
     // Transition
     this._state = newState;
     this._logger.log(`Subscription ${this._dialog ? this._dialog.id : undefined} transitioned to ${this._state}`);
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
 
     // Dispose
     if (newState === SubscriptionState.Terminated) {

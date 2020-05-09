@@ -1,6 +1,4 @@
-import { EventEmitter } from "events";
-
-import { _makeEmitter, Emitter } from "../../../api/emitter";
+import { Emitter, EmitterImpl } from "../../../api/emitter";
 import { StateTransitionError } from "../../../api/exceptions";
 import { Transport as TransportDefinition } from "../../../api/transport";
 import { TransportState } from "../../../api/transport-state";
@@ -26,7 +24,7 @@ export class Transport implements TransportDefinition {
 
   private _protocol: string;
   private _state: TransportState = TransportState.Disconnected;
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter: EmitterImpl<TransportState>;
   private _ws: WebSocket | undefined;
 
   private configuration: Required<TransportOptions>;
@@ -47,6 +45,9 @@ export class Transport implements TransportDefinition {
   private transitioningState = false;
 
   constructor(logger: Logger, options?: TransportOptions) {
+    // state emitter
+    this._stateEventEmitter = new EmitterImpl<TransportState>();
+
     // logger
     this.logger = logger;
 
@@ -134,7 +135,7 @@ export class Transport implements TransportDefinition {
    * Transport state change emitter.
    */
   public get stateChange(): Emitter<TransportState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   /**
@@ -600,7 +601,7 @@ export class Transport implements TransportDefinition {
     }
 
     this.logger.log(`Transitioned from ${oldState} to ${this._state}`);
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
 
     //  Transition to Connected
     if (newState === TransportState.Connected) {
