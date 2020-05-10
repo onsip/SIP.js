@@ -209,7 +209,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
           // early dialog.
           // https://tools.ietf.org/html/rfc3261#section-12.1
 
-          // Final without to tag, no dialog to create.
+          // Final without to tag, malformed response.
           if (!message.toTag) {
             this.logger.error("2xx INVITE response received without a to tag, dropping.");
             return;
@@ -227,7 +227,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
           // Final without Contact header field, malformed response.
           const contact = message.parseHeader("contact");
           if (!contact) {
-            this.logger.error("Final INVITE response received without a Contact header field, dropping.");
+            this.logger.error("2xx INVITE response received without a Contact header field, dropping.");
             return;
           }
 
