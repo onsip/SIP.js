@@ -6,9 +6,7 @@
     "sourceType": "module",
     "project": "./tsconfig-base.json"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
+  "plugins": ["@typescript-eslint", "tree-shaking"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
@@ -18,6 +16,16 @@
   ],
   "rules": {
     "no-console": "error",
-    "@typescript-eslint/member-ordering": "error"
-  }
+    // "@typescript-eslint/explicit-member-accessibility": "error",
+    "@typescript-eslint/member-ordering": "error",
+    "tree-shaking/no-side-effects-in-initialization": 2
+  },
+  "overrides": [
+    {
+      "files": ["./demo/**/*.ts", "./test/**/*.ts"],
+      "rules": {
+        "tree-shaking/no-side-effects-in-initialization": "off"
+      }
+    }
+  ]
 }
