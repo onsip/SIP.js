@@ -4,8 +4,6 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // @public
 export interface BodyAndContentType {
     body: string;
@@ -43,6 +41,24 @@ export interface Emitter<T> {
     on(listener: (data: T) => void): void;
     // @deprecated
     once(listener: (data: T) => void): void;
+    removeListener(listener: (data: T) => void): void;
+}
+
+// Warning: (ae-internal-missing-underscore) The name "EmitterImpl" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export class EmitterImpl<T> implements Emitter<T> {
+    addListener(listener: (data: T) => void, options?: {
+        once?: boolean;
+    }): void;
+    emit(data: T): void;
+    // @deprecated
+    off(listener: (data: T) => void): void;
+    // @deprecated
+    on(listener: (data: T) => void): void;
+    // @deprecated
+    once(listener: (data: T) => void): void;
+    removeAllListeners(): void;
     removeListener(listener: (data: T) => void): void;
 }
 
@@ -183,9 +199,6 @@ export type LogConnector = (level: LogLevel, category: string, label: string | u
 
 // @public
 export type LogLevel = "debug" | "log" | "warn" | "error";
-
-// @internal
-export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName?: string): Emitter<T>;
 
 // @public
 export class Message {

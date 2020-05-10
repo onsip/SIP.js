@@ -9,7 +9,7 @@ Transport for SIP over secure WebSocket (WSS).
 <b>Signature:</b>
 
 ```typescript
-export declare class Transport extends EventEmitter implements TransportDefinition 
+export declare class Transport implements TransportDefinition 
 ```
 
 ## Constructors
@@ -39,7 +39,5 @@ export declare class Transport extends EventEmitter implements TransportDefiniti
 |  [disconnect()](./sip.js.transport.disconnect.md) |  | Disconnect from network. Resolves once disconnected. Otherwise rejects with an Error. |
 |  [dispose()](./sip.js.transport.dispose.md) |  |  |
 |  [isConnected()](./sip.js.transport.isconnected.md) |  | Returns true if the <code>state</code> equals "Connected". |
-|  [on(event, listener)](./sip.js.transport.on.md) |  | Add listener for connection events. |
-|  [on(event, listener)](./sip.js.transport.on_1.md) |  | Add listener for message event. |
 |  [send(message)](./sip.js.transport.send.md) |  | Sends a message. Resolves once message is sent. Otherwise rejects with an Error. |
 

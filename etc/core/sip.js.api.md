@@ -4,8 +4,6 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // @public
 export interface AckableIncomingResponseWithSession extends IncomingResponse {
     ack(options?: RequestOptions): OutgoingAckRequest;
@@ -1061,8 +1059,11 @@ export const Timers: {
 };
 
 // @public
-export abstract class Transaction extends EventEmitter {
+export abstract class Transaction {
     protected constructor(_transport: Transport, _user: TransactionUser, _id: string, _state: TransactionState, loggerCategory: string);
+    addStateChangeListener(listener: () => void, options?: {
+        once?: boolean;
+    }): void;
     dispose(): void;
     get id(): string;
     get kind(): string;
@@ -1070,9 +1071,11 @@ export abstract class Transaction extends EventEmitter {
     protected logger: Logger;
     // (undocumented)
     protected logTransportError(error: TransportError, message: string): void;
-    on(name: "stateChanged", callback: () => void): this;
+    // @internal
+    notifyStateChangeListeners(): void;
     // (undocumented)
     protected abstract onTransportError(error: TransportError): void;
+    removeStateChangeListener(listener: () => void): void;
     protected send(message: string): Promise<void>;
     // (undocumented)
     protected setState(state: TransactionState): void;

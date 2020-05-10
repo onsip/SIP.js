@@ -4,8 +4,6 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // @public
 export class SimpleUser {
     constructor(server: string, options?: SimpleUserOptions);
