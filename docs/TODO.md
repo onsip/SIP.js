@@ -5,6 +5,7 @@
 - tighten up tslint and lint api, core, demo and tests
 - review packaging best practices (es7, es6, drop es5)
 - free core and API from DOM and Node dependencies
+- remove UMD bundle from npm
 - more documentation
 - more tests
 - bug fixes
@@ -43,10 +44,14 @@
 
 ### API - Miscellaneous
 
+- UserAgent: The `contact` should be configurable. Related to URI and Grammar work. Issue #791.
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
-- Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion
-- Make sure all options buckets are deep copied
+- Registerer: re-registration is current -3 seconds which seems not so good. Look at pjsip and others to see what they have done.
+- Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion.
+- Review all deprecated to make sure an alternative is provided that s something other than TBD.
+- Need alternatives for all hacks like `hackViaTcp`.
+- Make sure all options buckets are deep copied.
 
 ### Core - Miscellaneous
 
