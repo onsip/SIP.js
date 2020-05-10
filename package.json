@@ -6,6 +6,7 @@
   "license": "MIT",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
+  "sideEffects": false,
   "type": "module",
   "types": "./lib/index.d.ts",
   "homepage": "https://sipjs.com",
