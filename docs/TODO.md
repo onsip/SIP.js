@@ -24,6 +24,13 @@
 
 ## Dependencies
 
+### events
+
+- it's the only dependency currently and would be nice to get rid of it
+- web/session-description-handler extends it, which is the blocking isssue and an API change
+
+## Dev Dependencies
+
 ### api-extractor
 
 - issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
