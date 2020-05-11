@@ -44,7 +44,8 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((sdh as any).getDescriptionRejectOnce) { // hacky
+    if ((sdh as any).getDescriptionRejectOnce) {
+      // hacky
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).getDescriptionRejectOnce = undefined;
       return Promise.reject(new Error(`SDH.getDescription[${name}][${id}] SDH test failure`));
@@ -68,10 +69,11 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
         throw new Error("Unknown SDH state");
     }
     // console.warn(`getDescription[${name}] ${fromState} => ${state}`);
-    const bodyObj: BodyAndContentType = { contentType, body};
+    const bodyObj: BodyAndContentType = { contentType, body };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((sdh as any).getDescriptionUndefinedBodyOnce) {  // hacky
+    if ((sdh as any).getDescriptionUndefinedBodyOnce) {
+      // hacky
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).getDescriptionUndefinedBodyOnce = undefined;
       bodyObj.body = "";
@@ -121,14 +123,16 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((sdh as any).setDescriptionRejectOnce) { // hacky
+    if ((sdh as any).setDescriptionRejectOnce) {
+      // hacky
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).setDescriptionRejectOnce = undefined;
       return Promise.reject(new Error(`SDH.setDescription[${name}][${id}] SDH test failure`));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((sdh as any).setDescriptionWaitOnce) { // hacky
+    if ((sdh as any).setDescriptionWaitOnce) {
+      // hacky
       const timeout = 1;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sdh as any).setDescriptionWaitOnce = undefined;
@@ -144,13 +148,17 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     switch (state) {
       case "stable":
         if (sdp === "SDP ANSWER") {
-          throw new Error(`SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition - expected offer`);
+          throw new Error(
+            `SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition - expected offer`
+          );
         }
         state = "has-remote-offer";
         break;
       case "has-local-offer":
         if (sdp === "SDP OFFER") {
-          throw new Error(`SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition - expected answer`);
+          throw new Error(
+            `SDH.setDescription[${name}][${id}] ${fromState} => ${state} Invalid SDH state transition - expected answer`
+          );
         }
         state = "stable";
         break;
@@ -172,7 +180,8 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
 export function makeMockSessionDescriptionHandlerFactory(
   name: string,
   id = 0,
-  store?: Array<jasmine.SpyObj<SessionDescriptionHandler>>): SessionDescriptionHandlerFactory {
+  store?: Array<jasmine.SpyObj<SessionDescriptionHandler>>
+): SessionDescriptionHandlerFactory {
   const factory = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     session: Session,

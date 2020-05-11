@@ -48,7 +48,8 @@ export function makeEventEmitterEmitSpy(emitter: EventEmitter, logger: Logger): 
         logger.log(`Emitted ${event} [${args.length}]`);
         return emitHappened(event);
       }
-    ), {
+    ),
+    {
       wait: async (event?: string): Promise<void> => {
         if (waitingForEmitPromise) {
           throw new Error("Already waiting for emit.");

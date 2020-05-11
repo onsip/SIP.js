@@ -36,7 +36,8 @@ describe("API Registration", () => {
   });
 
   afterEach(async () => {
-    return alice.userAgent.stop()
+    return alice.userAgent
+      .stop()
       .then(() => expect(alice.isShutdown()).toBe(true))
       .then(() => registrar.userAgent.stop())
       .then(() => expect(registrar.isShutdown()).toBe(true))
@@ -76,7 +77,7 @@ describe("API Registration", () => {
       });
 
       it("her registerer should throw if register called", () => {
-        expect(() =>registerer.register()).toThrow();
+        expect(() => registerer.register()).toThrow();
       });
 
       it("her registerer should throw if unregister called", () => {
@@ -241,10 +242,9 @@ describe("API Registration", () => {
           }
         };
         registerer.unregister();
-        registerer.unregister()
-          .catch(() => {
-            threw = true;
-          });
+        registerer.unregister().catch(() => {
+          threw = true;
+        });
         await alice.transport.waitReceived(); // 200
       });
 
@@ -602,10 +602,9 @@ describe("API Registration", () => {
           }
         };
         registerer.register();
-        registerer.register()
-          .catch(() => {
-            threw = true;
-          });
+        registerer.register().catch(() => {
+          threw = true;
+        });
         await alice.transport.waitReceived(); // 200
       });
 

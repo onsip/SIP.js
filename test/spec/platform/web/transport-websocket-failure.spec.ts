@@ -13,7 +13,7 @@ function retrieveGlobalObject(this: unknown): any {
     return window;
   }
   // return typeof process === "object" && typeof require === "function" && typeof global === "object" ? global : this;
-  return typeof this === 'object' ? this : Function('return this')();
+  return typeof this === "object" ? this : Function("return this")();
 }
 
 function start(): void {
@@ -51,15 +51,13 @@ describe("Web Transport WebSocket Construction Failure", () => {
     start();
     jasmine.clock().install();
     connectError = undefined;
-    transport = new Transport(
-      logger,
-      {
-        connectionTimeout,
-        server
-      }
-    );
-    return transport.connect()
-      .catch((error: Error) => { connectError = error; });
+    transport = new Transport(logger, {
+      connectionTimeout,
+      server
+    });
+    return transport.connect().catch((error: Error) => {
+      connectError = error;
+    });
   });
 
   afterEach(() => {

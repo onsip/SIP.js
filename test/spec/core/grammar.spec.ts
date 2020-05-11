@@ -21,7 +21,8 @@ describe("Core Grammar", () => {
     });
   }
 
-  const contactString = '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sips:DOMAIN.com:5>';
+  const contactString =
+    '"Iñaki @ł€" <SIP:+1234@ALIAX.net;Transport=WS>;+sip.Instance="abCD", sip:bob@biloxi.COM;headerParam, <sips:DOMAIN.com:5>';
   describe("Contacts parsed from '" + contactString + "'", () => {
     let contacts: any;
 
@@ -38,7 +39,7 @@ describe("Core Grammar", () => {
       });
 
       it("is a NameAddrHeader", () => {
-        expect(c1 instanceof (NameAddrHeader)).toBeTruthy();
+        expect(c1 instanceof NameAddrHeader).toBeTruthy();
       });
 
       it("has the display name", () => {
@@ -60,7 +61,7 @@ describe("Core Grammar", () => {
       describe("its URI", () => {
         const uriThunk = () => c1.uri;
         it("is a URI", () => {
-          expect(uriThunk() instanceof (URI)).toBeTruthy();
+          expect(uriThunk() instanceof URI).toBeTruthy();
         });
 
         const uriHas = itHas.bind(null, uriThunk);
@@ -86,8 +87,9 @@ describe("Core Grammar", () => {
         c1.setParam("New-Param", null);
         expect(c1.hasParam("NEW-param")).toEqual(true);
         c1.uri.setParam("New-Param", null);
-        expect(c1.toString())
-          .toEqual('"€€€" <sip:+999@aliax.net;transport=ws;new-param>;+sip.instance="zxCV";new-param');
+        expect(c1.toString()).toEqual(
+          '"€€€" <sip:+999@aliax.net;transport=ws;new-param>;+sip.instance="zxCV";new-param'
+        );
       });
     });
 
@@ -110,7 +112,7 @@ describe("Core Grammar", () => {
       describe("its URI", () => {
         const uriThunk = () => c2.uri;
         it("is a URI", () => {
-          expect(uriThunk() instanceof (URI)).toBeTruthy();
+          expect(uriThunk() instanceof URI).toBeTruthy();
         });
 
         const uriHas = itHas.bind(null, uriThunk);
@@ -143,7 +145,7 @@ describe("Core Grammar", () => {
       describe("its URI", () => {
         const uriThunk = () => c3.uri;
         it("is a URI", () => {
-          expect(uriThunk() instanceof (URI)).toBeTruthy();
+          expect(uriThunk() instanceof URI).toBeTruthy();
         });
 
         const uriHas = itHas.bind(null, uriThunk);
@@ -198,7 +200,8 @@ describe("Core Grammar", () => {
   });
 
   // eslint-disable-next-line max-len
-  const challengeString = 'Digest realm =  "[1:ABCD::abc]", nonce =  "31d0a89ed7781ce6877de5cb032bf114", qop="AUTH,autH-INt", algorithm =  md5  ,  stale =  TRUE , opaque = "00000188"';
+  const challengeString =
+    'Digest realm =  "[1:ABCD::abc]", nonce =  "31d0a89ed7781ce6877de5cb032bf114", qop="AUTH,autH-INt", algorithm =  md5  ,  stale =  TRUE , opaque = "00000188"';
   describe("challenge parsed from '" + challengeString + "'", () => {
     let challenge: any;
 
@@ -232,11 +235,7 @@ describe("Core Grammar", () => {
 
   describe("Content-Disposition", () => {
     ["session", "render"].forEach((dispString) => {
-      itHas(
-        Grammar.parse.bind(Grammar, dispString, "Content_Disposition"),
-        "type",
-        dispString
-      );
+      itHas(Grammar.parse.bind(Grammar, dispString, "Content_Disposition"), "type", dispString);
     });
   });
 
@@ -253,9 +252,7 @@ describe("Core Grammar", () => {
 
   describe("Replaces", () => {
     const goods = [
-      "98732@sip.example.com\r\n" +
-      "          ;from-tag=r33th4x0r\r\n" +
-      "          ;to-tag=ff87ff",
+      "98732@sip.example.com\r\n" + "          ;from-tag=r33th4x0r\r\n" + "          ;to-tag=ff87ff",
       "12adf2f34456gs5;to-tag=12345;from-tag=54321;early-only", // early
       "12adf2f34456gs5;baz;to-tag=12345;early-only;from-tag=54321", // early
       "87134@171.161.34.23;to-tag=24796;from-tag=0",
@@ -267,24 +264,12 @@ describe("Core Grammar", () => {
       "12adf2f34456gs5",
       "12adf2f34456gs5",
       "87134@171.161.34.23",
-      "87134@171.161.34.23",
+      "87134@171.161.34.23"
     ];
 
-    const goodFroms = [
-      "r33th4x0r",
-      "54321",
-      "54321",
-      "0",
-      "0"
-    ];
+    const goodFroms = ["r33th4x0r", "54321", "54321", "0", "0"];
 
-    const goodTos = [
-      "ff87ff",
-      "12345",
-      "12345",
-      "24796",
-      "24796"
-    ];
+    const goodTos = ["ff87ff", "12345", "12345", "24796", "24796"];
 
     const bads = [
       "12adf2f34456gs5;to-tag1=12345;from-tag=54321;early-only",

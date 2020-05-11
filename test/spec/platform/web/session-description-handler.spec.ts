@@ -27,14 +27,16 @@ describe("Web SessionDescriptionHandler", () => {
     realGetUserMedia = window.navigator.mediaDevices && window.navigator.mediaDevices.getUserMedia;
     realMediaDevices = window.navigator.mediaDevices;
     realRTCPeerConnection = window.RTCPeerConnection;
-    (window as any).RTCPeerConnection = function(): void {
+    (window as any).RTCPeerConnection = function (): void {
       this.iceGatheringState = "new";
     };
-    window.RTCPeerConnection.prototype.close = (): void => { /* */ };
+    window.RTCPeerConnection.prototype.close = (): void => {
+      /* */
+    };
     window.RTCPeerConnection.prototype.getReceivers = (): Array<RTCRtpReceiver> => {
       return [];
     };
-    window.RTCPeerConnection.prototype.getSenders = ():  Array<RTCRtpSender> => {
+    window.RTCPeerConnection.prototype.getSenders = (): Array<RTCRtpSender> => {
       return [];
     };
 
@@ -44,14 +46,22 @@ describe("Web SessionDescriptionHandler", () => {
     //   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Read-only
     // which doesn't let us assign to it
     if (window.navigator.mediaDevices) {
-      (window.navigator.mediaDevices.getUserMedia as any) = (): any => { /* */ };
+      (window.navigator.mediaDevices.getUserMedia as any) = (): any => {
+        /* */
+      };
     } else {
-      (window.navigator.mediaDevices as any) = { getUserMedia: (): any => { /* */ } };
+      (window.navigator.mediaDevices as any) = {
+        getUserMedia: (): any => {
+          /* */
+        }
+      };
     }
 
-    (window.navigator.mediaDevices.getUserMedia as any) = (): any => { /* */ };
+    (window.navigator.mediaDevices.getUserMedia as any) = (): any => {
+      /* */
+    };
 
-    handler = new SessionDescriptionHandler(console as any as Logger, {
+    handler = new SessionDescriptionHandler((console as any) as Logger, {
       peerConnectionOptions: {
         iceCheckingTimeout: 500
       }
@@ -83,16 +93,20 @@ describe("Web SessionDescriptionHandler", () => {
     });
 
     // 0 value to disable the timeout
-    expect(handler.addDefaultIceCheckingTimeout({
-      iceCheckingTimeout: 0
-    })).toEqual({
+    expect(
+      handler.addDefaultIceCheckingTimeout({
+        iceCheckingTimeout: 0
+      })
+    ).toEqual({
       iceCheckingTimeout: 0
     });
 
     // other value
-    expect(handler.addDefaultIceCheckingTimeout({
-      iceCheckingTimeout: 1234
-    })).toEqual({
+    expect(
+      handler.addDefaultIceCheckingTimeout({
+        iceCheckingTimeout: 1234
+      })
+    ).toEqual({
       iceCheckingTimeout: 1234
     });
   });
@@ -113,21 +127,24 @@ describe("Web SessionDescriptionHandler", () => {
   });
 
   it("waits for ice gathering to complete, twice", (done) => {
-    handler.waitForIceGatheringComplete().then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
+    handler
+      .waitForIceGatheringComplete()
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("complete");
 
-      return handler.waitForIceGatheringComplete();
-    }).then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
+        return handler.waitForIceGatheringComplete();
+      })
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("complete");
 
-      done();
-    });
+        done();
+      });
 
     expect(handler.iceGatheringDeferred).toBeTruthy();
     setIceGatheringState(handler.peerConnection, "gathering");
@@ -135,57 +152,63 @@ describe("Web SessionDescriptionHandler", () => {
   });
 
   it("waits for ice gathering to timeout, then complete", (done) => {
-    handler.waitForIceGatheringComplete().then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(true);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("gathering");
+    handler
+      .waitForIceGatheringComplete()
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(true);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("gathering");
 
-      const promise = handler.waitForIceGatheringComplete();
-      expect(handler.iceGatheringDeferred).toBe(undefined); // no new promise!
-      expect(handler.iceGatheringTimeout).toBe(true);
-      expect(handler.iceGatheringTimer).toBe(undefined);
+        const promise = handler.waitForIceGatheringComplete();
+        expect(handler.iceGatheringDeferred).toBe(undefined); // no new promise!
+        expect(handler.iceGatheringTimeout).toBe(true);
+        expect(handler.iceGatheringTimer).toBe(undefined);
 
-      setIceGatheringState(handler.peerConnection, "complete");
+        setIceGatheringState(handler.peerConnection, "complete");
 
-      return promise;
-    }).then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(true);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
+        return promise;
+      })
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(true);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("complete");
 
-      done();
-    });
+        done();
+      });
 
     expect(handler.iceGatheringDeferred).toBeTruthy();
     setIceGatheringState(handler.peerConnection, "gathering");
   });
 
   it("waits for ice gathering to complete, then restart, then complete", (done) => {
-    handler.waitForIceGatheringComplete().then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
+    handler
+      .waitForIceGatheringComplete()
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("complete");
 
-      const promise = handler.waitForIceGatheringComplete();
-      expect(handler.iceGatheringDeferred).toBe(undefined); // no new promise!
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
+        const promise = handler.waitForIceGatheringComplete();
+        expect(handler.iceGatheringDeferred).toBe(undefined); // no new promise!
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
 
-      setIceGatheringState(handler.peerConnection, "gathering");
-      setIceGatheringState(handler.peerConnection, "complete");
+        setIceGatheringState(handler.peerConnection, "gathering");
+        setIceGatheringState(handler.peerConnection, "complete");
 
-      return promise;
-    }).then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
+        return promise;
+      })
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("complete");
 
-      done();
-    });
+        done();
+      });
 
     expect(handler.iceGatheringDeferred).toBeTruthy();
     setIceGatheringState(handler.peerConnection, "gathering");
@@ -193,29 +216,32 @@ describe("Web SessionDescriptionHandler", () => {
   });
 
   it("waits for ice gathering to complete, resets peer connection, waits again", (done) => {
-    handler.waitForIceGatheringComplete().catch(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("new");
+    handler
+      .waitForIceGatheringComplete()
+      .catch(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("new");
 
-      const promise = handler.waitForIceGatheringComplete();
-      expect(handler.iceGatheringDeferred).toBeTruthy(); // new promise!
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
+        const promise = handler.waitForIceGatheringComplete();
+        expect(handler.iceGatheringDeferred).toBeTruthy(); // new promise!
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
 
-      setIceGatheringState(handler.peerConnection, "gathering");
-      setIceGatheringState(handler.peerConnection, "complete");
+        setIceGatheringState(handler.peerConnection, "gathering");
+        setIceGatheringState(handler.peerConnection, "complete");
 
-      return promise;
-    }).then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
+        return promise;
+      })
+      .then(() => {
+        expect(handler.iceGatheringDeferred).toBe(undefined);
+        expect(handler.iceGatheringTimeout).toBe(false);
+        expect(handler.iceGatheringTimer).toBe(undefined);
+        expect(handler.peerConnection.iceGatheringState).toBe("complete");
 
-      done();
-    });
+        done();
+      });
 
     expect(handler.iceGatheringDeferred).toBeTruthy();
     setIceGatheringState(handler.peerConnection, "gathering");

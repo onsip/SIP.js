@@ -25,7 +25,8 @@ describe("API UserAgent", () => {
   });
 
   afterEach(async () => {
-    return alice.userAgent.stop()
+    return alice.userAgent
+      .stop()
       .then(() => expect(alice.isShutdown()).toBe(true))
       .then(() => bob.userAgent.stop())
       .then(() => expect(bob.isShutdown()).toBe(true))
