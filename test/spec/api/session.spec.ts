@@ -1789,7 +1789,7 @@ describe("API Session", () => {
               describe("Bob reject()", () => {
                 bobReject();
               });
-            });  
+            });
           });
         });
       });
