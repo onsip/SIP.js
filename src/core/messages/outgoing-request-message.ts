@@ -43,7 +43,7 @@ export class OutgoingRequestMessage {
   public extraHeaders: Array<string> = [];
   public body: { body: string; contentType: string } | undefined;
 
-  private options: Required<OutgoingRequestMessageOptions> = OutgoingRequestMessage.getDefaultOptions();
+  private options: Required<OutgoingRequestMessageOptions>;
 
   constructor(
     method: string,
@@ -54,6 +54,9 @@ export class OutgoingRequestMessage {
     extraHeaders?: Array<string>,
     body?: Body
   ) {
+    // Initialize default options
+    this.options = OutgoingRequestMessage.getDefaultOptions();
+
     // Options - merge a deep copy
     if (options) {
       this.options = {

@@ -927,7 +927,7 @@ export class SessionDialog extends Dialog implements Session {
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
       const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
-          transaction.removeListener("stateChanged", stateChanged);
+          transaction.removeStateChangeListener(stateChanged);
           if (this.invite2xxTimer) {
             clearTimeout(this.invite2xxTimer);
             this.invite2xxTimer = undefined;
@@ -941,7 +941,7 @@ export class SessionDialog extends Dialog implements Session {
           }
         }
       };
-      transaction.addListener("stateChanged", stateChanged);
+      transaction.addStateChangeListener(stateChanged);
     }
   }
 
@@ -980,7 +980,7 @@ export class SessionDialog extends Dialog implements Session {
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
       const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
-          transaction.removeListener("stateChanged", stateChanged);
+          transaction.removeStateChangeListener(stateChanged);
           if (this.invite2xxTimer) {
             clearTimeout(this.invite2xxTimer);
             this.invite2xxTimer = undefined;
@@ -990,7 +990,7 @@ export class SessionDialog extends Dialog implements Session {
           }
         }
       };
-      transaction.addListener("stateChanged", stateChanged);
+      transaction.addStateChangeListener(stateChanged);
     }
   }
 }

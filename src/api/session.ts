@@ -1,5 +1,3 @@
-import { EventEmitter } from "events";
-
 import {
   AckableIncomingResponseWithSession,
   Body,
@@ -32,7 +30,7 @@ import {
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
 import { Bye } from "./bye";
-import { _makeEmitter, Emitter } from "./emitter";
+import { Emitter, EmitterImpl } from "./emitter";
 import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
 import { Info } from "./info";
 import { Inviter } from "./inviter";
@@ -114,7 +112,7 @@ export abstract class Session {
   /** Session state. */
   private _state: SessionState = SessionState.Initial;
   /** Session state emitter. */
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter: EmitterImpl<SessionState>;
   /** User agent. */
   private _userAgent: UserAgent;
 
@@ -143,6 +141,7 @@ export abstract class Session {
    */
   protected constructor(userAgent: UserAgent, options: SessionOptions = {}) {
     this.delegate = options.delegate;
+    this._stateEventEmitter = new EmitterImpl<SessionState>();
     this._userAgent = userAgent;
   }
 
@@ -260,7 +259,7 @@ export abstract class Session {
    * Session state change emitter.
    */
   public get stateChange(): Emitter<SessionState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   /**
@@ -1299,7 +1298,7 @@ export abstract class Session {
     // Transition
     this._state = newState;
     this.logger.log(`Session ${this.id} transitioned to state ${this._state}`);
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
 
     // Dispose
     if (newState === SessionState.Terminated) {

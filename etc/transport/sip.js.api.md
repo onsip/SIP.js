@@ -4,12 +4,10 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // Warning: (ae-forgotten-export) The symbol "Transport" needs to be exported by the entry point index.d.ts
 //
 // @public
-export class Transport extends EventEmitter implements Transport_2 {
+export class Transport implements Transport_2 {
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     constructor(logger: Logger, options?: TransportOptions);
     connect(): Promise<void>;
@@ -17,10 +15,6 @@ export class Transport extends EventEmitter implements Transport_2 {
     // (undocumented)
     dispose(): Promise<void>;
     isConnected(): boolean;
-    // @deprecated
-    on(event: "connected" | "connecting" | "disconnecting" | "disconnected", listener: () => void): this;
-    // @deprecated
-    on(event: "message", listener: (message: string) => void): this;
     // (undocumented)
     onConnect: (() => void) | undefined;
     // (undocumented)

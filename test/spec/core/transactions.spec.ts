@@ -157,7 +157,7 @@ describe("Core Transactions", () => {
         transport = makeMockTransport();
         user = makeTransactionUser();
         transaction = transactionFactory(transport, user);
-        spyOn(transaction, "emit");
+        spyOn(transaction, "notifyStateChangeListeners");
       });
 
       afterEach(() => {
@@ -188,7 +188,7 @@ describe("Core Transactions", () => {
 
       it("has not notified the transaction user of a state change (emitted nothing)", () => {
         expect(user.onStateChange).not.toHaveBeenCalled();
-        expect(transaction.emit).not.toHaveBeenCalled();
+        expect(transaction.notifyStateChangeListeners).not.toHaveBeenCalled();
       });
     });
   };
@@ -293,7 +293,7 @@ describe("Core Transactions", () => {
         transport = makeMockTransport();
         user = makeClientTransactionUser();
         transaction = new InviteClientTransaction(request, transport, user);
-        spyOn(transaction, "emit");
+        spyOn(transaction, "notifyStateChangeListeners");
       });
 
       afterEach(() => {
@@ -324,7 +324,7 @@ describe("Core Transactions", () => {
 
               it("it MUST transition to the 'proceeding' state", () => {
                 expect(transaction.state).toBe(TransactionState.Proceeding);
-                expect(transaction.emit).toHaveBeenCalledTimes(1);
+                expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Proceeding);
               });
@@ -347,7 +347,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST remain in 'proceeding' state", () => {
                       expect(transaction.state).toBe(TransactionState.Proceeding);
-                      expect(transaction.emit).toHaveBeenCalledTimes(1);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
                   });
@@ -376,7 +376,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST transition to the 'accepted' state", () => {
                       expect(transaction.state).toBe(TransactionState.Accepted);
-                      expect(transaction.emit).toHaveBeenCalledTimes(2);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(2);
                       expect(user.onStateChange).toHaveBeenCalledTimes(2);
                     });
                   });
@@ -437,7 +437,7 @@ describe("Core Transactions", () => {
 
               it("it MUST transition to the 'accepted' state", () => {
                 expect(transaction.state).toBe(TransactionState.Accepted);
-                expect(transaction.emit).toHaveBeenCalledTimes(1);
+                expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
               });
 
@@ -458,7 +458,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST remain in 'accepted' state", () => {
                       expect(transaction.state).toBe(TransactionState.Accepted);
-                      expect(transaction.emit).toHaveBeenCalledTimes(1);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
                   });
@@ -487,7 +487,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST remain in 'accepted' state", () => {
                       expect(transaction.state).toBe(TransactionState.Accepted);
-                      expect(transaction.emit).toHaveBeenCalledTimes(1);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
                   });
@@ -521,7 +521,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST remain in 'accepted' state", () => {
                       expect(transaction.state).toBe(TransactionState.Accepted);
-                      expect(transaction.emit).toHaveBeenCalledTimes(1);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
                   });
@@ -549,7 +549,7 @@ describe("Core Transactions", () => {
 
                       it("it MUST remain in 'accepted' state", () => {
                         expect(transaction.state).toBe(TransactionState.Accepted);
-                        expect(transaction.emit).toHaveBeenCalledTimes(1);
+                        expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                         expect(user.onStateChange).toHaveBeenCalledTimes(1);
                       });
                     });
@@ -583,7 +583,7 @@ describe("Core Transactions", () => {
 
                 it("it MUST transition to the 'completed' state", () => {
                   expect(transaction.state).toBe(TransactionState.Completed);
-                  expect(transaction.emit).toHaveBeenCalledTimes(1);
+                  expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
 
@@ -604,7 +604,7 @@ describe("Core Transactions", () => {
 
                       it("it MUST remain in 'completed' state", () => {
                         expect(transaction.state).toBe(TransactionState.Completed);
-                        expect(transaction.emit).toHaveBeenCalledTimes(1);
+                        expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                         expect(user.onStateChange).toHaveBeenCalledTimes(1);
                       });
                     });
@@ -628,7 +628,7 @@ describe("Core Transactions", () => {
 
                       it("it MUST remain in 'completed' state", () => {
                         expect(transaction.state).toBe(TransactionState.Completed);
-                        expect(transaction.emit).toHaveBeenCalledTimes(1);
+                        expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                         expect(user.onStateChange).toHaveBeenCalledTimes(1);
                       });
                     });
@@ -658,7 +658,7 @@ describe("Core Transactions", () => {
 
                         it("it MUST remain in 'completed' state", () => {
                           expect(transaction.state).toBe(TransactionState.Completed);
-                          expect(transaction.emit).toHaveBeenCalledTimes(1);
+                          expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                           expect(user.onStateChange).toHaveBeenCalledTimes(1);
                         });
                       });
@@ -698,7 +698,7 @@ describe("Core Transactions", () => {
         transport = makeMockTransport();
         user = makeClientTransactionUser();
         transaction = new NonInviteClientTransaction(request, transport, user);
-        spyOn(transaction, "emit");
+        spyOn(transaction, "notifyStateChangeListeners");
       });
 
       afterEach(() => {
@@ -728,7 +728,7 @@ describe("Core Transactions", () => {
 
               it("it MUST transition to the 'proceeding' state", () => {
                 expect(transaction.state).toBe(TransactionState.Proceeding);
-                expect(transaction.emit).toHaveBeenCalledTimes(1);
+                expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Proceeding);
               });
@@ -751,7 +751,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST remain in 'proceeding' state", () => {
                       expect(transaction.state).toBe(TransactionState.Proceeding);
-                      expect(transaction.emit).toHaveBeenCalledTimes(1);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
                   });
@@ -812,7 +812,7 @@ describe("Core Transactions", () => {
 
                 it("it MUST transition to the 'completed' state", () => {
                   expect(transaction.state).toBe(TransactionState.Completed);
-                  expect(transaction.emit).toHaveBeenCalledTimes(1);
+                  expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
 
@@ -839,7 +839,7 @@ describe("Core Transactions", () => {
 
                         it("it MUST remain in 'completed' state", () => {
                           expect(transaction.state).toBe(TransactionState.Completed);
-                          expect(transaction.emit).toHaveBeenCalledTimes(1);
+                          expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                           expect(user.onStateChange).toHaveBeenCalledTimes(1);
                         });
                       });
@@ -910,7 +910,7 @@ describe("Core Transactions", () => {
         transport = makeMockTransport();
         user = makeClientTransactionUser();
         transaction = new InviteServerTransaction(request, transport, user);
-        spyOn(transaction, "emit");
+        spyOn(transaction, "notifyStateChangeListeners");
       });
 
       afterEach(() => {
@@ -950,7 +950,7 @@ describe("Core Transactions", () => {
 
               it("it MUST remain in 'proceeding' state", () => {
                 expect(transaction.state).toBe(TransactionState.Proceeding);
-                expect(transaction.emit).toHaveBeenCalledTimes(0);
+                expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(0);
                 expect(user.onStateChange).toHaveBeenCalledTimes(0);
               });
 
@@ -995,7 +995,7 @@ describe("Core Transactions", () => {
 
               it("it MUST transition to the 'accepted' state", () => {
                 expect(transaction.state).toBe(TransactionState.Accepted);
-                expect(transaction.emit).toHaveBeenCalledTimes(1);
+                expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                 expect(user.onStateChange).toHaveBeenCalledTimes(1);
               });
 
@@ -1007,7 +1007,7 @@ describe("Core Transactions", () => {
 
                 it("it MUST absorb the request without changing state", () => {
                   expect(transport.send).toHaveBeenCalledTimes(1);
-                  expect(transaction.emit).toHaveBeenCalledTimes(1);
+                  expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
               });
@@ -1036,7 +1036,7 @@ describe("Core Transactions", () => {
 
                     it("it MUST remain in 'accepted' state", () => {
                       expect(transaction.state).toBe(TransactionState.Accepted);
-                      expect(transaction.emit).toHaveBeenCalledTimes(1);
+                      expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                       expect(user.onStateChange).toHaveBeenCalledTimes(1);
                     });
                   });
@@ -1078,7 +1078,7 @@ describe("Core Transactions", () => {
 
                 it("it MUST transition to the 'completed' state", () => {
                   expect(transaction.state).toBe(TransactionState.Completed);
-                  expect(transaction.emit).toHaveBeenCalledTimes(1);
+                  expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                 });
 
@@ -1107,7 +1107,7 @@ describe("Core Transactions", () => {
 
                   it("it MUST remain in 'completed' state", () => {
                     expect(transaction.state).toBe(TransactionState.Completed);
-                    expect(transaction.emit).toHaveBeenCalledTimes(1);
+                    expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                     expect(user.onStateChange).toHaveBeenCalledTimes(1);
                   });
                 });
@@ -1127,7 +1127,7 @@ describe("Core Transactions", () => {
 
                   it("it MUST transition to the 'confirmed' state", () => {
                     expect(transaction.state).toBe(TransactionState.Confirmed);
-                    expect(transaction.emit).toHaveBeenCalledTimes(2);
+                    expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(2);
                     expect(user.onStateChange).toHaveBeenCalledTimes(2);
                   });
                 });
@@ -1165,7 +1165,7 @@ describe("Core Transactions", () => {
         transport = makeMockTransport();
         user = makeClientTransactionUser();
         transaction = new NonInviteServerTransaction(request, transport, user);
-        spyOn(transaction, "emit");
+        spyOn(transaction, "notifyStateChangeListeners");
       });
 
       afterEach(() => {
@@ -1221,7 +1221,7 @@ describe("Core Transactions", () => {
 
           it("it MUST transition the 'proceeding' state", () => {
             expect(transaction.state).toBe(TransactionState.Proceeding);
-            expect(transaction.emit).toHaveBeenCalledTimes(1);
+            expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
             expect(user.onStateChange).toHaveBeenCalledTimes(1);
             expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Proceeding);
           });
@@ -1276,7 +1276,7 @@ describe("Core Transactions", () => {
 
                   it("it MUST transition the 'completed' state", () => {
                     expect(transaction.state).toBe(TransactionState.Completed);
-                    expect(transaction.emit).toHaveBeenCalledTimes(2);
+                    expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(2);
                     expect(user.onStateChange).toHaveBeenCalledTimes(2);
                     expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Completed);
                   });
@@ -1328,7 +1328,7 @@ describe("Core Transactions", () => {
 
                 it("it MUST transition the 'completed' state", () => {
                   expect(transaction.state).toBe(TransactionState.Completed);
-                  expect(transaction.emit).toHaveBeenCalledTimes(1);
+                  expect(transaction.notifyStateChangeListeners).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledTimes(1);
                   expect(user.onStateChange).toHaveBeenCalledWith(TransactionState.Completed);
                 });

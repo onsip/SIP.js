@@ -6,14 +6,7 @@ import { StateTransitionError, TransportState } from "../../../../src/api";
 import { LoggerFactory } from "../../../../src/core";
 import { Transport } from "../../../../src/platform/web";
 import { EmitterSpy, makeEmitterSpy } from "../../../support/api/emitter-spy";
-import { EventEmitterEmitSpy, makeEventEmitterEmitSpy } from "../../../support/api/event-emitter-spy";
 import { soon } from "../../../support/api/utils";
-
-const EVENT_CONNECTING = "connecting";
-const EVENT_CONNECTED = "connected";
-const EVENT_DISCONNECTING = "disconnecting";
-const EVENT_DISCONNECTED = "disconnected";
-const EVENT_MESSAGE = "message";
 
 /**
  * Transport Unit Tests
@@ -41,7 +34,6 @@ describe("Web Transport", () => {
   let mockServerWebSocket: WebSocket | undefined;
   let mockServerReceivedMessage: string | undefined;
   let transport: Transport;
-  let transportEmitSpy: EventEmitterEmitSpy;
   let transportStateSpy: EmitterSpy<TransportState>;
   let connectPromise: Promise<void> | undefined;
   let disconnectPromise: Promise<void> | undefined;
@@ -54,7 +46,6 @@ describe("Web Transport", () => {
       connectionTimeout,
       server
     });
-    transportEmitSpy = makeEventEmitterEmitSpy(transport, logger);
     transportStateSpy = makeEmitterSpy(transport.stateChange, logger);
     transport.onConnect = onConnectMock;
     transport.onDisconnect = onDisconnectMock;
@@ -119,7 +110,6 @@ describe("Web Transport", () => {
     onConnectMock.calls.reset();
     onDisconnectMock.calls.reset();
     onMessageMock.calls.reset();
-    transportEmitSpy.calls.reset();
     transportStateSpy.calls.reset();
   }
 
@@ -136,11 +126,6 @@ describe("Web Transport", () => {
       expect(onConnectMock).toHaveBeenCalledTimes(0);
       expect(onDisconnectMock).toHaveBeenCalledTimes(0);
       expect(onMessageMock).toHaveBeenCalledTimes(0);
-    });
-
-    it("MUST NOT emit", () => {
-      const spy = transportEmitSpy;
-      expect(spy).toHaveBeenCalledTimes(0);
     });
 
     it("isConnected MUST be false", () => {
@@ -369,12 +354,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("state MUST be 'Connected'", () => {
@@ -389,12 +368,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
-        });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       case TransportState.Disconnecting:
@@ -412,12 +385,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'connecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("state MUST be 'Connecting'", () => {
@@ -433,12 +400,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST emit 'connecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -476,12 +437,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("state MUST be 'Disconnecting'", () => {
@@ -501,12 +456,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnecting:
         it("state MUST be 'Disconnecting'", () => {
@@ -524,12 +473,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'connecting' 'disconnecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("state MUST be 'Disconnecting'", () => {
@@ -546,12 +489,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST emit 'connecting' 'disconnecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -680,12 +617,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("error MUST NOT be thrown", () => {
@@ -703,12 +634,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
-        });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       case TransportState.Disconnecting:
@@ -730,12 +655,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'connecting', 'disconnected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("error MUST be thrown", () => {
@@ -755,12 +674,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST emit 'connecting', 'disconnected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -810,12 +723,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("assert open not blocked (hack for test working)", () => {
@@ -836,12 +743,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
-        });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       case TransportState.Disconnecting:
@@ -866,12 +767,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'connecting', 'disconnected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("assert open blocked (hack for test working)", () => {
@@ -894,12 +789,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST emit 'connecting', 'disconnected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -937,12 +826,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
         });
-        it("MUST emit 'connected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("error MUST NOT be thrown", () => {
@@ -960,12 +843,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
-        });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       case TransportState.Disconnecting:
@@ -987,12 +864,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
         });
-        it("MUST emit 'connecting', 'connected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("error MUST NOT be thrown", () => {
@@ -1012,12 +883,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
-        });
-        it("MUST emit 'connecting', 'connected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -1077,12 +942,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("state MUST be 'Disconnecting'", () => {
@@ -1102,12 +961,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnecting:
         it("state MUST be 'Disconnecting'", () => {
@@ -1123,12 +976,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("state MUST be 'Disconnected'", () => {
@@ -1143,12 +990,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -1187,12 +1028,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting', 'connecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("state MUST be 'Connecting'", () => {
@@ -1213,12 +1048,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting', 'connecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnecting:
         it("state MUST be 'Connecting'", () => {
@@ -1235,12 +1064,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'connecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("state MUST be 'Connecting'", () => {
@@ -1256,12 +1079,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST emit 'connecting'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -1306,12 +1123,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
         });
-        it("MUST emit 'disconnecting', 'connecting', 'connected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("disconnect error MUST be thrown", () => {
@@ -1337,12 +1148,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
         });
-        it("MUST emit 'disconnecting', 'connecting', 'connected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnecting:
         it("disconnect error MUST be thrown", () => {
@@ -1364,12 +1169,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
         });
-        it("MUST emit 'connecting', 'connected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("error MUST NOT be thrown", () => {
@@ -1390,12 +1189,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be true", () => {
           expect(transport.isConnected()).toBe(true);
-        });
-        it("MUST emit 'connecting', 'connected'", () => {
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -1434,12 +1227,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting', 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("error MUST NOT be thrown", () => {
@@ -1463,12 +1250,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnecting', 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnecting:
         it("error MUST NOT be thrown", () => {
@@ -1488,12 +1269,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnected:
         it("error MUST NOT be thrown", () => {
@@ -1511,12 +1286,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST NOT emit", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       default:
@@ -1618,15 +1387,9 @@ describe("Web Transport", () => {
         expect(onMessageMock).toHaveBeenCalledTimes(1);
         expect(onMessageMock.calls.argsFor(0)).toEqual([sendMessage]);
       });
-      it("MUST emit 'message'", () => {
-        expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_MESSAGE, sendMessage);
-      });
     } else {
       it("Message callback MUST NOT have been called", () => {
         expect(onMessageMock).toHaveBeenCalledTimes(0);
-      });
-      it("MUST NOT emit", () => {
-        expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_MESSAGE);
       });
     }
   }
@@ -1668,12 +1431,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Connected:
         it("state MUST be 'Disconnected'", () => {
@@ -1694,12 +1451,6 @@ describe("Web Transport", () => {
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
         });
-        it("MUST emit 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
-        });
         break;
       case TransportState.Disconnecting:
         it("state MUST be 'Disconnected'", () => {
@@ -1716,12 +1467,6 @@ describe("Web Transport", () => {
         });
         it("isConnected MUST be false", () => {
           expect(transport.isConnected()).toBe(false);
-        });
-        it("MUST emit 'disconnected'", () => {
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTING);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_CONNECTED);
-          expect(transportEmitSpy).not.toHaveBeenCalledWith(EVENT_DISCONNECTING);
-          expect(transportEmitSpy).toHaveBeenCalledWith(EVENT_DISCONNECTED);
         });
         break;
       case TransportState.Disconnected:
