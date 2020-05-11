@@ -50,13 +50,10 @@ describe("Web Transport", () => {
   beforeEach(() => {
     jasmine.clock().install();
     initServer();
-    transport = new Transport(
-      logger,
-      {
-        connectionTimeout,
-        server
-      }
-    );
+    transport = new Transport(logger, {
+      connectionTimeout,
+      server
+    });
     transportEmitSpy = makeEventEmitterEmitSpy(transport, logger);
     transportStateSpy = makeEmitterSpy(transport.stateChange, logger);
     transport.onConnect = onConnectMock;
@@ -83,10 +80,7 @@ describe("Web Transport", () => {
       mockServer.close();
       mockServerWebSocket = undefined;
     }
-    mockServer = new Server(
-      server,
-      { selectProtocol: (protocols: Array<string>): string => "sip" }
-    );
+    mockServer = new Server(server, { selectProtocol: (protocols: Array<string>): string => "sip" });
     mockServer.on("connection", (socket) => {
       logger.log("Mock WebSocket Server: incoming connection");
       mockServerWebSocket = socket;
@@ -288,7 +282,7 @@ describe("Web Transport", () => {
         if (error instanceof StateTransitionError) {
           return;
         }
-        throw (error);
+        throw error;
       }
 
       beforeEach(() => {
@@ -321,7 +315,7 @@ describe("Web Transport", () => {
         if (error instanceof StateTransitionError) {
           return;
         }
-        throw (error);
+        throw error;
       }
 
       beforeEach(() => {
@@ -355,8 +349,9 @@ describe("Web Transport", () => {
 
     beforeEach(() => {
       resetAll();
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
     });
 
     switch (state) {
@@ -457,10 +452,12 @@ describe("Web Transport", () => {
 
     beforeEach(() => {
       resetAll();
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
-      disconnectPromise = transport.disconnect()
-        .catch((error: Error) => { disconnectError = error; });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
+      disconnectPromise = transport.disconnect().catch((error: Error) => {
+        disconnectError = error;
+      });
     });
 
     switch (state) {
@@ -568,10 +565,12 @@ describe("Web Transport", () => {
 
     beforeEach(async () => {
       resetAll();
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
-      disconnectPromise = transport.disconnect()
-        .catch((error: Error) => { disconnectError = error; });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
+      disconnectPromise = transport.disconnect().catch((error: Error) => {
+        disconnectError = error;
+      });
       await soon(serverDelay);
     });
 
@@ -656,8 +655,9 @@ describe("Web Transport", () => {
       // Server rejects connection
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockServer.options as any) = { selectProtocol: (protocols: Array<string>): string => "invalid" };
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
       await soon(serverDelay);
     });
 
@@ -781,8 +781,9 @@ describe("Web Transport", () => {
         openBlocked = true;
         return;
       };
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
       await soon(serverDelay);
       await soon(connectionTimeout * 1000);
     });
@@ -911,8 +912,9 @@ describe("Web Transport", () => {
 
     beforeEach(async () => {
       resetAll();
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
       await soon(serverDelay);
     });
 
@@ -1054,8 +1056,9 @@ describe("Web Transport", () => {
 
     beforeEach(() => {
       resetAll();
-      disconnectPromise = transport.disconnect()
-        .catch((error: Error) => { disconnectError = error; });
+      disconnectPromise = transport.disconnect().catch((error: Error) => {
+        disconnectError = error;
+      });
     });
 
     switch (state) {
@@ -1159,10 +1162,12 @@ describe("Web Transport", () => {
 
     beforeEach(() => {
       resetAll();
-      disconnectPromise = transport.disconnect()
-        .catch((error: Error) => { disconnectError = error; });
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
+      disconnectPromise = transport.disconnect().catch((error: Error) => {
+        disconnectError = error;
+      });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
     });
 
     switch (state) {
@@ -1270,10 +1275,12 @@ describe("Web Transport", () => {
 
     beforeEach(async () => {
       resetAll();
-      disconnectPromise = transport.disconnect()
-        .catch((error: Error) => { disconnectError = error; });
-      connectPromise = transport.connect()
-        .catch((error: Error) => { connectError = error; });
+      disconnectPromise = transport.disconnect().catch((error: Error) => {
+        disconnectError = error;
+      });
+      connectPromise = transport.connect().catch((error: Error) => {
+        connectError = error;
+      });
       await soon(serverDelay);
     });
 
@@ -1401,8 +1408,9 @@ describe("Web Transport", () => {
 
     beforeEach(async () => {
       resetAll();
-      disconnectPromise = transport.disconnect()
-        .catch((error: Error) => { disconnectError = error; });
+      disconnectPromise = transport.disconnect().catch((error: Error) => {
+        disconnectError = error;
+      });
       await soon(serverDelay);
     });
 
@@ -1539,8 +1547,9 @@ describe("Web Transport", () => {
 
     beforeEach(() => {
       resetAll();
-      sendPromise = transport.send(sendMessage)
-        .catch((error: Error) => { sendError = error; });
+      sendPromise = transport.send(sendMessage).catch((error: Error) => {
+        sendError = error;
+      });
     });
 
     switch (state) {
@@ -1574,8 +1583,9 @@ describe("Web Transport", () => {
 
     beforeEach(async () => {
       resetAll();
-      sendPromise = transport.send(sendMessage)
-        .catch((error: Error) => { sendError = error; });
+      sendPromise = transport.send(sendMessage).catch((error: Error) => {
+        sendError = error;
+      });
       await soon(serverDelay);
     });
 
@@ -1724,5 +1734,4 @@ describe("Web Transport", () => {
         throw new Error("Unknown state.");
     }
   }
-
 });

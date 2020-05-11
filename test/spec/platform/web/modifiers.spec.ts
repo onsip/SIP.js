@@ -10,7 +10,8 @@ const offer: RTCSdpType = "offer";
 const SessionDescription = {
   withTcpCandidatesAndTelephoneEvents: {
     type: offer,
-    sdp: "\r\n" +
+    sdp:
+      "\r\n" +
       "v=0\r\n" +
       "o=- 5677966312555193038 2 IN IP4 127.0.0.1\r\n" +
       "s=-\r\n" +
@@ -64,10 +65,18 @@ describe("Web Modifiers", () => {
   it("should strip tcp candidates from sdp", (done) => {
     Modifiers.stripTcpCandidates(sdpWrapper).then((description) => {
       expect(description.type).toBe("offer");
-      expect(description.sdp).toContain("a=candidate:2608808550 1 udp 2113937151 192.168.1.33 53974 typ host generation 0");
-      expect(description.sdp).not.toContain("a=candidate:2608808550 2 tcp 2113937151 192.168.1.33 53974 typ host generation 0");
-      expect(description.sdp).toContain("a=candidate:478089246 1 udp 1685987071 127.0.0.1 58170 typ srflx raddr 127.0.0.1 rport 58170 generation 0 network-id 1");
-      expect(description.sdp).toContain("a=candidate:1099745028 1 udp 25042687 127.0.0.1 56353 typ relay raddr 127.0.0.1 rport 50998 generation 0 network-id 1");
+      expect(description.sdp).toContain(
+        "a=candidate:2608808550 1 udp 2113937151 192.168.1.33 53974 typ host generation 0"
+      );
+      expect(description.sdp).not.toContain(
+        "a=candidate:2608808550 2 tcp 2113937151 192.168.1.33 53974 typ host generation 0"
+      );
+      expect(description.sdp).toContain(
+        "a=candidate:478089246 1 udp 1685987071 127.0.0.1 58170 typ srflx raddr 127.0.0.1 rport 58170 generation 0 network-id 1"
+      );
+      expect(description.sdp).toContain(
+        "a=candidate:1099745028 1 udp 25042687 127.0.0.1 56353 typ relay raddr 127.0.0.1 rport 50998 generation 0 network-id 1"
+      );
 
       done();
     });

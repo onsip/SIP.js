@@ -1,18 +1,12 @@
 import { EventEmitter } from "events";
 
-import {
-  _makeEmitter,
-  Emitter,
-  Transport,
-  TransportState
-} from "../../../src/api";
+import { _makeEmitter, Emitter, Transport, TransportState } from "../../../src/api";
 import { Logger } from "../../../src/core";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
 export class TransportFake extends EventEmitter implements Transport {
-
   public onConnect: (() => void) | undefined;
   public onDisconnect: ((error?: Error) => void) | undefined;
   public onMessage: ((message: string) => void) | undefined;
@@ -55,7 +49,7 @@ export class TransportFake extends EventEmitter implements Transport {
   }
 
   public disconnect(): Promise<void> {
-    return  this._disconnect();
+    return this._disconnect();
   }
 
   public dispose(): Promise<void> {
@@ -63,7 +57,9 @@ export class TransportFake extends EventEmitter implements Transport {
   }
 
   public send(message: string): Promise<void> {
-    return this._send(message).then(() => { return; });
+    return this._send(message).then(() => {
+      return;
+    });
   }
 
   public isConnected(): boolean {
@@ -82,7 +78,7 @@ export class TransportFake extends EventEmitter implements Transport {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let message = "";
     message += this._id ? `${this._id} ` : "";
-    message +=  `Receiving...\n${msg}`;
+    message += `Receiving...\n${msg}`;
     // this.logger.log(message);
     this.emit("message", msg);
     if (this._receiveDropOnce) {
@@ -246,25 +242,17 @@ export class TransportFake extends EventEmitter implements Transport {
         }
         break;
       case TransportState.Connected:
-        if (
-          newState !== TransportState.Disconnecting &&
-          newState !== TransportState.Disconnected
-        ) {
+        if (newState !== TransportState.Disconnecting && newState !== TransportState.Disconnected) {
           invalidTransition();
         }
         break;
       case TransportState.Disconnecting:
-        if (
-          newState !== TransportState.Connecting &&
-          newState !== TransportState.Disconnected
-        ) {
+        if (newState !== TransportState.Connecting && newState !== TransportState.Disconnected) {
           invalidTransition();
         }
         break;
       case TransportState.Disconnected:
-        if (
-          newState !== TransportState.Connecting
-        ) {
+        if (newState !== TransportState.Connecting) {
           invalidTransition();
         }
         break;
