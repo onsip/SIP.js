@@ -1747,6 +1747,18 @@ describe("API Session", () => {
           describe("Bob reject()", () => {
             bobReject();
           });
+
+          describe("Bob progress(reliable) ", () => {
+            bobProgressReliable();
+
+            describe("Bob accept()", () => {
+              bobAccept();
+            });
+
+            describe("Bob reject()", () => {
+              bobReject();
+            });
+          });
         });
 
         describe("Bob progress()", () => {
@@ -1770,6 +1782,18 @@ describe("API Session", () => {
             describe("Bob reject()", () => {
               bobReject();
             });
+
+            describe("Bob progress(reliable) ", () => {
+              bobProgressReliable();
+
+              describe("Bob accept()", () => {
+                bobAccept();
+              });
+
+              describe("Bob reject()", () => {
+                bobReject();
+              });
+            });  
           });
         });
       });

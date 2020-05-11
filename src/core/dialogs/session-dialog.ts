@@ -703,6 +703,11 @@ export class SessionDialog extends Dialog implements Session {
     }
   }
 
+  /**
+   * Guard against out of order reliable provisional responses and retransmissions.
+   * Returns false if the response should be discarded, otherwise true.
+   * @param message - Incoming response message within this dialog.
+   */
   public reliableSequenceGuard(message: IncomingResponseMessage): boolean {
     const statusCode = message.statusCode;
     if (!statusCode) {
@@ -744,9 +749,7 @@ export class SessionDialog extends Dialog implements Session {
         // initialized to the RSeq header field in the first reliable
         // provisional response received for the initial request.
         // https://tools.ietf.org/html/rfc3262#section-4
-        if (!this.rseq) {
-          this.rseq = rseq;
-        }
+        this.rseq = rseq;
       }
     }
 

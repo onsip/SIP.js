@@ -128,7 +128,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
           // Guard against out of order reliable provisional responses.
           // Note that this is where the rseq tracking is done.
           if (!earlyDialog.reliableSequenceGuard(message)) {
-            this.logger.warn("1xx INVITE reliable response received out of order, dropping.");
+            this.logger.warn("1xx INVITE reliable response received out of order or is a retransmission, dropping.");
             return;
           }
 
