@@ -749,7 +749,7 @@ export class SessionDialog extends Dialog implements Session {
         // initialized to the RSeq header field in the first reliable
         // provisional response received for the initial request.
         // https://tools.ietf.org/html/rfc3262#section-4
-        this.rseq = rseq;
+        this.rseq = this.rseq ? this.rseq + 1 : rseq;
       }
     }
 
