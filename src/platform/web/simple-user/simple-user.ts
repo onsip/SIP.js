@@ -674,6 +674,10 @@ export class SimpleUser {
     }
 
     const peerConnection = sessionDescriptionHandler.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
     peerConnection.getSenders().forEach((sender) => {
       if (sender.track) {
         sender.track.enabled = enable;
@@ -699,6 +703,10 @@ export class SimpleUser {
     }
 
     const peerConnection = sessionDescriptionHandler.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
     const rtpReceiver = peerConnection.getReceivers().find((receiver) => {
       return receiver.track.kind === kind ? true : false;
     });
@@ -723,6 +731,10 @@ export class SimpleUser {
     }
 
     const peerConnection = sessionDescriptionHandler.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
     const rtpSender = peerConnection.getSenders().find((sender) => {
       return sender.track && sender.track.kind === kind ? true : false;
     });
