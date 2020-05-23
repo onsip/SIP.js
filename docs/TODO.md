@@ -87,6 +87,10 @@
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
 - Hold SDP offer too large for UDP
 
+### Session Timers - Issue #18 
+
+- There is an old branch for it which perhaps can be pulled forward.
+
 ### URI - Refresh
 
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
