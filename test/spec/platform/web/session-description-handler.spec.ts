@@ -1,250 +1,1281 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Logger } from "../../../../src/core";
-import { SessionDescriptionHandler } from "../../../../src/platform/web";
+import {
+  defaultMediaStreamFactory,
+  defaultSessionDescriptionHandlerFactory,
+  SessionDescriptionHandlerFactoryOptions,
+  SessionDescriptionHandler
+} from "../../../../src/platform/web";
+import { BodyAndContentType, Session, UserAgent } from "../../../../src";
 
-// TODO:
-// These old tests were ported from JavaScript to TypesSript verbatim.
-// The next time the SessionDescriptionHandler gets a work over, these should be reviewed.
+const splitFields = (body: string): Array<string> => body.split(/\r?\n/);
 
-// Might be helpful, so for reference...
+const atLeastOneField = (startsWith: string): jasmine.AsymmetricMatcher<string> => {
+  return {
+    asymmetricMatch: function (body: string): boolean {
+      const fields = splitFields(body);
+      return fields.filter((field) => field.startsWith(startsWith)).length >= 1;
+    },
+    jasmineToString: function (): string {
+      return "<atLeastOneField: " + startsWith + ">";
+    }
+  };
+};
+
+const exactlyOneField = (startsWith: string): jasmine.AsymmetricMatcher<string> => {
+  return {
+    asymmetricMatch: function (body: string): boolean {
+      const fields = splitFields(body);
+      return fields.filter((field) => field.startsWith(startsWith)).length === 1;
+    },
+    jasmineToString: function (): string {
+      return "<exactlyOneField: " + startsWith + ">";
+    }
+  };
+};
+
+const exactlyZeroField = (startsWith: string): jasmine.AsymmetricMatcher<string> => {
+  return {
+    asymmetricMatch: function (body: string): boolean {
+      const fields = splitFields(body);
+      return fields.filter((field) => field.startsWith(startsWith)).length === 0;
+    },
+    jasmineToString: function (): string {
+      return "<exactlyZeroField: " + startsWith + ">";
+    }
+  };
+};
+
+// Found a little info on WebRTC test which might be helpful, so for reference...
 // https://testrtc.com/manipulating-getusermedia-available-devices/
+// http://webrtc.github.io/webrtc-org/testing/
 
-function setIceGatheringState(pc: any, state: string): void {
-  pc.iceGatheringState = state;
-  pc.onicegatheringstatechange.call(pc);
+// We're using default SessionDescriptionHandlerFactory
+const sessionDescriptionHandlerFactory = defaultSessionDescriptionHandlerFactory();
+
+// A console logger
+const logger = (console as unknown) as Logger;
+
+// This is a fake Session with a console Logger to provide to the SessionDescriptionHandlerFactory.
+// Currently the default factory only uses the following properties, so the hacks "works".
+const session = {
+  userAgent: ({
+    getLogger: (): Logger => logger
+  } as unknown) as UserAgent
+} as Session;
+
+// Options for the SessionDescriptionHandlerFactory
+const sessionDescriptionHandlerFactoryOptions: SessionDescriptionHandlerFactoryOptions = {
+  iceGatheringTimeout: 500
+};
+
+// Helper class for testing the timeout on waiting for ICE to complete
+class SessionDescriptionHandlerTimeoutTest extends SessionDescriptionHandler {
+  public sessionDescription: RTCSessionDescriptionInit | undefined;
+  public waitForIceGatheringCompleteTimedOut = false;
+
+  protected getLocalSessionDescription(): Promise<RTCSessionDescription> {
+    this.logger.debug("SessionDescriptionHandlerTimeoutTest.getLocalSessionDescription");
+    this.waitForIceGatheringCompleteTimedOut = true; // ICE never started, so we will always have timed out if we get here
+    if (this._peerConnection === undefined) {
+      return Promise.reject(new Error("Peer connection closed."));
+    }
+    if (this.sessionDescription === undefined) {
+      throw new Error("Session description undefined.");
+    }
+    return super
+      .setLocalSessionDescription(this.sessionDescription) // set the local description now to avoid follow along errors
+      .then(() => super.getLocalSessionDescription());
+  }
+
+  protected setLocalSessionDescription(sessionDescription: RTCSessionDescriptionInit): Promise<void> {
+    this.logger.debug("SessionDescriptionHandlerTimeoutTest.setLocalSessionDescription");
+    if (this._peerConnection === undefined) {
+      return Promise.reject(new Error("Peer connection closed."));
+    }
+    this.sessionDescription = sessionDescription; // store this away so we can use it later
+    return Promise.resolve(); // just return so ICE never starts
+  }
 }
 
 describe("Web SessionDescriptionHandler", () => {
-  let realGetUserMedia: any;
-  let realMediaDevices: any;
-  let realRTCPeerConnection: any;
-  let handler: any;
-
   beforeEach(() => {
-    // stub out WebRTC APIs
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    realGetUserMedia = window.navigator.mediaDevices && window.navigator.mediaDevices.getUserMedia;
-    realMediaDevices = window.navigator.mediaDevices;
-    realRTCPeerConnection = window.RTCPeerConnection;
-    (window as any).RTCPeerConnection = function (): void {
-      this.iceGatheringState = "new";
-    };
-    window.RTCPeerConnection.prototype.close = (): void => {
-      /* */
-    };
-    window.RTCPeerConnection.prototype.getReceivers = (): Array<RTCRtpReceiver> => {
-      return [];
-    };
-    window.RTCPeerConnection.prototype.getSenders = (): Array<RTCRtpSender> => {
-      return [];
-    };
-
-    // In strict mode
-    //   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode)
-    // window.navigator.mediaDevices is read-only
-    //   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Read-only
-    // which doesn't let us assign to it
-    if (window.navigator.mediaDevices) {
-      (window.navigator.mediaDevices.getUserMedia as any) = (): any => {
-        /* */
-      };
-    } else {
-      (window.navigator.mediaDevices as any) = {
-        getUserMedia: (): any => {
-          /* */
-        }
-      };
-    }
-
-    (window.navigator.mediaDevices.getUserMedia as any) = (): any => {
-      /* */
-    };
-
-    handler = new SessionDescriptionHandler((console as any) as Logger, {
-      peerConnectionOptions: {
-        iceCheckingTimeout: 500
-      }
-    });
+    // jasmine.clock().install();
   });
 
   afterEach(() => {
-    handler.close();
-    if (window.navigator.mediaDevices) {
-      window.navigator.mediaDevices.getUserMedia = realGetUserMedia;
-    } else {
-      (window.navigator.mediaDevices as any) = realMediaDevices;
-    }
-    window.RTCPeerConnection = realRTCPeerConnection;
+    // jasmine.clock().uninstall();
   });
 
-  it("creates instance", () => {
-    expect(handler).toBeTruthy();
-    expect(handler.iceGatheringDeferred).toBe(undefined);
-    expect(handler.iceGatheringTimeout).toBe(false);
-    expect(handler.iceGatheringTimer).toBe(undefined);
-    expect(handler.peerConnection).toBeTruthy();
-  });
+  describe("ICE Gathering Timeout Tests", () => {
+    let sdh: SessionDescriptionHandlerTimeoutTest;
 
-  it("adds default ice gathering timeout", () => {
-    // no value
-    expect(handler.addDefaultIceCheckingTimeout({})).toEqual({
-      iceCheckingTimeout: 5000
-    });
-
-    // 0 value to disable the timeout
-    expect(
-      handler.addDefaultIceCheckingTimeout({
-        iceCheckingTimeout: 0
-      })
-    ).toEqual({
-      iceCheckingTimeout: 0
-    });
-
-    // other value
-    expect(
-      handler.addDefaultIceCheckingTimeout({
-        iceCheckingTimeout: 1234
-      })
-    ).toEqual({
-      iceCheckingTimeout: 1234
-    });
-  });
-
-  it("waits for ice gathering to complete", (done) => {
-    handler.waitForIceGatheringComplete().then(() => {
-      expect(handler.iceGatheringDeferred).toBe(undefined);
-      expect(handler.iceGatheringTimeout).toBe(false);
-      expect(handler.iceGatheringTimer).toBe(undefined);
-      expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-      done();
-    });
-
-    expect(handler.iceGatheringDeferred).toBeTruthy();
-    setIceGatheringState(handler.peerConnection, "gathering");
-    setIceGatheringState(handler.peerConnection, "complete");
-  });
-
-  it("waits for ice gathering to complete, twice", (done) => {
-    handler
-      .waitForIceGatheringComplete()
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-        return handler.waitForIceGatheringComplete();
-      })
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-        done();
+    describe("default configuration", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory());
+        const id = setTimeout(() => done(), 4500);
+        sdh.getDescription().then(() => {
+          clearTimeout(id);
+          done();
+        });
       });
 
-    expect(handler.iceGatheringDeferred).toBeTruthy();
-    setIceGatheringState(handler.peerConnection, "gathering");
-    setIceGatheringState(handler.peerConnection, "complete");
-  });
-
-  it("waits for ice gathering to timeout, then complete", (done) => {
-    handler
-      .waitForIceGatheringComplete()
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(true);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("gathering");
-
-        const promise = handler.waitForIceGatheringComplete();
-        expect(handler.iceGatheringDeferred).toBe(undefined); // no new promise!
-        expect(handler.iceGatheringTimeout).toBe(true);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-
-        setIceGatheringState(handler.peerConnection, "complete");
-
-        return promise;
-      })
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(true);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-        done();
+      afterEach(() => {
+        sdh.close();
       });
 
-    expect(handler.iceGatheringDeferred).toBeTruthy();
-    setIceGatheringState(handler.peerConnection, "gathering");
-  });
+      it("waiting for ICE gathering should not timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(false);
+      });
+    });
 
-  it("waits for ice gathering to complete, then restart, then complete", (done) => {
-    handler
-      .waitForIceGatheringComplete()
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-        const promise = handler.waitForIceGatheringComplete();
-        expect(handler.iceGatheringDeferred).toBe(undefined); // no new promise!
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-
-        setIceGatheringState(handler.peerConnection, "gathering");
-        setIceGatheringState(handler.peerConnection, "complete");
-
-        return promise;
-      })
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-        done();
+    describe("timeout passed via configuration", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory(), {
+          iceGatheringTimeout: 50
+        });
+        const id = setTimeout(() => done(), 4500);
+        sdh.getDescription().then(() => {
+          clearTimeout(id);
+          done();
+        });
       });
 
-    expect(handler.iceGatheringDeferred).toBeTruthy();
-    setIceGatheringState(handler.peerConnection, "gathering");
-    setIceGatheringState(handler.peerConnection, "complete");
-  });
-
-  it("waits for ice gathering to complete, resets peer connection, waits again", (done) => {
-    handler
-      .waitForIceGatheringComplete()
-      .catch(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("new");
-
-        const promise = handler.waitForIceGatheringComplete();
-        expect(handler.iceGatheringDeferred).toBeTruthy(); // new promise!
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-
-        setIceGatheringState(handler.peerConnection, "gathering");
-        setIceGatheringState(handler.peerConnection, "complete");
-
-        return promise;
-      })
-      .then(() => {
-        expect(handler.iceGatheringDeferred).toBe(undefined);
-        expect(handler.iceGatheringTimeout).toBe(false);
-        expect(handler.iceGatheringTimer).toBe(undefined);
-        expect(handler.peerConnection.iceGatheringState).toBe("complete");
-
-        done();
+      afterEach(() => {
+        sdh.close();
       });
 
-    expect(handler.iceGatheringDeferred).toBeTruthy();
-    setIceGatheringState(handler.peerConnection, "gathering");
-    handler.initPeerConnection();
+      it("waiting for ICE gathering should timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(true);
+      });
+    });
+
+    describe("timeout passed via configuration - zero timeout", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory(), {
+          iceGatheringTimeout: 0
+        });
+        const id = setTimeout(() => done(), 4500);
+        sdh.getDescription().then(() => {
+          clearTimeout(id);
+          done();
+        });
+      });
+
+      afterEach(() => {
+        sdh.close();
+      });
+
+      it("waiting for ICE gathering should not timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(false);
+      });
+    });
+
+    describe("timeout passed via getDescription()", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory());
+        const id = setTimeout(() => done(), 4500);
+        sdh
+          .getDescription({
+            iceGatheringTimeout: 50
+          })
+          .then(() => {
+            clearTimeout(id);
+            done();
+          });
+      });
+
+      afterEach(() => {
+        sdh.close();
+      });
+
+      it("waiting for ICE gathering should timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(true);
+      });
+    });
+
+    describe("timeout passed via getDescription() - zero timeout", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory());
+        const id = setTimeout(() => done(), 4500);
+        sdh
+          .getDescription({
+            iceGatheringTimeout: 0
+          })
+          .then(() => {
+            clearTimeout(id);
+            done();
+          });
+      });
+
+      afterEach(() => {
+        sdh.close();
+      });
+
+      it("waiting for ICE gathering should not timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(false);
+      });
+    });
+
+    describe("timeout passed via configuration and via getDescription, getDescription wins - without test timeout", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory(), {
+          iceGatheringTimeout: 6000 // this should be longer than 4500 timeout below so it gets cleared
+        });
+        const id = setTimeout(() => done(), 4500);
+        sdh
+          .getDescription({
+            iceGatheringTimeout: 50
+          })
+          .then(() => {
+            clearTimeout(id);
+            done();
+          });
+      });
+
+      afterEach(() => {
+        sdh.close();
+      });
+
+      it("waiting for ICE gathering should timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(true);
+      });
+    });
+
+    describe("timeout passed via configuration and via getDescription, getDescription wins - with test timeout", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory(), {
+          iceGatheringTimeout: 50
+        });
+        const id = setTimeout(() => done(), 4500);
+        sdh
+          .getDescription({
+            iceGatheringTimeout: 6000 // this should be longer than 4500 timeout above so it does not clear
+          })
+          .then(() => {
+            clearTimeout(id);
+            done();
+          })
+          .catch(() => {
+            // the ICE gathering timeout will trigger at 6000 after this test is done and the SDH is already closed,
+            // so here we are catching the uncaught error that gets thrown.
+          });
+      });
+
+      afterEach(() => {
+        sdh.close();
+      });
+
+      it("waiting for ICE gathering should not timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(false);
+      });
+    });
+
+    describe("timeout passed via configuration and via getDescription, getDescription wins - zero timeout", () => {
+      beforeEach((done) => {
+        sdh = new SessionDescriptionHandlerTimeoutTest(logger, defaultMediaStreamFactory(), {
+          iceGatheringTimeout: 6000 // this should be longer than 4500 timeout below so it gets cleared
+        });
+        const id = setTimeout(() => done(), 4500);
+        sdh
+          .getDescription({
+            iceGatheringTimeout: 0
+          })
+          .then(() => {
+            clearTimeout(id);
+            done();
+          });
+      });
+
+      afterEach(() => {
+        sdh.close();
+      });
+
+      it("waiting for ICE gathering should not timeout", () => {
+        expect(sdh.waitForIceGatheringCompleteTimedOut).toBe(false);
+      });
+    });
+  });
+
+  describe("Interop Tests", () => {
+    let sdh1: SessionDescriptionHandler;
+    let sdh1LocalOnAddTrackSpy: jasmine.Spy;
+    let sdh1LocalOnRemoveTrackSpy: jasmine.Spy;
+    let sdh1RemoteOnAddTrackSpy: jasmine.Spy;
+    let sdh1RemoteOnRemoveTrackSpy: jasmine.Spy;
+    let sdh2: SessionDescriptionHandler;
+    let sdh2LocalOnAddTrackSpy: jasmine.Spy;
+    let sdh2LocalOnRemoveTrackSpy: jasmine.Spy;
+    let sdh2RemoteOnAddTrackSpy: jasmine.Spy;
+    let sdh2RemoteOnRemoveTrackSpy: jasmine.Spy;
+
+    const resetSpies = (): void => {
+      sdh1LocalOnAddTrackSpy.calls.reset();
+      sdh1LocalOnRemoveTrackSpy.calls.reset();
+      sdh1RemoteOnAddTrackSpy.calls.reset();
+      sdh1RemoteOnRemoveTrackSpy.calls.reset();
+      sdh2LocalOnAddTrackSpy.calls.reset();
+      sdh2LocalOnRemoveTrackSpy.calls.reset();
+      sdh2RemoteOnAddTrackSpy.calls.reset();
+      sdh2RemoteOnRemoveTrackSpy.calls.reset();
+    };
+
+    beforeEach(() => {
+      sdh1 = sessionDescriptionHandlerFactory(session, sessionDescriptionHandlerFactoryOptions);
+      sdh1LocalOnAddTrackSpy = jasmine.createSpy("sdh1LocalOnAddTrackSpy");
+      sdh1LocalOnRemoveTrackSpy = jasmine.createSpy("sdh1LocalOnRemoveTrackSpy");
+      sdh1RemoteOnAddTrackSpy = jasmine.createSpy("sdh1RemoteOnAddTrackSpy");
+      sdh1RemoteOnRemoveTrackSpy = jasmine.createSpy("sdh1RemoteOnRemoveTrackSpy");
+      sdh1.localMediaStream.onaddtrack = sdh1LocalOnAddTrackSpy;
+      sdh1.localMediaStream.onremovetrack = sdh1LocalOnRemoveTrackSpy;
+      sdh1.remoteMediaStream.onaddtrack = sdh1RemoteOnAddTrackSpy;
+      sdh1.remoteMediaStream.onremovetrack = sdh1RemoteOnRemoveTrackSpy;
+
+      sdh2 = sessionDescriptionHandlerFactory(session, sessionDescriptionHandlerFactoryOptions);
+      sdh2LocalOnAddTrackSpy = jasmine.createSpy("sdh2LocalOnAddTrackSpy");
+      sdh2LocalOnRemoveTrackSpy = jasmine.createSpy("sdh2LocalOnRemoveTrackSpy");
+      sdh2RemoteOnAddTrackSpy = jasmine.createSpy("sdh2RemoteOnAddTrackSpy");
+      sdh2RemoteOnRemoveTrackSpy = jasmine.createSpy("sdh2RemoteOnRemoveTrackSpy");
+      sdh2.localMediaStream.onaddtrack = sdh2LocalOnAddTrackSpy;
+      sdh2.localMediaStream.onremovetrack = sdh2LocalOnRemoveTrackSpy;
+      sdh2.remoteMediaStream.onaddtrack = sdh2RemoteOnAddTrackSpy;
+      sdh2.remoteMediaStream.onremovetrack = sdh2RemoteOnRemoveTrackSpy;
+    });
+
+    afterEach(() => {
+      sdh1.close();
+      sdh2.close();
+    });
+
+    it("peer connection should not be undefined", () => {
+      expect(sdh1.peerConnection).not.toBe(undefined);
+      expect(sdh2.peerConnection).not.toBe(undefined);
+    });
+
+    it("signaling state should be stable", () => {
+      expect(sdh1.peerConnection?.signalingState).toBe("stable");
+      expect(sdh2.peerConnection?.signalingState).toBe("stable");
+    });
+
+    describe("close", () => {
+      beforeEach(() => {
+        resetSpies();
+        sdh1.close();
+        sdh2.close();
+      });
+
+      it("peer connection should be undefined", () => {
+        expect(sdh1.peerConnection).toBe(undefined);
+        expect(sdh2.peerConnection).toBe(undefined);
+      });
+    });
+
+    describe("sdh1 getDescription close race", () => {
+      let error: Error | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        return new Promise((resolve) => {
+          sdh1.getDescription().catch((e: Error) => {
+            error = e;
+            resolve();
+          });
+          sdh1.close();
+        });
+      });
+
+      it("peer connection should be undefined", () => {
+        expect(sdh1.peerConnection).toBe(undefined);
+      });
+
+      it("error should be instance of Error", () => {
+        expect(error instanceof Error).toBe(true);
+      });
+    });
+
+    describe("sdh1 getDescription", () => {
+      let offer: BodyAndContentType | undefined;
+      let answer: BodyAndContentType | undefined;
+
+      beforeEach(async () => {
+        resetSpies();
+        offer = undefined;
+        return sdh1.getDescription().then((description) => {
+          offer = description;
+        });
+      });
+
+      it("offer was created", () => {
+        if (!offer) {
+          fail("Offer undefined");
+          return;
+        }
+        expect(offer.body).not.toBe("");
+        expect(offer.contentType).toBe("application/sdp");
+      });
+
+      it("offer has one m=audio and zero m=video", () => {
+        if (!offer) {
+          fail("Offer undefined");
+          return;
+        }
+        expect(offer.body).toEqual(exactlyOneField("m=audio"));
+        expect(offer.body).toEqual(exactlyZeroField("m=video"));
+      });
+
+      it("offer has at least one a=candidate", () => {
+        if (!offer) {
+          fail("Offer undefined");
+          return;
+        }
+        expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+      });
+
+      it("hasDescription should be true", () => {
+        expect(offer).not.toBe(undefined);
+        if (offer) {
+          expect(sdh1.hasDescription(offer.contentType)).toBe(true);
+        }
+      });
+
+      it("signaling state should be have-local-offer", () => {
+        expect(sdh1.peerConnection?.signalingState).toBe("have-local-offer");
+      });
+
+      it("local media stream state", () => {
+        expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(1);
+        expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+      });
+
+      it("remote media stream state", () => {
+        expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+        expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+      });
+
+      describe("sdh2 setDescription close race", () => {
+        let error: Error | undefined;
+
+        beforeEach(async () => {
+          resetSpies();
+          return new Promise((resolve) => {
+            if (!offer) {
+              throw new Error("Offer undefined.");
+            }
+            sdh2.setDescription(offer.body).catch((e: Error) => {
+              error = e;
+              resolve();
+            });
+            sdh2.close();
+          });
+        });
+
+        it("peer connection should be undefined", () => {
+          expect(sdh2.peerConnection).toBe(undefined);
+        });
+
+        it("error should be instance of Error", () => {
+          expect(error instanceof Error).toBe(true);
+        });
+      });
+
+      describe("sdh2 setDescription", () => {
+        beforeEach(async () => {
+          resetSpies();
+          if (!offer) {
+            throw new Error("Offer undefined.");
+          }
+          return sdh2.setDescription(offer.body);
+        });
+
+        it("signaling state have-remote-offer", () => {
+          expect(sdh2.peerConnection?.signalingState).toBe("have-remote-offer");
+        });
+
+        it("local media stream state", () => {
+          expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(1);
+          expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+        });
+
+        it("remote media stream state", () => {
+          expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(1);
+          expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+        });
+
+        describe("sdh2 getDescription", () => {
+          beforeEach(async () => {
+            resetSpies();
+            answer = undefined;
+            return sdh2.getDescription().then((description) => {
+              answer = description;
+            });
+          });
+
+          it("answer was created", () => {
+            if (!answer) {
+              fail("Answer undefined");
+              return;
+            }
+            expect(answer.body).not.toBe("");
+            expect(answer.contentType).toBe("application/sdp");
+          });
+
+          it("answer has one m=audio and zero m=video", () => {
+            if (!answer) {
+              fail("Answer undefined");
+              return;
+            }
+            expect(answer.body).toEqual(exactlyOneField("m=audio"));
+            expect(answer.body).toEqual(exactlyZeroField("m=video"));
+          });
+
+          it("answer has at least one a=candidate", () => {
+            if (!answer) {
+              fail("Answer undefined");
+              return;
+            }
+            expect(answer.body).toEqual(atLeastOneField("a=candidate"));
+          });
+
+          it("hasDescription should be true", () => {
+            expect(answer).not.toBe(undefined);
+            if (answer) {
+              expect(sdh2.hasDescription(answer.contentType)).toBe(true);
+            }
+          });
+
+          it("signaling state should be stable", () => {
+            expect(sdh2.peerConnection?.signalingState).toBe("stable");
+          });
+
+          it("local media stream state", () => {
+            expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+            expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+          });
+
+          it("remote media stream state", () => {
+            expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+            expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+          });
+
+          describe("sdh1 setDescription", () => {
+            beforeEach(async () => {
+              resetSpies();
+              if (!answer) {
+                throw new Error("Answer undefined.");
+              }
+              return sdh1.setDescription(answer.body);
+            });
+
+            it("signaling state should be stable", () => {
+              expect(sdh1.peerConnection?.signalingState).toBe("stable");
+            });
+
+            it("local media stream state", () => {
+              expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+              expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+            });
+
+            it("remote media stream state", () => {
+              expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(1);
+              expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+            });
+
+            describe("sdh1 getDescription - audio with constraints change", () => {
+              beforeEach(async () => {
+                resetSpies();
+                offer = undefined;
+                return sdh1
+                  .getDescription({
+                    constraints: {
+                      audio: {
+                        noiseSuppression: true
+                      }
+                    }
+                  })
+                  .then((description) => {
+                    offer = description;
+                  });
+              });
+
+              it("offer was created", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).not.toBe("");
+                expect(offer.contentType).toBe("application/sdp");
+              });
+
+              it("offer has one m=audio and zero m=video", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                expect(offer.body).toEqual(exactlyZeroField("m=video"));
+              });
+
+              it("offer has at least one a=candidate", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+              });
+
+              it("local media stream state", () => {
+                expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(1);
+                expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(1);
+              });
+
+              it("remote media stream state", () => {
+                expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+            });
+
+            describe("sdh1 getDescription - audio with ice restart", () => {
+              beforeEach(async () => {
+                resetSpies();
+                offer = undefined;
+                return sdh1
+                  .getDescription({
+                    constraints: {
+                      audio: true
+                    },
+                    offerOptions: {
+                      iceRestart: true
+                    }
+                  })
+                  .then((description) => {
+                    offer = description;
+                  });
+              });
+
+              it("offer was created", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).not.toBe("");
+                expect(offer.contentType).toBe("application/sdp");
+              });
+
+              it("offer has one m=audio and zero m=video", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                expect(offer.body).toEqual(exactlyZeroField("m=video"));
+              });
+
+              it("offer has at least one a=candidate", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+              });
+
+              it("local media stream state", () => {
+                expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+
+              it("remote media stream state", () => {
+                expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+            });
+
+            describe("sdh1 getDescription - audio (no change)", () => {
+              beforeEach(async () => {
+                resetSpies();
+                offer = undefined;
+                return sdh1
+                  .getDescription({
+                    constraints: {
+                      audio: true
+                    }
+                  })
+                  .then((description) => {
+                    offer = description;
+                  });
+              });
+
+              it("offer was created", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).not.toBe("");
+                expect(offer.contentType).toBe("application/sdp");
+              });
+
+              it("offer has one m=audio and zero m=video", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                expect(offer.body).toEqual(exactlyZeroField("m=video"));
+              });
+
+              it("offer has at least one a=candidate", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+              });
+
+              it("local media stream state", () => {
+                expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+
+              it("remote media stream state", () => {
+                expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+
+              describe("sdh2 setDescription", () => {
+                beforeEach(async () => {
+                  resetSpies();
+                  if (!offer) {
+                    throw new Error("Offer undefined.");
+                  }
+                  return sdh2.setDescription(offer.body);
+                });
+
+                it("signaling state have-remote-offer", () => {
+                  expect(sdh2.peerConnection?.signalingState).toBe("have-remote-offer");
+                });
+
+                it("local media stream state", () => {
+                  expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                  expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                });
+
+                it("remote media stream state", () => {
+                  expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                  expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                });
+
+                describe("sdh2 getDescription", () => {
+                  beforeEach(async () => {
+                    resetSpies();
+                    answer = undefined;
+                    return sdh2.getDescription().then((description) => {
+                      answer = description;
+                    });
+                  });
+
+                  it("answer was created", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).not.toBe("");
+                    expect(answer.contentType).toBe("application/sdp");
+                  });
+
+                  it("hasDescription should be true", () => {
+                    expect(answer).not.toBe(undefined);
+                    if (answer) {
+                      expect(sdh2.hasDescription(answer.contentType)).toBe(true);
+                    }
+                  });
+
+                  it("signaling state should be stable", () => {
+                    expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                  });
+
+                  it("local media stream state", () => {
+                    expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                    expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                  });
+
+                  it("remote media stream state", () => {
+                    expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                    expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                  });
+
+                  describe("sdh1 setDescription", () => {
+                    beforeEach(async () => {
+                      resetSpies();
+                      if (!answer) {
+                        throw new Error("Answer undefined.");
+                      }
+                      return sdh1.setDescription(answer.body);
+                    });
+
+                    it("signaling state should be stable", () => {
+                      expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                    });
+
+                    it("local media stream state", () => {
+                      expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                      expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                    });
+
+                    it("remote media stream state", () => {
+                      expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                      expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                    });
+                  });
+                });
+              });
+            });
+
+            describe("sdh1 getDescription - video (upgrade)", () => {
+              beforeEach(async () => {
+                resetSpies();
+                offer = undefined;
+                return sdh1
+                  .getDescription({
+                    constraints: {
+                      video: true
+                    }
+                  })
+                  .then((description) => {
+                    offer = description;
+                  });
+              });
+
+              it("offer was created", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).not.toBe("");
+                expect(offer.contentType).toBe("application/sdp");
+              });
+
+              it("offer has one m=audio and one m=video", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                expect(offer.body).toEqual(exactlyOneField("m=video"));
+              });
+
+              it("offer has at least one a=candidate", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+              });
+
+              it("local media stream state", () => {
+                expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(2);
+                expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(1);
+              });
+
+              it("remote media stream state", () => {
+                expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+
+              describe("sdh2 setDescription", () => {
+                beforeEach(async () => {
+                  resetSpies();
+                  if (!offer) {
+                    throw new Error("Offer undefined.");
+                  }
+                  return sdh2.setDescription(offer.body);
+                });
+
+                it("signaling state have-remote-offer", () => {
+                  expect(sdh2.peerConnection?.signalingState).toBe("have-remote-offer");
+                });
+
+                it("local media stream state", () => {
+                  expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                  expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                });
+
+                it("remote media stream state", () => {
+                  expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(1);
+                  expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                });
+
+                describe("sdh2 getDescription - video", () => {
+                  beforeEach(async () => {
+                    resetSpies();
+                    answer = undefined;
+                    return sdh2
+                      .getDescription({
+                        constraints: {
+                          video: true
+                        }
+                      })
+                      .then((description) => {
+                        answer = description;
+                      });
+                  });
+
+                  it("answer was created", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).not.toBe("");
+                    expect(answer.contentType).toBe("application/sdp");
+                  });
+
+                  it("answer has one m=audio and one m=video", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).toEqual(exactlyOneField("m=audio"));
+                    expect(answer.body).toEqual(exactlyOneField("m=video"));
+                  });
+
+                  it("answer has at least one a=candidate", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).toEqual(atLeastOneField("a=candidate"));
+                  });
+
+                  it("hasDescription should be true", () => {
+                    expect(answer).not.toBe(undefined);
+                    if (answer) {
+                      expect(sdh2.hasDescription(answer.contentType)).toBe(true);
+                    }
+                  });
+
+                  it("signaling state should be stable", () => {
+                    expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                  });
+
+                  it("local media stream state", () => {
+                    expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(2);
+                    expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(1);
+                  });
+
+                  it("remote media stream state", () => {
+                    expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                    expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                  });
+
+                  describe("sdh1 setDescription", () => {
+                    beforeEach(async () => {
+                      resetSpies();
+                      if (!answer) {
+                        throw new Error("Answer undefined.");
+                      }
+                      return sdh1.setDescription(answer.body);
+                    });
+
+                    it("signaling state should be stable", () => {
+                      expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                    });
+
+                    it("local media stream state", () => {
+                      expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                      expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                    });
+
+                    it("remote media stream state", () => {
+                      expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(1);
+                      expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                    });
+
+                    describe("sdh1 getDescription - video with ice restart", () => {
+                      beforeEach(async () => {
+                        resetSpies();
+                        offer = undefined;
+                        return sdh1
+                          .getDescription({
+                            constraints: {
+                              video: true
+                            },
+                            offerOptions: {
+                              iceRestart: true
+                            }
+                          })
+                          .then((description) => {
+                            offer = description;
+                          });
+                      });
+
+                      it("offer was created", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).not.toBe("");
+                        expect(offer.contentType).toBe("application/sdp");
+                      });
+
+                      it("offer has one m=audio and one m=video", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                        expect(offer.body).toEqual(exactlyOneField("m=video"));
+                      });
+
+                      it("offer has at least one a=candidate", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+                      });
+
+                      it("local media stream state", () => {
+                        expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      it("remote media stream state", () => {
+                        expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+                    });
+
+                    describe("sdh1 getDescription - video with constraints change", () => {
+                      beforeEach(async () => {
+                        resetSpies();
+                        offer = undefined;
+                        return sdh1
+                          .getDescription({
+                            constraints: {
+                              video: {
+                                aspectRatio: 1.77
+                              }
+                            }
+                          })
+                          .then((description) => {
+                            offer = description;
+                          });
+                      });
+
+                      it("offer was created", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).not.toBe("");
+                        expect(offer.contentType).toBe("application/sdp");
+                      });
+
+                      it("offer has one m=audio and one m=video", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                        expect(offer.body).toEqual(exactlyOneField("m=video"));
+                      });
+
+                      it("offer has at least one a=candidate", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+                      });
+
+                      it("local media stream state", () => {
+                        expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(2);
+                        expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(2);
+                      });
+
+                      it("remote media stream state", () => {
+                        expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+                    });
+
+                    describe("sdh1 getDescription - video (no change)", () => {
+                      beforeEach(async () => {
+                        resetSpies();
+                        offer = undefined;
+                        return sdh1
+                          .getDescription({
+                            constraints: {
+                              audio: true,
+                              video: true
+                            }
+                          })
+                          .then((description) => {
+                            offer = description;
+                          });
+                      });
+
+                      it("offer was created", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).not.toBe("");
+                        expect(offer.contentType).toBe("application/sdp");
+                      });
+
+                      it("offer has one m=audio and one m=video", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                        expect(offer.body).toEqual(exactlyOneField("m=video"));
+                      });
+
+                      it("offer has at least one a=candidate", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+                      });
+
+                      it("local media stream state", () => {
+                        expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      it("remote media stream state", () => {
+                        expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      describe("sdh2 setDescription", () => {
+                        beforeEach(async () => {
+                          resetSpies();
+                          if (!offer) {
+                            throw new Error("Offer undefined.");
+                          }
+                          return sdh2.setDescription(offer.body);
+                        });
+
+                        it("signaling state have-remote-offer", () => {
+                          expect(sdh2.peerConnection?.signalingState).toBe("have-remote-offer");
+                        });
+
+                        it("local media stream state", () => {
+                          expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                          expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                        });
+
+                        it("remote media stream state", () => {
+                          expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                          expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                        });
+
+                        describe("sdh2 getDescription", () => {
+                          beforeEach(async () => {
+                            resetSpies();
+                            answer = undefined;
+                            return sdh2.getDescription().then((description) => {
+                              answer = description;
+                            });
+                          });
+
+                          it("answer was created", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).not.toBe("");
+                            expect(answer.contentType).toBe("application/sdp");
+                          });
+
+                          it("answer has one m=audio and one m=video", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).toEqual(exactlyOneField("m=audio"));
+                            expect(answer.body).toEqual(exactlyOneField("m=video"));
+                          });
+
+                          it("answer has at least one a=candidate", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).toEqual(atLeastOneField("a=candidate"));
+                          });
+
+                          it("hasDescription should be true", () => {
+                            expect(answer).not.toBe(undefined);
+                            if (answer) {
+                              expect(sdh2.hasDescription(answer.contentType)).toBe(true);
+                            }
+                          });
+
+                          it("signaling state should be stable", () => {
+                            expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                          });
+
+                          it("local media stream state", () => {
+                            expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                            expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                          });
+
+                          it("remote media stream state", () => {
+                            expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                            expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                          });
+
+                          describe("sdh1 setDescription", () => {
+                            beforeEach(async () => {
+                              resetSpies();
+                              if (!answer) {
+                                throw new Error("Answer undefined.");
+                              }
+                              return sdh1.setDescription(answer.body);
+                            });
+
+                            it("signaling state should be stable", () => {
+                              expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                            });
+
+                            it("local media stream state", () => {
+                              expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                              expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                            });
+
+                            it("remote media stream state", () => {
+                              expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                              expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+
+            describe("sdh1 sendDtmf", () => {
+              let result = false;
+
+              beforeEach(() => {
+                result = sdh1.sendDtmf("1");
+              });
+
+              it("dtmf should send", () => {
+                expect(result).toBe(true);
+              });
+
+              it("signaling state should be stable", () => {
+                expect(sdh1.peerConnection?.signalingState).toBe("stable");
+              });
+            });
+          });
+        });
+      });
+    });
   });
 });
