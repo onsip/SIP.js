@@ -60,7 +60,7 @@ export class EmitterImpl<T> implements Emitter<T> {
 
   /**
    * Emit change.
-   * @param data Data to emit.
+   * @param data - Data to emit.
    */
   public emit(data: T): void {
     this.listeners.slice().forEach((listener) => listener(data));
