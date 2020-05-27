@@ -33,6 +33,9 @@ Herein lies software enabling Session Initiation Protocol (SIP) internet endpoin
 
 Additional supporting implementations of classes for use with web browser environments are provided...
 
+* SessionDescriptionHandler - WebRTC session description handler
+  * [Overview](./session-description-handler.md)
+  * [Reference](./session-description-handler/sip.js.md)
 * Transport - SIP over secure WebSocket
   * [Overview](./transport.md)
   * [Reference](./transport/sip.js.md)
