@@ -1000,6 +1000,9 @@ export class Inviter extends Session {
             this,
             this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions || {}
           );
+          if (this.delegate?.onSessionDescriptionHandler) {
+            this.delegate.onSessionDescriptionHandler(sdh, true);
+          }
           this.earlyMediaSessionDescriptionHandlers.set(session.id, sdh);
           return sdh
             .setDescription(response.body, sdhOptions, sdhModifiers)

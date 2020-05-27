@@ -4,6 +4,7 @@ import { Info } from "./info";
 import { Message } from "./message";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
+import { SessionDescriptionHandler } from "./session-description-handler";
 
 /**
  * Delegate for {@link Session}.
@@ -49,4 +50,31 @@ export interface SessionDelegate {
    * @param referral - The referral.
    */
   onRefer?(referral: Referral): void;
+
+  /**
+   * Called upon creating a SessionDescriptionHandler.
+   *
+   * @remarks
+   * It's recommended that the SessionDescriptionHandler be accessed via the `Session.sessionDescriptionHandler` property.
+   * However there are use cases where one needs access immediately after it is constructed and before it is utilized.
+   * Thus this callback.
+   *
+   * In most scenarios a single SessionDescriptionHandler will be created per Session
+   * in which case this callback will be called at most once and `provisional` will be `false`.
+   *
+   * However if reliable provisional responses are being supported and an INVITE is sent without SDP,
+   * one or more session description handlers will be created if remote offers are received in reliable provisional responses.
+   * When remote offers are received in reliable provisional responses, the `provisional` parameter will be `true`.
+   * When the `provisional` paramter is `true`, this callback may (or may not) be called again.
+   * If the session is ultimately established using a SessionDescriptionHandler which was not created provisionally,
+   * this callback will be called again and the `provisional` parameter will be `false`.
+   * If the session is ultimately established using a SessionDescriptionHandler which was created provisionally,
+   * this callback will not be called again.
+   * Note that if the session is ultimately established using a SessionDescriptionHandler which was created provisionally,
+   * the provisional SessionDescriptionHandler being utilized will be available via the `Session.sessionDescriptionHandler` property.
+   *
+   * @param sessionDescriptionHandler - The handler.
+   * @param provisional - True if created provisionally.
+   */
+  onSessionDescriptionHandler?(sessionDescriptionHandler: SessionDescriptionHandler, provisional: boolean): void;
 }

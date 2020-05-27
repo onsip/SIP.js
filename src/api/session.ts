@@ -1245,6 +1245,9 @@ export abstract class Session {
       this,
       this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions
     );
+    if (this.delegate?.onSessionDescriptionHandler) {
+      this.delegate.onSessionDescriptionHandler(this._sessionDescriptionHandler, false);
+    }
     return this._sessionDescriptionHandler;
   }
 
