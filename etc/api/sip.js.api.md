@@ -520,6 +520,7 @@ export interface SessionDelegate {
     onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
+    onSessionDescriptionHandler?(sessionDescriptionHandler: SessionDescriptionHandler, provisional: boolean): void;
 }
 
 // @public
