@@ -579,6 +579,64 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   }
 
   /**
+   * Wait for ICE gathering to complete.
+   * @param restart If true, waits if current state is "complete" (waits for transition to "complete").
+   * @param timeout Milliseconds after which waiting times out. No timeout if 0.
+   */
+  protected waitForIceGatheringComplete(restart = false, timeout = 0): Promise<void> {
+    this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete");
+    if (this._peerConnection === undefined) {
+      return Promise.reject("Peer connection closed.");
+    }
+    // guard already complete
+    if (!restart && this._peerConnection.iceGatheringState === "complete") {
+      this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - already complete");
+      return Promise.resolve();
+    }
+    // only one may be waiting, reject any prior
+    if (this.iceGatheringCompletePromise !== undefined) {
+      this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - rejecting prior waiting promise");
+      this.iceGatheringCompleteReject && this.iceGatheringCompleteReject(new Error("Promise superseded."));
+      this.iceGatheringCompletePromise = undefined;
+      this.iceGatheringCompleteResolve = undefined;
+      this.iceGatheringCompleteReject = undefined;
+    }
+    this.iceGatheringCompletePromise = new Promise<void>((resolve, reject) => {
+      this.iceGatheringCompleteResolve = resolve;
+      this.iceGatheringCompleteReject = reject;
+      if (timeout > 0) {
+        this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - timeout in " + timeout);
+        this.iceGatheringCompleteTimeoutId = setTimeout(() => {
+          this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - timeout");
+          this.iceGatheringComplete();
+        }, timeout);
+      }
+    });
+    return this.iceGatheringCompletePromise;
+  }
+
+  /**
+   * Called when ICE gathering completes and resolves any waiting promise.
+   */
+  protected iceGatheringComplete(): void {
+    this.logger.debug("SessionDescriptionHandler.iceGatheringComplete");
+    // clear timer if need be
+    if (this.iceGatheringCompleteTimeoutId !== undefined) {
+      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - clearing timeout");
+      clearTimeout(this.iceGatheringCompleteTimeoutId);
+      this.iceGatheringCompleteTimeoutId = undefined;
+    }
+    // resolve and cleanup promise if need be
+    if (this.iceGatheringCompletePromise !== undefined) {
+      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - resolving promise");
+      this.iceGatheringCompleteResolve && this.iceGatheringCompleteResolve();
+      this.iceGatheringCompletePromise = undefined;
+      this.iceGatheringCompleteResolve = undefined;
+      this.iceGatheringCompleteReject = undefined;
+    }
+  }
+
+  /**
    * Initializes the peer connection event handlers
    */
   private initPeerConnectionEventHandlers(): void {
@@ -666,55 +724,5 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         this._peerConnectionDelegate.ontrack(event);
       }
     };
-  }
-
-  private iceGatheringComplete(): void {
-    this.logger.debug("SessionDescriptionHandler.iceGatheringComplete");
-    // clear timer if need be
-    if (this.iceGatheringCompleteTimeoutId !== undefined) {
-      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - clearing timeout");
-      clearTimeout(this.iceGatheringCompleteTimeoutId);
-      this.iceGatheringCompleteTimeoutId = undefined;
-    }
-    // resolve and cleanup promise if need be
-    if (this.iceGatheringCompletePromise !== undefined) {
-      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - resolving promise");
-      this.iceGatheringCompleteResolve && this.iceGatheringCompleteResolve();
-      this.iceGatheringCompletePromise = undefined;
-      this.iceGatheringCompleteResolve = undefined;
-      this.iceGatheringCompleteReject = undefined;
-    }
-  }
-
-  private waitForIceGatheringComplete(restart = false, timeout = 0): Promise<void> {
-    this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete");
-    if (this._peerConnection === undefined) {
-      return Promise.reject("Peer connection closed.");
-    }
-    // guard already complete
-    if (!restart && this._peerConnection.iceGatheringState === "complete") {
-      this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - already complete");
-      return Promise.resolve();
-    }
-    // only one may be waiting, reject any prior
-    if (this.iceGatheringCompletePromise !== undefined) {
-      this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - rejecting prior waiting promise");
-      this.iceGatheringCompleteReject && this.iceGatheringCompleteReject(new Error("Promise superseded."));
-      this.iceGatheringCompletePromise = undefined;
-      this.iceGatheringCompleteResolve = undefined;
-      this.iceGatheringCompleteReject = undefined;
-    }
-    this.iceGatheringCompletePromise = new Promise<void>((resolve, reject) => {
-      this.iceGatheringCompleteResolve = resolve;
-      this.iceGatheringCompleteReject = reject;
-      if (timeout > 0) {
-        this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - timeout in " + timeout);
-        this.iceGatheringCompleteTimeoutId = setTimeout(() => {
-          this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete - timeout");
-          this.iceGatheringComplete();
-        }, timeout);
-      }
-    });
-    return this.iceGatheringCompletePromise;
   }
 }
