@@ -392,7 +392,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    *
    * @param stream - Media stream containing tracks to be utilized.
    */
-  protected setLocalMediaStream(stream: MediaStream): void {
+  protected setLocalMediaStream(stream: MediaStream): Promise<void> {
     this.logger.debug("SessionDescriptionHandler.setLocalMediaStream");
 
     if (!this._peerConnection) {
@@ -414,49 +414,74 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       localStream.dispatchEvent(new MediaStreamTrackEvent("removetrack", { track }));
     };
 
+    const trackUpdates: Array<Promise<void>> = [];
+
+    const updateTrack = (newTrack: MediaStreamTrack): void => {
+      const kind = newTrack.kind;
+      if (kind !== "audio" && kind !== "video") {
+        throw new Error(`Unknown new track kind ${kind}.`);
+      }
+      const sender = pc.getSenders().find((sender) => sender.track && sender.track.kind === kind);
+      if (sender) {
+        trackUpdates.push(
+          new Promise((resolve) => {
+            this.logger.debug(`SessionDescriptionHandler.setLocalMediaStream - replacing sender ${kind} track`);
+            resolve();
+          }).then(() =>
+            sender
+              .replaceTrack(newTrack)
+              .then(() => {
+                const oldTrack = localStream.getTracks().find((localTrack) => localTrack.kind === kind);
+                if (oldTrack) {
+                  oldTrack.stop();
+                  localStream.removeTrack(oldTrack);
+                  dispatchRemoveTrackEvent(oldTrack);
+                }
+                localStream.addTrack(newTrack);
+                dispatchAddTrackEvent(newTrack);
+              })
+              .catch((error: Error) => {
+                this.logger.error(
+                  `SessionDescriptionHandler.setLocalMediaStream - failed to replace sender ${kind} track`
+                );
+                throw error;
+              })
+          )
+        );
+      } else {
+        trackUpdates.push(
+          new Promise((resolve) => {
+            this.logger.debug(`SessionDescriptionHandler.setLocalMediaStream - adding sender ${kind} track`);
+            resolve();
+          }).then(() => {
+            // Review: could make streamless tracks a configurable option?
+            // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTrack#Usage_notes
+            try {
+              pc.addTrack(newTrack, localStream);
+            } catch (error) {
+              this.logger.error(`SessionDescriptionHandler.setLocalMediaStream - failed to add sender ${kind} track`);
+              throw error;
+            }
+            localStream.addTrack(newTrack);
+            dispatchAddTrackEvent(newTrack);
+          })
+        );
+      }
+    };
+
     // update peer connection audio tracks
     const audioTracks = stream.getAudioTracks();
     if (audioTracks.length) {
-      const audioTrack = audioTracks[0];
-      const audioSenders = pc.getSenders().filter((sender) => sender.track && sender.track.kind === "audio");
-      if (audioSenders.length) {
-        this.logger.debug("SessionDescriptionHandler.setLocalMediaStream - replacing sender audio track");
-        audioSenders[0].replaceTrack(audioTrack);
-        localStream.getAudioTracks().forEach((track) => {
-          localStream.removeTrack(track);
-          dispatchRemoveTrackEvent(track);
-        });
-      } else {
-        this.logger.debug("SessionDescriptionHandler.setLocalMediaStream - adding sender audio track");
-        // Review: could make streamless tracks a configurable option?
-        // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTrack#Usage_notes
-        pc.addTrack(audioTrack, localStream);
-      }
-      localStream.addTrack(audioTrack);
-      dispatchAddTrackEvent(audioTrack);
+      updateTrack(audioTracks[0]);
     }
 
     // update peer connection video tracks
     const videoTracks = stream.getVideoTracks();
     if (videoTracks.length) {
-      const videoTrack = videoTracks[0];
-      const videoSenders = pc.getSenders().filter((sender) => sender.track && sender.track.kind === "video");
-      if (videoSenders.length) {
-        this.logger.debug("SessionDescriptionHandler.setLocalMediaStream - replacing sender video track");
-        videoSenders[0].replaceTrack(videoTrack);
-        localStream.getVideoTracks().forEach((track) => {
-          localStream.removeTrack(track);
-          dispatchRemoveTrackEvent(track);
-        });
-      } else {
-        this.logger.debug("SessionDescriptionHandler.setLocalMediaStream - adding sender video track");
-        // Review: could make streamless tracks a configurable option?
-        // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTrack#Usage_notes
-        pc.addTrack(videoTrack, localStream);
-      }
-      localStream.addTrack(videoTrack);
-      dispatchAddTrackEvent(videoTrack);
+      updateTrack(videoTracks[0]);
     }
+
+    return trackUpdates.reduce((p, x) => p.then(() => x), Promise.resolve());
   }
 
   /**
@@ -501,6 +526,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     } else if (track.kind === "audio") {
       this.logger.debug(`SessionDescriptionHandler.ontrack - adding remote ${track.kind} track`);
       remoteStream.getAudioTracks().forEach((track) => {
+        track.stop();
         remoteStream.removeTrack(track);
         dispatchRemoveTrackEvent(track);
       });
@@ -509,6 +535,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     } else if (track.kind === "video") {
       this.logger.debug(`SessionDescriptionHandler.ontrack - adding remote ${track.kind} track`);
       remoteStream.getVideoTracks().forEach((track) => {
+        track.stop();
         remoteStream.removeTrack(track);
         dispatchRemoveTrackEvent(track);
       });
