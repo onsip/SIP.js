@@ -38,7 +38,7 @@ export function defaultSessionDescriptionHandlerFactory(
       }
     };
 
-    const logger = session.userAgent.getLogger("sip.SDH");
+    const logger = session.userAgent.getLogger("sip.SessionDescriptionHandler");
 
     return new SessionDescriptionHandler(logger, mediaStreamFactory, sessionDescriptionHandlerConfiguration);
   };
