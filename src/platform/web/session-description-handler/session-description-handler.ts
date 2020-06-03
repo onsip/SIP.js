@@ -135,6 +135,17 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     this._peerConnectionDelegate = delegate;
   }
 
+  // The addtrack event does not get fired when JavaScript code explicitly adds tracks to the stream (by calling addTrack()).
+  // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
+  private static dispatchAddTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
+    stream.dispatchEvent(new MediaStreamTrackEvent("addtrack", { track }));
+  }
+  // The removetrack event does not get fired when JavaScript code explicitly removes tracks from the stream (by calling removeTrack()).
+  // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onremovetrack
+  private static dispatchRemoveTrackEvent(stream: MediaStream, track: MediaStreamTrack): void {
+    stream.dispatchEvent(new MediaStreamTrackEvent("removetrack", { track }));
+  }
+
   /**
    * Stop tracks and close peer connection.
    */
@@ -402,18 +413,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 
     const localStream = this._localMediaStream;
 
-    // The addtrack event does not get fired when JavaScript code explicitly adds tracks to the stream (by calling addTrack()).
-    // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
-    const dispatchAddTrackEvent = (track: MediaStreamTrack): void => {
-      localStream.dispatchEvent(new MediaStreamTrackEvent("addtrack", { track }));
-    };
-
-    // The removetrack event does not get fired when JavaScript code explicitly removes tracks from the stream (by calling removeTrack()).
-    // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onremovetrack
-    const dispatchRemoveTrackEvent = (track: MediaStreamTrack): void => {
-      localStream.dispatchEvent(new MediaStreamTrackEvent("removetrack", { track }));
-    };
-
     const trackUpdates: Array<Promise<void>> = [];
 
     const updateTrack = (newTrack: MediaStreamTrack): void => {
@@ -435,10 +434,10 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
                 if (oldTrack) {
                   oldTrack.stop();
                   localStream.removeTrack(oldTrack);
-                  dispatchRemoveTrackEvent(oldTrack);
+                  SessionDescriptionHandler.dispatchRemoveTrackEvent(localStream, oldTrack);
                 }
                 localStream.addTrack(newTrack);
-                dispatchAddTrackEvent(newTrack);
+                SessionDescriptionHandler.dispatchAddTrackEvent(localStream, newTrack);
               })
               .catch((error: Error) => {
                 this.logger.error(
@@ -463,7 +462,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
               throw error;
             }
             localStream.addTrack(newTrack);
-            dispatchAddTrackEvent(newTrack);
+            SessionDescriptionHandler.dispatchAddTrackEvent(localStream, newTrack);
           })
         );
       }
@@ -509,18 +508,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 
     const remoteStream = this._remoteMediaStream;
 
-    // The addtrack event does not get fired when JavaScript code explicitly adds tracks to the stream (by calling addTrack()).
-    // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onaddtrack
-    const dispatchAddTrackEvent = (track: MediaStreamTrack): void => {
-      remoteStream.dispatchEvent(new MediaStreamTrackEvent("addtrack", { track }));
-    };
-
-    // The removetrack event does not get fired when JavaScript code explicitly removes tracks from the stream (by calling removeTrack()).
-    // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream/onremovetrack
-    const dispatchRemoveTrackEvent = (track: MediaStreamTrack): void => {
-      remoteStream.dispatchEvent(new MediaStreamTrackEvent("removetrack", { track }));
-    };
-
     if (remoteStream.getTrackById(track.id)) {
       this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - have remote ${track.kind} track`);
     } else if (track.kind === "audio") {
@@ -528,19 +515,19 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       remoteStream.getAudioTracks().forEach((track) => {
         track.stop();
         remoteStream.removeTrack(track);
-        dispatchRemoveTrackEvent(track);
+        SessionDescriptionHandler.dispatchRemoveTrackEvent(remoteStream, track);
       });
       remoteStream.addTrack(track);
-      dispatchAddTrackEvent(track);
+      SessionDescriptionHandler.dispatchAddTrackEvent(remoteStream, track);
     } else if (track.kind === "video") {
       this.logger.debug(`SessionDescriptionHandler.ontrack - adding remote ${track.kind} track`);
       remoteStream.getVideoTracks().forEach((track) => {
         track.stop();
         remoteStream.removeTrack(track);
-        dispatchRemoveTrackEvent(track);
+        SessionDescriptionHandler.dispatchRemoveTrackEvent(remoteStream, track);
       });
       remoteStream.addTrack(track);
-      dispatchAddTrackEvent(track);
+      SessionDescriptionHandler.dispatchAddTrackEvent(remoteStream, track);
     }
   }
 
