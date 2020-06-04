@@ -304,6 +304,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     sdp: RTCSessionDescriptionInit,
     modifiers?: Array<SessionDescriptionHandlerModifier>
   ): Promise<RTCSessionDescriptionInit> {
+    this.logger.debug("SessionDescriptionHandler.applyModifiers");
     if (!modifiers) {
       return Promise.resolve(sdp);
     }
@@ -329,11 +330,11 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     switch (this._peerConnection.signalingState) {
       case "stable":
         // if we are stable, assume we are creating a local offer
-        this.logger.debug("SessionDescriptionHandler.createLocalSessionDescription - creating SDP offer");
+        this.logger.debug("SessionDescriptionHandler.createLocalOfferOrAnswer - creating SDP offer");
         return this._peerConnection.createOffer(options?.offerOptions);
       case "have-remote-offer":
         // if we have a remote offer, assume we are creating a local answer
-        this.logger.debug("SessionDescriptionHandler.createLocalSessionDescription - creating SDP answer");
+        this.logger.debug("SessionDescriptionHandler.createLocalOfferOrAnswer - creating SDP answer");
         return this._peerConnection.createAnswer(options?.answerOptions);
       case "have-local-offer":
       case "have-local-pranswer":
@@ -511,7 +512,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     if (remoteStream.getTrackById(track.id)) {
       this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - have remote ${track.kind} track`);
     } else if (track.kind === "audio") {
-      this.logger.debug(`SessionDescriptionHandler.ontrack - adding remote ${track.kind} track`);
+      this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - adding remote ${track.kind} track`);
       remoteStream.getAudioTracks().forEach((track) => {
         track.stop();
         remoteStream.removeTrack(track);
@@ -520,7 +521,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       remoteStream.addTrack(track);
       SessionDescriptionHandler.dispatchAddTrackEvent(remoteStream, track);
     } else if (track.kind === "video") {
-      this.logger.debug(`SessionDescriptionHandler.ontrack - adding remote ${track.kind} track`);
+      this.logger.debug(`SessionDescriptionHandler.setRemoteTrack - adding remote ${track.kind} track`);
       remoteStream.getVideoTracks().forEach((track) => {
         track.stop();
         remoteStream.removeTrack(track);
@@ -559,7 +560,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         return Promise.reject(new Error("Invalid signaling state " + this._peerConnection.signalingState));
     }
     if (!sdp) {
-      this.logger.error("SessionDescriptionHandler.setLocalSessionDescription failed - cannot set null sdp");
+      this.logger.error("SessionDescriptionHandler.setRemoteSessionDescription failed - cannot set null sdp");
       return Promise.reject(new Error("SDP is undefined"));
     }
     return this._peerConnection.setRemoteDescription({ sdp, type });
