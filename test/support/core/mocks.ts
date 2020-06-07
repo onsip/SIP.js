@@ -250,7 +250,8 @@ export function makeUserAgentCoreConfigurationFromUserAgent(ua: UserAgent): User
         ? ua.configuration.authorizationUsername
         : ua.configuration.uri.user; // if authorization username not provided, use uri user as username
       const password = ua.configuration.authorizationPassword ? ua.configuration.authorizationPassword : undefined;
-      return new DigestAuthentication(ua.getLoggerFactory(), username, password);
+      const ha1 = ua.configuration.authorizationHa1 ? ua.configuration.authorizationHa1 : undefined;
+      return new DigestAuthentication(ua.getLoggerFactory(), ha1, username, password);
     },
     transportAccessor: () => ua.transport
   };

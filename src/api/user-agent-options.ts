@@ -39,6 +39,12 @@ export interface UserAgentOptions {
   allowLegacyNotifications?: boolean;
 
   /**
+   * Authorization ha1.
+   * @defaultValue `""`
+   */
+  authorizationHa1?: string;
+
+  /**
    * Authorization password.
    * @defaultValue `""`
    */
