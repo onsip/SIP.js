@@ -170,7 +170,7 @@ export interface DialogState {
 //
 // @internal
 export class DigestAuthentication {
-    constructor(loggerFactory: LoggerFactory, username: string | undefined, password: string | undefined);
+    constructor(loggerFactory: LoggerFactory, ha1: string | undefined, username: string | undefined, password: string | undefined);
     authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean;
     // (undocumented)
     stale: boolean | undefined;
@@ -921,7 +921,6 @@ export class SessionDialog extends Dialog implements Session {
     reinviteUserAgentClient: ReInviteUserAgentClient | undefined;
     // (undocumented)
     reinviteUserAgentServer: ReInviteUserAgentServer | undefined;
-    // (undocumented)
     reliableSequenceGuard(message: IncomingResponseMessage): boolean;
     // (undocumented)
     get sessionState(): SessionState;
