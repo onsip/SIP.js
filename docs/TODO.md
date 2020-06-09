@@ -82,8 +82,6 @@
 ### SessionDescriptionHandler - Refresh
 
 - Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
-- SDH options & SDH modifiers options are applied somewhat ambiguously
-  - This behavior was ported from legacy code and the issue punted down the road.
 - Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
 - Hold SDP offer too large for UDP
 

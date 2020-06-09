@@ -6,11 +6,11 @@ import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } f
  */
 export interface InvitationAcceptOptions {
   /**
-   * Options to pass to SessionDescriptionHandler's getDescription() and setDescription().
-   */
-  sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
-  /**
-   * Modifiers to pass to SessionDescriptionHandler's getDescription() and setDescription().
+   * Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction.
    */
   sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
+  /**
+   * Options to pass to SessionDescriptionHandler during the initial INVITE transaction.
+   */
+  sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
 }

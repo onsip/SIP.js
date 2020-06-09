@@ -98,17 +98,23 @@ export abstract class Session {
   protected _renderbody: string | undefined;
   /** @internal */
   protected _rendertype: string | undefined;
-  /** @internal */
-  protected _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
-  /** @internal */
-  protected _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
 
   /** If defined, NOTIFYs associated with a REFER subscription are delivered here. */
   private onNotify: ((notification: Notification) => void) | undefined;
-  /** True if there is a re-INVITE request outstanding. */
+  /** True if there is an outgoing re-INVITE request outstanding. */
   private pendingReinvite = false;
+  /** True if there is an incoming re-INVITE ACK request outstanding. */
+  private pendingReinviteAck = false;
   /** Dialogs session description handler. */
   private _sessionDescriptionHandler: SessionDescriptionHandler | undefined;
+  /** SDH modifiers for the initial INVITE transaction. */
+  private _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
+  /** SDH options for the initial INVITE transaction. */
+  private _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+  /** SDH modifiers for re-INVITE transactions. */
+  private _sessionDescriptionHandlerModifiersReInvite: Array<SessionDescriptionHandlerModifier> | undefined;
+  /** SDH options for re-NVITE transactions.*/
+  private _sessionDescriptionHandlerOptionsReInvite: SessionDescriptionHandlerOptions | undefined;
   /** Session state. */
   private _state: SessionState = SessionState.Initial;
   /** Session state emitter. */
@@ -249,6 +255,50 @@ export abstract class Session {
   }
 
   /**
+   * SDH modifiers for the initial INVITE transaction
+   */
+  public get sessionDescriptionHandlerModifiers(): Array<SessionDescriptionHandlerModifier> {
+    return this._sessionDescriptionHandlerModifiers || [];
+  }
+
+  public set sessionDescriptionHandlerModifiers(modifiers: Array<SessionDescriptionHandlerModifier>) {
+    this._sessionDescriptionHandlerModifiers = modifiers.slice();
+  }
+
+  /**
+   * SDH options for the initial INVITE transaction
+   */
+  public get sessionDescriptionHandlerOptions(): SessionDescriptionHandlerOptions {
+    return this._sessionDescriptionHandlerOptions || {};
+  }
+
+  public set sessionDescriptionHandlerOptions(options: SessionDescriptionHandlerOptions) {
+    this._sessionDescriptionHandlerOptions = { ...options };
+  }
+
+  /**
+   * SDH modifiers for the re-INVITE transaction
+   */
+  public get sessionDescriptionHandlerModifiersReInvite(): Array<SessionDescriptionHandlerModifier> {
+    return this._sessionDescriptionHandlerModifiersReInvite || [];
+  }
+
+  public set sessionDescriptionHandlerModifiersReInvite(modifiers: Array<SessionDescriptionHandlerModifier>) {
+    this._sessionDescriptionHandlerModifiersReInvite = modifiers.slice();
+  }
+
+  /**
+   * SDH options for the re-INVITE transaction
+   */
+  public get sessionDescriptionHandlerOptionsReInvite(): SessionDescriptionHandlerOptions {
+    return this._sessionDescriptionHandlerOptionsReInvite || {};
+  }
+
+  public set sessionDescriptionHandlerOptionsReInvite(options: SessionDescriptionHandlerOptions) {
+    this._sessionDescriptionHandlerOptionsReInvite = { ...options };
+  }
+
+  /**
    * Session state.
    */
   public get state(): SessionState {
@@ -358,6 +408,14 @@ export abstract class Session {
     }
     this.pendingReinvite = true;
 
+    // Modifiers and options for initial INVITE transaction
+    if (options.sessionDescriptionHandlerModifiers) {
+      this.sessionDescriptionHandlerModifiersReInvite = options.sessionDescriptionHandlerModifiers;
+    }
+    if (options.sessionDescriptionHandlerOptions) {
+      this.sessionDescriptionHandlerOptionsReInvite = options.sessionDescriptionHandlerOptions;
+    }
+
     const delegate: OutgoingInviteRequestDelegate = {
       onAccept: (response): void => {
         // A re-INVITE transaction has an offer/answer [RFC3264] exchange
@@ -381,11 +439,9 @@ export abstract class Session {
 
         if (options.withoutSdp) {
           // INVITE without SDP - set remote offer and send an answer in the ACK
-          // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
-          //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
-            sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
-            sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
+            sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptionsReInvite,
+            sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiersReInvite
           };
           this.setOfferAndGetAnswer(body, answerOptions)
             .then((answerBody) => {
@@ -412,11 +468,9 @@ export abstract class Session {
             });
         } else {
           // INVITE with SDP - set remote answer and send an ACK
-          // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
-          //        This behavior was ported from legacy code and the issue punted down the road.
           const answerOptions = {
-            sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
-            sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
+            sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptionsReInvite,
+            sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiersReInvite
           };
           this.setAnswer(body, answerOptions)
             .then(() => {
@@ -506,11 +560,9 @@ export abstract class Session {
     }
 
     // Get an offer and send it in an INVITE
-    // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
-    //        This behavior was ported from legacy code and the issue punted down the road.
     const offerOptions = {
-      sessionDescriptionHandlerOptions: options.sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: options.sessionDescriptionHandlerModifiers
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptionsReInvite,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiersReInvite
     };
     return this.getOffer(offerOptions)
       .then((offerBody) => {
@@ -711,6 +763,19 @@ export abstract class Session {
       throw new Error("Dialog undefined.");
     }
 
+    // if received answer in ACK.
+    const answerOptions = {
+      sessionDescriptionHandlerOptions: this.pendingReinviteAck
+        ? this.sessionDescriptionHandlerOptionsReInvite
+        : this.sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this.pendingReinviteAck
+        ? this._sessionDescriptionHandlerModifiersReInvite
+        : this._sessionDescriptionHandlerModifiers
+    };
+
+    // reset pending ACK flag
+    this.pendingReinviteAck = false;
+
     switch (dialog.signalingState) {
       case SignalingState.Initial: {
         // State should never be reached as first reliable response must have answer/offer.
@@ -737,12 +802,7 @@ export abstract class Session {
         if (body.contentDisposition !== "session") {
           return Promise.resolve();
         }
-        // Received answer in ACK.
-        const options = {
-          sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
-          sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
-        };
-        return this.setAnswer(body, options).catch((error: Error) => {
+        return this.setAnswer(body, answerOptions).catch((error: Error) => {
           this.logger.error(error.message);
           const extraHeaders = ["Reason: " + this.getReasonHeaderValue(488, "Bad Media Description")];
           dialog.bye(undefined, { extraHeaders });
@@ -831,6 +891,9 @@ export abstract class Session {
       return;
     }
 
+    // set pending ACK flag
+    this.pendingReinviteAck = true;
+
     // TODO: would be nice to have core track and set the Contact header,
     // but currently the session which is setting it is holding onto it.
     const extraHeaders = ["Contact: " + this._contact];
@@ -844,11 +907,9 @@ export abstract class Session {
       this._assertedIdentity = Grammar.nameAddrHeaderParse(header);
     }
 
-    // FIXME: SDH options & SDH modifiers options are applied somewhat ambiguously
-    //        This behavior was ported from legacy code and the issue punted down the road.
     const options = {
-      sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptionsReInvite,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiersReInvite
     };
     this.generateResponseOfferAnswerInDialog(options)
       .then((body) => {
