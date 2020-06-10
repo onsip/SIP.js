@@ -668,8 +668,8 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 
   /**
    * Wait for ICE gathering to complete.
-   * @param restart If true, waits if current state is "complete" (waits for transition to "complete").
-   * @param timeout Milliseconds after which waiting times out. No timeout if 0.
+   * @param restart - If true, waits if current state is "complete" (waits for transition to "complete").
+   * @param timeout - Milliseconds after which waiting times out. No timeout if 0.
    */
   protected waitForIceGatheringComplete(restart = false, timeout = 0): Promise<void> {
     this.logger.debug("SessionDescriptionHandler.waitForIceGatheringToComplete");
