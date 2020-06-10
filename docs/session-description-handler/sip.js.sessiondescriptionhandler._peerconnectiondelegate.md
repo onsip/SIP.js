@@ -4,6 +4,8 @@
 
 ## SessionDescriptionHandler.\_peerConnectionDelegate property
 
+The peer conneciton delegate.
+
 <b>Signature:</b>
 
 ```typescript

@@ -4,6 +4,8 @@
 
 ## SessionDescriptionHandler.mediaStreamFactory property
 
+Media stream factory.
+
 <b>Signature:</b>
 
 ```typescript

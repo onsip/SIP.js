@@ -165,9 +165,7 @@ export interface InviterInviteOptions {
     requestDelegate?: OutgoingRequestDelegate;
     // Warning: (ae-forgotten-export) The symbol "RequestOptions" needs to be exported by the entry point index.d.ts
     requestOptions?: RequestOptions;
-    // (undocumented)
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
-    // (undocumented)
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
     withoutSdp?: boolean;
 }
@@ -191,7 +189,9 @@ export interface InviterOptions extends SessionOptions {
     // @deprecated (undocumented)
     rendertype?: string;
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
+    sessionDescriptionHandlerModifiersReInvite?: Array<SessionDescriptionHandlerModifier>;
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    sessionDescriptionHandlerOptionsReInvite?: SessionDescriptionHandlerOptions;
 }
 
 // @public
@@ -481,10 +481,14 @@ export abstract class Session {
     protected rollbackOffer(): Promise<void>;
     get sessionDescriptionHandler(): SessionDescriptionHandler | undefined;
     get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory;
-    // @internal (undocumented)
-    protected _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
-    // @internal (undocumented)
-    protected _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+    get sessionDescriptionHandlerModifiers(): Array<SessionDescriptionHandlerModifier>;
+    set sessionDescriptionHandlerModifiers(modifiers: Array<SessionDescriptionHandlerModifier>);
+    get sessionDescriptionHandlerModifiersReInvite(): Array<SessionDescriptionHandlerModifier>;
+    set sessionDescriptionHandlerModifiersReInvite(modifiers: Array<SessionDescriptionHandlerModifier>);
+    get sessionDescriptionHandlerOptions(): SessionDescriptionHandlerOptions;
+    set sessionDescriptionHandlerOptions(options: SessionDescriptionHandlerOptions);
+    get sessionDescriptionHandlerOptionsReInvite(): SessionDescriptionHandlerOptions;
+    set sessionDescriptionHandlerOptionsReInvite(options: SessionDescriptionHandlerOptions);
     // @internal
     protected setAnswer(answer: Body, options: {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
@@ -566,9 +570,7 @@ export interface SessionInfoOptions {
 export interface SessionInviteOptions {
     requestDelegate?: OutgoingRequestDelegate;
     requestOptions?: RequestOptions;
-    // (undocumented)
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
-    // (undocumented)
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
     withoutSdp?: boolean;
 }

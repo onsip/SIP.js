@@ -4,12 +4,12 @@
 
 ## SessionDescriptionHandler.setLocalMediaStream() method
 
-Sets the peer connections sender tracks and local media stream tracks.
+Sets the peer connection's sender tracks and local media stream tracks.
 
 <b>Signature:</b>
 
 ```typescript
-protected setLocalMediaStream(stream: MediaStream): void;
+protected setLocalMediaStream(stream: MediaStream): Promise<void>;
 ```
 
 ## Parameters
@@ -20,7 +20,7 @@ protected setLocalMediaStream(stream: MediaStream): void;
 
 <b>Returns:</b>
 
-`void`
+`Promise<void>`
 
 ## Remarks
 

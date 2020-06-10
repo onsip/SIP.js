@@ -4,8 +4,10 @@
 
 ## SessionDescriptionHandler.sessionDescriptionHandlerConfiguration property
 
+Configuration options.
+
 <b>Signature:</b>
 
 ```typescript
-protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration | undefined;
+protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration;
 ```

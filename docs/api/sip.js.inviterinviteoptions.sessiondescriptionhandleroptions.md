@@ -4,6 +4,8 @@
 
 ## InviterInviteOptions.sessionDescriptionHandlerOptions property
 
+Options to pass to SessionDescriptionHandler during the initial INVITE transaction.
+
 <b>Signature:</b>
 
 ```typescript

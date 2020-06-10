@@ -4,7 +4,7 @@
 
 ## SessionDescriptionHandler.setLocalSessionDescription() method
 
-Sets the local session description.
+Sets the peer connection's local session description.
 
 <b>Signature:</b>
 

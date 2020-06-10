@@ -20,7 +20,7 @@ export interface InvitationProgressOptions
 |  [extraHeaders](./sip.js.invitationprogressoptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the response. |
 |  [reasonPhrase](./sip.js.invitationprogressoptions.reasonphrase.md) | <code>string</code> | Reason phrase for response. |
 |  [rel100](./sip.js.invitationprogressoptions.rel100.md) | <code>boolean</code> | Send reliable response. |
-|  [sessionDescriptionHandlerModifiers](./sip.js.invitationprogressoptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler's getDescription() and setDescription(). |
-|  [sessionDescriptionHandlerOptions](./sip.js.invitationprogressoptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler's getDescription() and setDescription(). |
+|  [sessionDescriptionHandlerModifiers](./sip.js.invitationprogressoptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [sessionDescriptionHandlerOptions](./sip.js.invitationprogressoptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
 |  [statusCode](./sip.js.invitationprogressoptions.statuscode.md) | <code>number</code> | Status code for response. |
 

@@ -4,6 +4,8 @@
 
 ## SessionDescriptionHandler.\_remoteMediaStream property
 
+The remote media stream.
+
 <b>Signature:</b>
 
 ```typescript

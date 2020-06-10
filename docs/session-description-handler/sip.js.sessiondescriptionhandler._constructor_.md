@@ -9,7 +9,7 @@ Constructor
 <b>Signature:</b>
 
 ```typescript
-constructor(logger: Logger, mediaStreamFactory: MediaStreamFactory, sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration | undefined);
+constructor(logger: Logger, mediaStreamFactory: MediaStreamFactory, sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration);
 ```
 
 ## Parameters
@@ -18,5 +18,5 @@ constructor(logger: Logger, mediaStreamFactory: MediaStreamFactory, sessionDescr
 |  --- | --- | --- |
 |  logger | <code>Logger</code> | A logger |
 |  mediaStreamFactory | <code>MediaStreamFactory</code> | A factory to provide a MediaStream |
-|  sessionDescriptionHandlerConfiguration | <code>SessionDescriptionHandlerConfiguration &#124; undefined</code> |  |
+|  sessionDescriptionHandlerConfiguration | <code>SessionDescriptionHandlerConfiguration</code> |  |
 

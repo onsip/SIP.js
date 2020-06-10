@@ -4,7 +4,7 @@
 
 ## SessionDescriptionHandler.getLocalSessionDescription() method
 
-Gets the local session description.
+Gets the peer connection's local session description.
 
 <b>Signature:</b>
 

@@ -4,6 +4,8 @@
 
 ## SessionDescriptionHandler.logger property
 
+Logger.
+
 <b>Signature:</b>
 
 ```typescript

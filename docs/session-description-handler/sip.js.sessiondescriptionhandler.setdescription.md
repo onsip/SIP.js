@@ -16,7 +16,7 @@ setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifier
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  sdp | <code>string</code> |  |
+|  sdp | <code>string</code> | The session description. |
 |  options | <code>SessionDescriptionHandlerOptions</code> | Options bucket. |
 |  modifiers | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers. |
 

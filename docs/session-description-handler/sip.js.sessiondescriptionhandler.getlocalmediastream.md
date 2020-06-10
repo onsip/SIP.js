@@ -4,7 +4,7 @@
 
 ## SessionDescriptionHandler.getLocalMediaStream() method
 
-If we have not already done so, get and set local user media.
+Get a media stream from the media stream factory and set the local media stream.
 
 <b>Signature:</b>
 

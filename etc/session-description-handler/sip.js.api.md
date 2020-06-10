@@ -34,10 +34,13 @@ export interface PeerConnectionDelegate {
 //
 // @public
 export class SessionDescriptionHandler implements SessionDescriptionHandler_2 {
-    constructor(logger: Logger, mediaStreamFactory: MediaStreamFactory, sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration | undefined);
+    constructor(logger: Logger, mediaStreamFactory: MediaStreamFactory, sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration);
     protected applyModifiers(sdp: RTCSessionDescriptionInit, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<RTCSessionDescriptionInit>;
     close(): void;
+    protected createDataChannel(options?: SessionDescriptionHandlerOptions): Promise<void>;
     protected createLocalOfferOrAnswer(options?: SessionDescriptionHandlerOptions): Promise<RTCSessionDescriptionInit>;
+    get dataChannel(): RTCDataChannel | undefined;
+    protected _dataChannel: RTCDataChannel | undefined;
     // Warning: (ae-forgotten-export) The symbol "SessionDescriptionHandlerModifier" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "BodyAndContentType" needs to be exported by the entry point index.d.ts
     getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<BodyAndContentType>;
@@ -45,39 +48,31 @@ export class SessionDescriptionHandler implements SessionDescriptionHandler_2 {
     protected getLocalSessionDescription(): Promise<RTCSessionDescription>;
     hasDescription(contentType: string): boolean;
     holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
+    protected iceGatheringComplete(): void;
     get localMediaStream(): MediaStream;
-    // (undocumented)
     protected _localMediaStream: MediaStream;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
     protected logger: Logger;
-    // (undocumented)
     protected mediaStreamFactory: MediaStreamFactory;
     get peerConnection(): RTCPeerConnection | undefined;
-    // (undocumented)
     protected _peerConnection: RTCPeerConnection | undefined;
-    // (undocumented)
-    protected _peerConnectionConfiguration: RTCConfiguration | undefined;
     get peerConnectionDelegate(): PeerConnectionDelegate | undefined;
     set peerConnectionDelegate(delegate: PeerConnectionDelegate | undefined);
-    // (undocumented)
     protected _peerConnectionDelegate: PeerConnectionDelegate | undefined;
     get remoteMediaStream(): MediaStream;
-    // (undocumented)
     protected _remoteMediaStream: MediaStream;
     sendDtmf(tones: string, options?: {
         duration: number;
         interToneGap: number;
     }): boolean;
-    // (undocumented)
-    protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration | undefined;
+    protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration;
     setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<void>;
-    protected setLocalMediaStream(stream: MediaStream): void;
+    protected setLocalMediaStream(stream: MediaStream): Promise<void>;
     protected setLocalSessionDescription(sessionDescription: RTCSessionDescriptionInit): Promise<void>;
     protected setRemoteSessionDescription(sessionDescription: RTCSessionDescriptionInit): Promise<void>;
     protected setRemoteTrack(track: MediaStreamTrack): void;
-    }
+    protected waitForIceGatheringComplete(restart?: boolean, timeout?: number): Promise<void>;
+}
 
 // @public
 export interface SessionDescriptionHandlerConfiguration {
@@ -102,8 +97,12 @@ export type SessionDescriptionHandlerFactoryOptions = SessionDescriptionHandlerC
 export interface SessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptions_2 {
     answerOptions?: RTCAnswerOptions;
     constraints?: MediaStreamConstraints;
+    dataChannel?: boolean;
+    dataChannelLabel?: string;
+    dataChannelOptions?: RTCDataChannelInit;
     iceGatheringTimeout?: number;
     offerOptions?: RTCOfferOptions;
+    onDataChannel?: (dataChannel: RTCDataChannel) => void;
 }
 
 

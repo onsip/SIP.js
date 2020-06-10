@@ -4,6 +4,8 @@
 
 ## SessionDescriptionHandler.\_peerConnection property
 
+The peer conneciton. Undefined after SessionDesriptionHandler.close().
+
 <b>Signature:</b>
 
 ```typescript

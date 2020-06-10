@@ -4,6 +4,8 @@
 
 ## SessionDescriptionHandler.\_localMediaStream property
 
+The local media stream.
+
 <b>Signature:</b>
 
 ```typescript

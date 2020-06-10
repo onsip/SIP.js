@@ -4,7 +4,7 @@
 
 ## SessionDescriptionHandler.setRemoteSessionDescription() method
 
-Sets the remote session description.
+Sets the peer connection's remote session description.
 
 <b>Signature:</b>
 
