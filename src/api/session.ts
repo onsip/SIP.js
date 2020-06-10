@@ -255,7 +255,12 @@ export abstract class Session {
   }
 
   /**
-   * SDH modifiers for the initial INVITE transaction
+   * SDH modifiers for the initial INVITE transaction.
+   * @remarks
+   * Used in all cases when handling the initial INVITE transaction as either UAC or UAS.
+   * May be set directly at anytime.
+   * May optionally be set via constructor option.
+   * May optionally be set via options passed to Inviter.invite() or Invitation.accept().
    */
   public get sessionDescriptionHandlerModifiers(): Array<SessionDescriptionHandlerModifier> {
     return this._sessionDescriptionHandlerModifiers || [];
@@ -266,7 +271,12 @@ export abstract class Session {
   }
 
   /**
-   * SDH options for the initial INVITE transaction
+   * SDH options for the initial INVITE transaction.
+   * @remarks
+   * Used in all cases when handling the initial INVITE transaction as either UAC or UAS.
+   * May be set directly at anytime.
+   * May optionally be set via constructor option.
+   * May optionally be set via options passed to Inviter.invite() or Invitation.accept().
    */
   public get sessionDescriptionHandlerOptions(): SessionDescriptionHandlerOptions {
     return this._sessionDescriptionHandlerOptions || {};
@@ -277,7 +287,12 @@ export abstract class Session {
   }
 
   /**
-   * SDH modifiers for the re-INVITE transaction
+   * SDH modifiers for re-INVITE transactions.
+   * @remarks
+   * Used in all cases when handling a re-INVITE transaction as either UAC or UAS.
+   * May be set directly at anytime.
+   * May optionally be set via constructor option.
+   * May optionally be set via options passed to Session.invite().
    */
   public get sessionDescriptionHandlerModifiersReInvite(): Array<SessionDescriptionHandlerModifier> {
     return this._sessionDescriptionHandlerModifiersReInvite || [];
@@ -288,7 +303,12 @@ export abstract class Session {
   }
 
   /**
-   * SDH options for the re-INVITE transaction
+   * SDH options for re-INVITE transactions.
+   * @remarks
+   * Used in all cases when handling a re-INVITE transaction as either UAC or UAS.
+   * May be set directly at anytime.
+   * May optionally be set via constructor option.
+   * May optionally be set via options passed to Session.invite().
    */
   public get sessionDescriptionHandlerOptionsReInvite(): SessionDescriptionHandlerOptions {
     return this._sessionDescriptionHandlerOptionsReInvite || {};
