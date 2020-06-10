@@ -332,6 +332,8 @@ export class SimpleUser {
    * Resolves when the INVITE request is sent, otherwise rejects.
    * Use `onCallAnswered` delegate method to determine if Session is established.
    * @param destination - The target destination to call. A SIP address to send the INVITE to.
+   * @param inviterOptions - Optional options for Inviter constructor.
+   * @param inviterInviteOptions - Optional options for Inviter.invite().
    */
   public call(
     destination: string,
@@ -387,6 +389,7 @@ export class SimpleUser {
    * Accept an incoming INVITE request creating a new Session.
    * Resolves with the response is sent, otherwise rejects.
    * Use `onCallAnswered` delegate method to determine if and when call is established.
+   * @param invitationAcceptOptions - Optional options for Inviter.accept().
    */
   public answer(invitationAcceptOptions?: InvitationAcceptOptions): Promise<void> {
     this.logger.log(`[${this.id}] Accepting Invitation...`);
@@ -569,11 +572,8 @@ export class SimpleUser {
   /** Media constraints. */
   private get constraints(): { audio: boolean; video: boolean } {
     let constraints = { audio: true, video: false }; // default to audio only calls
-    if (this.options.media && this.options.media.constraints) {
+    if (this.options.media?.constraints) {
       constraints = { ...this.options.media.constraints };
-      if (!constraints.audio && !constraints.video) {
-        throw new Error("Invalid media constraints - audio and/or video must be true.");
-      }
     }
     return constraints;
   }
