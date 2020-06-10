@@ -805,6 +805,7 @@ export interface UserAgentDelegate {
 // @public
 export interface UserAgentOptions {
     allowLegacyNotifications?: boolean;
+    authorizationHa1?: string;
     authorizationPassword?: string;
     authorizationUsername?: string;
     // @deprecated (undocumented)

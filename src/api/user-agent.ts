@@ -251,6 +251,7 @@ export class UserAgent {
   private static defaultOptions(): Required<UserAgentOptions> {
     return {
       allowLegacyNotifications: false,
+      authorizationHa1: "",
       authorizationPassword: "",
       authorizationUsername: "",
       autoStart: false,
@@ -664,7 +665,8 @@ export class UserAgent {
           ? this.options.authorizationUsername
           : this.options.uri.user; // if authorization username not provided, use uri user as username
         const password = this.options.authorizationPassword ? this.options.authorizationPassword : undefined;
-        return new DigestAuthentication(this.getLoggerFactory(), username, password);
+        const ha1 = this.options.authorizationHa1 ? this.options.authorizationHa1 : undefined;
+        return new DigestAuthentication(this.getLoggerFactory(), ha1, username, password);
       },
       transportAccessor: () => this.transport
     };
