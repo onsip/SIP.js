@@ -81,8 +81,7 @@
 
 ### SessionDescriptionHandler - Refresh
 
-- Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
-- Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
+- Trickle ICE Support: https://tools.ietf.org/html/draft-ietf-mmusic-trickle-ice-sip-18
 - Hold SDP offer too large for UDP
 
 ### Session Timers - Issue #18 
