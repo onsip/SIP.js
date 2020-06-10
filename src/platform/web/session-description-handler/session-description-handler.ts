@@ -36,19 +36,30 @@ type RejectFunction = (reason: Error) => void;
  * @public
  */
 export class SessionDescriptionHandler implements SessionDescriptionHandlerDefinition {
-  protected _localMediaStream: MediaStream;
-  protected _remoteMediaStream: MediaStream;
+  /** Logger. */
+  protected logger: Logger;
+  /** Media stream factory. */
+  protected mediaStreamFactory: MediaStreamFactory;
+  /** Configuration options. */
+  protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration;
 
+  /** The local media stream. */
+  protected _localMediaStream: MediaStream;
+  /** The remote media stream. */
+  protected _remoteMediaStream: MediaStream;
+  /** The data channel. Undefined before created. */
+  protected _dataChannel: RTCDataChannel | undefined;
+  /** The peer conneciton. Undefined after SessionDesriptionHandler.close(). */
   protected _peerConnection: RTCPeerConnection | undefined;
-  protected _peerConnectionConfiguration: RTCConfiguration | undefined;
+  /** The peer conneciton delegate. */
   protected _peerConnectionDelegate: PeerConnectionDelegate | undefined;
 
   private iceGatheringCompletePromise: Promise<void> | undefined;
   private iceGatheringCompleteTimeoutId: number | undefined;
   private iceGatheringCompleteResolve: ResolveFunction | undefined;
   private iceGatheringCompleteReject: RejectFunction | undefined;
-
   private localMediaStreamConstraints: MediaStreamConstraints | undefined;
+  private onDataChannel: ((dataChannel: RTCDataChannel) => void) | undefined;
 
   /**
    * Constructor
@@ -57,11 +68,14 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * @param options - Options passed from the SessionDescriptionHandleFactory
    */
   constructor(
-    protected logger: Logger,
-    protected mediaStreamFactory: MediaStreamFactory,
-    protected sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration
+    logger: Logger,
+    mediaStreamFactory: MediaStreamFactory,
+    sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration
   ) {
     logger.debug("SessionDescriptionHandler.constructor");
+    this.logger = logger;
+    this.mediaStreamFactory = mediaStreamFactory;
+    this.sessionDescriptionHandlerConfiguration = sessionDescriptionHandlerConfiguration;
     this._localMediaStream = new MediaStream();
     this._remoteMediaStream = new MediaStream();
     this._peerConnection = new RTCPeerConnection(sessionDescriptionHandlerConfiguration?.peerConnectionConfiguration);
@@ -100,6 +114,13 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    */
   get remoteMediaStream(): MediaStream {
     return this._remoteMediaStream;
+  }
+
+  /**
+   * The data channel. Undefined before it is created.
+   */
+  get dataChannel(): RTCDataChannel | undefined {
+    return this._dataChannel;
   }
 
   /**
@@ -160,6 +181,9 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     this._peerConnection.getSenders().forEach((sender) => {
       sender.track && sender.track.stop();
     });
+    if (this._dataChannel) {
+      this._dataChannel.close();
+    }
     this._peerConnection.close();
     this._peerConnection = undefined;
   }
@@ -177,6 +201,8 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     if (this._peerConnection === undefined) {
       return Promise.reject(new Error("Peer connection closed."));
     }
+    // Callback on data channel creation
+    this.onDataChannel = options?.onDataChannel;
 
     // ICE will restart upon applying an offer created with the iceRestart option
     const iceRestart = options?.offerOptions?.iceRestart;
@@ -188,6 +214,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         : options?.iceGatheringTimeout;
 
     return this.getLocalMediaStream(options)
+      .then(() => this.createDataChannel(options))
       .then(() => this.createLocalOfferOrAnswer(options))
       .then((sessionDescription) => this.applyModifiers(sessionDescription, modifiers))
       .then((sessionDescription) => this.setLocalSessionDescription(sessionDescription))
@@ -272,7 +299,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 
   /**
    * Sets an offer or answer.
-   * @param  sessionDescription - The session description.
+   * @param sdp - The session description.
    * @param options - Options bucket.
    * @param modifiers - Modifiers.
    */
@@ -285,7 +312,13 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     if (this._peerConnection === undefined) {
       return Promise.reject(new Error("Peer connection closed."));
     }
+
+    // Callback on data channel creation
+    this.onDataChannel = options?.onDataChannel;
+
+    // SDP type
     const type = this._peerConnection.signalingState === "have-local-offer" ? "answer" : "offer";
+
     return this.getLocalMediaStream(options)
       .then(() => this.applyModifiers({ sdp, type }, modifiers))
       .then((sessionDescription) => this.setRemoteSessionDescription(sessionDescription))
@@ -305,7 +338,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     modifiers?: Array<SessionDescriptionHandlerModifier>
   ): Promise<RTCSessionDescriptionInit> {
     this.logger.debug("SessionDescriptionHandler.applyModifiers");
-    if (!modifiers) {
+    if (!modifiers || modifiers.length === 0) {
       return Promise.resolve(sdp);
     }
     return modifiers
@@ -317,6 +350,52 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         }
         return { sdp: modified.sdp, type: modified.type };
       });
+  }
+
+  /**
+   * Create a data channel.
+   * @remarks
+   * Only creates a data channel if SessionDescriptionHandlerOptions.dataChannel is true.
+   * Only creates a data channel if creating a local offer.
+   * Only if one does not already exist.
+   * @param options - Session description handler options.
+   */
+  protected createDataChannel(options?: SessionDescriptionHandlerOptions): Promise<void> {
+    if (this._peerConnection === undefined) {
+      return Promise.reject(new Error("Peer connection closed."));
+    }
+    // only create a data channel if requested
+    if (options?.dataChannel !== true) {
+      return Promise.resolve();
+    }
+    // do not create a data channel if we already have one
+    if (this._dataChannel) {
+      return Promise.resolve();
+    }
+    switch (this._peerConnection.signalingState) {
+      case "stable":
+        // if we are stable, assume we are creating a local offer so create a data channel
+        this.logger.debug("SessionDescriptionHandler.createDataChannel - creating data channel");
+        try {
+          this._dataChannel = this._peerConnection.createDataChannel(
+            options?.dataChannelLabel || "",
+            options?.dataChannelOptions
+          );
+          if (this.onDataChannel) {
+            this.onDataChannel(this._dataChannel);
+          }
+          return Promise.resolve();
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      case "have-remote-offer":
+      case "have-local-offer":
+      case "have-local-pranswer":
+      case "have-remote-pranswer":
+      case "closed":
+      default:
+        return Promise.reject(new Error("Invalid signaling state " + this._peerConnection.signalingState));
+    }
   }
 
   /**
@@ -643,6 +722,10 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 
     peerConnection.ondatachannel = (event): void => {
       this.logger.debug(`SessionDescriptionHandler.ondatachannel`);
+      this._dataChannel = event.channel;
+      if (this.onDataChannel) {
+        this.onDataChannel(this._dataChannel);
+      }
       if (this._peerConnectionDelegate?.ondatachannel) {
         this._peerConnectionDelegate.ondatachannel(event);
       }

@@ -12,8 +12,26 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
 
   /**
    * Constraints to use when creating local media stream.
+   * @remarks
+   * If undefined, defaults to audio true and video false.
+   * If audio and video are false, media stream will have no tracks.
    */
   constraints?: MediaStreamConstraints;
+
+  /**
+   * If true, create a data channel when making initial offer.
+   */
+  dataChannel?: boolean;
+
+  /**
+   * A human-readable name to use when creating the data channel.
+   */
+  dataChannelLabel?: string;
+
+  /**
+   * Configuration options for creating the data channel.
+   */
+  dataChannelOptions?: RTCDataChannelInit;
 
   /**
    * The maximum duration to wait in ms for ICE gathering to complete.
@@ -25,4 +43,9 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
    * Offer options to use when creating an offer.
    */
   offerOptions?: RTCOfferOptions;
+
+  /**
+   * Called upon creating a data channel.
+   */
+  onDataChannel?: (dataChannel: RTCDataChannel) => void;
 }
