@@ -1,10 +1,9 @@
 # Release Road Map
 
-## 0.16.x
+## 0.17.x
 
-- tighten up tslint and lint api, core, demo and tests
-- review packaging best practices (es7, es6, drop es5)
-- free core and API from DOM and Node dependencies
+- free core and API from DOM dependencies
+- complete more work in progress
 - remove UMD bundle from npm
 - more documentation
 - more tests
@@ -13,21 +12,17 @@
 
 # Work in Progress
 
-## Documentation
+## Dev Dependencies
 
-- Add documentation for "SessionDescriptionHandler - WebRTC"
+### api-extractor
+
+- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
 
 ## Tests
 
 - _Unit_ tests are being written for low level "core" components (Transaction, Transport)
 - _Integration_ tests are being written high level "api" components (Session, Subscription)
   - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
-
-## Dev Dependencies
-
-### api-extractor
-
-- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
 
 ## Source
 

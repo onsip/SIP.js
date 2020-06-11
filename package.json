@@ -33,7 +33,6 @@
   "devDependencies": {
     "@microsoft/api-documenter": "7.7.20",
     "@microsoft/api-extractor": "7.7.11",
-    "@types/events": "^3.0.0",
     "@types/jasmine": "^3.5.10",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
