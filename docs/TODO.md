@@ -23,13 +23,6 @@
 - _Integration_ tests are being written high level "api" components (Session, Subscription)
   - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
 
-## Dependencies
-
-### events
-
-- it's the only dependency currently and would be nice to get rid of it
-- web/session-description-handler extends it, which is the blocking isssue and an API change
-
 ## Dev Dependencies
 
 ### api-extractor
@@ -79,7 +72,7 @@
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: \*" header fails to parse - there's a test written for it
 
-### SessionDescriptionHandler - Refresh
+### SessionDescriptionHandler - Miscellaneous
 
 - Trickle ICE Support: https://tools.ietf.org/html/draft-ietf-mmusic-trickle-ice-sip-18
 - Hold SDP offer too large for UDP

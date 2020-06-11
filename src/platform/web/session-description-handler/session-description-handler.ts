@@ -49,9 +49,9 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   protected _remoteMediaStream: MediaStream;
   /** The data channel. Undefined before created. */
   protected _dataChannel: RTCDataChannel | undefined;
-  /** The peer conneciton. Undefined after SessionDesriptionHandler.close(). */
+  /** The peer connection. Undefined after SessionDescriptionHandler.close(). */
   protected _peerConnection: RTCPeerConnection | undefined;
-  /** The peer conneciton delegate. */
+  /** The peer connection delegate. */
   protected _peerConnectionDelegate: PeerConnectionDelegate | undefined;
 
   private iceGatheringCompletePromise: Promise<void> | undefined;

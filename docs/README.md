@@ -50,5 +50,5 @@ The [API](./api.md) framework is intended to provide a complete and suitable fra
 
 ### Core library
 
-The [Core](./core.md) library provides lower level representations of the elements which comprise the SIP protocol. It implements the constructs required by user agents. It strives to be RFC complient. It is intended to provide the foundational building blocks upon which to build a higher level abstraction suitable for any application.
+The [Core](./core.md) library provides lower level representations of the elements which comprise the SIP protocol. It implements the constructs required by user agents. It strives to be RFC compliant. It is intended to provide the foundational building blocks upon which to build a higher level abstraction suitable for any application.
 
