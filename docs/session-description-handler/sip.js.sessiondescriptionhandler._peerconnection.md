@@ -4,7 +4,7 @@
 
 ## SessionDescriptionHandler.\_peerConnection property
 
-The peer conneciton. Undefined after SessionDesriptionHandler.close().
+The peer connection. Undefined after SessionDescriptionHandler.close().
 
 <b>Signature:</b>
 

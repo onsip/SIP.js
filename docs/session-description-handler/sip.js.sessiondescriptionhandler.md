@@ -28,8 +28,8 @@ It is expected/intended to be extended by specific WebRTC based applications.
 |  --- | --- | --- | --- |
 |  [\_dataChannel](./sip.js.sessiondescriptionhandler._datachannel.md) |  | <code>RTCDataChannel &#124; undefined</code> | The data channel. Undefined before created. |
 |  [\_localMediaStream](./sip.js.sessiondescriptionhandler._localmediastream.md) |  | <code>MediaStream</code> | The local media stream. |
-|  [\_peerConnection](./sip.js.sessiondescriptionhandler._peerconnection.md) |  | <code>RTCPeerConnection &#124; undefined</code> | The peer conneciton. Undefined after SessionDesriptionHandler.close(). |
-|  [\_peerConnectionDelegate](./sip.js.sessiondescriptionhandler._peerconnectiondelegate.md) |  | <code>PeerConnectionDelegate &#124; undefined</code> | The peer conneciton delegate. |
+|  [\_peerConnection](./sip.js.sessiondescriptionhandler._peerconnection.md) |  | <code>RTCPeerConnection &#124; undefined</code> | The peer connection. Undefined after SessionDescriptionHandler.close(). |
+|  [\_peerConnectionDelegate](./sip.js.sessiondescriptionhandler._peerconnectiondelegate.md) |  | <code>PeerConnectionDelegate &#124; undefined</code> | The peer connection delegate. |
 |  [\_remoteMediaStream](./sip.js.sessiondescriptionhandler._remotemediastream.md) |  | <code>MediaStream</code> | The remote media stream. |
 |  [dataChannel](./sip.js.sessiondescriptionhandler.datachannel.md) |  | <code>RTCDataChannel &#124; undefined</code> | The data channel. Undefined before it is created. |
 |  [localMediaStream](./sip.js.sessiondescriptionhandler.localmediastream.md) |  | <code>MediaStream</code> | The local media stream currently being sent. |

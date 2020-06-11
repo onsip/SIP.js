@@ -4,7 +4,7 @@
 
 ## SessionDescriptionHandler.\_peerConnectionDelegate property
 
-The peer conneciton delegate.
+The peer connection delegate.
 
 <b>Signature:</b>
 
