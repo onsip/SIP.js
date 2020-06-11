@@ -29,10 +29,6 @@
 
 - issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
 
-### karma-jasmine
-
-- issue updating past 3.0.3 https://github.com/karma-runner/karma-jasmine/issues/256
-
 ## Source
 
 ### API - Miscellaneous
