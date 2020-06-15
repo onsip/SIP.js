@@ -961,7 +961,7 @@ export class SimpleUser {
       mediaElement.srcObject = localStream;
       mediaElement.volume = 0;
       mediaElement.play().catch((error: Error) => {
-        this.logger.error(`[${this.id}] Error playing local media`);
+        this.logger.error(`[${this.id}] Failed to play local media`);
         this.logger.error(error.message);
       });
     }
@@ -974,16 +974,26 @@ export class SimpleUser {
     }
 
     const mediaElement = this.options.media?.remote?.video || this.options.media?.remote?.audio;
+
     if (mediaElement) {
       const remoteStream = this.remoteMediaStream;
       if (!remoteStream) {
         throw new Error("Remote media stream undefiend.");
       }
+      mediaElement.autoplay = true; // Safari hack, because you cannot call .play() from a non user action
       mediaElement.srcObject = remoteStream;
       mediaElement.play().catch((error: Error) => {
-        this.logger.error(`[${this.id}] Error playing remote media`);
+        this.logger.error(`[${this.id}] Failed to play remote media`);
         this.logger.error(error.message);
       });
+      remoteStream.onaddtrack = (): void => {
+        this.logger.log(`[${this.id}] Remote media onaddtrack`);
+        mediaElement.load(); // Safari hack, as it doesn't work otheriwse
+        mediaElement.play().catch((error: Error) => {
+          this.logger.error(`[${this.id}] Failed to play remote media`);
+          this.logger.error(error.message);
+        });
+      };
     }
   }
 
