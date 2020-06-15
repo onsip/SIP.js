@@ -211,24 +211,60 @@ export class SimpleUser {
     return (this.options.userAgentOptions && this.options.userAgentOptions.displayName) || "Anonymous";
   }
 
-  /** The local audio track, if available. */
+  /** The local media stream. Undefined if call not answered. */
+  get localMediaStream(): MediaStream | undefined {
+    const sdh = this.session?.sessionDescriptionHandler;
+    if (!sdh) {
+      return undefined;
+    }
+    if (!(sdh instanceof SessionDescriptionHandler)) {
+      throw new Error("Session description handler not instance of web SessionDescriptionHandler");
+    }
+    return sdh.localMediaStream;
+  }
+
+  /** The remote media stream. Undefined if call not answered. */
+  get remoteMediaStream(): MediaStream | undefined {
+    const sdh = this.session?.sessionDescriptionHandler;
+    if (!sdh) {
+      return undefined;
+    }
+    if (!(sdh instanceof SessionDescriptionHandler)) {
+      throw new Error("Session description handler not instance of web SessionDescriptionHandler");
+    }
+    return sdh.remoteMediaStream;
+  }
+
+  /**
+   * The local audio track, if available.
+   * @deprecated Use localMediaStream and get track from the stream.
+   */
   get localAudioTrack(): MediaStreamTrack | undefined {
-    return this.getSenderTrack("audio");
+    return this.localMediaStream?.getTracks().find((track) => track.kind === "audio");
   }
 
-  /** The local video track, if available. */
+  /**
+   * The local video track, if available.
+   * @deprecated Use localMediaStream and get track from the stream.
+   */
   get localVideoTrack(): MediaStreamTrack | undefined {
-    return this.getSenderTrack("video");
+    return this.localMediaStream?.getTracks().find((track) => track.kind === "video");
   }
 
-  /** The remote audio track, if available. */
+  /**
+   * The remote audio track, if available.
+   * @deprecated Use remoteMediaStream and get track from the stream.
+   */
   get remoteAudioTrack(): MediaStreamTrack | undefined {
-    return this.getReceiverTrack("audio");
+    return this.remoteMediaStream?.getTracks().find((track) => track.kind === "audio");
   }
 
-  /** The remote video track, if available. */
+  /**
+   * The remote video track, if available.
+   * @deprecated Use remoteMediaStream and get track from the stream.
+   */
   get remoteVideoTrack(): MediaStreamTrack | undefined {
-    return this.getReceiverTrack("video");
+    return this.remoteMediaStream?.getTracks().find((track) => track.kind === "video");
   }
 
   /**
@@ -685,62 +721,6 @@ export class SimpleUser {
     });
   }
 
-  /** The receiver media track, if available. */
-  private getReceiverTrack(kind: "audio" | "video"): MediaStreamTrack | undefined {
-    if (!this.session) {
-      this.logger.warn(`[${this.id}] getReceiverTrack - session undefined`);
-      return undefined;
-    }
-
-    const sessionDescriptionHandler = this.session.sessionDescriptionHandler;
-    if (!sessionDescriptionHandler) {
-      this.logger.warn(`[${this.id}] getReceiverTrack - session description handler undefined`);
-      return undefined;
-    }
-
-    if (!(sessionDescriptionHandler instanceof SessionDescriptionHandler)) {
-      throw new Error("Session's session description handler not instance of SessionDescriptionHandler.");
-    }
-
-    const peerConnection = sessionDescriptionHandler.peerConnection;
-    if (!peerConnection) {
-      throw new Error("Peer connection closed.");
-    }
-
-    const rtpReceiver = peerConnection.getReceivers().find((receiver) => {
-      return receiver.track.kind === kind ? true : false;
-    });
-    return rtpReceiver ? rtpReceiver.track : undefined;
-  }
-
-  /** The sender media track, if available. */
-  private getSenderTrack(kind: "audio" | "video"): MediaStreamTrack | undefined {
-    if (!this.session) {
-      this.logger.warn(`[${this.id}] getSenderTrack - session undefined`);
-      return undefined;
-    }
-
-    const sessionDescriptionHandler = this.session.sessionDescriptionHandler;
-    if (!sessionDescriptionHandler) {
-      this.logger.warn(`[${this.id}] getSenderTrack - session description handler undefined`);
-      return undefined;
-    }
-
-    if (!(sessionDescriptionHandler instanceof SessionDescriptionHandler)) {
-      throw new Error("Session's session description handler not instance of SessionDescriptionHandler.");
-    }
-
-    const peerConnection = sessionDescriptionHandler.peerConnection;
-    if (!peerConnection) {
-      throw new Error("Peer connection closed.");
-    }
-
-    const rtpSender = peerConnection.getSenders().find((sender) => {
-      return sender.track && sender.track.kind === kind ? true : false;
-    });
-    return rtpSender && rtpSender.track ? rtpSender.track : undefined;
-  }
-
   /**
    * Setup session delegate and state change handler.
    * @param session - Session to setup
@@ -972,14 +952,18 @@ export class SimpleUser {
       throw new Error("Session does not exist.");
     }
 
-    if (this.options.media && this.options.media.local && this.options.media.local.video) {
-      const localVideoTrack = this.localVideoTrack;
-      if (localVideoTrack) {
-        const localStream = new MediaStream([localVideoTrack]);
-        this.options.media.local.video.srcObject = localStream;
-        this.options.media.local.video.volume = 0;
-        this.options.media.local.video.play();
+    const mediaElement = this.options.media?.local?.video;
+    if (mediaElement) {
+      const localStream = this.localMediaStream;
+      if (!localStream) {
+        throw new Error("Local media stream undefiend.");
       }
+      mediaElement.srcObject = localStream;
+      mediaElement.volume = 0;
+      mediaElement.play().catch((error: Error) => {
+        this.logger.error(`[${this.id}] Error playing local media`);
+        this.logger.error(error.message);
+      });
     }
   }
 
@@ -989,34 +973,17 @@ export class SimpleUser {
       throw new Error("Session does not exist.");
     }
 
-    if (this.options.media && this.options.media.remote) {
-      const remoteAudioTrack = this.remoteAudioTrack;
-      const remoteVideoTrack = this.remoteVideoTrack;
-      const remoteStream = new MediaStream();
-
-      // If there is a video element, both audio and video will be attached that element.
-      if (this.options.media.remote.video) {
-        if (remoteAudioTrack) {
-          remoteStream.addTrack(remoteAudioTrack);
-        }
-        if (remoteVideoTrack) {
-          remoteStream.addTrack(remoteVideoTrack);
-        }
-        this.options.media.remote.video.srcObject = remoteStream;
-        this.options.media.remote.video.play().catch((error: Error) => {
-          this.logger.error(`[${this.id}] Error playing video`);
-          this.logger.error(error.message);
-        });
-      } else if (this.options.media.remote.audio) {
-        if (remoteAudioTrack) {
-          remoteStream.addTrack(remoteAudioTrack);
-          this.options.media.remote.audio.srcObject = remoteStream;
-          this.options.media.remote.audio.play().catch((error: Error) => {
-            this.logger.error(`[${this.id}] Error playing audio`);
-            this.logger.error(error.message);
-          });
-        }
+    const mediaElement = this.options.media?.remote?.video || this.options.media?.remote?.audio;
+    if (mediaElement) {
+      const remoteStream = this.remoteMediaStream;
+      if (!remoteStream) {
+        throw new Error("Remote media stream undefiend.");
       }
+      mediaElement.srcObject = remoteStream;
+      mediaElement.play().catch((error: Error) => {
+        this.logger.error(`[${this.id}] Error playing remote media`);
+        this.logger.error(error.message);
+      });
     }
   }
 

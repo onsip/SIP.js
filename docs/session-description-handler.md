@@ -47,11 +47,17 @@ function handleStateChanges(
         }
         if (localHTMLMediaElement) {
           localHTMLMediaElement.srcObject = sessionDescriptionHandler.localMediaStream;
-          localHTMLMediaElement.play();
+          localHTMLMediaElement.play().catch((error: Error) => {
+            console.error("Error playing local media");
+            console.error(error);
+          });
         }
         if (remoteHTMLMediaElement) {
           remoteHTMLMediaElement.srcObject = sessionDescriptionHandler.remoteMediaStream;
-          remoteHTMLMediaElement.play();
+          remoteHTMLMediaElement.play().catch((error: Error) => {
+            console.error("Error playing remote media");
+            console.error(error);
+          });
         }
         break;
       case SessionState.Terminating:
