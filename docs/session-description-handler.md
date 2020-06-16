@@ -25,6 +25,7 @@ The session description handler and media tracks are availble once the `Session`
 ```ts
 import { Session, SessionState, Web } from "sip.js";
 
+// A Session state change handler which assigns media streams to HTML media elements.
 function handleStateChanges(
   session: Session,
   localHTMLMediaElement: HTMLVideoElement | undefined,
@@ -46,18 +47,10 @@ function handleStateChanges(
           throw new Error("Invalid session description handler.");
         }
         if (localHTMLMediaElement) {
-          localHTMLMediaElement.srcObject = sessionDescriptionHandler.localMediaStream;
-          localHTMLMediaElement.play().catch((error: Error) => {
-            console.error("Error playing local media");
-            console.error(error);
-          });
+          assignStream(sessionDescriptionHandler.localMediaStream, localHTMLMediaElement)
         }
         if (remoteHTMLMediaElement) {
-          remoteHTMLMediaElement.srcObject = sessionDescriptionHandler.remoteMediaStream;
-          remoteHTMLMediaElement.play().catch((error: Error) => {
-            console.error("Error playing remote media");
-            console.error(error);
-          });
+          assignStream(sessionDescriptionHandler.remoteMediaStream, remoteHTMLMediaElement)
         }
         break;
       case SessionState.Terminating:
@@ -68,6 +61,37 @@ function handleStateChanges(
         throw new Error("Unknown session state.");
     }
   });
+}
+
+// Assign a MediaStream to an HTMLMediaElement and update if tracks change.
+function assignStream(stream: MediaStream, element: HTMLMediaElement): void {
+  // Set element source.
+  element.autoplay = true; // Safari does not allow calling .play() from a non user action
+  element.srcObject = stream;
+
+  // Load and start playback of media.
+  element.play().catch((error: Error) => {
+    console.error("Failed to play media");
+    console.error(error);
+  });
+
+  // If a track is added, load and restart playback of media.
+  stream.onaddtrack = (): void => {
+    element.load(); // Safari does not work otheriwse
+    element.play().catch((error: Error) => {
+      console.error("Failed to play remote media on add track");
+      console.error(error);
+    });
+  };
+
+  // If a track is removed, load and restart playback of media.
+  stream.onremovetrack = (): void => {
+    element.load(); // Safari does not work otheriwse
+    element.play().catch((error: Error) => {
+      console.error("Failed to play remote media on remove track");
+      console.error(error);
+    });
+  };
 }
 ```
 
@@ -99,7 +123,7 @@ const myUserAgent = new UserAgent({
 
 ## How do I detect if a track was added or removed?
 
-The session description handler and media tracks are availble once the `Session` state transitions to `SessionState.Established`, however there are cases where tracks may be added or removed if the media changes - for example, on upgrade from audio only to a video session. Not also that when the `SessionDescriptionHandler` is constructed the media stream initially has no tracks, so the presence of tracks should not be assumed. 
+The session description handler is availble once the `Session` state transitions to `SessionState.Established`, however there are cases where tracks are added or removed if the media changes - for example, on upgrade from audio only to a video session. Not also that when the `SessionDescriptionHandler` is constructed the media stream initially has no tracks, so the presence of tracks should not be assumed. 
 
 See [`SessionDescriptionHandler.remoteMediaStream` docs](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) for more info.
 
@@ -145,11 +169,11 @@ function handleSessionDescriptionHandlerCreated(session: Session): void {
 
 `SessionDescriptionHandler` has a `peerConnection` property.
 
-See [`docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) for more info.
+See [docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) for more info.
 
 
 ## How do I get a handle on the peer connection events?
 
 `SessionDescriptionHandler` has a `peerConnectionDelegate` property.
 
-See [`docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) for more info.
+See [docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) for more info.
