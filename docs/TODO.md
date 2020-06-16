@@ -72,6 +72,11 @@
 
 - There is an old branch for it which perhaps can be pulled forward.
 
+### Transport - TCP Support
+
+- Support for "stream-oriented" transports: https://tools.ietf.org/html/rfc3261#section-18.3
+- This current Transport interface only supports "message-oriented" transports. Issue #818.
+
 ### URI - Refresh
 
 - Cleanup URI class, should not default to "sip" scheme, get rid of useless type checking
