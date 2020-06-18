@@ -20,6 +20,7 @@ A working knowledge of the SIP protocol is a prerequisite for working with this 
 - Connect the user agent
 - Register the user agent
 - Place an outbound call
+- Make a transfer call
 
 ```ts
 import {
@@ -32,7 +33,8 @@ import {
   Session,
   SessionState,
   UserAgent,
-  UserAgentOptions
+  UserAgentOptions,
+  InvitationAcceptOptions
 } from "sip.js";
 
 /*
@@ -81,6 +83,20 @@ userAgent.delegate = {
           break;
       }
     });
+
+    // Handle incoming INVITE request.
+    let constrainsDefault: MediaStreamConstraints = {
+      audio: true,
+      video: false,
+    }
+
+    const options: InvitationAcceptOptions = {
+      sessionDescriptionHandlerOptions: {
+        constraints: constrainsDefault,
+      },
+    }
+
+    incomingSession.accept(options)
   }
 };
 
@@ -145,6 +161,26 @@ userAgent.start().then(() => {
       // INVITE did not send
     });
 
+  // Send an outgoing REFER request
+  const transferTarget = UserAgent.makeURI("sip:transfer@example.com");
+
+  if (!transferTarget) {
+    throw new Error("Failed to create transfer target URI.");
+  }
+
+  outgoingSession.refer(transferTarget, {
+    // Example of extra headers in REFER request
+    requestOptions: {
+      extraHeaders: [
+        'X-Referred-By-Someone: Username'
+      ]
+    },
+    requestDelegate: {
+      onAccept(): void {
+        // ...
+      }
+    }
+  });
 });
 ```
 
