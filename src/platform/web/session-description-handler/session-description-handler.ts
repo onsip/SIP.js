@@ -389,6 +389,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
           return Promise.reject(error);
         }
       case "have-remote-offer":
+        return Promise.resolve();
       case "have-local-offer":
       case "have-local-pranswer":
       case "have-remote-pranswer":
