@@ -831,6 +831,16 @@ export abstract class Session {
       return;
     }
 
+    if (this._sessionDescriptionHandler) {
+      this.logger.log("Mitel-Reinvite Handler: ");
+      //KA Drop the current SDH as we want a new one with no past ICE candidates and connections
+      //This should speedup the negotiation
+      this._sessionDescriptionHandler.close();
+      this._sessionDescriptionHandler = undefined;
+      this.setupSessionDescriptionHandler();
+      this._stateEventEmitter.emit(SessionState.Initial);
+    }
+
     // TODO: would be nice to have core track and set the Contact header,
     // but currently the session which is setting it is holding onto it.
     const extraHeaders = ["Contact: " + this._contact];
