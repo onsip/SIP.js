@@ -832,7 +832,7 @@ export abstract class Session {
     }
 
     if (this._sessionDescriptionHandler) {
-      this.logger.log("Mitel Reinvite Handler: ");
+      this.logger.log("Mitel-Reinvite Handler: ");
       //KA Drop the current SDH as we want a new one with no past ICE candidates and connections
       //This should speedup the negotiation
       this._sessionDescriptionHandler.close();
