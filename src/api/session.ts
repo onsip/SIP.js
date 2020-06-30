@@ -831,7 +831,7 @@ export abstract class Session {
       return;
     }
 
-    if (this._sessionDescriptionHandler) {
+    if (this._sessionDescriptionHandler && request.message.hasHeader("X-3P-Media-Bypass")) {
       this.logger.log("Mitel-Reinvite Handler: ");
       //KA Drop the current SDH as we want a new one with no past ICE candidates and connections
       //This should speedup the negotiation
