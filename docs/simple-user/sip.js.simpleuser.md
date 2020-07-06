@@ -28,8 +28,10 @@ While this class is completely functional for simple use cases, it is not intend
 |  --- | --- | --- | --- |
 |  [delegate](./sip.js.simpleuser.delegate.md) |  | <code>SimpleUserDelegate &#124; undefined</code> | Delegate. |
 |  [localAudioTrack](./sip.js.simpleuser.localaudiotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The local audio track, if available. |
+|  [localMediaStream](./sip.js.simpleuser.localmediastream.md) |  | <code>MediaStream &#124; undefined</code> | The local media stream. Undefined if call not answered. |
 |  [localVideoTrack](./sip.js.simpleuser.localvideotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The local video track, if available. |
 |  [remoteAudioTrack](./sip.js.simpleuser.remoteaudiotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The remote audio track, if available. |
+|  [remoteMediaStream](./sip.js.simpleuser.remotemediastream.md) |  | <code>MediaStream &#124; undefined</code> | The remote media stream. Undefined if call not answered. |
 |  [remoteVideoTrack](./sip.js.simpleuser.remotevideotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The remote video track, if available. |
 
 ## Methods

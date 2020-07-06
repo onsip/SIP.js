@@ -30,6 +30,14 @@ export function getButtons(id: string): Array<HTMLButtonElement> {
   return buttons;
 }
 
+export function getDiv(id: string): HTMLDivElement {
+  const el = document.getElementById(id);
+  if (!(el instanceof HTMLDivElement)) {
+    throw new Error(`Element "${id}" not found or not a div element.`);
+  }
+  return el;
+}
+
 export function getInput(id: string): HTMLInputElement {
   const el = document.getElementById(id);
   if (!(el instanceof HTMLInputElement)) {

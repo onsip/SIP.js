@@ -167,8 +167,22 @@ export class Inviter extends Session {
     this._referralInviterOptions = inviterOptions;
     this._renderbody = options.renderbody;
     this._rendertype = options.rendertype;
-    this._sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
-    this._sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
+
+    // Modifiers and options for initial INVITE transaction
+    if (options.sessionDescriptionHandlerModifiers) {
+      this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    }
+    if (options.sessionDescriptionHandlerOptions) {
+      this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
+    }
+
+    // Modifiers and options for re-INVITE transactions
+    if (options.sessionDescriptionHandlerModifiersReInvite) {
+      this.sessionDescriptionHandlerModifiersReInvite = options.sessionDescriptionHandlerModifiersReInvite;
+    }
+    if (options.sessionDescriptionHandlerOptionsReInvite) {
+      this.sessionDescriptionHandlerOptionsReInvite = options.sessionDescriptionHandlerOptionsReInvite;
+    }
 
     // Identifier
     this._id = this.outgoingRequestMessage.callId + this.fromTag;
@@ -388,6 +402,14 @@ export class Inviter extends Session {
       return super.invite(options);
     }
 
+    // Modifiers and options for initial INVITE transaction
+    if (options.sessionDescriptionHandlerModifiers) {
+      this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    }
+    if (options.sessionDescriptionHandlerOptions) {
+      this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
+    }
+
     // just send an INVITE with no sdp...
     if (options.withoutSdp || this.inviteWithoutSdp) {
       if (this._renderbody && this._rendertype) {
@@ -402,8 +424,8 @@ export class Inviter extends Session {
 
     // get an offer and send it in an INVITE
     const offerOptions = {
-      sessionDescriptionHandlerOptions: this._sessionDescriptionHandlerOptions,
-      sessionDescriptionHandlerModifiers: this._sessionDescriptionHandlerModifiers
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers,
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions
     };
     return this.getOffer(offerOptions)
       .then((body) => {
@@ -790,9 +812,6 @@ export class Inviter extends Session {
     };
     this._dialog = session;
 
-    const sdhOptions = this._sessionDescriptionHandlerOptions;
-    const sdhModifiers = this._sessionDescriptionHandlerModifiers;
-
     switch (session.signalingState) {
       case SignalingState.Initial:
         // INVITE without offer, so MUST have offer at this point, so invalid state.
@@ -812,8 +831,8 @@ export class Inviter extends Session {
           throw new Error(`Session offer undefined in signaling state ${this._dialog.signalingState}.`);
         }
         const options = {
-          sessionDescriptionHandlerOptions: sdhOptions,
-          sessionDescriptionHandlerModifiers: sdhModifiers
+          sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers,
+          sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions
         };
         return this.setOfferAndGetAnswer(this._dialog.offer, options)
           .then((body) => {
@@ -877,8 +896,8 @@ export class Inviter extends Session {
           throw new Error("Answer is undefined.");
         }
         const options = {
-          sessionDescriptionHandlerOptions: sdhOptions,
-          sessionDescriptionHandlerModifiers: sdhModifiers
+          sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers,
+          sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions
         };
         return this.setAnswer(answer, options)
           .then(() => {
@@ -948,9 +967,6 @@ export class Inviter extends Session {
       extraHeaders.push("RAck: " + response.getHeader("rseq") + " " + response.getHeader("cseq"));
     }
 
-    const sdhOptions = this._sessionDescriptionHandlerOptions;
-    const sdhModifiers = this._sessionDescriptionHandlerModifiers;
-
     switch (session.signalingState) {
       case SignalingState.Initial:
         // INVITE without offer and session still has no offer (and no answer).
@@ -1000,10 +1016,19 @@ export class Inviter extends Session {
             this,
             this.userAgent.configuration.sessionDescriptionHandlerFactoryOptions || {}
           );
+          if (this.delegate?.onSessionDescriptionHandler) {
+            this.delegate.onSessionDescriptionHandler(sdh, true);
+          }
           this.earlyMediaSessionDescriptionHandlers.set(session.id, sdh);
           return sdh
-            .setDescription(response.body, sdhOptions, sdhModifiers)
-            .then(() => sdh.getDescription(sdhOptions, sdhModifiers))
+            .setDescription(
+              response.body,
+              this.sessionDescriptionHandlerOptions,
+              this.sessionDescriptionHandlerModifiers
+            )
+            .then(() =>
+              sdh.getDescription(this.sessionDescriptionHandlerOptions, this.sessionDescriptionHandlerModifiers)
+            )
             .then((description) => {
               const body: Body = {
                 contentDisposition: "session",
@@ -1031,8 +1056,8 @@ export class Inviter extends Session {
             throw new Error("Answer is undefined.");
           }
           const options = {
-            sessionDescriptionHandlerOptions: sdhOptions,
-            sessionDescriptionHandlerModifiers: sdhModifiers
+            sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers,
+            sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions
           };
           return this.setAnswer(answer, options).catch((error: Error) => {
             this.stateTransition(SessionState.Terminated);

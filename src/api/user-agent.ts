@@ -21,7 +21,7 @@ import {
   UserAgentCoreDelegate
 } from "../core";
 import { createRandomToken, utf8Length } from "../core/messages/utils";
-import { SessionDescriptionHandler as WebSessionDescriptionHandler } from "../platform/web/session-description-handler";
+import { defaultSessionDescriptionHandlerFactory } from "../platform/web/session-description-handler";
 import { Transport as WebTransport } from "../platform/web/transport";
 import { LIBRARY_VERSION } from "../version";
 import { Emitter, EmitterImpl } from "./emitter";
@@ -273,8 +273,7 @@ export class UserAgent {
       preloadedRouteSet: [],
       reconnectionAttempts: 0,
       reconnectionDelay: 4,
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      sessionDescriptionHandlerFactory: WebSessionDescriptionHandler.defaultFactory,
+      sessionDescriptionHandlerFactory: defaultSessionDescriptionHandlerFactory(),
       sessionDescriptionHandlerFactoryOptions: {},
       sipExtension100rel: SIPExtension.Unsupported,
       sipExtensionReplaces: SIPExtension.Unsupported,

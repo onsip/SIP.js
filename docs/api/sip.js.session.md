@@ -33,6 +33,10 @@ The constructor for this class is marked as internal. Third-party code should no
 |  [replacee](./sip.js.session.replacee.md) |  | <code>Session &#124; undefined</code> | The session being replace by this one. |
 |  [sessionDescriptionHandler](./sip.js.session.sessiondescriptionhandler.md) |  | <code>SessionDescriptionHandler &#124; undefined</code> | Session description handler. |
 |  [sessionDescriptionHandlerFactory](./sip.js.session.sessiondescriptionhandlerfactory.md) |  | <code>SessionDescriptionHandlerFactory</code> | Session description handler factory. |
+|  [sessionDescriptionHandlerModifiers](./sip.js.session.sessiondescriptionhandlermodifiers.md) |  | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | SDH modifiers for the initial INVITE transaction. |
+|  [sessionDescriptionHandlerModifiersReInvite](./sip.js.session.sessiondescriptionhandlermodifiersreinvite.md) |  | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | SDH modifiers for re-INVITE transactions. |
+|  [sessionDescriptionHandlerOptions](./sip.js.session.sessiondescriptionhandleroptions.md) |  | <code>SessionDescriptionHandlerOptions</code> | SDH options for the initial INVITE transaction. |
+|  [sessionDescriptionHandlerOptionsReInvite](./sip.js.session.sessiondescriptionhandleroptionsreinvite.md) |  | <code>SessionDescriptionHandlerOptions</code> | SDH options for re-INVITE transactions. |
 |  [state](./sip.js.session.state.md) |  | <code>SessionState</code> | Session state. |
 |  [stateChange](./sip.js.session.statechange.md) |  | <code>Emitter&lt;SessionState&gt;</code> | Session state change emitter. |
 |  [userAgent](./sip.js.session.useragent.md) |  | <code>UserAgent</code> | The user agent. |

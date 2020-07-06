@@ -1,10 +1,9 @@
 # Release Road Map
 
-## 0.16.x
+## 0.17.x
 
-- tighten up tslint and lint api, core, demo and tests
-- review packaging best practices (es7, es6, drop es5)
-- free core and API from DOM and Node dependencies
+- free core and API from DOM dependencies
+- complete more work in progress
 - remove UMD bundle from npm
 - more documentation
 - more tests
@@ -13,32 +12,17 @@
 
 # Work in Progress
 
-## Documentation
-
-- Add documentation for "SessionDescriptionHandler - WebRTC"
-
-## Tests
-
-- _Unit_ tests are being written for low level "core" components (Transaction, Transport)
-- _Integration_ tests are being written high level "api" components (Session, Subscription)
-  - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
-
-## Dependencies
-
-### events
-
-- it's the only dependency currently and would be nice to get rid of it
-- web/session-description-handler extends it, which is the blocking isssue and an API change
-
 ## Dev Dependencies
 
 ### api-extractor
 
 - issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
 
-### karma-jasmine
+## Tests
 
-- issue updating past 3.0.3 https://github.com/karma-runner/karma-jasmine/issues/256
+- _Unit_ tests are being written for low level "core" components (Transaction, Transport)
+- _Integration_ tests are being written high level "api" components (Session, Subscription)
+  - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
 
 ## Source
 
@@ -79,13 +63,19 @@
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: \*" header fails to parse - there's a test written for it
 
-### SessionDescriptionHandler - Refresh
+### SessionDescriptionHandler - Miscellaneous
 
-- Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
-- SDH options & SDH modifiers options are applied somewhat ambiguously
-  - This behavior was ported from legacy code and the issue punted down the road.
-- Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
+- Trickle ICE Support: https://tools.ietf.org/html/draft-ietf-mmusic-trickle-ice-sip-18
 - Hold SDP offer too large for UDP
+
+### Session Timers - Issue #18 
+
+- There is an old branch for it which perhaps can be pulled forward.
+
+### Transport - TCP Support
+
+- Support for "stream-oriented" transports: https://tools.ietf.org/html/rfc3261#section-18.3
+- This current Transport interface only supports "message-oriented" transports. Issue #818.
 
 ### URI - Refresh
 

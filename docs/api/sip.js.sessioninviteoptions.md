@@ -18,7 +18,7 @@ export interface SessionInviteOptions
 |  --- | --- | --- |
 |  [requestDelegate](./sip.js.sessioninviteoptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
 |  [requestOptions](./sip.js.sessioninviteoptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
-|  [sessionDescriptionHandlerModifiers](./sip.js.sessioninviteoptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> |  |
-|  [sessionDescriptionHandlerOptions](./sip.js.sessioninviteoptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> |  |
+|  [sessionDescriptionHandlerModifiers](./sip.js.sessioninviteoptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler during re-INVITE transaction. |
+|  [sessionDescriptionHandlerOptions](./sip.js.sessioninviteoptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler during re-INVITE transaction. |
 |  [withoutSdp](./sip.js.sessioninviteoptions.withoutsdp.md) | <code>boolean</code> | If true, send INVITE without SDP. Default is false. |
 

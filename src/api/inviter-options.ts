@@ -33,8 +33,12 @@ export interface InviterOptions extends SessionOptions {
   renderbody?: string;
   /** @deprecated TODO: provide alternative. */
   rendertype?: string;
-  /** Modifiers to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
+  /** Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. */
   sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
-  /** Options to pass to SessionDescriptionHandler's getDescription() and setDescription(). */
+  /** Options to pass to SessionDescriptionHandler during the initial INVITE transaction. */
   sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+  /** Modifiers to pass to SessionDescriptionHandler during re-INVITE transactions. */
+  sessionDescriptionHandlerModifiersReInvite?: Array<SessionDescriptionHandlerModifier>;
+  /** Options to pass to SessionDescriptionHandler during re-INVITE transactions. */
+  sessionDescriptionHandlerOptionsReInvite?: SessionDescriptionHandlerOptions;
 }

@@ -4,7 +4,7 @@
 
 ## InviterOptions.sessionDescriptionHandlerOptions property
 
-Options to pass to SessionDescriptionHandler's getDescription() and setDescription().
+Options to pass to SessionDescriptionHandler during the initial INVITE transaction.
 
 <b>Signature:</b>
 

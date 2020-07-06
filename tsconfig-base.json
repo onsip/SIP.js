@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "strict": true,
     "lib": ["es2017", "dom"],
-    "types": ["events"] // white list to avoid the unexpected like @types/node which brings in esnext
+    "types": [] // white list to avoid the unexpected like @types/node which brings in esnext
   },
   "include": ["**/*.ts"]
 }
