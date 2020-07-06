@@ -5,11 +5,6 @@ src/
 docs/
 demo/
 etc/
-dist/sip-api.d.ts
-dist/sip-api.js
-dist/sip-api.min.js
-dist/sip-core.d.ts
-dist/sip-core.js
-dist/sip-core.min.js
+dist/
 karma.conf.js
 .travis.yml
