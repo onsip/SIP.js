@@ -22,4 +22,5 @@ export interface SessionDelegate
 |  [onMessage(message)](./sip.js.sessiondelegate.onmessage.md) | Called upon receiving an incoming in dialog MESSAGE request. |
 |  [onNotify(notification)](./sip.js.sessiondelegate.onnotify.md) | Called upon receiving an incoming in dialog NOTIFY request. |
 |  [onRefer(referral)](./sip.js.sessiondelegate.onrefer.md) | Called upon receiving an incoming in dialog REFER request. |
+|  [onSessionDescriptionHandler(sessionDescriptionHandler, provisional)](./sip.js.sessiondelegate.onsessiondescriptionhandler.md) | Called upon creating a SessionDescriptionHandler. |
 

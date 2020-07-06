@@ -94,7 +94,6 @@ describe("Core URI", () => {
       uri.setParam("KEY", "value");
       expect(uri.getParam("KEY")).toBe("value");
     });
-
   });
 
   describe(".hasParam", () => {
@@ -316,7 +315,8 @@ describe("Core URI", () => {
     expect(parsedURI).toBeUndefined();
   });
 
-  const toParse = "SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2";
+  const toParse =
+    "SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2";
 
   describe('URI.parse with "' + toParse + '"', () => {
     beforeEach(() => {
@@ -361,9 +361,19 @@ describe("Core URI", () => {
     itsMethod("parses header X-HEADER-2", "getHeader", "X-HEADER-2", ["BbB"]);
     itsMethod('doesn\'t parse missing header "nooo"', "getHeader", "nooo", undefined);
     // eslint-disable-next-line max-len
-    itsMethod("correctly toString()s itself", "toString", undefined, "sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB");
+    itsMethod(
+      "correctly toString()s itself",
+      "toString",
+      undefined,
+      "sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB"
+    );
     // eslint-disable-next-line max-len
-    itsMethod("correctly toRaw()s itself", "toRaw", undefined, "SIP:aliCE@versaTICA.Com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB");
+    itsMethod(
+      "correctly toRaw()s itself",
+      "toRaw",
+      undefined,
+      "SIP:aliCE@versaTICA.Com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB"
+    );
 
     const newUser = "Iñaki:PASSWD";
     describe('when setting the user to "' + newUser + '"', () => {

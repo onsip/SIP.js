@@ -1,8 +1,4 @@
-import {
-  SIPExtension,
-  UserAgent,
-  UserAgentRegisteredOptionTags
-} from "../../../src/api";
+import { SIPExtension, UserAgent, UserAgentRegisteredOptionTags } from "../../../src/api";
 import {
   DigestAuthentication,
   IncomingAckRequest,
@@ -52,7 +48,8 @@ export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, u
       if (!(ua.configuration.uri instanceof URI)) {
         throw new Error("Configuration URI not instance of URI.");
       }
-      if (!incomingMessage.ruri) { // FIXME: A request message should always have an ruri
+      if (!incomingMessage.ruri) {
+        // FIXME: A request message should always have an ruri
         throw new Error("Request-URI undefined.");
       }
       const ruri = incomingMessage.ruri;
@@ -61,11 +58,7 @@ export function connectTransportToUAFork(transport: jasmine.SpyObj<Transport>, u
       };
       if (
         !ruriMatches(ua.configuration.uri) &&
-        !(
-          ruriMatches(ua.contact.uri) ||
-          ruriMatches(ua.contact.pubGruu) ||
-          ruriMatches(ua.contact.tempGruu)
-        )
+        !(ruriMatches(ua.contact.uri) || ruriMatches(ua.contact.pubGruu) || ruriMatches(ua.contact.tempGruu))
       ) {
         return false;
       }
@@ -118,16 +111,10 @@ export function makeMockOutgoingRequestDelegate(): jasmine.SpyObj<Required<Outgo
 
 /** Mocked user agent core delegate factory function. */
 export function makeMockOutgoingSubscribeRequestDelegate(): jasmine.SpyObj<Required<OutgoingSubscribeRequestDelegate>> {
-  const delegate =
-    jasmine.createSpyObj<Required<OutgoingSubscribeRequestDelegate>>("OutgoingSubscribeRequestDelegate", [
-      "onAccept",
-      "onProgress",
-      "onRedirect",
-      "onReject",
-      "onTrying",
-      "onNotify",
-      "onNotifyTimeout"
-    ]);
+  const delegate = jasmine.createSpyObj<Required<OutgoingSubscribeRequestDelegate>>(
+    "OutgoingSubscribeRequestDelegate",
+    ["onAccept", "onProgress", "onRedirect", "onReject", "onTrying", "onNotify", "onNotifyTimeout"]
+  );
   return delegate;
 }
 
@@ -153,17 +140,13 @@ export function makeMockSessionDelegate(): jasmine.SpyObj<Required<SessionDelega
 
 /** Mocked subscription delegate factory function. */
 export function makeMockSubscriptionDelegate(): jasmine.SpyObj<Required<SubscriptionDelegate>> {
-  const delegate = jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", [
-    "onNotify"
-  ]);
+  const delegate = jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", ["onNotify"]);
   return delegate;
 }
 
 /** Mocked transport factory function. */
 export function makeMockTransport(): jasmine.SpyObj<Transport> {
-  const transport = jasmine.createSpyObj<Transport>("Transport", [
-    "send"
-  ]);
+  const transport = jasmine.createSpyObj<Transport>("Transport", ["send"]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (transport.protocol as any) = "TEST";
   transport.send.and.returnValue(Promise.resolve());
@@ -189,7 +172,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
   const log = new LoggerFactory();
   const viaHost = `${user}Host.invalid`;
   const contactURI = new URI("sip", createRandomToken(8), viaHost, undefined, { transport: "ws" });
-  const ua = {
+  const ua = ({
     publishers: {},
     registerers: {},
     sessions: {},
@@ -213,7 +196,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
     getLogger: (category: string, label?: string) => log.getLogger(category, label),
     getLoggerFactory: () => log,
     getSupportedResponseOptions: () => ["outbound"]
-  } as unknown as UserAgent;
+  } as unknown) as UserAgent;
   if (!ua.configuration) {
     throw new Error("UA configuration undefined.");
   }
@@ -225,55 +208,52 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
 
 /** Hijacked from UserAgent.initCore() */
 export function makeUserAgentCoreConfigurationFromUserAgent(ua: UserAgent): UserAgentCoreConfiguration {
-    // supported options
-    let supportedOptionTags: Array<string> = [];
-    supportedOptionTags.push("outbound"); // TODO: is this really supported?
-    if (ua.configuration.sipExtension100rel === SIPExtension.Supported) {
-      supportedOptionTags.push("100rel");
-    }
-    if (ua.configuration.sipExtensionReplaces === SIPExtension.Supported) {
-      supportedOptionTags.push("replaces");
-    }
-    if (ua.configuration.sipExtensionExtraSupported) {
-      supportedOptionTags.push(...ua.configuration.sipExtensionExtraSupported);
-    }
-    if (!ua.configuration.hackAllowUnregisteredOptionTags) {
-      supportedOptionTags = supportedOptionTags.filter((optionTag) => UserAgentRegisteredOptionTags[optionTag]);
-    }
-    supportedOptionTags = Array.from(new Set(supportedOptionTags)); // array of unique values
-
-    // FIXME: TODO: This was ported, but this is and was just plain broken.
-    const supportedOptionTagsResponse = supportedOptionTags.slice();
-    if (ua.contact.pubGruu || ua.contact.tempGruu) {
-      supportedOptionTagsResponse.push("gruu");
-    }
-
-    // core configuration
-    const userAgentCoreConfiguration: UserAgentCoreConfiguration = {
-      aor: ua.configuration.uri,
-      contact: ua.contact,
-      displayName: ua.configuration.displayName,
-      loggerFactory: ua.getLoggerFactory(),
-      hackViaTcp: ua.configuration.hackViaTcp,
-      routeSet: ua.configuration.preloadedRouteSet,
-      supportedOptionTags,
-      supportedOptionTagsResponse,
-      sipjsId: ua.configuration.sipjsId,
-      userAgentHeaderFieldValue: ua.configuration.userAgentString,
-      viaForceRport: ua.configuration.forceRport,
-      viaHost: ua.configuration.viaHost,
-      authenticationFactory: () => {
-        const username =
-          ua.configuration.authorizationUsername ?
-            ua.configuration.authorizationUsername :
-            ua.configuration.uri.user; // if authorization username not provided, use uri user as username
-        const password =
-          ua.configuration.authorizationPassword ?
-            ua.configuration.authorizationPassword :
-            undefined;
-        return new DigestAuthentication(ua.getLoggerFactory(), username, password);
-      },
-      transportAccessor: () => ua.transport
-    };
-    return userAgentCoreConfiguration;
+  // supported options
+  let supportedOptionTags: Array<string> = [];
+  supportedOptionTags.push("outbound"); // TODO: is this really supported?
+  if (ua.configuration.sipExtension100rel === SIPExtension.Supported) {
+    supportedOptionTags.push("100rel");
   }
+  if (ua.configuration.sipExtensionReplaces === SIPExtension.Supported) {
+    supportedOptionTags.push("replaces");
+  }
+  if (ua.configuration.sipExtensionExtraSupported) {
+    supportedOptionTags.push(...ua.configuration.sipExtensionExtraSupported);
+  }
+  if (!ua.configuration.hackAllowUnregisteredOptionTags) {
+    supportedOptionTags = supportedOptionTags.filter((optionTag) => UserAgentRegisteredOptionTags[optionTag]);
+  }
+  supportedOptionTags = Array.from(new Set(supportedOptionTags)); // array of unique values
+
+  // FIXME: TODO: This was ported, but this is and was just plain broken.
+  const supportedOptionTagsResponse = supportedOptionTags.slice();
+  if (ua.contact.pubGruu || ua.contact.tempGruu) {
+    supportedOptionTagsResponse.push("gruu");
+  }
+
+  // core configuration
+  const userAgentCoreConfiguration: UserAgentCoreConfiguration = {
+    aor: ua.configuration.uri,
+    contact: ua.contact,
+    displayName: ua.configuration.displayName,
+    loggerFactory: ua.getLoggerFactory(),
+    hackViaTcp: ua.configuration.hackViaTcp,
+    routeSet: ua.configuration.preloadedRouteSet,
+    supportedOptionTags,
+    supportedOptionTagsResponse,
+    sipjsId: ua.configuration.sipjsId,
+    userAgentHeaderFieldValue: ua.configuration.userAgentString,
+    viaForceRport: ua.configuration.forceRport,
+    viaHost: ua.configuration.viaHost,
+    authenticationFactory: () => {
+      const username = ua.configuration.authorizationUsername
+        ? ua.configuration.authorizationUsername
+        : ua.configuration.uri.user; // if authorization username not provided, use uri user as username
+      const password = ua.configuration.authorizationPassword ? ua.configuration.authorizationPassword : undefined;
+      const ha1 = ua.configuration.authorizationHa1 ? ua.configuration.authorizationHa1 : undefined;
+      return new DigestAuthentication(ua.getLoggerFactory(), ha1, username, password);
+    },
+    transportAccessor: () => ua.transport
+  };
+  return userAgentCoreConfiguration;
+}

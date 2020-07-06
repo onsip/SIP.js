@@ -4,8 +4,6 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // @public
 export interface BodyAndContentType {
     body: string;
@@ -43,6 +41,24 @@ export interface Emitter<T> {
     on(listener: (data: T) => void): void;
     // @deprecated
     once(listener: (data: T) => void): void;
+    removeListener(listener: (data: T) => void): void;
+}
+
+// Warning: (ae-internal-missing-underscore) The name "EmitterImpl" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export class EmitterImpl<T> implements Emitter<T> {
+    addListener(listener: (data: T) => void, options?: {
+        once?: boolean;
+    }): void;
+    emit(data: T): void;
+    // @deprecated
+    off(listener: (data: T) => void): void;
+    // @deprecated
+    on(listener: (data: T) => void): void;
+    // @deprecated
+    once(listener: (data: T) => void): void;
+    removeAllListeners(): void;
     removeListener(listener: (data: T) => void): void;
 }
 
@@ -149,9 +165,7 @@ export interface InviterInviteOptions {
     requestDelegate?: OutgoingRequestDelegate;
     // Warning: (ae-forgotten-export) The symbol "RequestOptions" needs to be exported by the entry point index.d.ts
     requestOptions?: RequestOptions;
-    // (undocumented)
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
-    // (undocumented)
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
     withoutSdp?: boolean;
 }
@@ -175,7 +189,9 @@ export interface InviterOptions extends SessionOptions {
     // @deprecated (undocumented)
     rendertype?: string;
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
+    sessionDescriptionHandlerModifiersReInvite?: Array<SessionDescriptionHandlerModifier>;
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
+    sessionDescriptionHandlerOptionsReInvite?: SessionDescriptionHandlerOptions;
 }
 
 // @public
@@ -183,9 +199,6 @@ export type LogConnector = (level: LogLevel, category: string, label: string | u
 
 // @public
 export type LogLevel = "debug" | "log" | "warn" | "error";
-
-// @internal
-export function _makeEmitter<T>(eventEmitter: EventEmitter, eventName?: string): Emitter<T>;
 
 // @public
 export class Message {
@@ -468,10 +481,14 @@ export abstract class Session {
     protected rollbackOffer(): Promise<void>;
     get sessionDescriptionHandler(): SessionDescriptionHandler | undefined;
     get sessionDescriptionHandlerFactory(): SessionDescriptionHandlerFactory;
-    // @internal (undocumented)
-    protected _sessionDescriptionHandlerModifiers: Array<SessionDescriptionHandlerModifier> | undefined;
-    // @internal (undocumented)
-    protected _sessionDescriptionHandlerOptions: SessionDescriptionHandlerOptions | undefined;
+    get sessionDescriptionHandlerModifiers(): Array<SessionDescriptionHandlerModifier>;
+    set sessionDescriptionHandlerModifiers(modifiers: Array<SessionDescriptionHandlerModifier>);
+    get sessionDescriptionHandlerModifiersReInvite(): Array<SessionDescriptionHandlerModifier>;
+    set sessionDescriptionHandlerModifiersReInvite(modifiers: Array<SessionDescriptionHandlerModifier>);
+    get sessionDescriptionHandlerOptions(): SessionDescriptionHandlerOptions;
+    set sessionDescriptionHandlerOptions(options: SessionDescriptionHandlerOptions);
+    get sessionDescriptionHandlerOptionsReInvite(): SessionDescriptionHandlerOptions;
+    set sessionDescriptionHandlerOptionsReInvite(options: SessionDescriptionHandlerOptions);
     // @internal
     protected setAnswer(answer: Body, options: {
         sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
@@ -507,6 +524,7 @@ export interface SessionDelegate {
     onMessage?(message: Message): void;
     onNotify?(notification: Notification): void;
     onRefer?(referral: Referral): void;
+    onSessionDescriptionHandler?(sessionDescriptionHandler: SessionDescriptionHandler, provisional: boolean): void;
 }
 
 // @public
@@ -552,9 +570,7 @@ export interface SessionInfoOptions {
 export interface SessionInviteOptions {
     requestDelegate?: OutgoingRequestDelegate;
     requestOptions?: RequestOptions;
-    // (undocumented)
     sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;
-    // (undocumented)
     sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
     withoutSdp?: boolean;
 }
@@ -792,6 +808,7 @@ export interface UserAgentDelegate {
 // @public
 export interface UserAgentOptions {
     allowLegacyNotifications?: boolean;
+    authorizationHa1?: string;
     authorizationPassword?: string;
     authorizationUsername?: string;
     // @deprecated (undocumented)

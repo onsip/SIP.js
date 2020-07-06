@@ -16,7 +16,7 @@ answer(invitationAcceptOptions?: InvitationAcceptOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  invitationAcceptOptions | <code>InvitationAcceptOptions</code> |  |
+|  invitationAcceptOptions | <code>InvitationAcceptOptions</code> | Optional options for Inviter.accept(). |
 
 <b>Returns:</b>
 

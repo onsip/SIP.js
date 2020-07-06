@@ -8,11 +8,7 @@ import {
   SessionDescriptionHandler,
   SessionState
 } from "../../../src/api";
-import {
-  OutgoingRequestDelegate,
-  SignalingState,
-  URI
-} from "../../../src/core";
+import { OutgoingRequestDelegate, SignalingState, URI } from "../../../src/core";
 import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
@@ -78,21 +74,16 @@ describe("API Session In-Dialog", () => {
   let invitation: Invitation;
   let invitationStateSpy: EmitterSpy<SessionState>;
 
-  const inviterRequestDelegateMock =
-    jasmine.createSpyObj<Required<OutgoingRequestDelegate>>("OutgoingRequestDelegate", [
-      "onAccept",
-      "onProgress",
-      "onRedirect",
-      "onReject",
-      "onTrying"
-    ]);
+  const inviterRequestDelegateMock = jasmine.createSpyObj<Required<OutgoingRequestDelegate>>(
+    "OutgoingRequestDelegate",
+    ["onAccept", "onProgress", "onRedirect", "onReject", "onTrying"]
+  );
 
   function reinviteAccepted(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
       invitation.delegate = undefined;
-      return inviter.invite({ withoutSdp })
-        .then(() => alice.transport.waitSent()); // ACK
+      return inviter.invite({ withoutSdp }).then(() => alice.transport.waitSent()); // ACK
     });
 
     it("her ua should send INVITE, ACK", () => {
@@ -129,7 +120,8 @@ describe("API Session In-Dialog", () => {
     beforeEach(async () => {
       resetSpies();
       invitation.delegate = undefined;
-      { // Setup hacky thing to cause an auth rejection
+      {
+        // Setup hacky thing to cause an auth rejection
         if (!invitation.dialog) {
           throw new Error("Session dialog undefined.");
         }
@@ -141,7 +133,9 @@ describe("API Session In-Dialog", () => {
             }
             invitation.dialog.delegate = delegate; // restore dialog delegate
             // eslint-disable-next-line max-len
-            const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
+            const extraHeaders = [
+              `Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`
+            ];
             request.reject({ statusCode: 407, extraHeaders });
           }
         };
@@ -189,7 +183,8 @@ describe("API Session In-Dialog", () => {
   function reinviteAcceptedWithoutDescriptionFailure(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      { // Setup hacky thing to cause undefined body returned once
+      {
+        // Setup hacky thing to cause undefined body returned once
         if (!invitation.sessionDescriptionHandler) {
           throw new Error("SDH undefined.");
         }
@@ -198,8 +193,7 @@ describe("API Session In-Dialog", () => {
         (sdh as any).getDescriptionUndefinedBodyOnce = true;
       }
       const session: Session = inviter;
-      return session.invite({ withoutSdp })
-        .then(() => alice.transport.waitSent()); // ACK
+      return session.invite({ withoutSdp }).then(() => alice.transport.waitSent()); // ACK
     });
 
     if (withoutSdp) {
@@ -270,7 +264,8 @@ describe("API Session In-Dialog", () => {
       resetSpies();
       invitation.delegate = undefined;
       const session: Session = inviter;
-      return session.invite({ withoutSdp })
+      return session
+        .invite({ withoutSdp })
         .then(() => {
           const sessionDescriptionHandler = session.sessionDescriptionHandler;
           if (!sessionDescriptionHandler) {
@@ -350,7 +345,9 @@ describe("API Session In-Dialog", () => {
     beforeEach(async () => {
       resetSpies();
       invitation.delegate = {
-        onInvite: (): void => { return; } // ignore invite
+        onInvite: (): void => {
+          return;
+        } // ignore invite
       };
       return inviter.invite({ withoutSdp });
     });
@@ -362,10 +359,9 @@ describe("API Session In-Dialog", () => {
     });
 
     it("her ua should reject an additional INVITE", () => {
-      inviter.invite({ withoutSdp })
-        .catch((error: Error) => {
-          expect(error).toEqual(jasmine.any(RequestPendingError));
-        });
+      inviter.invite({ withoutSdp }).catch((error: Error) => {
+        expect(error).toEqual(jasmine.any(RequestPendingError));
+      });
     });
 
     if (withoutSdp) {
@@ -406,7 +402,8 @@ describe("API Session In-Dialog", () => {
   function reinviteRejected(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      { // Setup hacky thing to cause a rejection once
+      {
+        // Setup hacky thing to cause a rejection once
         if (!invitation.sessionDescriptionHandler) {
           throw new Error("SDH undefined.");
         }
@@ -415,8 +412,7 @@ describe("API Session In-Dialog", () => {
         (sdh as any).getDescriptionRejectOnce = true;
       }
       const session: Session = inviter;
-      return session.invite({ withoutSdp })
-        .then(() => alice.transport.waitSent()); // ACK
+      return session.invite({ withoutSdp }).then(() => alice.transport.waitSent()); // ACK
     });
 
     it("her ua should send INVITE, ACK", () => {
@@ -453,7 +449,8 @@ describe("API Session In-Dialog", () => {
   function reinviteRejectedRollbackFailure(withoutSdp: boolean): void {
     beforeEach(async () => {
       resetSpies();
-      { // Setup hacky thing to cause a rejection once
+      {
+        // Setup hacky thing to cause a rejection once
         if (!invitation.sessionDescriptionHandler) {
           throw new Error("SDH undefined.");
         }
@@ -462,7 +459,8 @@ describe("API Session In-Dialog", () => {
         (sdh as any).getDescriptionRejectOnce = true;
       }
       const session: Session = inviter;
-      return session.invite({ withoutSdp: false }) // Note that rollback on reject this only happens INVITE with SDP
+      return session
+        .invite({ withoutSdp: false }) // Note that rollback on reject this only happens INVITE with SDP
         .then(() => {
           const sessionDescriptionHandler = session.sessionDescriptionHandler;
           if (!sessionDescriptionHandler) {
@@ -471,7 +469,7 @@ describe("API Session In-Dialog", () => {
           const sdh = sessionDescriptionHandler as jasmine.SpyObj<Required<SessionDescriptionHandler>>; // assumes a spy
           sdh.rollbackDescription.and.callFake(() => Promise.reject(new Error("Failed to rollback description.")));
         })
-        .then(() => alice.transport.waitSent());  // ACK
+        .then(() => alice.transport.waitSent()); // ACK
     });
 
     it("her ua should send INVITE, ACK, BYE", () => {
@@ -515,7 +513,6 @@ describe("API Session In-Dialog", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)[0]).toEqual(SessionState.Terminated);
     });
-
   }
 
   function reinviteSuite(withoutSdp: boolean): void {
@@ -562,7 +559,9 @@ describe("API Session In-Dialog", () => {
     bob.transportReceiveSpy.calls.reset();
     bob.transportSendSpy.calls.reset();
     inviterStateSpy.calls.reset();
-    if (invitationStateSpy) { invitationStateSpy.calls.reset(); }
+    if (invitationStateSpy) {
+      invitationStateSpy.calls.reset();
+    }
     inviterRequestDelegateMock.onAccept.calls.reset();
     inviterRequestDelegateMock.onProgress.calls.reset();
     inviterRequestDelegateMock.onRedirect.calls.reset();
@@ -578,7 +577,8 @@ describe("API Session In-Dialog", () => {
   });
 
   afterEach(async () => {
-    return alice.userAgent.stop()
+    return alice.userAgent
+      .stop()
       .then(() => expect(alice.isShutdown()).toBe(true))
       .then(() => bob.userAgent.stop())
       .then(() => expect(bob.isShutdown()).toBe(true))
@@ -738,8 +738,7 @@ describe("API Session In-Dialog", () => {
 
     describe("Alice invite() with sdp", () => {
       beforeEach(async () => {
-        return inviter.invite()
-          .then(() => bob.transport.waitSent());
+        return inviter.invite().then(() => bob.transport.waitSent());
       });
 
       describe("Bob accept() ACK dropped", () => {
@@ -809,8 +808,7 @@ describe("API Session In-Dialog", () => {
       describe("Bob accept()", () => {
         beforeEach(async () => {
           resetSpies();
-          return invitation.accept()
-            .then(() => alice.transport.waitSent()); // ACK
+          return invitation.accept().then(() => alice.transport.waitSent()); // ACK
         });
 
         it("her session state should be `established`", () => {
@@ -830,7 +828,6 @@ describe("API Session In-Dialog", () => {
         });
 
         describe("Re-INVITE with SDP failure...", () => {
-
           describe("Alice invite() failure", () => {
             beforeEach(async () => {
               resetSpies();
@@ -841,10 +838,9 @@ describe("API Session In-Dialog", () => {
               }
               const sdh = sessionDescriptionHandler as jasmine.SpyObj<Required<SessionDescriptionHandler>>;
               sdh.getDescription.and.callFake(() => Promise.reject(new Error("Failed to get description.")));
-              return session.invite()
-                .catch(() => {
-                  return;
-                });
+              return session.invite().catch(() => {
+                return;
+              });
             });
 
             it("her ua should send nothing", () => {
@@ -871,12 +867,12 @@ describe("API Session In-Dialog", () => {
         });
 
         describe("Re-INVITE with SDP send BYE race...", () => {
-
           describe("Alice invite(), bye()", () => {
             beforeEach(async () => {
               resetSpies();
               invitation.delegate = undefined;
-              return inviter.invite()
+              return inviter
+                .invite()
                 .then(() => inviter.bye())
                 .then(() => alice.transport.waitSent());
             });
@@ -915,12 +911,12 @@ describe("API Session In-Dialog", () => {
         });
 
         describe("Re-INVITE without SDP send BYE race...", () => {
-
           describe("Alice invite(), bye()", () => {
             beforeEach(async () => {
               resetSpies();
               invitation.delegate = undefined;
-              return inviter.invite({ withoutSdp: true })
+              return inviter
+                .invite({ withoutSdp: true })
                 .then(() => inviter.bye())
                 .then(() => alice.transport.waitSent());
             });
@@ -959,12 +955,12 @@ describe("API Session In-Dialog", () => {
         });
 
         describe("Re-INVITE with SDP receive BYE race...", () => {
-
           describe("Alice invite(), Bob bye()", () => {
             beforeEach(async () => {
               resetSpies();
               invitation.delegate = undefined;
-              return inviter.invite()
+              return inviter
+                .invite()
                 .then(() => invitation.bye())
                 .then(() => alice.transport.waitSent());
             });
@@ -1003,12 +999,12 @@ describe("API Session In-Dialog", () => {
         });
 
         describe("Re-INVITE without SDP receive BYE race...", () => {
-
           describe("Alice invite(), Bob bye()", () => {
             beforeEach(async () => {
               resetSpies();
               invitation.delegate = undefined;
-              return inviter.invite({ withoutSdp: true })
+              return inviter
+                .invite({ withoutSdp: true })
                 .then(() => bob.transport.waitSent())
                 .then(() => invitation.bye())
                 .then(() => alice.transport.waitSent());
@@ -1047,12 +1043,13 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe ("REFER Alice with default handler", () => {
+        describe("REFER Alice with default handler", () => {
           beforeEach(async () => {
             resetSpies();
             inviter.delegate = undefined;
             const referTo = new URI("sip", "carol", "example.com");
-            return invitation.refer(referTo)
+            return invitation
+              .refer(referTo)
               .then(() => alice.transport.waitSent()) // 202
               .then(() => alice.transport.waitSent()) // INVITE
               .then(() => bob.transport.waitSent()); // 200
@@ -1084,21 +1081,20 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe ("REFER Alice with delegated handler", () => {
+        describe("REFER Alice with delegated handler", () => {
           beforeEach(async () => {
             resetSpies();
             inviter.delegate = {
               onRefer(referral: Referral): void {
-                referral
-                  .accept()
-                  .then(() => {
-                    const refereeInviter = referral.makeInviter();
-                    refereeInviter.invite();
-                  });
+                referral.accept().then(() => {
+                  const refereeInviter = referral.makeInviter();
+                  refereeInviter.invite();
+                });
               }
             };
             const referTo = new URI("sip", "carol", "example.com");
-            return invitation.refer(referTo)
+            return invitation
+              .refer(referTo)
               .then(() => alice.transport.waitSent()) // 202
               .then(() => alice.transport.waitSent()) // INVITE
               .then(() => bob.transport.waitSent()); // 200
@@ -1130,12 +1126,13 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe ("REFER Bob with default handler", () => {
+        describe("REFER Bob with default handler", () => {
           beforeEach(async () => {
             resetSpies();
             invitation.delegate = undefined;
             const referTo = new URI("sip", "carol", "example.com");
-            return inviter.refer(referTo)
+            return inviter
+              .refer(referTo)
               .then(() => bob.transport.waitSent()) // 202
               .then(() => bob.transport.waitSent()) // INVITE
               .then(() => alice.transport.waitSent()); // 200
@@ -1167,21 +1164,20 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe ("REFER Bob with delegated handler", () => {
+        describe("REFER Bob with delegated handler", () => {
           beforeEach(async () => {
             resetSpies();
             invitation.delegate = {
               onRefer(referral: Referral): void {
-                referral
-                  .accept()
-                  .then(() => {
-                    const refereeInviter = referral.makeInviter();
-                    refereeInviter.invite();
-                  });
+                referral.accept().then(() => {
+                  const refereeInviter = referral.makeInviter();
+                  refereeInviter.invite();
+                });
               }
             };
             const referTo = new URI("sip", "carol", "example.com");
-            return inviter.refer(referTo)
+            return inviter
+              .refer(referTo)
               .then(() => bob.transport.waitSent()) // 202
               .then(() => bob.transport.waitSent()) // INVITE
               .then(() => alice.transport.waitSent()); // 200
@@ -1213,7 +1209,7 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe ("MESSAGE with default handler", () => {
+        describe("MESSAGE with default handler", () => {
           beforeEach(async () => {
             resetSpies();
             inviter.delegate = undefined;
@@ -1243,7 +1239,7 @@ describe("API Session In-Dialog", () => {
           });
         });
 
-        describe ("MESSAGE with delegated handler", () => {
+        describe("MESSAGE with delegated handler", () => {
           beforeEach(async () => {
             resetSpies();
             inviter.delegate = undefined;
@@ -1295,15 +1291,13 @@ describe("API Session In-Dialog", () => {
 
     describe("Alice invite()", () => {
       beforeEach(() => {
-        return inviter.invite()
-          .then(() => bob.transport.waitSent());
+        return inviter.invite().then(() => bob.transport.waitSent());
       });
 
       describe("Bob accept()", () => {
         beforeEach(() => {
           resetSpies();
-          return invitation.accept()
-            .then(() => alice.transport.waitSent()); // ACK
+          return invitation.accept().then(() => alice.transport.waitSent()); // ACK
         });
 
         it("her state should be `established`", () => {
@@ -1331,8 +1325,7 @@ describe("API Session In-Dialog", () => {
           });
 
           afterEach(async () => {
-            return carol.userAgent.stop()
-              .then(() => expect(carol.isShutdown()).toBe(true));
+            return carol.userAgent.stop().then(() => expect(carol.isShutdown()).toBe(true));
           });
 
           describe("Replacing unknown session", () => {
@@ -1351,10 +1344,9 @@ describe("API Session In-Dialog", () => {
                 extraHeaders: ["Replaces: " + replaces]
               };
               replacesInviter = new Inviter(carol.userAgent, alice.uri, options);
-              return replacesInviter.invite()
-                .catch(() => {
-                  return;
-                });
+              return replacesInviter.invite().catch(() => {
+                return;
+              });
             });
 
             it("Carol ua should send INVITE, ACK", () => {
@@ -1392,7 +1384,8 @@ describe("API Session In-Dialog", () => {
                 extraHeaders: ["Replaces: " + replaces]
               };
               replacesInviter = new Inviter(carol.userAgent, alice.uri, options);
-              return replacesInviter.invite()
+              return replacesInviter
+                .invite()
                 .then(() => alice.transport.waitSent()) // provisional response
                 .catch(() => {
                   return;
@@ -1405,8 +1398,7 @@ describe("API Session In-Dialog", () => {
 
             describe("Alice accept()", () => {
               beforeEach(async () => {
-                return replacesInvitation.accept()
-                  .then(() => carol.transport.waitSent()); // ACK
+                return replacesInvitation.accept().then(() => carol.transport.waitSent()); // ACK
               });
 
               it("Carol ua should send INVITE, ACK", () => {
@@ -1454,5 +1446,4 @@ describe("API Session In-Dialog", () => {
       });
     });
   });
-
 });

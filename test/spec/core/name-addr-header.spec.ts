@@ -99,7 +99,8 @@ describe("Core NameAddrHeader", () => {
   });
 
   // eslint-disable-next-line max-len
-  const toParse = '"Iñaki ðđøþ" <SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2>;QWE=QWE;ASd';
+  const toParse =
+    '"Iñaki ðđøþ" <SIP:%61liCE@versaTICA.Com:6060;TRansport=TCp;Foo=ABc;baz?X-Header-1=AaA1&X-Header-2=BbB&x-header-1=AAA2>;QWE=QWE;ASd';
 
   describe("when calling NameAddrHeader.parse('" + toParse + "')", () => {
     let header: any;
@@ -109,7 +110,7 @@ describe("Core NameAddrHeader", () => {
     });
 
     it("returns a NameAddrHeader", () => {
-      expect(header instanceof (NameAddrHeader)).toBeTruthy();
+      expect(header instanceof NameAddrHeader).toBeTruthy();
     });
 
     it("parses the display name", () => {
@@ -139,7 +140,9 @@ describe("Core NameAddrHeader", () => {
       header.displayName = newDispName2;
       expect(header.displayName).toEqual(newDispName2);
       // eslint-disable-next-line max-len
-      expect(header.toString()).toEqual("<sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd");
+      expect(header.toString()).toEqual(
+        "<sip:aliCE@versatica.com:6060;transport=tcp;foo=ABc;baz?X-Header-1=AaA1&X-Header-1=AAA2&X-Header-2=BbB>;qwe=QWE;asd"
+      );
     });
 
     describe("its URI:", () => {

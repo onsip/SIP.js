@@ -105,9 +105,33 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
         // the early state).
         // https://tools.ietf.org/html/rfc3261#section-13.2.2.1
         {
+          // Dialogs are created through the generation of non-failure responses
+          // to requests with specific methods.  Within this specification, only
+          // 2xx and 101-199 responses with a To tag, where the request was
+          // INVITE, will establish a dialog.  A dialog established by a non-final
+          // response to a request is in the "early" state and it is called an
+          // early dialog.
+          // https://tools.ietf.org/html/rfc3261#section-12.1
+
           // Provisional without to tag, no dialog to create.
           if (!message.toTag) {
             this.logger.warn("Non-100 1xx INVITE response received without a to tag, dropping.");
+            return;
+          }
+
+          // When a UAS responds to a request with a response that establishes a
+          // dialog (such as a 2xx to INVITE), the UAS MUST copy all Record-Route
+          // header field values from the request into the response (including the
+          // URIs, URI parameters, and any Record-Route header field parameters,
+          // whether they are known or unknown to the UAS) and MUST maintain the
+          // order of those values.  The UAS MUST add a Contact header field to
+          // the response.
+          // https://tools.ietf.org/html/rfc3261#section-12.1.1
+
+          // Provisional without Contact header field, malformed response.
+          const contact = message.parseHeader("contact");
+          if (!contact) {
+            this.logger.error("Non-100 1xx INVITE response received without a Contact header field, dropping.");
             return;
           }
 
@@ -128,7 +152,7 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
           // Guard against out of order reliable provisional responses.
           // Note that this is where the rseq tracking is done.
           if (!earlyDialog.reliableSequenceGuard(message)) {
-            this.logger.warn("1xx INVITE reliable response received out of order, dropping.");
+            this.logger.warn("1xx INVITE reliable response received out of order or is a retransmission, dropping.");
             return;
           }
 
@@ -177,6 +201,36 @@ export class InviteUserAgentClient extends UserAgentClient implements OutgoingIn
         // constructed using the procedures of Section 12.1.2.
         // https://tools.ietf.org/html/rfc3261#section-13.2.2.4
         {
+          // Dialogs are created through the generation of non-failure responses
+          // to requests with specific methods.  Within this specification, only
+          // 2xx and 101-199 responses with a To tag, where the request was
+          // INVITE, will establish a dialog.  A dialog established by a non-final
+          // response to a request is in the "early" state and it is called an
+          // early dialog.
+          // https://tools.ietf.org/html/rfc3261#section-12.1
+
+          // Final without to tag, malformed response.
+          if (!message.toTag) {
+            this.logger.error("2xx INVITE response received without a to tag, dropping.");
+            return;
+          }
+
+          // When a UAS responds to a request with a response that establishes a
+          // dialog (such as a 2xx to INVITE), the UAS MUST copy all Record-Route
+          // header field values from the request into the response (including the
+          // URIs, URI parameters, and any Record-Route header field parameters,
+          // whether they are known or unknown to the UAS) and MUST maintain the
+          // order of those values.  The UAS MUST add a Contact header field to
+          // the response.
+          // https://tools.ietf.org/html/rfc3261#section-12.1.1
+
+          // Final without Contact header field, malformed response.
+          const contact = message.parseHeader("contact");
+          if (!contact) {
+            this.logger.error("2xx INVITE response received without a Contact header field, dropping.");
+            return;
+          }
+
           // Compute dialog state.
           const dialogState = Dialog.initialDialogStateForUserAgentClient(this.message, message);
 

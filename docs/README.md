@@ -33,19 +33,22 @@ Herein lies software enabling Session Initiation Protocol (SIP) internet endpoin
 
 Additional supporting implementations of classes for use with web browser environments are provided...
 
+* SessionDescriptionHandler - WebRTC session description handler
+  * [Overview](./session-description-handler.md)
+  * [Reference](./session-description-handler/sip.js.md)
 * Transport - SIP over secure WebSocket
   * [Overview](./transport.md)
   * [Reference](./transport/sip.js.md)
 
 ### SimpleUser class
 
-The [SimpleUser](./simple-user.md) class provides a representation of a simple internet endpoint (a simple user agent). It requires an understanding of what a phone call is, but minimal knowledge of SIP. There are working [Demonstrations](../demo/README.md) provided to help get started. It is the recommended interface for many applications. It has its limitations. The [SimpleUser](./simple-user.md) class is implemented on top of the [API](./api.md) framework.
+The [SimpleUser](./simple-user.md) class provides a representation of a simple internet endpoint (a simple user agent). It requires an understanding of what a phone call is, but minimal knowledge of SIP. There are working [Demonstrations](../demo/README.md) provided to help get started. It is the recommended interface for many applications. It has its limitations. The [SimpleUser](./simple-user.md) class is implemented utilizing the [API](./api.md) framework and as such provides a working example of how one might utilize the [API](./api.md) framework.
 
 ### API framework
 
-The [API](./api.md) framework is intended to provide a complete and suitable framework on which to build most end user applications - business phones, video conferencing endpoints, smart doorbells. A working knowledge of the SIP protocol is a prerequisite for using it. The framework provides infrastructure to connect with a SIP server as well as establish and maintain SIP registrations, sessions and subscriptions. There are no user interface components in it. The source code of the [SimpleUser](./simple-user.md) class is well documented and provides a good example of how to get started using the [API](./api.md) framework. The framework is implemented on top of the [Core](./core.md) library.
+The [API](./api.md) framework is intended to provide a complete and suitable framework on which to build most end user applications - business phones, video conferencing endpoints, smart doorbells. A working knowledge of the SIP protocol is a prerequisite for using it. The framework provides infrastructure to connect with a SIP server as well as establish and maintain SIP registrations, sessions and subscriptions. There are no user interface components in it. The source code of the [SimpleUser](./simple-user.md) class is well documented and provides a good example of how to get started using the [API](./api.md) framework. The framework is implemented on top of the [Core](./core.md) library and as such provides a working example of how one might utilize the [Core](./core.md) library.
 
 ### Core library
 
-The [Core](./core.md) library provides lower level representations of the elements which comprise the SIP protocol. It implements the constructs required by user agents. It strives to be RFC complient. It is intended to provide the foundational building blocks upon which to build a higher level abstraction suitable for any application.
+The [Core](./core.md) library provides lower level representations of the elements which comprise the SIP protocol. It implements the constructs required by user agents. It strives to be RFC compliant. It is intended to provide the foundational building blocks upon which to build a higher level abstraction suitable for any application.
 

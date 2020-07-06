@@ -1,10 +1,10 @@
 # Release Road Map
 
-## 0.16.x
+## 0.17.x
 
-- tighten up tslint and lint api, core, demo and tests
-- review packaging best practices (es7, es6, drop es5)
-- free core and API from DOM and Node dependencies
+- free core and API from DOM dependencies
+- complete more work in progress
+- remove UMD bundle from npm
 - more documentation
 - more tests
 - bug fixes
@@ -12,9 +12,11 @@
 
 # Work in Progress
 
-## Documentation
+## Dev Dependencies
 
-- Add documentation for "SessionDescriptionHandler - WebRTC"
+### api-extractor
+
+- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
 
 ## Tests
 
@@ -22,24 +24,18 @@
 - _Integration_ tests are being written high level "api" components (Session, Subscription)
   - Need to write more integration tests; Publisher, UserAgent, SimpleUser, etc
 
-## Dependencies
-
-### api-extractor
-
-- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
-
-### karma-jasmine
-
-- issue updating past 3.0.3 https://github.com/karma-runner/karma-jasmine/issues/256
-
 ## Source
 
 ### API - Miscellaneous
 
+- UserAgent: The `contact` should be configurable. Related to URI and Grammar work. Issue #791.
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
-- Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion
-- Make sure all options buckets are deep copied
+- Registerer: re-registration is current -3 seconds which seems not so good. Look at pjsip and others to see what they have done.
+- Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion.
+- Review all deprecated to make sure an alternative is provided that s something other than TBD.
+- Need alternatives for all hacks like `hackViaTcp`.
+- Make sure all options buckets are deep copied.
 
 ### Core - Miscellaneous
 
@@ -67,13 +63,19 @@
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: \*" header fails to parse - there's a test written for it
 
-### SessionDescriptionHandler - Refresh
+### SessionDescriptionHandler - Miscellaneous
 
-- Web (and React) versions need to be overhauled (events removed, peer connection observer added, etc, etc)
-- SDH options & SDH modifiers options are applied somewhat ambiguously
-  - This behavior was ported from legacy code and the issue punted down the road.
-- Trickle ICE Support: https://tools.ietf.org/id/draft-ietf-mmusic-trickle-ice-sip-11.html
+- Trickle ICE Support: https://tools.ietf.org/html/draft-ietf-mmusic-trickle-ice-sip-18
 - Hold SDP offer too large for UDP
+
+### Session Timers - Issue #18 
+
+- There is an old branch for it which perhaps can be pulled forward.
+
+### Transport - TCP Support
+
+- Support for "stream-oriented" transports: https://tools.ietf.org/html/rfc3261#section-18.3
+- This current Transport interface only supports "message-oriented" transports. Issue #818.
 
 ### URI - Refresh
 

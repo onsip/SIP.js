@@ -4,6 +4,11 @@
 
 ## SimpleUser.localAudioTrack property
 
+> Warning: This API is now obsolete.
+> 
+> Use localMediaStream and get track from the stream.
+> 
+
 The local audio track, if available.
 
 <b>Signature:</b>

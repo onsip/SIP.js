@@ -109,14 +109,7 @@ describe("Core UserAgentCore", () => {
         to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = coreAlice.makeOutgoingRequestMessage(
-          C.INVITE,
-          ruri,
-          from,
-          to,
-          {},
-          extraHeaders
-        );
+        message = coreAlice.makeOutgoingRequestMessage(C.INVITE, ruri, from, to, {}, extraHeaders);
         delegate = makeMockOutgoingRequestDelegate();
       });
 
@@ -130,8 +123,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then receives internal 503 Service Unavailable", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(1);
-          expect(transportAlice.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.all()[0].args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -166,12 +158,9 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then CANCEL, then ACK", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(3);
-          expect(transportAlice.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^CANCEL ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.all()[0].args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.all()[1].args[0]).toMatch(new RegExp(`^CANCEL ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.all()[2].args[0]).toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -182,12 +171,9 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying, then 200 Ok (to CANCEL), then 487 Request Terminated", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(3);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 487 Request Terminated`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 487 Request Terminated`));
         });
       });
 
@@ -207,10 +193,8 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then ACK", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(1);
@@ -221,10 +205,8 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying, then 302 Moved Temporarily", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(2);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 302 Moved Temporarily`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 302 Moved Temporarily`));
         });
       });
 
@@ -237,10 +219,8 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE then an ACK", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -251,8 +231,7 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying then 486 Busy Here", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(1);
-          expect(transportBob.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^SIP/2.0 486 Busy Here`));
+          expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 486 Busy Here`));
         });
       });
 
@@ -273,10 +252,8 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then ACK", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^ACK ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -287,12 +264,9 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying, then 180 Ringing, then 486 Busy Here", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(3);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 486 Busy Here`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 486 Busy Here`));
         });
       });
 
@@ -331,8 +305,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then retransmits wrong ACK (3x)", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(4); // INVITE + 3 ACKs
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -343,19 +316,14 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (3x)", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(5);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[3].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
         });
       });
 
       describe("Bob progresses and accepts, but Alice never sends an ACK", () => {
-
         beforeEach(async () => {
           jasmine.clock().install();
           coreBob.delegate = {
@@ -382,8 +350,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then...", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(2); // 2nd time is 200 OK to the BYE
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -394,18 +361,14 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (11x), times out, and sends BYE", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(14);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[3].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[4].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[13].args[0])
-            .toMatch(new RegExp(`^BYE ${uaAlice.contact.uri.toString()} SIP/2.0`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[4].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[13].args[0]).toMatch(
+            new RegExp(`^BYE ${uaAlice.contact.uri.toString()} SIP/2.0`)
+          );
         });
       });
 
@@ -439,8 +402,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an INVITE, then...", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(1);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -451,16 +413,11 @@ describe("Core UserAgentCore", () => {
 
         it("Bob's UAS sends 100 Trying, then 180 Ringing, 200 OK (11x), and times out", () => {
           expect(transportBob.send).toHaveBeenCalledTimes(13);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[3].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[12].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[12].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           expect(sessionDelegate.onAckTimeout).toHaveBeenCalledTimes(1);
         });
       });
@@ -484,15 +441,11 @@ describe("Core UserAgentCore", () => {
         to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = coreAlice.makeOutgoingRequestMessage(
-          C.INVITE,
-          ruri,
-          from,
-          to,
-          {},
-          extraHeaders,
-          { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
-        );
+        message = coreAlice.makeOutgoingRequestMessage(C.INVITE, ruri, from, to, {}, extraHeaders, {
+          contentDisposition: "session",
+          contentType: "application/sdp",
+          content: "Offer"
+        });
         delegate = makeMockOutgoingRequestDelegate();
       });
 
@@ -525,10 +478,10 @@ describe("Core UserAgentCore", () => {
         it("Alice's UAC sends an INVITE with Offer, then an ACK, and has stable session", () => {
           expect(sessionAlice.signalingState === SignalingState.Stable);
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+            new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+          );
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -539,12 +492,9 @@ describe("Core UserAgentCore", () => {
         it("Bob's UAS sends 100 Trying, then 200 Ok with Answer, and has stable session", () => {
           expect(sessionBob.signalingState === SignalingState.Stable);
           expect(transportBob.send).toHaveBeenCalledTimes(3);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
         });
       });
 
@@ -580,10 +530,10 @@ describe("Core UserAgentCore", () => {
         it("Alice's UAC sends an INVITE with Offer, then an ACK, and has stable session", () => {
           expect(sessionAlice.signalingState === SignalingState.Stable);
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+            new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+          );
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -594,12 +544,9 @@ describe("Core UserAgentCore", () => {
         it("Bob's UAS sends 100 Trying, then 183 Session Progress with Answer, and has stable session", () => {
           expect(sessionBob.signalingState === SignalingState.Stable);
           expect(transportBob.send).toHaveBeenCalledTimes(3);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 183 Session Progress`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 183 Session Progress`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
         });
       });
 
@@ -647,12 +594,13 @@ describe("Core UserAgentCore", () => {
         it("Alice's UAC sends an INVITE with Offer, then a PRACK and ACK, and has stable session", () => {
           expect(sessionAlice.signalingState === SignalingState.Stable);
           expect(transportAlice.send).toHaveBeenCalledTimes(3);
-          expect(transportAlice.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^PRACK ${uaBob.contact.uri.toString()} SIP/2.0`));
-          expect(transportAlice.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+          expect(transportAlice.send.calls.all()[0].args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.all()[1].args[0]).toMatch(
+            new RegExp(`^PRACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+          );
+          expect(transportAlice.send.calls.all()[2].args[0]).toMatch(
+            new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+          );
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -663,17 +611,12 @@ describe("Core UserAgentCore", () => {
         it("Bob's UAS sends 100 Trying, then 183 Session Progress with Answer, and has stable session", () => {
           expect(sessionBob.signalingState === SignalingState.Stable);
           expect(transportBob.send).toHaveBeenCalledTimes(4);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 183 Session Progress`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-          expect(transportBob.send.calls.all()[3].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 183 Session Progress`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
         });
       });
-
     });
 
     describe("Alice sends Bob an INVITE without an Offer and...", () => {
@@ -694,14 +637,7 @@ describe("Core UserAgentCore", () => {
         to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = coreAlice.makeOutgoingRequestMessage(
-          C.INVITE,
-          ruri,
-          from,
-          to,
-          {},
-          extraHeaders
-        );
+        message = coreAlice.makeOutgoingRequestMessage(C.INVITE, ruri, from, to, {}, extraHeaders);
         delegate = makeMockOutgoingRequestDelegate();
       });
 
@@ -742,10 +678,10 @@ describe("Core UserAgentCore", () => {
         it("Alice's UAC sends an INVITE, then ACKs with Answer, and has stable session", () => {
           expect(sessionAlice.signalingState === SignalingState.Stable);
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
-          expect(transportAlice.send.calls.mostRecent().args[0])
-            .toMatch(new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^INVITE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+            new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+          );
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(1);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -756,12 +692,9 @@ describe("Core UserAgentCore", () => {
         it("Bob's UAS sends 100 Trying, then 200 Ok with Offer, and has stable session", () => {
           expect(sessionBob.signalingState === SignalingState.Stable);
           expect(transportBob.send).toHaveBeenCalledTimes(3);
-          expect(transportBob.send.calls.all()[0].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-          expect(transportBob.send.calls.all()[1].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
-          expect(transportBob.send.calls.all()[2].args[0])
-            .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+          expect(transportBob.send.calls.all()[0].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+          expect(transportBob.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 180 Ringing`));
+          expect(transportBob.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
         });
 
         describe("Alice sends an in dialog BYE", () => {
@@ -775,15 +708,15 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAC sends a BYE", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^BYE ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^BYE ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a BYE and sends an 200 Ok", () => {
             expect(sessionBobDelegate.onBye).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -798,15 +731,15 @@ describe("Core UserAgentCore", () => {
 
           it("Bob's UAC sends a BYE", () => {
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^BYE ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^BYE ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a BYE and sends an 200 Ok", () => {
             expect(sessionAliceDelegate.onBye).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -821,15 +754,15 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAC sends a INFO", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^INFO ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^INFO ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a INFO and sends an 200 Ok", () => {
             expect(sessionBobDelegate.onInfo).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -844,15 +777,15 @@ describe("Core UserAgentCore", () => {
 
           it("Bob's UAC sends a INFO", () => {
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^INFO ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^INFO ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a INFO and sends an 200 Ok", () => {
             expect(sessionAliceDelegate.onInfo).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -872,39 +805,39 @@ describe("Core UserAgentCore", () => {
               extraHeaders,
               body: { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
             }).delegate = {
-                onAccept: (response): void => {
-                  response.ack();
-                }
-              };
+              onAccept: (response): void => {
+                response.ack();
+              }
+            };
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
 
           it("Alice's UAC sends a INVITE and an ACK", () => {
             expect(sessionAlice.signalingState === SignalingState.Stable);
             expect(transportAlice.send).toHaveBeenCalledTimes(4);
-            expect(transportAlice.send.calls.all()[2].args[0])
-              .toMatch(new RegExp(`^INVITE ${uaBob.contact.uri.toString()} SIP/2.0`));
-            expect(transportAlice.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.all()[2].args[0]).toMatch(
+              new RegExp(`^INVITE ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
+            expect(transportAlice.send.calls.all()[3].args[0]).toMatch(
+              new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a INVITE, sends 100 Trying and 200 Ok", () => {
             expect(sessionBob.signalingState === SignalingState.Stable);
             expect(sessionBobDelegate.onInvite).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(5);
-            expect(transportBob.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-            expect(transportBob.send.calls.all()[4].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+            expect(transportBob.send.calls.all()[4].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
         describe("Bob sends an in dialog INVITE (re-INVITE)", () => {
           beforeEach((done) => {
             sessionAliceDelegate.onInvite.and.callFake((incomingRequest: IncomingInviteRequest) => {
-               // Automatically send 100 Trying to mirror current UA behavior
-               incomingRequest.trying();
-               incomingRequest.accept({
+              // Automatically send 100 Trying to mirror current UA behavior
+              incomingRequest.trying();
+              incomingRequest.accept({
                 statusCode: 200,
                 body: { contentDisposition: "session", contentType: "application/sdp", content: "Answer" }
               });
@@ -915,30 +848,30 @@ describe("Core UserAgentCore", () => {
               extraHeaders,
               body: { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
             }).delegate = {
-                onAccept: (response): void => {
-                  response.ack()
-                }
-              };
+              onAccept: (response): void => {
+                response.ack();
+              }
+            };
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
 
           it("Bob's UAC sends a INVITE and an ACK", () => {
             expect(sessionBob.signalingState === SignalingState.Stable);
             expect(transportBob.send).toHaveBeenCalledTimes(5);
-            expect(transportBob.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^INVITE ${uaAlice.contact.uri.toString()} SIP/2.0`));
-            expect(transportBob.send.calls.all()[4].args[0])
-              .toMatch(new RegExp(`^ACK ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.all()[3].args[0]).toMatch(
+              new RegExp(`^INVITE ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
+            expect(transportBob.send.calls.all()[4].args[0]).toMatch(
+              new RegExp(`^ACK ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a INVITE, sends 100 Trying and 200 Ok", () => {
             expect(sessionAlice.signalingState === SignalingState.Stable);
             expect(sessionAliceDelegate.onInvite).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(4);
-            expect(transportAlice.send.calls.all()[2].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 100 Trying`));
-            expect(transportAlice.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 100 Trying`));
+            expect(transportAlice.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -948,10 +881,10 @@ describe("Core UserAgentCore", () => {
               extraHeaders: [`Contact: ${uaAlice.contact.toString()}`],
               body: { contentDisposition: "session", contentType: "application/sdp", content: "Offer" }
             }).delegate = {
-                onAccept: (response): void => {
-                  response.ack();
-                }
-              };
+              onAccept: (response): void => {
+                response.ack();
+              }
+            };
             setTimeout(() => done(), 10); // transport calls are async, so give it some time
           });
 
@@ -976,23 +909,25 @@ describe("Core UserAgentCore", () => {
           it("Alice's UAC sends an INVITE which is rejected with 491 Request Pending", () => {
             expect(sessionAlice.signalingState === SignalingState.Stable);
             expect(transportAlice.send).toHaveBeenCalledTimes(5);
-            expect(transportAlice.send.calls.all()[2].args[0])
-              .toMatch(new RegExp(`^INVITE ${uaBob.contact.uri.toString()} SIP/2.0`));
-            expect(transportAlice.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 491 Request Pending`));
-            expect(transportAlice.send.calls.all()[4].args[0])
-              .toMatch(new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.all()[2].args[0]).toMatch(
+              new RegExp(`^INVITE ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
+            expect(transportAlice.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 491 Request Pending`));
+            expect(transportAlice.send.calls.all()[4].args[0]).toMatch(
+              new RegExp(`^ACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAC sends an INVITE which is rejected with 491 Request Pending", () => {
             expect(sessionBob.signalingState === SignalingState.Stable);
             expect(transportBob.send).toHaveBeenCalledTimes(6);
-            expect(transportBob.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^INVITE ${uaAlice.contact.uri.toString()} SIP/2.0`));
-            expect(transportBob.send.calls.all()[4].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 491 Request Pending`));
-            expect(transportBob.send.calls.all()[5].args[0])
-              .toMatch(new RegExp(`^ACK ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.all()[3].args[0]).toMatch(
+              new RegExp(`^INVITE ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
+            expect(transportBob.send.calls.all()[4].args[0]).toMatch(new RegExp(`^SIP/2.0 491 Request Pending`));
+            expect(transportBob.send.calls.all()[5].args[0]).toMatch(
+              new RegExp(`^ACK ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
         });
 
@@ -1007,15 +942,15 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAC sends a MESSAGE", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^MESSAGE ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^MESSAGE ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a MESSAGE and sends an 200 Ok", () => {
             expect(sessionBobDelegate.onMessage).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1030,15 +965,15 @@ describe("Core UserAgentCore", () => {
 
           it("Bob's UAC sends a MESSAGE", () => {
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^MESSAGE ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^MESSAGE ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a MESSAGE and sends an 200 Ok", () => {
             expect(sessionAliceDelegate.onMessage).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1053,15 +988,15 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAC sends a NOTIFY", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^NOTIFY ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^NOTIFY ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a NOTIFY and sends an 200 Ok", () => {
             expect(sessionBobDelegate.onNotify).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1076,15 +1011,15 @@ describe("Core UserAgentCore", () => {
 
           it("Bob's UAC sends a NOTIFY", () => {
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^NOTIFY ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^NOTIFY ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a NOTIFY and sends an 200 Ok", () => {
             expect(sessionAliceDelegate.onNotify).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1099,15 +1034,15 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAC sends a PRACK", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^PRACK ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^PRACK ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a PRACK and sends an 200 Ok", () => {
             expect(sessionBobDelegate.onPrack).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1122,15 +1057,15 @@ describe("Core UserAgentCore", () => {
 
           it("Bob's UAC sends a PRACK", () => {
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^PRACK ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^PRACK ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a PRACK and sends an 200 Ok", () => {
             expect(sessionAliceDelegate.onPrack).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1145,15 +1080,15 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAC sends a REFER", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^REFER ${uaBob.contact.uri.toString()} SIP/2.0`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^REFER ${uaBob.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Bob's UAS receives a REFER and sends an 200 Ok", () => {
             expect(sessionBobDelegate.onRefer).toHaveBeenCalledTimes(1);
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
 
@@ -1168,18 +1103,17 @@ describe("Core UserAgentCore", () => {
 
           it("Bob's UAC sends a REFER", () => {
             expect(transportBob.send).toHaveBeenCalledTimes(4);
-            expect(transportBob.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^REFER ${uaAlice.contact.uri.toString()} SIP/2.0`));
+            expect(transportBob.send.calls.mostRecent().args[0]).toMatch(
+              new RegExp(`^REFER ${uaAlice.contact.uri.toString()} SIP/2.0`)
+            );
           });
 
           it("Alice's UAS receives a REFER and sends an 200 Ok", () => {
             expect(sessionAliceDelegate.onRefer).toHaveBeenCalledTimes(1);
             expect(transportAlice.send).toHaveBeenCalledTimes(3);
-            expect(transportAlice.send.calls.mostRecent().args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
           });
         });
-
       });
     });
   });
@@ -1203,14 +1137,7 @@ describe("Core UserAgentCore", () => {
         to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = coreAlice.makeOutgoingRequestMessage(
-          C.MESSAGE,
-          ruri,
-          from,
-          to,
-          {},
-          extraHeaders
-        );
+        message = coreAlice.makeOutgoingRequestMessage(C.MESSAGE, ruri, from, to, {}, extraHeaders);
         delegate = makeMockOutgoingRequestDelegate();
       });
 
@@ -1223,8 +1150,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an MESSAGE", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(1);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^MESSAGE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^MESSAGE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -1255,14 +1181,7 @@ describe("Core UserAgentCore", () => {
         to = ruri;
         contact = uaAlice.contact.toString();
         const extraHeaders = [`Contact: ${contact}`];
-        message = coreAlice.makeOutgoingRequestMessage(
-          C.PUBLISH,
-          ruri,
-          from,
-          to,
-          {},
-          extraHeaders
-        );
+        message = coreAlice.makeOutgoingRequestMessage(C.PUBLISH, ruri, from, to, {}, extraHeaders);
         delegate = makeMockOutgoingRequestDelegate();
       });
 
@@ -1275,8 +1194,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an PUBLISH", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(1);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^PUBLISH ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^PUBLISH ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -1311,14 +1229,7 @@ describe("Core UserAgentCore", () => {
         extraHeaders.push(`Expires: 420`);
         extraHeaders.push(`Subscription-State: active`);
         extraHeaders.push(`Contact: ${contact}`);
-        message = coreAlice.makeOutgoingRequestMessage(
-          C.SUBSCRIBE,
-          ruri,
-          from,
-          to,
-          {},
-          extraHeaders
-        );
+        message = coreAlice.makeOutgoingRequestMessage(C.SUBSCRIBE, ruri, from, to, {}, extraHeaders);
         delegate = makeMockOutgoingSubscribeRequestDelegate();
       });
 
@@ -1331,8 +1242,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an SUBSCRIBE and receives rejection from Bob", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(1);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^SUBSCRIBE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^SUBSCRIBE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(0);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -1386,8 +1296,10 @@ describe("Core UserAgentCore", () => {
           const outgoingResponse = constructOutgoingResponse(incomingRequestMessage, { statusCode, extraHeaders });
 
           // convert 200 OK outgoing response to an incoming response message
-          const incomingResponseMessage =
-            Parser.parseMessage(outgoingResponse.message, uaAlice.getLogger("sip.parser"));
+          const incomingResponseMessage = Parser.parseMessage(
+            outgoingResponse.message,
+            uaAlice.getLogger("sip.parser")
+          );
           if (!(incomingResponseMessage instanceof IncomingResponseMessage)) {
             throw new Error("Not instance of IncomingResponseMessage.");
           }
@@ -1427,8 +1339,7 @@ describe("Core UserAgentCore", () => {
 
         it("Alice's UAC sends an SUBSCRIBE and receives a 200 OK and a NOTIFY", () => {
           expect(transportAlice.send).toHaveBeenCalledTimes(2);
-          expect(transportAlice.send.calls.first().args[0])
-            .toMatch(new RegExp(`^SUBSCRIBE ${ruri} SIP/2.0`));
+          expect(transportAlice.send.calls.first().args[0]).toMatch(new RegExp(`^SUBSCRIBE ${ruri} SIP/2.0`));
           expect(delegate.onAccept).toHaveBeenCalledTimes(1);
           expect(delegate.onProgress).toHaveBeenCalledTimes(0);
           expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -1489,12 +1400,9 @@ describe("Core UserAgentCore", () => {
 
           it("Alice's UAS receives the NOTIFY messages and accepts them", () => {
             expect(transportAlice.send).toHaveBeenCalledTimes(4);
-            expect(transportAlice.send.calls.all()[1].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-            expect(transportAlice.send.calls.all()[2].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
-            expect(transportAlice.send.calls.all()[3].args[0])
-              .toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.all()[1].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.all()[2].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
+            expect(transportAlice.send.calls.all()[3].args[0]).toMatch(new RegExp(`^SIP/2.0 200 OK`));
             expect(delegate.onAccept).toHaveBeenCalledTimes(1);
             expect(delegate.onProgress).toHaveBeenCalledTimes(0);
             expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -1513,10 +1421,12 @@ describe("Core UserAgentCore", () => {
 
             it("Alice's UAS receives the NOTIFY messages and rejects them", () => {
               expect(transportAlice.send).toHaveBeenCalledTimes(6);
-              expect(transportAlice.send.calls.all()[4].args[0])
-                .toMatch(new RegExp(`^SIP/2.0 500 Internal Server Error`));
-              expect(transportAlice.send.calls.all()[5].args[0])
-                .toMatch(new RegExp(`^SIP/2.0 500 Internal Server Error`));
+              expect(transportAlice.send.calls.all()[4].args[0]).toMatch(
+                new RegExp(`^SIP/2.0 500 Internal Server Error`)
+              );
+              expect(transportAlice.send.calls.all()[5].args[0]).toMatch(
+                new RegExp(`^SIP/2.0 500 Internal Server Error`)
+              );
               expect(delegate.onAccept).toHaveBeenCalledTimes(1);
               expect(delegate.onProgress).toHaveBeenCalledTimes(0);
               expect(delegate.onRedirect).toHaveBeenCalledTimes(0);
@@ -1555,10 +1465,8 @@ describe("Core UserAgentCore", () => {
 
       it("Alice's UAS rejects with 405 Method Not Allowed", () => {
         expect(transportAlice.send).toHaveBeenCalledTimes(1);
-        expect(transportAlice.send.calls.mostRecent().args[0])
-          .toMatch(new RegExp(`^SIP/2.0 405 Method Not Allowed`));
-        expect(transportAlice.send.calls.mostRecent().args[0])
-          .toMatch(new RegExp(`\r\nAllow: `));
+        expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 405 Method Not Allowed`));
+        expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`\r\nAllow: `));
       });
     });
 
@@ -1572,8 +1480,9 @@ describe("Core UserAgentCore", () => {
 
       it("Alice's UAS rejects with 416 Unsupported URI Scheme", () => {
         expect(transportAlice.send).toHaveBeenCalledTimes(1);
-        expect(transportAlice.send.calls.mostRecent().args[0])
-          .toMatch(new RegExp(`^SIP/2.0 416 Unsupported URI Scheme`));
+        expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(
+          new RegExp(`^SIP/2.0 416 Unsupported URI Scheme`)
+        );
       });
     });
 
@@ -1587,8 +1496,7 @@ describe("Core UserAgentCore", () => {
 
       it("Alice's UAS rejects with 404 Not Found", () => {
         expect(transportAlice.send).toHaveBeenCalledTimes(1);
-        expect(transportAlice.send.calls.mostRecent().args[0])
-          .toMatch(new RegExp(`^SIP/2.0 404 Not Found`));
+        expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 404 Not Found`));
       });
     });
 
@@ -1606,8 +1514,7 @@ describe("Core UserAgentCore", () => {
 
       it("Alice's UAS rejects with 482 Loop Detected", () => {
         expect(transportAlice.send).toHaveBeenCalledTimes(2);
-        expect(transportAlice.send.calls.mostRecent().args[0])
-          .toMatch(new RegExp(`^SIP/2.0 482 Loop Detected`));
+        expect(transportAlice.send.calls.mostRecent().args[0]).toMatch(new RegExp(`^SIP/2.0 482 Loop Detected`));
       });
     });
   });

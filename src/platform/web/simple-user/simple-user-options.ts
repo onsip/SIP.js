@@ -7,8 +7,12 @@ import { SimpleUserDelegate } from "./simple-user-delegate";
  */
 export interface SimpleUserMedia {
   /**
-   * Offer/Answer constraints determine of audio and/or video are utilized.
-   * If not specified, only audio is offered (audio is true, video is false).
+   * Offer/Answer constraints determine if audio and/or video are utilized.
+   * If not specified, only audio is utilized (audio is true, video is false).
+   * @remarks
+   * Constraints are used when creating local media stream.
+   * If undefined, defaults to audio true and video false.
+   * If audio and video are false, media stream will have no tracks.
    */
   constraints?: SimpleUserMediaConstraints;
 

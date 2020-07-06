@@ -58,6 +58,15 @@ export class Dialog {
     // from the Contact header field of the response.
     // https://tools.ietf.org/html/rfc3261#section-12.1.2
     const routeSet = incomingResponseMessage.getHeaders("record-route").reverse();
+
+    // When a UAS responds to a request with a response that establishes a
+    // dialog (such as a 2xx to INVITE), the UAS MUST copy all Record-Route
+    // header field values from the request into the response (including the
+    // URIs, URI parameters, and any Record-Route header field parameters,
+    // whether they are known or unknown to the UAS) and MUST maintain the
+    // order of those values.  The UAS MUST add a Contact header field to
+    // the response.
+    // https://tools.ietf.org/html/rfc3261#section-12.1.1
     const contact = incomingResponseMessage.parseHeader("contact");
     if (!contact) {
       // TODO: Review to make sure this will never happen

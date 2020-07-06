@@ -4,8 +4,6 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // @public
 export interface AckableIncomingResponseWithSession extends IncomingResponse {
     ack(options?: RequestOptions): OutgoingAckRequest;
@@ -172,7 +170,7 @@ export interface DialogState {
 //
 // @internal
 export class DigestAuthentication {
-    constructor(loggerFactory: LoggerFactory, username: string | undefined, password: string | undefined);
+    constructor(loggerFactory: LoggerFactory, ha1: string | undefined, username: string | undefined, password: string | undefined);
     authenticate(request: OutgoingRequestMessage, challenge: any, body?: string): boolean;
     // (undocumented)
     stale: boolean | undefined;
@@ -923,7 +921,6 @@ export class SessionDialog extends Dialog implements Session {
     reinviteUserAgentClient: ReInviteUserAgentClient | undefined;
     // (undocumented)
     reinviteUserAgentServer: ReInviteUserAgentServer | undefined;
-    // (undocumented)
     reliableSequenceGuard(message: IncomingResponseMessage): boolean;
     // (undocumented)
     get sessionState(): SessionState;
@@ -1061,8 +1058,11 @@ export const Timers: {
 };
 
 // @public
-export abstract class Transaction extends EventEmitter {
+export abstract class Transaction {
     protected constructor(_transport: Transport, _user: TransactionUser, _id: string, _state: TransactionState, loggerCategory: string);
+    addStateChangeListener(listener: () => void, options?: {
+        once?: boolean;
+    }): void;
     dispose(): void;
     get id(): string;
     get kind(): string;
@@ -1070,9 +1070,11 @@ export abstract class Transaction extends EventEmitter {
     protected logger: Logger;
     // (undocumented)
     protected logTransportError(error: TransportError, message: string): void;
-    on(name: "stateChanged", callback: () => void): this;
+    // @internal
+    notifyStateChangeListeners(): void;
     // (undocumented)
     protected abstract onTransportError(error: TransportError): void;
+    removeStateChangeListener(listener: () => void): void;
     protected send(message: string): Promise<void>;
     // (undocumented)
     protected setState(state: TransactionState): void;

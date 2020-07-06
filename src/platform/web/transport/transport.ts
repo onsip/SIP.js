@@ -1,6 +1,4 @@
-import { EventEmitter } from "events";
-
-import { _makeEmitter, Emitter } from "../../../api/emitter";
+import { Emitter, EmitterImpl } from "../../../api/emitter";
 import { StateTransitionError } from "../../../api/exceptions";
 import { Transport as TransportDefinition } from "../../../api/transport";
 import { TransportState } from "../../../api/transport-state";
@@ -11,7 +9,7 @@ import { TransportOptions } from "./transport-options";
  * Transport for SIP over secure WebSocket (WSS).
  * @public
  */
-export class Transport extends EventEmitter implements TransportDefinition {
+export class Transport implements TransportDefinition {
   private static defaultOptions: Required<TransportOptions> = {
     server: "",
     connectionTimeout: 5,
@@ -26,7 +24,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
 
   private _protocol: string;
   private _state: TransportState = TransportState.Disconnected;
-  private _stateEventEmitter = new EventEmitter();
+  private _stateEventEmitter: EmitterImpl<TransportState>;
   private _ws: WebSocket | undefined;
 
   private configuration: Required<TransportOptions>;
@@ -47,7 +45,8 @@ export class Transport extends EventEmitter implements TransportDefinition {
   private transitioningState = false;
 
   constructor(logger: Logger, options?: TransportOptions) {
-    super();
+    // state emitter
+    this._stateEventEmitter = new EmitterImpl<TransportState>();
 
     // logger
     this.logger = logger;
@@ -136,7 +135,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
    * Transport state change emitter.
    */
   public get stateChange(): Emitter<TransportState> {
-    return _makeEmitter(this._stateEventEmitter);
+    return this._stateEventEmitter;
   }
 
   /**
@@ -192,31 +191,6 @@ export class Transport extends EventEmitter implements TransportDefinition {
     // layer SHOULD inform the transport user of a failure in sending.
     // https://tools.ietf.org/html/rfc3261#section-18.4
     return this._send(message);
-  }
-
-  /**
-   * Add listener for connection events.
-   * @deprecated Use `onConnected`, `onDisconnected` and/or `stateChange`.
-   */
-  public on(event: "connected" | "connecting" | "disconnecting" | "disconnected", listener: () => void): this;
-
-  /**
-   * Add listener for message event.
-   * @deprecated Use `onMessage`.
-   */
-  public on(event: "message", listener: (message: string) => void): this;
-
-  /**
-   * @internal
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public on(name: string, callback: (...args: any[]) => void): this {
-    const deprecatedMessage =
-      `A listener has been registered for the transport event "${name}". ` +
-      "Registering listeners for transport events has been deprecated and will no longer be available starting with SIP.js release 0.16.0. " +
-      "Please use the onConnected, onDisconnected, onMessage callbacks and/or the stateChange emitter instead. Please update accordingly.";
-    this.logger.warn(deprecatedMessage);
-    return super.on(name, callback);
   }
 
   private _connect(): Promise<void> {
@@ -518,7 +492,6 @@ export class Transport extends EventEmitter implements TransportDefinition {
         throw e; // rethrow unhandled exception
       }
     }
-    this.emit("message", finishedData);
   }
 
   /**
@@ -628,7 +601,7 @@ export class Transport extends EventEmitter implements TransportDefinition {
     }
 
     this.logger.log(`Transitioned from ${oldState} to ${this._state}`);
-    this._stateEventEmitter.emit("event", this._state);
+    this._stateEventEmitter.emit(this._state);
 
     //  Transition to Connected
     if (newState === TransportState.Connected) {
@@ -660,24 +633,6 @@ export class Transport extends EventEmitter implements TransportDefinition {
           throw e; // rethrow unhandled exception
         }
       }
-    }
-
-    // Legacy transport behavior (or at least what I believe the legacy transport was shooting for)
-    switch (newState) {
-      case TransportState.Connecting:
-        this.emit("connecting");
-        break;
-      case TransportState.Connected:
-        this.emit("connected");
-        break;
-      case TransportState.Disconnecting:
-        this.emit("disconnecting");
-        break;
-      case TransportState.Disconnected:
-        this.emit("disconnected");
-        break;
-      default:
-        throw new Error("Unknown state.");
     }
 
     // Complete connect promise

@@ -703,6 +703,11 @@ export class SessionDialog extends Dialog implements Session {
     }
   }
 
+  /**
+   * Guard against out of order reliable provisional responses and retransmissions.
+   * Returns false if the response should be discarded, otherwise true.
+   * @param message - Incoming response message within this dialog.
+   */
   public reliableSequenceGuard(message: IncomingResponseMessage): boolean {
     const statusCode = message.statusCode;
     if (!statusCode) {
@@ -744,9 +749,7 @@ export class SessionDialog extends Dialog implements Session {
         // initialized to the RSeq header field in the first reliable
         // provisional response received for the initial request.
         // https://tools.ietf.org/html/rfc3262#section-4
-        if (!this.rseq) {
-          this.rseq = rseq;
-        }
+        this.rseq = this.rseq ? this.rseq + 1 : rseq;
       }
     }
 
@@ -924,7 +927,7 @@ export class SessionDialog extends Dialog implements Session {
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
       const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
-          transaction.removeListener("stateChanged", stateChanged);
+          transaction.removeStateChangeListener(stateChanged);
           if (this.invite2xxTimer) {
             clearTimeout(this.invite2xxTimer);
             this.invite2xxTimer = undefined;
@@ -938,7 +941,7 @@ export class SessionDialog extends Dialog implements Session {
           }
         }
       };
-      transaction.addListener("stateChanged", stateChanged);
+      transaction.addStateChangeListener(stateChanged);
     }
   }
 
@@ -977,7 +980,7 @@ export class SessionDialog extends Dialog implements Session {
       // https://tools.ietf.org/html/rfc3261#section-13.3.1.4
       const stateChanged = (): void => {
         if (transaction.state === TransactionState.Terminated) {
-          transaction.removeListener("stateChanged", stateChanged);
+          transaction.removeStateChangeListener(stateChanged);
           if (this.invite2xxTimer) {
             clearTimeout(this.invite2xxTimer);
             this.invite2xxTimer = undefined;
@@ -987,7 +990,7 @@ export class SessionDialog extends Dialog implements Session {
           }
         }
       };
-      transaction.addListener("stateChanged", stateChanged);
+      transaction.addStateChangeListener(stateChanged);
     }
   }
 }

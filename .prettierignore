@@ -1,5 +1,4 @@
-test
 src/grammar
 src/platform/react
 src/platform/web/modifiers
-src/platform/web/session-description-handler
+src/platform/web/session-description-handler-old

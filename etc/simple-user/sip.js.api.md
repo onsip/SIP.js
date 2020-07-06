@@ -4,8 +4,6 @@
 
 ```ts
 
-import { EventEmitter } from 'events';
-
 // @public
 export class SimpleUser {
     constructor(server: string, options?: SimpleUserOptions);
@@ -25,14 +23,20 @@ export class SimpleUser {
     isConnected(): boolean;
     isHeld(): boolean;
     isMuted(): boolean;
+    // @deprecated
     get localAudioTrack(): MediaStreamTrack | undefined;
+    get localMediaStream(): MediaStream | undefined;
+    // @deprecated
     get localVideoTrack(): MediaStreamTrack | undefined;
     message(destination: string, message: string): Promise<void>;
     mute(): void;
     // Warning: (ae-forgotten-export) The symbol "RegistererOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "RegistererRegisterOptions" needs to be exported by the entry point index.d.ts
     register(registererOptions?: RegistererOptions, registererRegisterOptions?: RegistererRegisterOptions): Promise<void>;
+    // @deprecated
     get remoteAudioTrack(): MediaStreamTrack | undefined;
+    get remoteMediaStream(): MediaStream | undefined;
+    // @deprecated
     get remoteVideoTrack(): MediaStreamTrack | undefined;
     sendDTMF(tone: string): Promise<void>;
     unhold(): Promise<void>;

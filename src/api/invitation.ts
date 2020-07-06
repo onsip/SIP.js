@@ -21,7 +21,6 @@ import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
 import { InvitationRejectOptions } from "./invitation-reject-options";
 import { Session } from "./session";
-import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 import { SIPExtension } from "./user-agent-options";
@@ -264,11 +263,19 @@ export class Invitation extends Session {
       return Promise.reject(error);
     }
 
+    // Modifiers and options for initial INVITE transaction
+    if (options.sessionDescriptionHandlerModifiers) {
+      this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    }
+    if (options.sessionDescriptionHandlerOptions) {
+      this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
+    }
+
     // transition state
     this.stateTransition(SessionState.Establishing);
 
     return (
-      this.sendAccept(options)
+      this.sendAccept()
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .then(({ message, session }) => {
           session.delegate = {
@@ -318,6 +325,14 @@ export class Invitation extends Session {
     const statusCode = options.statusCode || 180;
     if (statusCode < 100 || statusCode > 199) {
       throw new TypeError("Invalid statusCode: " + statusCode);
+    }
+
+    // Modifiers and options for initial INVITE transaction
+    if (options.sessionDescriptionHandlerModifiers) {
+      this.sessionDescriptionHandlerModifiers = options.sessionDescriptionHandlerModifiers;
+    }
+    if (options.sessionDescriptionHandlerOptions) {
+      this.sessionDescriptionHandlerOptions = options.sessionDescriptionHandlerOptions;
     }
 
     // After the first reliable provisional response for a request has been
@@ -439,13 +454,7 @@ export class Invitation extends Session {
   /**
    * Helper function to handle offer/answer in a PRACK.
    */
-  private handlePrackOfferAnswer(
-    request: IncomingPrackRequest,
-    options: {
-      sessionDescriptionHandlerOptions?: SessionDescriptionHandlerOptions;
-      modifiers?: Array<SessionDescriptionHandlerModifier>;
-    }
-  ): Promise<Body | undefined> {
+  private handlePrackOfferAnswer(request: IncomingPrackRequest): Promise<Body | undefined> {
     if (!this.dialog) {
       throw new Error("Dialog undefined.");
     }
@@ -455,6 +464,11 @@ export class Invitation extends Session {
     if (!body || body.contentDisposition !== "session") {
       return Promise.resolve(undefined);
     }
+
+    const options = {
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+    };
 
     // If the UAC receives a reliable provisional response with an offer
     // (this would occur if the UAC sent an INVITE without an offer, in
@@ -567,7 +581,12 @@ export class Invitation extends Session {
    * A version of `accept` which resolves a session when the 200 Ok response is sent.
    * @param options - Options bucket.
    */
-  private sendAccept(options: InvitationAcceptOptions = {}): Promise<OutgoingResponseWithSession> {
+  private sendAccept(): Promise<OutgoingResponseWithSession> {
+    const responseOptions = {
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+    };
+
     // The UAS MAY send a final response to the initial request before
     // having received PRACKs for all unacknowledged reliable provisional
     // responses, unless the final response is 2xx and any of the
@@ -584,12 +603,12 @@ export class Invitation extends Session {
     if (this.waitingForPrack) {
       return this.waitForArrivalOfPrack()
         .then(() => clearTimeout(this.userNoAnswerTimer)) // Ported
-        .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, options))
+        .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions))
         .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
     }
 
     clearTimeout(this.userNoAnswerTimer); // Ported
-    return this.generateResponseOfferAnswer(this.incomingInviteRequest, options).then((body) =>
+    return this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions).then((body) =>
       this.incomingInviteRequest.accept({ statusCode: 200, body })
     );
   }
@@ -630,12 +649,16 @@ export class Invitation extends Session {
    * @param options - Options bucket.
    */
   private sendProgressWithSDP(options: InvitationProgressOptions = {}): Promise<OutgoingResponseWithSession> {
+    const responseOptions = {
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+    };
     const statusCode = options.statusCode || 183;
     const reasonPhrase = options.reasonPhrase;
     const extraHeaders = (options.extraHeaders || []).slice();
 
     // Get an offer/answer and send a reply.
-    return this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
+    return this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions)
       .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
         this._dialog = progressResponse.session;
@@ -665,6 +688,10 @@ export class Invitation extends Session {
     prackResponse: OutgoingResponse;
     progressResponse: OutgoingResponseWithSession;
   }> {
+    const responseOptions = {
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
+    };
     const statusCode = options.statusCode || 183;
     const reasonPhrase = options.reasonPhrase;
     const extraHeaders: Array<string> = (options.extraHeaders || []).slice();
@@ -674,7 +701,7 @@ export class Invitation extends Session {
 
     return new Promise((resolve, reject) => {
       this.waitingForPrack = true;
-      this.generateResponseOfferAnswer(this.incomingInviteRequest, options)
+      this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions)
         .then((offerAnswer) => {
           body = offerAnswer;
           return this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
@@ -695,7 +722,7 @@ export class Invitation extends Session {
                 return;
               }
               this.waitingForPrack = false;
-              this.handlePrackOfferAnswer(prackRequest, options)
+              this.handlePrackOfferAnswer(prackRequest)
                 .then((prackResponseBody) => {
                   try {
                     prackResponse = prackRequest.accept({ statusCode: 200, body: prackResponseBody });

@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import {
-  Notification,
-  Subscriber,
-  Subscription,
-  SubscriptionDelegate,
-  SubscriptionState
-} from "../../../src/api";
+import { Notification, Subscriber, Subscription, SubscriptionDelegate, SubscriptionState } from "../../../src/api";
 import {
   C,
   Dialog,
@@ -48,10 +42,9 @@ describe("API Subscription", () => {
   let receivedEvent: string;
   let receivedExpires: number;
 
-  const subscriptionDelegateMock =
-    jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", [
-      "onNotify"
-    ]);
+  const subscriptionDelegateMock = jasmine.createSpyObj<Required<SubscriptionDelegate>>("SubscriptionDelegate", [
+    "onNotify"
+  ]);
   subscriptionDelegateMock.onNotify.and.callFake((notification: Notification) => {
     notification.accept();
   });
@@ -187,7 +180,8 @@ describe("API Subscription", () => {
   });
 
   afterEach(async () => {
-    return alice.userAgent.stop()
+    return alice.userAgent
+      .stop()
       .then(() => expect(alice.isShutdown()).toBe(true))
       .then(() => bob.userAgent.stop())
       .then(() => expect(bob.isShutdown()).toBe(true))
@@ -196,12 +190,9 @@ describe("API Subscription", () => {
 
   describe("Alice constructs a new subscription targeting Bob", () => {
     beforeEach(() => {
-      subscription = subscriber = new Subscriber(
-        alice.userAgent,
-        target,
-        event,
-        { delegate: subscriptionDelegateMock }
-      );
+      subscription = subscriber = new Subscriber(alice.userAgent, target, event, {
+        delegate: subscriptionDelegateMock
+      });
       subscriptionStateSpy = makeEmitterSpy(subscription.stateChange, alice.userAgent.getLogger("Alice"));
     });
 
@@ -287,7 +278,9 @@ describe("API Subscription", () => {
               if (request.message.hasHeader("Proxy-Authorization")) {
                 request.accept();
               } else {
-                const extraHeaders = [`Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`];
+                const extraHeaders = [
+                  `Proxy-Authenticate: Digest realm="example.com", nonce="5cc8bf5800003e0181297d67d3a2e41aa964192a05e30fc4", qop="auth"`
+                ];
                 request.reject({ statusCode: 407, extraHeaders });
               }
             }
