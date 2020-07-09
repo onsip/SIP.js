@@ -71,11 +71,12 @@ export class TransportFake implements Transport {
   }
 
   public receive(msg: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    /*
     let message = "";
     message += this._id ? `${this._id} ` : "";
     message += `Receiving...\n${msg}`;
-    // this.logger.log(message);
+    this.logger.log(message);
+    */
     if (this._receiveDropOnce) {
       this._receiveDropOnce = false;
       this.logger.warn((this._id ? `${this._id} ` : "") + "Dropped message");

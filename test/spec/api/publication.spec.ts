@@ -1,5 +1,4 @@
 import { UserAgentOptions } from "../../../src/api";
-import { URI } from "../../../src/core";
 import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
 import { soon } from "../../support/api/utils";
 
@@ -11,8 +10,6 @@ import { soon } from "../../support/api/utils";
 describe("API Publication", () => {
   let alice: UserFake;
   let bob: UserFake;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let target: URI;
 
   beforeEach(async () => {
     jasmine.clock().install();
@@ -35,7 +32,6 @@ describe("API Publication", () => {
 
   describe("Alice exists", () => {
     beforeEach(async () => {
-      target = bob.uri;
       await soon();
     });
 

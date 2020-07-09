@@ -569,8 +569,7 @@ export class Transport implements TransportDefinition {
     this._state = newState;
 
     // Local copies of connect promises (guarding against callbacks changing them indirectly)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const connectPromise = this.connectPromise;
+    // const connectPromise = this.connectPromise;
     const connectResolve = this.connectResolve;
     const connectReject = this.connectReject;
 
@@ -582,8 +581,7 @@ export class Transport implements TransportDefinition {
     }
 
     // Local copies of disconnect promises (guarding against callbacks changing them indirectly)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const disconnectPromise = this.disconnectPromise;
+    // const disconnectPromise = this.disconnectPromise;
     const disconnectResolve = this.disconnectResolve;
     const disconnectReject = this.disconnectReject;
 
