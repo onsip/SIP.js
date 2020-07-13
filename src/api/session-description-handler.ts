@@ -29,15 +29,6 @@ export interface SessionDescriptionHandler {
   hasDescription(contentType: string): boolean;
 
   /**
-   * The modifier that should be used when the session would like to place the call on hold.
-   * @param sessionDescription - The description that will be modified.
-   * @returns Promise that resolves with modified SDP.
-   * Rejects with `ClosedSessionDescriptionHandlerError` when this method
-   * is called after close or when close occurs before complete.
-   */
-  holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
-
-  /**
    * Rolls back the current local/remote offer to the prior stable state.
    */
   rollbackDescription?(): Promise<void>;

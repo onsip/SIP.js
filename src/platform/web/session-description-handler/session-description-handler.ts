@@ -242,28 +242,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   }
 
   /**
-   * The modifier that should be used when the session would like to place the call on hold.
-   * @param sessionDescription - The description that will be modified.
-   */
-  public holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-    this.logger.debug("SessionDescriptionHandler.holdModifier");
-    if (!sessionDescription.sdp || !sessionDescription.type) {
-      throw new Error("Invalid SDP");
-    }
-    let sdp = sessionDescription.sdp;
-    const type = sessionDescription.type;
-    if (sdp) {
-      if (!/a=(sendrecv|sendonly|recvonly|inactive)/.test(sdp)) {
-        sdp = sdp.replace(/(m=[^\r]*\r\n)/g, "$1a=sendonly\r\n");
-      } else {
-        sdp = sdp.replace(/a=sendrecv\r\n/g, "a=sendonly\r\n");
-        sdp = sdp.replace(/a=recvonly\r\n/g, "a=inactive\r\n");
-      }
-    }
-    return Promise.resolve({ sdp, type });
-  }
-
-  /**
    * Send DTMF via RTP (RFC 4733).
    * Returns true if DTMF send is successful, false otherwise.
    * @param tones - A string containing DTMF digits.
