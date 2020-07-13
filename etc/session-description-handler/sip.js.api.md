@@ -47,7 +47,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandler_2 {
     protected getLocalMediaStream(options?: SessionDescriptionHandlerOptions): Promise<void>;
     protected getLocalSessionDescription(): Promise<RTCSessionDescription>;
     hasDescription(contentType: string): boolean;
-    holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
     protected iceGatheringComplete(): void;
     get localMediaStream(): MediaStream;
     protected _localMediaStream: MediaStream;
