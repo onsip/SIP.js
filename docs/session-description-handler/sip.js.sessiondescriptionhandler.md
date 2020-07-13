@@ -52,7 +52,6 @@ It is expected/intended to be extended by specific WebRTC based applications.
 |  [getLocalMediaStream(options)](./sip.js.sessiondescriptionhandler.getlocalmediastream.md) |  | Get a media stream from the media stream factory and set the local media stream. |
 |  [getLocalSessionDescription()](./sip.js.sessiondescriptionhandler.getlocalsessiondescription.md) |  | Gets the peer connection's local session description. |
 |  [hasDescription(contentType)](./sip.js.sessiondescriptionhandler.hasdescription.md) |  | Returns true if the SessionDescriptionHandler can handle the Content-Type described by a SIP message. |
-|  [holdModifier(sessionDescription)](./sip.js.sessiondescriptionhandler.holdmodifier.md) |  | The modifier that should be used when the session would like to place the call on hold. |
 |  [iceGatheringComplete()](./sip.js.sessiondescriptionhandler.icegatheringcomplete.md) |  | Called when ICE gathering completes and resolves any waiting promise. |
 |  [sendDtmf(tones, options)](./sip.js.sessiondescriptionhandler.senddtmf.md) |  | Send DTMF via RTP (RFC 4733). Returns true if DTMF send is successful, false otherwise. |
 |  [setDescription(sdp, options, modifiers)](./sip.js.sessiondescriptionhandler.setdescription.md) |  | Sets an offer or answer. |

@@ -532,7 +532,6 @@ export interface SessionDescriptionHandler {
     close(): void;
     getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<BodyAndContentType>;
     hasDescription(contentType: string): boolean;
-    holdModifier(sessionDescription: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit>;
     rollbackDescription?(): Promise<void>;
     sendDtmf(tones: string, options?: unknown): boolean;
     setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<void>;

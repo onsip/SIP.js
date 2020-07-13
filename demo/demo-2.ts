@@ -57,6 +57,10 @@ const bob = buildUser(
   videoRemoteBob
 );
 
+if (!alice || !bob) {
+  console.error("Something went wrong");
+}
+
 function buildUser(
   webSocketServer: string,
   aor: string,

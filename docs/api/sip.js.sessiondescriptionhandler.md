@@ -19,7 +19,6 @@ export interface SessionDescriptionHandler
 |  [close()](./sip.js.sessiondescriptionhandler.close.md) | Destructor. |
 |  [getDescription(options, modifiers)](./sip.js.sessiondescriptionhandler.getdescription.md) | Gets the local description from the underlying media implementation. |
 |  [hasDescription(contentType)](./sip.js.sessiondescriptionhandler.hasdescription.md) | Returns true if the Session Description Handler can handle the Content-Type described by a SIP message. |
-|  [holdModifier(sessionDescription)](./sip.js.sessiondescriptionhandler.holdmodifier.md) | The modifier that should be used when the session would like to place the call on hold. |
 |  [rollbackDescription()](./sip.js.sessiondescriptionhandler.rollbackdescription.md) | Rolls back the current local/remote offer to the prior stable state. |
 |  [sendDtmf(tones, options)](./sip.js.sessiondescriptionhandler.senddtmf.md) | Send DTMF via RTP (RFC 4733). Returns true if DTMF send is successful, false otherwise. |
 |  [setDescription(sdp, options, modifiers)](./sip.js.sessiondescriptionhandler.setdescription.md) | Sets the remote description to the underlying media implementation. |

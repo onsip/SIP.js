@@ -12,7 +12,6 @@ export function makeMockSessionDescriptionHandler(name: string, id: number): jas
     "close",
     "getDescription",
     "hasDescription",
-    "holdModifier",
     "rollbackDescription",
     "setDescription",
     "sendDtmf"

@@ -22,6 +22,7 @@ import {
   UserAgentState
 } from "../../../api";
 import { Logger } from "../../../core";
+import { holdModifier } from "../modifiers";
 import { SessionDescriptionHandler } from "../session-description-handler";
 import { Transport } from "../transport";
 import { SimpleUserDelegate } from "./simple-user-delegate";
@@ -908,11 +909,7 @@ export class SimpleUser {
     };
 
     // Use hold modifier to produce the appropriate SDP offer to place call on hold
-    if (hold) {
-      options.sessionDescriptionHandlerModifiers = [
-        (description): Promise<RTCSessionDescriptionInit> => sessionDescriptionHandler.holdModifier(description)
-      ];
-    }
+    options.sessionDescriptionHandlerModifiers = hold ? [holdModifier] : [];
 
     // Send re-INVITE
     return this.session
