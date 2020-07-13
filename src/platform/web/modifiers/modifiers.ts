@@ -157,3 +157,24 @@ export function addMidLines(description: RTCSessionDescriptionInit): Promise<RTC
   }
   return Promise.resolve(description);
 }
+
+/**
+ * The modifier that should be used when the session would like to place the call on hold.
+ * @param description - The description that will be modified.
+ */
+export function holdModifier(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
+  if (!description.sdp || !description.type) {
+    throw new Error("Invalid SDP");
+  }
+  let sdp = description.sdp;
+  const type = description.type;
+  if (sdp) {
+    if (!/a=(sendrecv|sendonly|recvonly|inactive)/.test(sdp)) {
+      sdp = sdp.replace(/(m=[^\r]*\r\n)/g, "$1a=sendonly\r\n");
+    } else {
+      sdp = sdp.replace(/a=sendrecv\r\n/g, "a=sendonly\r\n");
+      sdp = sdp.replace(/a=recvonly\r\n/g, "a=inactive\r\n");
+    }
+  }
+  return Promise.resolve({ sdp, type });
+}
