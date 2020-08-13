@@ -374,7 +374,7 @@ describe("Web SessionDescriptionHandler", () => {
 
       beforeEach(async () => {
         resetSpies();
-        return new Promise((resolve) => {
+        return new Promise<void>((resolve) => {
           sdh1.getDescription().catch((e: Error) => {
             error = e;
             resolve();
@@ -456,7 +456,7 @@ describe("Web SessionDescriptionHandler", () => {
 
         beforeEach(async () => {
           resetSpies();
-          return new Promise((resolve) => {
+          return new Promise<void>((resolve) => {
             if (!offer) {
               throw new Error("Offer undefined.");
             }

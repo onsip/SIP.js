@@ -467,7 +467,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       const sender = pc.getSenders().find((sender) => sender.track && sender.track.kind === kind);
       if (sender) {
         trackUpdates.push(
-          new Promise((resolve) => {
+          new Promise<void>((resolve) => {
             this.logger.debug(`SessionDescriptionHandler.setLocalMediaStream - replacing sender ${kind} track`);
             resolve();
           }).then(() =>
@@ -493,7 +493,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         );
       } else {
         trackUpdates.push(
-          new Promise((resolve) => {
+          new Promise<void>((resolve) => {
             this.logger.debug(`SessionDescriptionHandler.setLocalMediaStream - adding sender ${kind} track`);
             resolve();
           }).then(() => {
