@@ -909,6 +909,20 @@ export class SimpleUser {
       }
     };
 
+    // Session properties used to pass modifiers to the SessionDescriptionHandler:
+    //
+    // 1) Session.sessionDescriptionHandlerModifiers
+    //    - used in all cases when handling the initial INVITE transaction as either UAC or UAS
+    //    - may be set directly at anytime
+    //    - may optionally be set via constructor option
+    //    - may optionally be set via options passed to Inviter.invite() or Invitation.accept()
+    //
+    // 2) Session.sessionDescriptionHandlerModifiersReInvite
+    //    - used in all cases when handling a re-INVITE transaction as either UAC or UAS
+    //    - may be set directly at anytime
+    //    - may optionally be set via constructor option
+    //    - may optionally be set via options passed to Session.invite()
+
     // Set the session's SDH re-INVITE modifiers to produce the appropriate SDP offer to place call on hold
     session.sessionDescriptionHandlerModifiersReInvite = hold ? [holdModifier] : [];
 
