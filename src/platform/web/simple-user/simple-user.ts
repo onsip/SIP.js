@@ -880,6 +880,7 @@ export class SimpleUser {
     if (!this.session) {
       return Promise.reject(new Error("Session does not exist."));
     }
+    const session = this.session;
 
     // Just resolve if we are already in correct state
     if (this.held === hold) {
@@ -908,13 +909,17 @@ export class SimpleUser {
       }
     };
 
-    // Use hold modifier to produce the appropriate SDP offer to place call on hold
-    options.sessionDescriptionHandlerModifiers = hold ? [holdModifier] : [];
+    // Set the session's SDH re-INVITE modifiers to produce the appropriate SDP offer to place call on hold
+    session.sessionDescriptionHandlerModifiersReInvite = hold ? [holdModifier] : [];
 
     // Send re-INVITE
     return this.session
       .invite(options)
       .then(() => {
+        // Reset the session's SDH re-INVITE modifiers.
+        // Note that if the modifiers are not reset, they will be applied
+        // to the SDP answer as well (which we do not want in this case).
+        session.sessionDescriptionHandlerModifiersReInvite = [];
         this.enableSenderTracks(!hold); // mute/unmute
       })
       .catch((error: Error) => {
