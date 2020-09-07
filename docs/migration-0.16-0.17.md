@@ -55,11 +55,11 @@ const myUserAgent = new UserAgent({
 });
 ```
 
-Replaced by [SessionDescriptionHandler.remoteStream](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) property:
+Replaced by [SessionDescriptionHandler.remoteMediaStream](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) property:
 - "addTrack"
 - "addStream"
 
-Getting a handle on remote tracks when they are added has historically been tricky. Now [SessionDescriptionHandler.remoteStream](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) is always available and always has the current remote tracks (if any). Furthermore You can add event handlers for `addTrack` and `removeTrack` to the `MediaStream` and get updated when tracks are added or removed.
+Getting a handle on remote tracks when they are added has historically been tricky. Now [SessionDescriptionHandler.remoteMediaStream](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) is always available and always has the current remote tracks (if any). Furthermore You can add event handlers for `addTrack` and `removeTrack` to the `MediaStream` and get updated when tracks are added or removed.
 
 Replaced by [SessionDescriptionHandler.peerConnectionDelegate](./session-description-handler/sip.js.peerconnectiondelegate.md) property:
 - "iceCandidate"
