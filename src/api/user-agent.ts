@@ -257,6 +257,7 @@ export class UserAgent {
       autoStart: false,
       autoStop: true,
       delegate: {},
+      contactName: "",
       displayName: "",
       forceRport: false,
       hackAllowUnregisteredOptionTags: false,
@@ -593,7 +594,7 @@ export class UserAgent {
    * Initialize contact.
    */
   private initContact(): Contact {
-    const contactName = createRandomToken(8); // FIXME: should be configurable
+    const contactName = this.options.contactName != "" ? this.options.contactName : createRandomToken(8);
     const contactTransport = this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
     const contact = {
       pubGruu: undefined,
