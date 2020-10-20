@@ -65,6 +65,7 @@
 
 ### SessionDescriptionHandler - Miscellaneous
 
+- Redesign the way options and modifiers are passed to SDH via `Session` as it is currently confusing at best
 - Trickle ICE Support: https://tools.ietf.org/html/draft-ietf-mmusic-trickle-ice-sip-18
 - Hold SDP offer too large for UDP
 
