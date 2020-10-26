@@ -653,10 +653,11 @@ export class Registerer {
 
     // Re-Register before the expiration interval has elapsed.
     // For that, decrease the expires value. ie: 3 seconds
+    // expires * 1000 / 2 => expires * 500
     this.registrationTimer = setTimeout(() => {
       this.registrationTimer = undefined;
       this.register();
-    }, expires * 1000 - 3000);
+    }, expires * 500));
 
     // We are unregistered if the registration expires.
     this.registrationExpiredTimer = setTimeout(() => {
