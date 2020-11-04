@@ -24,7 +24,7 @@ HTAB    = "\t"
 alphanum    = [a-zA-Z0-9]
 reserved    = ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+" / "$" / ","
 unreserved  = alphanum / mark
-mark        = "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")"
+mark        = "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")" / "#"
 escaped     = $ ("%" HEXDIG HEXDIG)
 
 /* RFC3261 25: A recipient MAY replace any linear white space with a single SP
