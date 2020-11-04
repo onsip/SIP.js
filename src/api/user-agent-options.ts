@@ -91,6 +91,14 @@ export interface UserAgentOptions {
   displayName?: string;
 
   /**
+   * The contact name associated with the user agent.
+   * @remarks
+   * User specified contact name, if not specifed random string will be generated
+   * @defaultValue `""`
+   */
+  contactName?: string;
+
+  /**
    * Force adding rport to Via header.
    * @defaultValue `false`
    */
