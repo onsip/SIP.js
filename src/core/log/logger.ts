@@ -32,4 +32,11 @@ export class Logger {
   private genericLog(level: Levels, content: string): void {
     this.logger.genericLog(level, this.category, this.label, content);
   }
+
+  get level(): Levels {
+    return this.logger.level;
+  }
+  set level(newLevel: Levels) {
+    this.logger.level = newLevel;
+  }
 }
