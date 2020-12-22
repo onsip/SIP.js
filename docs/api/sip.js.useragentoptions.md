@@ -22,13 +22,14 @@ export interface UserAgentOptions
 |  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) | <code>string</code> | Authorization username. |
 |  [autoStart](./sip.js.useragentoptions.autostart.md) | <code>boolean</code> |  |
 |  [autoStop](./sip.js.useragentoptions.autostop.md) | <code>boolean</code> | If <code>true</code>, the user agent calls the <code>stop()</code> method on unload (if running in browser window). |
+|  [contactName](./sip.js.useragentoptions.contactname.md) | <code>string</code> | The contact name associated with the user agent. |
+|  [contactParams](./sip.js.useragentoptions.contactparams.md) | <code>{</code><br/><code>        [name: string]: string;</code><br/><code>    }</code> | The URI parameters associated with the user agent. |
 |  [delegate](./sip.js.useragentoptions.delegate.md) | <code>UserAgentDelegate</code> | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [displayName](./sip.js.useragentoptions.displayname.md) | <code>string</code> | The display name associated with the user agent. |
 |  [forceRport](./sip.js.useragentoptions.forcerport.md) | <code>boolean</code> | Force adding rport to Via header. |
 |  [hackAllowUnregisteredOptionTags](./sip.js.useragentoptions.hackallowunregisteredoptiontags.md) | <code>boolean</code> | Hack |
 |  [hackIpInContact](./sip.js.useragentoptions.hackipincontact.md) | <code>boolean &#124; string</code> | Hack |
 |  [hackViaTcp](./sip.js.useragentoptions.hackviatcp.md) | <code>boolean</code> | Hack |
-|  [hackWssInTransport](./sip.js.useragentoptions.hackwssintransport.md) | <code>boolean</code> | Hack |
 |  [logBuiltinEnabled](./sip.js.useragentoptions.logbuiltinenabled.md) | <code>boolean</code> | Indicates whether log messages should be written to the browser console. |
 |  [logConfiguration](./sip.js.useragentoptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the user agent configuration. |
 |  [logConnector](./sip.js.useragentoptions.logconnector.md) | <code>LogConnector</code> | A function which will be called every time a log is generated. |
