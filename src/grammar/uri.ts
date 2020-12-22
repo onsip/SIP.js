@@ -27,21 +27,18 @@ export class URI extends Parameters {
    * @param headers -
    */
   constructor(
-    scheme: string,
+    scheme = "sip",
     user: string,
     host: string,
     port?: number,
-    parameters?: any,
+    parameters?: { [name: string]: string | number | null },
     headers?: any
   ) {
-    super(parameters);
+    super(parameters || {});
     // Checks
     if (!host) {
       throw new TypeError('missing or invalid "host" parameter');
     }
-
-    // Initialize parameters
-    scheme = scheme || "sip";
 
     for (const header in headers) {
       // eslint-disable-next-line no-prototype-builtins
