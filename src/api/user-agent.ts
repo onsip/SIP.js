@@ -258,12 +258,12 @@ export class UserAgent {
       autoStop: true,
       delegate: {},
       contactName: "",
+      contactParams: { transport: "ws" },
       displayName: "",
       forceRport: false,
       hackAllowUnregisteredOptionTags: false,
       hackIpInContact: false,
       hackViaTcp: false,
-      hackWssInTransport: false,
       logBuiltinEnabled: true,
       logConfiguration: true,
       logConnector: (): void => {
@@ -595,17 +595,19 @@ export class UserAgent {
    */
   private initContact(): Contact {
     const contactName = this.options.contactName != "" ? this.options.contactName : createRandomToken(8);
-    const contactTransport = this.options.hackWssInTransport ? "wss" : "ws"; // FIXME: clearly broken for non ws transports
+    const contactParams = this.options.contactParams;
     const contact = {
       pubGruu: undefined,
       tempGruu: undefined,
-      uri: new URI("sip", contactName, this.options.viaHost, undefined, { transport: contactTransport }),
+      uri: new URI("sip", contactName, this.options.viaHost, undefined, contactParams),
       toString: (contactToStringOptions: { anonymous?: boolean; outbound?: boolean } = {}): string => {
         const anonymous = contactToStringOptions.anonymous || false;
         const outbound = contactToStringOptions.outbound || false;
         let contactString = "<";
         if (anonymous) {
-          contactString += this.contact.tempGruu || `sip:anonymous@anonymous.invalid;transport=${contactTransport}`;
+          contactString +=
+            this.contact.tempGruu ||
+            `sip:anonymous@anonymous.invalid;transport=${contactParams.transport ? contactParams.transport : "ws"}`;
         } else {
           contactString += this.contact.pubGruu || this.contact.uri;
         }
