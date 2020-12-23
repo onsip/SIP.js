@@ -74,6 +74,22 @@ export interface UserAgentOptions {
   autoStop?: boolean;
 
   /**
+   * The contact name associated with the user agent.
+   * @remarks
+   * User specified contact name, if not specifed random string will be generated
+   * @defaultValue `""`
+   */
+  contactName?: string;
+
+  /**
+   * The URI parameters associated with the user agent.
+   * @remarks
+   * User specified contact parameters
+   * @defaultValue `{ transport: "ws" }`
+   */
+  contactParams?: { [name: string]: string };
+
+  /**
    * Delegate for {@link UserAgent}.
    * @defaultValue `{}`
    */
@@ -89,14 +105,6 @@ export interface UserAgentOptions {
    * @defaultValue `""`
    */
   displayName?: string;
-
-  /**
-   * The contact name associated with the user agent.
-   * @remarks
-   * User specified contact name, if not specifed random string will be generated
-   * @defaultValue `""`
-   */
-  contactName?: string;
 
   /**
    * Force adding rport to Via header.
@@ -121,12 +129,6 @@ export interface UserAgentOptions {
    * @deprecated TBD
    */
   hackViaTcp?: boolean;
-
-  /**
-   * Hack
-   * @deprecated TBD
-   */
-  hackWssInTransport?: boolean;
 
   /**
    * Indicates whether log messages should be written to the browser console.

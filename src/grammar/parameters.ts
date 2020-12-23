@@ -2,9 +2,10 @@
  * @internal
  */
 export class Parameters {
-  public parameters: {[name: string]: string} = {};
+  public parameters: {[name: string]: string | null} = {};
 
-  constructor(parameters: {[name: string]: string}) {
+  constructor(parameters: {[name: string]: string | number | null | undefined}) {
+    // for in is required here as the Grammar parser is adding to the prototype chain
     for (const param in parameters) {
       // eslint-disable-next-line no-prototype-builtins
       if (parameters.hasOwnProperty(param)) {
@@ -13,34 +14,27 @@ export class Parameters {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public setParam(key: string, value: any): void {
+  public setParam(key: string, value: string | number | null | undefined): void {
     if (key) {
       this.parameters[key.toLowerCase()] = (typeof value === "undefined" || value === null) ? null : value.toString();
     }
   }
 
-  public getParam(key: string): string | undefined {
+  public getParam(key: string): string | null | undefined {
     if (key) {
       return this.parameters[key.toLowerCase()];
     }
   }
 
   public hasParam(key: string): boolean {
-    if (key) {
-      // eslint-disable-next-line no-prototype-builtins
-      return !!this.parameters.hasOwnProperty(key.toLowerCase());
-    }
-    return false;
+    return !!(key && this.parameters[key.toLowerCase()] !== undefined);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public deleteParam(parameter: string): any {
-    parameter = parameter.toLowerCase();
-    // eslint-disable-next-line no-prototype-builtins
-    if (this.parameters.hasOwnProperty(parameter)) {
-      const value = this.parameters[parameter];
-      delete this.parameters[parameter];
+  public deleteParam(key: string): string | null | undefined {
+    key = key.toLowerCase();
+    if (this.hasParam(key)) {
+      const value = this.parameters[key];
+      delete this.parameters[key];
       return value;
     }
   }
