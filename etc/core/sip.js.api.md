@@ -468,6 +468,9 @@ export class Logger {
     // (undocumented)
     error(content: string): void;
     // (undocumented)
+    get level(): Levels;
+    set level(newLevel: Levels);
+    // (undocumented)
     log(content: string): void;
     // (undocumented)
     warn(content: string): void;
