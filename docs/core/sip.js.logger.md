@@ -18,6 +18,12 @@ export declare class Logger
 |  --- | --- | --- |
 |  [(constructor)(logger, category, label)](./sip.js.logger._constructor_.md) |  | Constructs a new instance of the <code>Logger</code> class |
 
+## Properties
+
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [level](./sip.js.logger.level.md) |  | <code>Levels</code> |  |
+
 ## Methods
 
 |  Method | Modifiers | Description |

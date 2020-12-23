@@ -373,7 +373,11 @@ export class Registerer {
           if (!contact) {
             throw new Error("Contact undefined");
           }
-          if (contact.uri.user === this.userAgent.contact.uri.user) {
+          if (
+            contact.uri.user === this.userAgent.contact.uri.user &&
+            contact.uri.host === this.userAgent.contact.uri.host &&
+            contact.uri.port === this.userAgent.contact.uri.port
+          ) {
             expires = Number(contact.getParam("expires"));
             break;
           }

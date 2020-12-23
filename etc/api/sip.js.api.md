@@ -813,6 +813,10 @@ export interface UserAgentOptions {
     // @deprecated (undocumented)
     autoStart?: boolean;
     autoStop?: boolean;
+    contactName?: string;
+    contactParams?: {
+        [name: string]: string;
+    };
     delegate?: UserAgentDelegate;
     displayName?: string;
     forceRport?: boolean;
@@ -822,8 +826,6 @@ export interface UserAgentOptions {
     hackIpInContact?: boolean | string;
     // @deprecated
     hackViaTcp?: boolean;
-    // @deprecated
-    hackWssInTransport?: boolean;
     logBuiltinEnabled?: boolean;
     logConfiguration?: boolean;
     logConnector?: LogConnector;
