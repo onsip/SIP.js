@@ -594,7 +594,7 @@ export class UserAgent {
    * Initialize contact.
    */
   private initContact(): Contact {
-    const contactName = this.options.contactName != "" ? this.options.contactName : createRandomToken(8);
+    const contactName = this.options.contactName !== "" ? this.options.contactName : createRandomToken(8);
     const contactParams = this.options.contactParams;
     const contact = {
       pubGruu: undefined,
