@@ -272,6 +272,13 @@ export interface UserAgentOptions {
    * A random hostname in the .invalid domain.
    */
   viaHost?: string;
+
+  /**
+   * If true, a first provisional response after the 100 Trying will be sent automatically if UAC does not
+   * require reliable provisional responses.
+   * @defaultValue `true`
+   */
+  sendInitialProvisionalResponse?: boolean;
 }
 
 /**
