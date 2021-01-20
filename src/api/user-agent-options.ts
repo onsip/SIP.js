@@ -74,17 +74,15 @@ export interface UserAgentOptions {
   autoStop?: boolean;
 
   /**
-   * The contact name associated with the user agent.
+   * The user portion of user agent's contact URI.
    * @remarks
-   * User specified contact name, if not specifed random string will be generated
+   * If not specifed a random string will be generated and utilized as the user portion of the contact URI.
    * @defaultValue `""`
    */
   contactName?: string;
 
   /**
-   * The URI parameters associated with the user agent.
-   * @remarks
-   * User specified contact parameters
+   * The URI parameters of the user agent's contact URI.
    * @defaultValue `{ transport: "ws" }`
    */
   contactParams?: { [name: string]: string };
