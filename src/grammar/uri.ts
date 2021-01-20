@@ -252,6 +252,7 @@ export class URI extends Parameters {
  * SIP or SIPS URIs are equivalent.
  *
  * https://tools.ietf.org/html/rfc3261#section-19.1.4
+ * @internal
  */
 export function equivalentURI(a: URI, b: URI): boolean {
 
