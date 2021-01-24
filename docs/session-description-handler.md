@@ -6,7 +6,7 @@ The `SessionDescriptionHandler` class provides an implementation of which adhear
 
 ## Reference Documentation
 
-* [SessionDescriptionHandler Class Reference](./session-description-handler/sip.js.md)
+- [SessionDescriptionHandler Class Reference](./session-description-handler/sip.js.md)
 
 ## How do I get the session description handler for an `Invitation` or an `Inviter`?
 
@@ -29,7 +29,7 @@ import { Session, SessionState, Web } from "sip.js";
 function handleStateChanges(
   session: Session,
   localHTMLMediaElement: HTMLVideoElement | undefined,
-  remoteHTMLMediaElement: HTMLAudioElement | HTMLVideoElement | undefined,
+  remoteHTMLMediaElement: HTMLAudioElement | HTMLVideoElement | undefined
 ): void {
   // Track session state changes and set media tracks to HTML elements when they become available.
   session.stateChange.addListener((state: SessionState) => {
@@ -40,17 +40,14 @@ function handleStateChanges(
         break;
       case SessionState.Established:
         const sessionDescriptionHandler = session.sessionDescriptionHandler;
-        if (
-          !sessionDescriptionHandler ||
-          !(sessionDescriptionHandler instanceof Web.SessionDescriptionHandler)
-        ) {
+        if (!sessionDescriptionHandler || !(sessionDescriptionHandler instanceof Web.SessionDescriptionHandler)) {
           throw new Error("Invalid session description handler.");
         }
         if (localHTMLMediaElement) {
-          assignStream(sessionDescriptionHandler.localMediaStream, localHTMLMediaElement)
+          assignStream(sessionDescriptionHandler.localMediaStream, localHTMLMediaElement);
         }
         if (remoteHTMLMediaElement) {
-          assignStream(sessionDescriptionHandler.remoteMediaStream, remoteHTMLMediaElement)
+          assignStream(sessionDescriptionHandler.remoteMediaStream, remoteHTMLMediaElement);
         }
         break;
       case SessionState.Terminating:
@@ -109,11 +106,12 @@ const myMediaStreamFactory: Web.MediaStreamFactory = (
 ): Promise<MediaStream> => {
   const mediaStream = new MediaStream(); // my custom media stream acquisition
   return Promise.resolve(mediaStream);
-}
+};
 
 // Create session description handler factory
-const mySessionDescriptionHandlerFactory: Web.SessionDescriptionHandlerFactory = 
-  Web.defaultSessionDescriptionHandlerFactory(myMediaStreamFactory);
+const mySessionDescriptionHandlerFactory: Web.SessionDescriptionHandlerFactory = Web.defaultSessionDescriptionHandlerFactory(
+  myMediaStreamFactory
+);
 
 // Create user agent
 const myUserAgent = new UserAgent({
@@ -123,16 +121,14 @@ const myUserAgent = new UserAgent({
 
 ## How do I detect if a track was added or removed?
 
-The session description handler is availble once the `Session` state transitions to `SessionState.Established`, however there are cases where tracks are added or removed if the media changes - for example, on upgrade from audio only to a video session. Not also that when the `SessionDescriptionHandler` is constructed the media stream initially has no tracks, so the presence of tracks should not be assumed. 
+The session description handler is availble once the `Session` state transitions to `SessionState.Established`, however there are cases where tracks are added or removed if the media changes - for example, on upgrade from audio only to a video session. Not also that when the `SessionDescriptionHandler` is constructed the media stream initially has no tracks, so the presence of tracks should not be assumed.
 
 See [`SessionDescriptionHandler.remoteMediaStream` docs](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) for more info.
 
 ```ts
 import { Web } from "sip.js";
 
-function handleAddTrack(
-  sessionDescriptionHandler: Web.SessionDescriptionHandler
-): void {
+function handleAddTrack(sessionDescriptionHandler: Web.SessionDescriptionHandler): void {
   sessionDescriptionHandler.remoteMediaStream.onaddtrack = (event) => {
     const track = event.track;
     console.log("A track was added");
@@ -143,6 +139,41 @@ function handleAddTrack(
   };
 }
 ```
+
+## How do I put a session on "hold"?
+
+```ts
+import { Web } from "sip.js";
+
+// The Session.sessionDescriptionHandlerOptionsReInvite property
+// may be used to pass options to the SessionDescriptionHandler.
+const sessionDescriptionHandlerOptions: Web.SesionDescriptionHandlerOptions = {
+  hold: true; // set to false to "unhold" session
+}
+session.sessionDescriptionHandlerOptionsReInvite = sessionDescriptionHandlerOptions;
+
+const options: SessionInviteOptions = {
+  requestDelegate: {
+    onAccept: (): void => {
+      // session is on hold
+    },
+    onReject: (): void => {
+      // re-invite request was rejected, call not on hold
+    }
+  }
+};
+
+// Send re-INVITE
+session
+  .invite(options)
+  .catch((error: Error) => {
+    if (error instanceof RequestPendingError) {
+      // a hold request is already in progress
+    }
+  });
+```
+
+See [docs](./session-description-handler/sip.js.sessiondescriptionhandleroptions.md) for more info.
 
 ## How do I get a handle on the session description handler when it is created?
 
@@ -155,12 +186,9 @@ import { SessionDescriptionHandler } from "sip.js";
 
 function handleSessionDescriptionHandlerCreated(session: Session): void {
   session.delegate = {
-    onSessionDescriptionHandler: (
-      sessionDescriptionHandler: SessionDescriptionHandler,
-      provisional: boolean
-    ) => {
+    onSessionDescriptionHandler: (sessionDescriptionHandler: SessionDescriptionHandler, provisional: boolean) => {
       console.log("A session description handler was created");
-    },
+    }
   };
 }
 ```
@@ -170,7 +198,6 @@ function handleSessionDescriptionHandlerCreated(session: Session): void {
 `SessionDescriptionHandler` has a `peerConnection` property.
 
 See [docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) for more info.
-
 
 ## How do I get a handle on the peer connection events?
 
