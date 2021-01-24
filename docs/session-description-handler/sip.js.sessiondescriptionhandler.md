@@ -59,5 +59,6 @@ It is expected/intended to be extended by specific WebRTC based applications.
 |  [setLocalSessionDescription(sessionDescription)](./sip.js.sessiondescriptionhandler.setlocalsessiondescription.md) |  | Sets the peer connection's local session description. |
 |  [setRemoteSessionDescription(sessionDescription)](./sip.js.sessiondescriptionhandler.setremotesessiondescription.md) |  | Sets the peer connection's remote session description. |
 |  [setRemoteTrack(track)](./sip.js.sessiondescriptionhandler.setremotetrack.md) |  | Sets a remote media stream track. |
+|  [updateDirection(options)](./sip.js.sessiondescriptionhandler.updatedirection.md) |  | Depending on the current signaling state and the session hold state, update transceiver direction. |
 |  [waitForIceGatheringComplete(restart, timeout)](./sip.js.sessiondescriptionhandler.waitforicegatheringcomplete.md) |  | Wait for ICE gathering to complete. |
 
