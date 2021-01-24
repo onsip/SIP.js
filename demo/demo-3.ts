@@ -187,6 +187,7 @@ function buildUser(
       }
     },
     userAgentOptions: {
+      // logLevel: "debug",
       displayName
     }
   };
