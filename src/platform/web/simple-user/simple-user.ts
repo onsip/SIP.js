@@ -22,8 +22,7 @@ import {
   UserAgentState
 } from "../../../api";
 import { Logger } from "../../../core";
-import { holdModifier } from "../modifiers";
-import { SessionDescriptionHandler } from "../session-description-handler";
+import { SessionDescriptionHandler, SessionDescriptionHandlerOptions } from "../session-description-handler";
 import { Transport } from "../transport";
 import { SimpleUserDelegate } from "./simple-user-delegate";
 import { SimpleUserOptions } from "./simple-user-options";
@@ -45,6 +44,7 @@ export class SimpleUser {
   private connectRequested = false;
   private logger: Logger;
   private held = false;
+  private muted = false;
   private options: SimpleUserOptions;
   private registerer: Registerer | undefined = undefined;
   private registerRequested = false;
@@ -535,8 +535,7 @@ export class SimpleUser {
    * True if sender's media track is disabled.
    */
   public isMuted(): boolean {
-    const track = this.localAudioTrack || this.localVideoTrack;
-    return track ? !track.enabled : false;
+    return this.muted;
   }
 
   /**
@@ -697,6 +696,29 @@ export class SimpleUser {
         }
       }
     }
+  }
+
+  /** Helper function to enable/disable media tracks. */
+  private enableReceiverTracks(enable: boolean): void {
+    if (!this.session) {
+      throw new Error("Session does not exist.");
+    }
+
+    const sessionDescriptionHandler = this.session.sessionDescriptionHandler;
+    if (!(sessionDescriptionHandler instanceof SessionDescriptionHandler)) {
+      throw new Error("Session's session description handler not instance of SessionDescriptionHandler.");
+    }
+
+    const peerConnection = sessionDescriptionHandler.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
+    peerConnection.getReceivers().forEach((receiver) => {
+      if (receiver.track) {
+        receiver.track.enabled = enable;
+      }
+    });
   }
 
   /** Helper function to enable/disable media tracks. */
@@ -896,12 +918,16 @@ export class SimpleUser {
       requestDelegate: {
         onAccept: (): void => {
           this.held = hold;
+          this.enableReceiverTracks(!this.held);
+          this.enableSenderTracks(!this.held && !this.muted);
           if (this.delegate && this.delegate.onCallHold) {
             this.delegate.onCallHold(this.held);
           }
         },
         onReject: (): void => {
           this.logger.warn(`[${this.id}] re-invite request was rejected`);
+          this.enableReceiverTracks(!this.held);
+          this.enableSenderTracks(!this.held && !this.muted);
           if (this.delegate && this.delegate.onCallHold) {
             this.delegate.onCallHold(this.held);
           }
@@ -909,32 +935,33 @@ export class SimpleUser {
       }
     };
 
-    // Session properties used to pass modifiers to the SessionDescriptionHandler:
+    // Session properties used to pass options to the SessionDescriptionHandler:
     //
-    // 1) Session.sessionDescriptionHandlerModifiers
-    //    - used in all cases when handling the initial INVITE transaction as either UAC or UAS
-    //    - may be set directly at anytime
-    //    - may optionally be set via constructor option
-    //    - may optionally be set via options passed to Inviter.invite() or Invitation.accept()
+    // 1) Session.sessionDescriptionHandlerOptions
+    //    SDH options for the initial INVITE transaction.
+    //    - Used in all cases when handling the initial INVITE transaction as either UAC or UAS.
+    //    - May be set directly at anytime.
+    //    - May optionally be set via constructor option.
+    //    - May optionally be set via options passed to Inviter.invite() or Invitation.accept().
     //
-    // 2) Session.sessionDescriptionHandlerModifiersReInvite
-    //    - used in all cases when handling a re-INVITE transaction as either UAC or UAS
-    //    - may be set directly at anytime
-    //    - may optionally be set via constructor option
-    //    - may optionally be set via options passed to Session.invite()
+    // 2) Session.sessionDescriptionHandlerOptionsReInvite
+    //    SDH options for re-INVITE transactions.
+    //    - Used in all cases when handling a re-INVITE transaction as either UAC or UAS.
+    //    - May be set directly at anytime.
+    //    - May optionally be set via constructor option.
+    //    - May optionally be set via options passed to Session.invite().
 
-    // Set the session's SDH re-INVITE modifiers to produce the appropriate SDP offer to place call on hold
-    session.sessionDescriptionHandlerModifiersReInvite = hold ? [holdModifier] : [];
+    const sessionDescriptionHandlerOptions = session.sessionDescriptionHandlerOptionsReInvite as SessionDescriptionHandlerOptions;
+    sessionDescriptionHandlerOptions.hold = hold;
+    session.sessionDescriptionHandlerOptionsReInvite = sessionDescriptionHandlerOptions;
 
     // Send re-INVITE
     return this.session
       .invite(options)
       .then(() => {
-        // Reset the session's SDH re-INVITE modifiers.
-        // Note that if the modifiers are not reset, they will be applied
-        // to the SDP answer as well (which we do not want in this case).
-        session.sessionDescriptionHandlerModifiersReInvite = [];
-        this.enableSenderTracks(!hold); // mute/unmute
+        // preemptively enable/disable tracks
+        this.enableReceiverTracks(!hold);
+        this.enableSenderTracks(!hold && !this.muted);
       })
       .catch((error: Error) => {
         if (error instanceof RequestPendingError) {
@@ -959,7 +986,9 @@ export class SimpleUser {
       return;
     }
 
-    this.enableSenderTracks(!mute);
+    this.muted = mute;
+
+    this.enableSenderTracks(!this.held && !this.muted);
   }
 
   /** Helper function to attach local media to html elements. */
