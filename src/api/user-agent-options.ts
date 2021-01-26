@@ -74,17 +74,15 @@ export interface UserAgentOptions {
   autoStop?: boolean;
 
   /**
-   * The contact name associated with the user agent.
+   * The user portion of user agent's contact URI.
    * @remarks
-   * User specified contact name, if not specifed random string will be generated
+   * If not specifed a random string will be generated and utilized as the user portion of the contact URI.
    * @defaultValue `""`
    */
   contactName?: string;
 
   /**
-   * The URI parameters associated with the user agent.
-   * @remarks
-   * User specified contact parameters
+   * The URI parameters of the user agent's contact URI.
    * @defaultValue `{ transport: "ws" }`
    */
   contactParams?: { [name: string]: string };
@@ -179,6 +177,13 @@ export interface UserAgentOptions {
    * @defaultValue 4
    */
   reconnectionDelay?: number;
+
+  /**
+   * If true, a first provisional response after the 100 Trying will be sent automatically if UAC does not
+   * require reliable provisional responses.
+   * @defaultValue `true`
+   */
+  sendInitialProvisionalResponse?: boolean;
 
   /**
    * A factory for generating `SessionDescriptionHandler` instances.

@@ -22,8 +22,8 @@ export interface UserAgentOptions
 |  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) | <code>string</code> | Authorization username. |
 |  [autoStart](./sip.js.useragentoptions.autostart.md) | <code>boolean</code> |  |
 |  [autoStop](./sip.js.useragentoptions.autostop.md) | <code>boolean</code> | If <code>true</code>, the user agent calls the <code>stop()</code> method on unload (if running in browser window). |
-|  [contactName](./sip.js.useragentoptions.contactname.md) | <code>string</code> | The contact name associated with the user agent. |
-|  [contactParams](./sip.js.useragentoptions.contactparams.md) | <code>{</code><br/><code>        [name: string]: string;</code><br/><code>    }</code> | The URI parameters associated with the user agent. |
+|  [contactName](./sip.js.useragentoptions.contactname.md) | <code>string</code> | The user portion of user agent's contact URI. |
+|  [contactParams](./sip.js.useragentoptions.contactparams.md) | <code>{</code><br/><code>        [name: string]: string;</code><br/><code>    }</code> | The URI parameters of the user agent's contact URI. |
 |  [delegate](./sip.js.useragentoptions.delegate.md) | <code>UserAgentDelegate</code> | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [displayName](./sip.js.useragentoptions.displayname.md) | <code>string</code> | The display name associated with the user agent. |
 |  [forceRport](./sip.js.useragentoptions.forcerport.md) | <code>boolean</code> | Force adding rport to Via header. |
@@ -38,6 +38,7 @@ export interface UserAgentOptions
 |  [preloadedRouteSet](./sip.js.useragentoptions.preloadedrouteset.md) | <code>Array&lt;string&gt;</code> | Adds a Route header(s) to outgoing requests. |
 |  [reconnectionAttempts](./sip.js.useragentoptions.reconnectionattempts.md) | <code>number</code> |  |
 |  [reconnectionDelay](./sip.js.useragentoptions.reconnectiondelay.md) | <code>number</code> |  |
+|  [sendInitialProvisionalResponse](./sip.js.useragentoptions.sendinitialprovisionalresponse.md) | <code>boolean</code> | If true, a first provisional response after the 100 Trying will be sent automatically if UAC does not require reliable provisional responses. |
 |  [sessionDescriptionHandlerFactory](./sip.js.useragentoptions.sessiondescriptionhandlerfactory.md) | <code>SessionDescriptionHandlerFactory</code> | A factory for generating <code>SessionDescriptionHandler</code> instances. |
 |  [sessionDescriptionHandlerFactoryOptions](./sip.js.useragentoptions.sessiondescriptionhandlerfactoryoptions.md) | <code>object</code> | Options to passed to <code>sessionDescriptionHandlerFactory</code>. |
 |  [sipExtension100rel](./sip.js.useragentoptions.sipextension100rel.md) | <code>SIPExtension</code> | Reliable provisional responses. https://tools.ietf.org/html/rfc3262 |

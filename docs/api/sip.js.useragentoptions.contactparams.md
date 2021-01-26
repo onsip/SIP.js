@@ -4,7 +4,7 @@
 
 ## UserAgentOptions.contactParams property
 
-The URI parameters associated with the user agent.
+The URI parameters of the user agent's contact URI.
 
 <b>Signature:</b>
 
@@ -13,8 +13,3 @@ contactParams?: {
         [name: string]: string;
     };
 ```
-
-## Remarks
-
-User specified contact parameters
-

@@ -21,6 +21,18 @@ const atLeastOneField = (startsWith: string): jasmine.AsymmetricMatcher<string> 
   };
 };
 
+const exactlyTwoField = (startsWith: string): jasmine.AsymmetricMatcher<string> => {
+  return {
+    asymmetricMatch: function (body: string): boolean {
+      const fields = splitFields(body);
+      return fields.filter((field) => field.startsWith(startsWith)).length === 2;
+    },
+    jasmineToString: function (): string {
+      return "<exactlyOneField: " + startsWith + ">";
+    }
+  };
+};
+
 const exactlyOneField = (startsWith: string): jasmine.AsymmetricMatcher<string> => {
   return {
     asymmetricMatch: function (body: string): boolean {
@@ -422,6 +434,14 @@ describe("Web SessionDescriptionHandler", () => {
         expect(offer.body).toEqual(exactlyZeroField("m=video"));
       });
 
+      it("offer has one a=sendrecv", () => {
+        if (!offer) {
+          fail("Offer undefined");
+          return;
+        }
+        expect(offer.body).toEqual(exactlyOneField("a=sendrecv"));
+      });
+
       it("offer has at least one a=candidate", () => {
         if (!offer) {
           fail("Offer undefined");
@@ -439,6 +459,16 @@ describe("Web SessionDescriptionHandler", () => {
 
       it("signaling state should be have-local-offer", () => {
         expect(sdh1.peerConnection?.signalingState).toBe("have-local-offer");
+      });
+
+      it("transceiver direction should be sendrecv", () => {
+        const transceivers = sdh1.peerConnection?.getTransceivers();
+        if (!transceivers) {
+          fail("Transceivers undefined");
+          return;
+        }
+        expect(transceivers.length).toBe(1);
+        expect(transceivers[0].direction).toBe("sendrecv");
       });
 
       it("local media stream state", () => {
@@ -527,6 +557,14 @@ describe("Web SessionDescriptionHandler", () => {
             expect(answer.body).toEqual(exactlyZeroField("m=video"));
           });
 
+          it("answer has one a=sendrecv", () => {
+            if (!answer) {
+              fail("Answer undefined");
+              return;
+            }
+            expect(answer.body).toEqual(exactlyOneField("a=sendrecv"));
+          });
+
           it("answer has at least one a=candidate", () => {
             if (!answer) {
               fail("Answer undefined");
@@ -544,6 +582,16 @@ describe("Web SessionDescriptionHandler", () => {
 
           it("signaling state should be stable", () => {
             expect(sdh2.peerConnection?.signalingState).toBe("stable");
+          });
+
+          it("transceiver direction should be sendrecv", () => {
+            const transceivers = sdh2.peerConnection?.getTransceivers();
+            if (!transceivers) {
+              fail("Transceivers undefined");
+              return;
+            }
+            expect(transceivers.length).toBe(1);
+            expect(transceivers[0].direction).toBe("sendrecv");
           });
 
           it("local media stream state", () => {
@@ -567,6 +615,16 @@ describe("Web SessionDescriptionHandler", () => {
 
             it("signaling state should be stable", () => {
               expect(sdh1.peerConnection?.signalingState).toBe("stable");
+            });
+
+            it("transceiver direction should be sendrecv", () => {
+              const transceivers = sdh1.peerConnection?.getTransceivers();
+              if (!transceivers) {
+                fail("Transceivers undefined");
+                return;
+              }
+              expect(transceivers.length).toBe(1);
+              expect(transceivers[0].direction).toBe("sendrecv");
             });
 
             it("local media stream state", () => {
@@ -828,6 +886,754 @@ describe("Web SessionDescriptionHandler", () => {
               });
             });
 
+            describe("sdh1 getDescription - audio hold", () => {
+              beforeEach(async () => {
+                resetSpies();
+                offer = undefined;
+                return sdh1
+                  .getDescription({
+                    constraints: {
+                      audio: true
+                    },
+                    hold: true
+                  })
+                  .then((description) => {
+                    offer = description;
+                  });
+              });
+
+              it("offer was created", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).not.toBe("");
+                expect(offer.contentType).toBe("application/sdp");
+              });
+
+              it("offer has one m=audio and zero m=video", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                expect(offer.body).toEqual(exactlyZeroField("m=video"));
+              });
+
+              it("offer has one a=sendonly", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyOneField("a=sendonly"));
+              });
+
+              it("offer has at least one a=candidate", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+              });
+
+              it("transceiver direction should be sendonly", () => {
+                const transceivers = sdh1.peerConnection?.getTransceivers();
+                if (!transceivers) {
+                  fail("Transceivers undefined");
+                  return;
+                }
+                expect(transceivers.length).toBe(1);
+                expect(transceivers[0].direction).toBe("sendonly");
+              });
+
+              it("local media stream state", () => {
+                expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+
+              it("remote media stream state", () => {
+                expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+              });
+
+              describe("sdh2 setDescription", () => {
+                beforeEach(async () => {
+                  resetSpies();
+                  if (!offer) {
+                    throw new Error("Offer undefined.");
+                  }
+                  return sdh2.setDescription(offer.body);
+                });
+
+                it("signaling state have-remote-offer", () => {
+                  expect(sdh2.peerConnection?.signalingState).toBe("have-remote-offer");
+                });
+
+                it("local media stream state", () => {
+                  expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                  expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                });
+
+                it("remote media stream state", () => {
+                  expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                  expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                });
+
+                describe("sdh2 getDescription", () => {
+                  beforeEach(async () => {
+                    resetSpies();
+                    answer = undefined;
+                    return sdh2.getDescription().then((description) => {
+                      answer = description;
+                    });
+                  });
+
+                  it("answer was created", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).not.toBe("");
+                    expect(answer.contentType).toBe("application/sdp");
+                  });
+
+                  it("answer has one a=recvonly", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).toEqual(exactlyOneField("a=recvonly"));
+                  });
+
+                  it("hasDescription should be true", () => {
+                    expect(answer).not.toBe(undefined);
+                    if (answer) {
+                      expect(sdh2.hasDescription(answer.contentType)).toBe(true);
+                    }
+                  });
+
+                  it("signaling state should be stable", () => {
+                    expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                  });
+
+                  it("transceiver direction should be recvonly", () => {
+                    const transceivers = sdh2.peerConnection?.getTransceivers();
+                    if (!transceivers) {
+                      fail("Transceivers undefined");
+                      return;
+                    }
+                    expect(transceivers.length).toBe(1);
+                    expect(transceivers[0].direction).toBe("recvonly");
+                  });
+
+                  it("local media stream state", () => {
+                    expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                    expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                  });
+
+                  it("remote media stream state", () => {
+                    expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                    expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                  });
+
+                  describe("sdh1 setDescription", () => {
+                    beforeEach(async () => {
+                      resetSpies();
+                      if (!answer) {
+                        throw new Error("Answer undefined.");
+                      }
+                      return sdh1.setDescription(answer.body);
+                    });
+
+                    it("signaling state should be stable", () => {
+                      expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                    });
+
+                    it("transceiver direction should be sendonly", () => {
+                      const transceivers = sdh1.peerConnection?.getTransceivers();
+                      if (!transceivers) {
+                        fail("Transceivers undefined");
+                        return;
+                      }
+                      expect(transceivers.length).toBe(1);
+                      expect(transceivers[0].direction).toBe("sendonly");
+                    });
+
+                    it("local media stream state", () => {
+                      expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                      expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                    });
+
+                    it("remote media stream state", () => {
+                      expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                      expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                    });
+
+                    describe("sdh1 getDescription - audio unhold", () => {
+                      beforeEach(async () => {
+                        resetSpies();
+                        offer = undefined;
+                        return sdh1
+                          .getDescription({
+                            constraints: {
+                              audio: true
+                            },
+                            hold: false
+                          })
+                          .then((description) => {
+                            offer = description;
+                          });
+                      });
+
+                      it("offer was created", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).not.toBe("");
+                        expect(offer.contentType).toBe("application/sdp");
+                      });
+
+                      it("offer has one m=audio and zero m=video", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                        expect(offer.body).toEqual(exactlyZeroField("m=video"));
+                      });
+
+                      it("offer has one a=sendrecv", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("a=sendrecv"));
+                      });
+
+                      it("offer has at least one a=candidate", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+                      });
+
+                      it("transceiver direction should be sendrecv", () => {
+                        const transceivers = sdh1.peerConnection?.getTransceivers();
+                        if (!transceivers) {
+                          fail("Transceivers undefined");
+                          return;
+                        }
+                        expect(transceivers.length).toBe(1);
+                        expect(transceivers[0].direction).toBe("sendrecv");
+                      });
+
+                      it("local media stream state", () => {
+                        expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      it("remote media stream state", () => {
+                        expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      describe("sdh2 setDescription", () => {
+                        beforeEach(async () => {
+                          resetSpies();
+                          if (!offer) {
+                            throw new Error("Offer undefined.");
+                          }
+                          return sdh2.setDescription(offer.body);
+                        });
+
+                        it("signaling state have-remote-offer", () => {
+                          expect(sdh2.peerConnection?.signalingState).toBe("have-remote-offer");
+                        });
+
+                        it("local media stream state", () => {
+                          expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                          expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                        });
+
+                        it("remote media stream state", () => {
+                          expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                          expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                        });
+
+                        describe("sdh2 getDescription", () => {
+                          beforeEach(async () => {
+                            resetSpies();
+                            answer = undefined;
+                            return sdh2.getDescription().then((description) => {
+                              answer = description;
+                            });
+                          });
+
+                          it("answer was created", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).not.toBe("");
+                            expect(answer.contentType).toBe("application/sdp");
+                          });
+
+                          it("answer has one a=sendrecv", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).toEqual(exactlyOneField("a=sendrecv"));
+                          });
+
+                          it("hasDescription should be true", () => {
+                            expect(answer).not.toBe(undefined);
+                            if (answer) {
+                              expect(sdh2.hasDescription(answer.contentType)).toBe(true);
+                            }
+                          });
+
+                          it("signaling state should be stable", () => {
+                            expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                          });
+
+                          it("transceiver direction should be sendrecv", () => {
+                            const transceivers = sdh2.peerConnection?.getTransceivers();
+                            if (!transceivers) {
+                              fail("Transceivers undefined");
+                              return;
+                            }
+                            expect(transceivers.length).toBe(1);
+                            expect(transceivers[0].direction).toBe("sendrecv");
+                          });
+
+                          it("local media stream state", () => {
+                            expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                            expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                          });
+
+                          it("remote media stream state", () => {
+                            expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                            expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                          });
+
+                          describe("sdh1 setDescription", () => {
+                            beforeEach(async () => {
+                              resetSpies();
+                              if (!answer) {
+                                throw new Error("Answer undefined.");
+                              }
+                              return sdh1.setDescription(answer.body);
+                            });
+
+                            it("signaling state should be stable", () => {
+                              expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                            });
+
+                            it("transceiver direction should be sendrecv", () => {
+                              const transceivers = sdh1.peerConnection?.getTransceivers();
+                              if (!transceivers) {
+                                fail("Transceivers undefined");
+                                return;
+                              }
+                              expect(transceivers.length).toBe(1);
+                              expect(transceivers[0].direction).toBe("sendrecv");
+                            });
+
+                            it("local media stream state", () => {
+                              expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                              expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                            });
+
+                            it("remote media stream state", () => {
+                              expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                              expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                            });
+                          });
+                        });
+                      });
+                    });
+
+                    describe("sdh2 getDescription - audio hold", () => {
+                      beforeEach(async () => {
+                        resetSpies();
+                        offer = undefined;
+                        return sdh2
+                          .getDescription({
+                            constraints: {
+                              audio: true
+                            },
+                            hold: true
+                          })
+                          .then((description) => {
+                            offer = description;
+                          });
+                      });
+
+                      it("offer was created", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).not.toBe("");
+                        expect(offer.contentType).toBe("application/sdp");
+                      });
+
+                      it("offer has one m=audio and zero m=video", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                        expect(offer.body).toEqual(exactlyZeroField("m=video"));
+                      });
+
+                      it("offer has one a=inactive", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(exactlyOneField("a=inactive"));
+                      });
+
+                      it("offer has at least one a=candidate", () => {
+                        if (!offer) {
+                          fail("Offer undefined");
+                          return;
+                        }
+                        expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+                      });
+
+                      it("transceiver direction should be inactive", () => {
+                        const transceivers = sdh2.peerConnection?.getTransceivers();
+                        if (!transceivers) {
+                          fail("Transceivers undefined");
+                          return;
+                        }
+                        expect(transceivers.length).toBe(1);
+                        expect(transceivers[0].direction).toBe("inactive");
+                      });
+
+                      it("local media stream state", () => {
+                        expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      it("remote media stream state", () => {
+                        expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                        expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                      });
+
+                      describe("sdh1 setDescription", () => {
+                        beforeEach(async () => {
+                          resetSpies();
+                          if (!offer) {
+                            throw new Error("Offer undefined.");
+                          }
+                          return sdh1.setDescription(offer.body);
+                        });
+
+                        it("signaling state have-remote-offer", () => {
+                          expect(sdh1.peerConnection?.signalingState).toBe("have-remote-offer");
+                        });
+
+                        it("local media stream state", () => {
+                          expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                          expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                        });
+
+                        it("remote media stream state", () => {
+                          expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                          expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                        });
+
+                        describe("sdh1 getDescription", () => {
+                          beforeEach(async () => {
+                            resetSpies();
+                            answer = undefined;
+                            return sdh1.getDescription().then((description) => {
+                              answer = description;
+                            });
+                          });
+
+                          it("answer was created", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).not.toBe("");
+                            expect(answer.contentType).toBe("application/sdp");
+                          });
+
+                          it("answer has one a=inactive", () => {
+                            if (!answer) {
+                              fail("Answer undefined");
+                              return;
+                            }
+                            expect(answer.body).toEqual(exactlyOneField("a=inactive"));
+                          });
+
+                          it("hasDescription should be true", () => {
+                            expect(answer).not.toBe(undefined);
+                            if (answer) {
+                              expect(sdh1.hasDescription(answer.contentType)).toBe(true);
+                            }
+                          });
+
+                          it("signaling state should be stable", () => {
+                            expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                          });
+
+                          it("transceiver direction should be inactive", () => {
+                            const transceivers = sdh1.peerConnection?.getTransceivers();
+                            if (!transceivers) {
+                              fail("Transceivers undefined");
+                              return;
+                            }
+                            expect(transceivers.length).toBe(1);
+                            expect(transceivers[0].direction).toBe("inactive");
+                          });
+
+                          it("local media stream state", () => {
+                            expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                            expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                          });
+
+                          it("remote media stream state", () => {
+                            expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                            expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                          });
+
+                          describe("sdh2 setDescription", () => {
+                            beforeEach(async () => {
+                              resetSpies();
+                              if (!answer) {
+                                throw new Error("Answer undefined.");
+                              }
+                              return sdh2.setDescription(answer.body);
+                            });
+
+                            it("signaling state should be stable", () => {
+                              expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                            });
+
+                            it("transceiver direction should be inactive", () => {
+                              const transceivers = sdh2.peerConnection?.getTransceivers();
+                              if (!transceivers) {
+                                fail("Transceivers undefined");
+                                return;
+                              }
+                              expect(transceivers.length).toBe(1);
+                              expect(transceivers[0].direction).toBe("inactive");
+                            });
+
+                            it("local media stream state", () => {
+                              expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                              expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                            });
+
+                            it("remote media stream state", () => {
+                              expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                              expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                            });
+
+                            describe("sdh2 getDescription - audio unhold", () => {
+                              beforeEach(async () => {
+                                resetSpies();
+                                offer = undefined;
+                                return sdh2
+                                  .getDescription({
+                                    constraints: {
+                                      audio: true
+                                    },
+                                    hold: false
+                                  })
+                                  .then((description) => {
+                                    offer = description;
+                                  });
+                              });
+
+                              it("offer was created", () => {
+                                if (!offer) {
+                                  fail("Offer undefined");
+                                  return;
+                                }
+                                expect(offer.body).not.toBe("");
+                                expect(offer.contentType).toBe("application/sdp");
+                              });
+
+                              it("offer has one m=audio and zero m=video", () => {
+                                if (!offer) {
+                                  fail("Offer undefined");
+                                  return;
+                                }
+                                expect(offer.body).toEqual(exactlyOneField("m=audio"));
+                                expect(offer.body).toEqual(exactlyZeroField("m=video"));
+                              });
+
+                              it("offer has one a=recvonly", () => {
+                                if (!offer) {
+                                  fail("Offer undefined");
+                                  return;
+                                }
+                                expect(offer.body).toEqual(exactlyOneField("a=recvonly"));
+                              });
+
+                              it("offer has at least one a=candidate", () => {
+                                if (!offer) {
+                                  fail("Offer undefined");
+                                  return;
+                                }
+                                expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+                              });
+
+                              it("transceiver direction should be recvonly", () => {
+                                const transceivers = sdh2.peerConnection?.getTransceivers();
+                                if (!transceivers) {
+                                  fail("Transceivers undefined");
+                                  return;
+                                }
+                                expect(transceivers.length).toBe(1);
+                                expect(transceivers[0].direction).toBe("recvonly");
+                              });
+
+                              it("local media stream state", () => {
+                                expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                              });
+
+                              it("remote media stream state", () => {
+                                expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                              });
+
+                              describe("sdh1 setDescription", () => {
+                                beforeEach(async () => {
+                                  resetSpies();
+                                  if (!offer) {
+                                    throw new Error("Offer undefined.");
+                                  }
+                                  return sdh1.setDescription(offer.body);
+                                });
+
+                                it("signaling state have-remote-offer", () => {
+                                  expect(sdh1.peerConnection?.signalingState).toBe("have-remote-offer");
+                                });
+
+                                it("local media stream state", () => {
+                                  expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                  expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                                });
+
+                                it("remote media stream state", () => {
+                                  expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                  expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                                });
+
+                                describe("sdh1 getDescription", () => {
+                                  beforeEach(async () => {
+                                    resetSpies();
+                                    answer = undefined;
+                                    return sdh1.getDescription().then((description) => {
+                                      answer = description;
+                                    });
+                                  });
+
+                                  it("answer was created", () => {
+                                    if (!answer) {
+                                      fail("Answer undefined");
+                                      return;
+                                    }
+                                    expect(answer.body).not.toBe("");
+                                    expect(answer.contentType).toBe("application/sdp");
+                                  });
+
+                                  it("answer has one a=sendonly", () => {
+                                    if (!answer) {
+                                      fail("Answer undefined");
+                                      return;
+                                    }
+                                    expect(answer.body).toEqual(exactlyOneField("a=sendonly"));
+                                  });
+
+                                  it("hasDescription should be true", () => {
+                                    expect(answer).not.toBe(undefined);
+                                    if (answer) {
+                                      expect(sdh1.hasDescription(answer.contentType)).toBe(true);
+                                    }
+                                  });
+
+                                  it("signaling state should be stable", () => {
+                                    expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                                  });
+
+                                  it("transceiver direction should be sendonly", () => {
+                                    const transceivers = sdh1.peerConnection?.getTransceivers();
+                                    if (!transceivers) {
+                                      fail("Transceivers undefined");
+                                      return;
+                                    }
+                                    expect(transceivers.length).toBe(1);
+                                    expect(transceivers[0].direction).toBe("sendonly");
+                                  });
+
+                                  it("local media stream state", () => {
+                                    expect(sdh1LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                    expect(sdh1LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                                  });
+
+                                  it("remote media stream state", () => {
+                                    expect(sdh1RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                    expect(sdh1RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                                  });
+
+                                  describe("sdh2 setDescription", () => {
+                                    beforeEach(async () => {
+                                      resetSpies();
+                                      if (!answer) {
+                                        throw new Error("Answer undefined.");
+                                      }
+                                      return sdh2.setDescription(answer.body);
+                                    });
+
+                                    it("signaling state should be stable", () => {
+                                      expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                                    });
+
+                                    it("transceiver direction should be recvonly", () => {
+                                      const transceivers = sdh2.peerConnection?.getTransceivers();
+                                      if (!transceivers) {
+                                        fail("Transceivers undefined");
+                                        return;
+                                      }
+                                      expect(transceivers.length).toBe(1);
+                                      expect(transceivers[0].direction).toBe("recvonly");
+                                    });
+
+                                    it("local media stream state", () => {
+                                      expect(sdh2LocalOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                      expect(sdh2LocalOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                                    });
+
+                                    it("remote media stream state", () => {
+                                      expect(sdh2RemoteOnAddTrackSpy).toHaveBeenCalledTimes(0);
+                                      expect(sdh2RemoteOnRemoveTrackSpy).toHaveBeenCalledTimes(0);
+                                    });
+                                  });
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+
             describe("sdh1 getDescription - video (upgrade)", () => {
               beforeEach(async () => {
                 resetSpies();
@@ -861,12 +1667,31 @@ describe("Web SessionDescriptionHandler", () => {
                 expect(offer.body).toEqual(exactlyOneField("m=video"));
               });
 
+              it("offer has two a=sendrecv", () => {
+                if (!offer) {
+                  fail("Offer undefined");
+                  return;
+                }
+                expect(offer.body).toEqual(exactlyTwoField("a=sendrecv"));
+              });
+
               it("offer has at least one a=candidate", () => {
                 if (!offer) {
                   fail("Offer undefined");
                   return;
                 }
                 expect(offer.body).toEqual(atLeastOneField("a=candidate"));
+              });
+
+              it("transceiver direction should be sendrecv", () => {
+                const transceivers = sdh1.peerConnection?.getTransceivers();
+                if (!transceivers) {
+                  fail("Transceivers undefined");
+                  return;
+                }
+                expect(transceivers.length).toBe(2);
+                expect(transceivers[0].direction).toBe("sendrecv");
+                expect(transceivers[1].direction).toBe("sendrecv");
               });
 
               it("local media stream state", () => {
@@ -935,6 +1760,14 @@ describe("Web SessionDescriptionHandler", () => {
                     expect(answer.body).toEqual(exactlyOneField("m=video"));
                   });
 
+                  it("answer has two a=sendrecv", () => {
+                    if (!answer) {
+                      fail("Answer undefined");
+                      return;
+                    }
+                    expect(answer.body).toEqual(exactlyTwoField("a=sendrecv"));
+                  });
+
                   it("answer has at least one a=candidate", () => {
                     if (!answer) {
                       fail("Answer undefined");
@@ -952,6 +1785,17 @@ describe("Web SessionDescriptionHandler", () => {
 
                   it("signaling state should be stable", () => {
                     expect(sdh2.peerConnection?.signalingState).toBe("stable");
+                  });
+
+                  it("transceiver direction should be sendrecv", () => {
+                    const transceivers = sdh2.peerConnection?.getTransceivers();
+                    if (!transceivers) {
+                      fail("Transceivers undefined");
+                      return;
+                    }
+                    expect(transceivers.length).toBe(2);
+                    expect(transceivers[0].direction).toBe("sendrecv");
+                    expect(transceivers[1].direction).toBe("sendrecv");
                   });
 
                   it("local media stream state", () => {
@@ -975,6 +1819,17 @@ describe("Web SessionDescriptionHandler", () => {
 
                     it("signaling state should be stable", () => {
                       expect(sdh1.peerConnection?.signalingState).toBe("stable");
+                    });
+
+                    it("transceiver direction should be sendrecv", () => {
+                      const transceivers = sdh1.peerConnection?.getTransceivers();
+                      if (!transceivers) {
+                        fail("Transceivers undefined");
+                        return;
+                      }
+                      expect(transceivers.length).toBe(2);
+                      expect(transceivers[0].direction).toBe("sendrecv");
+                      expect(transceivers[1].direction).toBe("sendrecv");
                     });
 
                     it("local media stream state", () => {

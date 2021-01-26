@@ -9,21 +9,6 @@ import { SessionDescriptionHandlerConfiguration } from "./session-description-ha
 import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
 import { PeerConnectionDelegate } from "./peer-connection-delegate";
 
-// Terminology notes for those not familiar...
-//
-// A MediaStream is a collection MediaStreamTracks
-//  - these are used to get cam/mic tracks and attach tracks to audio/video tags
-//  - a video tag renders both audio and video tracks
-//
-// A PeerConnection has Transceivers (only ever one in our use case)
-// A Transceiver has a Sender and a Receiver
-// A Sender has zero or more MediaStreamTracks
-// A Receiver has zero or more MediaStreamTracks
-//  - a transceiver maps to SDP; sender local SDP, receiver to remote
-//  - in our use case, there's one audio track optionally one video track per sender/receiver
-//  - in theory, 3-way calling could be implemented by adding a the audio track from a receiver
-//    on one peer connection to the sender of another peer connection'
-
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
 
@@ -214,6 +199,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
         : options?.iceGatheringTimeout;
 
     return this.getLocalMediaStream(options)
+      .then(() => this.updateDirection(options))
       .then(() => this.createDataChannel(options))
       .then(() => this.createLocalOfferOrAnswer(options))
       .then((sessionDescription) => this.applyModifiers(sessionDescription, modifiers))
@@ -622,6 +608,179 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       remoteStream.addTrack(track);
       SessionDescriptionHandler.dispatchAddTrackEvent(remoteStream, track);
     }
+  }
+
+  /**
+   * Depending on the current signaling state and the session hold state, update transceiver direction.
+   * @param options - Session description handler options.
+   */
+  protected updateDirection(options?: SessionDescriptionHandlerOptions): Promise<void> {
+    if (this._peerConnection === undefined) {
+      return Promise.reject(new Error("Peer connection closed."));
+    }
+
+    // 4.2.3.  setDirection
+    //
+    //    The setDirection method sets the direction of a transceiver, which
+    //    affects the direction property of the associated "m=" section on
+    //    future calls to createOffer and createAnswer.  The permitted values
+    //    for direction are "recvonly", "sendrecv", "sendonly", and "inactive",
+    //    mirroring the identically named direction attributes defined in
+    //    [RFC4566], Section 6.
+    //
+    //    When creating offers, the transceiver direction is directly reflected
+    //    in the output, even for re-offers.  When creating answers, the
+    //    transceiver direction is intersected with the offered direction, as
+    //    explained in Section 5.3 below.
+    //
+    //    Note that while setDirection sets the direction property of the
+    //    transceiver immediately (Section 4.2.4), this property does not
+    //    immediately affect whether the transceiver's RtpSender will send or
+    //    its RtpReceiver will receive.  The direction in effect is represented
+    //    by the currentDirection property, which is only updated when an
+    //    answer is applied.
+    //
+    // 4.2.4.  direction
+    //
+    //    The direction property indicates the last value passed into
+    //    setDirection.  If setDirection has never been called, it is set to
+    //    the direction the transceiver was initialized with.
+    //
+    // 4.2.5.  currentDirection
+    //
+    //    The currentDirection property indicates the last negotiated direction
+    //    for the transceiver's associated "m=" section.  More specifically, it
+    //    indicates the direction attribute [RFC3264] of the associated "m="
+    //    section in the last applied answer (including provisional answers),
+    //    with "send" and "recv" directions reversed if it was a remote answer.
+    //    For example, if the direction attribute for the associated "m="
+    //    section in a remote answer is "recvonly", currentDirection is set to
+    //    "sendonly".
+    //
+    //    If an answer that references this transceiver has not yet been
+    //    applied or if the transceiver is stopped, currentDirection is set to
+    //    "null".
+    //  https://tools.ietf.org/html/rfc8829#section-4.2.3
+    //
+    // *  A direction attribute, determined by applying the rules regarding
+    //    the offered direction specified in [RFC3264], Section 6.1, and
+    //    then intersecting with the direction of the associated
+    //    RtpTransceiver.  For example, in the case where an "m=" section is
+    //    offered as "sendonly" and the local transceiver is set to
+    //    "sendrecv", the result in the answer is a "recvonly" direction.
+    // https://tools.ietf.org/html/rfc8829#section-5.3.1
+    //
+    // If a stream is offered as sendonly, the corresponding stream MUST be
+    // marked as recvonly or inactive in the answer.  If a media stream is
+    // listed as recvonly in the offer, the answer MUST be marked as
+    // sendonly or inactive in the answer.  If an offered media stream is
+    // listed as sendrecv (or if there is no direction attribute at the
+    // media or session level, in which case the stream is sendrecv by
+    // default), the corresponding stream in the answer MAY be marked as
+    // sendonly, recvonly, sendrecv, or inactive.  If an offered media
+    // stream is listed as inactive, it MUST be marked as inactive in the
+    // answer.
+    // https://tools.ietf.org/html/rfc3264#section-6.1
+
+    switch (this._peerConnection.signalingState) {
+      case "stable":
+        // if we are stable, assume we are creating a local offer
+        this.logger.debug("SessionDescriptionHandler.updateDirection - setting offer direction");
+        {
+          // determine the direction to offer given the current direction and hold state
+          const directionToOffer = (currentDirection: RTCRtpTransceiverDirection): RTCRtpTransceiverDirection => {
+            switch (currentDirection) {
+              case "inactive":
+                return options?.hold ? "inactive" : "recvonly";
+              case "recvonly":
+                return options?.hold ? "inactive" : "recvonly";
+              case "sendonly":
+                return options?.hold ? "sendonly" : "sendrecv";
+              case "sendrecv":
+                return options?.hold ? "sendonly" : "sendrecv";
+              case "stopped":
+                return "stopped";
+              default:
+                throw new Error("Should never happen");
+            }
+          };
+          // set the transceiver direction to the offer direction
+          this._peerConnection.getTransceivers().forEach((transceiver) => {
+            if (transceiver.direction /* guarding, but should always be true */) {
+              const offerDirection = directionToOffer(transceiver.direction);
+              if (transceiver.direction !== offerDirection) {
+                transceiver.direction = offerDirection;
+              }
+            }
+          });
+        }
+        break;
+      case "have-remote-offer":
+        // if we have a remote offer, assume we are creating a local answer
+        this.logger.debug("SessionDescriptionHandler.updateDirection - setting answer direction");
+
+        // FIXME: This is not the correct way to determine the answer direction as it is only
+        // considering first match in the offered SDP and using that to determine the answer direction.
+        // While that may be fine for our current use cases, it is not a generally correct approach.
+        {
+          // determine the offered direction
+          const offeredDirection = ((): "inactive" | "recvonly" | "sendonly" | "sendrecv" => {
+            const description = this._peerConnection.remoteDescription;
+            if (!description) {
+              throw new Error("Failed to read remote offer");
+            }
+            const searchResult = /a=sendrecv\r\n|a=sendonly\r\n|a=recvonly\r\n|a=inactive\r\n/.exec(description.sdp);
+            if (searchResult) {
+              switch (searchResult[0]) {
+                case "a=inactive\r\n":
+                  return "inactive";
+                case "a=recvonly\r\n":
+                  return "recvonly";
+                case "a=sendonly\r\n":
+                  return "sendonly";
+                case "a=sendrecv\r\n":
+                  return "sendrecv";
+                default:
+                  throw new Error("Should never happen");
+              }
+            }
+            return "sendrecv";
+          })();
+
+          // determine the answer direction based on the offered direction and our hold state
+          const answerDirection = ((): "inactive" | "recvonly" | "sendonly" | "sendrecv" => {
+            switch (offeredDirection) {
+              case "inactive":
+                return "inactive";
+              case "recvonly":
+                return "sendonly";
+              case "sendonly":
+                return options?.hold ? "inactive" : "recvonly";
+              case "sendrecv":
+                return options?.hold ? "sendonly" : "sendrecv";
+              default:
+                throw new Error("Should never happen");
+            }
+          })();
+
+          // set the transceiver direction to the answer direction
+          this._peerConnection.getTransceivers().forEach((transceiver) => {
+            if (transceiver.direction /* guarding, but should always be true */) {
+              if (transceiver.direction !== "stopped" && transceiver.direction !== answerDirection) {
+                transceiver.direction = answerDirection;
+              }
+            }
+          });
+        }
+        break;
+      case "have-local-offer":
+      case "have-local-pranswer":
+      case "have-remote-pranswer":
+      case "closed":
+      default:
+        return Promise.reject(new Error("Invalid signaling state " + this._peerConnection.signalingState));
+    }
+    return Promise.resolve();
   }
 
   /**

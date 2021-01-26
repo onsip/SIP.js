@@ -274,6 +274,7 @@ export class UserAgent {
       preloadedRouteSet: [],
       reconnectionAttempts: 0,
       reconnectionDelay: 4,
+      sendInitialProvisionalResponse: true,
       sessionDescriptionHandlerFactory: defaultSessionDescriptionHandlerFactory(),
       sessionDescriptionHandlerFactoryOptions: {},
       sipExtension100rel: SIPExtension.Unsupported,

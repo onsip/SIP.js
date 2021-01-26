@@ -80,7 +80,6 @@ export class Invitation extends Session {
     // @internal
     constructor(userAgent: UserAgent, incomingInviteRequest: IncomingInviteRequest);
     accept(options?: InvitationAcceptOptions): Promise<void>;
-    // @internal
     get autoSendAnInitialProvisionalResponse(): boolean;
     get body(): string | undefined;
     dispose(): Promise<void>;
@@ -836,6 +835,7 @@ export interface UserAgentOptions {
     reconnectionAttempts?: number;
     // @deprecated (undocumented)
     reconnectionDelay?: number;
+    sendInitialProvisionalResponse?: boolean;
     sessionDescriptionHandlerFactory?: SessionDescriptionHandlerFactory;
     sessionDescriptionHandlerFactoryOptions?: object;
     sipExtension100rel?: SIPExtension;

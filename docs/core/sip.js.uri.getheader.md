@@ -7,7 +7,7 @@
 <b>Signature:</b>
 
 ```typescript
-getHeader(name: string): string | undefined;
+getHeader(name: string): Array<string> | undefined;
 ```
 
 ## Parameters
@@ -18,5 +18,5 @@ getHeader(name: string): string | undefined;
 
 <b>Returns:</b>
 
-`string | undefined`
+`Array<string> | undefined`
 

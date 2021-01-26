@@ -30,4 +30,5 @@ button {
   width: 40px;
   top: 150px;
   left: 10px;
+  transform: scaleX(-1);
 }
