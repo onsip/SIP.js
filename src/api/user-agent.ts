@@ -284,7 +284,8 @@ export class UserAgent {
       transportOptions: {},
       uri: new URI("sip", "anonymous", "anonymous.invalid"),
       userAgentString: "SIP.js/" + LIBRARY_VERSION,
-      viaHost: ""
+      viaHost: "",
+      sendInitialProvisionalResponse: true
     };
   }
 
