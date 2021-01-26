@@ -34,6 +34,11 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
   dataChannelOptions?: RTCDataChannelInit;
 
   /**
+   * If true, offer and answer directions will be set to place peer on hold.
+   */
+  hold?: boolean;
+
+  /**
    * The maximum duration to wait in ms for ICE gathering to complete.
    * No timeout if undefined or zero.
    */

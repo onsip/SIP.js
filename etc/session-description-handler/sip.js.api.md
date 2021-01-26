@@ -70,6 +70,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandler_2 {
     protected setLocalSessionDescription(sessionDescription: RTCSessionDescriptionInit): Promise<void>;
     protected setRemoteSessionDescription(sessionDescription: RTCSessionDescriptionInit): Promise<void>;
     protected setRemoteTrack(track: MediaStreamTrack): void;
+    protected updateDirection(options?: SessionDescriptionHandlerOptions): Promise<void>;
     protected waitForIceGatheringComplete(restart?: boolean, timeout?: number): Promise<void>;
 }
 
@@ -99,6 +100,7 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
     dataChannel?: boolean;
     dataChannelLabel?: string;
     dataChannelOptions?: RTCDataChannelInit;
+    hold?: boolean;
     iceGatheringTimeout?: number;
     offerOptions?: RTCOfferOptions;
     onDataChannel?: (dataChannel: RTCDataChannel) => void;

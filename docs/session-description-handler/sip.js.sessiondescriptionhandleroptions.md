@@ -21,6 +21,7 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
 |  [dataChannel](./sip.js.sessiondescriptionhandleroptions.datachannel.md) | <code>boolean</code> | If true, create a data channel when making initial offer. |
 |  [dataChannelLabel](./sip.js.sessiondescriptionhandleroptions.datachannellabel.md) | <code>string</code> | A human-readable name to use when creating the data channel. |
 |  [dataChannelOptions](./sip.js.sessiondescriptionhandleroptions.datachanneloptions.md) | <code>RTCDataChannelInit</code> | Configuration options for creating the data channel. |
+|  [hold](./sip.js.sessiondescriptionhandleroptions.hold.md) | <code>boolean</code> | If true, offer and answer directions will be set to place peer on hold. |
 |  [iceGatheringTimeout](./sip.js.sessiondescriptionhandleroptions.icegatheringtimeout.md) | <code>number</code> | The maximum duration to wait in ms for ICE gathering to complete. No timeout if undefined or zero. |
 |  [offerOptions](./sip.js.sessiondescriptionhandleroptions.offeroptions.md) | <code>RTCOfferOptions</code> | Offer options to use when creating an offer. |
 |  [onDataChannel](./sip.js.sessiondescriptionhandleroptions.ondatachannel.md) | <code>(dataChannel: RTCDataChannel) =&gt; void</code> | Called upon creating a data channel. |
