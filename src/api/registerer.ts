@@ -1,4 +1,13 @@
-import { C, Grammar, Logger, OutgoingRegisterRequest, OutgoingRequestMessage, URI, NameAddrHeader } from "../core";
+import {
+  C,
+  Grammar,
+  Logger,
+  OutgoingRegisterRequest,
+  OutgoingRequestMessage,
+  URI,
+  equivalentURI,
+  NameAddrHeader
+} from "../core";
 import { Emitter, EmitterImpl } from "./emitter";
 import { RequestPendingError } from "./exceptions";
 import { RegistererOptions } from "./registerer-options";
@@ -374,19 +383,21 @@ export class Registerer {
             throw new Error("Contact undefined");
           }
 
-          /* Adding host and port checks may break people not using contactName, so only check those
-           * if the parameter is set. The server mucking with host and port is entirely legal,
-           * so in cases where that occurs usage of contactName is currently broken.
-           */
-          if (
-            contact.uri.user === this.userAgent.contact.uri.user &&
-            (this.userAgent.configuration.contactName === "" ||
-              (contact.uri.host === this.userAgent.contact.uri.host &&
-                contact.uri.port === this.userAgent.contact.uri.port))
-          ) {
-            expires = Number(contact.getParam("expires"));
-            break;
+          // If we are using a randomly generated user name (which is the default behavior)
+          if (this.userAgent.configuration.contactName === "") {
+            // compare the user portion of the URI under the assumption that it will be unique
+            if (contact.uri.user === this.userAgent.contact.uri.user) {
+              expires = Number(contact.getParam("expires"));
+              break;
+            }
+          } else {
+            // otherwise use comparision rules in Section 19.1.4
+            if (equivalentURI(contact.uri, this.userAgent.contact.uri)) {
+              expires = Number(contact.getParam("expires"));
+              break;
+            }
           }
+
           contact = undefined;
         }
 

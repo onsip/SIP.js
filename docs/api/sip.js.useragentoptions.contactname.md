@@ -4,7 +4,7 @@
 
 ## UserAgentOptions.contactName property
 
-The contact name associated with the user agent.
+The user portion of user agent's contact URI.
 
 <b>Signature:</b>
 
@@ -14,5 +14,5 @@ contactName?: string;
 
 ## Remarks
 
-User specified contact name, if not specifed random string will be generated
+If not specifed a random string will be generated and utilized as the user portion of the contact URI.
 
