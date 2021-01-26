@@ -20,6 +20,7 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
+|  [autoSendAnInitialProvisionalResponse](./sip.js.invitation.autosendaninitialprovisionalresponse.md) |  | <code>boolean</code> | If true, a first provisional response after the 100 Trying will be sent automatically. This is false it the UAC required reliable provisional responses (100rel in Require header) or the user agent configuration has specified to not send an initial response, otherwise it is true. The provisional is sent by calling <code>progress()</code> without any options. |
 |  [body](./sip.js.invitation.body.md) |  | <code>string &#124; undefined</code> | Initial incoming INVITE request message body. |
 |  [localIdentity](./sip.js.invitation.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
 |  [logger](./sip.js.invitation.logger.md) |  | <code>Logger</code> | Logger. |

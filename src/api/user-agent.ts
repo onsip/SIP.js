@@ -274,6 +274,7 @@ export class UserAgent {
       preloadedRouteSet: [],
       reconnectionAttempts: 0,
       reconnectionDelay: 4,
+      sendInitialProvisionalResponse: true,
       sessionDescriptionHandlerFactory: defaultSessionDescriptionHandlerFactory(),
       sessionDescriptionHandlerFactoryOptions: {},
       sipExtension100rel: SIPExtension.Unsupported,
@@ -284,8 +285,7 @@ export class UserAgent {
       transportOptions: {},
       uri: new URI("sip", "anonymous", "anonymous.invalid"),
       userAgentString: "SIP.js/" + LIBRARY_VERSION,
-      viaHost: "",
-      sendInitialProvisionalResponse: true
+      viaHost: ""
     };
   }
 
