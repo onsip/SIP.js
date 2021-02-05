@@ -82,7 +82,7 @@ const stripMediaDescription = (sdp: string, description: string): string => {
  * @public
  */
 export function stripTcpCandidates(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
-  description.sdp = (description.sdp || "").replace(/^a=candidate:\d+ \d+ tcp .*?\r\n/img, "");
+  description.sdp = (description.sdp || "").replace(/^a=candidate:\d+ \d+ tcp .*?\r?\n/img, "");
   return Promise.resolve(description);
 }
 

@@ -23,6 +23,7 @@ const SessionDescription = {
       "a=rtcp:53027 IN IP4 199.7.173.162\r\n" +
       "a=candidate:2608808550 1 udp 2113937151 192.168.1.33 53974 typ host generation 0\r\n" +
       "a=candidate:2608808550 2 tcp 2113937151 192.168.1.33 53974 typ host generation 0\r\n" +
+	  "a=candidate:2608808550 3 tcp 2113937151 192.168.1.33 53975 typ host generation 0\n" +
       "a=candidate:478089246 1 udp 1685987071 127.0.0.1 58170 typ srflx raddr 127.0.0.1 rport 58170 generation 0 network-id 1\r\n" +
       "a=candidate:1099745028 1 udp 25042687 127.0.0.1 56353 typ relay raddr 127.0.0.1 rport 50998 generation 0 network-id 1\r\n" +
       "a=ice-ufrag:yTSZ59T6XRf4f7+q\r\n" +
@@ -70,6 +71,9 @@ describe("Web Modifiers", () => {
       );
       expect(description.sdp).not.toContain(
         "a=candidate:2608808550 2 tcp 2113937151 192.168.1.33 53974 typ host generation 0"
+      );
+      expect(description.sdp).not.toContain(
+        "a=candidate:2608808550 3 tcp 2113937151 192.168.1.33 53975 typ host generation 0\n"
       );
       expect(description.sdp).toContain(
         "a=candidate:478089246 1 udp 1685987071 127.0.0.1 58170 typ srflx raddr 127.0.0.1 rport 58170 generation 0 network-id 1"
