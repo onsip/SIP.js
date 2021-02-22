@@ -22,10 +22,12 @@ import { UserAgent } from "./user-agent";
  */
 export class Registerer {
   private static readonly defaultExpires = 600;
+  private static readonly defaultRefreshFrequency = 99;
 
   private disposed = false;
   private id: string;
   private expires: number;
+  private refreshFrequency: number;
   private logger: Logger;
   private options: RegistererOptions;
   private request: OutgoingRequestMessage;
@@ -125,6 +127,14 @@ export class Registerer {
       throw new Error("Invalid expires.");
     }
 
+    // Interval at which re-REGISTER requests are sent
+    this.refreshFrequency = this.options.refreshFrequency || Registerer.defaultRefreshFrequency;
+    if (this.refreshFrequency < 50 || this.refreshFrequency > 99) {
+      throw new Error(
+        "Invalid refresh frequency. The value represents a percentage of the expiration time and should be between 50 and 99."
+      );
+    }
+
     // initialize logger
     this.logger = userAgent.getLogger("sip.Registerer");
 
@@ -160,7 +170,8 @@ export class Registerer {
       instanceId: "",
       params: {},
       regId: 0,
-      registrar: new URI("sip", "anonymous", "anonymous.invalid")
+      registrar: new URI("sip", "anonymous", "anonymous.invalid"),
+      refreshFrequency: Registerer.defaultRefreshFrequency
     };
   }
 
@@ -673,11 +684,11 @@ export class Registerer {
     this.clearTimers();
 
     // Re-Register before the expiration interval has elapsed.
-    // For that, decrease the expires value. ie: 3 seconds
+    // For that, calculate the delay as a percentage of the expiration time
     this.registrationTimer = setTimeout(() => {
       this.registrationTimer = undefined;
       this.register();
-    }, expires * 1000 - 3000);
+    }, (this.refreshFrequency / 100) * expires * 1000);
 
     // We are unregistered if the registration expires.
     this.registrationExpiredTimer = setTimeout(() => {
