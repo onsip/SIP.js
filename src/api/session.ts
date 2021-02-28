@@ -794,10 +794,9 @@ export abstract class Session {
         : this._sessionDescriptionHandlerModifiers
     };
 
-    if (this.delegate && this.delegate.onAck)
-    {
-        const ack = new Ack(request);
-        this.delegate.onAck(ack);
+    if (this.delegate && this.delegate.onAck) {
+      const ack = new Ack(request);
+      this.delegate.onAck(ack);
     }
 
     // reset pending ACK flag
