@@ -6,6 +6,9 @@
 export abstract class Exception extends Error {
   protected constructor(message?: string) {
     super(message); // 'Error' breaks prototype chain here
-    Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+
+    if (new.target) {
+      Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
+    }
   }
 }
