@@ -394,6 +394,10 @@ export class Registerer {
             throw new Error("Contact undefined");
           }
 
+          if (this.userAgent.contact.pubGruu && equivalentURI(contact.uri, this.userAgent.contact.pubGruu)) {
+            expires = Number(contact.getParam("expires"));
+            break;
+          }
           // If we are using a randomly generated user name (which is the default behavior)
           if (this.userAgent.configuration.contactName === "") {
             // compare the user portion of the URI under the assumption that it will be unique
