@@ -229,7 +229,9 @@ export class Publisher {
         if (this.pubRequestExpires !== 0) {
           // Schedule refresh
           this.publishRefreshTimer = setTimeout(() => this.refreshRequest(), this.pubRequestExpires * 900);
-          this.stateTransition(PublisherState.Published);
+          if (this._state !== PublisherState.Published) {
+            this.stateTransition(PublisherState.Published);
+          }
         } else {
           this.stateTransition(PublisherState.Unpublished);
         }

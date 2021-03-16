@@ -10,6 +10,7 @@ A simple yet powerful API which takes care of SIP signaling and WebRTC media ses
 
 |  Class | Description |
 |  --- | --- |
+|  [Ack](./sip.js.ack.md) | A request to confirm a [Session](./sip.js.session.md) (incoming ACK). |
 |  [Bye](./sip.js.bye.md) | A request to end a [Session](./sip.js.session.md) (incoming BYE). |
 |  [ContentTypeUnsupportedError](./sip.js.contenttypeunsupportederror.md) | An exception indicating an unsupported content type prevented execution. |
 |  [Info](./sip.js.info.md) | An exchange of information (incoming INFO). |

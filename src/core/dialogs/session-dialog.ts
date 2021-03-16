@@ -652,7 +652,7 @@ export class SessionDialog extends Dialog implements Session {
             ? this.delegate.onInfo(uas)
             : uas.reject({
                 statusCode: 469,
-                extraHeaders: ["Recv-Info :"]
+                extraHeaders: ["Recv-Info:"]
               });
         }
         break;

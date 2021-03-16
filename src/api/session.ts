@@ -29,6 +29,7 @@ import {
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
 import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
+import { Ack } from "./ack";
 import { Bye } from "./bye";
 import { Emitter, EmitterImpl } from "./emitter";
 import { ContentTypeUnsupportedError, RequestPendingError } from "./exceptions";
@@ -792,6 +793,11 @@ export abstract class Session {
         ? this._sessionDescriptionHandlerModifiersReInvite
         : this._sessionDescriptionHandlerModifiers
     };
+
+    if (this.delegate && this.delegate.onAck) {
+      const ack = new Ack(request);
+      this.delegate.onAck(ack);
+    }
 
     // reset pending ACK flag
     this.pendingReinviteAck = false;
