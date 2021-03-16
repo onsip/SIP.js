@@ -3,6 +3,7 @@
  * @packageDocumentation
  */
 export * from "./exceptions";
+export * from "./ack";
 export * from "./bye";
 export * from "./emitter";
 export * from "./info";
