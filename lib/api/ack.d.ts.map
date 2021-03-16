@@ -1,0 +1,1 @@
+{"version":3,"file":"ack.d.ts","sourceRoot":"","sources":["../../src/api/ack.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,sBAAsB,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAErE;;;GAGG;AACH,qBAAa,GAAG;IAEK,OAAO,CAAC,kBAAkB;IAD7C,gBAAgB;gBACW,kBAAkB,EAAE,kBAAkB;IAEjE,oCAAoC;IACpC,IAAW,OAAO,IAAI,sBAAsB,CAE3C;CACF"}
