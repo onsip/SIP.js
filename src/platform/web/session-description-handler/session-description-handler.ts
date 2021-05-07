@@ -8,6 +8,7 @@ import { MediaStreamFactory } from "./media-stream-factory";
 import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration";
 import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
 import { PeerConnectionDelegate } from "./peer-connection-delegate";
+import { RTCPeerConnectionIceEventEx } from "./rtc-peer-connection-event-ex";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
@@ -872,7 +873,13 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     peerConnection.onicecandidate = (event): void => {
       this.logger.debug(`SessionDescriptionHandler.onicecandidate`);
       if (this._peerConnectionDelegate?.onicecandidate) {
-        this._peerConnectionDelegate.onicecandidate(event);
+        const a: RTCPeerConnectionIceEventEx = {
+          innerEvent: event,
+          ready: () => {
+            this.iceGatheringComplete();
+          }
+        };
+        this._peerConnectionDelegate.onicecandidate(a);
       }
     };
 

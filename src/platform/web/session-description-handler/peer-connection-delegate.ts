@@ -1,3 +1,5 @@
+import { RTCPeerConnectionIceEventEx } from "./rtc-peer-connection-event-ex";
+
 /**
  * Delegate to handle PeerConnection state changes.
  * @public
@@ -20,9 +22,9 @@ export interface PeerConnectionDelegate {
 
   /**
    * Triggered when a new ICE candidate has been found.
-   * @param event - RTCPeerConnectionIceEvent.
+   * @param event - RTCPeerConnectionIceEventEx.
    */
-  onicecandidate?(event: RTCPeerConnectionIceEvent): void;
+  onicecandidate?(event: RTCPeerConnectionIceEventEx): void;
 
   /**
    * Triggered when an error occurred during ICE candidate gathering.
