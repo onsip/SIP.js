@@ -768,10 +768,16 @@ export class SimpleUser {
         case SessionState.Initial:
           break;
         case SessionState.Establishing:
+          if (this.session.earlyMedia) {
+            this.setupLocalMedia();
+            this.setupRemoteMedia();
+          }        
           break;
         case SessionState.Established:
-          this.setupLocalMedia();
-          this.setupRemoteMedia();
+          if (!this.session.earlyMedia) {
+            this.setupLocalMedia();
+            this.setupRemoteMedia();
+          }
           if (this.delegate && this.delegate.onCallAnswered) {
             this.delegate.onCallAnswered();
           }
@@ -1027,10 +1033,12 @@ export class SimpleUser {
       }
       mediaElement.autoplay = true; // Safari hack, because you cannot call .play() from a non user action
       mediaElement.srcObject = remoteStream;
-      mediaElement.play().catch((error: Error) => {
-        this.logger.error(`[${this.id}] Failed to play remote media`);
-        this.logger.error(error.message);
-      });
+      if (!this.session.earlyMedia) {
+        mediaElement.play().catch((error: Error) => {
+          this.logger.error(`[${this.id}] Failed to play remote media`);
+          this.logger.error(error.message);
+        });
+      }
       remoteStream.onaddtrack = (): void => {
         this.logger.log(`[${this.id}] Remote media onaddtrack`);
         mediaElement.load(); // Safari hack, as it doesn't work otheriwse
