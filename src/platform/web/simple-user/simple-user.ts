@@ -1011,10 +1011,12 @@ export class SimpleUser {
       }
       mediaElement.srcObject = localStream;
       mediaElement.volume = 0;
-      mediaElement.play().catch((error: Error) => {
-        this.logger.error(`[${this.id}] Failed to play local media`);
-        this.logger.error(error.message);
-      });
+      mediaElement.onloadedmetadata= function() {
+        mediaElement.play().catch((error: Error) => {
+          this.logger.error(`[${this.id}] Failed to play local media`);
+          this.logger.error(error.message);
+        });
+      }
     }
   }
 
@@ -1033,7 +1035,7 @@ export class SimpleUser {
       }
       mediaElement.autoplay = true; // Safari hack, because you cannot call .play() from a non user action
       mediaElement.srcObject = remoteStream;
-      if (!this.session.earlyMedia) {
+      mediaElement.onloadedmetadata= function() {
         mediaElement.play().catch((error: Error) => {
           this.logger.error(`[${this.id}] Failed to play remote media`);
           this.logger.error(error.message);
