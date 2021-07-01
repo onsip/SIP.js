@@ -768,16 +768,10 @@ export class SimpleUser {
         case SessionState.Initial:
           break;
         case SessionState.Establishing:
-          if (this.session.earlyMedia) {
-            this.setupLocalMedia();
-            this.setupRemoteMedia();
-          }
+          this.setupLocalMedia();
+          this.setupRemoteMedia();
           break;
         case SessionState.Established:
-          if (!this.session.earlyMedia) {
-            this.setupLocalMedia();
-            this.setupRemoteMedia();
-          }
           if (this.delegate && this.delegate.onCallAnswered) {
             this.delegate.onCallAnswered();
           }
