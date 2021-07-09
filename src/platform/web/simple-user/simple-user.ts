@@ -768,10 +768,16 @@ export class SimpleUser {
         case SessionState.Initial:
           break;
         case SessionState.Establishing:
+          if (referralInviterOptions && referralInviterOptions.earlyMedia) {
+            this.setupLocalMedia();
+            this.setupRemoteMedia();
+          }
           break;
         case SessionState.Established:
-          this.setupLocalMedia();
-          this.setupRemoteMedia();
+          if (!referralInviterOptions || !referralInviterOptions.earlyMedia) {
+            this.setupLocalMedia();
+            this.setupRemoteMedia();
+          }
           if (this.delegate && this.delegate.onCallAnswered) {
             this.delegate.onCallAnswered();
           }
@@ -1005,9 +1011,11 @@ export class SimpleUser {
       }
       mediaElement.srcObject = localStream;
       mediaElement.volume = 0;
-      mediaElement.play().catch((error: Error) => {
-        this.logger.error(`[${this.id}] Failed to play local media`);
-        this.logger.error(error.message);
+      mediaElement.addEventListener("onloadedmetadata", () => {
+        mediaElement.play().catch((error: Error) => {
+          this.logger.error(`[${this.id}] Failed to play local media`);
+          this.logger.error(error.message);
+        });
       });
     }
   }
@@ -1027,9 +1035,11 @@ export class SimpleUser {
       }
       mediaElement.autoplay = true; // Safari hack, because you cannot call .play() from a non user action
       mediaElement.srcObject = remoteStream;
-      mediaElement.play().catch((error: Error) => {
-        this.logger.error(`[${this.id}] Failed to play remote media`);
-        this.logger.error(error.message);
+      mediaElement.addEventListener("onloadedmetadata", () => {
+        mediaElement.play().catch((error: Error) => {
+          this.logger.error(`[${this.id}] Failed to play remote media`);
+          this.logger.error(error.message);
+        });
       });
       remoteStream.onaddtrack = (): void => {
         this.logger.log(`[${this.id}] Remote media onaddtrack`);
