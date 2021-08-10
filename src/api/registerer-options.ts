@@ -46,4 +46,10 @@ export interface RegistererOptions {
    * @defaultValue domain portion of the user agent's uri
    */
   registrar?: URI;
+
+  /**
+   * Determines when a re-REGISTER request is sent. The value should be specified as a percentage of the expiration time (between 50 and 99).
+   * @defaultValue 99
+   */
+  refreshFrequency?: number;
 }

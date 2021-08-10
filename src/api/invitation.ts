@@ -259,7 +259,7 @@ export class Invitation extends Session {
     this.stateTransition(SessionState.Establishing);
 
     return (
-      this.sendAccept()
+      this.sendAccept(options)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .then(({ message, session }) => {
           session.delegate = {
@@ -565,11 +565,13 @@ export class Invitation extends Session {
    * A version of `accept` which resolves a session when the 200 Ok response is sent.
    * @param options - Options bucket.
    */
-  private sendAccept(): Promise<OutgoingResponseWithSession> {
+  private sendAccept(options: InvitationAcceptOptions = {}): Promise<OutgoingResponseWithSession> {
     const responseOptions = {
       sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptions,
       sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiers
     };
+
+    const extraHeaders = options.extraHeaders || [];
 
     // The UAS MAY send a final response to the initial request before
     // having received PRACKs for all unacknowledged reliable provisional
@@ -588,12 +590,12 @@ export class Invitation extends Session {
       return this.waitForArrivalOfPrack()
         .then(() => clearTimeout(this.userNoAnswerTimer)) // Ported
         .then(() => this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions))
-        .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body }));
+        .then((body) => this.incomingInviteRequest.accept({ statusCode: 200, body, extraHeaders }));
     }
 
     clearTimeout(this.userNoAnswerTimer); // Ported
     return this.generateResponseOfferAnswer(this.incomingInviteRequest, responseOptions).then((body) =>
-      this.incomingInviteRequest.accept({ statusCode: 200, body })
+      this.incomingInviteRequest.accept({ statusCode: 200, body, extraHeaders })
     );
   }
 

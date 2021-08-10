@@ -19,7 +19,7 @@ export class DigestAuthentication {
   private logger: Logger;
   private ha1: string | undefined;
   private username: string | undefined;
-  private password: string | undefined;
+  private password: string | Function | undefined;
   private cnonce: string | undefined;
   private nc: number;
   private ncHex: string;
@@ -42,7 +42,7 @@ export class DigestAuthentication {
     loggerFactory: LoggerFactory,
     ha1: string | undefined,
     username: string | undefined,
-    password: string | undefined
+    password: string | Function | undefined
   ) {
     this.logger = loggerFactory.getLogger("sipjs.digestauthentication");
     this.username = username;
@@ -167,7 +167,11 @@ export class DigestAuthentication {
     // HA1 = MD5(A1) = MD5(username:realm:password)
     ha1 = this.ha1;
     if (ha1 === "" || ha1 === undefined) {
-      ha1 = MD5(this.username + ":" + this.realm + ":" + this.password);
+      if (typeof this.password === "function") {
+        ha1 = MD5(this.username + ":" + this.realm + ":" + this.password());
+      } else {
+        ha1 = MD5(this.username + ":" + this.realm + ":" + this.password);
+      }
     }
 
     if (this.qop === "auth") {

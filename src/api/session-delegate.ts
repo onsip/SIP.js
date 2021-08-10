@@ -1,4 +1,5 @@
 import { IncomingRequestMessage } from "../core";
+import { Ack } from "./ack";
 import { Bye } from "./bye";
 import { Info } from "./info";
 import { Message } from "./message";
@@ -11,6 +12,12 @@ import { SessionDescriptionHandler } from "./session-description-handler";
  * @public
  */
 export interface SessionDelegate {
+  /**
+   * Called upon receiving an incoming in dialog ACK request.
+   * @param ack - The ack.
+   */
+  onAck?(ack: Ack): void;
+
   /**
    * Called upon receiving an incoming in dialog BYE request.
    * @param bye - The bye.
