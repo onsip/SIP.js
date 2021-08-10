@@ -147,7 +147,7 @@ import { Web } from "sip.js";
 
 // The Session.sessionDescriptionHandlerOptionsReInvite property
 // may be used to pass options to the SessionDescriptionHandler.
-const sessionDescriptionHandlerOptions: Web.SesionDescriptionHandlerOptions = {
+const sessionDescriptionHandlerOptions: Web.SessionDescriptionHandlerOptions = {
   hold: true; // set to false to "unhold" session
 }
 session.sessionDescriptionHandlerOptionsReInvite = sessionDescriptionHandlerOptions;

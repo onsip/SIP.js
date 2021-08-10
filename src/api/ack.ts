@@ -1,7 +1,7 @@
 import { IncomingRequestMessage, IncomingAckRequest } from "../core";
 
 /**
- * A request to end a {@link Session} (incoming ACK).
+ * A request to confirm a {@link Session} (incoming ACK).
  * @public
  */
 export class Ack {

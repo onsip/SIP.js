@@ -6,6 +6,10 @@ import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } f
  */
 export interface InvitationAcceptOptions {
   /**
+   * Array of extra headers added to the response.
+   */
+  extraHeaders?: Array<string>;
+  /**
    * Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction.
    */
   sessionDescriptionHandlerModifiers?: Array<SessionDescriptionHandlerModifier>;

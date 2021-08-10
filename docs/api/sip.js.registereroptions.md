@@ -22,6 +22,7 @@ export interface RegistererOptions
 |  [instanceId](./sip.js.registereroptions.instanceid.md) | <code>string</code> | UUID to provide with "+sip.instance" Contact parameter. |
 |  [logConfiguration](./sip.js.registereroptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the registerer configuration. |
 |  [params](./sip.js.registereroptions.params.md) | <code>{</code><br/><code>        fromDisplayName?: string;</code><br/><code>        fromTag?: string;</code><br/><code>        fromUri?: URI;</code><br/><code>        toDisplayName?: string;</code><br/><code>        toUri?: URI;</code><br/><code>    }</code> |  |
+|  [refreshFrequency](./sip.js.registereroptions.refreshfrequency.md) | <code>number</code> | Determines when a re-REGISTER request is sent. The value should be specified as a percentage of the expiration time (between 50 and 99). |
 |  [regId](./sip.js.registereroptions.regid.md) | <code>number</code> | Value to provide with "reg-id" Contact parameter. |
 |  [registrar](./sip.js.registereroptions.registrar.md) | <code>URI</code> | The URI of the registrar to send the REGISTER requests. |
 
