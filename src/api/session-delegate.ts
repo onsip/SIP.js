@@ -1,6 +1,7 @@
 import { IncomingRequestMessage } from "../core";
 import { Ack } from "./ack";
 import { Bye } from "./bye";
+import { Cancel } from "./cancel";
 import { Info } from "./info";
 import { Message } from "./message";
 import { Notification } from "./notification";
@@ -23,6 +24,12 @@ export interface SessionDelegate {
    * @param bye - The bye.
    */
   onBye?(bye: Bye): void;
+
+  /**
+   * Called upon receiving an incoming CANCEL request.
+   * @param cancel - The cancel.
+   */
+  onCancel?(cancel: Cancel): void;
 
   /**
    * Called upon receiving an incoming in dialog INFO request.

@@ -16,6 +16,7 @@ import {
   TransactionStateError
 } from "../core";
 import { getReasonPhrase } from "../core/messages/utils";
+import { Cancel } from "./cancel";
 import { ContentTypeUnsupportedError, SessionDescriptionHandlerError, SessionTerminatedError } from "./exceptions";
 import { InvitationAcceptOptions } from "./invitation-accept-options";
 import { InvitationProgressOptions } from "./invitation-progress-options";
@@ -424,6 +425,11 @@ export class Invitation extends Session {
     if (this.state !== SessionState.Initial && this.state !== SessionState.Establishing) {
       this.logger.error(`CANCEL received while in state ${this.state}, dropping request`);
       return;
+    }
+
+    if (this.delegate && this.delegate.onCancel) {
+      const cancel = new Cancel(message);
+      this.delegate.onCancel(cancel);
     }
 
     // flag canceled
