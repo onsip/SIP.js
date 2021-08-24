@@ -6,6 +6,7 @@ import { Message } from "./message";
 import { Notification } from "./notification";
 import { Referral } from "./referral";
 import { SessionDescriptionHandler } from "./session-description-handler";
+import { Cancel } from "./cancel";
 
 /**
  * Delegate for {@link Session}.
@@ -23,6 +24,12 @@ export interface SessionDelegate {
    * @param bye - The bye.
    */
   onBye?(bye: Bye): void;
+
+  /**
+   * Called upon receiving an incoming CANCEL request.
+   * @param cancel - The bye.
+   */
+  onCancel?(cancel: Cancel): void;
 
   /**
    * Called upon receiving an incoming in dialog INFO request.
