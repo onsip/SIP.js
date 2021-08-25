@@ -267,7 +267,6 @@ export class Invitation extends Session {
             onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
             onAckTimeout: (): void => this.onAckTimeout(),
             onBye: (byeRequest): void => this.onByeRequest(byeRequest),
-            onCancel: (cancelRequest): void => this._onCancel(cancelRequest.message),
             onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
             onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
             onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
@@ -422,9 +421,12 @@ export class Invitation extends Session {
   public _onCancel(message: IncomingRequestMessage): void {
     this.logger.log("Invitation._onCancel");
 
-    if (this.delegate && this.delegate.onCancel) {
-      const cancel = new Cancel(message);
-      this.delegate.onCancel(cancel);
+    // validate state for CANCEL delegation
+    if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
+      if (this.delegate && this.delegate.onCancel) {
+        const cancel = new Cancel(message);
+        this.delegate.onCancel(cancel);
+      }
     }
 
     // validate state

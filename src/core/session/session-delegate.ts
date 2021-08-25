@@ -1,7 +1,6 @@
 import {
   IncomingAckRequest,
   IncomingByeRequest,
-  IncomingCancelRequest,
   IncomingInfoRequest,
   IncomingInviteRequest,
   IncomingMessageRequest,
@@ -45,13 +44,6 @@ export interface SessionDelegate {
    * @param request - Incoming BYE request.
    */
   onBye?(request: IncomingByeRequest): void;
-
-  /**
-   * Receive CANCEL request.
-   * https://datatracker.ietf.org/doc/html/rfc3261#section-9.2
-   * @param request - Incoming CANCEL request.
-   */
-  onCancel?(request: IncomingCancelRequest): void;
 
   /**
    * Receive INFO request.
