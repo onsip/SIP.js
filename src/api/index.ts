@@ -5,6 +5,7 @@
 export * from "./exceptions";
 export * from "./ack";
 export * from "./bye";
+export * from "./cancel";
 export * from "./emitter";
 export * from "./info";
 export * from "./invitation-accept-options";

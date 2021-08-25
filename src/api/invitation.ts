@@ -24,6 +24,7 @@ import { Session } from "./session";
 import { SessionState } from "./session-state";
 import { UserAgent } from "./user-agent";
 import { SIPExtension } from "./user-agent-options";
+import { Cancel } from "./cancel";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
@@ -419,6 +420,14 @@ export class Invitation extends Session {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public _onCancel(message: IncomingRequestMessage): void {
     this.logger.log("Invitation._onCancel");
+
+    // validate state for CANCEL delegation
+    if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
+      if (this.delegate && this.delegate.onCancel) {
+        const cancel = new Cancel(message);
+        this.delegate.onCancel(cancel);
+      }
+    }
 
     // validate state
     if (this.state !== SessionState.Initial && this.state !== SessionState.Establishing) {
