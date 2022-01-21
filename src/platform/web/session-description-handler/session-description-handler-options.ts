@@ -19,6 +19,11 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
   constraints?: MediaStreamConstraints;
 
   /**
+   * Accept custom media stream externally on accept
+   */
+  mediaStream?: MediaStream;
+
+  /**
    * If true, create a data channel when making initial offer.
    */
   dataChannel?: boolean;

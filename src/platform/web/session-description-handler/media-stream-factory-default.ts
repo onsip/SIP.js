@@ -5,7 +5,7 @@ import { MediaStreamFactory } from "./media-stream-factory";
  * @public
  */
 export function defaultMediaStreamFactory(): MediaStreamFactory {
-  return (constraints: MediaStreamConstraints): Promise<MediaStream> => {
+  return (constraints: MediaStreamConstraints, mediaStream?: any): Promise<MediaStream> => {
     // if no audio or video, return a media stream without tracks
     if (!constraints.audio && !constraints.video) {
       return Promise.resolve(new MediaStream());
@@ -17,6 +17,11 @@ export function defaultMediaStreamFactory(): MediaStreamFactory {
     if (navigator.mediaDevices === undefined) {
       return Promise.reject(new Error("Media devices not available in insecure contexts."));
     }
+
+    if (mediaStream) {
+      return Promise.resolve(mediaStream)
+    }
+
     return navigator.mediaDevices.getUserMedia.call(navigator.mediaDevices, constraints);
   };
 }

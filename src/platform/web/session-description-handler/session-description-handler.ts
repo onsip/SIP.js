@@ -399,6 +399,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       return Promise.reject(new Error("Peer connection closed."));
     }
     let constraints: MediaStreamConstraints = { ...options?.constraints };
+    let mediaStream: MediaStream | any = options?.mediaStream
 
     // if we already have a local media stream...
     if (this.localMediaStreamConstraints) {
@@ -421,7 +422,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
 
     this.localMediaStreamConstraints = constraints;
-    return this.mediaStreamFactory(constraints, this).then((mediaStream) => this.setLocalMediaStream(mediaStream));
+    return this.mediaStreamFactory(constraints, mediaStream, this).then((mediaStream) => this.setLocalMediaStream(mediaStream));
   }
 
   /**
