@@ -2099,14 +2099,17 @@ describe("API Session", () => {
   describe("Custom mediaStream passed...", () => {
     beforeEach(async () => {
       target = bob.uri;
+
       bob.userAgent.delegate = {
         onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
         }
       };
-      inviter = new Inviter(alice.userAgent, target, { earlyMedia: true });
+
+      inviter = new Inviter(alice.userAgent, target);
       inviterStateSpy = makeEmitterSpy(inviter.stateChange, alice.userAgent.getLogger("Alice"));
+
       await soon();
     });
 
