@@ -75,6 +75,7 @@ export interface SessionDescriptionHandlerModifier {
  */
 export interface SessionDescriptionHandlerOptions {
   constraints?: object;
+  mediaStream?: MediaStream;
 }
 
 /**

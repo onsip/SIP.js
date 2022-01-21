@@ -392,13 +392,16 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   /**
    * Get a media stream from the media stream factory and set the local media stream.
    * @param options - Session description handler options.
+   * @param mediaStream - Set an custom MediaStream in runtime when invite accepted
    */
   protected getLocalMediaStream(options?: SessionDescriptionHandlerOptions): Promise<void> {
     this.logger.debug("SessionDescriptionHandler.getLocalMediaStream");
     if (this._peerConnection === undefined) {
       return Promise.reject(new Error("Peer connection closed."));
     }
+
     let constraints: MediaStreamConstraints = { ...options?.constraints };
+    const mediaStream: MediaStream | any = options?.mediaStream;
 
     // if we already have a local media stream...
     if (this.localMediaStreamConstraints) {
@@ -421,7 +424,10 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
 
     this.localMediaStreamConstraints = constraints;
-    return this.mediaStreamFactory(constraints, this).then((mediaStream) => this.setLocalMediaStream(mediaStream));
+
+    return this.mediaStreamFactory(constraints, mediaStream, this).then((mediaStream) =>
+      this.setLocalMediaStream(mediaStream)
+    );
   }
 
   /**

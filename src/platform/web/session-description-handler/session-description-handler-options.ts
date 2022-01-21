@@ -11,6 +11,11 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
   answerOptions?: RTCAnswerOptions;
 
   /**
+   * Accept custom media stream externally on accept
+   */
+  mediaStream?: MediaStream | any;
+
+  /**
    * Constraints to use when creating local media stream.
    * @remarks
    * If undefined, defaults to audio true and video false.
