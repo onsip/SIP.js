@@ -1,11 +1,16 @@
 import { MediaStreamFactory } from "./media-stream-factory";
+import { SessionDescriptionHandler } from "./session-description-handler";
 
 /**
  * Function which returns a MediaStreamFactory.
  * @public
  */
 export function defaultMediaStreamFactory(): MediaStreamFactory {
-  return (constraints: MediaStreamConstraints, mediaStream?: MediaStream | any): Promise<MediaStream> => {
+  return (
+    constraints: MediaStreamConstraints,
+    sessionDescriptionHandler?: SessionDescriptionHandler,
+    mediaStream?: MediaStream
+  ): Promise<MediaStream> => {
     // if no audio or video, return a media stream without tracks
     if (!constraints.audio && !constraints.video) {
       return Promise.resolve(new MediaStream());

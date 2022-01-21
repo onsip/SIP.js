@@ -17,7 +17,8 @@ import { SessionDescriptionHandlerFactoryOptions } from "./session-description-h
 export function defaultSessionDescriptionHandlerFactory(
   mediaStreamFactory?: (
     constraints: MediaStreamConstraints,
-    sessionDescriptionHandler: SessionDescriptionHandler
+    sessionDescriptionHandler: SessionDescriptionHandler,
+    mediaStream?: MediaStream
   ) => Promise<MediaStream>
 ): SessionDescriptionHandlerFactory {
   return (session: Session, options?: SessionDescriptionHandlerFactoryOptions): SessionDescriptionHandler => {

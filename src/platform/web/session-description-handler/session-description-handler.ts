@@ -253,7 +253,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     const interToneGap = options?.interToneGap;
     try {
       dtmfSender.insertDTMF(tones, duration, interToneGap);
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(e);
       return false;
     }
@@ -401,7 +401,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
 
     let constraints: MediaStreamConstraints = { ...options?.constraints };
-    const mediaStream: MediaStream | any = options?.mediaStream;
+    const customMediaStream: MediaStream | any = options?.mediaStream || undefined;
 
     // if we already have a local media stream...
     if (this.localMediaStreamConstraints) {
@@ -425,7 +425,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
 
     this.localMediaStreamConstraints = constraints;
 
-    return this.mediaStreamFactory(constraints, mediaStream, this).then((mediaStream) =>
+    return this.mediaStreamFactory(constraints, this, customMediaStream).then((mediaStream) =>
       this.setLocalMediaStream(mediaStream)
     );
   }

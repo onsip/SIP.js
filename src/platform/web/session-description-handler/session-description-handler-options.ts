@@ -13,7 +13,7 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
   /**
    * Accept custom media stream externally on accept
    */
-  mediaStream?: MediaStream | any;
+  mediaStream?: MediaStream;
 
   /**
    * Constraints to use when creating local media stream.

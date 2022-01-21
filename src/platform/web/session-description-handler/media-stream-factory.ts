@@ -6,6 +6,6 @@ import { SessionDescriptionHandler } from "./session-description-handler";
  */
 export type MediaStreamFactory = (
   constraints: MediaStreamConstraints,
-  mediaStream?: MediaStream,
-  sessionDescriptionHandler?: SessionDescriptionHandler
+  sessionDescriptionHandler: SessionDescriptionHandler,
+  mediaStream?: MediaStream
 ) => Promise<MediaStream>;
