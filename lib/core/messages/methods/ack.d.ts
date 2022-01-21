@@ -1,12 +1,19 @@
 import { IncomingRequestMessage } from "../incoming-request-message";
 import { OutgoingRequestMessage } from "../outgoing-request-message";
-/** ACK message sent from remote client to local server. */
+/**
+ * Incoming ACK request.
+ * @public
+ */
 export interface IncomingAckRequest {
     /** The incoming message. */
     readonly message: IncomingRequestMessage;
 }
-/** ACK message sent from local client to remote server. */
+/**
+ * Outgoing ACK request.
+ * @public
+ */
 export interface OutgoingAckRequest {
     /** The outgoing message. */
     readonly message: OutgoingRequestMessage;
 }
+//# sourceMappingURL=ack.d.ts.map

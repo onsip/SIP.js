@@ -1,6 +1,6 @@
-import { NameAddrHeader } from "./name-addr-header";
+import { NameAddrHeader } from "../../grammar";
 /**
- * Incoming SIP message.
+ * Incoming message.
  * @public
  */
 export declare class IncomingMessage {
@@ -77,3 +77,4 @@ export declare class IncomingMessage {
     setHeader(name: string, value: string): void;
     toString(): string;
 }
+//# sourceMappingURL=incoming-message.d.ts.map

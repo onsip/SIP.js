@@ -11,3 +11,4 @@ export * from "./publish";
 export * from "./register";
 export * from "./refer";
 export * from "./subscribe";
+//# sourceMappingURL=index.d.ts.map

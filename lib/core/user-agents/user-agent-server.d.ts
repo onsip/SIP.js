@@ -5,7 +5,9 @@ import { Transport } from "../transport";
 import { UserAgentCore } from "../user-agent-core";
 declare type ServerTransactionConstructor = new (message: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser) => ServerTransaction;
 /**
- * User Agent Server (UAS): A user agent server is a logical entity
+ * User Agent Server (UAS).
+ * @remarks
+ * A user agent server is a logical entity
  * that generates a response to a SIP request.  The response
  * accepts, rejects, or redirects the request.  This role lasts
  * only for the duration of that transaction.  In other words, if
@@ -14,6 +16,7 @@ declare type ServerTransactionConstructor = new (message: IncomingRequestMessage
  * later, it assumes the role of a user agent client for the
  * processing of that transaction.
  * https://tools.ietf.org/html/rfc3261#section-6
+ * @public
  */
 export declare class UserAgentServer implements IncomingRequest {
     private transactionConstructor;
@@ -25,9 +28,9 @@ export declare class UserAgentServer implements IncomingRequest {
     private _transaction;
     constructor(transactionConstructor: ServerTransactionConstructor, core: UserAgentCore, message: IncomingRequestMessage, delegate?: IncomingRequestDelegate | undefined);
     dispose(): void;
-    readonly loggerFactory: LoggerFactory;
+    get loggerFactory(): LoggerFactory;
     /** The transaction associated with this request. */
-    readonly transaction: ServerTransaction;
+    get transaction(): ServerTransaction;
     accept(options?: ResponseOptions): OutgoingResponse;
     progress(options?: ResponseOptions): OutgoingResponse;
     redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
@@ -49,14 +52,14 @@ export declare class UserAgentServer implements IncomingRequest {
      * Terminated).  A CANCEL request has no impact on the processing of
      * transactions with any other method defined in this specification.
      * https://tools.ietf.org/html/rfc3261#section-9.2
-     * @param request Incoming CANCEL request.
+     * @param request - Incoming CANCEL request.
      */
     receiveCancel(message: IncomingRequestMessage): void;
-    protected readonly acceptable: boolean;
-    protected readonly progressable: boolean;
-    protected readonly redirectable: boolean;
-    protected readonly rejectable: boolean;
-    protected readonly tryingable: boolean;
+    protected get acceptable(): boolean;
+    protected get progressable(): boolean;
+    protected get redirectable(): boolean;
+    protected get rejectable(): boolean;
+    protected get tryingable(): boolean;
     /**
      * When a UAS wishes to construct a response to a request, it follows
      * the general procedures detailed in the following subsections.
@@ -67,10 +70,11 @@ export declare class UserAgentServer implements IncomingRequest {
      * been completed, the UAS hands the response back to the server
      * transaction from which it received the request.
      * https://tools.ietf.org/html/rfc3261#section-8.2.6
-     * @param statusCode Status code to reply with.
-     * @param options Reply options bucket.
+     * @param statusCode - Status code to reply with.
+     * @param options - Reply options bucket.
      */
     private reply;
     private init;
 }
 export {};
+//# sourceMappingURL=user-agent-server.d.ts.map

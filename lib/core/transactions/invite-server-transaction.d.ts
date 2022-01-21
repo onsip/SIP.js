@@ -3,8 +3,10 @@ import { Transport } from "../transport";
 import { ServerTransaction } from "./server-transaction";
 import { ServerTransactionUser } from "./transaction-user";
 /**
- * INVITE Server Transaction
+ * INVITE Server Transaction.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-17.2.1
+ * @public
  */
 export declare class InviteServerTransaction extends ServerTransaction {
     private lastFinalResponse;
@@ -37,9 +39,9 @@ export declare class InviteServerTransaction extends ServerTransaction {
      * After construction the transaction will be in the "proceeding" state and the transaction
      * `id` will equal the branch parameter set in the Via header of the incoming request.
      * https://tools.ietf.org/html/rfc3261#section-17.2.1
-     * @param request Incoming INVITE request from the transport.
-     * @param transport The transport.
-     * @param user The transaction user.
+     * @param request - Incoming INVITE request from the transport.
+     * @param transport - The transport.
+     * @param user - The transaction user.
      */
     constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser);
     /**
@@ -47,16 +49,16 @@ export declare class InviteServerTransaction extends ServerTransaction {
      */
     dispose(): void;
     /** Transaction kind. Deprecated. */
-    readonly kind: string;
+    get kind(): string;
     /**
      * Receive requests from transport matching this transaction.
-     * @param request Request matching this transaction.
+     * @param request - Request matching this transaction.
      */
     receiveRequest(request: IncomingRequestMessage): void;
     /**
      * Receive responses from TU for this transaction.
-     * @param statusCode Status code of response.
-     * @param response Response.
+     * @param statusCode - Status code of response.
+     * @param response - Response.
      */
     receiveResponse(statusCode: number, response: string): void;
     /**
@@ -74,7 +76,7 @@ export declare class InviteServerTransaction extends ServerTransaction {
     protected typeToString(): string;
     /**
      * Execute a state transition.
-     * @param newState New state.
+     * @param newState - New state.
      */
     private stateTransition;
     /**
@@ -99,19 +101,19 @@ export declare class InviteServerTransaction extends ServerTransaction {
      * it is reset with the value of T2.
      * https://tools.ietf.org/html/rfc3261#section-17.2.1
      */
-    private timer_G;
+    private timerG;
     /**
      * If timer H fires while in the "Completed" state, it implies that the ACK was never received.
      * In this case, the server transaction MUST transition to the "Terminated" state, and MUST
      * indicate to the TU that a transaction failure has occurred.
      * https://tools.ietf.org/html/rfc3261#section-17.2.1
      */
-    private timer_H;
+    private timerH;
     /**
      * Once timer I fires, the server MUST transition to the "Terminated" state.
      * https://tools.ietf.org/html/rfc3261#section-17.2.1
      */
-    private timer_I;
+    private timerI;
     /**
      * When Timer L fires and the state machine is in the "Accepted" state, the machine MUST
      * transition to the "Terminated" state. Once the transaction is in the "Terminated" state,
@@ -121,5 +123,6 @@ export declare class InviteServerTransaction extends ServerTransaction {
      * https://tools.ietf.org/html/rfc6026#section-7.1
      * https://tools.ietf.org/html/rfc6026#section-8.7
      */
-    private timer_L;
+    private timerL;
 }
+//# sourceMappingURL=invite-server-transaction.d.ts.map

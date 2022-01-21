@@ -7,6 +7,7 @@ import { OutgoingRequestMessage } from "./outgoing-request-message";
 export declare class DigestAuthentication {
     stale: boolean | undefined;
     private logger;
+    private ha1;
     private username;
     private password;
     private cnonce;
@@ -26,7 +27,7 @@ export declare class DigestAuthentication {
      * @param username - Username.
      * @param password - Password.
      */
-    constructor(loggerFactory: LoggerFactory, username: string | undefined, password: string | undefined);
+    constructor(loggerFactory: LoggerFactory, ha1: string | undefined, username: string | undefined, password: string | undefined);
     /**
      * Performs Digest authentication given a SIP request and the challenge
      * received in a response to that request.
@@ -48,3 +49,4 @@ export declare class DigestAuthentication {
      */
     private calculateResponse;
 }
+//# sourceMappingURL=digest-authentication.d.ts.map

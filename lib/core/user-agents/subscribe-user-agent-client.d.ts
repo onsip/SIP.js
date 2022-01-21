@@ -3,11 +3,14 @@ import { UserAgentCore } from "../user-agent-core";
 import { NotifyUserAgentServer } from "./notify-user-agent-server";
 import { UserAgentClient } from "./user-agent-client";
 /**
+ * SUBSCRIBE UAC.
+ * @remarks
  * 4.1.  Subscriber Behavior
  * https://tools.ietf.org/html/rfc6665#section-4.1
  *
  * User agent client for installation of a single subscription per SUBSCRIBE request.
- * TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE reqeuests.
+ * TODO: Support for installation of multiple subscriptions on forked SUBSCRIBE requests.
+ * @public
  */
 export declare class SubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest {
     delegate: OutgoingSubscribeRequestDelegate | undefined;
@@ -37,16 +40,16 @@ export declare class SubscribeUserAgentClient extends UserAgentClient implements
      */
     dispose(): void;
     /**
-     * Handle out of dialog NOTIFY assoicated with SUBSCRIBE request.
+     * Handle out of dialog NOTIFY associated with SUBSCRIBE request.
      * This is the first NOTIFY received after the SUBSCRIBE request.
-     * @param uas User agent server handling the subscription creating NOTIFY.
+     * @param uas - User agent server handling the subscription creating NOTIFY.
      */
     onNotify(uas: NotifyUserAgentServer): void;
     waitNotifyStart(): void;
     waitNotifyStop(): void;
     /**
      * Receive a response from the transaction layer.
-     * @param message Incoming response message.
+     * @param message - Incoming response message.
      */
     protected receiveResponse(message: IncomingResponseMessage): void;
     /**
@@ -58,5 +61,6 @@ export declare class SubscribeUserAgentClient extends UserAgentClient implements
      * subscription attempt.
      * https://tools.ietf.org/html/rfc6665#section-4.1.2.4
      */
-    private timer_N;
+    private timerN;
 }
+//# sourceMappingURL=subscribe-user-agent-client.d.ts.map

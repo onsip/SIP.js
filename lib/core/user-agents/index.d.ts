@@ -1,6 +1,7 @@
 export * from "./bye-user-agent-client";
 export * from "./bye-user-agent-server";
 export * from "./cancel-user-agent-client";
+export * from "./info-user-agent-client";
 export * from "./info-user-agent-server";
 export * from "./invite-user-agent-client";
 export * from "./invite-user-agent-server";
@@ -18,7 +19,9 @@ export * from "./re-subscribe-user-agent-server";
 export * from "./refer-user-agent-client";
 export * from "./refer-user-agent-server";
 export * from "./register-user-agent-client";
+export * from "./register-user-agent-server";
 export * from "./subscribe-user-agent-client";
 export * from "./subscribe-user-agent-server";
 export * from "./user-agent-client";
 export * from "./user-agent-server";
+//# sourceMappingURL=index.d.ts.map

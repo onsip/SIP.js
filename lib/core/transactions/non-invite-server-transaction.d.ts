@@ -3,8 +3,10 @@ import { Transport } from "../transport";
 import { ServerTransaction } from "./server-transaction";
 import { ServerTransactionUser } from "./transaction-user";
 /**
- * Non-INVITE Server Transaction
+ * Non-INVITE Server Transaction.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-17.2.2
+ * @public
  */
 export declare class NonInviteServerTransaction extends ServerTransaction {
     private lastResponse;
@@ -14,9 +16,9 @@ export declare class NonInviteServerTransaction extends ServerTransaction {
      * After construction the transaction will be in the "trying": state and the transaction
      * `id` will equal the branch parameter set in the Via header of the incoming request.
      * https://tools.ietf.org/html/rfc3261#section-17.2.2
-     * @param request Incoming Non-INVITE request from the transport.
-     * @param transport The transport.
-     * @param user The transaction user.
+     * @param request - Incoming Non-INVITE request from the transport.
+     * @param transport - The transport.
+     * @param user - The transaction user.
      */
     constructor(request: IncomingRequestMessage, transport: Transport, user: ServerTransactionUser);
     /**
@@ -24,16 +26,16 @@ export declare class NonInviteServerTransaction extends ServerTransaction {
      */
     dispose(): void;
     /** Transaction kind. Deprecated. */
-    readonly kind: string;
+    get kind(): string;
     /**
      * Receive requests from transport matching this transaction.
-     * @param request Request matching this transaction.
+     * @param request - Request matching this transaction.
      */
     receiveRequest(request: IncomingRequestMessage): void;
     /**
      * Receive responses from TU for this transaction.
-     * @param statusCode Status code of repsonse. 101-199 not allowed per RFC 4320.
-     * @param response Response to send.
+     * @param statusCode - Status code of response. 101-199 not allowed per RFC 4320.
+     * @param response - Response to send.
      */
     receiveResponse(statusCode: number, response: string): void;
     /**
@@ -51,5 +53,6 @@ export declare class NonInviteServerTransaction extends ServerTransaction {
      * at which point it MUST transition to the "Terminated" state.
      * https://tools.ietf.org/html/rfc3261#section-17.2.2
      */
-    private timer_J;
+    private timerJ;
 }
+//# sourceMappingURL=non-invite-server-transaction.d.ts.map

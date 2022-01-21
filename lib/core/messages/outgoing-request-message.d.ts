@@ -1,8 +1,7 @@
+import { NameAddrHeader, URI } from "../../grammar";
 import { Body } from "./body";
-import { NameAddrHeader } from "./name-addr-header";
-import { URI } from "./uri";
 /**
- * Outgoing SIP request message options.
+ * Outgoing request message options.
  * @public
  */
 export interface OutgoingRequestMessageOptions {
@@ -25,9 +24,6 @@ export interface OutgoingRequestMessageOptions {
  * @public
  */
 export declare class OutgoingRequestMessage {
-    /** Get a copy of the default options. */
-    private static getDefaultOptions;
-    private static makeNameAddrHeader;
     readonly headers: {
         [name: string]: Array<string>;
     };
@@ -49,6 +45,9 @@ export declare class OutgoingRequestMessage {
     } | undefined;
     private options;
     constructor(method: string, ruri: URI, fromURI: URI, toURI: URI, options?: OutgoingRequestMessageOptions, extraHeaders?: Array<string>, body?: Body);
+    /** Get a copy of the default options. */
+    private static getDefaultOptions;
+    private static makeNameAddrHeader;
     /**
      * Get the value of the given header name at the given position.
      * @param name - header name
@@ -88,8 +87,9 @@ export declare class OutgoingRequestMessage {
      * the client and the server.
      * https://tools.ietf.org/html/rfc3261#section-8.1.1.7
      * @param branchParameter - The branch parameter.
-     * @param scheme - The scheme.
+     * @param transport - The sent protocol transport.
      */
-    setViaHeader(branch: string, scheme?: string): void;
+    setViaHeader(branch: string, transport: string): void;
     toString(): string;
 }
+//# sourceMappingURL=outgoing-request-message.d.ts.map

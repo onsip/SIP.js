@@ -21,4 +21,5 @@ export declare function headerize(str: string): string;
  * @param str -
  * @internal
  */
-export declare function str_utf8_length(str: string): number;
+export declare function utf8Length(str: string): number;
+//# sourceMappingURL=utils.d.ts.map

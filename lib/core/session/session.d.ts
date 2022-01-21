@@ -1,7 +1,10 @@
-import { Body, OutgoingByeRequest, OutgoingInfoRequest, OutgoingInviteRequest, OutgoingInviteRequestDelegate, OutgoingNotifyRequest, OutgoingPrackRequest, OutgoingReferRequest, OutgoingRequestDelegate, RequestOptions, URI } from "../messages";
+import { Body, OutgoingByeRequest, OutgoingInfoRequest, OutgoingInviteRequest, OutgoingInviteRequestDelegate, OutgoingMessageRequest, OutgoingNotifyRequest, OutgoingPrackRequest, OutgoingReferRequest, OutgoingRequestDelegate, RequestOptions, URI } from "../messages";
 import { SessionDelegate } from "./session-delegate";
 /**
+ * Session.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-13
+ * @public
  */
 export interface Session {
     /** Session delegate. */
@@ -36,69 +39,66 @@ export interface Session {
      * Send a BYE request.
      * Terminating a session.
      * https://tools.ietf.org/html/rfc3261#section-15
-     * @param delegate Request delegate.
-     * @param options Options bucket.
-     * @returns A promise which resolves when a 2xx response to the BYE is received.
-     * @throws {RequestFailedReason} If a non-2xx final response to the BYE is received.
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
      */
     bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingByeRequest;
     /**
      * Send an INFO request.
      * Exchange information during a session.
      * https://tools.ietf.org/html/rfc6086#section-4.2.1
-     * @param delegate Request delegate.
-     * @param options Options bucket.
-     * @returns A promise which resolves when a 2xx response to the BYE is received.
-     * @throws {RequestFailedReason} If a non-2xx final response to the BYE is received.
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
      */
     info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfoRequest;
     /**
      * Send re-INVITE request.
      * Modifying a session.
      * https://tools.ietf.org/html/rfc3261#section-14.1
-     * @param delegate Request delegate.
-     * @param options Options bucket.
-     * @returns A promise which resolves when a 2xx response to the INVITE is received.
-     * @throws {PendingRequestError} If there is a re-invite "pending".
-     * @throws {RequestFailedReason} If a non-2xx final response to the INVITE is received.
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
      */
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
+    /**
+     * Send MESSAGE request.
+     * Deliver a message during a session.
+     * https://tools.ietf.org/html/rfc3428#section-4
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
+     */
+    message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     /**
      * Send NOTIFY request.
      * Inform referrer of transfer progress.
      * The use of this is limited to the implicit creation of subscription by REFER (historical).
      * Otherwise, notifiers MUST NOT create subscriptions except upon receipt of a SUBSCRIBE request.
      * https://tools.ietf.org/html/rfc3515#section-3.7
-     * @param delegate Request delegate.
-     * @param options Options bucket.
-     * @returns A promise which resolves when a 2xx response to the NOTIFY is received.
-     * @throws {RequestFailedReason} If a non-2xx final response to the NOTIFY is received.
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
      */
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     /**
      * Send PRACK request.
      * Acknowledge a reliable provisional response.
      * https://tools.ietf.org/html/rfc3262#section-4
-     * @param delegate Request delegate.
-     * @param options Options bucket.
-     * @returns A promise which resolves when a 2xx response to the PRACK is received.
-     * @throws {RequestFailedReason} If a non-2xx final response to the PRACK is received.
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
      */
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
     /**
-     * Send REFER request (in dialog).
+     * Send REFER request.
      * Transfer a session.
      * https://tools.ietf.org/html/rfc3515#section-2.4.1
-     * @param delegate Request delegate.
-     * @param options Options bucket.
-     * @returns A promise which resolves when a 2xx response to the REFER is received.
-     * @throws {RequestFailedReason} If a non-2xx final response to the REFER is received.
+     * @param delegate - Request delegate.
+     * @param options - Options bucket.
      */
     refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest;
 }
 /**
  * Session state.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-13
+ * @public
  */
 export declare enum SessionState {
     Initial = "Initial",
@@ -108,8 +108,9 @@ export declare enum SessionState {
     Terminated = "Terminated"
 }
 /**
- * Offer/Answer State
- *
+ * Offer/Answer state.
+ * @remarks
+ * ```txt
  *         Offer                Answer             RFC    Ini Est Early
  *  -------------------------------------------------------------------
  *  1. INVITE Req.          2xx INVITE Resp.     RFC 3261  Y   Y    N
@@ -120,7 +121,9 @@ export declare enum SessionState {
  *  6. UPDATE Req.          2xx UPDATE Resp.     RFC 3311  N   Y    Y
  *
  *       Table 1: Summary of SIP Usage of the Offer/Answer Model
+ * ```
  * https://tools.ietf.org/html/rfc6337#section-2.2
+ * @public
  */
 export declare enum SignalingState {
     Initial = "Initial",
@@ -129,3 +132,4 @@ export declare enum SignalingState {
     Stable = "Stable",
     Closed = "Closed"
 }
+//# sourceMappingURL=session.d.ts.map

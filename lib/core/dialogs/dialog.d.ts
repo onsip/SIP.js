@@ -2,6 +2,8 @@ import { Body, IncomingRequestMessage, IncomingResponseMessage, OutgoingRequestM
 import { UserAgentCore } from "../user-agent-core";
 import { DialogState } from "./dialog-state";
 /**
+ * Dialog.
+ * @remarks
  * A key concept for a user agent is that of a dialog.  A dialog
  * represents a peer-to-peer SIP relationship between two user agents
  * that persists for some time.  The dialog facilitates sequencing of
@@ -9,33 +11,34 @@ import { DialogState } from "./dialog-state";
  * between both of them.  The dialog represents a context in which to
  * interpret SIP messages.
  * https://tools.ietf.org/html/rfc3261#section-12
+ * @public
  */
 export declare class Dialog {
     protected core: UserAgentCore;
     protected dialogState: DialogState;
     /**
+     * Dialog constructor.
+     * @param core - User agent core.
+     * @param dialogState - Initial dialog state.
+     */
+    protected constructor(core: UserAgentCore, dialogState: DialogState);
+    /**
      * When a UAC receives a response that establishes a dialog, it
      * constructs the state of the dialog.  This state MUST be maintained
      * for the duration of the dialog.
      * https://tools.ietf.org/html/rfc3261#section-12.1.2
-     * @param outgoingRequestMessage Outgoing request message for dialog.
-     * @param incomingResponseMessage Incoming response message creating dialog.
+     * @param outgoingRequestMessage - Outgoing request message for dialog.
+     * @param incomingResponseMessage - Incoming response message creating dialog.
      */
     static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequestMessage, incomingResponseMessage: IncomingResponseMessage): DialogState;
     /**
      * The UAS then constructs the state of the dialog.  This state MUST be
      * maintained for the duration of the dialog.
      * https://tools.ietf.org/html/rfc3261#section-12.1.1
-     * @param incomingRequestMessage Incoming request message creating dialog.
-     * @param toTag Tag in the To field in the response to the incoming request.
+     * @param incomingRequestMessage - Incoming request message creating dialog.
+     * @param toTag - Tag in the To field in the response to the incoming request.
      */
     static initialDialogStateForUserAgentServer(incomingRequestMessage: IncomingRequestMessage, toTag: string, early?: boolean): DialogState;
-    /**
-     * Dialog constructor.
-     * @param core User agent core.
-     * @param dialogState Initial dialog state.
-     */
-    protected constructor(core: UserAgentCore, dialogState: DialogState);
     /** Destructor. */
     dispose(): void;
     /**
@@ -47,7 +50,7 @@ export declare class Dialog {
      * dialog IDs.
      * https://tools.ietf.org/html/rfc3261#section-12
      */
-    readonly id: string;
+    get id(): string;
     /**
      * A dialog can also be in the "early" state, which occurs when it is
      * created with a provisional response, and then it transition to the
@@ -62,35 +65,35 @@ export declare class Dialog {
      * when it is confirmed but an ACK has not yet been received (in
      * particular with regard to a callee sending BYE requests).
      */
-    readonly early: boolean;
+    get early(): boolean;
     /** Call identifier component of the dialog id. */
-    readonly callId: string;
+    get callId(): string;
     /** Local tag component of the dialog id. */
-    readonly localTag: string;
+    get localTag(): string;
     /** Remote tag component of the dialog id. */
-    readonly remoteTag: string;
+    get remoteTag(): string;
     /** Local sequence number (used to order requests from the UA to its peer). */
-    readonly localSequenceNumber: number | undefined;
+    get localSequenceNumber(): number | undefined;
     /** Remote sequence number (used to order requests from its peer to the UA). */
-    readonly remoteSequenceNumber: number | undefined;
+    get remoteSequenceNumber(): number | undefined;
     /** Local URI. */
-    readonly localURI: URI;
+    get localURI(): URI;
     /** Remote URI. */
-    readonly remoteURI: URI;
+    get remoteURI(): URI;
     /** Remote target. */
-    readonly remoteTarget: URI;
+    get remoteTarget(): URI;
     /**
      * Route set, which is an ordered list of URIs. The route set is the
      * list of servers that need to be traversed to send a request to the peer.
      */
-    readonly routeSet: Array<string>;
+    get routeSet(): Array<string>;
     /**
      * If the request was sent over TLS, and the Request-URI contained
      * a SIPS URI, the "secure" flag is set to true. *NOT IMPLEMENTED*
      */
-    readonly secure: boolean;
+    get secure(): boolean;
     /** The user agent core servicing this dialog. */
-    readonly userAgentCore: UserAgentCore;
+    get userAgentCore(): UserAgentCore;
     /** Confirm the dialog. Only matters if dialog is currently early. */
     confirm(): void;
     /**
@@ -103,7 +106,7 @@ export declare class Dialog {
      *    state.
      *
      * https://tools.ietf.org/html/rfc3261#section-12.2.2
-     * @param message Incoming request message within this dialog.
+     * @param message - Incoming request message within this dialog.
      */
     receiveRequest(message: IncomingRequestMessage): void;
     /**
@@ -130,7 +133,7 @@ export declare class Dialog {
      * A request within a dialog is constructed by using many of the
      * components of the state stored as part of the dialog.
      * https://tools.ietf.org/html/rfc3261#section-12.2.1.1
-     * @param method Outgoing request method.
+     * @param method - Outgoing request method.
      */
     createOutgoingRequestMessage(method: string, options?: {
         cseq?: number;
@@ -138,14 +141,22 @@ export declare class Dialog {
         body?: Body;
     }): OutgoingRequestMessage;
     /**
+     * Increment the local sequence number by one.
+     * It feels like this should be protected, but the current authentication handling currently
+     * needs this to keep the dialog in sync when "auto re-sends" request messages.
+     * @internal
+     */
+    incrementLocalSequenceNumber(): void;
+    /**
      * If the remote sequence number was not empty, but the sequence number
      * of the request is lower than the remote sequence number, the request
      * is out of order and MUST be rejected with a 500 (Server Internal
      * Error) response.
      * https://tools.ietf.org/html/rfc3261#section-12.2.2
-     * @param request Incoming request to guard.
+     * @param request - Incoming request to guard.
      * @returns True if the program execution is to continue in the branch in question.
      *          Otherwise a 500 Server Internal Error was stateless sent and request processing must stop.
      */
     protected sequenceGuard(message: IncomingRequestMessage): boolean;
 }
+//# sourceMappingURL=dialog.d.ts.map

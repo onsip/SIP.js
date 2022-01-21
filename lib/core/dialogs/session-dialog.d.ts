@@ -1,4 +1,4 @@
-import { Body, IncomingRequestMessage, IncomingResponseMessage, OutgoingAckRequest, OutgoingByeRequest, OutgoingInfoRequest, OutgoingInviteRequest, OutgoingInviteRequestDelegate, OutgoingNotifyRequest, OutgoingPrackRequest, OutgoingReferRequest, OutgoingRequestDelegate, OutgoingRequestMessage, RequestOptions } from "../messages";
+import { Body, IncomingRequestMessage, IncomingResponseMessage, OutgoingAckRequest, OutgoingByeRequest, OutgoingInfoRequest, OutgoingInviteRequest, OutgoingInviteRequestDelegate, OutgoingMessageRequest, OutgoingNotifyRequest, OutgoingPrackRequest, OutgoingReferRequest, OutgoingRequestDelegate, OutgoingRequestMessage, RequestOptions } from "../messages";
 import { Session, SessionDelegate, SessionState, SignalingState } from "../session";
 import { InviteClientTransaction, InviteServerTransaction } from "../transactions";
 import { UserAgentCore } from "../user-agent-core";
@@ -6,6 +6,10 @@ import { ReInviteUserAgentClient } from "../user-agents/re-invite-user-agent-cli
 import { ReInviteUserAgentServer } from "../user-agents/re-invite-user-agent-server";
 import { Dialog } from "./dialog";
 import { DialogState } from "./dialog-state";
+/**
+ * Session Dialog.
+ * @public
+ */
 export declare class SessionDialog extends Dialog implements Session {
     private initialTransaction;
     delegate: SessionDelegate | undefined;
@@ -13,12 +17,18 @@ export declare class SessionDialog extends Dialog implements Session {
     reinviteUserAgentServer: ReInviteUserAgentServer | undefined;
     /** The state of the offer/answer exchange. */
     private _signalingState;
-    /** The current offer. Undefined unless signaling state HaveLocalOffer, HaveRemoteOffer, of Stable. */
+    /** The current offer. Undefined unless signaling state HaveLocalOffer, HaveRemoteOffer, or Stable. */
     private _offer;
     /** The current answer. Undefined unless signaling state Stable. */
     private _answer;
+    /** The rollback offer. Undefined unless signaling state HaveLocalOffer or HaveRemoteOffer. */
+    private _rollbackOffer;
+    /** The rollback answer. Undefined unless signaling state HaveLocalOffer or HaveRemoteOffer. */
+    private _rollbackAnswer;
     /** True if waiting for an ACK to the initial transaction 2xx (UAS only). */
     private ackWait;
+    /** True if processing an ACK to the initial transaction 2xx (UAS only). */
+    private ackProcessing;
     /** Retransmission timer for 2xx response which confirmed the dialog. */
     private invite2xxTimer;
     /** The rseq of the last reliable response. */
@@ -26,13 +36,13 @@ export declare class SessionDialog extends Dialog implements Session {
     private logger;
     constructor(initialTransaction: InviteClientTransaction | InviteServerTransaction, core: UserAgentCore, state: DialogState, delegate?: SessionDelegate);
     dispose(): void;
-    readonly sessionState: SessionState;
+    get sessionState(): SessionState;
     /** The state of the offer/answer exchange. */
-    readonly signalingState: SignalingState;
+    get signalingState(): SignalingState;
     /** The current offer. Undefined unless signaling state HaveLocalOffer, HaveRemoteOffer, of Stable. */
-    readonly offer: Body | undefined;
+    get offer(): Body | undefined;
     /** The current answer. Undefined unless signaling state Stable. */
-    readonly answer: Body | undefined;
+    get answer(): Body | undefined;
     /** Confirm the dialog. Only matters if dialog is currently early. */
     confirm(): void;
     /** Re-confirm the dialog. Only matters if handling re-INVITE request. */
@@ -50,7 +60,7 @@ export declare class SessionDialog extends Dialog implements Session {
      * acceptable, the UAC core MUST generate a valid answer in the ACK and
      * then send a BYE immediately.
      * https://tools.ietf.org/html/rfc3261#section-13.2.2.4
-     * @param options ACK options bucket.
+     * @param options - ACK options bucket.
      */
     ack(options?: RequestOptions): OutgoingAckRequest;
     /**
@@ -84,10 +94,11 @@ export declare class SessionDialog extends Dialog implements Session {
      *
      * https://tools.ietf.org/html/rfc3261#section-15
      * FIXME: Make these proper Exceptions...
-     * @param options BYE options bucket.
-     * @throws {Error} If callee's UA attempts a BYE on an early dialog.
-     * @throws {Error} If callee's UA attempts a BYE on a confirmed dialog
-     *                 while it's waiting on the ACK for its 2xx response.
+     * @param options - BYE options bucket.
+     * @returns
+     * Throws `Error` if callee's UA attempts a BYE on an early dialog.
+     * Throws `Error` if callee's UA attempts a BYE on a confirmed dialog
+     *                while it's waiting on the ACK for its 2xx response.
      */
     bye(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingByeRequest;
     /**
@@ -98,7 +109,7 @@ export declare class SessionDialog extends Dialog implements Session {
      * non-target refresh request within an existing invite dialog usage as
      * described in Section 12.2 of RFC 3261.
      * https://tools.ietf.org/html/rfc6086#section-4.2.1
-     * @param options Options bucket.
+     * @param options - Options bucket.
      */
     info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfoRequest;
     /**
@@ -120,14 +131,22 @@ export declare class SessionDialog extends Dialog implements Session {
      *
      * Either the caller or callee can modify an existing session.
      * https://tools.ietf.org/html/rfc3261#section-14
-     * @param options Options bucket
+     * @param options - Options bucket
      */
     invite(delegate?: OutgoingInviteRequestDelegate, options?: RequestOptions): OutgoingInviteRequest;
+    /**
+     * A UAC MAY associate a MESSAGE request with an existing dialog.  If a
+     * MESSAGE request is sent within a dialog, it is "associated" with any
+     * media session or sessions associated with that dialog.
+     * https://tools.ietf.org/html/rfc3428#section-4
+     * @param options - Options bucket.
+     */
+    message(delegate: OutgoingRequestDelegate, options?: RequestOptions): OutgoingMessageRequest;
     /**
      * The NOTIFY mechanism defined in [2] MUST be used to inform the agent
      * sending the REFER of the status of the reference.
      * https://tools.ietf.org/html/rfc3515#section-2.4.4
-     * @param options Options bucket.
+     * @param options - Options bucket.
      */
     notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNotifyRequest;
     /**
@@ -138,14 +157,14 @@ export declare class SessionDialog extends Dialog implements Session {
      * MAY contain bodies, which are interpreted according to their type and
      * disposition.
      * https://tools.ietf.org/html/rfc3262#section-4
-     * @param options Options bucket.
+     * @param options - Options bucket.
      */
     prack(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingPrackRequest;
     /**
      * REFER is a SIP request and is constructed as defined in [1].  A REFER
      * request MUST contain exactly one Refer-To header field value.
      * https://tools.ietf.org/html/rfc3515#section-2.4.1
-     * @param options Options bucket.
+     * @param options - Options bucket.
      */
     refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingReferRequest;
     /**
@@ -154,15 +173,25 @@ export declare class SessionDialog extends Dialog implements Session {
      * associated with it are performed.  If the request is rejected, none
      * of the state changes are performed.
      * https://tools.ietf.org/html/rfc3261#section-12.2.2
-     * @param message Incoming request message within this dialog.
+     * @param message - Incoming request message within this dialog.
      */
     receiveRequest(message: IncomingRequestMessage): void;
+    /**
+     * Guard against out of order reliable provisional responses and retransmissions.
+     * Returns false if the response should be discarded, otherwise true.
+     * @param message - Incoming response message within this dialog.
+     */
     reliableSequenceGuard(message: IncomingResponseMessage): boolean;
     /**
+     * If not in a stable signaling state, rollback to prior stable signaling state.
+     */
+    signalingStateRollback(): void;
+    /**
      * Update the signaling state of the dialog.
-     * @param message The message to base the update off of.
+     * @param message - The message to base the update off of.
      */
     signalingStateTransition(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): void;
     private start2xxRetransmissionTimer;
     private startReInvite2xxRetransmissionTimer;
 }
+//# sourceMappingURL=session-dialog.d.ts.map

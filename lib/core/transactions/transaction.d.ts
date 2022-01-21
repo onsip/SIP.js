@@ -1,13 +1,11 @@
-/// <reference types="node" />
-import { EventEmitter } from "events";
 import { TransportError } from "../exceptions";
 import { Logger } from "../log";
 import { Transport } from "../transport";
 import { TransactionState } from "./transaction-state";
 import { TransactionUser } from "./transaction-user";
 /**
- * Transaction
- *
+ * Transaction.
+ * @remarks
  * SIP is a transactional protocol: interactions between components take
  * place in a series of independent message exchanges.  Specifically, a
  * SIP transaction consists of a single request and any responses to
@@ -18,13 +16,15 @@ import { TransactionUser } from "./transaction-user";
  * a 2xx response.  If the response was a 2xx, the ACK is not considered
  * part of the transaction.
  * https://tools.ietf.org/html/rfc3261#section-17
+ * @public
  */
-export declare abstract class Transaction extends EventEmitter {
+export declare abstract class Transaction {
     private _transport;
     private _user;
     private _id;
     private _state;
     protected logger: Logger;
+    private listeners;
     protected constructor(_transport: Transport, _user: TransactionUser, _id: string, _state: TransactionState, loggerCategory: string);
     /**
      * Destructor.
@@ -38,23 +38,43 @@ export declare abstract class Transaction extends EventEmitter {
      */
     dispose(): void;
     /** Transaction id. */
-    readonly id: string;
+    get id(): string;
     /** Transaction kind. Deprecated. */
-    readonly kind: string;
+    get kind(): string;
     /** Transaction state. */
-    readonly state: TransactionState;
+    get state(): TransactionState;
     /** Transaction transport. */
-    readonly transport: Transport;
-    /** Subscribe to 'stateChanged' event. */
-    on(name: "stateChanged", callback: () => void): this;
+    get transport(): Transport;
+    /**
+     * Sets up a function that will be called whenever the transaction state changes.
+     * @param listener - Callback function.
+     * @param options - An options object that specifies characteristics about the listener.
+     *                  If once true, indicates that the listener should be invoked at most once after being added.
+     *                  If once true, the listener would be automatically removed when invoked.
+     */
+    addStateChangeListener(listener: () => void, options?: {
+        once?: boolean;
+    }): void;
+    /**
+     * This is currently public so tests may spy on it.
+     * @internal
+     */
+    notifyStateChangeListeners(): void;
+    /**
+     * Removes a listener previously registered with addStateListener.
+     * @param listener - Callback function.
+     */
+    removeStateChangeListener(listener: () => void): void;
     protected logTransportError(error: TransportError, message: string): void;
-    protected abstract onTransportError(error: TransportError): void;
     /**
      * Pass message to transport for transmission. If transport fails,
      * the transaction user is notified by callback to onTransportError().
-     * @throws {TransportError} If transport fails.
+     * @returns
+     * Rejects with `TransportError` if transport fails.
      */
     protected send(message: string): Promise<void>;
     protected setState(state: TransactionState): void;
     protected typeToString(): string;
+    protected abstract onTransportError(error: TransportError): void;
 }
+//# sourceMappingURL=transaction.d.ts.map

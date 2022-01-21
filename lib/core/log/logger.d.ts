@@ -1,3 +1,4 @@
+import { Levels } from "./levels";
 import { LoggerFactory } from "./logger-factory";
 /**
  * Logger.
@@ -13,4 +14,7 @@ export declare class Logger {
     log(content: string): void;
     debug(content: string): void;
     private genericLog;
+    get level(): Levels;
+    set level(newLevel: Levels);
 }
+//# sourceMappingURL=logger.d.ts.map

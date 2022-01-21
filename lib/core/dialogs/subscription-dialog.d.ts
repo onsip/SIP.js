@@ -4,6 +4,8 @@ import { UserAgentCore } from "../user-agent-core/user-agent-core";
 import { Dialog } from "./dialog";
 import { DialogState } from "./dialog-state";
 /**
+ * Subscription Dialog.
+ * @remarks
  * SIP-Specific Event Notification
  *
  * Abstract
@@ -26,17 +28,9 @@ import { DialogState } from "./dialog-state";
  *    in that document.
  *
  *  https://tools.ietf.org/html/rfc6665
+ * @public
  */
 export declare class SubscriptionDialog extends Dialog implements Subscription {
-    /**
-     * When a UAC receives a response that establishes a dialog, it
-     * constructs the state of the dialog.  This state MUST be maintained
-     * for the duration of the dialog.
-     * https://tools.ietf.org/html/rfc3261#section-12.1.2
-     * @param outgoingRequestMessage Outgoing request message for dialog.
-     * @param incomingResponseMessage Incoming response message creating dialog.
-     */
-    static initialDialogStateForSubscription(outgoingSubscribeRequestMessage: OutgoingRequestMessage, incomingNotifyRequestMessage: IncomingRequestMessage): DialogState;
     delegate: SubscriptionDelegate | undefined;
     private _autoRefresh;
     private _subscriptionEvent;
@@ -50,18 +44,29 @@ export declare class SubscriptionDialog extends Dialog implements Subscription {
     private N;
     private refreshTimer;
     constructor(subscriptionEvent: string, subscriptionExpires: number, subscriptionState: SubscriptionState, core: UserAgentCore, state: DialogState, delegate?: SubscriptionDelegate);
+    /**
+     * When a UAC receives a response that establishes a dialog, it
+     * constructs the state of the dialog.  This state MUST be maintained
+     * for the duration of the dialog.
+     * https://tools.ietf.org/html/rfc3261#section-12.1.2
+     * @param outgoingRequestMessage - Outgoing request message for dialog.
+     * @param incomingResponseMessage - Incoming response message creating dialog.
+     */
+    static initialDialogStateForSubscription(outgoingSubscribeRequestMessage: OutgoingRequestMessage, incomingNotifyRequestMessage: IncomingRequestMessage): DialogState;
     dispose(): void;
-    autoRefresh: boolean;
-    readonly subscriptionEvent: string;
+    get autoRefresh(): boolean;
+    set autoRefresh(autoRefresh: boolean);
+    get subscriptionEvent(): string;
     /** Number of seconds until subscription expires. */
-    subscriptionExpires: number;
-    readonly subscriptionExpiresInitial: number;
+    get subscriptionExpires(): number;
+    set subscriptionExpires(expires: number);
+    get subscriptionExpiresInitial(): number;
     /** Number of seconds until subscription auto refresh. */
-    readonly subscriptionRefresh: number | undefined;
-    readonly subscriptionState: SubscriptionState;
+    get subscriptionRefresh(): number | undefined;
+    get subscriptionState(): SubscriptionState;
     /**
      * Receive in dialog request message from transport.
-     * @param message The incoming request message.
+     * @param message -  The incoming request message.
      */
     receiveRequest(message: IncomingRequestMessage): void;
     /**
@@ -72,8 +77,8 @@ export declare class SubscriptionDialog extends Dialog implements Subscription {
     /**
      * 4.1.2.2.  Refreshing of Subscriptions
      * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
-     * @param delegate Delegate to handle responses.
-     * @param options Options bucket.
+     * @param delegate - Delegate to handle responses.
+     * @param options - Options bucket.
      */
     subscribe(delegate?: OutgoingSubscribeRequestDelegate, options?: RequestOptions): OutgoingSubscribeRequest;
     /**
@@ -92,7 +97,7 @@ export declare class SubscriptionDialog extends Dialog implements Subscription {
     /**
      * Handle in dialog NOTIFY requests.
      * This does not include the first NOTIFY which created the dialog.
-     * @param message The incoming NOTIFY request message.
+     * @param message - The incoming NOTIFY request message.
      */
     private onNotify;
     private onRefresh;
@@ -111,5 +116,6 @@ export declare class SubscriptionDialog extends Dialog implements Subscription {
      * cancel Timer N.
      * https://tools.ietf.org/html/rfc6665#section-4.1.2.2
      */
-    private timer_N;
+    private timerN;
 }
+//# sourceMappingURL=subscription-dialog.d.ts.map

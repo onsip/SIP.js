@@ -6,3 +6,4 @@
 export declare abstract class Exception extends Error {
     protected constructor(message?: string);
 }
+//# sourceMappingURL=exception.d.ts.map

@@ -4,19 +4,20 @@ import { Transport } from "../transport";
 import { ClientTransaction } from "./client-transaction";
 import { ClientTransactionUser } from "./transaction-user";
 /**
- * INVITE Client Transaction
- *
+ * INVITE Client Transaction.
+ * @remarks
  * The INVITE transaction consists of a three-way handshake.  The client
  * transaction sends an INVITE, the server transaction sends responses,
  * and the client transaction sends an ACK.
  * https://tools.ietf.org/html/rfc3261#section-17.1.1
+ * @public
  */
 export declare class InviteClientTransaction extends ClientTransaction {
     private B;
     private D;
     private M;
     /**
-     * Map of 2xx to-tag => ACK.
+     * Map of 2xx to-tag to ACK.
      * If value is not undefined, value is the ACK which was sent.
      * If key exists but value is undefined, a 2xx was received but the ACK not yet sent.
      * Otherwise, a 2xx was not (yet) received for this transaction.
@@ -29,9 +30,9 @@ export declare class InviteClientTransaction extends ClientTransaction {
      * After construction the transaction will be in the "calling" state and the transaction id
      * will equal the branch parameter set in the Via header of the outgoing request.
      * https://tools.ietf.org/html/rfc3261#section-17.1.1
-     * @param request The outgoing INVITE request.
-     * @param transport The transport.
-     * @param user The transaction user.
+     * @param request - The outgoing INVITE request.
+     * @param transport - The transport.
+     * @param user - The transaction user.
      */
     constructor(request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser);
     /**
@@ -39,7 +40,7 @@ export declare class InviteClientTransaction extends ClientTransaction {
      */
     dispose(): void;
     /** Transaction kind. Deprecated. */
-    readonly kind: string;
+    get kind(): string;
     /**
      * ACK a 2xx final response.
      *
@@ -55,12 +56,12 @@ export declare class InviteClientTransaction extends ClientTransaction {
      * the transport directly. Herein the transaction layer manages sending ACKs to 2xx responses
      * and any retransmissions of those ACKs as needed.
      *
-     * @param ack The outgoing ACK request.
+     * @param ack - The outgoing ACK request.
      */
     ackResponse(ack: OutgoingRequestMessage): void;
     /**
      * Handler for incoming responses from the transport which match this transaction.
-     * @param response The incoming response.
+     * @param response - The incoming response.
      */
     receiveResponse(response: IncomingResponseMessage): void;
     /**
@@ -69,7 +70,7 @@ export declare class InviteClientTransaction extends ClientTransaction {
      * to the "Terminated" state.  The TU will handle the failover
      * mechanisms described in [4].
      * https://tools.ietf.org/html/rfc3261#section-17.1.4
-     * @param error The error.
+     * @param error - The error.
      */
     protected onTransportError(error: TransportError): void;
     /** For logging. */
@@ -77,7 +78,7 @@ export declare class InviteClientTransaction extends ClientTransaction {
     private ack;
     /**
      * Execute a state transition.
-     * @param newState New state.
+     * @param newState - New state.
      */
     private stateTransition;
     /**
@@ -92,24 +93,25 @@ export declare class InviteClientTransaction extends ClientTransaction {
      * transaction is in the "Calling" state.
      * https://tools.ietf.org/html/rfc3261#section-17.1.1.2
      */
-    private timer_A;
+    private timerA;
     /**
      * If the client transaction is still in the "Calling" state when timer
      * B fires, the client transaction SHOULD inform the TU that a timeout
      * has occurred.  The client transaction MUST NOT generate an ACK.
      * https://tools.ietf.org/html/rfc3261#section-17.1.1.2
      */
-    private timer_B;
+    private timerB;
     /**
      * If Timer D fires while the client transaction is in the "Completed" state,
      * the client transaction MUST move to the "Terminated" state.
      * https://tools.ietf.org/html/rfc6026#section-8.4
      */
-    private timer_D;
+    private timerD;
     /**
      * If Timer M fires while the client transaction is in the "Accepted"
      * state, the client transaction MUST move to the "Terminated" state.
      * https://tools.ietf.org/html/rfc6026#section-8.4
      */
-    private timer_M;
+    private timerM;
 }
+//# sourceMappingURL=invite-client-transaction.d.ts.map

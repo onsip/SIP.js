@@ -18,3 +18,4 @@ export declare namespace C {
     const REFER = "REFER";
     const PRACK = "PRACK";
 }
+//# sourceMappingURL=constants.d.ts.map

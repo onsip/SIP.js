@@ -1,4 +1,7 @@
-/** Transaction state. */
+/**
+ * Transaction state.
+ * @public
+ */
 export declare enum TransactionState {
     Accepted = "Accepted",
     Calling = "Calling",
@@ -8,3 +11,4 @@ export declare enum TransactionState {
     Terminated = "Terminated",
     Trying = "Trying"
 }
+//# sourceMappingURL=transaction-state.d.ts.map

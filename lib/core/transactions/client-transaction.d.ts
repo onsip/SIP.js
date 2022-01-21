@@ -4,8 +4,8 @@ import { Transaction } from "./transaction";
 import { TransactionState } from "./transaction-state";
 import { ClientTransactionUser } from "./transaction-user";
 /**
- * Client Transaction
- *
+ * Client Transaction.
+ * @remarks
  * The client transaction provides its functionality through the
  * maintenance of a state machine.
  *
@@ -16,20 +16,15 @@ import { ClientTransactionUser } from "./transaction-user";
  * client transaction begins execution of its state machine.  Valid
  * responses are passed up to the TU from the client transaction.
  * https://tools.ietf.org/html/rfc3261#section-17.1
+ * @public
  */
 export declare abstract class ClientTransaction extends Transaction {
     private _request;
     protected user: ClientTransactionUser;
-    private static makeId;
     protected constructor(_request: OutgoingRequestMessage, transport: Transport, user: ClientTransactionUser, state: TransactionState, loggerCategory: string);
+    private static makeId;
     /** The outgoing request the transaction handling. */
-    readonly request: OutgoingRequestMessage;
-    /**
-     * Receive incoming responses from the transport which match this transaction.
-     * Responses will be delivered to the transaction user as necessary.
-     * @param response The incoming response.
-     */
-    abstract receiveResponse(response: IncomingResponseMessage): void;
+    get request(): OutgoingRequestMessage;
     /**
      * A 408 to non-INVITE will always arrive too late to be useful ([3]),
      * The client already has full knowledge of the timeout. The only
@@ -41,4 +36,11 @@ export declare abstract class ClientTransaction extends Transaction {
      * https://tools.ietf.org/html/rfc4320#section-4.1
      */
     protected onRequestTimeout(): void;
+    /**
+     * Receive incoming responses from the transport which match this transaction.
+     * Responses will be delivered to the transaction user as necessary.
+     * @param response - The incoming response.
+     */
+    abstract receiveResponse(response: IncomingResponseMessage): void;
 }
+//# sourceMappingURL=client-transaction.d.ts.map

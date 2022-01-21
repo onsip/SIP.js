@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Server, WebSocket } from "mock-socket";
+import { Client, Server, WebSocket } from "mock-socket";
 
 import { StateTransitionError, TransportState } from "../../../../src/api";
 import { LoggerFactory } from "../../../../src/core";
@@ -31,7 +31,7 @@ describe("Web Transport", () => {
   const onDisconnectMock = jasmine.createSpy("onDisconnect");
   const onMessageMock = jasmine.createSpy("onMessage");
   let mockServer: Server;
-  let mockServerWebSocket: WebSocket | undefined;
+  let mockServerWebSocket: Client | WebSocket | undefined;
   let mockServerReceivedMessage: string | undefined;
   let transport: Transport;
   let transportStateSpy: EmitterSpy<TransportState>;

@@ -11,9 +11,12 @@ export declare class LoggerFactory {
     private loggers;
     private logger;
     constructor();
-    level: Levels;
-    connector: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+    get level(): Levels;
+    set level(newLevel: Levels);
+    get connector(): ((level: string, category: string, label: string | undefined, content: any) => void) | undefined;
+    set connector(value: ((level: string, category: string, label: string | undefined, content: any) => void) | undefined);
     getLogger(category: string, label?: string): Logger;
     genericLog(levelToLog: Levels, category: string, label: string | undefined, content: any): void;
     private print;
 }
+//# sourceMappingURL=logger-factory.d.ts.map

@@ -2,12 +2,15 @@ import { IncomingInviteRequest, IncomingRequestDelegate, IncomingRequestMessage,
 import { UserAgentCore } from "../user-agent-core";
 import { UserAgentServer } from "./user-agent-server";
 /**
+ * INVITE UAS.
+ * @remarks
  * 13 Initiating a Session
  * https://tools.ietf.org/html/rfc3261#section-13
  * 13.1 Overview
  * https://tools.ietf.org/html/rfc3261#section-13.1
  * 13.3 UAS Processing
  * https://tools.ietf.org/html/rfc3261#section-13.3
+ * @public
  */
 export declare class InviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest {
     protected core: UserAgentCore;
@@ -23,7 +26,7 @@ export declare class InviteUserAgentServer extends UserAgentServer implements In
      * dialog, and therefore follows the procedures of Section 12.1.1 in
      * addition to those of Section 8.2.6.
      * https://tools.ietf.org/html/rfc3261#section-13.3.1.4
-     * @param options Accept options bucket.
+     * @param options - Accept options bucket.
      */
     accept(options?: ResponseOptions): OutgoingResponseWithSession;
     /**
@@ -46,7 +49,7 @@ export declare class InviteUserAgentServer extends UserAgentServer implements In
      * provisional response at every minute, to handle the possibility of
      * lost provisional responses.
      * https://tools.ietf.org/html/rfc3261#section-13.3.1.1
-     * @param options Progress options bucket.
+     * @param options - Progress options bucket.
      */
     progress(options?: ResponseOptions): OutgoingResponseWithSession;
     /**
@@ -58,7 +61,8 @@ export declare class InviteUserAgentServer extends UserAgentServer implements In
      * response is passed to the INVITE server transaction, which will deal
      * with its retransmissions.
      * https://tools.ietf.org/html/rfc3261#section-13.3.1.2
-     * @param options Reject options bucket.
+     * @param contacts - Contacts to redirect to.
+     * @param options - Redirect options bucket.
      */
     redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
     /**
@@ -67,7 +71,8 @@ export declare class InviteUserAgentServer extends UserAgentServer implements In
      * able to take additional calls at this end system.  A 486 (Busy Here)
      * SHOULD be returned in such a scenario.
      * https://tools.ietf.org/html/rfc3261#section-13.3.1.3
-     * @param options Reject options bucket.
+     * @param options - Reject options bucket.
      */
     reject(options?: ResponseOptions): OutgoingResponse;
 }
+//# sourceMappingURL=invite-user-agent-server.d.ts.map

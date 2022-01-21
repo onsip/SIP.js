@@ -2,8 +2,10 @@ import { IncomingRequestMessage } from "./incoming-request-message";
 import { IncomingResponseMessage } from "./incoming-response-message";
 import { OutgoingRequestMessage } from "./outgoing-request-message";
 /**
- * SIP Message Body.
+ * Message body.
+ * @remarks
  * https://tools.ietf.org/html/rfc3261#section-7.4
+ * @public
  */
 export interface Body {
     /**
@@ -39,23 +41,25 @@ export interface Body {
     content: string;
 }
 /**
- * Create a Body given a BodyObj.
- * @param bodyObj Body Object
+ * Create a Body given a legacy body type.
+ * @param bodyLegacy - Body Object
+ * @internal
  */
 export declare function fromBodyLegacy(bodyLegacy: string | {
     body: string;
     contentType: string;
 }): Body;
-/** Outgoing response body */
-export declare type OutgoingResponseBody = Body;
+/**
+ * User-Defined Type Guard for Body.
+ * @param body - Body to check.
+ * @internal
+ */
+export declare function isBody(body: any): body is Body;
 /**
  * Given a message, get a normalized body.
  * The content disposition is inferred if not set.
- * @param message The message.
+ * @param message - The message.
+ * @internal
  */
-export declare function getBody(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | OutgoingResponseBody): Body | undefined;
-/**
- * User-Defined Type Guard for Body.
- * @param body Body to check.
- */
-export declare function isBody(body: any): body is Body;
+export declare function getBody(message: IncomingRequestMessage | IncomingResponseMessage | OutgoingRequestMessage | Body): Body | undefined;
+//# sourceMappingURL=body.d.ts.map

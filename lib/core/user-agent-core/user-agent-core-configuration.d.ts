@@ -2,21 +2,26 @@ import { LoggerFactory } from "../log";
 import { DigestAuthentication, URI } from "../messages";
 import { Transport } from "../transport";
 /**
- * User agent contact.
+ * Contact.
  * @remarks
  * https://tools.ietf.org/html/rfc3261#section-8.1.1.8
  * This is ported from UA.contact.
  * FIXME: TODO: This is not a great rep for Contact
  * and is used in a kinda hacky way herein.
+ * @public
  */
 export interface Contact {
     pubGruu: URI | undefined;
     tempGruu: URI | undefined;
     uri: URI;
-    toString: (options?: any) => string;
+    toString: (options?: {
+        anonymous?: boolean;
+        outbound?: boolean;
+    }) => string;
 }
 /**
- * User agent core configuration.
+ * User Agent Core configuration.
+ * @public
  */
 export interface UserAgentCoreConfiguration {
     /**
@@ -52,12 +57,12 @@ export interface UserAgentCoreConfiguration {
      */
     sipjsId: string;
     /**
-     * Option tags of supported SIP extenstions.
+     * Option tags of supported SIP extensions.
      */
     supportedOptionTags: Array<string>;
     /**
-     * Option tags of supported SIP extenstions.
-     * Used in resposnes.
+     * Option tags of supported SIP extensions.
+     * Used in responses.
      * @remarks
      * FIXME: Make this go away.
      */
@@ -92,3 +97,4 @@ export interface UserAgentCoreConfiguration {
      */
     transportAccessor(): Transport | undefined;
 }
+//# sourceMappingURL=user-agent-core-configuration.d.ts.map
