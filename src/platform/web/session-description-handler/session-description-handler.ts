@@ -876,7 +876,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       }
     };
 
-    peerConnection.onicecandidateerror = (event): void => {
+    peerConnection.onicecandidateerror = (event: any): void => {
       this.logger.debug(`SessionDescriptionHandler.onicecandidateerror`);
       if (this._peerConnectionDelegate?.onicecandidateerror) {
         this._peerConnectionDelegate.onicecandidateerror(event);
@@ -917,7 +917,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       }
     };
 
-    peerConnection.onstatsended = (event): void => {
+    peerConnection.onstatsended = (event: any): void => {
       this.logger.debug(`SessionDescriptionHandler.onstatsended`);
       if (this._peerConnectionDelegate?.onstatsended) {
         this._peerConnectionDelegate.onstatsended(event);
