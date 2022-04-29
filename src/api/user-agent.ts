@@ -74,6 +74,7 @@ export class UserAgent {
   /** @internal */
   public _subscriptions: { [id: string]: Subscription } = {};
 
+  private _instanceId = "";
   private _contact: Contact;
   private _state: UserAgentState = UserAgentState.Stopped;
   private _stateEventEmitter: EmitterImpl<UserAgentState>;
@@ -216,6 +217,16 @@ export class UserAgent {
       this.logger.warn(deprecatedMessage);
     }
 
+    // Set instance ID
+    if (typeof this.options.instanceId === "string") {
+      if (this.options.instanceId && Grammar.parse(this.options.instanceId, "uuid") === -1) {
+        throw new Error("Invalid instanceId.");
+      }
+      this._instanceId = this.options.instanceId;
+    } else {
+      this._instanceId = UserAgent.newUUID();
+    }
+
     // Initialize Transport
     this._transport = new this.options.transportConstructor(
       this.getLogger("sip.Transport"),
@@ -264,6 +275,7 @@ export class UserAgent {
       hackAllowUnregisteredOptionTags: false,
       hackIpInContact: false,
       hackViaTcp: false,
+      instanceId: false,
       logBuiltinEnabled: true,
       logConfiguration: true,
       logConnector: (): void => {
@@ -304,6 +316,16 @@ export class UserAgent {
       }
       return object;
     }, {});
+  }
+
+  // http://stackoverflow.com/users/109538/broofa
+  private static newUUID(): string {
+    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r: number = Math.floor(Math.random() * 16);
+      const v: number = c === "x" ? r : (r % 4) + 8;
+      return v.toString(16);
+    });
+    return UUID;
   }
 
   /**
@@ -597,13 +619,18 @@ export class UserAgent {
   private initContact(): Contact {
     const contactName = this.options.contactName !== "" ? this.options.contactName : createRandomToken(8);
     const contactParams = this.options.contactParams;
+
     const contact = {
       pubGruu: undefined,
       tempGruu: undefined,
       uri: new URI("sip", contactName, this.options.viaHost, undefined, contactParams),
-      toString: (contactToStringOptions: { anonymous?: boolean; outbound?: boolean } = {}): string => {
+      instanceId: this._instanceId,
+      toString: (
+        contactToStringOptions: { anonymous?: boolean; outbound?: boolean; instanceId?: boolean } = {}
+      ): string => {
         const anonymous = contactToStringOptions.anonymous || false;
         const outbound = contactToStringOptions.outbound || false;
+        const instanceId = contactToStringOptions.instanceId || false;
         let contactString = "<";
         if (anonymous) {
           contactString +=
@@ -616,6 +643,9 @@ export class UserAgent {
           contactString += ";ob";
         }
         contactString += ">";
+        if (instanceId || this.options.instanceId) {
+          contactString += ';+sip.instance="<urn:uuid:' + this._instanceId + '>"';
+        }
         return contactString;
       }
     };

@@ -20,8 +20,9 @@ https://tools.ietf.org/html/rfc3261\#section-8.1.1.8 This is ported from UA.cont
 
 |  Property | Type | Description |
 |  --- | --- | --- |
+|  [instanceId](./sip.js.contact.instanceid.md) | <code>string</code> |  |
 |  [pubGruu](./sip.js.contact.pubgruu.md) | <code>URI &#124; undefined</code> |  |
 |  [tempGruu](./sip.js.contact.tempgruu.md) | <code>URI &#124; undefined</code> |  |
-|  [toString](./sip.js.contact.tostring.md) | <code>(options?: {</code><br/><code>        anonymous?: boolean;</code><br/><code>        outbound?: boolean;</code><br/><code>    }) =&gt; string</code> |  |
+|  [toString](./sip.js.contact.tostring.md) | <code>(options?: {</code><br/><code>        anonymous?: boolean;</code><br/><code>        outbound?: boolean;</code><br/><code>        instanceId?: boolean;</code><br/><code>    }) =&gt; string</code> |  |
 |  [uri](./sip.js.contact.uri.md) | <code>URI</code> |  |
 

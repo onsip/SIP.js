@@ -14,8 +14,9 @@ import { Transport } from "../transport";
 export interface Contact {
   pubGruu: URI | undefined;
   tempGruu: URI | undefined;
+  instanceId: string;
   uri: URI;
-  toString: (options?: { anonymous?: boolean; outbound?: boolean }) => string;
+  toString: (options?: { anonymous?: boolean; outbound?: boolean; instanceId?: boolean }) => string;
 }
 
 /**

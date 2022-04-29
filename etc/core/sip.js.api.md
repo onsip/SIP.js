@@ -90,6 +90,8 @@ export function constructOutgoingResponse(message: IncomingRequestMessage, optio
 // @public
 export interface Contact {
     // (undocumented)
+    instanceId: string;
+    // (undocumented)
     pubGruu: URI | undefined;
     // (undocumented)
     tempGruu: URI | undefined;
@@ -97,6 +99,7 @@ export interface Contact {
     toString: (options?: {
         anonymous?: boolean;
         outbound?: boolean;
+        instanceId?: boolean;
     }) => string;
     // (undocumented)
     uri: URI;

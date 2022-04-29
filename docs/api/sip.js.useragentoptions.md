@@ -30,6 +30,7 @@ export interface UserAgentOptions
 |  [hackAllowUnregisteredOptionTags](./sip.js.useragentoptions.hackallowunregisteredoptiontags.md) | <code>boolean</code> | Hack |
 |  [hackIpInContact](./sip.js.useragentoptions.hackipincontact.md) | <code>boolean &#124; string</code> | Hack |
 |  [hackViaTcp](./sip.js.useragentoptions.hackviatcp.md) | <code>boolean</code> | Hack |
+|  [instanceId](./sip.js.useragentoptions.instanceid.md) | <code>boolean &#124; string</code> | UUID to provide with "+sip.instance" Contact parameter in all requests. When <code>true</code>, an instanceId will be automatically generated and used in all requests. When <code>false</code>, REGISTER requests will still generate and use an instanceId, but the rest of the requests will not. It is also possible to set the instanceId for all requests manually by proving a string. |
 |  [logBuiltinEnabled](./sip.js.useragentoptions.logbuiltinenabled.md) | <code>boolean</code> | Indicates whether log messages should be written to the browser console. |
 |  [logConfiguration](./sip.js.useragentoptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the user agent configuration. |
 |  [logConnector](./sip.js.useragentoptions.logconnector.md) | <code>LogConnector</code> | A function which will be called every time a log is generated. |

@@ -129,6 +129,15 @@ export interface UserAgentOptions {
   hackViaTcp?: boolean;
 
   /**
+   * UUID to provide with "+sip.instance" Contact parameter in all requests.
+   * When `true`, an instanceId will be automatically generated and used in all requests.
+   * When `false`, REGISTER requests will still generate and use an instanceId, but the rest of the requests will not.
+   * It is also possible to set the instanceId for all requests manually by proving a string.
+   * @defaultValue `false`
+   */
+  instanceId?: boolean | string;
+
+  /**
    * Indicates whether log messages should be written to the browser console.
    * @defaultValue `true`
    */

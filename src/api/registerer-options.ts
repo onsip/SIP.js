@@ -15,12 +15,6 @@ export interface RegistererOptions {
   extraHeaders?: Array<string>;
 
   /**
-   * UUID to provide with "+sip.instance" Contact parameter.
-   * @defaultValue a randomly generated uuid
-   */
-  instanceId?: string;
-
-  /**
    * If true, constructor logs the registerer configuration.
    * @defaultValue `true`
    */

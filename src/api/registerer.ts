@@ -91,14 +91,9 @@ export class Registerer {
     }
     this.options.registrar = this.options.registrar.clone();
 
-    // Set instanceId and regId conditional defaults and validate
-    if (this.options.regId && !this.options.instanceId) {
-      this.options.instanceId = Registerer.newUUID();
-    } else if (!this.options.regId && this.options.instanceId) {
+    // Set regId defaults and validate
+    if (!this.options.regId) {
       this.options.regId = 1;
-    }
-    if (this.options.instanceId && Grammar.parse(this.options.instanceId, "uuid") === -1) {
-      throw new Error("Invalid instanceId.");
     }
     if (this.options.regId && this.options.regId < 0) {
       throw new Error("Invalid regId.");
@@ -167,22 +162,11 @@ export class Registerer {
       extraContactHeaderParams: [],
       extraHeaders: [],
       logConfiguration: true,
-      instanceId: "",
       params: {},
       regId: 0,
       registrar: new URI("sip", "anonymous", "anonymous.invalid"),
       refreshFrequency: Registerer.defaultRefreshFrequency
     };
-  }
-
-  // http://stackoverflow.com/users/109538/broofa
-  private static newUUID(): string {
-    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r: number = Math.floor(Math.random() * 16);
-      const v: number = c === "x" ? r : (r % 4) + 8;
-      return v.toString(16);
-    });
-    return UUID;
   }
 
   /**
@@ -664,10 +648,9 @@ export class Registerer {
    * Generate Contact Header
    */
   private generateContactHeader(expires: number): string {
-    let contact = this.userAgent.contact.toString();
-    if (this.options.regId && this.options.instanceId) {
+    let contact = this.userAgent.contact.toString({ instanceId: true });
+    if (this.options.regId) {
       contact += ";reg-id=" + this.options.regId;
-      contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
     }
 
     if (this.options.extraContactHeaderParams) {

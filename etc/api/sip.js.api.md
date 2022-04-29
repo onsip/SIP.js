@@ -349,7 +349,6 @@ export interface RegistererOptions {
     expires?: number;
     extraContactHeaderParams?: Array<string>;
     extraHeaders?: Array<string>;
-    instanceId?: string;
     logConfiguration?: boolean;
     // @deprecated (undocumented)
     params?: {
@@ -835,6 +834,7 @@ export interface UserAgentOptions {
     hackIpInContact?: boolean | string;
     // @deprecated
     hackViaTcp?: boolean;
+    instanceId?: boolean | string;
     logBuiltinEnabled?: boolean;
     logConfiguration?: boolean;
     logConnector?: LogConnector;
