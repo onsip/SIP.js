@@ -601,14 +601,25 @@ export class UserAgent {
       pubGruu: undefined,
       tempGruu: undefined,
       uri: new URI("sip", contactName, this.options.viaHost, undefined, contactParams),
-      toString: (contactToStringOptions: { anonymous?: boolean; outbound?: boolean } = {}): string => {
+      toString: (
+        contactToStringOptions: { anonymous?: boolean; outbound?: boolean; register?: boolean } = {}
+      ): string => {
         const anonymous = contactToStringOptions.anonymous || false;
         const outbound = contactToStringOptions.outbound || false;
+        const register = contactToStringOptions.register || false;
         let contactString = "<";
+        // 3.3.  Using a GRUU
+        // Once a user agent obtains GRUUs from the registrar, it uses them in
+        // several ways.  First, it uses them as the contents of the Contact
+        // header field in non-REGISTER requests and responses that it emits
+        // (for example, an INVITE request and 200 OK response).
+        // https://datatracker.ietf.org/doc/html/rfc5627#section-3.3
         if (anonymous) {
           contactString +=
             this.contact.tempGruu ||
             `sip:anonymous@anonymous.invalid;transport=${contactParams.transport ? contactParams.transport : "ws"}`;
+        } else if (register) {
+          contactString += this.contact.uri;
         } else {
           contactString += this.contact.pubGruu || this.contact.uri;
         }

@@ -664,7 +664,7 @@ export class Registerer {
    * Generate Contact Header
    */
   private generateContactHeader(expires: number): string {
-    let contact = this.userAgent.contact.toString();
+    let contact = this.userAgent.contact.toString({ register: true });
     if (this.options.regId && this.options.instanceId) {
       contact += ";reg-id=" + this.options.regId;
       contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';
