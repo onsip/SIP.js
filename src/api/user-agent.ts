@@ -601,14 +601,17 @@ export class UserAgent {
       pubGruu: undefined,
       tempGruu: undefined,
       uri: new URI("sip", contactName, this.options.viaHost, undefined, contactParams),
-      toString: (contactToStringOptions: { anonymous?: boolean; outbound?: boolean } = {}): string => {
+      toString: (contactToStringOptions: { anonymous?: boolean; outbound?: boolean; register?: boolean } = {}): string => {
         const anonymous = contactToStringOptions.anonymous || false;
         const outbound = contactToStringOptions.outbound || false;
+        const register = contactToStringOptions.register || false;
         let contactString = "<";
         if (anonymous) {
           contactString +=
             this.contact.tempGruu ||
             `sip:anonymous@anonymous.invalid;transport=${contactParams.transport ? contactParams.transport : "ws"}`;
+        } else if (register) {
+          contactString += this.contact.uri;
         } else {
           contactString += this.contact.pubGruu || this.contact.uri;
         }
