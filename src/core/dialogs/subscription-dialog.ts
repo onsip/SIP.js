@@ -318,10 +318,12 @@ export class SubscriptionDialog extends Dialog implements Subscription {
       clearTimeout(this.N);
       this.N = undefined;
     }
-    // When refreshing a subscription, a subscriber starts Timer N, set to
-    // 64*T1, when it sends the SUBSCRIBE request.
-    // https://tools.ietf.org/html/rfc6665#section-4.1.2.2
-    this.N = setTimeout(() => this.timerN(), Timers.TIMER_N);
+    if (!options.extraHeaders?.includes("Expires: 0")) {
+      // When refreshing a subscription, a subscriber starts Timer N, set to
+      // 64*T1, when it sends the SUBSCRIBE request.
+      // https://tools.ietf.org/html/rfc6665#section-4.1.2.2
+      this.N = setTimeout(() => this.timerN(), Timers.TIMER_N);
+    }
     return uac;
   }
 
