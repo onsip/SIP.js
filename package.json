@@ -49,7 +49,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-sourcemap-loader": "^0.3.8",
     "karma-webpack": "^5.0.0",
-    "mock-socket": "9.0.3",
+    "mock-socket": "^9.1.5",
     "pegjs": "^0.10.0",
     "prettier": "^2.7.1",
     "ts-loader": "^9.3.1",

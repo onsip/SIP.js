@@ -74,7 +74,7 @@ describe("Web Transport", () => {
     mockServer = new Server(server, { selectProtocol: (protocols: Array<string>): string => "sip" });
     mockServer.on("connection", (socket) => {
       logger.log("Mock WebSocket Server: incoming connection");
-      mockServerWebSocket = socket;
+      mockServerWebSocket = socket as WebSocket; // TODO: Client and WebSocket do not have same signature - close() is an issue.
 
       socket.on("message", (receivedMessage) => {
         if (typeof receivedMessage !== "string") {
