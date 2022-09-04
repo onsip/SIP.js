@@ -610,7 +610,31 @@ describe("Web SessionDescriptionHandler", () => {
               if (!answer) {
                 throw new Error("Answer undefined.");
               }
-              return sdh1.setDescription(answer.body);
+              return sdh1.setDescription(answer.body).then(() => {
+                // Wait until both ends are reporting connected otherwise things
+                // may not yet work as expected (sending DTMF for example).
+                return new Promise<void>((resolve) => {
+                  const resolveIfConnected = (): void => {
+                    if (
+                      sdh1.peerConnection?.connectionState === "connected" &&
+                      sdh2.peerConnection?.connectionState === "connected"
+                    ) {
+                      resolve();
+                    }
+                  };
+                  resolveIfConnected();
+                  sdh1.peerConnectionDelegate = {
+                    onconnectionstatechange: (): void => {
+                      resolveIfConnected();
+                    }
+                  };
+                  sdh2.peerConnectionDelegate = {
+                    onconnectionstatechange: (): void => {
+                      resolveIfConnected();
+                    }
+                  };
+                });
+              });
             });
 
             it("signaling state should be stable", () => {
