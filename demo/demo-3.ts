@@ -42,8 +42,8 @@ class SimpleUserWithDataChannel extends SimpleUser {
     };
     dataChannel.onerror = (event) => {
       console.error(`[${this.id}] data channel onError`);
-      console.error(event.error);
-      alert(`[${this.id}] Data channel error.\n` + event.error);
+      console.error((event as RTCErrorEvent).error);
+      alert(`[${this.id}] Data channel error.\n` + (event as RTCErrorEvent).error);
     };
     dataChannel.onmessage = (event) => {
       console.log(`[${this.id}] data channel onMessage`);

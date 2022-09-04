@@ -1188,7 +1188,7 @@ export abstract class Session {
     } catch (error) {
       // don't trust SDH to throw an Error
       this.logger.error("Session.getOffer: SDH getDescription threw...");
-      const e = error instanceof Error ? error : new Error(error);
+      const e = error instanceof Error ? error : new Error(error as string);
       this.logger.error(e.message);
       return Promise.reject(e);
     }
@@ -1215,7 +1215,7 @@ export abstract class Session {
     } catch (error) {
       // don't trust SDH to throw an Error
       this.logger.error("Session.rollbackOffer: SDH rollbackDescription threw...");
-      const e = error instanceof Error ? error : new Error(error);
+      const e = error instanceof Error ? error : new Error(error as string);
       this.logger.error(e.message);
       return Promise.reject(e);
     }
@@ -1242,7 +1242,7 @@ export abstract class Session {
       }
     } catch (error) {
       this.logger.error("Session.setAnswer: SDH hasDescription threw...");
-      const e = error instanceof Error ? error : new Error(error);
+      const e = error instanceof Error ? error : new Error(error as string);
       this.logger.error(e.message);
       return Promise.reject(e);
     }
@@ -1257,7 +1257,7 @@ export abstract class Session {
     } catch (error) {
       // don't trust SDH to throw an Error
       this.logger.error("Session.setAnswer: SDH setDescription threw...");
-      const e = error instanceof Error ? error : new Error(error);
+      const e = error instanceof Error ? error : new Error(error as string);
       this.logger.error(e.message);
       return Promise.reject(e);
     }
@@ -1284,7 +1284,7 @@ export abstract class Session {
       }
     } catch (error) {
       this.logger.error("Session.setOfferAndGetAnswer: SDH hasDescription threw...");
-      const e = error instanceof Error ? error : new Error(error);
+      const e = error instanceof Error ? error : new Error(error as string);
       this.logger.error(e.message);
       return Promise.reject(e);
     }
@@ -1303,7 +1303,7 @@ export abstract class Session {
     } catch (error) {
       // don't trust SDH to throw an Error
       this.logger.error("Session.setOfferAndGetAnswer: SDH setDescription or getDescription threw...");
-      const e = error instanceof Error ? error : new Error(error);
+      const e = error instanceof Error ? error : new Error(error as string);
       this.logger.error(e.message);
       return Promise.reject(e);
     }

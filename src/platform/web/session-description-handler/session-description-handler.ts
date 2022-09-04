@@ -254,7 +254,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     try {
       dtmfSender.insertDTMF(tones, duration, interToneGap);
     } catch (e) {
-      this.logger.error(e);
+      this.logger.error((e as Error).toString());
       return false;
     }
     this.logger.log("SessionDescriptionHandler.sendDtmf sent via RTP: " + tones.toString());
@@ -879,7 +879,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     peerConnection.onicecandidateerror = (event): void => {
       this.logger.debug(`SessionDescriptionHandler.onicecandidateerror`);
       if (this._peerConnectionDelegate?.onicecandidateerror) {
-        this._peerConnectionDelegate.onicecandidateerror(event);
+        this._peerConnectionDelegate.onicecandidateerror(event as RTCPeerConnectionIceErrorEvent);
       }
     };
 
@@ -914,13 +914,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       this.logger.debug(`SessionDescriptionHandler.onsignalingstatechange ${newState}`);
       if (this._peerConnectionDelegate?.onsignalingstatechange) {
         this._peerConnectionDelegate.onsignalingstatechange(event);
-      }
-    };
-
-    peerConnection.onstatsended = (event): void => {
-      this.logger.debug(`SessionDescriptionHandler.onstatsended`);
-      if (this._peerConnectionDelegate?.onstatsended) {
-        this._peerConnectionDelegate.onstatsended(event);
       }
     };
 

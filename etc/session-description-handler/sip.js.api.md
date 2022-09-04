@@ -26,7 +26,6 @@ export interface PeerConnectionDelegate {
     onicegatheringstatechange?(event: Event): void;
     onnegotiationneeded?(event: Event): void;
     onsignalingstatechange?(event: Event): void;
-    onstatsended?(event: Event): void;
     ontrack?(event: Event): void;
 }
 
