@@ -2,14 +2,7 @@
 
 You just need to have [Node.js](http://nodejs.org/) and [Git](http://git-scm.com/).
 
-### Node.js
-
-* [Install Node.js via package manager](https://github.com/nodejs/node/wiki)
-* [Install Node.js from sources](http://nodejs.org)
-
-### Git
-
-* [Install Git](http://git-scm.com/book/en/Getting-Started-Installing-Git)
+Development is currently being done using Node.js version 16.
 
 ## How to build SIP.js
 
