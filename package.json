@@ -30,7 +30,7 @@
     "typescript"
   ],
   "devDependencies": {
-    "@microsoft/api-documenter": "7.7.20",
+    "@microsoft/api-documenter": "^7.19.10",
     "@microsoft/api-extractor": "7.7.11",
     "@types/jasmine": "^4.3.0",
     "@typescript-eslint/eslint-plugin": "^5.36.1",
