@@ -1,6 +1,6 @@
 "use strict";
 const fs = require("fs"),
-    pegjs = require("pegjs"),
+    pegjs = require("peggy"),
     tspegjs = require("ts-pegjs");
 
 const thisFolder = "./src/grammar/pegjs",
