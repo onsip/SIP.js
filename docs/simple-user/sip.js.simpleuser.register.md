@@ -16,12 +16,12 @@ register(registererOptions?: RegistererOptions, registererRegisterOptions?: Regi
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  registererOptions | <code>RegistererOptions</code> |  |
-|  registererRegisterOptions | <code>RegistererRegisterOptions</code> |  |
+|  registererOptions | RegistererOptions |  |
+|  registererRegisterOptions | RegistererRegisterOptions |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

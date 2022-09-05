@@ -11,3 +11,5 @@ Outgoing INFO request.
 ```typescript
 export interface OutgoingInfoRequest extends OutgoingRequest 
 ```
+<b>Extends:</b> [OutgoingRequest](./sip.js.outgoingrequest.md)
+

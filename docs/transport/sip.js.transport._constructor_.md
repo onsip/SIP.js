@@ -16,6 +16,6 @@ constructor(logger: Logger, options?: TransportOptions);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  logger | <code>Logger</code> |  |
-|  options | <code>TransportOptions</code> |  |
+|  logger | Logger |  |
+|  options | [TransportOptions](./sip.js.transportoptions.md) |  |
 

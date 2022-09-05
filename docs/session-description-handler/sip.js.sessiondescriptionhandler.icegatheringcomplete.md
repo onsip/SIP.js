@@ -13,5 +13,5 @@ protected iceGatheringComplete(): void;
 ```
 <b>Returns:</b>
 
-`void`
+void
 

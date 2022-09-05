@@ -11,10 +11,11 @@ Outgoing INVITE response with the associated [Session](./sip.js.session.md)<!-- 
 ```typescript
 export interface OutgoingResponseWithSession extends OutgoingResponse 
 ```
+<b>Extends:</b> [OutgoingResponse](./sip.js.outgoingresponse.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [session](./sip.js.outgoingresponsewithsession.session.md) | <code>Session</code> | Session associated with incoming request acceptance, or Session associated with incoming request progress (if an out of dialog request, an early dialog). |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [session](./sip.js.outgoingresponsewithsession.session.md) |  | [Session](./sip.js.session.md) | Session associated with incoming request acceptance, or Session associated with incoming request progress (if an out of dialog request, an early dialog). |
 

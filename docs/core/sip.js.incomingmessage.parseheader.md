@@ -16,12 +16,12 @@ parseHeader(name: string, idx?: number): any | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> | header name |
-|  idx | <code>number</code> | header index |
+|  name | string | header name |
+|  idx | number | header index |
 
 <b>Returns:</b>
 
-`any | undefined`
+any \| undefined
 
 Parsed header object, undefined if the header is not present or in case of a parsing error.
 

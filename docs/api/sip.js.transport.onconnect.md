@@ -18,6 +18,5 @@ When the `UserAgent` is constructed, this property is set.
 
 ```txt
 - The `state` MUST be "Connected" when called.
-
 ```
 

@@ -16,9 +16,9 @@ invite(options?: SessionInviteOptions): Promise<OutgoingInviteRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionInviteOptions</code> | Options bucket. See [SessionInviteOptions](./sip.js.sessioninviteoptions.md) for details. |
+|  options | [SessionInviteOptions](./sip.js.sessioninviteoptions.md) | Options bucket. See [SessionInviteOptions](./sip.js.sessioninviteoptions.md) for details. |
 
 <b>Returns:</b>
 
-`Promise<OutgoingInviteRequest>`
+Promise&lt;OutgoingInviteRequest&gt;
 

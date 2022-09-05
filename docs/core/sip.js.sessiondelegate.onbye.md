@@ -16,9 +16,9 @@ onBye?(request: IncomingByeRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingByeRequest</code> | Incoming BYE request. |
+|  request | [IncomingByeRequest](./sip.js.incomingbyerequest.md) | Incoming BYE request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -14,12 +14,12 @@ export interface PublisherOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.publisheroptions.body.md) | <code>string</code> |  |
-|  [contentType](./sip.js.publisheroptions.contenttype.md) | <code>string</code> |  |
-|  [expires](./sip.js.publisheroptions.expires.md) | <code>number</code> | Expire value for the published event. |
-|  [extraHeaders](./sip.js.publisheroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the PUBLISH request message. |
-|  [params](./sip.js.publisheroptions.params.md) | <code>{</code><br/><code>        fromDisplayName?: string;</code><br/><code>        fromTag?: string;</code><br/><code>        fromUri?: URI;</code><br/><code>        toDisplayName?: string;</code><br/><code>        toUri?: URI;</code><br/><code>    }</code> |  |
-|  [unpublishOnClose](./sip.js.publisheroptions.unpublishonclose.md) | <code>boolean</code> | If set true, UA will gracefully unpublish for the event on UA close. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.publisheroptions.body.md) |  | string |  |
+|  [contentType](./sip.js.publisheroptions.contenttype.md) |  | string |  |
+|  [expires](./sip.js.publisheroptions.expires.md) |  | number | Expire value for the published event. |
+|  [extraHeaders](./sip.js.publisheroptions.extraheaders.md) |  | Array&lt;string&gt; | Array of extra headers added to the PUBLISH request message. |
+|  [params](./sip.js.publisheroptions.params.md) |  | { fromDisplayName?: string; fromTag?: string; fromUri?: URI; toDisplayName?: string; toUri?: URI; } |  |
+|  [unpublishOnClose](./sip.js.publisheroptions.unpublishonclose.md) |  | boolean | If set true, UA will gracefully unpublish for the event on UA close. |
 

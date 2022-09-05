@@ -30,6 +30,5 @@ The [Subscription](./sip.js.subscription.md) behaves in a deterministic manner a
 Subscription      |                                       v
 Constructed -> Initial -> NotifyWait -> Subscribed -> Terminated
                              |____________________________^
-
 ```
 

@@ -16,10 +16,10 @@ redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  contacts | <code>Array&lt;URI&gt;</code> | Contacts to redirect the UAC to. |
-|  options | <code>ResponseOptions</code> | Response options bucket. |
+|  contacts | Array&lt;[URI](./sip.js.uri.md)<!-- -->&gt; | Contacts to redirect the UAC to. |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) | Response options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingResponse`
+[OutgoingResponse](./sip.js.outgoingresponse.md)
 

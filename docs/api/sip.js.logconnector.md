@@ -11,3 +11,5 @@ Log connector function.
 ```typescript
 export declare type LogConnector = (level: LogLevel, category: string, label: string | undefined, content: string) => void;
 ```
+<b>References:</b> [LogLevel](./sip.js.loglevel.md)
+

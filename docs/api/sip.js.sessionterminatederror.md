@@ -11,6 +11,7 @@ An exception indicating the session terminated before the action completed.
 ```typescript
 export declare class SessionTerminatedError extends Exception 
 ```
+<b>Extends:</b> Exception
 
 ## Constructors
 

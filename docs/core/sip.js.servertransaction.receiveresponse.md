@@ -16,10 +16,10 @@ abstract receiveResponse(statusCode: number, response: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  statusCode | <code>number</code> | Response status code. |
-|  response | <code>string</code> | Response. |
+|  statusCode | number | Response status code. |
+|  response | string | Response. |
 
 <b>Returns:</b>
 
-`void`
+void
 

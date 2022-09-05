@@ -11,3 +11,5 @@ Incoming NOTIFY request.
 ```typescript
 export interface IncomingNotifyRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

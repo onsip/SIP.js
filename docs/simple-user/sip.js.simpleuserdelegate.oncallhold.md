@@ -16,11 +16,11 @@ onCallHold?(held: boolean): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  held | <code>boolean</code> |  |
+|  held | boolean |  |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

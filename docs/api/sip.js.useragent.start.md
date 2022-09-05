@@ -13,7 +13,7 @@ start(): Promise<void>;
 ```
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 
@@ -30,6 +30,5 @@ userAgent.start()
   .catch((error: Error) => {
     // userAgent.isConnected() === false
   });
-
 ```
 

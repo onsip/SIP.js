@@ -16,6 +16,6 @@ constructor(server: string, options?: SimpleUserOptions);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  server | <code>string</code> | SIP WebSocket Server URL. |
-|  options | <code>SimpleUserOptions</code> | Options bucket. See [SimpleUserOptions](./sip.js.simpleuseroptions.md) for details. |
+|  server | string | SIP WebSocket Server URL. |
+|  options | [SimpleUserOptions](./sip.js.simpleuseroptions.md) | Options bucket. See [SimpleUserOptions](./sip.js.simpleuseroptions.md) for details. |
 

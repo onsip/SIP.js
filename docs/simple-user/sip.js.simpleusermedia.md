@@ -14,9 +14,9 @@ export interface SimpleUserMedia
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [constraints](./sip.js.simpleusermedia.constraints.md) | <code>SimpleUserMediaConstraints</code> | Offer/Answer constraints determine if audio and/or video are utilized. If not specified, only audio is utilized (audio is true, video is false). |
-|  [local](./sip.js.simpleusermedia.local.md) | <code>SimpleUserMediaLocal</code> | HTML elements for local media streams. |
-|  [remote](./sip.js.simpleusermedia.remote.md) | <code>SimpleUserMediaRemote</code> | Local HTML media elements. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [constraints](./sip.js.simpleusermedia.constraints.md) |  | [SimpleUserMediaConstraints](./sip.js.simpleusermediaconstraints.md) | Offer/Answer constraints determine if audio and/or video are utilized. If not specified, only audio is utilized (audio is true, video is false). |
+|  [local](./sip.js.simpleusermedia.local.md) |  | [SimpleUserMediaLocal](./sip.js.simpleusermedialocal.md) | HTML elements for local media streams. |
+|  [remote](./sip.js.simpleusermedia.remote.md) |  | [SimpleUserMediaRemote](./sip.js.simpleusermediaremote.md) | Local HTML media elements. |
 

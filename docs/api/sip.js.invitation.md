@@ -11,6 +11,7 @@ An invitation is an offer to establish a [Session](./sip.js.session.md) (incomin
 ```typescript
 export declare class Invitation extends Session 
 ```
+<b>Extends:</b> [Session](./sip.js.session.md)
 
 ## Remarks
 
@@ -20,12 +21,12 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [autoSendAnInitialProvisionalResponse](./sip.js.invitation.autosendaninitialprovisionalresponse.md) |  | <code>boolean</code> | If true, a first provisional response after the 100 Trying will be sent automatically. This is false it the UAC required reliable provisional responses (100rel in Require header) or the user agent configuration has specified to not send an initial response, otherwise it is true. The provisional is sent by calling <code>progress()</code> without any options. |
-|  [body](./sip.js.invitation.body.md) |  | <code>string &#124; undefined</code> | Initial incoming INVITE request message body. |
-|  [localIdentity](./sip.js.invitation.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
-|  [logger](./sip.js.invitation.logger.md) |  | <code>Logger</code> | Logger. |
-|  [remoteIdentity](./sip.js.invitation.remoteidentity.md) |  | <code>NameAddrHeader</code> | The identity of the remote user. |
-|  [request](./sip.js.invitation.request.md) |  | <code>IncomingRequestMessage</code> | Initial incoming INVITE request message. |
+|  [autoSendAnInitialProvisionalResponse](./sip.js.invitation.autosendaninitialprovisionalresponse.md) |  | boolean | If true, a first provisional response after the 100 Trying will be sent automatically. This is false it the UAC required reliable provisional responses (100rel in Require header) or the user agent configuration has specified to not send an initial response, otherwise it is true. The provisional is sent by calling <code>progress()</code> without any options. |
+|  [body](./sip.js.invitation.body.md) |  | string \| undefined | Initial incoming INVITE request message body. |
+|  [localIdentity](./sip.js.invitation.localidentity.md) |  | NameAddrHeader | The identity of the local user. |
+|  [logger](./sip.js.invitation.logger.md) |  | Logger | Logger. |
+|  [remoteIdentity](./sip.js.invitation.remoteidentity.md) |  | NameAddrHeader | The identity of the remote user. |
+|  [request](./sip.js.invitation.request.md) |  | IncomingRequestMessage | Initial incoming INVITE request message. |
 
 ## Methods
 

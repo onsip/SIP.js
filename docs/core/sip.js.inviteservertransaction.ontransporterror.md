@@ -16,9 +16,9 @@ protected onTransportError(error: Error): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  error | <code>Error</code> |  |
+|  error | Error |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -13,7 +13,7 @@ stop(): Promise<void>;
 ```
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 
@@ -26,7 +26,6 @@ Resolves when the user agent has completed a graceful shutdown.
 4) Publishers unpublish.
 5) Transport disconnects.
 6) User Agent Core resets.
-
 ```
 NOTE: While this is a "graceful shutdown", it can also be very slow one if you are waiting for the returned Promise to resolve. The disposal of the clients and dialogs is done serially - waiting on one to finish before moving on to the next. This can be slow if there are lot of subscriptions to unsubscribe for example.
 

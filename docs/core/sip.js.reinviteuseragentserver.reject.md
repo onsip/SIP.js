@@ -16,9 +16,9 @@ reject(options?: ResponseOptions): OutgoingResponse;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>ResponseOptions</code> | Reject options bucket. |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) | Reject options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingResponse`
+[OutgoingResponse](./sip.js.outgoingresponse.md)
 

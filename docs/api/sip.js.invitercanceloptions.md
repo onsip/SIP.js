@@ -14,9 +14,9 @@ export interface InviterCancelOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [extraHeaders](./sip.js.invitercanceloptions.extraheaders.md) | <code>Array&lt;string&gt;</code> |  |
-|  [reasonPhrase](./sip.js.invitercanceloptions.reasonphrase.md) | <code>string</code> |  |
-|  [statusCode](./sip.js.invitercanceloptions.statuscode.md) | <code>number</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [extraHeaders](./sip.js.invitercanceloptions.extraheaders.md) |  | Array&lt;string&gt; |  |
+|  [reasonPhrase](./sip.js.invitercanceloptions.reasonphrase.md) |  | string |  |
+|  [statusCode](./sip.js.invitercanceloptions.statuscode.md) |  | number |  |
 

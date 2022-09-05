@@ -14,7 +14,7 @@ export interface SimpleUserMediaLocal
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [video](./sip.js.simpleusermedialocal.video.md) | <code>HTMLVideoElement</code> | The local video media stream is attached to this element. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [video](./sip.js.simpleusermedialocal.video.md) |  | HTMLVideoElement | The local video media stream is attached to this element. |
 

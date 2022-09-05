@@ -11,6 +11,9 @@ SUBSCRIBE UAS.
 ```typescript
 export declare class SubscribeUserAgentServer extends UserAgentServer implements IncomingSubscribeRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingSubscribeRequest](./sip.js.incomingsubscriberequest.md)
 
 ## Constructors
 
@@ -22,5 +25,5 @@ export declare class SubscribeUserAgentServer extends UserAgentServer implements
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [core](./sip.js.subscribeuseragentserver.core.md) |  | <code>UserAgentCore</code> |  |
+|  [core](./sip.js.subscribeuseragentserver.core.md) |  | [UserAgentCore](./sip.js.useragentcore.md) |  |
 

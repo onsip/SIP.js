@@ -11,6 +11,7 @@ An inviter offers to establish a [Session](./sip.js.session.md) (outgoing INVITE
 ```typescript
 export declare class Inviter extends Session 
 ```
+<b>Extends:</b> [Session](./sip.js.session.md)
 
 ## Constructors
 
@@ -22,11 +23,11 @@ export declare class Inviter extends Session
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [body](./sip.js.inviter.body.md) |  | <code>BodyAndContentType &#124; undefined</code> | Initial outgoing INVITE request message body. |
-|  [localIdentity](./sip.js.inviter.localidentity.md) |  | <code>NameAddrHeader</code> | The identity of the local user. |
-|  [logger](./sip.js.inviter.logger.md) |  | <code>Logger</code> | Logger. |
-|  [remoteIdentity](./sip.js.inviter.remoteidentity.md) |  | <code>NameAddrHeader</code> | The identity of the remote user. |
-|  [request](./sip.js.inviter.request.md) |  | <code>OutgoingRequestMessage</code> | Initial outgoing INVITE request message. |
+|  [body](./sip.js.inviter.body.md) |  | [BodyAndContentType](./sip.js.bodyandcontenttype.md) \| undefined | Initial outgoing INVITE request message body. |
+|  [localIdentity](./sip.js.inviter.localidentity.md) |  | NameAddrHeader | The identity of the local user. |
+|  [logger](./sip.js.inviter.logger.md) |  | Logger | Logger. |
+|  [remoteIdentity](./sip.js.inviter.remoteidentity.md) |  | NameAddrHeader | The identity of the remote user. |
+|  [request](./sip.js.inviter.request.md) |  | OutgoingRequestMessage | Initial outgoing INVITE request message. |
 
 ## Methods
 

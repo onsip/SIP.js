@@ -14,8 +14,8 @@ export interface SessionDescriptionHandlerConfiguration
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [iceGatheringTimeout](./sip.js.sessiondescriptionhandlerconfiguration.icegatheringtimeout.md) | <code>number</code> | The maximum duration to wait in ms for ICE gathering to complete. If undefined, implementation dependent. If zero, no timeout. |
-|  [peerConnectionConfiguration](./sip.js.sessiondescriptionhandlerconfiguration.peerconnectionconfiguration.md) | <code>RTCConfiguration</code> | Peer connection options. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [iceGatheringTimeout](./sip.js.sessiondescriptionhandlerconfiguration.icegatheringtimeout.md) |  | number | The maximum duration to wait in ms for ICE gathering to complete. If undefined, implementation dependent. If zero, no timeout. |
+|  [peerConnectionConfiguration](./sip.js.sessiondescriptionhandlerconfiguration.peerconnectionconfiguration.md) |  | RTCConfiguration | Peer connection options. |
 

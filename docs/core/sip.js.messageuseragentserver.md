@@ -11,6 +11,9 @@ MESSAGE UAS.
 ```typescript
 export declare class MessageUserAgentServer extends UserAgentServer implements IncomingMessageRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingMessageRequest](./sip.js.incomingmessagerequest.md)
 
 ## Constructors
 

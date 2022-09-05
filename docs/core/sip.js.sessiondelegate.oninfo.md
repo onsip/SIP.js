@@ -16,9 +16,9 @@ onInfo?(request: IncomingInfoRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingInfoRequest</code> | Incoming INFO request. |
+|  request | [IncomingInfoRequest](./sip.js.incominginforequest.md) | Incoming INFO request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

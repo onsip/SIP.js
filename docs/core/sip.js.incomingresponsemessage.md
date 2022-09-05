@@ -11,6 +11,7 @@ Incoming response message.
 ```typescript
 export declare class IncomingResponseMessage extends IncomingMessage 
 ```
+<b>Extends:</b> [IncomingMessage](./sip.js.incomingmessage.md)
 
 ## Constructors
 
@@ -22,6 +23,6 @@ export declare class IncomingResponseMessage extends IncomingMessage
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [reasonPhrase](./sip.js.incomingresponsemessage.reasonphrase.md) |  | <code>string &#124; undefined</code> |  |
-|  [statusCode](./sip.js.incomingresponsemessage.statuscode.md) |  | <code>number &#124; undefined</code> |  |
+|  [reasonPhrase](./sip.js.incomingresponsemessage.reasonphrase.md) |  | string \| undefined |  |
+|  [statusCode](./sip.js.incomingresponsemessage.statuscode.md) |  | number \| undefined |  |
 

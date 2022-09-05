@@ -16,17 +16,16 @@ static makeURI(uri: string): URI | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  uri | <code>string</code> | The string to parse. |
+|  uri | string | The string to parse. |
 
 <b>Returns:</b>
 
-`URI | undefined`
+URI \| undefined
 
 ## Example
 
 
 ```ts
 const uri = UserAgent.makeURI("sip:edgar@example.com");
-
 ```
 

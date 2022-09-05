@@ -16,9 +16,9 @@ progress(options?: ResponseOptions): OutgoingResponseWithSession;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>ResponseOptions</code> | Progress options bucket. |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) | Progress options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingResponseWithSession`
+[OutgoingResponseWithSession](./sip.js.outgoingresponsewithsession.md)
 

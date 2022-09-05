@@ -14,8 +14,8 @@ export interface BodyAndContentType
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.bodyandcontenttype.body.md) | <code>string</code> | Message body content. |
-|  [contentType](./sip.js.bodyandcontenttype.contenttype.md) | <code>string</code> | Message body content type. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.bodyandcontenttype.body.md) |  | string | Message body content. |
+|  [contentType](./sip.js.bodyandcontenttype.contenttype.md) |  | string | Message body content type. |
 

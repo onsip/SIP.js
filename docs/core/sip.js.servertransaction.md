@@ -11,6 +11,7 @@ Server Transaction.
 ```typescript
 export declare abstract class ServerTransaction extends Transaction 
 ```
+<b>Extends:</b> [Transaction](./sip.js.transaction.md)
 
 ## Remarks
 
@@ -26,8 +27,8 @@ The server transaction is responsible for the delivery of requests to the TU and
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [request](./sip.js.servertransaction.request.md) |  | <code>IncomingRequestMessage</code> | The incoming request the transaction handling. |
-|  [user](./sip.js.servertransaction.user.md) |  | <code>ServerTransactionUser</code> |  |
+|  [request](./sip.js.servertransaction.request.md) |  | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) | The incoming request the transaction handling. |
+|  [user](./sip.js.servertransaction.user.md) |  | [ServerTransactionUser](./sip.js.servertransactionuser.md) |  |
 
 ## Methods
 

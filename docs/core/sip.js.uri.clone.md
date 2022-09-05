@@ -11,5 +11,5 @@ clone(): URI;
 ```
 <b>Returns:</b>
 
-`URI`
+[URI](./sip.js.uri.md)
 

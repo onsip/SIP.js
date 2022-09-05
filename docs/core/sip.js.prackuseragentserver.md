@@ -11,6 +11,9 @@ PRACK UAS.
 ```typescript
 export declare class PrackUserAgentServer extends UserAgentServer implements IncomingPrackRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingPrackRequest](./sip.js.incomingprackrequest.md)
 
 ## Constructors
 

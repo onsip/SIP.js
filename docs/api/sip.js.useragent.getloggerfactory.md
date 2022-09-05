@@ -13,5 +13,5 @@ getLoggerFactory(): LoggerFactory;
 ```
 <b>Returns:</b>
 
-`LoggerFactory`
+LoggerFactory
 

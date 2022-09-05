@@ -16,11 +16,11 @@ protected setLocalMediaStream(stream: MediaStream): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  stream | <code>MediaStream</code> | Media stream containing tracks to be utilized. |
+|  stream | MediaStream | Media stream containing tracks to be utilized. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

@@ -11,6 +11,7 @@ Transport error.
 ```typescript
 export declare class TransportError extends Exception 
 ```
+<b>Extends:</b> [Exception](./sip.js.exception.md)
 
 ## Constructors
 

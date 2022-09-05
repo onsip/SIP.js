@@ -16,11 +16,11 @@ unregister(options?: RegistererUnregisterOptions): Promise<OutgoingRegisterReque
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>RegistererUnregisterOptions</code> |  |
+|  options | [RegistererUnregisterOptions](./sip.js.registererunregisteroptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<OutgoingRegisterRequest>`
+Promise&lt;OutgoingRegisterRequest&gt;
 
 ## Remarks
 

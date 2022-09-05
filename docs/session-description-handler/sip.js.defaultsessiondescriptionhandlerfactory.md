@@ -16,11 +16,11 @@ export declare function defaultSessionDescriptionHandlerFactory(mediaStreamFacto
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  mediaStreamFactory | <code>(constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler) =&gt; Promise&lt;MediaStream&gt;</code> | MediaStream factory. |
+|  mediaStreamFactory | (constraints: MediaStreamConstraints, sessionDescriptionHandler: [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md)<!-- -->) =&gt; Promise&lt;MediaStream&gt; | MediaStream factory. |
 
 <b>Returns:</b>
 
-`SessionDescriptionHandlerFactory`
+[SessionDescriptionHandlerFactory](./sip.js.sessiondescriptionhandlerfactory.md)
 
 ## Remarks
 

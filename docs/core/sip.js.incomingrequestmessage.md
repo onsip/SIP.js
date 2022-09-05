@@ -11,6 +11,7 @@ Incoming request message.
 ```typescript
 export declare class IncomingRequestMessage extends IncomingMessage 
 ```
+<b>Extends:</b> [IncomingMessage](./sip.js.incomingmessage.md)
 
 ## Constructors
 
@@ -22,5 +23,5 @@ export declare class IncomingRequestMessage extends IncomingMessage
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [ruri](./sip.js.incomingrequestmessage.ruri.md) |  | <code>URI &#124; undefined</code> |  |
+|  [ruri](./sip.js.incomingrequestmessage.ruri.md) |  | [URI](./sip.js.uri.md) \| undefined |  |
 

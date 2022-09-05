@@ -16,9 +16,9 @@ onicecandidateerror?(event: RTCPeerConnectionIceErrorEvent): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  event | <code>RTCPeerConnectionIceErrorEvent</code> | RTCPeerConnectionIceErrorEvent. |
+|  event | RTCPeerConnectionIceErrorEvent | RTCPeerConnectionIceErrorEvent. |
 
 <b>Returns:</b>
 
-`void`
+void
 

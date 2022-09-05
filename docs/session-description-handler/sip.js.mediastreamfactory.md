@@ -11,3 +11,5 @@ Interface of factory function which produces a MediaStream.
 ```typescript
 export declare type MediaStreamFactory = (constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler) => Promise<MediaStream>;
 ```
+<b>References:</b> [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md)
+

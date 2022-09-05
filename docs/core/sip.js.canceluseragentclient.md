@@ -11,6 +11,9 @@ CANCEL UAC.
 ```typescript
 export declare class CancelUserAgentClient extends UserAgentClient implements OutgoingCancelRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingCancelRequest](./sip.js.outgoingcancelrequest.md)
 
 ## Constructors
 

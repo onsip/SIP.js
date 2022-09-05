@@ -22,9 +22,9 @@ export declare class LoggerFactory
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [builtinEnabled](./sip.js.loggerfactory.builtinenabled.md) |  | <code>boolean</code> |  |
-|  [connector](./sip.js.loggerfactory.connector.md) |  | <code>((level: string, category: string, label: string &#124; undefined, content: any) =&gt; void) &#124; undefined</code> |  |
-|  [level](./sip.js.loggerfactory.level.md) |  | <code>Levels</code> |  |
+|  [builtinEnabled](./sip.js.loggerfactory.builtinenabled.md) |  | boolean |  |
+|  [connector](./sip.js.loggerfactory.connector.md) |  | ((level: string, category: string, label: string \| undefined, content: any) =&gt; void) \| undefined |  |
+|  [level](./sip.js.loggerfactory.level.md) |  | [Levels](./sip.js.levels.md) |  |
 
 ## Methods
 

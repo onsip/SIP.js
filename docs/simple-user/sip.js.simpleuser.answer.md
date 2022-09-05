@@ -16,11 +16,11 @@ answer(invitationAcceptOptions?: InvitationAcceptOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  invitationAcceptOptions | <code>InvitationAcceptOptions</code> | Optional options for Inviter.accept(). |
+|  invitationAcceptOptions | InvitationAcceptOptions | Optional options for Inviter.accept(). |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

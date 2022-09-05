@@ -16,9 +16,9 @@ onProgress?(response: PrackableIncomingResponseWithSession): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  response | <code>PrackableIncomingResponseWithSession</code> | Incoming response (including an early Session). |
+|  response | [PrackableIncomingResponseWithSession](./sip.js.prackableincomingresponsewithsession.md) | Incoming response (including an early Session). |
 
 <b>Returns:</b>
 
-`void`
+void
 

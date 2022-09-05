@@ -11,6 +11,7 @@ An exception indicating an outstanding prior request prevented execution.
 ```typescript
 export declare class RequestPendingError extends Exception 
 ```
+<b>Extends:</b> Exception
 
 ## Remarks
 

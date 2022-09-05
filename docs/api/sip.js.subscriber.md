@@ -11,6 +11,7 @@ A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SU
 ```typescript
 export declare class Subscriber extends Subscription 
 ```
+<b>Extends:</b> [Subscription](./sip.js.subscription.md)
 
 ## Remarks
 
@@ -44,7 +45,6 @@ subscriber.subscribe();
 
 // Sometime later when done with subscription
 subscriber.unsubscribe();
-
 ```
 
 ## Constructors

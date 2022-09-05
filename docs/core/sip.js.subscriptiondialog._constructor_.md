@@ -16,10 +16,10 @@ constructor(subscriptionEvent: string, subscriptionExpires: number, subscription
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  subscriptionEvent | <code>string</code> |  |
-|  subscriptionExpires | <code>number</code> |  |
-|  subscriptionState | <code>SubscriptionState</code> |  |
-|  core | <code>UserAgentCore</code> |  |
-|  state | <code>DialogState</code> |  |
-|  delegate | <code>SubscriptionDelegate</code> |  |
+|  subscriptionEvent | string |  |
+|  subscriptionExpires | number |  |
+|  subscriptionState | [SubscriptionState](./sip.js.subscriptionstate.md) |  |
+|  core | [UserAgentCore](./sip.js.useragentcore.md) |  |
+|  state | [DialogState](./sip.js.dialogstate.md) |  |
+|  delegate | [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) |  |
 

@@ -22,7 +22,7 @@ export declare class Logger
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [level](./sip.js.logger.level.md) |  | <code>Levels</code> |  |
+|  [level](./sip.js.logger.level.md) |  | [Levels](./sip.js.levels.md) |  |
 
 ## Methods
 

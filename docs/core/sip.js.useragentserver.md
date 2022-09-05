@@ -11,6 +11,7 @@ User Agent Server (UAS).
 ```typescript
 export declare class UserAgentServer implements IncomingRequest 
 ```
+<b>Implements:</b> [IncomingRequest](./sip.js.incomingrequest.md)
 
 ## Remarks
 
@@ -26,18 +27,18 @@ A user agent server is a logical entity that generates a response to a SIP reque
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [acceptable](./sip.js.useragentserver.acceptable.md) |  | <code>boolean</code> |  |
-|  [core](./sip.js.useragentserver.core.md) |  | <code>UserAgentCore</code> |  |
-|  [delegate](./sip.js.useragentserver.delegate.md) |  | <code>IncomingRequestDelegate &#124; undefined</code> |  |
-|  [logger](./sip.js.useragentserver.logger.md) |  | <code>Logger</code> |  |
-|  [loggerFactory](./sip.js.useragentserver.loggerfactory.md) |  | <code>LoggerFactory</code> |  |
-|  [message](./sip.js.useragentserver.message.md) |  | <code>IncomingRequestMessage</code> |  |
-|  [progressable](./sip.js.useragentserver.progressable.md) |  | <code>boolean</code> |  |
-|  [redirectable](./sip.js.useragentserver.redirectable.md) |  | <code>boolean</code> |  |
-|  [rejectable](./sip.js.useragentserver.rejectable.md) |  | <code>boolean</code> |  |
-|  [toTag](./sip.js.useragentserver.totag.md) |  | <code>string</code> |  |
-|  [transaction](./sip.js.useragentserver.transaction.md) |  | <code>ServerTransaction</code> | The transaction associated with this request. |
-|  [tryingable](./sip.js.useragentserver.tryingable.md) |  | <code>boolean</code> |  |
+|  [acceptable](./sip.js.useragentserver.acceptable.md) |  | boolean |  |
+|  [core](./sip.js.useragentserver.core.md) |  | [UserAgentCore](./sip.js.useragentcore.md) |  |
+|  [delegate](./sip.js.useragentserver.delegate.md) |  | [IncomingRequestDelegate](./sip.js.incomingrequestdelegate.md) \| undefined |  |
+|  [logger](./sip.js.useragentserver.logger.md) |  | [Logger](./sip.js.logger.md) |  |
+|  [loggerFactory](./sip.js.useragentserver.loggerfactory.md) |  | [LoggerFactory](./sip.js.loggerfactory.md) |  |
+|  [message](./sip.js.useragentserver.message.md) |  | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) |  |
+|  [progressable](./sip.js.useragentserver.progressable.md) |  | boolean |  |
+|  [redirectable](./sip.js.useragentserver.redirectable.md) |  | boolean |  |
+|  [rejectable](./sip.js.useragentserver.rejectable.md) |  | boolean |  |
+|  [toTag](./sip.js.useragentserver.totag.md) |  | string |  |
+|  [transaction](./sip.js.useragentserver.transaction.md) |  | [ServerTransaction](./sip.js.servertransaction.md) | The transaction associated with this request. |
+|  [tryingable](./sip.js.useragentserver.tryingable.md) |  | boolean |  |
 
 ## Methods
 

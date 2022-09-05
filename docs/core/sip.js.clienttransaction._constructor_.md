@@ -16,9 +16,9 @@ protected constructor(_request: OutgoingRequestMessage, transport: Transport, us
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  \_request | <code>OutgoingRequestMessage</code> |  |
-|  transport | <code>Transport</code> |  |
-|  user | <code>ClientTransactionUser</code> |  |
-|  state | <code>TransactionState</code> |  |
-|  loggerCategory | <code>string</code> |  |
+|  \_request | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) |  |
+|  transport | [Transport](./sip.js.transport.md) |  |
+|  user | [ClientTransactionUser](./sip.js.clienttransactionuser.md) |  |
+|  state | [TransactionState](./sip.js.transactionstate.md) |  |
+|  loggerCategory | string |  |
 

@@ -16,11 +16,11 @@ onAck?(request: IncomingAckRequest): Promise<void> | void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingAckRequest</code> | Incoming ACK request. |
+|  request | [IncomingAckRequest](./sip.js.incomingackrequest.md) | Incoming ACK request. |
 
 <b>Returns:</b>
 
-`Promise<void> | void`
+Promise&lt;void&gt; \| void
 
 The callback MUST return a promise if it asynchronously handles answers. For example, an ACK with an answer (offer in the 200 Ok) may require asynchronous processing in which case the callback MUST return a Promise which resolves when the answer handling is complete.
 

@@ -16,9 +16,9 @@ accept(options?: ResponseOptions): OutgoingResponseWithSession;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>ResponseOptions</code> | Options bucket. |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingResponseWithSession`
+[OutgoingResponseWithSession](./sip.js.outgoingresponsewithsession.md)
 

@@ -16,9 +16,9 @@ onRegister?(request: IncomingRegisterRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingRegisterRequest</code> | Incoming REGISTER request. |
+|  request | [IncomingRegisterRequest](./sip.js.incomingregisterrequest.md) | Incoming REGISTER request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

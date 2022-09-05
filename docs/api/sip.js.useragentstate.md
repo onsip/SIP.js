@@ -26,6 +26,5 @@ Valid state transitions:
 ```
 1. "Started" --> "Stopped"
 2. "Stopped" --> "Started"
-
 ```
 

@@ -20,9 +20,9 @@ receiveRequest(message: IncomingRequestMessage): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingRequestMessage</code> | Incoming request message within this dialog. |
+|  message | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) | Incoming request message within this dialog. |
 
 <b>Returns:</b>
 
-`void`
+void
 

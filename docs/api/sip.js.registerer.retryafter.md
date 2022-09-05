@@ -37,6 +37,5 @@ registerer.register({
     }
   }
 });
-
 ```
 

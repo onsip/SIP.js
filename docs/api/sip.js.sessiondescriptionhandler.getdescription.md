@@ -16,12 +16,12 @@ getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<Ses
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionDescriptionHandlerOptions</code> | Options object to be used by getDescription. |
-|  modifiers | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Array with one time use description modifiers. |
+|  options | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options object to be used by getDescription. |
+|  modifiers | Array&lt;[SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md)<!-- -->&gt; | Array with one time use description modifiers. |
 
 <b>Returns:</b>
 
-`Promise<BodyAndContentType>`
+Promise&lt;[BodyAndContentType](./sip.js.bodyandcontenttype.md)<!-- -->&gt;
 
 Promise that resolves with the local description to be used for the session. Rejects with `ClosedSessionDescriptionHandlerError` when this method is called after close or when close occurs before complete.
 

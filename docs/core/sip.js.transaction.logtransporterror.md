@@ -14,10 +14,10 @@ protected logTransportError(error: TransportError, message: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  error | <code>TransportError</code> |  |
-|  message | <code>string</code> |  |
+|  error | [TransportError](./sip.js.transporterror.md) |  |
+|  message | string |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

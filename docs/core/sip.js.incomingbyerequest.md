@@ -11,3 +11,5 @@ Incoming BYE request.
 ```typescript
 export interface IncomingByeRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

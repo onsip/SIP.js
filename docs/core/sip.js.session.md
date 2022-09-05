@@ -18,20 +18,20 @@ https://tools.ietf.org/html/rfc3261\#section-13
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [answer](./sip.js.session.answer.md) | <code>Body &#124; undefined</code> | The current answer if signalingState is stable. Otherwise undefined. |
-|  [callId](./sip.js.session.callid.md) | <code>string</code> | Call Id. |
-|  [delegate](./sip.js.session.delegate.md) | <code>SessionDelegate &#124; undefined</code> | Session delegate. |
-|  [id](./sip.js.session.id.md) | <code>string</code> | The session id. Equal to callId + localTag + remoteTag. |
-|  [localTag](./sip.js.session.localtag.md) | <code>string</code> | Local Tag. |
-|  [localURI](./sip.js.session.localuri.md) | <code>URI</code> | Local URI. |
-|  [offer](./sip.js.session.offer.md) | <code>Body &#124; undefined</code> | The current offer if signalingState is not initial or closed. Otherwise undefined. |
-|  [remoteTag](./sip.js.session.remotetag.md) | <code>string</code> | Remote Tag. |
-|  [remoteTarget](./sip.js.session.remotetarget.md) | <code>URI</code> | Remote Target. |
-|  [remoteURI](./sip.js.session.remoteuri.md) | <code>URI</code> | Remote URI. |
-|  [sessionState](./sip.js.session.sessionstate.md) | <code>SessionState</code> | Session state. |
-|  [signalingState](./sip.js.session.signalingstate.md) | <code>SignalingState</code> | Current state of the offer/answer exchange. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [answer](./sip.js.session.answer.md) |  | [Body](./sip.js.body.md) \| undefined | The current answer if signalingState is stable. Otherwise undefined. |
+|  [callId](./sip.js.session.callid.md) |  | string | Call Id. |
+|  [delegate](./sip.js.session.delegate.md) |  | [SessionDelegate](./sip.js.sessiondelegate.md) \| undefined | Session delegate. |
+|  [id](./sip.js.session.id.md) |  | string | The session id. Equal to callId + localTag + remoteTag. |
+|  [localTag](./sip.js.session.localtag.md) |  | string | Local Tag. |
+|  [localURI](./sip.js.session.localuri.md) |  | [URI](./sip.js.uri.md) | Local URI. |
+|  [offer](./sip.js.session.offer.md) |  | [Body](./sip.js.body.md) \| undefined | The current offer if signalingState is not initial or closed. Otherwise undefined. |
+|  [remoteTag](./sip.js.session.remotetag.md) |  | string | Remote Tag. |
+|  [remoteTarget](./sip.js.session.remotetarget.md) |  | [URI](./sip.js.uri.md) | Remote Target. |
+|  [remoteURI](./sip.js.session.remoteuri.md) |  | [URI](./sip.js.uri.md) | Remote URI. |
+|  [sessionState](./sip.js.session.sessionstate.md) |  | [SessionState](./sip.js.sessionstate.md) | Session state. |
+|  [signalingState](./sip.js.session.signalingstate.md) |  | [SignalingState](./sip.js.signalingstate.md) | Current state of the offer/answer exchange. |
 
 ## Methods
 

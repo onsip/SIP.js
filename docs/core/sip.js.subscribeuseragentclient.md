@@ -11,6 +11,9 @@ SUBSCRIBE UAC.
 ```typescript
 export declare class SubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingSubscribeRequest](./sip.js.outgoingsubscriberequest.md)
 
 ## Remarks
 
@@ -28,7 +31,7 @@ User agent client for installation of a single subscription per SUBSCRIBE reques
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [delegate](./sip.js.subscribeuseragentclient.delegate.md) |  | <code>OutgoingSubscribeRequestDelegate &#124; undefined</code> |  |
+|  [delegate](./sip.js.subscribeuseragentclient.delegate.md) |  | [OutgoingSubscribeRequestDelegate](./sip.js.outgoingsubscriberequestdelegate.md) \| undefined |  |
 
 ## Methods
 

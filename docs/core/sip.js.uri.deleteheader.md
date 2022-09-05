@@ -14,9 +14,9 @@ deleteHeader(header: string): Array<string> | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  header | <code>string</code> |  |
+|  header | string |  |
 
 <b>Returns:</b>
 
-`Array<string> | undefined`
+Array&lt;string&gt; \| undefined
 
