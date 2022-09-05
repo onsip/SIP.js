@@ -1,6 +1,6 @@
 # Release Road Map
 
-## 0.18.x
+## 0.22.x
 
 - free core and API from DOM dependencies
 - complete more work in progress
@@ -15,7 +15,9 @@
 
 ### api-extractor
 
-- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
+- issue updating @microsoft/api-extractor past 7.7.11 where _2 gets added to class names which match globals (Notification, Transport, etc.)
+  - https://github.com/microsoft/rushstack/issues/1830 
+  - potential workaround https://github.com/microsoft/rushstack/issues/2895#issuecomment-943533628
 
 ## Tests
 
@@ -67,7 +69,7 @@
 
 Non-exhaustive research on these parsers, generally it seems like there is nothing both popular and well-typed:
 
-- _ts-pegjs_: we currently use this on top of pegjs (it's not separate). I don't know how far typing can go, but it'd be the lowest work.
+- _ts-pegjs_: we currently use this on top of peggy (it's not separate). It used to use pegjs, but pegjs got replaced by peggy. I don't know how far typing can go, but it'd be the lowest work.
 - _antlr4ts_: antlr4 is a fairly well-used grammar parser, and they built a separate ts project (don't know if its typescript from the ground up). What I don't like is it incurs a runtime dependency.
 - _tspeg_: this one has very few users, but if it were popular, it would be exactly what we want. It is currently maintained (has been since it was made about 1.25 years ago), is strongly typed throughout, and outputs classes and interfaces.
 
