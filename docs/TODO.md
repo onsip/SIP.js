@@ -1,8 +1,12 @@
 # Release Road Map
 
-## 0.22.x
+## Next release
 
+- add .js extentions to imports to fix ES6 module resolution
+- add tests for recent pull requests accepted without them
+- review and remove everything that was deprecated
 - free core and API from DOM dependencies
+- figure out replacement for Travis CI
 - complete more work in progress
 - more documentation
 - more tests
