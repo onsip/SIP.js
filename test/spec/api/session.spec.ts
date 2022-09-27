@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Invitation, Inviter, SessionDescriptionHandler, SessionState } from "../../../src/api";
+import {
+  Invitation,
+  Inviter,
+  SessionDelegate,
+  SessionDescriptionHandler,
+  SessionState
+} from "../../../src/api";
 import {
   Logger,
   OutgoingRequestDelegate,
@@ -57,6 +63,11 @@ describe("API Session", () => {
   let invitation: Invitation;
   let invitationStateSpy: EmitterSpy<SessionState>;
 
+  const invitationDelegateMock = jasmine.createSpyObj<Required<SessionDelegate>>(
+    "SessionDelegate",
+    ["onAck", "onCancel"]
+  );
+
   const inviterRequestDelegateMock = jasmine.createSpyObj<Required<OutgoingRequestDelegate>>(
     "OutgoingRequestDelegate",
     ["onAccept", "onProgress", "onRedirect", "onReject", "onTrying"]
@@ -108,6 +119,12 @@ describe("API Session", () => {
       expect(session && session.sessionState).toBe(SessionDialogState.Confirmed);
       expect(session && session.signalingState).toBe(SignalingState.Stable);
     });
+
+    it("his session delegate onAck", () => {
+      const spy = invitationDelegateMock;
+      expect(spy.onAck).toHaveBeenCalledTimes(1);
+      expect(spy.onCancel).toHaveBeenCalledTimes(0);
+    });  
 
     it("his dialog should be 'confirmed' and 'stable'", () => {
       const session = invitation.dialog;
@@ -162,6 +179,12 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
       expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
     });
+
+    it("his session delegate onAck", () => {
+      const spy = invitationDelegateMock;
+      expect(spy.onAck).toHaveBeenCalledTimes(1);
+      expect(spy.onCancel).toHaveBeenCalledTimes(0);
+    });  
 
     it("her dialog should be 'confirmed' and 'stable'", () => {
       const session = inviter.dialog;
@@ -280,6 +303,12 @@ describe("API Session", () => {
       expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminating]);
       expect(spy.calls.argsFor(3)).toEqual([SessionState.Terminated]);
     });
+
+    it("his session delegate nothing", () => {
+      const spy = invitationDelegateMock;
+      expect(spy.onAck).toHaveBeenCalledTimes(0);
+      expect(spy.onCancel).toHaveBeenCalledTimes(0);
+    });  
   }
 
   function bobProgress(): void {
@@ -452,6 +481,12 @@ describe("API Session", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
     });
+
+    it("his session delegate nothing", () => {
+      const spy = invitationDelegateMock;
+      expect(spy.onAck).toHaveBeenCalledTimes(0);
+      expect(spy.onCancel).toHaveBeenCalledTimes(0);
+    });  
   }
 
   function bobReject2x(): void {
@@ -499,6 +534,12 @@ describe("API Session", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
     });
+
+    it("his session delegate nothing", () => {
+      const spy = invitationDelegateMock;
+      expect(spy.onAck).toHaveBeenCalledTimes(0);
+      expect(spy.onCancel).toHaveBeenCalledTimes(0);
+    });  
 
     it("his second reject() threw an error", () => {
       expect(threw).toBe(true);
@@ -910,6 +951,12 @@ describe("API Session", () => {
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate onCancel", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(1);
+        });  
       });
 
       describe("Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
@@ -958,6 +1005,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate onCancel", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(1);
+        });  
       });
 
       describe("Bob accept(), Alice cancel() - a network glare condition (200 wins)", () => {
@@ -1038,6 +1091,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate onAck", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(1);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
       });
 
       // These only makes sense in INVITE with SDP case.
@@ -1104,6 +1163,12 @@ describe("API Session", () => {
             expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
             expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
           });
+
+          it("his session delegate nothing", () => {
+            const spy = invitationDelegateMock;
+            expect(spy.onAck).toHaveBeenCalledTimes(0);
+            expect(spy.onCancel).toHaveBeenCalledTimes(0);
+          });  
         });
       }
 
@@ -1166,6 +1231,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate onAck", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(1);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
 
         it("her dialog should be 'terminated' and 'closed'", () => {
           const session = inviter.dialog;
@@ -1255,6 +1326,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
 
+        it("his session delegate onAck", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(1);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
+
         it("her dialog should be 'terminated' and 'closed'", () => {
           const session = inviter.dialog;
           expect(session && session.sessionState).toBe(SessionDialogState.Terminated);
@@ -1299,6 +1376,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate nothing", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
       });
 
       // These only makes sense in INVITE without SDP case.
@@ -1337,6 +1420,12 @@ describe("API Session", () => {
             expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
             expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
           });
+
+          it("his session delegate onAck", () => {
+            const spy = invitationDelegateMock;
+            expect(spy.onAck).toHaveBeenCalledTimes(1);
+            expect(spy.onCancel).toHaveBeenCalledTimes(0);
+          });  
         });
 
         describe("Bob accept(), ACK SDP set fails - SDH Error", () => {
@@ -1383,6 +1472,13 @@ describe("API Session", () => {
             expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
             expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
           });
+
+          it("his session delegate onAck", () => {
+            const spy = invitationDelegateMock;
+            expect(spy.onAck).toHaveBeenCalledTimes(1);
+            expect(spy.onCancel).toHaveBeenCalledTimes(0);
+          });  
+
         });
       }
 
@@ -1427,6 +1523,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate nothing", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
       });
 
       describe("Bob accept(), ACK never arrives - Request Timeout", () => {
@@ -1450,6 +1552,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Established]);
           expect(spy.calls.argsFor(2)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate nothing", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
       });
 
       describe("Bob reject(), ACK send fails - Transport Error", () => {
@@ -1489,6 +1597,12 @@ describe("API Session", () => {
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate nothing", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
       });
 
       describe("Bob nothing - no answer timeout", () => {
@@ -1602,6 +1716,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate onCancel", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(1);
+        });  
       });
 
       describe("Bob progress(reliable), Alice cancel(), Bob accept() - an async race condition (CANCEL wins)", () => {
@@ -1654,6 +1774,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate onCancel", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(1);
+        });  
       });
 
       describe("Bob progress(reliable), Bob accept(), Bob dispose() - an async race condition (dispose wins)", () => {
@@ -1704,6 +1830,12 @@ describe("API Session", () => {
           expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
           expect(spy.calls.argsFor(1)).toEqual([SessionState.Terminated]);
         });
+
+        it("his session delegate nothing", () => {
+          const spy = invitationDelegateMock;
+          expect(spy.onAck).toHaveBeenCalledTimes(0);
+          expect(spy.onCancel).toHaveBeenCalledTimes(0);
+        });  
       });
 
       describe("Bob progress()", () => {
@@ -1878,6 +2010,8 @@ describe("API Session", () => {
     inviterRequestDelegateMock.onRedirect.calls.reset();
     inviterRequestDelegateMock.onReject.calls.reset();
     inviterRequestDelegateMock.onTrying.calls.reset();
+    invitationDelegateMock.onAck.calls.reset();
+    invitationDelegateMock.onCancel.calls.reset();
   }
 
   beforeEach(async () => {
@@ -1903,6 +2037,7 @@ describe("API Session", () => {
         onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
+          invitation.delegate = invitationDelegateMock
         }
       };
       inviter = new Inviter(alice.userAgent, target);
@@ -1920,6 +2055,7 @@ describe("API Session", () => {
         onInvite: (session): void => {
           invitation = session;
           invitationStateSpy = makeEmitterSpy(invitation.stateChange, bob.userAgent.getLogger("Bob"));
+          invitation.delegate = invitationDelegateMock
         }
       };
       inviter = new Inviter(alice.userAgent, target, { inviteWithoutSdp: true });
