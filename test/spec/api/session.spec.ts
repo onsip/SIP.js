@@ -798,6 +798,42 @@ describe("API Session", () => {
       });
     });
 
+    describe("Alice invite(), auto provisional disabled - 100 Trying only", () => {
+      beforeEach(async () => {
+        resetSpies();
+        bob.userAgent.configuration.sendInitialProvisionalResponse = false;
+        resetSpies();
+        return inviter.invite({ requestDelegate: inviterRequestDelegateMock }).then(() => bob.transport.waitSent());
+      });
+
+      it("her ua should send INVITE", () => {
+        const spy = alice.transportSendSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_INVITE);
+      });
+
+      it("her ua should receive 100", () => {
+        const spy = alice.transportReceiveSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual(SIP_100);
+      });
+
+      it("her request delegate onTyring", () => {
+        const spy = inviterRequestDelegateMock;
+        expect(spy.onAccept).toHaveBeenCalledTimes(0);
+        expect(spy.onProgress).toHaveBeenCalledTimes(0);
+        expect(spy.onRedirect).toHaveBeenCalledTimes(0);
+        expect(spy.onReject).toHaveBeenCalledTimes(0);
+        expect(spy.onTrying).toHaveBeenCalledTimes(1);
+      });
+
+      it("her session state should transition 'establishing'", () => {
+        const spy = inviterStateSpy;
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.calls.argsFor(0)).toEqual([SessionState.Establishing]);
+      });
+    });
+
     describe("Alice invite()", () => {
       beforeEach(async () => {
         resetSpies();
