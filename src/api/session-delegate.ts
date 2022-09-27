@@ -15,9 +15,12 @@ import { SessionDescriptionHandler } from "./session-description-handler";
 export interface SessionDelegate {
   /**
    * Called upon receiving an incoming in dialog ACK request.
+   * @remarks
+   * Includes the ACK confirming an accepted initial Invite
+   * as well as ACKs associated with in dialog INVITE requests.
    * @param ack - The ack.
    */
-  onAck?(ack: Ack): void;
+   onAck?(ack: Ack): void;
 
   /**
    * Called upon receiving an incoming in dialog BYE request.
@@ -27,6 +30,10 @@ export interface SessionDelegate {
 
   /**
    * Called upon receiving an incoming CANCEL request.
+   * @remarks
+   * Relevant to an Invitation only. CANCEL reqeusts are being handled as
+   * a special case and there is currently no way to externally impact the
+   * response to the a CANCEL request. See core implementation for details.
    * @param cancel - The cancel.
    */
   onCancel?(cancel: Cancel): void;
