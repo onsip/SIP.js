@@ -2,7 +2,7 @@
   "name": "sip.js",
   "title": "SIP.js",
   "description": "A SIP library for JavaScript",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "license": "MIT",
   "main": "./lib/index.js",
   "files": [
