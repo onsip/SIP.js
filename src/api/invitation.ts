@@ -88,7 +88,7 @@ export class Invitation extends Session {
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    incomingRequestMessage.toTag = ((incomingInviteRequest as InviteUserAgentServer) as any).toTag;
+    incomingRequestMessage.toTag = (incomingInviteRequest as InviteUserAgentServer as any).toTag;
     if (typeof incomingRequestMessage.toTag !== "string") {
       throw new TypeError("toTag should have been a string.");
     }
@@ -504,7 +504,7 @@ export class Invitation extends Session {
     } else {
       // We don't actually know what a session description handler implementation might throw our way,
       // and more generally as a last resort catch all, just assume we are getting an "unknown" and log it.
-      this.logger.error((error as unknown) as string);
+      this.logger.error(error as unknown as string);
     }
 
     // Log Exception message
@@ -673,9 +673,7 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when the reliable provisional response is acknowledged.
    * @param options - Options bucket.
    */
-  private sendProgressReliableWaitForPrack(
-    options: InvitationProgressOptions = {}
-  ): Promise<{
+  private sendProgressReliableWaitForPrack(options: InvitationProgressOptions = {}): Promise<{
     prackRequest: IncomingPrackRequest;
     prackResponse: OutgoingResponse;
     progressResponse: OutgoingResponseWithSession;

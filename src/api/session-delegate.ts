@@ -20,7 +20,7 @@ export interface SessionDelegate {
    * as well as ACKs associated with in dialog INVITE requests.
    * @param ack - The ack.
    */
-   onAck?(ack: Ack): void;
+  onAck?(ack: Ack): void;
 
   /**
    * Called upon receiving an incoming in dialog BYE request.

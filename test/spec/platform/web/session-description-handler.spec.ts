@@ -65,14 +65,14 @@ const exactlyZeroField = (startsWith: string): jasmine.AsymmetricMatcher<string>
 const sessionDescriptionHandlerFactory = defaultSessionDescriptionHandlerFactory();
 
 // A console logger
-const logger = (console as unknown) as Logger;
+const logger = console as unknown as Logger;
 
 // This is a fake Session with a console Logger to provide to the SessionDescriptionHandlerFactory.
 // Currently the default factory only uses the following properties, so the hacks "works".
 const session = {
-  userAgent: ({
+  userAgent: {
     getLogger: (): Logger => logger
-  } as unknown) as UserAgent
+  } as unknown as UserAgent
 } as Session;
 
 // Options for the SessionDescriptionHandlerFactory

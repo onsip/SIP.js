@@ -951,7 +951,8 @@ export class SimpleUser {
     //    - May optionally be set via constructor option.
     //    - May optionally be set via options passed to Session.invite().
 
-    const sessionDescriptionHandlerOptions = session.sessionDescriptionHandlerOptionsReInvite as SessionDescriptionHandlerOptions;
+    const sessionDescriptionHandlerOptions =
+      session.sessionDescriptionHandlerOptionsReInvite as SessionDescriptionHandlerOptions;
     sessionDescriptionHandlerOptions.hold = hold;
     session.sessionDescriptionHandlerOptionsReInvite = sessionDescriptionHandlerOptions;
 

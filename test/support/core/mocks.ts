@@ -172,7 +172,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
   const log = new LoggerFactory();
   const viaHost = `${user}Host.invalid`;
   const contactURI = new URI("sip", createRandomToken(8), viaHost, undefined, { transport: "ws" });
-  const ua = ({
+  const ua = {
     publishers: {},
     registerers: {},
     sessions: {},
@@ -196,7 +196,7 @@ export function makeMockUA(user: string, domain: string, displayName: string, tr
     getLogger: (category: string, label?: string) => log.getLogger(category, label),
     getLoggerFactory: () => log,
     getSupportedResponseOptions: () => ["outbound"]
-  } as unknown) as UserAgent;
+  } as unknown as UserAgent;
   if (!ua.configuration) {
     throw new Error("UA configuration undefined.");
   }
