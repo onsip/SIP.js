@@ -129,6 +129,18 @@ export interface UserAgentOptions {
   hackViaTcp?: boolean;
 
   /**
+   * UUID to provide with "+sip.instance" Contact header parameter.
+   * @defaultValue A randomly generated uuid
+   */
+  instanceId?: string;
+
+  /**
+   * Add "+sip.instance" Contact header parameter to all requests.
+   * @defaultValue `false`
+   */
+  instanceIdAlwaysAdded?: boolean;
+
+  /**
    * Indicates whether log messages should be written to the browser console.
    * @defaultValue `true`
    */

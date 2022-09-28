@@ -93,7 +93,7 @@ export class Registerer {
 
     // Set instanceId and regId conditional defaults and validate
     if (this.options.regId && !this.options.instanceId) {
-      this.options.instanceId = Registerer.newUUID();
+      this.options.instanceId = this.userAgent.instanceId;
     } else if (!this.options.regId && this.options.instanceId) {
       this.options.regId = 1;
     }
@@ -173,16 +173,6 @@ export class Registerer {
       registrar: new URI("sip", "anonymous", "anonymous.invalid"),
       refreshFrequency: Registerer.defaultRefreshFrequency
     };
-  }
-
-  // http://stackoverflow.com/users/109538/broofa
-  private static newUUID(): string {
-    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r: number = Math.floor(Math.random() * 16);
-      const v: number = c === "x" ? r : (r % 4) + 8;
-      return v.toString(16);
-    });
-    return UUID;
   }
 
   /**

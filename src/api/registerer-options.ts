@@ -16,7 +16,8 @@ export interface RegistererOptions {
 
   /**
    * UUID to provide with "+sip.instance" Contact parameter.
-   * @defaultValue a randomly generated uuid
+   * @defaultValue A randomly generated uuid
+   * @deprecated Use UserAgentOptions.instanceId
    */
   instanceId?: string;
 

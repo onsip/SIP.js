@@ -75,6 +75,7 @@ export class UserAgent {
   public _subscriptions: { [id: string]: Subscription } = {};
 
   private _contact: Contact;
+  private _instanceId: string;
   private _state: UserAgentState = UserAgentState.Stopped;
   private _stateEventEmitter: EmitterImpl<UserAgentState>;
   private _transport: Transport;
@@ -226,6 +227,12 @@ export class UserAgent {
     // Initialize Contact
     this._contact = this.initContact();
 
+    // Set instance id
+    this._instanceId = this.options.instanceId ? this.options.instanceId : UserAgent.newUUID();
+    if (Grammar.parse(this._instanceId, "uuid") === -1) {
+      throw new Error("Invalid instanceId.");
+    }
+
     // Initialize UserAgentCore
     this._userAgentCore = this.initCore();
 
@@ -264,6 +271,8 @@ export class UserAgent {
       hackAllowUnregisteredOptionTags: false,
       hackIpInContact: false,
       hackViaTcp: false,
+      instanceId: "",
+      instanceIdAlwaysAdded: false,
       logBuiltinEnabled: true,
       logConfiguration: true,
       logConnector: (): void => {
@@ -287,6 +296,16 @@ export class UserAgent {
       userAgentString: "SIP.js/" + LIBRARY_VERSION,
       viaHost: ""
     };
+  }
+
+  // http://stackoverflow.com/users/109538/broofa
+  private static newUUID(): string {
+    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r: number = Math.floor(Math.random() * 16);
+      const v: number = c === "x" ? r : (r % 4) + 8;
+      return v.toString(16);
+    });
+    return UUID;
   }
 
   /**
@@ -318,6 +337,13 @@ export class UserAgent {
    */
   public get contact(): Contact {
     return this._contact;
+  }
+
+  /**
+   * User agent instance id.
+   */
+  public get instanceId(): string {
+    return this._instanceId;
   }
 
   /**
@@ -627,6 +653,9 @@ export class UserAgent {
           contactString += ";ob";
         }
         contactString += ">";
+        if (this.options.instanceIdAlwaysAdded) {
+          contactString += ';+sip.instance="<urn:uuid:' + this._instanceId + '>"';
+        }
         return contactString;
       }
     };
