@@ -421,7 +421,9 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
 
     this.localMediaStreamConstraints = constraints;
-    return this.mediaStreamFactory(constraints, this).then((mediaStream) => this.setLocalMediaStream(mediaStream));
+    return this.mediaStreamFactory(constraints, this, options).then((mediaStream) =>
+      this.setLocalMediaStream(mediaStream)
+    );
   }
 
   /**
