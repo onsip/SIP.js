@@ -888,8 +888,24 @@ export class SimpleUser {
     // Initialize our session
     this.initSession(inviter, inviterOptions);
 
+    // Clone options for safe keeping
+    const options = { ...inviterInviteOptions };
+    options.requestDelegate = { ...options.requestDelegate };
+
+    // If utilizing early media, add a handler to catch 183 Session Progress
+    // messages and then to play the associated remote media (the early media).
+    if (inviterOptions?.earlyMedia) {
+      const existingOnProgress = options.requestDelegate.onProgress;
+      options.requestDelegate.onProgress = (response) => {
+        if (response.message.statusCode === 183) {
+          this.setupRemoteMedia();
+        }
+        existingOnProgress && existingOnProgress(response);
+      };
+    }
+
     // Send the INVITE
-    return inviter.invite(inviterInviteOptions).then(() => {
+    return inviter.invite(options).then(() => {
       this.logger.log(`[${this.id}] sent INVITE`);
     });
   }
