@@ -8,20 +8,21 @@
     "project": "./tsconfig-base.json"
   },
   "plugins": [
-    "@typescript-eslint",
-    "tree-shaking",
-    "prettier"
+      "@typescript-eslint",
+      "tree-shaking",
+      "prettier"
   ],
   "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended",
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
     // "plugin:@typescript-eslint/recommended-requiring-type-checking",
     // "plugin:@typescript-eslint/strict",
-    "prettier"
+      "prettier"
   ],
   "rules": {
     "no-console": "error",
+    "prettier/prettier": "error",
     // "@typescript-eslint/explicit-member-accessibility": "error",
     // "@typescript-eslint/member-ordering": "error",
     "tree-shaking/no-side-effects-in-initialization": "error"
