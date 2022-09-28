@@ -37,7 +37,7 @@ Run `npm run build-lib` to regenerate the `lib` folder.
 SIP.js includes integration and units implemented using [Jasmine](https://jasmine.github.io/).
 Run the tests as follows:
 ```
-$ npm run command-line-test
+$ npm run test
 ```
 or
 ```
