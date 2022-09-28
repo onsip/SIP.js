@@ -2,7 +2,6 @@
   "files.associations": {
     "*.json": "jsonc"
   },
-  "typescript.tsdk": "./node_modules/typescript/lib",
   "files.exclude": {
     "**/*.js": {
       "when": "$(basename).ts"
