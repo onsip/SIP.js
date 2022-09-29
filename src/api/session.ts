@@ -632,6 +632,20 @@ export abstract class Session {
       return Promise.reject(new Error(`Invalid session state ${this.state}`));
     }
 
+    // REFER with Replaces (Attended Transfer) only supported with established sessions.
+    if (referTo instanceof Session && !referTo.dialog) {
+      const message =
+        "Session.refer() may only be called with session which is established. " +
+        "You are perhaps attempting to attended transfer to a target for which " +
+        "there is not dialog yet established. Perhaps you are attempting a " +
+        "'semi-attended' tansfer? Regardless, this is not supported. The recommended " +
+        "approached is to check to see if the target Session is in the Established " +
+        "state before calling refer(); if the state is not Established you may " +
+        "proceed by falling back using a URI as the target (blind transfer).";
+      this.logger.error(message);
+      return Promise.reject(new Error(`Invalid session state ${this.state}`));
+    }
+
     const requestDelegate = options.requestDelegate;
     const requestOptions = this.copyRequestOptions(options.requestOptions);
     requestOptions.extraHeaders = requestOptions.extraHeaders
