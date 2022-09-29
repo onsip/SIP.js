@@ -267,7 +267,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * May be called prior to ICE gathering actually completing to allow the
    * session descirption handler proceed with whatever candidates have been
    * gathered up to this point in time. Use this to stop waiting on ICE to
-   * complete if you are implementing your own ICE gathering "timeout" strategy.
+   * complete if you are implementing your own ICE gathering completion strategy.
    */
   public iceGatheringComplete(): void {
     this.logger.debug("SessionDescriptionHandler.iceGatheringComplete");
