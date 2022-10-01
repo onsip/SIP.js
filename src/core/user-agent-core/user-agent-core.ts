@@ -1,46 +1,39 @@
-import { Dialog } from "../dialogs";
-import { Logger, LoggerFactory } from "../log";
-import {
-  Body,
-  C,
-  constructOutgoingResponse,
-  IncomingRequestMessage,
-  IncomingResponseMessage,
-  OutgoingInviteRequest,
-  OutgoingInviteRequestDelegate,
-  OutgoingMessageRequest,
-  OutgoingPublishRequest,
-  OutgoingRegisterRequest,
-  OutgoingRequest,
-  OutgoingRequestDelegate,
-  OutgoingRequestMessage,
-  OutgoingRequestMessageOptions,
-  OutgoingResponse,
-  OutgoingSubscribeRequest,
-  OutgoingSubscribeRequestDelegate,
-  ResponseOptions,
-  URI
-} from "../messages";
-import { InviteServerTransaction, NonInviteClientTransaction, TransactionState } from "../transactions";
-import { Transport } from "../transport";
-import {
-  InviteUserAgentClient,
-  InviteUserAgentServer,
-  MessageUserAgentClient,
-  MessageUserAgentServer,
-  NotifyUserAgentServer,
-  PublishUserAgentClient,
-  ReferUserAgentServer,
-  RegisterUserAgentClient,
-  RegisterUserAgentServer,
-  SubscribeUserAgentClient,
-  SubscribeUserAgentServer,
-  UserAgentClient,
-  UserAgentServer
-} from "../user-agents";
-import { AllowedMethods } from "./allowed-methods";
-import { UserAgentCoreConfiguration } from "./user-agent-core-configuration";
-import { UserAgentCoreDelegate } from "./user-agent-core-delegate";
+import { URI } from "../../grammar/uri.js";
+import { Dialog } from "../dialogs/dialog.js";
+import { Logger } from "../log/logger.js";
+import { LoggerFactory } from "../log/logger-factory.js";
+import { Body } from "../messages/body.js";
+import { C } from "../messages/methods/constants.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequest, OutgoingRequestDelegate } from "../messages/outgoing-request.js";
+import { OutgoingRequestMessage, OutgoingRequestMessageOptions } from "../messages/outgoing-request-message.js";
+import { constructOutgoingResponse, OutgoingResponse, ResponseOptions } from "../messages/outgoing-response.js";
+import { OutgoingInviteRequest, OutgoingInviteRequestDelegate } from "../messages/methods/invite.js";
+import { OutgoingMessageRequest } from "../messages/methods/message.js";
+import { OutgoingPublishRequest } from "../messages/methods/publish.js";
+import { OutgoingRegisterRequest } from "../messages/methods/register.js";
+import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate } from "../messages/methods/subscribe.js";
+import { InviteServerTransaction } from "../transactions/invite-server-transaction.js";
+import { NonInviteClientTransaction } from "../transactions/non-invite-client-transaction.js";
+import { TransactionState } from "../transactions/transaction-state.js";
+import { Transport } from "../transport.js";
+import { InviteUserAgentClient } from "../user-agents/invite-user-agent-client.js";
+import { InviteUserAgentServer } from "../user-agents/invite-user-agent-server.js";
+import { MessageUserAgentClient } from "../user-agents/message-user-agent-client.js";
+import { MessageUserAgentServer } from "../user-agents/message-user-agent-server.js";
+import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server.js";
+import { PublishUserAgentClient } from "../user-agents/publish-user-agent-client.js";
+import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server.js";
+import { RegisterUserAgentClient } from "../user-agents/register-user-agent-client.js";
+import { RegisterUserAgentServer } from "../user-agents/register-user-agent-server.js";
+import { SubscribeUserAgentClient } from "../user-agents/subscribe-user-agent-client.js";
+import { SubscribeUserAgentServer } from "../user-agents/subscribe-user-agent-server.js";
+import { UserAgentClient } from "../user-agents/user-agent-client.js";
+import { UserAgentServer } from "../user-agents/user-agent-server.js";
+import { AllowedMethods } from "./allowed-methods.js";
+import { UserAgentCoreConfiguration } from "./user-agent-core-configuration.js";
+import { UserAgentCoreDelegate } from "./user-agent-core-delegate.js";
 /**
  * This is ported from UA.C.ACCEPTED_BODY_TYPES.
  * FIXME: TODO: Should be configurable/variable.

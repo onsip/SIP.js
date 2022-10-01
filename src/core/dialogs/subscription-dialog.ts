@@ -1,21 +1,20 @@
-import { Logger } from "../log";
-import {
-  C,
-  IncomingRequestMessage,
-  NameAddrHeader,
-  OutgoingRequestMessage,
-  OutgoingSubscribeRequest,
-  OutgoingSubscribeRequestDelegate,
-  RequestOptions
-} from "../messages";
-import { Subscription, SubscriptionDelegate, SubscriptionState } from "../subscription";
-import { Timers } from "../timers";
-import { AllowedMethods } from "../user-agent-core/allowed-methods";
-import { UserAgentCore } from "../user-agent-core/user-agent-core";
-import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server";
-import { ReSubscribeUserAgentClient } from "../user-agents/re-subscribe-user-agent-client";
-import { Dialog } from "./dialog";
-import { DialogState } from "./dialog-state";
+import { NameAddrHeader } from "../../grammar/name-addr-header.js";
+import { Logger } from "../log/logger.js";
+import { C } from "../messages/methods/constants.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { OutgoingSubscribeRequest } from "../messages/methods/subscribe.js";
+import { OutgoingSubscribeRequestDelegate } from "../messages/methods/subscribe.js";
+import { RequestOptions } from "../messages/outgoing-request.js";
+import { Subscription, SubscriptionState } from "../subscription/subscription.js";
+import { SubscriptionDelegate } from "../subscription/subscription-delegate.js";
+import { Timers } from "../timers.js";
+import { AllowedMethods } from "../user-agent-core/allowed-methods.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server.js";
+import { ReSubscribeUserAgentClient } from "../user-agents/re-subscribe-user-agent-client.js";
+import { Dialog } from "./dialog.js";
+import { DialogState } from "./dialog-state.js";
 
 /**
  * Subscription Dialog.

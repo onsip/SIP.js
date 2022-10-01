@@ -1,31 +1,30 @@
-import {
-  Info,
-  Invitation,
-  InvitationAcceptOptions,
-  Inviter,
-  InviterInviteOptions,
-  InviterOptions,
-  Message,
-  Messager,
-  Referral,
-  Registerer,
-  RegistererOptions,
-  RegistererRegisterOptions,
-  RegistererState,
-  RegistererUnregisterOptions,
-  RequestPendingError,
-  Session,
-  SessionInviteOptions,
-  SessionState,
-  UserAgent,
-  UserAgentOptions,
-  UserAgentState
-} from "../../../api";
-import { Logger } from "../../../core";
-import { SessionDescriptionHandler, SessionDescriptionHandlerOptions } from "../session-description-handler";
-import { Transport } from "../transport";
-import { SimpleUserDelegate } from "./simple-user-delegate";
-import { SimpleUserOptions } from "./simple-user-options";
+import { Info } from "../../../api/info.js";
+import { Invitation } from "../../../api/invitation.js";
+import { InvitationAcceptOptions } from "../../../api/invitation-accept-options.js";
+import { Inviter } from "../../../api/inviter.js";
+import { InviterInviteOptions } from "../../../api/inviter-invite-options.js";
+import { InviterOptions } from "../../../api/inviter-options.js";
+import { Message } from "../../../api/message.js";
+import { Messager } from "../../../api/messager.js";
+import { Referral } from "../../../api/referral.js";
+import { Registerer } from "../../../api/registerer.js";
+import { RegistererOptions } from "../../../api/registerer-options.js";
+import { RegistererRegisterOptions } from "../../../api/registerer-register-options.js";
+import { RegistererState } from "../../../api/registerer-state.js";
+import { RegistererUnregisterOptions } from "../../../api/registerer-unregister-options.js";
+import { RequestPendingError } from "../../../api/exceptions/request-pending.js";
+import { Session } from "../../../api/session.js";
+import { SessionInviteOptions } from "../../../api/session-invite-options.js";
+import { SessionState } from "../../../api/session-state.js";
+import { UserAgent } from "../../../api/user-agent.js";
+import { UserAgentOptions } from "../../../api/user-agent-options.js";
+import { UserAgentState } from "../../../api/user-agent-state.js";
+import { Logger } from "../../../core/log/logger.js";
+import { SessionDescriptionHandler } from "../session-description-handler/session-description-handler.js";
+import { SessionDescriptionHandlerOptions } from "../session-description-handler/session-description-handler-options.js";
+import { Transport } from "../transport/transport.js";
+import { SimpleUserDelegate } from "./simple-user-delegate.js";
+import { SimpleUserOptions } from "./simple-user-options.js";
 
 /**
  * A simple SIP user class.

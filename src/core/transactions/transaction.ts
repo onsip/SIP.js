@@ -1,8 +1,8 @@
-import { TransportError } from "../exceptions";
-import { Logger } from "../log";
-import { Transport } from "../transport";
-import { TransactionState } from "./transaction-state";
-import { TransactionUser } from "./transaction-user";
+import { TransportError } from "../exceptions/transport-error.js";
+import { Logger } from "../log/logger.js";
+import { Transport } from "../transport.js";
+import { TransactionState } from "./transaction-state.js";
+import { TransactionUser } from "./transaction-user.js";
 
 /**
  * Transaction.

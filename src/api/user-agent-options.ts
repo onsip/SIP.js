@@ -1,7 +1,8 @@
-import { Logger, URI } from "../core";
-import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory";
-import { Transport } from "./transport";
-import { UserAgentDelegate } from "./user-agent-delegate";
+import { URI } from "../grammar/uri.js";
+import { Logger } from "../core/log/logger.js";
+import { SessionDescriptionHandlerFactory } from "./session-description-handler-factory.js";
+import { Transport } from "./transport.js";
+import { UserAgentDelegate } from "./user-agent-delegate.js";
 
 /**
  * Log level.

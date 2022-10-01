@@ -1,6 +1,6 @@
-import { UserAgentOptions } from "../../../src/api";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+import { UserAgentOptions } from "../../../lib/api/index.js";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 /**
  * TODO:

@@ -1,4 +1,4 @@
-import { SIPExtension, UserAgent, UserAgentRegisteredOptionTags } from "../../../src/api";
+import { SIPExtension, UserAgent, UserAgentRegisteredOptionTags } from "../../../lib/api/index.js";
 import {
   DigestAuthentication,
   IncomingAckRequest,
@@ -12,11 +12,11 @@ import {
   SessionDelegate,
   SubscriptionDelegate,
   Transport,
-  URI,
   UserAgentCoreConfiguration,
   UserAgentCoreDelegate
-} from "../../../src/core";
-import { createRandomToken } from "../../../src/core/messages/utils";
+} from "../../../lib/core/index.js";
+import { URI } from "../../../lib/grammar/index.js";
+import { createRandomToken } from "../../../lib/core/messages/utils.js";
 
 export function connectTransportToUA(transport: jasmine.SpyObj<Transport>, ua: UserAgent): void {
   transport.send.and.callFake((message: string) => {

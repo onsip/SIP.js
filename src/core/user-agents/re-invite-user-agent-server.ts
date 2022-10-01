@@ -1,15 +1,11 @@
-import { SessionDialog } from "../dialogs";
-import {
-  IncomingInviteRequest,
-  IncomingRequestDelegate,
-  IncomingRequestMessage,
-  OutgoingResponse,
-  OutgoingResponseWithSession,
-  ResponseOptions,
-  URI
-} from "../messages";
-import { InviteServerTransaction } from "../transactions";
-import { UserAgentServer } from "./user-agent-server";
+import { URI } from "../../grammar/uri.js";
+import { SessionDialog } from "../dialogs/session-dialog.js";
+import { IncomingInviteRequest, OutgoingResponseWithSession } from "../messages/methods/invite.js";
+import { IncomingRequestDelegate } from "../messages/incoming-request.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { OutgoingResponse, ResponseOptions } from "../messages/outgoing-response.js";
+import { InviteServerTransaction } from "../transactions/invite-server-transaction.js";
+import { UserAgentServer } from "./user-agent-server.js";
 
 /**
  * Re-INVITE UAS.

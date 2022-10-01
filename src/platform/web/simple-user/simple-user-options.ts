@@ -1,5 +1,5 @@
-import { UserAgentOptions } from "../../../api";
-import { SimpleUserDelegate } from "./simple-user-delegate";
+import { UserAgentOptions } from "../../../api/user-agent-options.js";
+import { SimpleUserDelegate } from "./simple-user-delegate.js";
 
 /**
  * Media for {@link SimpleUserOptions}.

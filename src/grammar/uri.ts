@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Parameters } from "./parameters";
+import { Parameters } from "./parameters.js";
 
 interface URIObject {
   scheme: string;

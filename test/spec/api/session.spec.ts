@@ -1,18 +1,24 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Invitation, Inviter, SessionDelegate, SessionDescriptionHandler, SessionState } from "../../../src/api";
+import {
+  Invitation,
+  Inviter,
+  SessionDelegate,
+  SessionDescriptionHandler,
+  SessionState
+} from "../../../lib/api/index.js";
+import { URI } from "../../../lib/grammar/index.js";
 import {
   Logger,
   OutgoingRequestDelegate,
   SessionState as SessionDialogState,
   SignalingState,
-  Timers,
-  URI
-} from "../../../src/core";
-import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { TransportFake } from "../../support/api/transport-fake";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+  Timers
+} from "../../../lib/core/index.js";
+import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy.js";
+import { TransportFake } from "../../support/api/transport-fake.js";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 const SIP_ACK = [jasmine.stringMatching(/^ACK/)];
 const SIP_BYE = [jasmine.stringMatching(/^BYE/)];

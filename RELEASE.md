@@ -77,5 +77,11 @@ Instead whitelist files in `package.json`. It's better to be exact about what we
 
 ## Update release notes on GitHub
 
+Build the bundle files to upload.
+
+`npm run build-bundles`
+
 * Find 'Releases' on repository page
 * Draft and publish release notes for new tag
+* Upload bundles for new verison
+

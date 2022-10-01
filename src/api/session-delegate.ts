@@ -1,12 +1,12 @@
-import { IncomingRequestMessage } from "../core";
-import { Ack } from "./ack";
-import { Bye } from "./bye";
-import { Cancel } from "./cancel";
-import { Info } from "./info";
-import { Message } from "./message";
-import { Notification } from "./notification";
-import { Referral } from "./referral";
-import { SessionDescriptionHandler } from "./session-description-handler";
+import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
+import { Ack } from "./ack.js";
+import { Bye } from "./bye.js";
+import { Cancel } from "./cancel.js";
+import { Info } from "./info.js";
+import { Message } from "./message.js";
+import { Notification } from "./notification.js";
+import { Referral } from "./referral.js";
+import { SessionDescriptionHandler } from "./session-description-handler.js";
 
 /**
  * Delegate for {@link Session}.

@@ -1,9 +1,10 @@
-import { Emitter, EmitterImpl } from "../../../api/emitter";
-import { StateTransitionError } from "../../../api/exceptions";
-import { Transport as TransportDefinition } from "../../../api/transport";
-import { TransportState } from "../../../api/transport-state";
-import { Grammar, Logger } from "../../../core";
-import { TransportOptions } from "./transport-options";
+import { Emitter, EmitterImpl } from "../../../api/emitter.js";
+import { StateTransitionError } from "../../../api/exceptions/state-transition.js";
+import { Transport as TransportDefinition } from "../../../api/transport.js";
+import { TransportState } from "../../../api/transport-state.js";
+import { Grammar } from "../../../grammar/grammar.js";
+import { Logger } from "../../../core/log/logger.js";
+import { TransportOptions } from "./transport-options.js";
 
 /**
  * Transport for SIP over secure WebSocket (WSS).

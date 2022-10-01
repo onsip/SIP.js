@@ -1,9 +1,10 @@
-import { Md5 } from "./md5";
+import { Md5 } from "./md5.js";
 
-import { URI } from "../../grammar";
-import { Logger, LoggerFactory } from "../log";
-import { OutgoingRequestMessage } from "./outgoing-request-message";
-import { createRandomToken } from "./utils";
+import { URI } from "../../grammar/uri.js";
+import { Logger } from "../log/logger.js";
+import { LoggerFactory } from "../log/logger-factory.js";
+import { OutgoingRequestMessage } from "./outgoing-request-message.js";
+import { createRandomToken } from "./utils.js";
 
 function MD5(s: string): string {
   return Md5.hashStr(s);

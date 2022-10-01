@@ -1,8 +1,8 @@
-import { IncomingRequestMessage } from "../messages";
-import { Transport } from "../transport";
-import { Transaction } from "./transaction";
-import { TransactionState } from "./transaction-state";
-import { ServerTransactionUser } from "./transaction-user";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { Transport } from "../transport.js";
+import { Transaction } from "./transaction.js";
+import { TransactionState } from "./transaction-state.js";
+import { ServerTransactionUser } from "./transaction-user.js";
 
 /**
  * Server Transaction.

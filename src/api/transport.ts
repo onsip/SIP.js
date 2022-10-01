@@ -1,6 +1,6 @@
-import { Transport as CoreTransport } from "../core";
-import { Emitter } from "./emitter";
-import { TransportState } from "./transport-state";
+import { Transport as CoreTransport } from "../core/transport.js";
+import { Emitter } from "./emitter.js";
+import { TransportState } from "./transport-state.js";
 
 /**
  * Transport layer interface expected by the `UserAgent`.

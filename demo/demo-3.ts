@@ -7,9 +7,9 @@ import {
   SimpleUser,
   SimpleUserDelegate,
   SimpleUserOptions
-} from "../src/platform/web";
-import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users";
-import { getButton, getDiv, getInput } from "./demo-utils";
+} from "../lib/platform/web/index.js";
+import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users.js";
+import { getButton, getDiv, getInput } from "./demo-utils.js";
 
 // A class which extends SimpleUser to handle setup and use of a data channel
 class SimpleUserWithDataChannel extends SimpleUser {

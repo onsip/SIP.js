@@ -1,20 +1,17 @@
-import {
-  C,
-  Grammar,
-  Logger,
-  OutgoingRegisterRequest,
-  OutgoingRequestMessage,
-  URI,
-  equivalentURI,
-  NameAddrHeader
-} from "../core";
-import { Emitter, EmitterImpl } from "./emitter";
-import { RequestPendingError } from "./exceptions";
-import { RegistererOptions } from "./registerer-options";
-import { RegistererRegisterOptions } from "./registerer-register-options";
-import { RegistererState } from "./registerer-state";
-import { RegistererUnregisterOptions } from "./registerer-unregister-options";
-import { UserAgent } from "./user-agent";
+import { Grammar } from "../grammar/grammar.js";
+import { NameAddrHeader } from "../grammar/name-addr-header.js";
+import { equivalentURI, URI } from "../grammar/uri.js";
+import { Logger } from "../core/log/logger.js";
+import { C } from "../core/messages/methods/constants.js";
+import { OutgoingRegisterRequest } from "../core/messages/methods/register.js";
+import { OutgoingRequestMessage } from "../core/messages/outgoing-request-message.js";
+import { Emitter, EmitterImpl } from "./emitter.js";
+import { RequestPendingError } from "./exceptions/request-pending.js";
+import { RegistererOptions } from "./registerer-options.js";
+import { RegistererRegisterOptions } from "./registerer-register-options.js";
+import { RegistererState } from "./registerer-state.js";
+import { RegistererUnregisterOptions } from "./registerer-unregister-options.js";
+import { UserAgent } from "./user-agent.js";
 
 /**
  * A registerer registers a contact for an address of record (outgoing REGISTER).

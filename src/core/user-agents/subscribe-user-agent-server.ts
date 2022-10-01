@@ -1,7 +1,9 @@
-import { IncomingRequestDelegate, IncomingRequestMessage, IncomingSubscribeRequest } from "../messages";
-import { NonInviteServerTransaction } from "../transactions";
-import { UserAgentCore } from "../user-agent-core";
-import { UserAgentServer } from "./user-agent-server";
+import { IncomingSubscribeRequest } from "../messages/methods/subscribe.js";
+import { IncomingRequestDelegate } from "../messages/incoming-request.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { NonInviteServerTransaction } from "../transactions/non-invite-server-transaction.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { UserAgentServer } from "./user-agent-server.js";
 
 /**
  * SUBSCRIBE UAS.

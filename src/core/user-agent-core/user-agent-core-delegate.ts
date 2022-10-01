@@ -1,11 +1,9 @@
-import {
-  IncomingInviteRequest,
-  IncomingMessageRequest,
-  IncomingNotifyRequest,
-  IncomingReferRequest,
-  IncomingRegisterRequest,
-  IncomingSubscribeRequest
-} from "../messages";
+import { IncomingInviteRequest } from "../messages/methods/invite.js";
+import { IncomingMessageRequest } from "../messages/methods/message.js";
+import { IncomingNotifyRequest } from "../messages/methods/notify.js";
+import { IncomingReferRequest } from "../messages/methods/refer.js";
+import { IncomingRegisterRequest } from "../messages/methods/register.js";
+import { IncomingSubscribeRequest } from "../messages/methods/subscribe.js";
 
 /**
  * User Agent Core delegate.

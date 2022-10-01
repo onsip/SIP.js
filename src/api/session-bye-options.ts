@@ -1,4 +1,4 @@
-import { OutgoingRequestDelegate, RequestOptions } from "../core";
+import { OutgoingRequestDelegate, RequestOptions } from "../core/messages/outgoing-request.js";
 
 /**
  * Options for {@link Session.bye}.

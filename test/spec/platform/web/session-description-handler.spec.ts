@@ -1,11 +1,11 @@
-import { Logger } from "../../../../src/core";
+import { Logger } from "../../../../lib/core/index.js";
 import {
   defaultMediaStreamFactory,
   defaultSessionDescriptionHandlerFactory,
   SessionDescriptionHandlerFactoryOptions,
   SessionDescriptionHandler
-} from "../../../../src/platform/web";
-import { BodyAndContentType, Session, UserAgent } from "../../../../src";
+} from "../../../../lib/platform/web/index.js";
+import { BodyAndContentType, Session, UserAgent } from "../../../../lib/index.js";
 
 const splitFields = (body: string): Array<string> => body.split(/\r?\n/);
 

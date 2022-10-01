@@ -1,30 +1,28 @@
-import {
-  Body,
-  fromBodyLegacy,
-  getBody,
-  Grammar,
-  IncomingInviteRequest,
-  IncomingPrackRequest,
-  IncomingRequestMessage,
-  InviteUserAgentServer,
-  Logger,
-  NameAddrHeader,
-  OutgoingResponse,
-  OutgoingResponseWithSession,
-  SignalingState,
-  Timers,
-  TransactionStateError
-} from "../core";
-import { getReasonPhrase } from "../core/messages/utils";
-import { Cancel } from "./cancel";
-import { ContentTypeUnsupportedError, SessionDescriptionHandlerError, SessionTerminatedError } from "./exceptions";
-import { InvitationAcceptOptions } from "./invitation-accept-options";
-import { InvitationProgressOptions } from "./invitation-progress-options";
-import { InvitationRejectOptions } from "./invitation-reject-options";
-import { Session } from "./session";
-import { SessionState } from "./session-state";
-import { UserAgent } from "./user-agent";
-import { SIPExtension } from "./user-agent-options";
+import { Grammar } from "../grammar/grammar.js";
+import { NameAddrHeader } from "../grammar/name-addr-header.js";
+import { Body, fromBodyLegacy, getBody } from "../core/messages/body.js";
+import { IncomingInviteRequest } from "../core/messages/methods/invite.js";
+import { IncomingPrackRequest } from "../core/messages/methods/prack.js";
+import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
+import { InviteUserAgentServer } from "../core/user-agents/invite-user-agent-server.js";
+import { Logger } from "../core/log/logger.js";
+import { OutgoingResponse } from "../core/messages/outgoing-response.js";
+import { OutgoingResponseWithSession } from "../core/messages/methods/invite.js";
+import { SignalingState } from "../core/session/session.js";
+import { Timers } from "../core/timers.js";
+import { TransactionStateError } from "../core/exceptions/transaction-state-error.js";
+import { getReasonPhrase } from "../core/messages/utils.js";
+import { Cancel } from "./cancel.js";
+import { ContentTypeUnsupportedError } from "./exceptions/content-type-unsupported.js";
+import { SessionDescriptionHandlerError } from "./exceptions/session-description-handler.js";
+import { SessionTerminatedError } from "./exceptions/session-terminated.js";
+import { InvitationAcceptOptions } from "./invitation-accept-options.js";
+import { InvitationProgressOptions } from "./invitation-progress-options.js";
+import { InvitationRejectOptions } from "./invitation-reject-options.js";
+import { Session } from "./session.js";
+import { SessionState } from "./session-state.js";
+import { UserAgent } from "./user-agent.js";
+import { SIPExtension } from "./user-agent-options.js";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;

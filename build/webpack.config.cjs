@@ -72,7 +72,11 @@ module.exports = function (env) {
       ]
     },
     resolve: {
-      extensions: ['.ts', '.d.ts', '.js']
+      extensions: ['.ts', '.d.ts', '.js'],
+      extensionAlias: {
+        '.js': ['.ts', '.js'],
+        '.mjs': ['.mts', '.mjs']
+      }
     },
     optimization: {
       minimizer: [

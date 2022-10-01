@@ -2,11 +2,11 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { Server, WebSocket } from "mock-socket";
 
-import { StateTransitionError, TransportState } from "../../../../src/api";
-import { LoggerFactory } from "../../../../src/core";
-import { Transport } from "../../../../src/platform/web";
-import { EmitterSpy, makeEmitterSpy } from "../../../support/api/emitter-spy";
-import { soon } from "../../../support/api/utils";
+import { StateTransitionError, TransportState } from "../../../../lib/api/index.js";
+import { LoggerFactory } from "../../../../lib/core/index.js";
+import { Transport } from "../../../../lib/platform/web/index.js";
+import { EmitterSpy, makeEmitterSpy } from "../../../support/api/emitter-spy.js";
+import { soon } from "../../../support/api/utils.js";
 
 /**
  * Transport Unit Tests

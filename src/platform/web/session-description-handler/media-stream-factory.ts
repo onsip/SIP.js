@@ -1,5 +1,5 @@
-import { SessionDescriptionHandler } from "./session-description-handler";
-import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
+import { SessionDescriptionHandler } from "./session-description-handler.js";
+import { SessionDescriptionHandlerOptions } from "./session-description-handler-options.js";
 
 /**
  * Interface of factory function which produces a MediaStream.

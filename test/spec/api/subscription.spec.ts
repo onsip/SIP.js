@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Notification, Subscriber, Subscription, SubscriptionDelegate, SubscriptionState } from "../../../src/api";
+import {
+  Notification,
+  Subscriber,
+  Subscription,
+  SubscriptionDelegate,
+  SubscriptionState
+} from "../../../lib/api/index.js";
+import { URI } from "../../../lib/grammar/index.js";
 import {
   C,
   Dialog,
@@ -8,14 +15,13 @@ import {
   NonInviteClientTransaction,
   ReSubscribeUserAgentServer,
   Timers,
-  URI,
   UserAgentClient,
   UserAgentCore
-} from "../../../src/core";
-import { newTag } from "../../../src/core/messages/utils";
-import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+} from "../../../lib/core/index.js";
+import { newTag } from "../../../lib/core/messages/utils.js";
+import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy.js";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 class NotifierDialog extends Dialog {
   constructor(protected core: UserAgentCore, protected dialogState: DialogState) {

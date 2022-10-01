@@ -1,7 +1,9 @@
-import { SessionDialog } from "../dialogs";
-import { C, OutgoingInfoRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
-import { NonInviteClientTransaction } from "../transactions";
-import { UserAgentClient } from "./user-agent-client";
+import { SessionDialog } from "../dialogs/session-dialog.js";
+import { C } from "../messages/methods/constants.js";
+import { OutgoingInfoRequest } from "../messages/methods/info.js";
+import { OutgoingRequestDelegate, RequestOptions } from "../messages/outgoing-request.js";
+import { NonInviteClientTransaction } from "../transactions/non-invite-client-transaction.js";
+import { UserAgentClient } from "./user-agent-client.js";
 
 /**
  * INFO UAC.

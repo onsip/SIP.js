@@ -1,43 +1,41 @@
-import {
-  Contact,
-  DigestAuthentication,
-  Grammar,
-  IncomingInviteRequest,
-  IncomingMessageRequest,
-  IncomingNotifyRequest,
-  IncomingReferRequest,
-  IncomingRegisterRequest,
-  IncomingRequestMessage,
-  IncomingResponseMessage,
-  IncomingSubscribeRequest,
-  Levels,
-  Logger,
-  LoggerFactory,
-  Parser,
-  TransportError,
-  URI,
-  UserAgentCore,
-  UserAgentCoreConfiguration,
-  UserAgentCoreDelegate
-} from "../core";
-import { createRandomToken, utf8Length } from "../core/messages/utils";
-import { defaultSessionDescriptionHandlerFactory } from "../platform/web/session-description-handler";
-import { Transport as WebTransport } from "../platform/web/transport";
-import { LIBRARY_VERSION } from "../version";
-import { Emitter, EmitterImpl } from "./emitter";
-import { Invitation } from "./invitation";
-import { Inviter } from "./inviter";
-import { InviterOptions } from "./inviter-options";
-import { Message } from "./message";
-import { Notification } from "./notification";
-import { Publisher } from "./publisher";
-import { Registerer } from "./registerer";
-import { Session } from "./session";
-import { Subscription } from "./subscription";
-import { Transport } from "./transport";
-import { UserAgentDelegate } from "./user-agent-delegate";
-import { SIPExtension, UserAgentOptions, UserAgentRegisteredOptionTags } from "./user-agent-options";
-import { UserAgentState } from "./user-agent-state";
+import { Grammar } from "../grammar/grammar.js";
+import { URI } from "../grammar/uri.js";
+import { Contact } from "../core/user-agent-core/user-agent-core-configuration.js";
+import { DigestAuthentication } from "../core/messages/digest-authentication.js";
+import { IncomingInviteRequest } from "../core/messages/methods/invite.js";
+import { IncomingMessageRequest } from "../core/messages/methods/message.js";
+import { IncomingNotifyRequest } from "../core/messages/methods/notify.js";
+import { IncomingReferRequest } from "../core/messages/methods/refer.js";
+import { IncomingRegisterRequest } from "../core/messages/methods/register.js";
+import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
+import { IncomingResponseMessage } from "../core/messages/incoming-response-message.js";
+import { IncomingSubscribeRequest } from "../core/messages/methods/subscribe.js";
+import { Levels } from "../core/log/levels.js";
+import { Logger } from "../core/log/logger.js";
+import { LoggerFactory } from "../core/log/logger-factory.js";
+import { Parser } from "../core/messages/parser.js";
+import { TransportError } from "../core/exceptions/transport-error.js";
+import { UserAgentCore } from "../core/user-agent-core/user-agent-core.js";
+import { UserAgentCoreConfiguration } from "../core/user-agent-core/user-agent-core-configuration.js";
+import { UserAgentCoreDelegate } from "../core/user-agent-core/user-agent-core-delegate.js";
+import { createRandomToken, utf8Length } from "../core/messages/utils.js";
+import { defaultSessionDescriptionHandlerFactory } from "../platform/web/session-description-handler/session-description-handler-factory-default.js";
+import { Transport as WebTransport } from "../platform/web/transport/transport.js";
+import { LIBRARY_VERSION } from "../version.js";
+import { Emitter, EmitterImpl } from "./emitter.js";
+import { Invitation } from "./invitation.js";
+import { Inviter } from "./inviter.js";
+import { InviterOptions } from "./inviter-options.js";
+import { Message } from "./message.js";
+import { Notification } from "./notification.js";
+import { Publisher } from "./publisher.js";
+import { Registerer } from "./registerer.js";
+import { Session } from "./session.js";
+import { Subscription } from "./subscription.js";
+import { Transport } from "./transport.js";
+import { UserAgentDelegate } from "./user-agent-delegate.js";
+import { SIPExtension, UserAgentOptions, UserAgentRegisteredOptionTags } from "./user-agent-options.js";
+import { UserAgentState } from "./user-agent-state.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const chrome: any;

@@ -7,11 +7,12 @@ import {
   Session,
   SessionDescriptionHandler,
   SessionState
-} from "../../../src/api";
-import { OutgoingRequestDelegate, SignalingState, URI } from "../../../src/core";
-import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+} from "../../../lib/api/index.js";
+import { URI } from "../../../lib/grammar/index.js";
+import { OutgoingRequestDelegate, SignalingState } from "../../../lib/core/index.js";
+import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy.js";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 const SIP_ACK = [jasmine.stringMatching(/^ACK/)];
 const SIP_BYE = [jasmine.stringMatching(/^BYE/)];

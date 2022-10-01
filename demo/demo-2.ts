@@ -2,9 +2,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platform/web";
-import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users";
-import { getButton, getInput, getVideo } from "./demo-utils";
+import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../lib/platform/web/index.js";
+import { nameAlice, nameBob, uriAlice, uriBob, webSocketServerAlice, webSocketServerBob } from "./demo-users.js";
+import { getButton, getInput, getVideo } from "./demo-utils.js";
 
 const connectAlice = getButton("connectAlice");
 const connectBob = getButton("connectBob");

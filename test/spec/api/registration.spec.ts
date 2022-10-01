@@ -1,9 +1,14 @@
-import { Registerer, RegistererRegisterOptions, RegistererState, RegistererUnregisterOptions } from "../../../src/api";
-import { Timers } from "../../../src/core";
-import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { TransportFake } from "../../support/api/transport-fake";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+import {
+  Registerer,
+  RegistererRegisterOptions,
+  RegistererState,
+  RegistererUnregisterOptions
+} from "../../../lib/api/index.js";
+import { Timers } from "../../../lib/core/index.js";
+import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy.js";
+import { TransportFake } from "../../support/api/transport-fake.js";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 const SIP_REGISTER = [jasmine.stringMatching(/^REGISTER/)];
 

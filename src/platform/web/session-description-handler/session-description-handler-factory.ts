@@ -1,6 +1,7 @@
-import { Session, SessionDescriptionHandlerFactory as SessionDescriptionHandlerFactoryDefinition } from "../../../api";
-import { SessionDescriptionHandler } from "./session-description-handler";
-import { SessionDescriptionHandlerFactoryOptions } from "./session-description-handler-factory-options";
+import { Session } from "../../../api/session.js";
+import { SessionDescriptionHandlerFactory as SessionDescriptionHandlerFactoryDefinition } from "../../../api/session-description-handler-factory.js";
+import { SessionDescriptionHandler } from "./session-description-handler.js";
+import { SessionDescriptionHandlerFactoryOptions } from "./session-description-handler-factory-options.js";
 
 /**
  * Factory for {@link SessionDescriptionHandler}.

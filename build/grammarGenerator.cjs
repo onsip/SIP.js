@@ -52,7 +52,7 @@ const parser = pegjs.generate(grammarContents, {
   plugins: [tspegjs],
   "tspegjs": {
     "tslintIgnores": "interface-name, trailing-comma, object-literal-sort-keys, max-line-length, only-arrow-functions, one-variable-per-declaration, no-consecutive-blank-lines, align, radix, quotemark, semicolon, object-literal-shorthand, variable-name, no-var-keyword, whitespace, curly, prefer-const, object-literal-key-quotes, no-string-literal, one-line, no-unused-expression, space-before-function-paren, arrow-return-shorthand",
-    "customHeader": "import { NameAddrHeader } from \"../../name-addr-header\";\nimport { URI } from \"../../uri\";"
+    "customHeader": "import { NameAddrHeader } from \"../../name-addr-header.js\";\nimport { URI } from \"../../uri.js\";"
   },
   "returnTypes": {
     Contact: "URI | NameAddrHeader",

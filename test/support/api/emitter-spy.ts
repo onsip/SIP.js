@@ -1,5 +1,5 @@
-import { Emitter } from "../../../src/api";
-import { Logger } from "../../../src/core";
+import { Emitter } from "../../../lib/api/index.js";
+import { Logger } from "../../../lib/core/index.js";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;

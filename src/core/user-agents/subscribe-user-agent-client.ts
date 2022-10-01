@@ -1,16 +1,13 @@
-import { SubscriptionDialog } from "../dialogs/subscription-dialog";
-import {
-  IncomingResponseMessage,
-  OutgoingRequestMessage,
-  OutgoingSubscribeRequest,
-  OutgoingSubscribeRequestDelegate
-} from "../messages";
-import { SubscriptionState } from "../subscription";
-import { Timers } from "../timers";
-import { NonInviteClientTransaction } from "../transactions";
-import { UserAgentCore } from "../user-agent-core";
-import { NotifyUserAgentServer } from "./notify-user-agent-server";
-import { UserAgentClient } from "./user-agent-client";
+import { SubscriptionDialog } from "../dialogs/subscription-dialog.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { OutgoingSubscribeRequest, OutgoingSubscribeRequestDelegate } from "../messages/methods/subscribe.js";
+import { SubscriptionState } from "../subscription/subscription.js";
+import { Timers } from "../timers.js";
+import { NonInviteClientTransaction } from "../transactions/non-invite-client-transaction.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { NotifyUserAgentServer } from "./notify-user-agent-server.js";
+import { UserAgentClient } from "./user-agent-client.js";
 
 /**
  * SUBSCRIBE UAC.

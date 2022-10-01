@@ -24,11 +24,6 @@ module.exports = function(config) {
 
     webpack: {
       devtool: 'inline-source-map',
-      module: { rules: [ { test: /\.m?js/,
-        resolve: {
-	    fullySpecified: false
-	}
-      }]},
       mode: 'production'
     },
 

@@ -1,5 +1,5 @@
-import { Session } from "./session";
-import { SessionDescriptionHandler } from "./session-description-handler";
+import { Session } from "./session.js";
+import { SessionDescriptionHandler } from "./session-description-handler.js";
 
 /**
  * Factory for {@link SessionDescriptionHandler}.

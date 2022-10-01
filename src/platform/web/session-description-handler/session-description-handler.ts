@@ -2,12 +2,12 @@ import {
   BodyAndContentType,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifier
-} from "../../../api";
-import { Logger } from "../../../core";
-import { MediaStreamFactory } from "./media-stream-factory";
-import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration";
-import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
-import { PeerConnectionDelegate } from "./peer-connection-delegate";
+} from "../../../api/session-description-handler.js";
+import { Logger } from "../../../core/log/logger.js";
+import { MediaStreamFactory } from "./media-stream-factory.js";
+import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration.js";
+import { SessionDescriptionHandlerOptions } from "./session-description-handler-options.js";
+import { PeerConnectionDelegate } from "./peer-connection-delegate.js";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;

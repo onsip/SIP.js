@@ -1,7 +1,10 @@
-import { IncomingReferRequest, IncomingRequestMessage, NameAddrHeader, ResponseOptions } from "../core";
-import { Inviter } from "./inviter";
-import { InviterOptions } from "./inviter-options";
-import { Session } from "./session";
+import { NameAddrHeader } from "../grammar/name-addr-header.js";
+import { IncomingReferRequest } from "../core/messages/methods/refer.js";
+import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
+import { ResponseOptions } from "../core/messages/outgoing-response.js";
+import { Inviter } from "./inviter.js";
+import { InviterOptions } from "./inviter-options.js";
+import { Session } from "./session.js";
 
 /**
  * A request to establish a {@link Session} elsewhere (incoming REFER).

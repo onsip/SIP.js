@@ -1,4 +1,4 @@
-import { SessionDescriptionHandlerOptions as SessionDescriptionHandlerOptionsDefinition } from "../../../api";
+import { SessionDescriptionHandlerOptions as SessionDescriptionHandlerOptionsDefinition } from "../../../api/session-description-handler.js";
 
 /**
  * Options for {@link SessionDescriptionHandler}.

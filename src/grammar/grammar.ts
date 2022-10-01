@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable no-inner-declarations */
-import * as pegGrammar from "./pegjs/dist/grammar";
+import * as pegGrammar from "./pegjs/dist/grammar.js";
 
-import { NameAddrHeader } from "./name-addr-header";
-import { URI } from "./uri";
+import { NameAddrHeader } from "./name-addr-header.js";
+import { URI } from "./uri.js";
 
 /**
  * Grammar.

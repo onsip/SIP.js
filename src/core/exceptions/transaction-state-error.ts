@@ -1,4 +1,4 @@
-import { Exception } from "./exception";
+import { Exception } from "./exception.js";
 
 /**
  * Indicates that the operation could not be completed given the current transaction state.
