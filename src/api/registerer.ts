@@ -300,6 +300,22 @@ export class Registerer {
     });
   }
 
+  public disposeWithoutUnregister(): Promise<void> {
+    if (this.disposed) {
+      return Promise.resolve();
+    }
+    this.disposed = true;
+    this.logger.log(`Registerer ${this.id} in state ${this.state} is being deleted`);
+
+    // Remove from the user agent's registerer collection
+    delete this.userAgent._registerers[this.id];
+
+    return new Promise((resolve) => {
+      this.terminated();
+      resolve();
+    });
+  }
+
   /**
    * Sends the REGISTER request.
    * @remarks
