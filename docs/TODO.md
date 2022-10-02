@@ -1,12 +1,9 @@
 # Release Road Map
 
-## Next release
+## Next Release
 
-- add .js extentions to imports to fix ES6 module resolution
-- add tests for recent pull requests accepted without them
 - review and remove everything that was deprecated
 - free core and API from DOM dependencies
-- figure out replacement for Travis CI
 - complete more work in progress
 - more documentation
 - more tests
@@ -14,6 +11,10 @@
 - 1.0 prep
 
 # Work in Progress
+
+## DOM Dependencies 
+
+This is an issue with the URI class. The new API requires a URI instance be passed as an options, so that's indirectly no longer an issue. But the URI class should not be implemented in a fashion where toString() depends on decodeURIComponent which can (and does) throw URIError: URI malformed. The short is the URI class needs to be modified and this is also somewhat related to how the parser utilizes URI. Adding it to my TODO list (towards the bottom).
 
 ## Dev Dependencies
 
@@ -89,8 +90,26 @@ Non-exhaustive research on these parsers, generally it seems like there is nothi
 
 ### Transport - TCP Support
 
+- WebSocket Keep Alive: The time it takes the WebSocket to recognize the remote is no longer responding is too long.
 - Support for "stream-oriented" transports: https://tools.ietf.org/html/rfc3261#section-18.3
 - This current Transport interface only supports "message-oriented" transports. Issue #818.
+
+## GRUU and Outbound - would be good to make sure we are compliant (tests)
+
+### RFC5626: Managing Client-Initiated Connections (Outbound)
+### RFC5627: Obtaining and Using Globally Routable User Agent URIs (GRUUs)
+- MUST include the outbound option tag in a Supported header field in a REGISTER request.
+- The UAC MUST support the Path header [RFC3327] mechanism, and
+   indicate its support by including the 'path' option-tag in a
+   Supported header field value in its REGISTER requests.  Other than
+   optionally examining the Path vector in the response, this is all
+   that is required of the UAC to support Path.
+- UAs that support this specification SHOULD include the outbound
+   option tag in a Supported header field in a request that is not a
+   REGISTER request.
+- support +sip.instance and reg-id
+- support for multiple web sockets
+
 
 ## REFER handling - it has evolved over time and we are out of date
 
