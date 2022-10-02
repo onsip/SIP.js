@@ -436,7 +436,11 @@ export class Inviter extends Session {
       })
       .catch((error) => {
         this.logger.log(error.message);
-        this.stateTransition(SessionState.Terminated);
+        // It's possible we are already terminated,
+        // so don't throw trying to transition again.
+        if (this.state !== SessionState.Terminated) {
+          this.stateTransition(SessionState.Terminated);
+        }
         throw error;
       });
   }
