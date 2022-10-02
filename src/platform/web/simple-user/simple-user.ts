@@ -759,9 +759,6 @@ export class SimpleUser {
 
     // Setup session state change handler
     this.session.stateChange.addListener((state: SessionState) => {
-      if (this.session !== session) {
-        return; // if our session has changed, just return
-      }
       this.logger.log(`[${this.id}] session state changed to ${state}`);
       switch (state) {
         case SessionState.Initial:
