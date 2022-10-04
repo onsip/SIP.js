@@ -243,6 +243,12 @@ export class UserAgent {
    * Create a URI instance from a string.
    * @param uri - The string to parse.
    *
+   * @remarks
+   * Returns undefined if the syntax of the URI is invalid.
+   * The syntax must conform to a SIP URI as defined in the RFC.
+   * 25 Augmented BNF for the SIP Protocol
+   * https://tools.ietf.org/html/rfc3261#section-25
+   *
    * @example
    * ```ts
    * const uri = UserAgent.makeURI("sip:edgar@example.com");
