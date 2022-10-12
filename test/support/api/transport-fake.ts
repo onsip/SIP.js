@@ -33,7 +33,7 @@ export class TransportFake implements Transport {
   }
 
   public get state(): TransportState {
-    return this.state;
+    return this._state;
   }
 
   public get stateChange(): Emitter<TransportState> {
