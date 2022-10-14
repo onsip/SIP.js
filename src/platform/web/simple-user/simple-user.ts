@@ -614,12 +614,12 @@ export class SimpleUser {
   }
 
   /**
-   * Attempt reconnection up to `maxReconnectionAttempts` times.
+   * Attempt reconnection up to `reconnectionAttempts` times.
    * @param reconnectionAttempt - Current attempt number.
    */
   private attemptReconnection(reconnectionAttempt = 1): void {
-    const reconnectionAttempts = this.options.reconnectionAttempts || 3;
-    const reconnectionDelay = this.options.reconnectionDelay || 4;
+    const reconnectionAttempts = this.options.reconnectionAttempts ?? 3;
+    const reconnectionDelay = this.options.reconnectionDelay ?? 4;
 
     if (!this.connectRequested) {
       this.logger.log(`[${this.id}] Reconnection not currently desired`);
