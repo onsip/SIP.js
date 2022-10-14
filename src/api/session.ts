@@ -991,7 +991,7 @@ export abstract class Session {
               }
               const extraHeadersBye: Array<string> = [];
               extraHeadersBye.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
-              this.dialog.bye(undefined, { extraHeaders });
+              this.dialog.bye(undefined, { extraHeaders: extraHeadersBye });
               this.stateTransition(SessionState.Terminated);
             }
             if (this.delegate && this.delegate.onInvite) {
