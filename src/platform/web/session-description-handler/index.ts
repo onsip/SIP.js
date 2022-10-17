@@ -12,3 +12,4 @@ export * from "./session-description-handler-factory-options.js";
 export * from "./session-description-handler-factory.js";
 export * from "./session-description-handler-options.js";
 export * from "./session-description-handler.js";
+export * from "./web-audio-session-description-handler.js";
