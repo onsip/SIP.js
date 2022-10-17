@@ -347,7 +347,7 @@ function makeDisconnectButtonClickListener(
 function makeRegisterButtonClickListener(user: SimpleUser, registerButton: HTMLButtonElement): () => void {
   return () => {
     user
-      .register(undefined, {
+      .register({
         // An example of how to get access to a SIP response message for custom handling
         requestDelegate: {
           onReject: (response) => {

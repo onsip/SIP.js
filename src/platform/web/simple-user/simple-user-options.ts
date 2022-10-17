@@ -1,3 +1,4 @@
+import { RegistererOptions } from "../../../api/registerer-options.js";
 import { UserAgentOptions } from "../../../api/user-agent-options.js";
 import { SimpleUserDelegate } from "./simple-user-delegate.js";
 
@@ -94,6 +95,11 @@ export interface SimpleUserOptions {
    * @defaultValue 4
    */
   reconnectionDelay?: number;
+
+  /**
+   * Options for Registerer.
+   */
+  registererOptions?: RegistererOptions;
 
   /**
    * Options for UserAgent.

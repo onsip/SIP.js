@@ -208,6 +208,40 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   }
 
   /**
+   * Helper function to enable/disable media tracks.
+   * @param enable - If true enable tracks, otherwise disable tracks.
+   */
+  public enableReceiverTracks(enable: boolean): void {
+    const peerConnection = this.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
+    peerConnection.getReceivers().forEach((receiver) => {
+      if (receiver.track) {
+        receiver.track.enabled = enable;
+      }
+    });
+  }
+
+  /**
+   * Helper function to enable/disable media tracks.
+   * @param enable - If true enable tracks, otherwise disable tracks.
+   */
+  public enableSenderTracks(enable: boolean): void {
+    const peerConnection = this.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
+    peerConnection.getSenders().forEach((sender) => {
+      if (sender.track) {
+        sender.track.enabled = enable;
+      }
+    });
+  }
+
+  /**
    * Creates an offer or answer.
    * @param options - Options bucket.
    * @param modifiers - Modifiers.
