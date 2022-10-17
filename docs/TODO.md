@@ -2,8 +2,8 @@
 
 ## Next Release
 
+- implement Session Timers or OPTIONS Ping to detect network failure
 - review and remove everything that was deprecated
-- free core and API from DOM dependencies
 - complete more work in progress
 - more documentation
 - more tests
@@ -11,10 +11,6 @@
 - 1.0 prep
 
 # Work in Progress
-
-## DOM Dependencies 
-
-This is an issue with the URI class. The new API requires a URI instance be passed as an options, so that's indirectly no longer an issue. But the URI class should not be implemented in a fashion where toString() depends on decodeURIComponent which can (and does) throw URIError: URI malformed. The short is the URI class needs to be modified and this is also somewhat related to how the parser utilizes URI. Adding it to my TODO list (towards the bottom).
 
 ## Dev Dependencies
 
@@ -37,7 +33,6 @@ This is an issue with the URI class. The new API requires a URI instance be pass
 - UserAgent: The `contact` should be configurable. Related to URI and Grammar work. Issue #791.
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
-- Registerer: Re-registration is current -3 seconds which seems not so good. Look at pjsip and others to see what they have done.
 - Review all deprecated to make sure an alternative is provided that is something other than TBD.
 - Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion.
 - Need alternatives for all hacks like `hackViaTcp`.
@@ -48,15 +43,13 @@ This is an issue with the URI class. The new API requires a URI instance be pass
 - Dialog UACs are creating messages while non-dialog UACs are being handed message in most cases,
   but not all cases; MessageUserAgentClient is used for both out of dialog and in dialog.
   It would be worth it to have the constructor interface be consistent.
-  Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
 - Dialog UASs are created using a "dialog or core" in some cases when the request can be in dialog
   or out of dialog but this is not being done consistently. See Message vs Notify vs ReferUAS, etc.
 - I believe all in and out of dialog requests should be able to be authenticated (confirm this).
   Currently only INVITE and re-INVITE work. There needs to be a small refactor to make it work for everything.
-  Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
 - Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
-- Extra headers array approach is error prone
 - Timers and some associated timer code doesn't support unreliable transports (UDP for example)
+- Extra headers array approach is error prone
 
 ### Grammar & URI - Refresh
 
@@ -67,6 +60,10 @@ This is an issue with the URI class. The new API requires a URI instance be pass
 - URI should be strongly typed (currently using any for constructor params)
 - URI allows "" for user and 0 for port which is confusing and should probably be undefined instead
 - URI toString() can and does throw. Issue #286.
+  - This is an issue with the URI class. The new API requires a URI instance be passed as an options, so that's
+    indirectly no longer an issue. But the URI class should not be implemented in a fashion where toString()
+    depends on decodeURIComponent which can (and does) throw URIError: URI malformed. The short is the URI
+    class needs to be modified and this is also somewhat related to how the parser utilizes URI.
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: \*" header fails to parse - there's a test written for it
 
@@ -90,7 +87,6 @@ Non-exhaustive research on these parsers, generally it seems like there is nothi
 
 ### Transport - TCP Support
 
-- WebSocket Keep Alive: The time it takes the WebSocket to recognize the remote is no longer responding is too long.
 - Support for "stream-oriented" transports: https://tools.ietf.org/html/rfc3261#section-18.3
 - This current Transport interface only supports "message-oriented" transports. Issue #818.
 
@@ -98,6 +94,7 @@ Non-exhaustive research on these parsers, generally it seems like there is nothi
 
 ### RFC5626: Managing Client-Initiated Connections (Outbound)
 ### RFC5627: Obtaining and Using Globally Routable User Agent URIs (GRUUs)
+
 - MUST include the outbound option tag in a Supported header field in a REGISTER request.
 - The UAC MUST support the Path header [RFC3327] mechanism, and
    indicate its support by including the 'path' option-tag in a
