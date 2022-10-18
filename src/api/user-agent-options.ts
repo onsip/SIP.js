@@ -58,23 +58,6 @@ export interface UserAgentOptions {
   authorizationUsername?: string;
 
   /**
-   * @deprecated
-   * If `true`, the user agent calls the `start()` method in the constructor.
-   * @defaultValue `false`
-   * @remarks
-   * The call to start() resolves when the user agent connects, so if this
-   * option is set to `true` an alternative method of connection detection
-   * must be used.
-   */
-  autoStart?: boolean;
-
-  /**
-   * If `true`, the user agent calls the `stop()` method on unload (if running in browser window).
-   * @defaultValue `true`
-   */
-  autoStop?: boolean;
-
-  /**
    * The user portion of user agent's contact URI.
    * @remarks
    * If not specifed a random string will be generated and utilized as the user portion of the contact URI.
@@ -110,6 +93,13 @@ export interface UserAgentOptions {
    * @defaultValue `false`
    */
   forceRport?: boolean;
+
+  /**
+   * If `true`, the `stop()` method will attempt to gracefully end all dialogs and registrations before disconnecting.
+   * Otherwise `stop()` will transition immediately abandoning all dialogs and registrations.
+   * @defaultValue `true`
+   */
+  gracefulShutdown?: boolean;
 
   /**
    * Hack

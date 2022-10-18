@@ -37,9 +37,6 @@ import { UserAgentDelegate } from "./user-agent-delegate.js";
 import { SIPExtension, UserAgentOptions, UserAgentRegisteredOptionTags } from "./user-agent-options.js";
 import { UserAgentState } from "./user-agent-state.js";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const chrome: any;
-
 /**
  * A user agent sends and receives requests using a `Transport`.
  *
@@ -233,10 +230,6 @@ export class UserAgent {
 
     // Initialize UserAgentCore
     this._userAgentCore = this.initCore();
-
-    if (this.options.autoStart) {
-      this.start();
-    }
   }
 
   /**
@@ -265,13 +258,12 @@ export class UserAgent {
       authorizationHa1: "",
       authorizationPassword: "",
       authorizationUsername: "",
-      autoStart: false,
-      autoStop: true,
       delegate: {},
       contactName: "",
       contactParams: { transport: "ws" },
       displayName: "",
       forceRport: false,
+      gracefulShutdown: true,
       hackAllowUnregisteredOptionTags: false,
       hackIpInContact: false,
       hackViaTcp: false,
@@ -415,6 +407,7 @@ export class UserAgent {
    *
    * @remarks
    * Resolves if transport connects, otherwise rejects.
+   * Calling `start()` after calling `stop()` will fail if `stop()` has yet to resolve.
    *
    * @example
    * ```ts
@@ -437,20 +430,6 @@ export class UserAgent {
     // Transition state
     this.transitionState(UserAgentState.Started);
 
-    // TODO: Review this as it is not clear it has any benefit and at worst causes additional load the server.
-    // On unload it may be best to simply in most scenarios to do nothing. Furthermore and regardless, this
-    // kind of behavior seems more appropriate to be managed by the consumer of the API than the API itself.
-    // Should this perhaps be deprecated?
-    //
-    // Add window unload event listener
-    if (this.options.autoStop) {
-      // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
-      const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (typeof window !== "undefined" && typeof window.addEventListener === "function" && !googleChromePackagedApp) {
-        window.addEventListener("unload", this.unloadListener);
-      }
-    }
-
     return this.transport.connect();
   }
 
@@ -467,6 +446,9 @@ export class UserAgent {
    * 5) Transport disconnects.
    * 6) User Agent Core resets.
    * ```
+   * The user agent state transistions to stopped once these steps have been completed.
+   * Calling `start()` after calling `stop()` will fail if `stop()` has yet to resolve.
+   *
    * NOTE: While this is a "graceful shutdown", it can also be very slow one if you
    * are waiting for the returned Promise to resolve. The disposal of the clients and
    * dialogs is done serially - waiting on one to finish before moving on to the next.
@@ -489,17 +471,28 @@ export class UserAgent {
     }
     this.logger.log(`Stopping ${this.configuration.uri}`);
 
-    // Transition state
-    this.transitionState(UserAgentState.Stopped);
+    // The default behavior is to cleanup dialogs and registrations. This is not that...
+    if (!this.options.gracefulShutdown) {
+      // Dispose of the transport (disconnecting)
+      this.logger.log(`Dispose of transport`);
+      this.transport.dispose().catch((error: Error) => {
+        this.logger.error(error.message);
+        throw error;
+      });
 
-    // TODO: See comments with associated complimentary code in start(). Should this perhaps be deprecated?
-    // Remove window unload event listener
-    if (this.options.autoStop) {
-      // Google Chrome Packaged Apps don't allow 'unload' listeners: unload is not available in packaged apps
-      const googleChromePackagedApp = typeof chrome !== "undefined" && chrome.app && chrome.app.runtime ? true : false;
-      if (typeof window !== "undefined" && window.removeEventListener && !googleChromePackagedApp) {
-        window.removeEventListener("unload", this.unloadListener);
-      }
+      // Dispose of the user agent core (resetting)
+      this.logger.log(`Dispose of core`);
+      this.userAgentCore.dispose();
+
+      // Reset dialogs and registrations
+      this._publishers = {};
+      this._registerers = {};
+      this._sessions = {};
+      this._subscriptions = {};
+
+      this.transitionState(UserAgentState.Stopped);
+
+      return Promise.resolve();
     }
 
     // Be careful here to use a local references as start() can be called
@@ -581,6 +574,9 @@ export class UserAgent {
     // Dispose of the user agent core (resetting)
     this.logger.log(`Dispose of core`);
     userAgentCore.dispose();
+
+    // Transition state
+    this.transitionState(UserAgentState.Stopped);
   }
 
   /**
@@ -1050,9 +1046,4 @@ export class UserAgent {
     this._state = newState;
     this._stateEventEmitter.emit(this._state);
   }
-
-  /** Unload listener. */
-  private unloadListener = (): void => {
-    this.stop();
-  };
 }
