@@ -40,6 +40,8 @@ import { UserAgent } from "./user-agent.js";
  * // Add delegate to handle event notifications.
  * subscriber.delegate = {
  *   onNotify: (notification: Notification) => {
+ *     // send a response
+ *     notification.accept();
  *     // handle notification here
  *   }
  * };
