@@ -648,11 +648,11 @@ export class SessionManager {
    * Hold state.
    * @param session - Session to check.
    * @remarks
-   * True if session media is on hold.
-   * Undefined is session doesn't exist.
+   * True if session is on hold.
    */
-  public isHeld(session: Session): boolean | undefined {
-    return this.sessionManaged(session)?.held;
+  public isHeld(session: Session): boolean {
+    const managedSession = this.sessionManaged(session);
+    return managedSession ? managedSession.held : false;
   }
 
   /**
@@ -682,10 +682,10 @@ export class SessionManager {
    * @param session - Session to check.
    * @remarks
    * True if sender's media track is disabled.
-   * Undefined is session doesn't exist.
    */
-  public isMuted(session: Session): boolean | undefined {
-    return this.sessionManaged(session)?.muted;
+  public isMuted(session: Session): boolean {
+    const managedSession = this.sessionManaged(session);
+    return managedSession ? managedSession.muted : false;
   }
 
   /**

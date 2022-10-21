@@ -283,10 +283,10 @@ export class SimpleUser {
   /**
    * Hold state.
    * @remarks
-   * True if session media is on hold.
+   * True if session is on hold.
    */
-  public isHeld(): boolean | undefined {
-    return this.session && this.sessionManager.isHeld(this.session);
+  public isHeld(): boolean {
+    return this.session ? this.sessionManager.isHeld(this.session) : false;
   }
 
   /**
@@ -314,8 +314,8 @@ export class SimpleUser {
    * @remarks
    * True if sender's media track is disabled.
    */
-  public isMuted(): boolean | undefined {
-    return this.session && this.sessionManager.isMuted(this.session);
+  public isMuted(): boolean {
+    return this.session ? this.sessionManager.isMuted(this.session) : false;
   }
 
   /**
