@@ -17,7 +17,7 @@ Promise&lt;void&gt;
 
 ## Remarks
 
-Resolves if transport connects, otherwise rejects.
+Resolves if transport connects, otherwise rejects. Calling `start()` after calling `stop()` will fail if `stop()` has yet to resolve.
 
 ## Example
 

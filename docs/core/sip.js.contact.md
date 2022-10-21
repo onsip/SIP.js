@@ -22,6 +22,6 @@ https://tools.ietf.org/html/rfc3261\#section-8.1.1.8 This is ported from UA.cont
 |  --- | --- | --- | --- |
 |  [pubGruu](./sip.js.contact.pubgruu.md) |  | [URI](./sip.js.uri.md) \| undefined |  |
 |  [tempGruu](./sip.js.contact.tempgruu.md) |  | [URI](./sip.js.uri.md) \| undefined |  |
-|  [toString](./sip.js.contact.tostring.md) |  | (options?: { anonymous?: boolean; outbound?: boolean; }) =&gt; string |  |
+|  [toString](./sip.js.contact.tostring.md) |  | (options?: { anonymous?: boolean; outbound?: boolean; register?: boolean; }) =&gt; string |  |
 |  [uri](./sip.js.contact.uri.md) |  | [URI](./sip.js.uri.md) |  |
 

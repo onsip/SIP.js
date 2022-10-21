@@ -2,6 +2,10 @@
 
 * From [Simple to SimpleUser](./migration-simple.md) is relatively simple.
 
+* From [0.20 to 0.21](./migration-0.20-0.21.md)
+  * 0.21 has two minor breaking changes with 0.20
+  * ECMAScript module support and SessionManager introduction
+
 * From 0.19 to 0.20
   * 0.20 is backwards compatible with 0.19
 

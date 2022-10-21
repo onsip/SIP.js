@@ -22,6 +22,10 @@ static makeURI(uri: string): URI | undefined;
 
 URI \| undefined
 
+## Remarks
+
+Returns undefined if the syntax of the URI is invalid. The syntax must conform to a SIP URI as defined in the RFC. 25 Augmented BNF for the SIP Protocol https://tools.ietf.org/html/rfc3261\#section-25
+
 ## Example
 
 

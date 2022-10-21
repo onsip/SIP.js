@@ -20,16 +20,17 @@ export interface UserAgentOptions
 |  [authorizationHa1](./sip.js.useragentoptions.authorizationha1.md) |  | string | Authorization ha1. |
 |  [authorizationPassword](./sip.js.useragentoptions.authorizationpassword.md) |  | string | Authorization password. |
 |  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) |  | string | Authorization username. |
-|  [autoStart](./sip.js.useragentoptions.autostart.md) |  | boolean |  |
-|  [autoStop](./sip.js.useragentoptions.autostop.md) |  | boolean | If <code>true</code>, the user agent calls the <code>stop()</code> method on unload (if running in browser window). |
 |  [contactName](./sip.js.useragentoptions.contactname.md) |  | string | The user portion of user agent's contact URI. |
 |  [contactParams](./sip.js.useragentoptions.contactparams.md) |  | { \[name: string\]: string; } | The URI parameters of the user agent's contact URI. |
 |  [delegate](./sip.js.useragentoptions.delegate.md) |  | [UserAgentDelegate](./sip.js.useragentdelegate.md) | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
 |  [displayName](./sip.js.useragentoptions.displayname.md) |  | string | The display name associated with the user agent. |
 |  [forceRport](./sip.js.useragentoptions.forcerport.md) |  | boolean | Force adding rport to Via header. |
+|  [gracefulShutdown](./sip.js.useragentoptions.gracefulshutdown.md) |  | boolean | If <code>true</code>, the <code>stop()</code> method will attempt to gracefully end all dialogs and registrations before disconnecting. Otherwise <code>stop()</code> will transition immediately abandoning all dialogs and registrations. |
 |  [hackAllowUnregisteredOptionTags](./sip.js.useragentoptions.hackallowunregisteredoptiontags.md) |  | boolean | Hack |
 |  [hackIpInContact](./sip.js.useragentoptions.hackipincontact.md) |  | boolean \| string | Hack |
 |  [hackViaTcp](./sip.js.useragentoptions.hackviatcp.md) |  | boolean | Hack |
+|  [instanceId](./sip.js.useragentoptions.instanceid.md) |  | string | UUID to provide with "+sip.instance" Contact header parameter. |
+|  [instanceIdAlwaysAdded](./sip.js.useragentoptions.instanceidalwaysadded.md) |  | boolean | Add "+sip.instance" Contact header parameter to all requests. |
 |  [logBuiltinEnabled](./sip.js.useragentoptions.logbuiltinenabled.md) |  | boolean | Indicates whether log messages should be written to the browser console. |
 |  [logConfiguration](./sip.js.useragentoptions.logconfiguration.md) |  | boolean | If true, constructor logs the user agent configuration. |
 |  [logConnector](./sip.js.useragentoptions.logconnector.md) |  | [LogConnector](./sip.js.logconnector.md) | A function which will be called every time a log is generated. |

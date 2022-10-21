@@ -54,8 +54,8 @@ export class SessionManager {
     hangup(session: Session): Promise<void>;
     hold(session: Session): Promise<void>;
     isConnected(): boolean;
-    isHeld(session: Session): boolean | undefined;
-    isMuted(session: Session): boolean | undefined;
+    isHeld(session: Session): boolean;
+    isMuted(session: Session): boolean;
     managedSessions: Array<ManagedSession>;
     message(destination: string, message: string): Promise<void>;
     mute(session: Session): void;

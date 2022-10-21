@@ -9,7 +9,7 @@ Hold state.
 <b>Signature:</b>
 
 ```typescript
-isHeld(session: Session): boolean | undefined;
+isHeld(session: Session): boolean;
 ```
 
 ## Parameters
@@ -20,9 +20,9 @@ isHeld(session: Session): boolean | undefined;
 
 <b>Returns:</b>
 
-boolean \| undefined
+boolean
 
 ## Remarks
 
-True if session media is on hold. Undefined is session doesn't exist.
+True if session is on hold.
 

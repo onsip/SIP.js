@@ -49,6 +49,8 @@ It is expected/intended to be extended by specific WebRTC based applications.
 |  [close()](./sip.js.sessiondescriptionhandler.close.md) |  | Stop tracks and close peer connection. |
 |  [createDataChannel(options)](./sip.js.sessiondescriptionhandler.createdatachannel.md) |  | Create a data channel. |
 |  [createLocalOfferOrAnswer(options)](./sip.js.sessiondescriptionhandler.createlocalofferoranswer.md) |  | Depending on current signaling state, create a local offer or answer. |
+|  [enableReceiverTracks(enable)](./sip.js.sessiondescriptionhandler.enablereceivertracks.md) |  | Helper function to enable/disable media tracks. |
+|  [enableSenderTracks(enable)](./sip.js.sessiondescriptionhandler.enablesendertracks.md) |  | Helper function to enable/disable media tracks. |
 |  [getDescription(options, modifiers)](./sip.js.sessiondescriptionhandler.getdescription.md) |  | Creates an offer or answer. |
 |  [getLocalMediaStream(options)](./sip.js.sessiondescriptionhandler.getlocalmediastream.md) |  | Get a media stream from the media stream factory and set the local media stream. |
 |  [getLocalSessionDescription()](./sip.js.sessiondescriptionhandler.getlocalsessiondescription.md) |  | Gets the peer connection's local session description. |

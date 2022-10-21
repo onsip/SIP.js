@@ -9,7 +9,7 @@ Mute state.
 <b>Signature:</b>
 
 ```typescript
-isMuted(session: Session): boolean | undefined;
+isMuted(session: Session): boolean;
 ```
 
 ## Parameters
@@ -20,9 +20,9 @@ isMuted(session: Session): boolean | undefined;
 
 <b>Returns:</b>
 
-boolean \| undefined
+boolean
 
 ## Remarks
 
-True if sender's media track is disabled. Undefined is session doesn't exist.
+True if sender's media track is disabled.
 

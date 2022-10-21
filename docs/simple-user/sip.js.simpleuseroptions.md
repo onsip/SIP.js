@@ -21,5 +21,6 @@ export interface SimpleUserOptions
 |  [media](./sip.js.simpleuseroptions.media.md) |  | [SimpleUserMedia](./sip.js.simpleusermedia.md) | Media options. |
 |  [reconnectionAttempts](./sip.js.simpleuseroptions.reconnectionattempts.md) |  | number | Maximum number of times to attempt to reconnection. |
 |  [reconnectionDelay](./sip.js.simpleuseroptions.reconnectiondelay.md) |  | number | Seconds to wait between reconnection attempts. |
+|  [registererOptions](./sip.js.simpleuseroptions.registereroptions.md) |  | RegistererOptions | Options for Registerer. |
 |  [userAgentOptions](./sip.js.simpleuseroptions.useragentoptions.md) |  | UserAgentOptions | Options for UserAgent. |
 

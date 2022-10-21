@@ -9,14 +9,13 @@ Start receiving incoming calls.
 <b>Signature:</b>
 
 ```typescript
-register(registererOptions?: RegistererOptions, registererRegisterOptions?: RegistererRegisterOptions): Promise<void>;
+register(registererRegisterOptions?: RegistererRegisterOptions): Promise<void>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  registererOptions | RegistererOptions |  |
 |  registererRegisterOptions | RegistererRegisterOptions |  |
 
 <b>Returns:</b>

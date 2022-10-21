@@ -28,7 +28,7 @@ All the demos must work.
 
 ## Documentation
 
-Make sure the documentation is up to date and review any changes to the API. Commit any new documentation and consider the version number bump based on the changes to the API.
+Make sure the documentation is up to date and review any changes to the API. Commit any new documentation and consider the version number bump based on the changes to the API. If you commit any changes, go back to the Clean, Build and Test step.
 
 * `npm run build-docs`
 
@@ -53,8 +53,7 @@ This approach will leverage the `npm pack` command to package up and zip your np
 1. From within your npm package directory, run `npm pack` in your terminal. Note the .tgz file it produces and the location of it.
 2. Change directories to the project directory where you want to use the npm package. Example: `cd /path/to/project`
 3. From within the client project directory, run `npm install /path/to/package.tgz` but replace it with the proper path to the location of the .tgz file from step 1.
-4. Then you can start using the package in that client project to test things out
-This will give you the closest to production experience for using your npm package.
+4. Then you can start using the package in that client project to test things out. This will give you the closest to production experience for using your npm package.
 5. Delete the .tgz file created in step 1.
 
 ## Tag, Push and Publish

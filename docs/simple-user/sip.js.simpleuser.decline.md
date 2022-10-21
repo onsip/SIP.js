@@ -17,5 +17,5 @@ Promise&lt;void&gt;
 
 ## Remarks
 
-Reject an incoming INVITE request. Resolves with the response is sent, otherwise rejects. Use `onCallTerminated` delegate method to determine if and when call is ended.
+Reject an incoming INVITE request. Resolves with the response is sent, otherwise rejects. Use `onCallHangup` delegate method to determine if and when call is ended.
 

@@ -29,6 +29,8 @@ const subscriber = new Subscriber(userAgent, targetURI, eventType);
 // Add delegate to handle event notifications.
 subscriber.delegate = {
   onNotify: (notification: Notification) => {
+    // send a response
+    notification.accept();
     // handle notification here
   }
 };

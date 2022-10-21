@@ -17,5 +17,5 @@ boolean
 
 ## Remarks
 
-True if session media is on hold.
+True if session is on hold.
 

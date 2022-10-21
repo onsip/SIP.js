@@ -50,7 +50,7 @@ While this class is completely functional for simple use cases, it is not intend
 |  [isMuted()](./sip.js.simpleuser.ismuted.md) |  | Mute state. |
 |  [message(destination, message)](./sip.js.simpleuser.message.md) |  | Send a message. |
 |  [mute()](./sip.js.simpleuser.mute.md) |  | Mute call. |
-|  [register(registererOptions, registererRegisterOptions)](./sip.js.simpleuser.register.md) |  | Start receiving incoming calls. |
+|  [register(registererRegisterOptions)](./sip.js.simpleuser.register.md) |  | Start receiving incoming calls. |
 |  [sendDTMF(tone)](./sip.js.simpleuser.senddtmf.md) |  | Send DTMF. |
 |  [unhold()](./sip.js.simpleuser.unhold.md) |  | Unhold call. |
 |  [unmute()](./sip.js.simpleuser.unmute.md) |  | Unmute call. |

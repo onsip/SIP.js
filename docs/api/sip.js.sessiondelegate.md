@@ -18,6 +18,7 @@ export interface SessionDelegate
 |  --- | --- |
 |  [onAck(ack)](./sip.js.sessiondelegate.onack.md) | Called upon receiving an incoming in dialog ACK request. |
 |  [onBye(bye)](./sip.js.sessiondelegate.onbye.md) | Called upon receiving an incoming in dialog BYE request. |
+|  [onCancel(cancel)](./sip.js.sessiondelegate.oncancel.md) | Called upon receiving an incoming CANCEL request. |
 |  [onInfo(info)](./sip.js.sessiondelegate.oninfo.md) | Called upon receiving an incoming in dialog INFO request. |
 |  [onInvite(request, response, statusCode)](./sip.js.sessiondelegate.oninvite.md) | Called upon receiving an incoming in dialog INVITE request. |
 |  [onMessage(message)](./sip.js.sessiondelegate.onmessage.md) | Called upon receiving an incoming in dialog MESSAGE request. |
