@@ -17,3 +17,10 @@ export * from "./user-agents/index.js";
 // Files
 export * from "./timers.js";
 export * from "./transport.js";
+
+// Grammar
+// TODO:
+// - This is documented as part of the core, but it is also exported by root index.js.
+// - Arguably move grammar to core proper and deprecate the export from the root.
+// - Arguably URI should be a top level export.
+export * from "../grammar/index.js";
