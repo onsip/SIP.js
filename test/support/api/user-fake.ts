@@ -28,8 +28,6 @@ export async function makeUserFake(
   const uri = new URI("sip", userHack, domain);
   const userAgentOptions: UserAgentOptions = {
     ...{
-      autoStart: false,
-      autoStop: false,
       uri,
       displayName,
       noAnswerTimeout: 90, // seconds
