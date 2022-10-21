@@ -116,19 +116,19 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * with the RTCPeerConnection. For example...
    *
    * Do NOT do this...
-   *
+   * ```ts
    * peerConnection.onicecandidate = (event) => {
    *   // do something
    * };
-   *
+   * ```
    * Instead, do this...
-   *
+   * ```ts
    * peerConnection.peerConnectionDelegate = {
    *   onicecandidate: (event) => {
    *     // do something
    *   }
    * };
-   *
+   * ```
    * While access to the underlying `RTCPeerConnection` is provided, note that
    * using methods which modify it may break the operation of this class.
    * In particular, this class depends on exclusive access to the
@@ -149,19 +149,19 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * with the RTCPeerConnection. For example...
    *
    * Do NOT do this...
-   *
+   * ```ts
    * peerConnection.onicecandidate = (event) => {
    *   // do something
    * };
-   *
+   * ```
    * Instead, do this...
-   *
+   * ```
    * peerConnection.peerConnectionDelegate = {
    *   onicecandidate: (event) => {
    *     // do something
    *   }
    * };
-   *
+   * ```
    * Setting the peer connection event handlers directly is not supported
    * and may break this class. As this class depends on exclusive access
    * to them. This delegate is intended to provide access to the

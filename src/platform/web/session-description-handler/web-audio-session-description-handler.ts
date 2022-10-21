@@ -7,6 +7,8 @@ import { SessionDescriptionHandlerConfiguration } from "./session-description-ha
 /**
  * Start a conference.
  * @param conferenceSessions - The sessions to conference.
+ *
+ * @beta
  */
 export function startLocalConference(conferenceSessions: Array<Session>): void {
   if (conferenceSessions.length < 2) {
@@ -29,11 +31,11 @@ export function startLocalConference(conferenceSessions: Array<Session>): void {
 
 /**
  * A WebAudioSessionDescriptionHandler uses the Web Audio API to enable local conferencing of audio streams.
- *
+ * @remarks
  * This handler only works for one track of audio per peer connection. While the session description handler
  * being extended supports both audio and video, attempting to utilize video with this handler is not defined.
  *
- * @internal
+ * @beta
  */
 export class WebAudioSessionDescriptionHandler extends SessionDescriptionHandler {
   static audioContext: AudioContext | undefined;
@@ -79,7 +81,7 @@ export class WebAudioSessionDescriptionHandler extends SessionDescriptionHandler
    * aditional audio sorces into the local media stream (ie for 3-way conferencing).
    * @param stream - The MediaStream to proxy.
    */
-  initLocalMediaStream(stream: MediaStream): MediaStream {
+  public initLocalMediaStream(stream: MediaStream): MediaStream {
     if (!WebAudioSessionDescriptionHandler.audioContext) {
       throw new Error("SessionManagerSessionDescriptionHandler.audioContext undefined.");
     }
@@ -95,7 +97,7 @@ export class WebAudioSessionDescriptionHandler extends SessionDescriptionHandler
    * Join (conference) media streams with another party.
    * @param peer - The session description handler of the peer to join with.
    */
-  joinWith(peer: WebAudioSessionDescriptionHandler): void {
+  public joinWith(peer: WebAudioSessionDescriptionHandler): void {
     if (!WebAudioSessionDescriptionHandler.audioContext) {
       throw new Error("SessionManagerSessionDescriptionHandler.audioContext undefined.");
     }
@@ -127,7 +129,7 @@ export class WebAudioSessionDescriptionHandler extends SessionDescriptionHandler
    * Only the first audio and video tracks of the provided MediaStream are utilized.
    * Adds tracks if audio and/or video tracks are not already present, otherwise replaces tracks.
    */
-  setRealLocalMediaStream(stream: MediaStream): void {
+  public setRealLocalMediaStream(stream: MediaStream): void {
     if (!WebAudioSessionDescriptionHandler.audioContext) {
       throw new Error("SessionManagerSessionDescriptionHandler.audioContext undefined.");
     }
