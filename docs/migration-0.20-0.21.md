@@ -2,12 +2,21 @@
 
 ## General
 
-First off, the entire project was updated for ECMAScript module (ESM) support. Overall this makes the library more compatible and standard usages of the built library are backwards compatible (for example, if installing it via npm has been working for you it will continue to work). However if you are using a custom build or development process then this change may impact those processes...
+First off, the entire project was updated for ECMAScript module (ESM) support. Overall this makes the library more compatible and standard usages of the built library are backwards compatible (for example, if installing it via npm has been working for you it will continue to work). However if you are using a custom build or development process or fork of this library then this change may impact those processes. In particular, the TypeScript compilier options `module` and `moduleResolution` for this project have been changed to `NodeNext` for this project...
+```
+  "compilerOptions": {
+    ...
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    ...
+  },
+```
+... and as such all imports need to be fully specified going forward. For example, `import "../api";` now must be `import "../api/index.js";`. The changes to project which have been made in this regard include...
 
+  - fully specified all imports
   - added .js extensions to all imports
   - changed compiler options to NodeNext
   - tweaked webpack configs (removed fullySpecified: false)
-
 
 Secondly, the [SimpleUser](./simple-user.md) class has been ported from utilizing the API directly to using the [SessionManager](./session-manager.md) class (which is in turn is utilizing the API directly). The interface and usage of `SimpleUser` is completely identical (well, see below for the one breaking change), but if you were utilizing private methods, private properties, or otherwise depending on the internals of SimpleUser you may have issues.
 
