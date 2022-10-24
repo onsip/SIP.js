@@ -102,6 +102,12 @@ export interface SimpleUserOptions {
   registererOptions?: RegistererOptions;
 
   /**
+   * Send DTMF using the session description handler (uses RFC 2833 DTMF).
+   * @defaultValue `false`
+   */
+  sendDTMFUsingSessionDescriptionHandler?: boolean;
+
+  /**
    * Options for UserAgent.
    */
   userAgentOptions?: UserAgentOptions;

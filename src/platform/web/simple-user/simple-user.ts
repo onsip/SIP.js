@@ -68,6 +68,7 @@ export class SimpleUser {
       reconnectionAttempts: this.options.reconnectionAttempts,
       reconnectionDelay: this.options.reconnectionDelay,
       registererOptions: this.options.registererOptions,
+      sendDTMFUsingSessionDescriptionHandler: this.options.sendDTMFUsingSessionDescriptionHandler,
       userAgentOptions: this.options.userAgentOptions
     };
 

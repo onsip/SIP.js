@@ -81,6 +81,7 @@ export class SessionManager {
         registerGuard: null,
         registererOptions: {},
         registererRegisterOptions: {},
+        sendDTMFUsingSessionDescriptionHandler: false,
         userAgentOptions: {}
       },
       ...SessionManager.stripUndefinedProperties(options)
@@ -715,16 +716,6 @@ export class SessionManager {
   public async sendDTMF(session: Session, tone: string): Promise<void> {
     this.logger.log(`[${session.id}] Sending DTMF...`);
 
-    // As RFC 6086 states, sending DTMF via INFO is not standardized...
-    //
-    // Companies have been using INFO messages in order to transport
-    // Dual-Tone Multi-Frequency (DTMF) tones.  All mechanisms are
-    // proprietary and have not been standardized.
-    // https://tools.ietf.org/html/rfc6086#section-2
-    //
-    // It is however widely supported based on this draft:
-    // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00
-
     // Validate tone
     if (!/^[0-9A-D#*,]$/.exec(tone)) {
       return Promise.reject(new Error("Invalid DTMF tone."));
@@ -734,27 +725,50 @@ export class SessionManager {
       return Promise.reject(new Error("Session does not exist."));
     }
 
-    // The UA MUST populate the "application/dtmf-relay" body, as defined
-    // earlier, with the button pressed and the duration it was pressed
-    // for.  Technically, this actually requires the INFO to be generated
-    // when the user *releases* the button, however if the user has still
-    // not released a button after 5 seconds, which is the maximum duration
-    // supported by this mechanism, the UA should generate the INFO at that
-    // time.
-    // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00#section-5.3
     this.logger.log(`[${session.id}] Sending DTMF tone: ${tone}`);
-    const dtmf = tone;
-    const duration = 2000;
-    const body = {
-      contentDisposition: "render",
-      contentType: "application/dtmf-relay",
-      content: "Signal=" + dtmf + "\r\nDuration=" + duration
-    };
-    const requestOptions = { body };
 
-    return session.info({ requestOptions }).then(() => {
-      return;
-    });
+    if (this.options.sendDTMFUsingSessionDescriptionHandler) {
+      if (!session.sessionDescriptionHandler) {
+        return Promise.reject(new Error("Session desciption handler undefined."));
+      }
+
+      if (!session.sessionDescriptionHandler.sendDtmf(tone)) {
+        return Promise.reject(new Error("Failed to send DTMF"));
+      }
+
+      return Promise.resolve();
+    } else {
+      // As RFC 6086 states, sending DTMF via INFO is not standardized...
+      //
+      // Companies have been using INFO messages in order to transport
+      // Dual-Tone Multi-Frequency (DTMF) tones.  All mechanisms are
+      // proprietary and have not been standardized.
+      // https://tools.ietf.org/html/rfc6086#section-2
+      //
+      // It is however widely supported based on this draft:
+      // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00
+
+      // The UA MUST populate the "application/dtmf-relay" body, as defined
+      // earlier, with the button pressed and the duration it was pressed
+      // for.  Technically, this actually requires the INFO to be generated
+      // when the user *releases* the button, however if the user has still
+      // not released a button after 5 seconds, which is the maximum duration
+      // supported by this mechanism, the UA should generate the INFO at that
+      // time.
+      // https://tools.ietf.org/html/draft-kaplan-dispatch-info-dtmf-package-00#section-5.3
+      const dtmf = tone;
+      const duration = 2000;
+      const body = {
+        contentDisposition: "render",
+        contentType: "application/dtmf-relay",
+        content: "Signal=" + dtmf + "\r\nDuration=" + duration
+      };
+      const requestOptions = { body };
+
+      return session.info({ requestOptions }).then(() => {
+        return;
+      });
+    }
   }
 
   /**
