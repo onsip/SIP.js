@@ -25,6 +25,9 @@ export interface SessionManagerMedia {
 
   /** Local HTML media elements. */
   remote?: SessionManagerMediaRemote | ((session: Session) => SessionManagerMediaRemote);
+
+  /** Whether to use the SessionDescriptionHandler to send DTMF */
+  sendDtmfUsingSessionDescriptionHandler?: boolean;
 }
 
 /**
