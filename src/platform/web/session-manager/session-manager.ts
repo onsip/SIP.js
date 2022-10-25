@@ -83,7 +83,7 @@ export class SessionManager {
         registererRegisterOptions: {},
         userAgentOptions: {}
       },
-      ...options
+      ...SessionManager.stripUndefinedProperties(options)
     };
 
     // UserAgentOptions
@@ -275,6 +275,23 @@ export class SessionManager {
         await this.userAgent.stop();
       });
     }
+  }
+
+  /**
+   * Strip properties with undefined values from options.
+   * This is a work around while waiting for missing vs undefined to be addressed (or not)...
+   * https://github.com/Microsoft/TypeScript/issues/13195
+   * @param options - Options to reduce
+   */
+  private static stripUndefinedProperties(options: Partial<SessionManagerOptions>): Partial<SessionManagerOptions> {
+    return Object.keys(options).reduce((object, key) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((options as any)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (object as any)[key] = (options as any)[key];
+      }
+      return object;
+    }, {});
   }
 
   /**
