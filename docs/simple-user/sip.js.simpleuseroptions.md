@@ -22,5 +22,6 @@ export interface SimpleUserOptions
 |  [reconnectionAttempts](./sip.js.simpleuseroptions.reconnectionattempts.md) |  | number | Maximum number of times to attempt to reconnection. |
 |  [reconnectionDelay](./sip.js.simpleuseroptions.reconnectiondelay.md) |  | number | Seconds to wait between reconnection attempts. |
 |  [registererOptions](./sip.js.simpleuseroptions.registereroptions.md) |  | RegistererOptions | Options for Registerer. |
+|  [sendDTMFUsingSessionDescriptionHandler](./sip.js.simpleuseroptions.senddtmfusingsessiondescriptionhandler.md) |  | boolean | Send DTMF using the session description handler (uses RFC 2833 DTMF). |
 |  [userAgentOptions](./sip.js.simpleuseroptions.useragentoptions.md) |  | UserAgentOptions | Options for UserAgent. |
 

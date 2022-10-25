@@ -131,6 +131,7 @@ export interface SessionManagerOptions {
     registerGuard?: (() => Promise<boolean>) | null;
     registrationRetry?: boolean;
     registrationRetryInterval?: number;
+    sendDTMFUsingSessionDescriptionHandler?: boolean;
     // Warning: (ae-forgotten-export) The symbol "UserAgentOptions" needs to be exported by the entry point index.d.ts
     userAgentOptions?: UserAgentOptions;
 }

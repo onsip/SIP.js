@@ -92,6 +92,7 @@ export interface SimpleUserOptions {
     reconnectionDelay?: number;
     // Warning: (ae-forgotten-export) The symbol "RegistererOptions" needs to be exported by the entry point index.d.ts
     registererOptions?: RegistererOptions;
+    sendDTMFUsingSessionDescriptionHandler?: boolean;
     // Warning: (ae-forgotten-export) The symbol "UserAgentOptions" needs to be exported by the entry point index.d.ts
     userAgentOptions?: UserAgentOptions;
 }

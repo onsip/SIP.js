@@ -30,5 +30,6 @@ export interface SessionManagerOptions
 |  [registerGuard](./sip.js.sessionmanageroptions.registerguard.md) |  | (() =&gt; Promise&lt;boolean&gt;) \| null | Does nothing if undefined or resolves false. If resolves true, the next regitration attempt will be blocked. |
 |  [registrationRetry](./sip.js.sessionmanageroptions.registrationretry.md) |  | boolean | If <code>true</code> then registration attempts will be automatically retried when any registration attempts fail or is otherwise rejected. |
 |  [registrationRetryInterval](./sip.js.sessionmanageroptions.registrationretryinterval.md) |  | number | Time to wait before retrying to send a registration reqeust in seconds. |
+|  [sendDTMFUsingSessionDescriptionHandler](./sip.js.sessionmanageroptions.senddtmfusingsessiondescriptionhandler.md) |  | boolean | Send DTMF using the session description handler (uses RFC 2833 DTMF). |
 |  [userAgentOptions](./sip.js.sessionmanageroptions.useragentoptions.md) |  | UserAgentOptions | Options for UserAgent. |
 
