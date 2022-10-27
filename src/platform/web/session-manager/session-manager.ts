@@ -238,8 +238,6 @@ export class SessionManager {
       ...options.registererOptions
     };
 
-    this.registererOptions.expires = 60;
-
     // RegistererRegisterOptions
     this.registererRegisterOptions = {
       ...options.registererRegisterOptions
