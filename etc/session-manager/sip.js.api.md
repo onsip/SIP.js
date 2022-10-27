@@ -123,6 +123,8 @@ export interface SessionManagerOptions {
     managedSessionFactory?: ManagedSessionFactory;
     maxSimultaneousSessions?: number;
     media?: SessionManagerMedia;
+    optionsPingInterval?: number;
+    optionsPingRequestURI?: string;
     reconnectionAttempts?: number;
     reconnectionDelay?: number;
     // Warning: (ae-forgotten-export) The symbol "RegistererOptions" needs to be exported by the entry point index.d.ts

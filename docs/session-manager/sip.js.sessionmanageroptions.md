@@ -23,6 +23,8 @@ export interface SessionManagerOptions
 |  [managedSessionFactory](./sip.js.sessionmanageroptions.managedsessionfactory.md) |  | [ManagedSessionFactory](./sip.js.managedsessionfactory.md) | A factory for generating <code>ManagedSession</code> instances. |
 |  [maxSimultaneousSessions](./sip.js.sessionmanageroptions.maxsimultaneoussessions.md) |  | number | Maximum number of simultaneous sessions to manage. |
 |  [media](./sip.js.sessionmanageroptions.media.md) |  | [SessionManagerMedia](./sip.js.sessionmanagermedia.md) | Media options. |
+|  [optionsPingInterval](./sip.js.sessionmanageroptions.optionspinginterval.md) |  | number | If defined, SIP OPTIONS pings will be sent separated by this interval in seconds. |
+|  [optionsPingRequestURI](./sip.js.sessionmanageroptions.optionspingrequesturi.md) |  | string | The request URI to use for SIP OPTIONS pings. |
 |  [reconnectionAttempts](./sip.js.sessionmanageroptions.reconnectionattempts.md) |  | number | Maximum number of times to attempt to reconnection. |
 |  [reconnectionDelay](./sip.js.sessionmanageroptions.reconnectiondelay.md) |  | number | Seconds to wait between reconnection attempts. |
 |  [registererOptions](./sip.js.sessionmanageroptions.registereroptions.md) |  | RegistererOptions | Options for Registerer. |
