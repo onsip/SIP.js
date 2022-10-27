@@ -2,7 +2,6 @@
 
 ## Next Release
 
-- implement Session Timers or OPTIONS Ping to detect network failure
 - review and remove everything that was deprecated
 - complete more work in progress
 - more documentation

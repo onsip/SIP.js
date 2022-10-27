@@ -116,6 +116,41 @@ export interface SessionManagerOptions {
   media?: SessionManagerMedia;
 
   /**
+   * If defined, SIP OPTIONS pings will be sent separated by this interval in seconds.
+   * @remarks
+   * When this is defined, the user agent will periodically send an OPTIONS request to the destination
+   * to determine its reachability and will disconnect the transport if the destination is unreachable.
+   * A destination is considered to be "out of service" if it fails to respond to an OPTIONS request,
+   * if it sends a Service Unavailable (503) response or Request Timeout (408) response. The overall
+   * state is considered to be "in service" when a response other than a 408 or 503 is received.
+   *
+   * There is currently no Javascript API to send WebSocket Ping frames or receive Pong frames.
+   * A Ping frame may serve either as a keepalive or as a means to verify that the remote endpoint
+   * is still responsive. It is either supported by your browser, or not. There is also no API to
+   * enable, configure or detect whether the browser supports and is using ping/pong frames.
+   * As such, if a keepalive and/or a means to verify that the remote endpoint is responsive is
+   * desired, an alternative approach is needed. The intention of sending SIP OPTIONS pings
+   * herein is to provide an application level alternative.
+   *
+   * There is no golden rule or best practice here. For example, too low and these messages clutter
+   * log files and make more work for the system than is useful (10 seconds is arguably too low).
+   * Too high and it may take longer than expected to detect a server or otherwise unreachable
+   * (120 seconds is arguably too high). So choose a value that is reasonable for your environment.
+   * @defaultValue `undefined`
+   */
+  optionsPingInterval?: number;
+
+  /**
+   * The request URI to use for SIP OPTIONS pings.
+   * @remarks
+   * If this is not defined but the aor option has been defined, the aor host portion of
+   * the aor will be used to form the request URI (the assumption is this will target the
+   * registrar server assoicated with the AOR).
+   * @defaultValue `undefined`
+   */
+  optionsPingRequestURI?: string;
+
+  /**
    * Maximum number of times to attempt to reconnection.
    * @remarks
    * When the transport connection is lost (WebSocket disconnects),

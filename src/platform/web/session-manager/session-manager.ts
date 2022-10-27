@@ -22,6 +22,8 @@ import { UserAgent } from "../../../api/user-agent.js";
 import { UserAgentOptions } from "../../../api/user-agent-options.js";
 import { UserAgentState } from "../../../api/user-agent-state.js";
 import { Logger } from "../../../core/log/logger.js";
+import { OutgoingRequest } from "../../../core/messages/outgoing-request.js";
+import { URI } from "../../../grammar/uri.js";
 import { SessionDescriptionHandler } from "../session-description-handler/session-description-handler.js";
 import { SessionDescriptionHandlerOptions } from "../session-description-handler/session-description-handler-options.js";
 import { Transport } from "../transport/transport.js";
@@ -47,9 +49,13 @@ export class SessionManager {
   private attemptingReconnection = false;
   private logger: Logger;
   private options: Required<SessionManagerOptions>;
+  private optionsPingFailure = false;
+  private optionsPingRequest?: OutgoingRequest;
+  private optionsPingRunning = false;
+  private optionsPingTimeout?: ReturnType<typeof setTimeout>;
   private registrationAttemptTimeout?: ReturnType<typeof setTimeout>;
-  private registerer: Registerer | undefined;
-  private registererOptions: RegistererOptions | undefined;
+  private registerer?: Registerer;
+  private registererOptions?: RegistererOptions;
   private registererRegisterOptions: RegistererRegisterOptions;
   private shouldBeConnected = false;
   private shouldBeRegistered = false;
@@ -74,6 +80,8 @@ export class SessionManager {
         managedSessionFactory: defaultManagedSessionFactory(),
         maxSimultaneousSessions: 2,
         media: {},
+        optionsPingInterval: -1,
+        optionsPingRequestURI: "",
         reconnectionAttempts: 3,
         reconnectionDelay: 4,
         registrationRetry: false,
@@ -127,21 +135,36 @@ export class SessionManager {
         if (this.delegate && this.delegate.onServerConnect) {
           this.delegate.onServerConnect();
         }
-        // Attempt to register if we are supposed to be registered.
+        // Attempt to register if we are supposed to be registered
         if (this.shouldBeRegistered) {
           this.register();
+        }
+        // Start OPTIONS pings if we are to be pinging
+        if (this.options.optionsPingInterval > 0) {
+          this.optionsPingStart();
         }
       },
       // Handle connection with server lost
       onDisconnect: async (error?: Error): Promise<void> => {
         this.logger.log(`Disconnected`);
+
+        // Stop OPTIONS ping if need be.
+        let optionsPingFailure = false;
+        if (this.options.optionsPingInterval > 0) {
+          optionsPingFailure = this.optionsPingFailure;
+          this.optionsPingFailure = false;
+          this.optionsPingStop();
+        }
+
+        // Let delgate know we have disconnected
         if (this.delegate && this.delegate.onServerDisconnect) {
           this.delegate.onServerDisconnect(error);
         }
+
         // If the user called `disconnect` a graceful cleanup will be done therein.
         // Only cleanup if network/server dropped the connection.
         // Only reconnect if network/server dropped the connection
-        if (error) {
+        if (error || optionsPingFailure) {
           // There is no transport at this point, so we are not expecting to be able to
           // send messages much less get responses. So just dispose of everything without
           // waiting for anything to succeed.
@@ -266,12 +289,25 @@ export class SessionManager {
       }
     });
 
-    // Before unload, clean up and disconnect.
+    // NOTE: The autoStop option does not currently work as one likley expects.
+    //       This code is here because the "autoStop behavior" and this assoicated
+    //       implemenation has been a recurring request. So instead of removing
+    //       the implementation again (because it doesn't work) and then having
+    //       to explain agian the issue over and over again to those who want it,
+    //       we have included it here to break that cycle. The implementation is
+    //       harmless and serves to provide an explaination for those interested.
     if (this.options.autoStop) {
+      // Standard operation workflow will resume after this callback exits, meaning
+      // that any asynchronous operations are likely not going to be finished, especially
+      // if they are guaranteed to not be executed in the current tick (promises fall
+      // under this category, they will never be resolved synchronously by design).
       window.addEventListener("beforeunload", async () => {
         this.shouldBeConnected = false;
         this.shouldBeRegistered = false;
-        await this.userAgent.stop();
+        if (this.userAgent.state !== UserAgentState.Stopped) {
+          // The stop() method returns a promise which will not resolve before the page unloads.
+          await this.userAgent.stop();
+        }
       });
     }
   }
@@ -1165,6 +1201,130 @@ export class SessionManager {
           this.logger.error(error.message);
         });
     };
+  }
+
+  /**
+   * Periodically send OPTIONS pings and disconnect when a ping fails.
+   * @param requestURI - Request URI to target
+   * @param fromURI - From URI
+   * @param toURI - To URI
+   */
+  private optionsPingRun(requestURI: URI, fromURI: URI, toURI: URI): void {
+    // Guard against nvalid interval
+    if (this.options.optionsPingInterval < 1) {
+      throw new Error("Invalid options ping interval.");
+    }
+    // Guard against sending a ping when there is one outstanading
+    if (this.optionsPingRunning) {
+      return;
+    }
+    this.optionsPingRunning = true;
+
+    // Setup next ping to run in future
+    this.optionsPingTimeout = setTimeout(() => {
+      this.optionsPingTimeout = undefined;
+
+      // If ping succeeds...
+      const onPingSuccess = () => {
+        // record success or failure
+        this.optionsPingFailure = false;
+        // if we are still running, queue up the next ping
+        if (this.optionsPingRunning) {
+          this.optionsPingRunning = false;
+          this.optionsPingRun(requestURI, fromURI, toURI);
+        }
+      };
+
+      // If ping fails...
+      const onPingFailure = () => {
+        this.logger.error("OPTIONS ping failed");
+        // record success or failure
+        this.optionsPingFailure = true;
+        // stop running
+        this.optionsPingRunning = false;
+        // disconnect the transport
+        this.userAgent.transport.disconnect().catch((error) => this.logger.error(error));
+      };
+
+      // Create an OPTIONS request message
+      const core = this.userAgent.userAgentCore;
+      const message = core.makeOutgoingRequestMessage("OPTIONS", requestURI, fromURI, toURI, {});
+
+      // Send the request message
+      this.optionsPingRequest = core.request(message, {
+        onAccept: () => {
+          this.optionsPingRequest = undefined;
+          onPingSuccess();
+        },
+        onReject: (response) => {
+          this.optionsPingRequest = undefined;
+          // Ping fails on following responses...
+          // - 408 Request Timeout (no response was received)
+          // - 503 Service Unavailable (a transport layer error occured)
+          if (response.message.statusCode === 408 || response.message.statusCode === 503) {
+            onPingFailure();
+          } else {
+            onPingSuccess();
+          }
+        }
+      });
+    }, this.options.optionsPingInterval * 1000);
+  }
+
+  /**
+   * Start sending OPTIONS pings.
+   */
+  private optionsPingStart(): void {
+    this.logger.log(`OPTIONS pings started`);
+
+    // Create the URIs needed to send OPTIONS pings
+    let requestURI, fromURI, toURI;
+    if (this.options.optionsPingRequestURI) {
+      // Use whatever specific RURI is provided.
+      requestURI = UserAgent.makeURI(this.options.optionsPingRequestURI);
+      if (!requestURI) {
+        throw new Error("Failed to create Request URI.");
+      }
+      // Use the user agent's contact URI for From and To URIs
+      fromURI = this.userAgent.contact.uri.clone();
+      toURI = this.userAgent.contact.uri.clone();
+    } else if (this.options.aor) {
+      // Otherwise use the AOR provided to target the assocated registrar server.
+      const uri = UserAgent.makeURI(this.options.aor);
+      if (!uri) {
+        throw new Error("Failed to create URI.");
+      }
+      requestURI = uri.clone();
+      requestURI.user = undefined; // target the registrar server
+      fromURI = uri.clone();
+      toURI = uri.clone();
+    } else {
+      this.logger.error(
+        "You have enabled sending OPTIONS pings and as such you must provide either " +
+          "a) an AOR to register, or b) an RURI to use for the target of the OPTIONS ping requests. "
+      );
+      return;
+    }
+
+    // Send the OPTIONS pings
+    this.optionsPingRun(requestURI, fromURI, toURI);
+  }
+
+  /**
+   * Stop sending OPTIONS pings.
+   */
+  private optionsPingStop(): void {
+    this.logger.log(`OPTIONS pings stopped`);
+    this.optionsPingRunning = false;
+    this.optionsPingFailure = false;
+    if (this.optionsPingRequest) {
+      this.optionsPingRequest.dispose();
+      this.optionsPingRequest = undefined;
+    }
+    if (this.optionsPingTimeout) {
+      clearTimeout(this.optionsPingTimeout);
+      this.optionsPingTimeout = undefined;
+    }
   }
 
   /** Helper function to init send then send invite. */
