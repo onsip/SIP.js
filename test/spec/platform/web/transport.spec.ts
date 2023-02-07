@@ -64,6 +64,21 @@ describe("Web Transport", () => {
 
     // The transport should now be in the Disconnected state, so traverse the FSM.
     traverseTransportStateMachine();
+
+    describe("supports customized header protocols", () => {
+      // constructTransport normally validates that the protocol is WSS
+      // given that the server URL is wss://...
+      const headerProtocol = "ws";
+      const customizedTransport = new Transport(logger, {
+        connectionTimeout,
+        server,
+        headerProtocol
+      });
+
+      it("protocol MUST be WS", () => {
+        expect(customizedTransport.protocol).toBe(headerProtocol.toUpperCase());
+      });
+    });
   });
 
   function initServer(): void {

@@ -31,4 +31,10 @@ export interface TransportOptions {
    * @defaultValue `true`
    */
   traceSip?: boolean;
+
+  /**
+   * The transport protocol to use in Via header declarations.
+   * If not specified, will be inferred from the server URL.
+   */
+  headerProtocol?: string;
 }
