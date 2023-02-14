@@ -246,13 +246,13 @@ export class Subscriber extends Subscription {
         break;
       case SubscriptionDialogState.Pending:
         if (this._dialog) {
-          this._dialog.unsubscribe();
+          this._dialog.unsubscribe(options);
           // responses intentionally ignored
         }
         break;
       case SubscriptionDialogState.Active:
         if (this._dialog) {
-          this._dialog.unsubscribe();
+          this._dialog.unsubscribe(options);
           // responses intentionally ignored
         }
         break;
