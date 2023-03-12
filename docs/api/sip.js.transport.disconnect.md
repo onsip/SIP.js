@@ -13,7 +13,7 @@ disconnect(): Promise<void>;
 ```
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 
@@ -25,7 +25,6 @@ disconnect(): Promise<void>;
 - If `state` is "Disconnected", `state` MUST NOT transition before returning.
 - The `state` MUST transition to "Disconnected" before resolving (assuming `state` is not already "Disconnected").
 - The `state` MUST transition to "Connecting" or "Connected" before rejecting and MUST reject with an Error.
-
 ```
 Resolves when the transport disconnects. Rejects if transport fails to disconnect. Rejects with [StateTransitionError](./sip.js.statetransitionerror.md) if a loop is detected. In particular, callbacks and emitters MUST NOT call this method synchronously.
 

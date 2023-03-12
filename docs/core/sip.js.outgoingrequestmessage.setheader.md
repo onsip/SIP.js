@@ -16,10 +16,10 @@ setHeader(name: string, value: string | Array<string>): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> | header name |
-|  value | <code>string &#124; Array&lt;string&gt;</code> | header value |
+|  name | string | header name |
+|  value | string \| Array&lt;string&gt; | header value |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -16,11 +16,11 @@ register(options?: RegistererRegisterOptions): Promise<OutgoingRegisterRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>RegistererRegisterOptions</code> |  |
+|  options | [RegistererRegisterOptions](./sip.js.registererregisteroptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<OutgoingRegisterRequest>`
+Promise&lt;OutgoingRegisterRequest&gt;
 
 ## Remarks
 

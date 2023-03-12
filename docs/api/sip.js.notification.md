@@ -20,7 +20,7 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [request](./sip.js.notification.request.md) |  | <code>IncomingRequestMessage</code> | Incoming NOTIFY request message. |
+|  [request](./sip.js.notification.request.md) |  | IncomingRequestMessage | Incoming NOTIFY request message. |
 
 ## Methods
 

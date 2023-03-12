@@ -13,5 +13,5 @@ transportAccessor(): Transport | undefined;
 ```
 <b>Returns:</b>
 
-`Transport | undefined`
+[Transport](./sip.js.transport.md) \| undefined
 

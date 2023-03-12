@@ -14,7 +14,7 @@ export interface OutgoingAckRequest
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [message](./sip.js.outgoingackrequest.message.md) | <code>OutgoingRequestMessage</code> | The outgoing message. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [message](./sip.js.outgoingackrequest.message.md) |  | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) | The outgoing message. |
 

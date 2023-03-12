@@ -20,9 +20,9 @@ recomputeRouteSet(message: IncomingResponseMessage): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingResponseMessage</code> |  |
+|  message | [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

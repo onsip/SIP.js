@@ -20,10 +20,10 @@ createOutgoingRequestMessage(method: string, options?: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  method | <code>string</code> | Outgoing request method. |
-|  options | <code>{</code><br/><code>        cseq?: number;</code><br/><code>        extraHeaders?: Array&lt;string&gt;;</code><br/><code>        body?: Body;</code><br/><code>    }</code> |  |
+|  method | string | Outgoing request method. |
+|  options | { cseq?: number; extraHeaders?: Array&lt;string&gt;; body?: [Body](./sip.js.body.md)<!-- -->; } |  |
 
 <b>Returns:</b>
 
-`OutgoingRequestMessage`
+[OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md)
 

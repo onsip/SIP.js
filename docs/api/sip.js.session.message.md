@@ -16,9 +16,9 @@ message(options?: SessionMessageOptions): Promise<OutgoingMessageRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionMessageOptions</code> | Options bucket. See [SessionMessageOptions](./sip.js.sessionmessageoptions.md) for details. |
+|  options | [SessionMessageOptions](./sip.js.sessionmessageoptions.md) | Options bucket. See [SessionMessageOptions](./sip.js.sessionmessageoptions.md) for details. |
 
 <b>Returns:</b>
 
-`Promise<OutgoingMessageRequest>`
+Promise&lt;OutgoingMessageRequest&gt;
 

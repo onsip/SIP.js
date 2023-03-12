@@ -1,15 +1,12 @@
-import { SessionDialog } from "../dialogs";
-import {
-  C,
-  IncomingResponseMessage,
-  OutgoingAckRequest,
-  OutgoingInviteRequest,
-  OutgoingInviteRequestDelegate,
-  OutgoingPrackRequest,
-  RequestOptions
-} from "../messages";
-import { InviteClientTransaction } from "../transactions";
-import { UserAgentClient } from "./user-agent-client";
+import { SessionDialog } from "../dialogs/session-dialog.js";
+import { C } from "../messages/methods/constants.js";
+import { OutgoingAckRequest } from "../messages/methods/ack.js";
+import { RequestOptions } from "../messages/outgoing-request.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingInviteRequest, OutgoingInviteRequestDelegate } from "../messages/methods/invite.js";
+import { OutgoingPrackRequest } from "../messages/methods/prack.js";
+import { InviteClientTransaction } from "../transactions/invite-client-transaction.js";
+import { UserAgentClient } from "./user-agent-client.js";
 
 /**
  * Re-INVITE UAC.

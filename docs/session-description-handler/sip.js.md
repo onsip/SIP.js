@@ -11,6 +11,7 @@ A SessionDescriptionHandler for web browsers.
 |  Class | Description |
 |  --- | --- |
 |  [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) | A base class implementing a WebRTC session description handler for sip.js. |
+|  [WebAudioSessionDescriptionHandler](./sip.js.webaudiosessiondescriptionhandler.md) | <b><i>(BETA)</i></b> A WebAudioSessionDescriptionHandler uses the Web Audio API to enable local conferencing of audio streams. |
 
 ## Functions
 
@@ -19,6 +20,7 @@ A SessionDescriptionHandler for web browsers.
 |  [defaultMediaStreamFactory()](./sip.js.defaultmediastreamfactory.md) | Function which returns a MediaStreamFactory. |
 |  [defaultPeerConnectionConfiguration()](./sip.js.defaultpeerconnectionconfiguration.md) | Function which returns an RTCConfiguration. |
 |  [defaultSessionDescriptionHandlerFactory(mediaStreamFactory)](./sip.js.defaultsessiondescriptionhandlerfactory.md) | Function which returns a SessionDescriptionHandlerFactory. |
+|  [startLocalConference(conferenceSessions)](./sip.js.startlocalconference.md) | <b><i>(BETA)</i></b> Start a conference. |
 
 ## Interfaces
 

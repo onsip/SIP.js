@@ -14,8 +14,8 @@ export interface SessionInfoOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [requestDelegate](./sip.js.sessioninfooptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.sessioninfooptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [requestDelegate](./sip.js.sessioninfooptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.sessioninfooptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

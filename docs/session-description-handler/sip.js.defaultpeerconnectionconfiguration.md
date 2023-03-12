@@ -13,5 +13,5 @@ export declare function defaultPeerConnectionConfiguration(): RTCConfiguration;
 ```
 <b>Returns:</b>
 
-`RTCConfiguration`
+RTCConfiguration
 

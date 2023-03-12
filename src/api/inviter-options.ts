@@ -1,7 +1,6 @@
-import { URI } from "../core";
-import { SessionDescriptionHandlerModifier } from "./session-description-handler";
-import { SessionDescriptionHandlerOptions } from "./session-description-handler";
-import { SessionOptions } from "./session-options";
+import { URI } from "../grammar/uri.js";
+import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler.js";
+import { SessionOptions } from "./session-options.js";
 
 /**
  * Options for {@link Inviter} constructor.

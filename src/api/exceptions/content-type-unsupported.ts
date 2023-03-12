@@ -1,4 +1,4 @@
-import { Exception } from "../../core";
+import { Exception } from "../../core/exceptions/exception.js";
 
 /**
  * An exception indicating an unsupported content type prevented execution.

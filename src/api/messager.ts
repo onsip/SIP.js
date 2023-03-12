@@ -1,7 +1,12 @@
-import { Body, C, Grammar, Logger, OutgoingRequestMessage, URI } from "../core";
-import { MessagerMessageOptions } from "./messager-message-options";
-import { MessagerOptions } from "./messager-options";
-import { UserAgent } from "./user-agent";
+import { Grammar } from "../grammar/grammar.js";
+import { URI } from "../grammar/uri.js";
+import { Body } from "../core/messages/body.js";
+import { C } from "../core/messages/methods/constants.js";
+import { Logger } from "../core/log/logger.js";
+import { OutgoingRequestMessage } from "../core/messages/outgoing-request-message.js";
+import { MessagerMessageOptions } from "./messager-message-options.js";
+import { MessagerOptions } from "./messager-options.js";
+import { UserAgent } from "./user-agent.js";
 
 /**
  * A messager sends a {@link Message} (outgoing MESSAGE).

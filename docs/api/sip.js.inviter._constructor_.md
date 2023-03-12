@@ -16,7 +16,7 @@ constructor(userAgent: UserAgent, targetURI: URI, options?: InviterOptions);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  userAgent | <code>UserAgent</code> | User agent. See [UserAgent](./sip.js.useragent.md) for details. |
-|  targetURI | <code>URI</code> | Request URI identifying the target of the message. |
-|  options | <code>InviterOptions</code> | Options bucket. See [InviterOptions](./sip.js.inviteroptions.md) for details. |
+|  userAgent | [UserAgent](./sip.js.useragent.md) | User agent. See [UserAgent](./sip.js.useragent.md) for details. |
+|  targetURI | URI | Request URI identifying the target of the message. |
+|  options | [InviterOptions](./sip.js.inviteroptions.md) | Options bucket. See [InviterOptions](./sip.js.inviteroptions.md) for details. |
 

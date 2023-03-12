@@ -9,7 +9,6 @@ export function defaultPeerConnectionConfiguration(): RTCConfiguration {
     iceCandidatePoolSize: 0,
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }], // TURN URL example: "turn:88.88.88.0:3478", "test", "test"
     iceTransportPolicy: "all",
-    peerIdentity: undefined,
     rtcpMuxPolicy: "require"
   };
   return configuration;

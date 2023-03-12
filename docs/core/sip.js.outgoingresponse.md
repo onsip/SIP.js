@@ -18,7 +18,7 @@ For indicating the status of a request sent from the client to the server. https
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [message](./sip.js.outgoingresponse.message.md) | <code>string</code> | The outgoing message. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [message](./sip.js.outgoingresponse.message.md) |  | string | The outgoing message. |
 

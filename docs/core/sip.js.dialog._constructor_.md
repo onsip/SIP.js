@@ -16,6 +16,6 @@ protected constructor(core: UserAgentCore, dialogState: DialogState);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  core | <code>UserAgentCore</code> | User agent core. |
-|  dialogState | <code>DialogState</code> | Initial dialog state. |
+|  core | [UserAgentCore](./sip.js.useragentcore.md) | User agent core. |
+|  dialogState | [DialogState](./sip.js.dialogstate.md) | Initial dialog state. |
 

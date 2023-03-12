@@ -16,9 +16,13 @@ onAck?(ack: Ack): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  ack | <code>Ack</code> | The ack. |
+|  ack | [Ack](./sip.js.ack.md) | The ack. |
 
 <b>Returns:</b>
 
-`void`
+void
+
+## Remarks
+
+Includes the ACK confirming an accepted initial Invite as well as ACKs associated with in dialog INVITE requests.
 

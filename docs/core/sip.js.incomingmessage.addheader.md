@@ -16,10 +16,10 @@ addHeader(name: string, value: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> | header name |
-|  value | <code>string</code> | header value |
+|  name | string | header name |
+|  value | string | header value |
 
 <b>Returns:</b>
 
-`void`
+void
 

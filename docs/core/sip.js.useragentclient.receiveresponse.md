@@ -16,9 +16,9 @@ protected receiveResponse(message: IncomingResponseMessage): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingResponseMessage</code> | Incoming response message. |
+|  message | [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) | Incoming response message. |
 
 <b>Returns:</b>
 
-`void`
+void
 

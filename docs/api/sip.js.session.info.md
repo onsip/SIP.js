@@ -16,9 +16,9 @@ info(options?: SessionInfoOptions): Promise<OutgoingInfoRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionInfoOptions</code> | Options bucket. See [SessionInfoOptions](./sip.js.sessioninfooptions.md) for details. |
+|  options | [SessionInfoOptions](./sip.js.sessioninfooptions.md) | Options bucket. See [SessionInfoOptions](./sip.js.sessioninfooptions.md) for details. |
 
 <b>Returns:</b>
 
-`Promise<OutgoingInfoRequest>`
+Promise&lt;OutgoingInfoRequest&gt;
 

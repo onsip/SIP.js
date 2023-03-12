@@ -18,7 +18,7 @@ These options are provided to various UserAgent methods (invite() for example) a
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) | <code>object</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) |  | object |  |
 

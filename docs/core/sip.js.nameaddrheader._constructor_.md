@@ -18,7 +18,7 @@ constructor(uri: URI, displayName: string, parameters: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  uri | <code>URI</code> |  |
-|  displayName | <code>string</code> |  |
-|  parameters | <code>{</code><br/><code>        [name: string]: string;</code><br/><code>    }</code> |  |
+|  uri | [URI](./sip.js.uri.md) |  |
+|  displayName | string |  |
+|  parameters | { \[name: string\]: string; } |  |
 

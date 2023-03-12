@@ -14,20 +14,20 @@ export interface UserAgentCoreConfiguration
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [aor](./sip.js.useragentcoreconfiguration.aor.md) | <code>URI</code> | Address-of-Record (AOR). |
-|  [contact](./sip.js.useragentcoreconfiguration.contact.md) | <code>Contact</code> | Contact. |
-|  [displayName](./sip.js.useragentcoreconfiguration.displayname.md) | <code>string</code> | From header display name. |
-|  [hackViaTcp](./sip.js.useragentcoreconfiguration.hackviatcp.md) | <code>boolean</code> | Force Via header field transport to TCP. |
-|  [loggerFactory](./sip.js.useragentcoreconfiguration.loggerfactory.md) | <code>LoggerFactory</code> | Logger factory. |
-|  [routeSet](./sip.js.useragentcoreconfiguration.routeset.md) | <code>Array&lt;string&gt;</code> | Preloaded route set. |
-|  [sipjsId](./sip.js.useragentcoreconfiguration.sipjsid.md) | <code>string</code> | Unique instance id. |
-|  [supportedOptionTags](./sip.js.useragentcoreconfiguration.supportedoptiontags.md) | <code>Array&lt;string&gt;</code> | Option tags of supported SIP extensions. |
-|  [supportedOptionTagsResponse](./sip.js.useragentcoreconfiguration.supportedoptiontagsresponse.md) | <code>Array&lt;string&gt;</code> | Option tags of supported SIP extensions. Used in responses. |
-|  [userAgentHeaderFieldValue](./sip.js.useragentcoreconfiguration.useragentheaderfieldvalue.md) | <code>string &#124; undefined</code> | User-Agent header field value. |
-|  [viaForceRport](./sip.js.useragentcoreconfiguration.viaforcerport.md) | <code>boolean</code> | Force use of "rport" Via header field parameter. |
-|  [viaHost](./sip.js.useragentcoreconfiguration.viahost.md) | <code>string</code> | Via header field host name or network address. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [aor](./sip.js.useragentcoreconfiguration.aor.md) |  | [URI](./sip.js.uri.md) | Address-of-Record (AOR). |
+|  [contact](./sip.js.useragentcoreconfiguration.contact.md) |  | [Contact](./sip.js.contact.md) | Contact. |
+|  [displayName](./sip.js.useragentcoreconfiguration.displayname.md) |  | string | From header display name. |
+|  [hackViaTcp](./sip.js.useragentcoreconfiguration.hackviatcp.md) |  | boolean | Force Via header field transport to TCP. |
+|  [loggerFactory](./sip.js.useragentcoreconfiguration.loggerfactory.md) |  | [LoggerFactory](./sip.js.loggerfactory.md) | Logger factory. |
+|  [routeSet](./sip.js.useragentcoreconfiguration.routeset.md) |  | Array&lt;string&gt; | Preloaded route set. |
+|  [sipjsId](./sip.js.useragentcoreconfiguration.sipjsid.md) |  | string | Unique instance id. |
+|  [supportedOptionTags](./sip.js.useragentcoreconfiguration.supportedoptiontags.md) |  | Array&lt;string&gt; | Option tags of supported SIP extensions. |
+|  [supportedOptionTagsResponse](./sip.js.useragentcoreconfiguration.supportedoptiontagsresponse.md) |  | Array&lt;string&gt; | Option tags of supported SIP extensions. Used in responses. |
+|  [userAgentHeaderFieldValue](./sip.js.useragentcoreconfiguration.useragentheaderfieldvalue.md) |  | string \| undefined | User-Agent header field value. |
+|  [viaForceRport](./sip.js.useragentcoreconfiguration.viaforcerport.md) |  | boolean | Force use of "rport" Via header field parameter. |
+|  [viaHost](./sip.js.useragentcoreconfiguration.viahost.md) |  | string | Via header field host name or network address. |
 
 ## Methods
 

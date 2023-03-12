@@ -16,6 +16,6 @@ constructor(userAgent: UserAgent, options?: RegistererOptions);
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  userAgent | <code>UserAgent</code> | User agent. See [UserAgent](./sip.js.useragent.md) for details. |
-|  options | <code>RegistererOptions</code> | Options bucket. See [RegistererOptions](./sip.js.registereroptions.md) for details. |
+|  userAgent | [UserAgent](./sip.js.useragent.md) | User agent. See [UserAgent](./sip.js.useragent.md) for details. |
+|  options | [RegistererOptions](./sip.js.registereroptions.md) | Options bucket. See [RegistererOptions](./sip.js.registereroptions.md) for details. |
 

@@ -11,3 +11,5 @@ Incoming PUBLISH request.
 ```typescript
 export interface IncomingPublishRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

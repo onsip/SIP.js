@@ -18,13 +18,13 @@ https://tools.ietf.org/html/rfc6665
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [autoRefresh](./sip.js.subscription.autorefresh.md) | <code>boolean</code> | If true, refresh subscription prior to expiration. Default is false. |
-|  [delegate](./sip.js.subscription.delegate.md) | <code>SubscriptionDelegate &#124; undefined</code> | Subscription delegate. |
-|  [id](./sip.js.subscription.id.md) | <code>string</code> | The subscription id. |
-|  [subscriptionExpires](./sip.js.subscription.subscriptionexpires.md) | <code>number</code> | Subscription expires. Number of seconds until the subscription expires. |
-|  [subscriptionState](./sip.js.subscription.subscriptionstate.md) | <code>SubscriptionState</code> | Subscription state. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [autoRefresh](./sip.js.subscription.autorefresh.md) |  | boolean | If true, refresh subscription prior to expiration. Default is false. |
+|  [delegate](./sip.js.subscription.delegate.md) |  | [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) \| undefined | Subscription delegate. |
+|  [id](./sip.js.subscription.id.md) |  | string | The subscription id. |
+|  [subscriptionExpires](./sip.js.subscription.subscriptionexpires.md) |  | number | Subscription expires. Number of seconds until the subscription expires. |
+|  [subscriptionState](./sip.js.subscription.subscriptionstate.md) |  | [SubscriptionState](./sip.js.subscriptionstate.md) | Subscription state. |
 
 ## Methods
 

@@ -13,5 +13,5 @@ refresh(): OutgoingSubscribeRequest;
 ```
 <b>Returns:</b>
 
-`OutgoingSubscribeRequest`
+[OutgoingSubscribeRequest](./sip.js.outgoingsubscriberequest.md)
 

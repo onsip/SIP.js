@@ -18,12 +18,12 @@ protected authenticationGuard(message: IncomingResponseMessage, dialog?: Dialog)
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingResponseMessage</code> |  |
-|  dialog | <code>Dialog</code> | If defined, the dialog within which the response was received. |
+|  message | [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) |  |
+|  dialog | [Dialog](./sip.js.dialog.md) | If defined, the dialog within which the response was received. |
 
 <b>Returns:</b>
 
-`boolean`
+boolean
 
 True if the program execution is to continue in the branch in question. Otherwise the request is retried with credentials and current request processing must stop.
 

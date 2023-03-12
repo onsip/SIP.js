@@ -14,8 +14,8 @@ export interface SimpleUserMediaConstraints
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [audio](./sip.js.simpleusermediaconstraints.audio.md) | <code>boolean</code> | If true, offer and answer to send and receive audio. |
-|  [video](./sip.js.simpleusermediaconstraints.video.md) | <code>boolean</code> | If true, offer and answer to send and receive video. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [audio](./sip.js.simpleusermediaconstraints.audio.md) |  | boolean | If true, offer and answer to send and receive audio. |
+|  [video](./sip.js.simpleusermediaconstraints.video.md) |  | boolean | If true, offer and answer to send and receive video. |
 

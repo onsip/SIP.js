@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Parameters } from "./parameters";
+import { Parameters } from "./parameters.js";
 
 interface URIObject {
   scheme: string;
@@ -243,8 +243,8 @@ export class URI extends Parameters {
 
 /**
  * Returns true if URIs are equivalent per RFC 3261 Section 19.1.4.
- * @param a URI to compare
- * @param b URI to compare
+ * @param a - URI to compare
+ * @param b - URI to compare
  *
  * @remarks
  * 19.1.4 URI Comparison

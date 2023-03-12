@@ -11,6 +11,7 @@ Client Transaction.
 ```typescript
 export declare abstract class ClientTransaction extends Transaction 
 ```
+<b>Extends:</b> [Transaction](./sip.js.transaction.md)
 
 ## Remarks
 
@@ -28,8 +29,8 @@ The TU communicates with the client transaction through a simple interface. When
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [request](./sip.js.clienttransaction.request.md) |  | <code>OutgoingRequestMessage</code> | The outgoing request the transaction handling. |
-|  [user](./sip.js.clienttransaction.user.md) |  | <code>ClientTransactionUser</code> |  |
+|  [request](./sip.js.clienttransaction.request.md) |  | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) | The outgoing request the transaction handling. |
+|  [user](./sip.js.clienttransaction.user.md) |  | [ClientTransactionUser](./sip.js.clienttransactionuser.md) |  |
 
 ## Methods
 

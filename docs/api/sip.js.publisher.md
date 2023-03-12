@@ -22,8 +22,8 @@ export declare class Publisher
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [state](./sip.js.publisher.state.md) |  | <code>PublisherState</code> | The publication state. |
-|  [stateChange](./sip.js.publisher.statechange.md) |  | <code>Emitter&lt;PublisherState&gt;</code> | Emits when the publisher state changes. |
+|  [state](./sip.js.publisher.state.md) |  | [PublisherState](./sip.js.publisherstate.md) | The publication state. |
+|  [stateChange](./sip.js.publisher.statechange.md) |  | [Emitter](./sip.js.emitter.md)<!-- -->&lt;[PublisherState](./sip.js.publisherstate.md)<!-- -->&gt; | Emits when the publisher state changes. |
 
 ## Methods
 

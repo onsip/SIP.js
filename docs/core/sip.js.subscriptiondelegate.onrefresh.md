@@ -16,9 +16,9 @@ onRefresh?(request: OutgoingSubscribeRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>OutgoingSubscribeRequest</code> | Outgoing SUBSCRIBE request. |
+|  request | [OutgoingSubscribeRequest](./sip.js.outgoingsubscriberequest.md) | Outgoing SUBSCRIBE request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

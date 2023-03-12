@@ -16,9 +16,9 @@ onInvite?(request: IncomingInviteRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingInviteRequest</code> | Incoming INVITE request. |
+|  request | [IncomingInviteRequest](./sip.js.incominginviterequest.md) | Incoming INVITE request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

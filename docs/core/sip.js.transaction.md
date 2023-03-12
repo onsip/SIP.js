@@ -26,11 +26,11 @@ SIP is a transactional protocol: interactions between components take place in a
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [id](./sip.js.transaction.id.md) |  | <code>string</code> | Transaction id. |
-|  [kind](./sip.js.transaction.kind.md) |  | <code>string</code> | Transaction kind. Deprecated. |
-|  [logger](./sip.js.transaction.logger.md) |  | <code>Logger</code> |  |
-|  [state](./sip.js.transaction.state.md) |  | <code>TransactionState</code> | Transaction state. |
-|  [transport](./sip.js.transaction.transport.md) |  | <code>Transport</code> | Transaction transport. |
+|  [id](./sip.js.transaction.id.md) |  | string | Transaction id. |
+|  [kind](./sip.js.transaction.kind.md) |  | string | Transaction kind. Deprecated. |
+|  [logger](./sip.js.transaction.logger.md) |  | [Logger](./sip.js.logger.md) |  |
+|  [state](./sip.js.transaction.state.md) |  | [TransactionState](./sip.js.transactionstate.md) | Transaction state. |
+|  [transport](./sip.js.transaction.transport.md) |  | [Transport](./sip.js.transport.md) | Transaction transport. |
 
 ## Methods
 

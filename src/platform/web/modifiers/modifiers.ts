@@ -1,4 +1,4 @@
-import { SessionDescriptionHandlerModifier } from "../../../api";
+import { SessionDescriptionHandlerModifier } from "../../../api/session-description-handler.js";
 
 const stripPayload = (sdp: string, payload: string): string => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

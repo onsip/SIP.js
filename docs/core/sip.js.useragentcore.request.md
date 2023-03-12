@@ -16,10 +16,10 @@ request(request: OutgoingRequestMessage, delegate?: OutgoingRequestDelegate): Ou
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>OutgoingRequestMessage</code> | Outgoing request. |
-|  delegate | <code>OutgoingRequestDelegate</code> | Request delegate. |
+|  request | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) | Outgoing request. |
+|  delegate | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) | Request delegate. |
 
 <b>Returns:</b>
 
-`OutgoingRequest`
+[OutgoingRequest](./sip.js.outgoingrequest.md)
 

@@ -1,11 +1,12 @@
-import { Logger, Subscription as SubscriptionDialog } from "../core";
-import { Emitter, EmitterImpl } from "./emitter";
-import { SubscriptionDelegate } from "./subscription-delegate";
-import { SubscriptionOptions } from "./subscription-options";
-import { SubscriptionState } from "./subscription-state";
-import { SubscriptionSubscribeOptions } from "./subscription-subscribe-options";
-import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-options";
-import { UserAgent } from "./user-agent";
+import { Logger } from "../core/log/logger.js";
+import { Subscription as SubscriptionDialog } from "../core/subscription/subscription.js";
+import { Emitter, EmitterImpl } from "./emitter.js";
+import { SubscriptionDelegate } from "./subscription-delegate.js";
+import { SubscriptionOptions } from "./subscription-options.js";
+import { SubscriptionState } from "./subscription-state.js";
+import { SubscriptionSubscribeOptions } from "./subscription-subscribe-options.js";
+import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-options.js";
+import { UserAgent } from "./user-agent.js";
 
 /**
  * A subscription provides {@link Notification} of events.

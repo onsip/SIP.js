@@ -1,19 +1,16 @@
-import { Dialog, SessionDialog } from "../dialogs";
-import { TransactionStateError } from "../exceptions";
-import {
-  IncomingInviteRequest,
-  IncomingRequestDelegate,
-  IncomingRequestMessage,
-  OutgoingResponse,
-  OutgoingResponseWithSession,
-  ResponseOptions,
-  URI
-} from "../messages";
-import { SignalingState } from "../session";
-import { InviteServerTransaction } from "../transactions";
-import { UserAgentCore } from "../user-agent-core";
-import { AllowedMethods } from "../user-agent-core/allowed-methods";
-import { UserAgentServer } from "./user-agent-server";
+import { URI } from "../../grammar/uri.js";
+import { Dialog } from "../dialogs/dialog.js";
+import { SessionDialog } from "../dialogs/session-dialog.js";
+import { TransactionStateError } from "../exceptions/transaction-state-error.js";
+import { IncomingInviteRequest, OutgoingResponseWithSession } from "../messages/methods/invite.js";
+import { IncomingRequestDelegate } from "../messages/incoming-request.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { OutgoingResponse, ResponseOptions } from "../messages/outgoing-response.js";
+import { SignalingState } from "../session/session.js";
+import { InviteServerTransaction } from "../transactions/invite-server-transaction.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { AllowedMethods } from "../user-agent-core/allowed-methods.js";
+import { UserAgentServer } from "./user-agent-server.js";
 
 /**
  * INVITE UAS.

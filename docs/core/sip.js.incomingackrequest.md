@@ -14,7 +14,7 @@ export interface IncomingAckRequest
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [message](./sip.js.incomingackrequest.message.md) | <code>IncomingRequestMessage</code> | The incoming message. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [message](./sip.js.incomingackrequest.message.md) |  | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) | The incoming message. |
 

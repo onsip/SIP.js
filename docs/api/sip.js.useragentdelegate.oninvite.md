@@ -16,11 +16,11 @@ onInvite?(invitation: Invitation): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  invitation | <code>Invitation</code> | The invitation. |
+|  invitation | [Invitation](./sip.js.invitation.md) | The invitation. |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

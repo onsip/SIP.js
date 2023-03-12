@@ -16,9 +16,9 @@ onMessage?(message: Message): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>Message</code> | The message. |
+|  message | [Message](./sip.js.message.md) | The message. |
 
 <b>Returns:</b>
 
-`void`
+void
 

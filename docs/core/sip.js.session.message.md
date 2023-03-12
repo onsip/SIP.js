@@ -16,10 +16,10 @@ message(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingM
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  delegate | <code>OutgoingRequestDelegate</code> | Request delegate. |
-|  options | <code>RequestOptions</code> | Options bucket. |
+|  delegate | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) | Request delegate. |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingMessageRequest`
+[OutgoingMessageRequest](./sip.js.outgoingmessagerequest.md)
 

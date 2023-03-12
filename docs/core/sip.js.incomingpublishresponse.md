@@ -11,3 +11,5 @@ Incoming PUBLISH response.
 ```typescript
 export interface IncomingPublishResponse extends IncomingResponse 
 ```
+<b>Extends:</b> [IncomingResponse](./sip.js.incomingresponse.md)
+

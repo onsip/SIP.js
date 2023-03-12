@@ -16,9 +16,9 @@ message(options?: MessagerMessageOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>MessagerMessageOptions</code> |  |
+|  options | [MessagerMessageOptions](./sip.js.messagermessageoptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

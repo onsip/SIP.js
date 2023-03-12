@@ -16,9 +16,9 @@ onNotify?(request: IncomingNotifyRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingNotifyRequest</code> | Incoming NOTIFY request. |
+|  request | [IncomingNotifyRequest](./sip.js.incomingnotifyrequest.md) | Incoming NOTIFY request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

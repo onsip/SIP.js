@@ -11,6 +11,7 @@ An Exception is considered a condition that a reasonable application may wish to
 ```typescript
 export declare abstract class Exception extends Error 
 ```
+<b>Extends:</b> Error
 
 ## Constructors
 

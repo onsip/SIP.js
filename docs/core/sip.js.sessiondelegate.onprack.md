@@ -16,9 +16,9 @@ onPrack?(request: IncomingPrackRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingPrackRequest</code> | Incoming PRACK request. |
+|  request | [IncomingPrackRequest](./sip.js.incomingprackrequest.md) | Incoming PRACK request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

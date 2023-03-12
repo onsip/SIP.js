@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Notification, Subscriber, Subscription, SubscriptionDelegate, SubscriptionState } from "../../../src/api";
+import {
+  Notification,
+  Subscriber,
+  Subscription,
+  SubscriptionDelegate,
+  SubscriptionState
+} from "../../../lib/api/index.js";
+import { URI } from "../../../lib/grammar/index.js";
 import {
   C,
   Dialog,
@@ -8,14 +15,13 @@ import {
   NonInviteClientTransaction,
   ReSubscribeUserAgentServer,
   Timers,
-  URI,
   UserAgentClient,
   UserAgentCore
-} from "../../../src/core";
-import { newTag } from "../../../src/core/messages/utils";
-import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+} from "../../../lib/core/index.js";
+import { newTag } from "../../../lib/core/messages/utils.js";
+import { EmitterSpy, makeEmitterSpy } from "../../support/api/emitter-spy.js";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 class NotifierDialog extends Dialog {
   constructor(protected core: UserAgentCore, protected dialogState: DialogState) {
@@ -257,13 +263,15 @@ describe("API Subscription", () => {
         });
 
         it("the subscription delegate should not be called after timeout", async () => {
-          await soon(Timers.TIMER_F + 1);
+          jasmine.clock().tick(Timers.TIMER_F + 1);
+          await soon();
           const spy = subscriptionDelegateMock;
           expect(spy.onNotify).toHaveBeenCalledTimes(0);
         });
 
         it("the subscription state should transition to 'terminated' after timeout", async () => {
-          await soon(Timers.TIMER_F + 1);
+          jasmine.clock().tick(Timers.TIMER_F + 1);
+          await soon();
           const spy = subscriptionStateSpy;
           expect(spy).toHaveBeenCalledTimes(1);
           expect(spy.calls.argsFor(0)).toEqual([SubscriptionState.Terminated]);

@@ -16,12 +16,12 @@ onCallDTMFReceived?(tone: string, duration: number): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  tone | <code>string</code> |  |
-|  duration | <code>number</code> |  |
+|  tone | string |  |
+|  duration | number |  |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

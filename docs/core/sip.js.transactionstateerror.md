@@ -11,6 +11,7 @@ Indicates that the operation could not be completed given the current transactio
 ```typescript
 export declare class TransactionStateError extends Exception 
 ```
+<b>Extends:</b> [Exception](./sip.js.exception.md)
 
 ## Constructors
 

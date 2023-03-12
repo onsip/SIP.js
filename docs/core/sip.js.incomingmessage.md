@@ -16,19 +16,19 @@ export declare class IncomingMessage
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [body](./sip.js.incomingmessage.body.md) |  | <code>string</code> |  |
-|  [callId](./sip.js.incomingmessage.callid.md) |  | <code>string</code> |  |
-|  [cseq](./sip.js.incomingmessage.cseq.md) |  | <code>number</code> |  |
-|  [data](./sip.js.incomingmessage.data.md) |  | <code>string</code> |  |
-|  [from](./sip.js.incomingmessage.from.md) |  | <code>NameAddrHeader</code> |  |
-|  [fromTag](./sip.js.incomingmessage.fromtag.md) |  | <code>string</code> |  |
-|  [headers](./sip.js.incomingmessage.headers.md) |  | <code>{</code><br/><code>        [name: string]: Array&lt;{</code><br/><code>            parsed?: any;</code><br/><code>            raw: string;</code><br/><code>        }&gt;;</code><br/><code>    }</code> |  |
-|  [method](./sip.js.incomingmessage.method.md) |  | <code>string</code> |  |
-|  [referTo](./sip.js.incomingmessage.referto.md) |  | <code>string &#124; undefined</code> |  |
-|  [to](./sip.js.incomingmessage.to.md) |  | <code>NameAddrHeader</code> |  |
-|  [toTag](./sip.js.incomingmessage.totag.md) |  | <code>string</code> |  |
-|  [via](./sip.js.incomingmessage.via.md) |  | <code>{</code><br/><code>        host: string;</code><br/><code>        port: number;</code><br/><code>    }</code> |  |
-|  [viaBranch](./sip.js.incomingmessage.viabranch.md) |  | <code>string</code> |  |
+|  [body](./sip.js.incomingmessage.body.md) |  | string |  |
+|  [callId](./sip.js.incomingmessage.callid.md) |  | string |  |
+|  [cseq](./sip.js.incomingmessage.cseq.md) |  | number |  |
+|  [data](./sip.js.incomingmessage.data.md) |  | string |  |
+|  [from](./sip.js.incomingmessage.from.md) |  | [NameAddrHeader](./sip.js.nameaddrheader.md) |  |
+|  [fromTag](./sip.js.incomingmessage.fromtag.md) |  | string |  |
+|  [headers](./sip.js.incomingmessage.headers.md) |  | { \[name: string\]: Array&lt;{ parsed?: any; raw: string; }&gt;; } |  |
+|  [method](./sip.js.incomingmessage.method.md) |  | string |  |
+|  [referTo](./sip.js.incomingmessage.referto.md) |  | string \| undefined |  |
+|  [to](./sip.js.incomingmessage.to.md) |  | [NameAddrHeader](./sip.js.nameaddrheader.md) |  |
+|  [toTag](./sip.js.incomingmessage.totag.md) |  | string |  |
+|  [via](./sip.js.incomingmessage.via.md) |  | { host: string; port: number; } |  |
+|  [viaBranch](./sip.js.incomingmessage.viabranch.md) |  | string |  |
 
 ## Methods
 

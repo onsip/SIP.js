@@ -16,11 +16,11 @@ subscribe(options?: SubscriberSubscribeOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SubscriberSubscribeOptions</code> |  |
+|  options | [SubscriberSubscribeOptions](./sip.js.subscribersubscribeoptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

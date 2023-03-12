@@ -1,10 +1,10 @@
-import { TransportError } from "../exceptions";
-import { IncomingRequestMessage } from "../messages";
-import { Timers } from "../timers";
-import { Transport } from "../transport";
-import { ServerTransaction } from "./server-transaction";
-import { TransactionState } from "./transaction-state";
-import { ServerTransactionUser } from "./transaction-user";
+import { TransportError } from "../exceptions/transport-error.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { Timers } from "../timers.js";
+import { Transport } from "../transport.js";
+import { ServerTransaction } from "./server-transaction.js";
+import { TransactionState } from "./transaction-state.js";
+import { ServerTransactionUser } from "./transaction-user.js";
 
 /**
  * Non-INVITE Server Transaction.

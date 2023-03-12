@@ -11,6 +11,7 @@ An exception indicating an invalid state transition error occured.
 ```typescript
 export declare class StateTransitionError extends Exception 
 ```
+<b>Extends:</b> Exception
 
 ## Constructors
 

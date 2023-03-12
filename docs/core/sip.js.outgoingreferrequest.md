@@ -11,3 +11,5 @@ Outgoing REFER request.
 ```typescript
 export interface OutgoingReferRequest extends OutgoingRequest 
 ```
+<b>Extends:</b> [OutgoingRequest](./sip.js.outgoingrequest.md)
+

@@ -11,6 +11,9 @@ INFO UAC.
 ```typescript
 export declare class InfoUserAgentClient extends UserAgentClient implements OutgoingInfoRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingInfoRequest](./sip.js.outgoinginforequest.md)
 
 ## Constructors
 

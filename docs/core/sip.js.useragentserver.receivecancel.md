@@ -16,9 +16,9 @@ receiveCancel(message: IncomingRequestMessage): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingRequestMessage</code> |  |
+|  message | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

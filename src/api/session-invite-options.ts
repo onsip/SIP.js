@@ -1,5 +1,5 @@
-import { OutgoingRequestDelegate, RequestOptions } from "../core";
-import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler";
+import { OutgoingRequestDelegate, RequestOptions } from "../core/messages/outgoing-request.js";
+import { SessionDescriptionHandlerModifier, SessionDescriptionHandlerOptions } from "./session-description-handler.js";
 
 /**
  * Options for {@link Session.invite}.

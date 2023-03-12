@@ -11,6 +11,7 @@ An exception indicating a session description handler error occured.
 ```typescript
 export declare class SessionDescriptionHandlerError extends Exception 
 ```
+<b>Extends:</b> Exception
 
 ## Constructors
 

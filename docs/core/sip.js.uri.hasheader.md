@@ -14,9 +14,9 @@ hasHeader(name: string): boolean;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> |  |
+|  name | string |  |
 
 <b>Returns:</b>
 
-`boolean`
+boolean
 

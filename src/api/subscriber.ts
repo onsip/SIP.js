@@ -1,27 +1,26 @@
+import { URI } from "../grammar/uri.js";
+import { fromBodyLegacy } from "../core/messages/body.js";
+import { Logger } from "../core/log/logger.js";
+import { C } from "../core/messages/methods/constants.js";
+import { IncomingNotifyRequest } from "../core/messages/methods/notify.js";
+import { IncomingRequestWithSubscription, OutgoingSubscribeRequest } from "../core/messages/methods/subscribe.js";
+import { IncomingResponse } from "../core/messages/incoming-response.js";
+import { OutgoingRequestMessage } from "../core/messages/outgoing-request-message.js";
+import { RequestOptions } from "../core/messages/outgoing-request.js";
 import {
-  C,
-  fromBodyLegacy,
-  IncomingNotifyRequest,
-  IncomingRequestWithSubscription,
-  IncomingResponse,
-  Logger,
-  OutgoingRequestMessage,
-  OutgoingSubscribeRequest,
-  RequestOptions,
   Subscription as SubscriptionDialog,
-  SubscriptionState as SubscriptionDialogState,
-  URI,
-  UserAgentCore
-} from "../core";
-import { AllowedMethods } from "../core/user-agent-core/allowed-methods";
-import { Notification } from "./notification";
-import { BodyAndContentType } from "./session-description-handler";
-import { SubscriberOptions } from "./subscriber-options";
-import { SubscriberSubscribeOptions } from "./subscriber-subscribe-options";
-import { Subscription } from "./subscription";
-import { SubscriptionState } from "./subscription-state";
-import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-options";
-import { UserAgent } from "./user-agent";
+  SubscriptionState as SubscriptionDialogState
+} from "../core/subscription/subscription.js";
+import { UserAgentCore } from "../core/user-agent-core/user-agent-core.js";
+import { AllowedMethods } from "../core/user-agent-core/allowed-methods.js";
+import { Notification } from "./notification.js";
+import { BodyAndContentType } from "./session-description-handler.js";
+import { SubscriberOptions } from "./subscriber-options.js";
+import { SubscriberSubscribeOptions } from "./subscriber-subscribe-options.js";
+import { Subscription } from "./subscription.js";
+import { SubscriptionState } from "./subscription-state.js";
+import { SubscriptionUnsubscribeOptions } from "./subscription-unsubscribe-options.js";
+import { UserAgent } from "./user-agent.js";
 
 /**
  * A subscriber establishes a {@link Subscription} (outgoing SUBSCRIBE).
@@ -41,6 +40,8 @@ import { UserAgent } from "./user-agent";
  * // Add delegate to handle event notifications.
  * subscriber.delegate = {
  *   onNotify: (notification: Notification) => {
+ *     // send a response
+ *     notification.accept();
  *     // handle notification here
  *   }
  * };

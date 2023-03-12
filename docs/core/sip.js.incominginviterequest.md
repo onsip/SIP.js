@@ -11,6 +11,7 @@ Incoming INVITE request.
 ```typescript
 export interface IncomingInviteRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
 
 ## Methods
 

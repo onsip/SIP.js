@@ -2,12 +2,12 @@ import {
   BodyAndContentType,
   SessionDescriptionHandler as SessionDescriptionHandlerDefinition,
   SessionDescriptionHandlerModifier
-} from "../../../api";
-import { Logger } from "../../../core";
-import { MediaStreamFactory } from "./media-stream-factory";
-import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration";
-import { SessionDescriptionHandlerOptions } from "./session-description-handler-options";
-import { PeerConnectionDelegate } from "./peer-connection-delegate";
+} from "../../../api/session-description-handler.js";
+import { Logger } from "../../../core/log/logger.js";
+import { MediaStreamFactory } from "./media-stream-factory.js";
+import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration.js";
+import { SessionDescriptionHandlerOptions } from "./session-description-handler-options.js";
+import { PeerConnectionDelegate } from "./peer-connection-delegate.js";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
@@ -112,8 +112,25 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * The peer connection. Undefined if peer connection has closed.
    *
    * @remarks
+   * Use the peerConnectionDelegate to get access to the events associated
+   * with the RTCPeerConnection. For example...
+   *
+   * Do NOT do this...
+   * ```ts
+   * peerConnection.onicecandidate = (event) => {
+   *   // do something
+   * };
+   * ```
+   * Instead, do this...
+   * ```ts
+   * peerConnection.peerConnectionDelegate = {
+   *   onicecandidate: (event) => {
+   *     // do something
+   *   }
+   * };
+   * ```
    * While access to the underlying `RTCPeerConnection` is provided, note that
-   * using methods with modify it may break the operation of this class.
+   * using methods which modify it may break the operation of this class.
    * In particular, this class depends on exclusive access to the
    * event handler properties. If you need access to the peer connection
    * events, either register for events using `addEventListener()` on
@@ -128,10 +145,27 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
    * A delegate which provides access to the peer connection event handlers.
    *
    * @remarks
+   * Use the peerConnectionDelegate to get access to the events associated
+   * with the RTCPeerConnection. For example...
+   *
+   * Do NOT do this...
+   * ```ts
+   * peerConnection.onicecandidate = (event) => {
+   *   // do something
+   * };
+   * ```
+   * Instead, do this...
+   * ```
+   * peerConnection.peerConnectionDelegate = {
+   *   onicecandidate: (event) => {
+   *     // do something
+   *   }
+   * };
+   * ```
    * Setting the peer connection event handlers directly is not supported
    * and may break this class. As this class depends on exclusive access
-   * to them, a delegate may be set which provides alternative access to
-   * the event handlers in a fashion which is supported.
+   * to them. This delegate is intended to provide access to the
+   * RTCPeerConnection events in a fashion which is supported.
    */
   get peerConnectionDelegate(): PeerConnectionDelegate | undefined {
     return this._peerConnectionDelegate;
@@ -171,6 +205,40 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
     this._peerConnection.close();
     this._peerConnection = undefined;
+  }
+
+  /**
+   * Helper function to enable/disable media tracks.
+   * @param enable - If true enable tracks, otherwise disable tracks.
+   */
+  public enableReceiverTracks(enable: boolean): void {
+    const peerConnection = this.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
+    peerConnection.getReceivers().forEach((receiver) => {
+      if (receiver.track) {
+        receiver.track.enabled = enable;
+      }
+    });
+  }
+
+  /**
+   * Helper function to enable/disable media tracks.
+   * @param enable - If true enable tracks, otherwise disable tracks.
+   */
+  public enableSenderTracks(enable: boolean): void {
+    const peerConnection = this.peerConnection;
+    if (!peerConnection) {
+      throw new Error("Peer connection closed.");
+    }
+
+    peerConnection.getSenders().forEach((sender) => {
+      if (sender.track) {
+        sender.track.enabled = enable;
+      }
+    });
   }
 
   /**
@@ -228,6 +296,32 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   }
 
   /**
+   * Called when ICE gathering completes and resolves any waiting promise.
+   * @remarks
+   * May be called prior to ICE gathering actually completing to allow the
+   * session descirption handler proceed with whatever candidates have been
+   * gathered up to this point in time. Use this to stop waiting on ICE to
+   * complete if you are implementing your own ICE gathering completion strategy.
+   */
+  public iceGatheringComplete(): void {
+    this.logger.debug("SessionDescriptionHandler.iceGatheringComplete");
+    // clear timer if need be
+    if (this.iceGatheringCompleteTimeoutId !== undefined) {
+      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - clearing timeout");
+      clearTimeout(this.iceGatheringCompleteTimeoutId);
+      this.iceGatheringCompleteTimeoutId = undefined;
+    }
+    // resolve and cleanup promise if need be
+    if (this.iceGatheringCompletePromise !== undefined) {
+      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - resolving promise");
+      this.iceGatheringCompleteResolve && this.iceGatheringCompleteResolve();
+      this.iceGatheringCompletePromise = undefined;
+      this.iceGatheringCompleteResolve = undefined;
+      this.iceGatheringCompleteReject = undefined;
+    }
+  }
+
+  /**
    * Send DTMF via RTP (RFC 4733).
    * Returns true if DTMF send is successful, false otherwise.
    * @param tones - A string containing DTMF digits.
@@ -254,7 +348,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     try {
       dtmfSender.insertDTMF(tones, duration, interToneGap);
     } catch (e) {
-      this.logger.error(e);
+      this.logger.error((e as Error).toString());
       return false;
     }
     this.logger.log("SessionDescriptionHandler.sendDtmf sent via RTP: " + tones.toString());
@@ -421,7 +515,9 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     }
 
     this.localMediaStreamConstraints = constraints;
-    return this.mediaStreamFactory(constraints, this).then((mediaStream) => this.setLocalMediaStream(mediaStream));
+    return this.mediaStreamFactory(constraints, this, options).then((mediaStream) =>
+      this.setLocalMediaStream(mediaStream)
+    );
   }
 
   /**
@@ -784,27 +880,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   }
 
   /**
-   * Called when ICE gathering completes and resolves any waiting promise.
-   */
-  protected iceGatheringComplete(): void {
-    this.logger.debug("SessionDescriptionHandler.iceGatheringComplete");
-    // clear timer if need be
-    if (this.iceGatheringCompleteTimeoutId !== undefined) {
-      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - clearing timeout");
-      clearTimeout(this.iceGatheringCompleteTimeoutId);
-      this.iceGatheringCompleteTimeoutId = undefined;
-    }
-    // resolve and cleanup promise if need be
-    if (this.iceGatheringCompletePromise !== undefined) {
-      this.logger.debug("SessionDescriptionHandler.iceGatheringComplete - resolving promise");
-      this.iceGatheringCompleteResolve && this.iceGatheringCompleteResolve();
-      this.iceGatheringCompletePromise = undefined;
-      this.iceGatheringCompleteResolve = undefined;
-      this.iceGatheringCompleteReject = undefined;
-    }
-  }
-
-  /**
    * Wait for ICE gathering to complete.
    * @param restart - If true, waits if current state is "complete" (waits for transition to "complete").
    * @param timeout - Milliseconds after which waiting times out. No timeout if 0.
@@ -879,7 +954,7 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
     peerConnection.onicecandidateerror = (event): void => {
       this.logger.debug(`SessionDescriptionHandler.onicecandidateerror`);
       if (this._peerConnectionDelegate?.onicecandidateerror) {
-        this._peerConnectionDelegate.onicecandidateerror(event);
+        this._peerConnectionDelegate.onicecandidateerror(event as RTCPeerConnectionIceErrorEvent);
       }
     };
 
@@ -914,13 +989,6 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
       this.logger.debug(`SessionDescriptionHandler.onsignalingstatechange ${newState}`);
       if (this._peerConnectionDelegate?.onsignalingstatechange) {
         this._peerConnectionDelegate.onsignalingstatechange(event);
-      }
-    };
-
-    peerConnection.onstatsended = (event): void => {
-      this.logger.debug(`SessionDescriptionHandler.onstatsended`);
-      if (this._peerConnectionDelegate?.onstatsended) {
-        this._peerConnectionDelegate.onstatsended(event);
       }
     };
 

@@ -1,4 +1,5 @@
-import { SessionDescriptionHandler } from "./session-description-handler";
+import { SessionDescriptionHandler } from "./session-description-handler.js";
+import { SessionDescriptionHandlerOptions } from "./session-description-handler-options.js";
 
 /**
  * Interface of factory function which produces a MediaStream.
@@ -6,5 +7,6 @@ import { SessionDescriptionHandler } from "./session-description-handler";
  */
 export type MediaStreamFactory = (
   constraints: MediaStreamConstraints,
-  sessionDescriptionHandler: SessionDescriptionHandler
+  sessionDescriptionHandler: SessionDescriptionHandler,
+  options?: SessionDescriptionHandlerOptions
 ) => Promise<MediaStream>;

@@ -26,13 +26,13 @@ While this class is completely functional for simple use cases, it is not intend
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [delegate](./sip.js.simpleuser.delegate.md) |  | <code>SimpleUserDelegate &#124; undefined</code> | Delegate. |
-|  [localAudioTrack](./sip.js.simpleuser.localaudiotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The local audio track, if available. |
-|  [localMediaStream](./sip.js.simpleuser.localmediastream.md) |  | <code>MediaStream &#124; undefined</code> | The local media stream. Undefined if call not answered. |
-|  [localVideoTrack](./sip.js.simpleuser.localvideotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The local video track, if available. |
-|  [remoteAudioTrack](./sip.js.simpleuser.remoteaudiotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The remote audio track, if available. |
-|  [remoteMediaStream](./sip.js.simpleuser.remotemediastream.md) |  | <code>MediaStream &#124; undefined</code> | The remote media stream. Undefined if call not answered. |
-|  [remoteVideoTrack](./sip.js.simpleuser.remotevideotrack.md) |  | <code>MediaStreamTrack &#124; undefined</code> | The remote video track, if available. |
+|  [delegate](./sip.js.simpleuser.delegate.md) |  | [SimpleUserDelegate](./sip.js.simpleuserdelegate.md) \| undefined | Delegate. |
+|  [localAudioTrack](./sip.js.simpleuser.localaudiotrack.md) |  | MediaStreamTrack \| undefined | The local audio track, if available. |
+|  [localMediaStream](./sip.js.simpleuser.localmediastream.md) |  | MediaStream \| undefined | The local media stream. Undefined if call not answered. |
+|  [localVideoTrack](./sip.js.simpleuser.localvideotrack.md) |  | MediaStreamTrack \| undefined | The local video track, if available. |
+|  [remoteAudioTrack](./sip.js.simpleuser.remoteaudiotrack.md) |  | MediaStreamTrack \| undefined | The remote audio track, if available. |
+|  [remoteMediaStream](./sip.js.simpleuser.remotemediastream.md) |  | MediaStream \| undefined | The remote media stream. Undefined if call not answered. |
+|  [remoteVideoTrack](./sip.js.simpleuser.remotevideotrack.md) |  | MediaStreamTrack \| undefined | The remote video track, if available. |
 
 ## Methods
 
@@ -50,7 +50,7 @@ While this class is completely functional for simple use cases, it is not intend
 |  [isMuted()](./sip.js.simpleuser.ismuted.md) |  | Mute state. |
 |  [message(destination, message)](./sip.js.simpleuser.message.md) |  | Send a message. |
 |  [mute()](./sip.js.simpleuser.mute.md) |  | Mute call. |
-|  [register(registererOptions, registererRegisterOptions)](./sip.js.simpleuser.register.md) |  | Start receiving incoming calls. |
+|  [register(registererRegisterOptions)](./sip.js.simpleuser.register.md) |  | Start receiving incoming calls. |
 |  [sendDTMF(tone)](./sip.js.simpleuser.senddtmf.md) |  | Send DTMF. |
 |  [unhold()](./sip.js.simpleuser.unhold.md) |  | Unhold call. |
 |  [unmute()](./sip.js.simpleuser.unmute.md) |  | Unmute call. |

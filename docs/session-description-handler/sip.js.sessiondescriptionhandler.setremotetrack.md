@@ -16,11 +16,11 @@ protected setRemoteTrack(track: MediaStreamTrack): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  track | <code>MediaStreamTrack</code> | Media stream track to be utilized. |
+|  track | MediaStreamTrack | Media stream track to be utilized. |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

@@ -16,9 +16,9 @@ accept(options?: ResponseOptions): OutgoingResponse;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>ResponseOptions</code> | Response options bucket. |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) | Response options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingResponse`
+[OutgoingResponse](./sip.js.outgoingresponse.md)
 

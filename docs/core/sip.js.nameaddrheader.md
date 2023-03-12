@@ -11,6 +11,7 @@ Name Address SIP header.
 ```typescript
 export declare class NameAddrHeader extends Parameters 
 ```
+<b>Extends:</b> Parameters
 
 ## Constructors
 
@@ -22,9 +23,9 @@ export declare class NameAddrHeader extends Parameters
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [displayName](./sip.js.nameaddrheader.displayname.md) |  | <code>string</code> |  |
-|  [friendlyName](./sip.js.nameaddrheader.friendlyname.md) |  | <code>string</code> |  |
-|  [uri](./sip.js.nameaddrheader.uri.md) |  | <code>URI</code> |  |
+|  [displayName](./sip.js.nameaddrheader.displayname.md) |  | string |  |
+|  [friendlyName](./sip.js.nameaddrheader.friendlyname.md) |  | string |  |
+|  [uri](./sip.js.nameaddrheader.uri.md) |  | [URI](./sip.js.uri.md) |  |
 
 ## Methods
 

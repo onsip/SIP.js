@@ -16,9 +16,9 @@ onNotify(notification: Notification): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  notification | <code>Notification</code> | A notification. See [Notification](./sip.js.notification.md) for details. |
+|  notification | [Notification](./sip.js.notification.md) | A notification. See [Notification](./sip.js.notification.md) for details. |
 
 <b>Returns:</b>
 
-`void`
+void
 

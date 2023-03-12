@@ -11,5 +11,5 @@ protected typeToString(): string;
 ```
 <b>Returns:</b>
 
-`string`
+string
 

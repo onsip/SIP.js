@@ -36,7 +36,6 @@ export declare enum SignalingState
  6. UPDATE Req.          2xx UPDATE Resp.     RFC 3311  N   Y    Y
 
       Table 1: Summary of SIP Usage of the Offer/Answer Model
-
 ```
 https://tools.ietf.org/html/rfc6337\#section-2.2
 

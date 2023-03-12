@@ -16,9 +16,9 @@ onInfo?(info: Info): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  info | <code>Info</code> | The info. |
+|  info | [Info](./sip.js.info.md) | The info. |
 
 <b>Returns:</b>
 
-`void`
+void
 

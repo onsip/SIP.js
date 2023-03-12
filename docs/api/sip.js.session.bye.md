@@ -16,9 +16,9 @@ bye(options?: SessionByeOptions): Promise<OutgoingByeRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionByeOptions</code> | Options bucket. See [SessionByeOptions](./sip.js.sessionbyeoptions.md) for details. |
+|  options | [SessionByeOptions](./sip.js.sessionbyeoptions.md) | Options bucket. See [SessionByeOptions](./sip.js.sessionbyeoptions.md) for details. |
 
 <b>Returns:</b>
 
-`Promise<OutgoingByeRequest>`
+Promise&lt;OutgoingByeRequest&gt;
 

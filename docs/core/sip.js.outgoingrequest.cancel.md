@@ -16,10 +16,10 @@ cancel(reason?: string, options?: RequestOptions): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  reason | <code>string</code> | Reason for canceling request. |
-|  options | <code>RequestOptions</code> | Request options bucket. |
+|  reason | string | Reason for canceling request. |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Request options bucket. |
 
 <b>Returns:</b>
 
-`void`
+void
 

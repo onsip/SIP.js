@@ -11,6 +11,7 @@ A base class implementing a WebRTC session description handler for sip.js.
 ```typescript
 export declare class SessionDescriptionHandler implements SessionDescriptionHandlerDefinition 
 ```
+<b>Implements:</b> SessionDescriptionHandlerDefinition
 
 ## Remarks
 
@@ -26,19 +27,19 @@ It is expected/intended to be extended by specific WebRTC based applications.
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [\_dataChannel](./sip.js.sessiondescriptionhandler._datachannel.md) |  | <code>RTCDataChannel &#124; undefined</code> | The data channel. Undefined before created. |
-|  [\_localMediaStream](./sip.js.sessiondescriptionhandler._localmediastream.md) |  | <code>MediaStream</code> | The local media stream. |
-|  [\_peerConnection](./sip.js.sessiondescriptionhandler._peerconnection.md) |  | <code>RTCPeerConnection &#124; undefined</code> | The peer connection. Undefined after SessionDescriptionHandler.close(). |
-|  [\_peerConnectionDelegate](./sip.js.sessiondescriptionhandler._peerconnectiondelegate.md) |  | <code>PeerConnectionDelegate &#124; undefined</code> | The peer connection delegate. |
-|  [\_remoteMediaStream](./sip.js.sessiondescriptionhandler._remotemediastream.md) |  | <code>MediaStream</code> | The remote media stream. |
-|  [dataChannel](./sip.js.sessiondescriptionhandler.datachannel.md) |  | <code>RTCDataChannel &#124; undefined</code> | The data channel. Undefined before it is created. |
-|  [localMediaStream](./sip.js.sessiondescriptionhandler.localmediastream.md) |  | <code>MediaStream</code> | The local media stream currently being sent. |
-|  [logger](./sip.js.sessiondescriptionhandler.logger.md) |  | <code>Logger</code> | Logger. |
-|  [mediaStreamFactory](./sip.js.sessiondescriptionhandler.mediastreamfactory.md) |  | <code>MediaStreamFactory</code> | Media stream factory. |
-|  [peerConnection](./sip.js.sessiondescriptionhandler.peerconnection.md) |  | <code>RTCPeerConnection &#124; undefined</code> | The peer connection. Undefined if peer connection has closed. |
-|  [peerConnectionDelegate](./sip.js.sessiondescriptionhandler.peerconnectiondelegate.md) |  | <code>PeerConnectionDelegate &#124; undefined</code> | A delegate which provides access to the peer connection event handlers. |
-|  [remoteMediaStream](./sip.js.sessiondescriptionhandler.remotemediastream.md) |  | <code>MediaStream</code> | The remote media stream currently being received. |
-|  [sessionDescriptionHandlerConfiguration](./sip.js.sessiondescriptionhandler.sessiondescriptionhandlerconfiguration.md) |  | <code>SessionDescriptionHandlerConfiguration</code> | Configuration options. |
+|  [\_dataChannel](./sip.js.sessiondescriptionhandler._datachannel.md) |  | RTCDataChannel \| undefined | The data channel. Undefined before created. |
+|  [\_localMediaStream](./sip.js.sessiondescriptionhandler._localmediastream.md) |  | MediaStream | The local media stream. |
+|  [\_peerConnection](./sip.js.sessiondescriptionhandler._peerconnection.md) |  | RTCPeerConnection \| undefined | The peer connection. Undefined after SessionDescriptionHandler.close(). |
+|  [\_peerConnectionDelegate](./sip.js.sessiondescriptionhandler._peerconnectiondelegate.md) |  | [PeerConnectionDelegate](./sip.js.peerconnectiondelegate.md) \| undefined | The peer connection delegate. |
+|  [\_remoteMediaStream](./sip.js.sessiondescriptionhandler._remotemediastream.md) |  | MediaStream | The remote media stream. |
+|  [dataChannel](./sip.js.sessiondescriptionhandler.datachannel.md) |  | RTCDataChannel \| undefined | The data channel. Undefined before it is created. |
+|  [localMediaStream](./sip.js.sessiondescriptionhandler.localmediastream.md) |  | MediaStream | The local media stream currently being sent. |
+|  [logger](./sip.js.sessiondescriptionhandler.logger.md) |  | Logger | Logger. |
+|  [mediaStreamFactory](./sip.js.sessiondescriptionhandler.mediastreamfactory.md) |  | [MediaStreamFactory](./sip.js.mediastreamfactory.md) | Media stream factory. |
+|  [peerConnection](./sip.js.sessiondescriptionhandler.peerconnection.md) |  | RTCPeerConnection \| undefined | The peer connection. Undefined if peer connection has closed. |
+|  [peerConnectionDelegate](./sip.js.sessiondescriptionhandler.peerconnectiondelegate.md) |  | [PeerConnectionDelegate](./sip.js.peerconnectiondelegate.md) \| undefined | A delegate which provides access to the peer connection event handlers. |
+|  [remoteMediaStream](./sip.js.sessiondescriptionhandler.remotemediastream.md) |  | MediaStream | The remote media stream currently being received. |
+|  [sessionDescriptionHandlerConfiguration](./sip.js.sessiondescriptionhandler.sessiondescriptionhandlerconfiguration.md) |  | [SessionDescriptionHandlerConfiguration](./sip.js.sessiondescriptionhandlerconfiguration.md) | Configuration options. |
 
 ## Methods
 
@@ -48,6 +49,8 @@ It is expected/intended to be extended by specific WebRTC based applications.
 |  [close()](./sip.js.sessiondescriptionhandler.close.md) |  | Stop tracks and close peer connection. |
 |  [createDataChannel(options)](./sip.js.sessiondescriptionhandler.createdatachannel.md) |  | Create a data channel. |
 |  [createLocalOfferOrAnswer(options)](./sip.js.sessiondescriptionhandler.createlocalofferoranswer.md) |  | Depending on current signaling state, create a local offer or answer. |
+|  [enableReceiverTracks(enable)](./sip.js.sessiondescriptionhandler.enablereceivertracks.md) |  | Helper function to enable/disable media tracks. |
+|  [enableSenderTracks(enable)](./sip.js.sessiondescriptionhandler.enablesendertracks.md) |  | Helper function to enable/disable media tracks. |
 |  [getDescription(options, modifiers)](./sip.js.sessiondescriptionhandler.getdescription.md) |  | Creates an offer or answer. |
 |  [getLocalMediaStream(options)](./sip.js.sessiondescriptionhandler.getlocalmediastream.md) |  | Get a media stream from the media stream factory and set the local media stream. |
 |  [getLocalSessionDescription()](./sip.js.sessiondescriptionhandler.getlocalsessiondescription.md) |  | Gets the peer connection's local session description. |

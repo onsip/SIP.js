@@ -16,13 +16,13 @@ call(destination: string, inviterOptions?: InviterOptions, inviterInviteOptions?
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  destination | <code>string</code> | The target destination to call. A SIP address to send the INVITE to. |
-|  inviterOptions | <code>InviterOptions</code> | Optional options for Inviter constructor. |
-|  inviterInviteOptions | <code>InviterInviteOptions</code> | Optional options for Inviter.invite(). |
+|  destination | string | The target destination to call. A SIP address to send the INVITE to. |
+|  inviterOptions | InviterOptions | Optional options for Inviter constructor. |
+|  inviterInviteOptions | InviterInviteOptions | Optional options for Inviter.invite(). |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

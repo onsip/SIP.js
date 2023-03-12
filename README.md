@@ -1,6 +1,6 @@
 ![SIP.js Logo](https://sipjs.com/shared/img/logo.png "SIP.js")
 
-[![Build Status](https://travis-ci.com/onsip/SIP.js.svg?branch=master)](https://travis-ci.com/onsip/SIP.js)
+![Build Status](https://github.com/onsip/SIP.js/actions/workflows/node.js.yml/badge.svg)
 [![npm version](https://badge.fury.io/js/sip.js.svg)](https://badge.fury.io/js/sip.js)
 
 # SIP Library for JavaScript

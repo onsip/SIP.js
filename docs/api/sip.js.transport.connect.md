@@ -13,7 +13,7 @@ connect(): Promise<void>;
 ```
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 
@@ -25,7 +25,6 @@ connect(): Promise<void>;
 - If `state` is "Disconnected" `state` MUST transition to "Connecting" before returning.
 - The `state` MUST transition to "Connected" before resolving (assuming `state` is not already "Connected").
 - The `state` MUST transition to "Disconnecting" or "Disconnected" before rejecting and MUST reject with an Error.
-
 ```
 Resolves when the transport connects. Rejects if transport fails to connect. Rejects with [StateTransitionError](./sip.js.statetransitionerror.md) if a loop is detected. In particular, callbacks and emitters MUST NOT call this method synchronously.
 

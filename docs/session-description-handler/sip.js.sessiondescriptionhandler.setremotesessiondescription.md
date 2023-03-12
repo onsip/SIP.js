@@ -16,9 +16,9 @@ protected setRemoteSessionDescription(sessionDescription: RTCSessionDescriptionI
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  sessionDescription | <code>RTCSessionDescriptionInit</code> | The session description. |
+|  sessionDescription | RTCSessionDescriptionInit | The session description. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

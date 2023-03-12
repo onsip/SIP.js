@@ -1,2 +1,2 @@
-export * from "./subscription";
-export * from "./subscription-delegate";
+export * from "./subscription.js";
+export * from "./subscription-delegate.js";

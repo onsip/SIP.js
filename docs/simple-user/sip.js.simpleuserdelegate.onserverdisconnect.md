@@ -16,11 +16,11 @@ onServerDisconnect?(error?: Error): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  error | <code>Error</code> | An Error if server caused the disconnect. Otherwise undefined. |
+|  error | Error | An Error if server caused the disconnect. Otherwise undefined. |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

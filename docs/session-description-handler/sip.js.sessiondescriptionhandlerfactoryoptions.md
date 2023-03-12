@@ -11,6 +11,7 @@ Options for SessionDescriptionHandlerFactory.
 ```typescript
 export declare type SessionDescriptionHandlerFactoryOptions = SessionDescriptionHandlerConfiguration;
 ```
+<b>References:</b> [SessionDescriptionHandlerConfiguration](./sip.js.sessiondescriptionhandlerconfiguration.md)
 
 ## Remarks
 

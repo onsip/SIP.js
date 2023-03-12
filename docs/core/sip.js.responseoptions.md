@@ -14,13 +14,13 @@ export interface ResponseOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.responseoptions.body.md) | <code>Body</code> | Body to include in the message. |
-|  [extraHeaders](./sip.js.responseoptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Extra headers to include in the message. |
-|  [reasonPhrase](./sip.js.responseoptions.reasonphrase.md) | <code>string</code> | Reason phrase of the response. |
-|  [statusCode](./sip.js.responseoptions.statuscode.md) | <code>number</code> | Status code of the response. |
-|  [supported](./sip.js.responseoptions.supported.md) | <code>Array&lt;string&gt;</code> | Support options tags for Supported header. |
-|  [toTag](./sip.js.responseoptions.totag.md) | <code>string</code> | To tag of the response. If not provided, one is generated. |
-|  [userAgent](./sip.js.responseoptions.useragent.md) | <code>string</code> | User agent string for User-Agent header. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.responseoptions.body.md) |  | [Body](./sip.js.body.md) | Body to include in the message. |
+|  [extraHeaders](./sip.js.responseoptions.extraheaders.md) |  | Array&lt;string&gt; | Extra headers to include in the message. |
+|  [reasonPhrase](./sip.js.responseoptions.reasonphrase.md) |  | string | Reason phrase of the response. |
+|  [statusCode](./sip.js.responseoptions.statuscode.md) |  | number | Status code of the response. |
+|  [supported](./sip.js.responseoptions.supported.md) |  | Array&lt;string&gt; | Support options tags for Supported header. |
+|  [toTag](./sip.js.responseoptions.totag.md) |  | string | To tag of the response. If not provided, one is generated. |
+|  [userAgent](./sip.js.responseoptions.useragent.md) |  | string | User agent string for User-Agent header. |
 

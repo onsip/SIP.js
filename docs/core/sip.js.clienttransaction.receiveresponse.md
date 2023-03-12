@@ -16,9 +16,9 @@ abstract receiveResponse(response: IncomingResponseMessage): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  response | <code>IncomingResponseMessage</code> | The incoming response. |
+|  response | [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) | The incoming response. |
 
 <b>Returns:</b>
 
-`void`
+void
 

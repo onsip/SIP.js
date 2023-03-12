@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `SessionDescriptionHandler` class provides an implementation of which adhears to the `SessionDescriptionHandler` interface required by the [API](./api.md). The class is intended to be suitable for extending to provide custom behaviour if needed.
+The `SessionDescriptionHandler` class provides an implementation of which adhears to the `SessionDescriptionHandler` interface required by the [API](./api.md). The class is intended to be suitable for extending to provide custom behaviour if needed. It supports up to one audio track and/or one video track per session.
 
 ## Reference Documentation
 
@@ -204,3 +204,9 @@ See [docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) fo
 `SessionDescriptionHandler` has a `peerConnectionDelegate` property.
 
 See [docs](./session-description-handler/sip.js.sessiondescriptionhandler.md) for more info.
+
+## How do I use more than one audio and one video track?
+
+`SessionDescriptionHandler` only supports up to one audio and one video track.
+
+A custom session description handler needs to be created to support more tracks.

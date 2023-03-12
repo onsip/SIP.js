@@ -14,8 +14,8 @@ export interface RequestOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.requestoptions.body.md) | <code>Body</code> | Body to include in the message. |
-|  [extraHeaders](./sip.js.requestoptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Extra headers to include in the message. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.requestoptions.body.md) |  | [Body](./sip.js.body.md) | Body to include in the message. |
+|  [extraHeaders](./sip.js.requestoptions.extraheaders.md) |  | Array&lt;string&gt; | Extra headers to include in the message. |
 

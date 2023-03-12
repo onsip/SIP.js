@@ -1,9 +1,10 @@
-import { Emitter, EmitterImpl } from "../../../api/emitter";
-import { StateTransitionError } from "../../../api/exceptions";
-import { Transport as TransportDefinition } from "../../../api/transport";
-import { TransportState } from "../../../api/transport-state";
-import { Grammar, Logger } from "../../../core";
-import { TransportOptions } from "./transport-options";
+import { Emitter, EmitterImpl } from "../../../api/emitter.js";
+import { StateTransitionError } from "../../../api/exceptions/state-transition.js";
+import { Transport as TransportDefinition } from "../../../api/transport.js";
+import { TransportState } from "../../../api/transport-state.js";
+import { Grammar } from "../../../grammar/grammar.js";
+import { Logger } from "../../../core/log/logger.js";
+import { TransportOptions } from "./transport-options.js";
 
 /**
  * Transport for SIP over secure WebSocket (WSS).
@@ -261,12 +262,12 @@ export class Transport implements TransportDefinition {
     } catch (error) {
       this._ws = undefined;
       this.logger.error("WebSocket construction failed.");
-      this.logger.error(error);
+      this.logger.error((error as Error).toString());
       return new Promise((resolve, reject) => {
         this.connectResolve = resolve;
         this.connectReject = reject;
         // The `state` MUST transition to "Disconnecting" or "Disconnected" before rejecting
-        this.transitionState(TransportState.Disconnected, error);
+        this.transitionState(TransportState.Disconnected, error as Error);
       });
     }
 
@@ -359,7 +360,7 @@ export class Transport implements TransportDefinition {
         // Treating this as a coding error as it apparently can only happen
         // if you pass close() invalid parameters (so it should never happen)
         this.logger.error("WebSocket close failed.");
-        this.logger.error(error);
+        this.logger.error((error as Error).toString());
         throw error;
       }
     });
@@ -463,7 +464,7 @@ export class Transport implements TransportDefinition {
         // It's old code and works in old browsers (IE), so leaving it here in a comment in case someone needs it.
         // finishedData = String.fromCharCode.apply(null, (new Uint8Array(data) as unknown as Array<number>));
       } catch (err) {
-        this.logger.error(err);
+        this.logger.error((err as Error).toString());
         this.logger.error("Received WebSocket binary message failed to be converted into string, message discarded");
         return;
       }
@@ -487,7 +488,7 @@ export class Transport implements TransportDefinition {
       try {
         this.onMessage(finishedData);
       } catch (e) {
-        this.logger.error(e);
+        this.logger.error((e as Error).toString());
         this.logger.error("Exception thrown by onMessage callback");
         throw e; // rethrow unhandled exception
       }
@@ -608,7 +609,7 @@ export class Transport implements TransportDefinition {
         try {
           this.onConnect();
         } catch (e) {
-          this.logger.error(e);
+          this.logger.error((e as Error).toString());
           this.logger.error("Exception thrown by onConnect callback");
           throw e; // rethrow unhandled exception
         }
@@ -626,7 +627,7 @@ export class Transport implements TransportDefinition {
             this.onDisconnect();
           }
         } catch (e) {
-          this.logger.error(e);
+          this.logger.error((e as Error).toString());
           this.logger.error("Exception thrown by onDisconnect callback");
           throw e; // rethrow unhandled exception
         }

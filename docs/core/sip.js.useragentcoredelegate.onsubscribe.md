@@ -16,9 +16,9 @@ onSubscribe?(request: IncomingSubscribeRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingSubscribeRequest</code> | Incoming SUBSCRIBE request. |
+|  request | [IncomingSubscribeRequest](./sip.js.incomingsubscriberequest.md) | Incoming SUBSCRIBE request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

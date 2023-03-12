@@ -36,8 +36,8 @@ function stop(): void {
   originalWebSocket = null;
 }
 
-import { LoggerFactory } from "../../../../src/core";
-import { Transport } from "../../../../src/platform/web";
+import { LoggerFactory } from "../../../../lib/core/index.js";
+import { Transport } from "../../../../lib/platform/web/index.js";
 
 describe("Web Transport WebSocket Construction Failure", () => {
   const connectionTimeout = 5; // seconds

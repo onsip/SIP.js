@@ -14,15 +14,15 @@ export interface RegistererOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [expires](./sip.js.registereroptions.expires.md) | <code>number</code> | Registration expiration time in seconds. |
-|  [extraContactHeaderParams](./sip.js.registereroptions.extracontactheaderparams.md) | <code>Array&lt;string&gt;</code> | Array of extra Contact header parameters. |
-|  [extraHeaders](./sip.js.registereroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the REGISTER. |
-|  [instanceId](./sip.js.registereroptions.instanceid.md) | <code>string</code> | UUID to provide with "+sip.instance" Contact parameter. |
-|  [logConfiguration](./sip.js.registereroptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the registerer configuration. |
-|  [params](./sip.js.registereroptions.params.md) | <code>{</code><br/><code>        fromDisplayName?: string;</code><br/><code>        fromTag?: string;</code><br/><code>        fromUri?: URI;</code><br/><code>        toDisplayName?: string;</code><br/><code>        toUri?: URI;</code><br/><code>    }</code> |  |
-|  [refreshFrequency](./sip.js.registereroptions.refreshfrequency.md) | <code>number</code> | Determines when a re-REGISTER request is sent. The value should be specified as a percentage of the expiration time (between 50 and 99). |
-|  [regId](./sip.js.registereroptions.regid.md) | <code>number</code> | Value to provide with "reg-id" Contact parameter. |
-|  [registrar](./sip.js.registereroptions.registrar.md) | <code>URI</code> | The URI of the registrar to send the REGISTER requests. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [expires](./sip.js.registereroptions.expires.md) |  | number | Registration expiration time in seconds. |
+|  [extraContactHeaderParams](./sip.js.registereroptions.extracontactheaderparams.md) |  | Array&lt;string&gt; | Array of extra Contact header parameters. |
+|  [extraHeaders](./sip.js.registereroptions.extraheaders.md) |  | Array&lt;string&gt; | Array of extra headers added to the REGISTER. |
+|  [instanceId](./sip.js.registereroptions.instanceid.md) |  | string | UUID to provide with "+sip.instance" Contact parameter. |
+|  [logConfiguration](./sip.js.registereroptions.logconfiguration.md) |  | boolean | If true, constructor logs the registerer configuration. |
+|  [params](./sip.js.registereroptions.params.md) |  | { fromDisplayName?: string; fromTag?: string; fromUri?: URI; toDisplayName?: string; toUri?: URI; } |  |
+|  [refreshFrequency](./sip.js.registereroptions.refreshfrequency.md) |  | number | Determines when a re-REGISTER request is sent. The value should be specified as a percentage of the expiration time (between 50 and 99). |
+|  [regId](./sip.js.registereroptions.regid.md) |  | number | Value to provide with "reg-id" Contact parameter. |
+|  [registrar](./sip.js.registereroptions.registrar.md) |  | URI | The URI of the registrar to send the REGISTER requests. |
 

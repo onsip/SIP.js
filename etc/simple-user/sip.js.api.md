@@ -30,9 +30,8 @@ export class SimpleUser {
     get localVideoTrack(): MediaStreamTrack | undefined;
     message(destination: string, message: string): Promise<void>;
     mute(): void;
-    // Warning: (ae-forgotten-export) The symbol "RegistererOptions" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "RegistererRegisterOptions" needs to be exported by the entry point index.d.ts
-    register(registererOptions?: RegistererOptions, registererRegisterOptions?: RegistererRegisterOptions): Promise<void>;
+    register(registererRegisterOptions?: RegistererRegisterOptions): Promise<void>;
     // @deprecated
     get remoteAudioTrack(): MediaStreamTrack | undefined;
     get remoteMediaStream(): MediaStream | undefined;
@@ -43,7 +42,7 @@ export class SimpleUser {
     unmute(): void;
     // Warning: (ae-forgotten-export) The symbol "RegistererUnregisterOptions" needs to be exported by the entry point index.d.ts
     unregister(registererUnregisterOptions?: RegistererUnregisterOptions): Promise<void>;
-    }
+}
 
 // @public
 export interface SimpleUserDelegate {
@@ -91,6 +90,9 @@ export interface SimpleUserOptions {
     media?: SimpleUserMedia;
     reconnectionAttempts?: number;
     reconnectionDelay?: number;
+    // Warning: (ae-forgotten-export) The symbol "RegistererOptions" needs to be exported by the entry point index.d.ts
+    registererOptions?: RegistererOptions;
+    sendDTMFUsingSessionDescriptionHandler?: boolean;
     // Warning: (ae-forgotten-export) The symbol "UserAgentOptions" needs to be exported by the entry point index.d.ts
     userAgentOptions?: UserAgentOptions;
 }

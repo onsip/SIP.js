@@ -1,18 +1,17 @@
-import { Dialog, SessionDialog } from "../dialogs";
-import { TransportError } from "../exceptions";
-import {
-  IncomingResponseMessage,
-  OutgoingAckRequest,
-  OutgoingInviteRequest,
-  OutgoingInviteRequestDelegate,
-  OutgoingPrackRequest,
-  OutgoingRequestMessage,
-  RequestOptions
-} from "../messages";
-import { SignalingState } from "../session";
-import { InviteClientTransaction, TransactionState } from "../transactions";
-import { UserAgentCore } from "../user-agent-core";
-import { UserAgentClient } from "./user-agent-client";
+import { Dialog } from "../dialogs/dialog.js";
+import { SessionDialog } from "../dialogs/session-dialog.js";
+import { TransportError } from "../exceptions/transport-error.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingAckRequest } from "../messages/methods/ack.js";
+import { OutgoingInviteRequest, OutgoingInviteRequestDelegate } from "../messages/methods/invite.js";
+import { OutgoingPrackRequest } from "../messages/methods/prack.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { RequestOptions } from "../messages/outgoing-request.js";
+import { SignalingState } from "../session/session.js";
+import { InviteClientTransaction } from "../transactions/invite-client-transaction.js";
+import { TransactionState } from "../transactions/transaction-state.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { UserAgentClient } from "./user-agent-client.js";
 
 /**
  * INVITE UAC.

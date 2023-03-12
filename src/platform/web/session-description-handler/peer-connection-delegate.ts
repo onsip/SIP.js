@@ -59,12 +59,6 @@ export interface PeerConnectionDelegate {
   onsignalingstatechange?(event: Event): void;
 
   /**
-   * Triggered when when a statistics object being monitored is deleted.
-   * @param event - Event.
-   */
-  onstatsended?(event: Event): void;
-
-  /**
    * Triggered when a new track is signaled by the remote peer, as a result of setRemoteDescription.
    * @param event - Event.
    */

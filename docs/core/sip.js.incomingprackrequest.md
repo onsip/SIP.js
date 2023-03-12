@@ -11,3 +11,5 @@ Incoming PRACK request.
 ```typescript
 export interface IncomingPrackRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

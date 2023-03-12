@@ -11,6 +11,9 @@ Re-SUBSCRIBE UAC.
 ```typescript
 export declare class ReSubscribeUserAgentClient extends UserAgentClient implements OutgoingSubscribeRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingSubscribeRequest](./sip.js.outgoingsubscriberequest.md)
 
 ## Constructors
 

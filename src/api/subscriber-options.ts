@@ -1,4 +1,4 @@
-import { SubscriptionOptions } from "./subscription-options";
+import { SubscriptionOptions } from "./subscription-options.js";
 
 /**
  * Options for {@link Subscriber} constructor.

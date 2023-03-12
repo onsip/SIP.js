@@ -13,7 +13,7 @@ isConnected(): boolean;
 ```
 <b>Returns:</b>
 
-`boolean`
+boolean
 
 ## Remarks
 
@@ -31,6 +31,5 @@ userAgent.transport.stateChange.addListener(() => {
     // handle transport disconnect
   }
 });
-
 ```
 

@@ -11,6 +11,7 @@ Delegate providing custom handling of outgoing SUBSCRIBE requests.
 ```typescript
 export interface OutgoingSubscribeRequestDelegate extends OutgoingRequestDelegate 
 ```
+<b>Extends:</b> [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md)
 
 ## Methods
 

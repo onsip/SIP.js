@@ -16,5 +16,23 @@ set peerConnectionDelegate(delegate: PeerConnectionDelegate | undefined);
 
 ## Remarks
 
-Setting the peer connection event handlers directly is not supported and may break this class. As this class depends on exclusive access to them, a delegate may be set which provides alternative access to the event handlers in a fashion which is supported.
+Use the peerConnectionDelegate to get access to the events associated with the RTCPeerConnection. For example...
+
+Do NOT do this...
+
+```ts
+peerConnection.onicecandidate = (event) => {
+  // do something
+};
+```
+Instead, do this...
+
+```
+peerConnection.peerConnectionDelegate = {
+  onicecandidate: (event) => {
+    // do something
+  }
+};
+```
+Setting the peer connection event handlers directly is not supported and may break this class. As this class depends on exclusive access to them. This delegate is intended to provide access to the RTCPeerConnection events in a fashion which is supported.
 

@@ -16,9 +16,9 @@ onNotify?(request: IncomingRequestWithSubscription): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingRequestWithSubscription</code> | Incoming NOTIFY request (including a Subscription). |
+|  request | [IncomingRequestWithSubscription](./sip.js.incomingrequestwithsubscription.md) | Incoming NOTIFY request (including a Subscription). |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -16,9 +16,9 @@ onicecandidate?(event: RTCPeerConnectionIceEvent): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  event | <code>RTCPeerConnectionIceEvent</code> | RTCPeerConnectionIceEvent. |
+|  event | RTCPeerConnectionIceEvent | RTCPeerConnectionIceEvent. |
 
 <b>Returns:</b>
 
-`void`
+void
 

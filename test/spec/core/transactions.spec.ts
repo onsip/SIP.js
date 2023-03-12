@@ -16,9 +16,9 @@ import {
   Transaction,
   TransactionState,
   TransactionUser,
-  Transport,
-  URI
-} from "../../../src/core";
+  Transport
+} from "../../../lib/core/index.js";
+import { URI } from "../../../lib/grammar/index.js";
 
 // TODO: Mocking the Requests and Responses isn't ideal and would rather use
 // the actual implementations, but the current implementations depend on UA

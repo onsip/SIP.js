@@ -14,13 +14,13 @@ export interface InvitationProgressOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.invitationprogressoptions.body.md) | <code>string &#124; {</code><br/><code>        body: string;</code><br/><code>        contentType: string;</code><br/><code>    }</code> | Body |
-|  [extraHeaders](./sip.js.invitationprogressoptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the response. |
-|  [reasonPhrase](./sip.js.invitationprogressoptions.reasonphrase.md) | <code>string</code> | Reason phrase for response. |
-|  [rel100](./sip.js.invitationprogressoptions.rel100.md) | <code>boolean</code> | Send reliable response. |
-|  [sessionDescriptionHandlerModifiers](./sip.js.invitationprogressoptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
-|  [sessionDescriptionHandlerOptions](./sip.js.invitationprogressoptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
-|  [statusCode](./sip.js.invitationprogressoptions.statuscode.md) | <code>number</code> | Status code for response. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.invitationprogressoptions.body.md) |  | string \| { body: string; contentType: string; } | Body |
+|  [extraHeaders](./sip.js.invitationprogressoptions.extraheaders.md) |  | Array&lt;string&gt; | Array of extra headers added to the response. |
+|  [reasonPhrase](./sip.js.invitationprogressoptions.reasonphrase.md) |  | string | Reason phrase for response. |
+|  [rel100](./sip.js.invitationprogressoptions.rel100.md) |  | boolean | Send reliable response. |
+|  [sessionDescriptionHandlerModifiers](./sip.js.invitationprogressoptions.sessiondescriptionhandlermodifiers.md) |  | Array&lt;[SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md)<!-- -->&gt; | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [sessionDescriptionHandlerOptions](./sip.js.invitationprogressoptions.sessiondescriptionhandleroptions.md) |  | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [statusCode](./sip.js.invitationprogressoptions.statuscode.md) |  | number | Status code for response. |
 

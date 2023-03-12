@@ -16,11 +16,11 @@ hasHeader(name: string): boolean;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> | header name |
+|  name | string | header name |
 
 <b>Returns:</b>
 
-`boolean`
+boolean
 
 true if header with given name exists, false otherwise
 

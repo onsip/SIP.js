@@ -11,12 +11,13 @@ Incoming INVITE response received when request is progressed.
 ```typescript
 export interface PrackableIncomingResponseWithSession extends IncomingResponse 
 ```
+<b>Extends:</b> [IncomingResponse](./sip.js.incomingresponse.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [session](./sip.js.prackableincomingresponsewithsession.session.md) | <code>Session</code> | Session associated with outgoing request progress. If out of dialog request, an early dialog. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [session](./sip.js.prackableincomingresponsewithsession.session.md) |  | [Session](./sip.js.session.md) | Session associated with outgoing request progress. If out of dialog request, an early dialog. |
 
 ## Methods
 

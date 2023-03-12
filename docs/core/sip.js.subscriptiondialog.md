@@ -11,6 +11,9 @@ Subscription Dialog.
 ```typescript
 export declare class SubscriptionDialog extends Dialog implements Subscription 
 ```
+<b>Extends:</b> [Dialog](./sip.js.dialog.md)
+
+<b>Implements:</b> [Subscription](./sip.js.subscription.md)
 
 ## Remarks
 
@@ -36,13 +39,13 @@ https://tools.ietf.org/html/rfc6665
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [autoRefresh](./sip.js.subscriptiondialog.autorefresh.md) |  | <code>boolean</code> |  |
-|  [delegate](./sip.js.subscriptiondialog.delegate.md) |  | <code>SubscriptionDelegate &#124; undefined</code> |  |
-|  [subscriptionEvent](./sip.js.subscriptiondialog.subscriptionevent.md) |  | <code>string</code> |  |
-|  [subscriptionExpires](./sip.js.subscriptiondialog.subscriptionexpires.md) |  | <code>number</code> | Number of seconds until subscription expires. |
-|  [subscriptionExpiresInitial](./sip.js.subscriptiondialog.subscriptionexpiresinitial.md) |  | <code>number</code> |  |
-|  [subscriptionRefresh](./sip.js.subscriptiondialog.subscriptionrefresh.md) |  | <code>number &#124; undefined</code> | Number of seconds until subscription auto refresh. |
-|  [subscriptionState](./sip.js.subscriptiondialog.subscriptionstate.md) |  | <code>SubscriptionState</code> |  |
+|  [autoRefresh](./sip.js.subscriptiondialog.autorefresh.md) |  | boolean |  |
+|  [delegate](./sip.js.subscriptiondialog.delegate.md) |  | [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) \| undefined |  |
+|  [subscriptionEvent](./sip.js.subscriptiondialog.subscriptionevent.md) |  | string |  |
+|  [subscriptionExpires](./sip.js.subscriptiondialog.subscriptionexpires.md) |  | number | Number of seconds until subscription expires. |
+|  [subscriptionExpiresInitial](./sip.js.subscriptiondialog.subscriptionexpiresinitial.md) |  | number |  |
+|  [subscriptionRefresh](./sip.js.subscriptiondialog.subscriptionrefresh.md) |  | number \| undefined | Number of seconds until subscription auto refresh. |
+|  [subscriptionState](./sip.js.subscriptiondialog.subscriptionstate.md) |  | [SubscriptionState](./sip.js.subscriptionstate.md) |  |
 
 ## Methods
 

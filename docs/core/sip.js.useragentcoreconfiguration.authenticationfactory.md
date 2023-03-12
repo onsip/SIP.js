@@ -13,5 +13,5 @@ authenticationFactory(): DigestAuthentication | undefined;
 ```
 <b>Returns:</b>
 
-`DigestAuthentication | undefined`
+DigestAuthentication \| undefined
 

@@ -11,13 +11,14 @@ Options for [Subscriber](./sip.js.subscriber.md) constructor.
 ```typescript
 export interface SubscriberOptions extends SubscriptionOptions 
 ```
+<b>Extends:</b> [SubscriptionOptions](./sip.js.subscriptionoptions.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.subscriberoptions.body.md) | <code>string</code> |  |
-|  [contentType](./sip.js.subscriberoptions.contenttype.md) | <code>string</code> |  |
-|  [expires](./sip.js.subscriberoptions.expires.md) | <code>number</code> |  |
-|  [extraHeaders](./sip.js.subscriberoptions.extraheaders.md) | <code>Array&lt;string&gt;</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.subscriberoptions.body.md) |  | string |  |
+|  [contentType](./sip.js.subscriberoptions.contenttype.md) |  | string |  |
+|  [expires](./sip.js.subscriberoptions.expires.md) |  | number |  |
+|  [extraHeaders](./sip.js.subscriberoptions.extraheaders.md) |  | Array&lt;string&gt; |  |
 
