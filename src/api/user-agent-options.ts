@@ -49,7 +49,7 @@ export interface UserAgentOptions {
    * Authorization password.
    * @defaultValue `""`
    */
-  authorizationPassword?: string | Function;
+  authorizationPassword?: string;
 
   /**
    * Authorization username.
