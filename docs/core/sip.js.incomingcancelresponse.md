@@ -11,3 +11,5 @@ Incoming CANCEL response.
 ```typescript
 export interface IncomingCancelResponse extends IncomingResponse 
 ```
+<b>Extends:</b> [IncomingResponse](./sip.js.incomingresponse.md)
+

@@ -16,10 +16,10 @@ cancel(reason?: string, options?: RequestOptions): OutgoingRequestMessage;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  reason | <code>string</code> |  |
-|  options | <code>RequestOptions</code> | Cancel options bucket. |
+|  reason | string |  |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Cancel options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingRequestMessage`
+[OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md)
 

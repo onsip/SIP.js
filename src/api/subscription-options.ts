@@ -1,4 +1,4 @@
-import { SubscriptionDelegate } from "./subscription-delegate";
+import { SubscriptionDelegate } from "./subscription-delegate.js";
 /**
  * Options for {@link Subscription } constructor.
  * @public

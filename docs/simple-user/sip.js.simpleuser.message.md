@@ -16,12 +16,12 @@ message(destination: string, message: string): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  destination | <code>string</code> | The target destination for the message. A SIP address to send the MESSAGE to. |
-|  message | <code>string</code> |  |
+|  destination | string | The target destination for the message. A SIP address to send the MESSAGE to. |
+|  message | string |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

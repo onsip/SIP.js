@@ -24,6 +24,5 @@ export interface PeerConnectionDelegate
 |  [onicegatheringstatechange(event)](./sip.js.peerconnectiondelegate.onicegatheringstatechange.md) | Triggered when the ICE gathering state changes. |
 |  [onnegotiationneeded(event)](./sip.js.peerconnectiondelegate.onnegotiationneeded.md) | Triggered when renegotiation is necessary. |
 |  [onsignalingstatechange(event)](./sip.js.peerconnectiondelegate.onsignalingstatechange.md) | Triggered when the SignalingState changes. |
-|  [onstatsended(event)](./sip.js.peerconnectiondelegate.onstatsended.md) | Triggered when when a statistics object being monitored is deleted. |
 |  [ontrack(event)](./sip.js.peerconnectiondelegate.ontrack.md) | Triggered when a new track is signaled by the remote peer, as a result of setRemoteDescription. |
 

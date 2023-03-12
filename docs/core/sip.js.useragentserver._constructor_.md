@@ -16,8 +16,8 @@ constructor(transactionConstructor: ServerTransactionConstructor, core: UserAgen
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  transactionConstructor | <code>ServerTransactionConstructor</code> |  |
-|  core | <code>UserAgentCore</code> |  |
-|  message | <code>IncomingRequestMessage</code> |  |
-|  delegate | <code>IncomingRequestDelegate &#124; undefined</code> |  |
+|  transactionConstructor | ServerTransactionConstructor |  |
+|  core | [UserAgentCore](./sip.js.useragentcore.md) |  |
+|  message | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) |  |
+|  delegate | [IncomingRequestDelegate](./sip.js.incomingrequestdelegate.md) \| undefined |  |
 

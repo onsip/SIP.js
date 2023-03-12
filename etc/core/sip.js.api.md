@@ -97,6 +97,7 @@ export interface Contact {
     toString: (options?: {
         anonymous?: boolean;
         outbound?: boolean;
+        register?: boolean;
     }) => string;
     // (undocumented)
     uri: URI;

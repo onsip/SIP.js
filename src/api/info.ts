@@ -1,4 +1,6 @@
-import { IncomingInfoRequest, IncomingRequestMessage, ResponseOptions } from "../core";
+import { IncomingInfoRequest } from "../core/messages/methods/info.js";
+import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
+import { ResponseOptions } from "../core/messages/outgoing-response.js";
 
 /**
  * An exchange of information (incoming INFO).

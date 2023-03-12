@@ -16,7 +16,7 @@ constructor(request: IncomingRequestMessage, transport: Transport, user: ServerT
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingRequestMessage</code> | Incoming Non-INVITE request from the transport. |
-|  transport | <code>Transport</code> | The transport. |
-|  user | <code>ServerTransactionUser</code> | The transaction user. |
+|  request | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) | Incoming Non-INVITE request from the transport. |
+|  transport | [Transport](./sip.js.transport.md) | The transport. |
+|  user | [ServerTransactionUser](./sip.js.servertransactionuser.md) | The transaction user. |
 

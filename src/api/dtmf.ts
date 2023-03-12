@@ -1,5 +1,5 @@
-import { IncomingInfoRequest } from "../core";
-import { Info } from "./info";
+import { IncomingInfoRequest } from "../core/messages/methods/info.js";
+import { Info } from "./info.js";
 
 /**
  * A DTMF signal (incoming INFO).

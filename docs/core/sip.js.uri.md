@@ -11,6 +11,7 @@ URI.
 ```typescript
 export declare class URI extends Parameters 
 ```
+<b>Extends:</b> Parameters
 
 ## Constructors
 
@@ -22,12 +23,12 @@ export declare class URI extends Parameters
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [aor](./sip.js.uri.aor.md) |  | <code>string</code> |  |
-|  [headers](./sip.js.uri.headers.md) |  | <code>{</code><br/><code>        [name: string]: Array&lt;string&gt;;</code><br/><code>    }</code> |  |
-|  [host](./sip.js.uri.host.md) |  | <code>string</code> |  |
-|  [port](./sip.js.uri.port.md) |  | <code>number &#124; undefined</code> |  |
-|  [scheme](./sip.js.uri.scheme.md) |  | <code>string</code> |  |
-|  [user](./sip.js.uri.user.md) |  | <code>string &#124; undefined</code> |  |
+|  [aor](./sip.js.uri.aor.md) |  | string |  |
+|  [headers](./sip.js.uri.headers.md) |  | { \[name: string\]: Array&lt;string&gt;; } |  |
+|  [host](./sip.js.uri.host.md) |  | string |  |
+|  [port](./sip.js.uri.port.md) |  | number \| undefined |  |
+|  [scheme](./sip.js.uri.scheme.md) |  | string |  |
+|  [user](./sip.js.uri.user.md) |  | string \| undefined |  |
 
 ## Methods
 

@@ -11,6 +11,7 @@ User Agent Client (UAC).
 ```typescript
 export declare class UserAgentClient implements OutgoingRequest 
 ```
+<b>Implements:</b> [OutgoingRequest](./sip.js.outgoingrequest.md)
 
 ## Remarks
 
@@ -26,18 +27,18 @@ A user agent client is a logical entity that creates a new request, and then use
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [core](./sip.js.useragentclient.core.md) |  | <code>UserAgentCore</code> |  |
-|  [delegate](./sip.js.useragentclient.delegate.md) |  | <code>OutgoingRequestDelegate &#124; undefined</code> |  |
-|  [logger](./sip.js.useragentclient.logger.md) |  | <code>Logger</code> |  |
-|  [loggerFactory](./sip.js.useragentclient.loggerfactory.md) |  | <code>LoggerFactory</code> |  |
-|  [message](./sip.js.useragentclient.message.md) |  | <code>OutgoingRequestMessage</code> |  |
-|  [transaction](./sip.js.useragentclient.transaction.md) |  | <code>ClientTransaction</code> | The transaction associated with this request. |
+|  [core](./sip.js.useragentclient.core.md) |  | [UserAgentCore](./sip.js.useragentcore.md) |  |
+|  [delegate](./sip.js.useragentclient.delegate.md) |  | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) \| undefined |  |
+|  [logger](./sip.js.useragentclient.logger.md) |  | [Logger](./sip.js.logger.md) |  |
+|  [loggerFactory](./sip.js.useragentclient.loggerfactory.md) |  | [LoggerFactory](./sip.js.loggerfactory.md) |  |
+|  [message](./sip.js.useragentclient.message.md) |  | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) |  |
+|  [transaction](./sip.js.useragentclient.transaction.md) |  | [ClientTransaction](./sip.js.clienttransaction.md) | The transaction associated with this request. |
 
 ## Methods
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [authenticationGuard(message, dialog)](./sip.js.useragentclient.authenticationguard.md) |  | If a 401 (Unauthorized) or 407 (Proxy Authentication Required) response is received, the UAC SHOULD follow the authorization procedures of Section 22.2 and Section 22.3 to retry the request with credentials. https://tools.ietf.org/html/rfc3261\#section-8.1.3.5 22 Usage of HTTP Authentication https://tools.ietf.org/html/rfc3261\#section-22 22.1 Framework https://tools.ietf.org/html/rfc3261\#section-22.1 22.2 User-to-User Authentication https://tools.ietf.org/html/rfc3261\#section-22.2 22.3 Proxy-to-User Authentication https://tools.ietf.org/html/rfc3261\#section-22.3<!-- -->FIXME: This "guard for and retry the request with credentials" implementation is not complete and at best minimally passable. |
+|  [authenticationGuard(message, dialog)](./sip.js.useragentclient.authenticationguard.md) |  | <p>If a 401 (Unauthorized) or 407 (Proxy Authentication Required) response is received, the UAC SHOULD follow the authorization procedures of Section 22.2 and Section 22.3 to retry the request with credentials. https://tools.ietf.org/html/rfc3261\#section-8.1.3.5 22 Usage of HTTP Authentication https://tools.ietf.org/html/rfc3261\#section-22 22.1 Framework https://tools.ietf.org/html/rfc3261\#section-22.1 22.2 User-to-User Authentication https://tools.ietf.org/html/rfc3261\#section-22.2 22.3 Proxy-to-User Authentication https://tools.ietf.org/html/rfc3261\#section-22.3</p><p>FIXME: This "guard for and retry the request with credentials" implementation is not complete and at best minimally passable.</p> |
 |  [cancel(reason, options)](./sip.js.useragentclient.cancel.md) |  | Since requests other than INVITE are responded to immediately, sending a CANCEL for a non-INVITE request would always create a race condition. A CANCEL request SHOULD NOT be sent to cancel a request other than INVITE. https://tools.ietf.org/html/rfc3261\#section-9.1 |
 |  [dispose()](./sip.js.useragentclient.dispose.md) |  |  |
 |  [onRequestTimeout()](./sip.js.useragentclient.onrequesttimeout.md) |  | 8.1.3.1 Transaction Layer Errors In some cases, the response returned by the transaction layer will not be a SIP message, but rather a transaction layer error. When a timeout error is received from the transaction layer, it MUST be treated as if a 408 (Request Timeout) status code has been received. If a fatal transport error is reported by the transport layer (generally, due to fatal ICMP errors in UDP or connection failures in TCP), the condition MUST be treated as a 503 (Service Unavailable) status code. https://tools.ietf.org/html/rfc3261\#section-8.1.3.1 |

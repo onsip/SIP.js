@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-console */
-import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../src/platform/web";
-import { getAudio, getButton, getButtons, getInput, getSpan } from "./demo-utils";
+import { SimpleUser, SimpleUserDelegate, SimpleUserOptions } from "../lib/platform/web/index.js";
+import { getAudio, getButton, getButtons, getInput, getSpan } from "./demo-utils.js";
 
 const serverSpan = getSpan("server");
 const targetSpan = getSpan("target");

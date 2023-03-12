@@ -11,6 +11,9 @@ REGISTER UAS.
 ```typescript
 export declare class RegisterUserAgentServer extends UserAgentServer implements IncomingRegisterRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingRegisterRequest](./sip.js.incomingregisterrequest.md)
 
 ## Constructors
 
@@ -22,5 +25,5 @@ export declare class RegisterUserAgentServer extends UserAgentServer implements 
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [core](./sip.js.registeruseragentserver.core.md) |  | <code>UserAgentCore</code> |  |
+|  [core](./sip.js.registeruseragentserver.core.md) |  | [UserAgentCore](./sip.js.useragentcore.md) |  |
 

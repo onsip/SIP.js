@@ -16,9 +16,9 @@ onNotify(uas: NotifyUserAgentServer): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  uas | <code>NotifyUserAgentServer</code> | User agent server handling the subscription creating NOTIFY. |
+|  uas | [NotifyUserAgentServer](./sip.js.notifyuseragentserver.md) | User agent server handling the subscription creating NOTIFY. |
 
 <b>Returns:</b>
 
-`void`
+void
 

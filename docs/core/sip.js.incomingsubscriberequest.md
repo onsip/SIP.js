@@ -11,3 +11,5 @@ Incoming SUBSCRIBE request.
 ```typescript
 export interface IncomingSubscribeRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

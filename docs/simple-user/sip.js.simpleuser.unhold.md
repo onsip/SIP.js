@@ -13,7 +13,7 @@ unhold(): Promise<void>;
 ```
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

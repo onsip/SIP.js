@@ -11,6 +11,9 @@ REFER UAS.
 ```typescript
 export declare class ReferUserAgentServer extends UserAgentServer implements IncomingReferRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingReferRequest](./sip.js.incomingreferrequest.md)
 
 ## Constructors
 

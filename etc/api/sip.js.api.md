@@ -32,6 +32,13 @@ export class Bye {
     get request(): IncomingRequestMessage;
 }
 
+// @public
+export class Cancel {
+    // @internal
+    constructor(incomingCancelRequest: IncomingRequestMessage);
+    get request(): IncomingRequestMessage;
+}
+
 // Warning: (ae-forgotten-export) The symbol "Exception" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -349,6 +356,7 @@ export interface RegistererOptions {
     expires?: number;
     extraContactHeaderParams?: Array<string>;
     extraHeaders?: Array<string>;
+    // @deprecated
     instanceId?: string;
     logConfiguration?: boolean;
     // @deprecated (undocumented)
@@ -528,6 +536,7 @@ export interface SessionByeOptions {
 export interface SessionDelegate {
     onAck?(ack: Ack): void;
     onBye?(bye: Bye): void;
+    onCancel?(cancel: Cancel): void;
     onInfo?(info: Info): void;
     onInvite?(request: IncomingRequestMessage, response: string, statusCode: number): void;
     onMessage?(message: Message): void;
@@ -758,6 +767,7 @@ export class UserAgent {
     getLogger(category: string, label?: string): Logger;
     // Warning: (ae-forgotten-export) The symbol "LoggerFactory" needs to be exported by the entry point index.d.ts
     getLoggerFactory(): LoggerFactory;
+    get instanceId(): string;
     isConnected(): boolean;
     // @internal
     _makeInviter(targetURI: URI, options?: InviterOptions): Inviter;
@@ -819,9 +829,6 @@ export interface UserAgentOptions {
     authorizationHa1?: string;
     authorizationPassword?: string;
     authorizationUsername?: string;
-    // @deprecated (undocumented)
-    autoStart?: boolean;
-    autoStop?: boolean;
     contactName?: string;
     contactParams?: {
         [name: string]: string;
@@ -829,12 +836,15 @@ export interface UserAgentOptions {
     delegate?: UserAgentDelegate;
     displayName?: string;
     forceRport?: boolean;
+    gracefulShutdown?: boolean;
     // @deprecated
     hackAllowUnregisteredOptionTags?: boolean;
     // @deprecated
     hackIpInContact?: boolean | string;
     // @deprecated
     hackViaTcp?: boolean;
+    instanceId?: string;
+    instanceIdAlwaysAdded?: boolean;
     logBuiltinEnabled?: boolean;
     logConfiguration?: boolean;
     logConnector?: LogConnector;

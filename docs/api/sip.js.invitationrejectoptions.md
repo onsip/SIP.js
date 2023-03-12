@@ -14,10 +14,10 @@ export interface InvitationRejectOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [body](./sip.js.invitationrejectoptions.body.md) | <code>string &#124; {</code><br/><code>        body: string;</code><br/><code>        contentType: string;</code><br/><code>    }</code> | Body |
-|  [extraHeaders](./sip.js.invitationrejectoptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the response. |
-|  [reasonPhrase](./sip.js.invitationrejectoptions.reasonphrase.md) | <code>string</code> | Reason phrase for response. |
-|  [statusCode](./sip.js.invitationrejectoptions.statuscode.md) | <code>number</code> | Status code for response. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [body](./sip.js.invitationrejectoptions.body.md) |  | string \| { body: string; contentType: string; } | Body |
+|  [extraHeaders](./sip.js.invitationrejectoptions.extraheaders.md) |  | Array&lt;string&gt; | Array of extra headers added to the response. |
+|  [reasonPhrase](./sip.js.invitationrejectoptions.reasonphrase.md) |  | string | Reason phrase for response. |
+|  [statusCode](./sip.js.invitationrejectoptions.statuscode.md) |  | number | Status code for response. |
 

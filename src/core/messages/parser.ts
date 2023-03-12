@@ -1,9 +1,9 @@
 /* eslint-disable no-inner-declarations */
 /* eslint-disable @typescript-eslint/no-namespace */
-import { Grammar } from "../../grammar";
-import { Logger } from "../log/logger";
-import { IncomingRequestMessage } from "./incoming-request-message";
-import { IncomingResponseMessage } from "./incoming-response-message";
+import { Grammar } from "../../grammar/grammar.js";
+import { Logger } from "../log/logger.js";
+import { IncomingRequestMessage } from "./incoming-request-message.js";
+import { IncomingResponseMessage } from "./incoming-response-message.js";
 
 /**
  * Extract and parse every header of a SIP message.

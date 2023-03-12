@@ -1,20 +1,17 @@
-import {
-  C,
-  Grammar,
-  Logger,
-  OutgoingRegisterRequest,
-  OutgoingRequestMessage,
-  URI,
-  equivalentURI,
-  NameAddrHeader
-} from "../core";
-import { Emitter, EmitterImpl } from "./emitter";
-import { RequestPendingError } from "./exceptions";
-import { RegistererOptions } from "./registerer-options";
-import { RegistererRegisterOptions } from "./registerer-register-options";
-import { RegistererState } from "./registerer-state";
-import { RegistererUnregisterOptions } from "./registerer-unregister-options";
-import { UserAgent } from "./user-agent";
+import { Grammar } from "../grammar/grammar.js";
+import { NameAddrHeader } from "../grammar/name-addr-header.js";
+import { equivalentURI, URI } from "../grammar/uri.js";
+import { Logger } from "../core/log/logger.js";
+import { C } from "../core/messages/methods/constants.js";
+import { OutgoingRegisterRequest } from "../core/messages/methods/register.js";
+import { OutgoingRequestMessage } from "../core/messages/outgoing-request-message.js";
+import { Emitter, EmitterImpl } from "./emitter.js";
+import { RequestPendingError } from "./exceptions/request-pending.js";
+import { RegistererOptions } from "./registerer-options.js";
+import { RegistererRegisterOptions } from "./registerer-register-options.js";
+import { RegistererState } from "./registerer-state.js";
+import { RegistererUnregisterOptions } from "./registerer-unregister-options.js";
+import { UserAgent } from "./user-agent.js";
 
 /**
  * A registerer registers a contact for an address of record (outgoing REGISTER).
@@ -93,7 +90,7 @@ export class Registerer {
 
     // Set instanceId and regId conditional defaults and validate
     if (this.options.regId && !this.options.instanceId) {
-      this.options.instanceId = Registerer.newUUID();
+      this.options.instanceId = this.userAgent.instanceId;
     } else if (!this.options.regId && this.options.instanceId) {
       this.options.regId = 1;
     }
@@ -173,16 +170,6 @@ export class Registerer {
       registrar: new URI("sip", "anonymous", "anonymous.invalid"),
       refreshFrequency: Registerer.defaultRefreshFrequency
     };
-  }
-
-  // http://stackoverflow.com/users/109538/broofa
-  private static newUUID(): string {
-    const UUID: string = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r: number = Math.floor(Math.random() * 16);
-      const v: number = c === "x" ? r : (r % 4) + 8;
-      return v.toString(16);
-    });
-    return UUID;
   }
 
   /**
@@ -680,7 +667,7 @@ export class Registerer {
    * Generate Contact Header
    */
   private generateContactHeader(expires: number): string {
-    let contact = this.userAgent.contact.toString();
+    let contact = this.userAgent.contact.toString({ register: true });
     if (this.options.regId && this.options.instanceId) {
       contact += ";reg-id=" + this.options.regId;
       contact += ';+sip.instance="<urn:uuid:' + this.options.instanceId + '>"';

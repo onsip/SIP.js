@@ -11,6 +11,9 @@ MESSAGE UAC.
 ```typescript
 export declare class MessageUserAgentClient extends UserAgentClient implements OutgoingMessageRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingMessageRequest](./sip.js.outgoingmessagerequest.md)
 
 ## Constructors
 

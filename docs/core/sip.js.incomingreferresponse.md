@@ -11,3 +11,5 @@ Incoming REFER response.
 ```typescript
 export interface IncomingReferResponse extends IncomingResponse 
 ```
+<b>Extends:</b> [IncomingResponse](./sip.js.incomingresponse.md)
+

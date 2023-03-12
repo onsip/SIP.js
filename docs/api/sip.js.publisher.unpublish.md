@@ -16,9 +16,9 @@ unpublish(options?: PublisherUnpublishOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>PublisherUnpublishOptions</code> |  |
+|  options | [PublisherUnpublishOptions](./sip.js.publisherunpublishoptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

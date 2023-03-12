@@ -20,10 +20,10 @@ constructor(scheme: string | undefined, user: string, host: string, port?: numbe
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  scheme | <code>string &#124; undefined</code> |  |
-|  user | <code>string</code> |  |
-|  host | <code>string</code> |  |
-|  port | <code>number</code> |  |
-|  parameters | <code>{</code><br/><code>        [name: string]: string &#124; number &#124; null;</code><br/><code>    }</code> |  |
-|  headers | <code>{</code><br/><code>        [name: string]: Array&lt;string&gt;;</code><br/><code>    }</code> |  |
+|  scheme | string \| undefined |  |
+|  user | string |  |
+|  host | string |  |
+|  port | number |  |
+|  parameters | { \[name: string\]: string \| number \| null; } |  |
+|  headers | { \[name: string\]: Array&lt;string&gt;; } |  |
 

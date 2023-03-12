@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Grammar, NameAddrHeader, URI } from "../../../src/core";
+import { Grammar, NameAddrHeader, URI } from "../../../lib/grammar/index.js";
 
 // TODO:
 // These old tests were ported from JavaScript to TypesSript verbatim.

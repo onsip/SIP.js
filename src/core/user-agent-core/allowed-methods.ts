@@ -1,4 +1,4 @@
-import { C } from "../messages";
+import { C } from "../messages/methods/constants.js";
 
 /**
  * FIXME: TODO: Should be configurable/variable.

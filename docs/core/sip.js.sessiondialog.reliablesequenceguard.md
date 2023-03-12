@@ -16,9 +16,9 @@ reliableSequenceGuard(message: IncomingResponseMessage): boolean;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingResponseMessage</code> | Incoming response message within this dialog. |
+|  message | [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) | Incoming response message within this dialog. |
 
 <b>Returns:</b>
 
-`boolean`
+boolean
 

@@ -16,10 +16,10 @@ refer(referTo: URI | Session, options?: SessionReferOptions): Promise<OutgoingRe
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  referTo | <code>URI &#124; Session</code> | The referral target. If a <code>Session</code>, a REFER w/Replaces is sent. |
-|  options | <code>SessionReferOptions</code> | Options bucket. See [SessionReferOptions](./sip.js.sessionreferoptions.md) for details. |
+|  referTo | URI \| [Session](./sip.js.session.md) | The referral target. If a <code>Session</code>, a REFER w/Replaces is sent. |
+|  options | [SessionReferOptions](./sip.js.sessionreferoptions.md) | Options bucket. See [SessionReferOptions](./sip.js.sessionreferoptions.md) for details. |
 
 <b>Returns:</b>
 
-`Promise<OutgoingReferRequest>`
+Promise&lt;OutgoingReferRequest&gt;
 

@@ -16,10 +16,10 @@ static initialDialogStateForUserAgentClient(outgoingRequestMessage: OutgoingRequ
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  outgoingRequestMessage | <code>OutgoingRequestMessage</code> | Outgoing request message for dialog. |
-|  incomingResponseMessage | <code>IncomingResponseMessage</code> | Incoming response message creating dialog. |
+|  outgoingRequestMessage | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) | Outgoing request message for dialog. |
+|  incomingResponseMessage | [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) | Incoming response message creating dialog. |
 
 <b>Returns:</b>
 
-`DialogState`
+[DialogState](./sip.js.dialogstate.md)
 

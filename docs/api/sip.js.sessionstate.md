@@ -34,6 +34,5 @@ Session          | |           |                            v   v            v
 Constructed -> Initial -> Establishing -> Established -> Terminating -> Terminated
                                |               |___________________________^   ^
                                |_______________________________________________|
-
 ```
 

@@ -14,8 +14,8 @@ export interface SessionMessageOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [requestDelegate](./sip.js.sessionmessageoptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.sessionmessageoptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [requestDelegate](./sip.js.sessionmessageoptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.sessionmessageoptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

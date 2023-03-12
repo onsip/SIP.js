@@ -1,29 +1,27 @@
+import { Grammar } from "../grammar/grammar.js";
+import { NameAddrHeader } from "../grammar/name-addr-header.js";
+import { URI } from "../grammar/uri.js";
+import { C } from "../core/messages/methods/constants.js";
 import {
   AckableIncomingResponseWithSession,
-  Body,
-  C,
-  Grammar,
-  IncomingResponse,
-  Logger,
-  NameAddrHeader,
-  OutgoingInviteRequest,
-  OutgoingRequestMessage,
-  OutgoingRequestMessageOptions,
   PrackableIncomingResponseWithSession,
-  RequestOptions,
-  Session as SessionDialog,
-  SignalingState,
-  URI
-} from "../core";
-import { getReasonPhrase, newTag } from "../core/messages/utils";
-import { InviterCancelOptions } from "./inviter-cancel-options";
-import { InviterInviteOptions } from "./inviter-invite-options";
-import { InviterOptions } from "./inviter-options";
-import { Session } from "./session";
-import { BodyAndContentType, SessionDescriptionHandler } from "./session-description-handler";
-import { SessionState } from "./session-state";
-import { UserAgent } from "./user-agent";
-import { SIPExtension } from "./user-agent-options";
+  OutgoingInviteRequest
+} from "../core/messages/methods/invite.js";
+import { Body } from "../core/messages/body.js";
+import { IncomingResponse } from "../core/messages/incoming-response.js";
+import { Logger } from "../core/log/logger.js";
+import { OutgoingRequestMessage, OutgoingRequestMessageOptions } from "../core/messages/outgoing-request-message.js";
+import { RequestOptions } from "../core/messages/outgoing-request.js";
+import { Session as SessionDialog, SignalingState } from "../core/session/session.js";
+import { getReasonPhrase, newTag } from "../core/messages/utils.js";
+import { InviterCancelOptions } from "./inviter-cancel-options.js";
+import { InviterInviteOptions } from "./inviter-invite-options.js";
+import { InviterOptions } from "./inviter-options.js";
+import { Session } from "./session.js";
+import { BodyAndContentType, SessionDescriptionHandler } from "./session-description-handler.js";
+import { SessionState } from "./session-state.js";
+import { UserAgent } from "./user-agent.js";
+import { SIPExtension } from "./user-agent-options.js";
 
 /**
  * An inviter offers to establish a {@link Session} (outgoing INVITE).
@@ -438,7 +436,11 @@ export class Inviter extends Session {
       })
       .catch((error) => {
         this.logger.log(error.message);
-        this.stateTransition(SessionState.Terminated);
+        // It's possible we are already terminated,
+        // so don't throw trying to transition again.
+        if (this.state !== SessionState.Terminated) {
+          this.stateTransition(SessionState.Terminated);
+        }
         throw error;
       });
   }

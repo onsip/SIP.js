@@ -16,11 +16,11 @@ onInvite?(request: IncomingRequestMessage, response: string, statusCode: number)
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingRequestMessage</code> |  |
-|  response | <code>string</code> |  |
-|  statusCode | <code>number</code> |  |
+|  request | IncomingRequestMessage |  |
+|  response | string |  |
+|  statusCode | number |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

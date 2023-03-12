@@ -16,7 +16,7 @@ constructor(dialog: Dialog, message: IncomingRequestMessage, delegate?: Incoming
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  dialog | <code>Dialog</code> |  |
-|  message | <code>IncomingRequestMessage</code> |  |
-|  delegate | <code>IncomingRequestDelegate</code> |  |
+|  dialog | [Dialog](./sip.js.dialog.md) |  |
+|  message | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) |  |
+|  delegate | [IncomingRequestDelegate](./sip.js.incomingrequestdelegate.md) |  |
 

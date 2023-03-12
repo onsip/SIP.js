@@ -1,8 +1,9 @@
-import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
-import { Transport } from "../transport";
-import { Transaction } from "./transaction";
-import { TransactionState } from "./transaction-state";
-import { ClientTransactionUser } from "./transaction-user";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { Transport } from "../transport.js";
+import { Transaction } from "./transaction.js";
+import { TransactionState } from "./transaction-state.js";
+import { ClientTransactionUser } from "./transaction-user.js";
 
 /**
  * Client Transaction.

@@ -11,20 +11,21 @@ Options for [Inviter](./sip.js.inviter.md) constructor.
 ```typescript
 export interface InviterOptions extends SessionOptions 
 ```
+<b>Extends:</b> [SessionOptions](./sip.js.sessionoptions.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [anonymous](./sip.js.inviteroptions.anonymous.md) | <code>boolean</code> | If true, an anonymous call. |
-|  [earlyMedia](./sip.js.inviteroptions.earlymedia.md) | <code>boolean</code> | If true, the first answer to the local offer is immediately utilized for media. Requires that the INVITE request MUST NOT fork. Has no effect if <code>inviteWithoutSdp</code> is true. Default is false. |
-|  [extraHeaders](./sip.js.inviteroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the INVITE. |
-|  [inviteWithoutSdp](./sip.js.inviteroptions.invitewithoutsdp.md) | <code>boolean</code> | If true, send INVITE without SDP. Default is false. |
-|  [params](./sip.js.inviteroptions.params.md) | <code>{</code><br/><code>        fromDisplayName?: string;</code><br/><code>        fromTag?: string;</code><br/><code>        fromUri?: string &#124; URI;</code><br/><code>        toDisplayName?: string;</code><br/><code>        toUri?: string &#124; URI;</code><br/><code>    }</code> |  |
-|  [renderbody](./sip.js.inviteroptions.renderbody.md) | <code>string</code> |  |
-|  [rendertype](./sip.js.inviteroptions.rendertype.md) | <code>string</code> |  |
-|  [sessionDescriptionHandlerModifiers](./sip.js.inviteroptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
-|  [sessionDescriptionHandlerModifiersReInvite](./sip.js.inviteroptions.sessiondescriptionhandlermodifiersreinvite.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler during re-INVITE transactions. |
-|  [sessionDescriptionHandlerOptions](./sip.js.inviteroptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
-|  [sessionDescriptionHandlerOptionsReInvite](./sip.js.inviteroptions.sessiondescriptionhandleroptionsreinvite.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler during re-INVITE transactions. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [anonymous](./sip.js.inviteroptions.anonymous.md) |  | boolean | If true, an anonymous call. |
+|  [earlyMedia](./sip.js.inviteroptions.earlymedia.md) |  | boolean | If true, the first answer to the local offer is immediately utilized for media. Requires that the INVITE request MUST NOT fork. Has no effect if <code>inviteWithoutSdp</code> is true. Default is false. |
+|  [extraHeaders](./sip.js.inviteroptions.extraheaders.md) |  | Array&lt;string&gt; | Array of extra headers added to the INVITE. |
+|  [inviteWithoutSdp](./sip.js.inviteroptions.invitewithoutsdp.md) |  | boolean | If true, send INVITE without SDP. Default is false. |
+|  [params](./sip.js.inviteroptions.params.md) |  | { fromDisplayName?: string; fromTag?: string; fromUri?: string \| URI; toDisplayName?: string; toUri?: string \| URI; } |  |
+|  [renderbody](./sip.js.inviteroptions.renderbody.md) |  | string |  |
+|  [rendertype](./sip.js.inviteroptions.rendertype.md) |  | string |  |
+|  [sessionDescriptionHandlerModifiers](./sip.js.inviteroptions.sessiondescriptionhandlermodifiers.md) |  | Array&lt;[SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md)<!-- -->&gt; | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [sessionDescriptionHandlerModifiersReInvite](./sip.js.inviteroptions.sessiondescriptionhandlermodifiersreinvite.md) |  | Array&lt;[SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md)<!-- -->&gt; | Modifiers to pass to SessionDescriptionHandler during re-INVITE transactions. |
+|  [sessionDescriptionHandlerOptions](./sip.js.inviteroptions.sessiondescriptionhandleroptions.md) |  | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [sessionDescriptionHandlerOptionsReInvite](./sip.js.inviteroptions.sessiondescriptionhandleroptionsreinvite.md) |  | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options to pass to SessionDescriptionHandler during re-INVITE transactions. |
 

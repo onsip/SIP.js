@@ -16,9 +16,9 @@ onRefer?(request: IncomingReferRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingReferRequest</code> | Incoming REFER request. |
+|  request | [IncomingReferRequest](./sip.js.incomingreferrequest.md) | Incoming REFER request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

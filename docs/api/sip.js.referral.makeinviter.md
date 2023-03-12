@@ -16,11 +16,11 @@ makeInviter(options?: InviterOptions): Inviter;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>InviterOptions</code> | Options bucket. |
+|  options | [InviterOptions](./sip.js.inviteroptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`Inviter`
+[Inviter](./sip.js.inviter.md)
 
 ## Remarks
 

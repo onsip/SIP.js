@@ -16,9 +16,9 @@ ack(options?: RequestOptions): OutgoingAckRequest;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>RequestOptions</code> | Request options bucket. |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Request options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingAckRequest`
+[OutgoingAckRequest](./sip.js.outgoingackrequest.md)
 

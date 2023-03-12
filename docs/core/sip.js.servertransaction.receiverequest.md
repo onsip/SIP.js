@@ -16,9 +16,9 @@ abstract receiveRequest(request: IncomingRequestMessage): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingRequestMessage</code> | The incoming request. |
+|  request | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) | The incoming request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -16,11 +16,11 @@ protected send(message: string): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>string</code> |  |
+|  message | string |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 Rejects with `TransportError` if transport fails.
 

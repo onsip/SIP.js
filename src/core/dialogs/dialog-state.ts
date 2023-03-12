@@ -1,4 +1,4 @@
-import { URI } from "../../grammar";
+import { URI } from "../../grammar/uri.js";
 
 /**
  * Dialog state.

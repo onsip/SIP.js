@@ -13,5 +13,5 @@ onConnect?(): void;
 ```
 <b>Returns:</b>
 
-`void`
+void
 

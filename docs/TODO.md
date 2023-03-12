@@ -1,8 +1,8 @@
 # Release Road Map
 
-## 0.18.x
+## Next Release
 
-- free core and API from DOM dependencies
+- review and remove everything that was deprecated
 - complete more work in progress
 - more documentation
 - more tests
@@ -15,7 +15,9 @@
 
 ### api-extractor
 
-- issue updating @microsoft/api-extractor past 7.7.11 https://github.com/microsoft/rushstack/issues/1830
+- issue updating @microsoft/api-extractor past 7.7.11 where _2 gets added to class names which match globals (Notification, Transport, etc.)
+  - https://github.com/microsoft/rushstack/issues/1830 
+  - potential workaround https://github.com/microsoft/rushstack/issues/2895#issuecomment-943533628
 
 ## Tests
 
@@ -30,7 +32,6 @@
 - UserAgent: The `contact` should be configurable. Related to URI and Grammar work. Issue #791.
 - UserAgent: Should support multiple servers (or multiple Transports). Issue #706.
 - Registerer: There is no good way to know if there is a request in progress (currently throws exception). Perhaps Registering/Unregistering state?
-- Registerer: Re-registration is current -3 seconds which seems not so good. Look at pjsip and others to see what they have done.
 - Review all deprecated to make sure an alternative is provided that is something other than TBD.
 - Review Allowed Methods and Allow header so configurable/variable in more reasonable fashion.
 - Need alternatives for all hacks like `hackViaTcp`.
@@ -41,15 +42,13 @@
 - Dialog UACs are creating messages while non-dialog UACs are being handed message in most cases,
   but not all cases; MessageUserAgentClient is used for both out of dialog and in dialog.
   It would be worth it to have the constructor interface be consistent.
-  Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
 - Dialog UASs are created using a "dialog or core" in some cases when the request can be in dialog
   or out of dialog but this is not being done consistently. See Message vs Notify vs ReferUAS, etc.
 - I believe all in and out of dialog requests should be able to be authenticated (confirm this).
   Currently only INVITE and re-INVITE work. There needs to be a small refactor to make it work for everything.
-  Regardless, this needs to wait till post 0.16 as it doesn't make sense to port the old code.
 - Messages (IncomingMessage, OutgoingRequestMessage) could use a make over (tied to Grammar work)
-- Extra headers array approach is error prone
 - Timers and some associated timer code doesn't support unreliable transports (UDP for example)
+- Extra headers array approach is error prone
 
 ### Grammar & URI - Refresh
 
@@ -60,6 +59,10 @@
 - URI should be strongly typed (currently using any for constructor params)
 - URI allows "" for user and 0 for port which is confusing and should probably be undefined instead
 - URI toString() can and does throw. Issue #286.
+  - This is an issue with the URI class. The new API requires a URI instance be passed as an options, so that's
+    indirectly no longer an issue. But the URI class should not be implemented in a fashion where toString()
+    depends on decodeURIComponent which can (and does) throw URIError: URI malformed. The short is the URI
+    class needs to be modified and this is also somewhat related to how the parser utilizes URI.
 - IncomingMessage class has public properties that may not be set (!), internally generated 408 for example
 - Handling incoming REGISTER, "Contact: \*" header fails to parse - there's a test written for it
 
@@ -67,7 +70,7 @@
 
 Non-exhaustive research on these parsers, generally it seems like there is nothing both popular and well-typed:
 
-- _ts-pegjs_: we currently use this on top of pegjs (it's not separate). I don't know how far typing can go, but it'd be the lowest work.
+- _ts-pegjs_: we currently use this on top of peggy (it's not separate). It used to use pegjs, but pegjs got replaced by peggy. I don't know how far typing can go, but it'd be the lowest work.
 - _antlr4ts_: antlr4 is a fairly well-used grammar parser, and they built a separate ts project (don't know if its typescript from the ground up). What I don't like is it incurs a runtime dependency.
 - _tspeg_: this one has very few users, but if it were popular, it would be exactly what we want. It is currently maintained (has been since it was made about 1.25 years ago), is strongly typed throughout, and outputs classes and interfaces.
 
@@ -85,6 +88,24 @@ Non-exhaustive research on these parsers, generally it seems like there is nothi
 
 - Support for "stream-oriented" transports: https://tools.ietf.org/html/rfc3261#section-18.3
 - This current Transport interface only supports "message-oriented" transports. Issue #818.
+
+## GRUU and Outbound - would be good to make sure we are compliant (tests)
+
+### RFC5626: Managing Client-Initiated Connections (Outbound)
+### RFC5627: Obtaining and Using Globally Routable User Agent URIs (GRUUs)
+
+- MUST include the outbound option tag in a Supported header field in a REGISTER request.
+- The UAC MUST support the Path header [RFC3327] mechanism, and
+   indicate its support by including the 'path' option-tag in a
+   Supported header field value in its REGISTER requests.  Other than
+   optionally examining the Path vector in the response, this is all
+   that is required of the UAC to support Path.
+- UAs that support this specification SHOULD include the outbound
+   option tag in a Supported header field in a request that is not a
+   REGISTER request.
+- support +sip.instance and reg-id
+- support for multiple web sockets
+
 
 ## REFER handling - it has evolved over time and we are out of date
 

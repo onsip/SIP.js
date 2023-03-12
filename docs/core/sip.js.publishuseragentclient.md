@@ -11,6 +11,9 @@ PUBLISH UAC.
 ```typescript
 export declare class PublishUserAgentClient extends UserAgentClient implements OutgoingPublishRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingPublishRequest](./sip.js.outgoingpublishrequest.md)
 
 ## Constructors
 

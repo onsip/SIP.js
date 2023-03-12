@@ -16,11 +16,11 @@ constructor(method: string, ruri: URI, fromURI: URI, toURI: URI, options?: Outgo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  method | <code>string</code> |  |
-|  ruri | <code>URI</code> |  |
-|  fromURI | <code>URI</code> |  |
-|  toURI | <code>URI</code> |  |
-|  options | <code>OutgoingRequestMessageOptions</code> |  |
-|  extraHeaders | <code>Array&lt;string&gt;</code> |  |
-|  body | <code>Body</code> |  |
+|  method | string |  |
+|  ruri | [URI](./sip.js.uri.md) |  |
+|  fromURI | [URI](./sip.js.uri.md) |  |
+|  toURI | [URI](./sip.js.uri.md) |  |
+|  options | [OutgoingRequestMessageOptions](./sip.js.outgoingrequestmessageoptions.md) |  |
+|  extraHeaders | Array&lt;string&gt; |  |
+|  body | [Body](./sip.js.body.md) |  |
 

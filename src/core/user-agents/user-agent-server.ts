@@ -1,25 +1,19 @@
-import { TransactionStateError } from "../exceptions";
-import { Logger, LoggerFactory } from "../log";
-import {
-  constructOutgoingResponse,
-  IncomingRequest,
-  IncomingRequestDelegate,
-  IncomingRequestMessage,
-  OutgoingResponse,
-  ResponseOptions,
-  URI
-} from "../messages";
-import { newTag } from "../messages/utils";
-
-import {
-  InviteServerTransaction,
-  NonInviteServerTransaction,
-  ServerTransaction,
-  ServerTransactionUser,
-  TransactionState
-} from "../transactions";
-import { Transport } from "../transport";
-import { UserAgentCore } from "../user-agent-core";
+import { TransactionStateError } from "../exceptions/transaction-state-error.js";
+import { URI } from "../../grammar/uri.js";
+import { Logger } from "../log/logger.js";
+import { LoggerFactory } from "../log/logger-factory.js";
+import { IncomingRequestDelegate } from "../messages/incoming-request.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { IncomingRequest } from "../messages/incoming-request.js";
+import { constructOutgoingResponse, OutgoingResponse, ResponseOptions } from "../messages/outgoing-response.js";
+import { newTag } from "../messages/utils.js";
+import { InviteServerTransaction } from "../transactions/invite-server-transaction.js";
+import { NonInviteServerTransaction } from "../transactions/non-invite-server-transaction.js";
+import { ServerTransaction } from "../transactions/server-transaction.js";
+import { ServerTransactionUser } from "../transactions/transaction-user.js";
+import { TransactionState } from "../transactions/transaction-state.js";
+import { Transport } from "../transport.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
 
 type ServerTransactionConstructor = new (
   message: IncomingRequestMessage,

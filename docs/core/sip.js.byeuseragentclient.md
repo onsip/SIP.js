@@ -11,6 +11,9 @@ BYE UAC.
 ```typescript
 export declare class ByeUserAgentClient extends UserAgentClient implements OutgoingByeRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingByeRequest](./sip.js.outgoingbyerequest.md)
 
 ## Constructors
 

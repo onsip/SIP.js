@@ -1,4 +1,4 @@
-import { IncomingMessage } from "./incoming-message";
+import { IncomingMessage } from "./incoming-message.js";
 
 /**
  * Incoming response message.

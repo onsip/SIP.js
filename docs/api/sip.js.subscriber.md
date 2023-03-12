@@ -11,6 +11,7 @@ A subscriber establishes a [Subscription](./sip.js.subscription.md) (outgoing SU
 ```typescript
 export declare class Subscriber extends Subscription 
 ```
+<b>Extends:</b> [Subscription](./sip.js.subscription.md)
 
 ## Remarks
 
@@ -28,6 +29,8 @@ const subscriber = new Subscriber(userAgent, targetURI, eventType);
 // Add delegate to handle event notifications.
 subscriber.delegate = {
   onNotify: (notification: Notification) => {
+    // send a response
+    notification.accept();
     // handle notification here
   }
 };
@@ -44,7 +47,6 @@ subscriber.subscribe();
 
 // Sometime later when done with subscription
 subscriber.unsubscribe();
-
 ```
 
 ## Constructors

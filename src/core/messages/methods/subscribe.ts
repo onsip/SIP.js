@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { Subscription } from "../../subscription";
-import { IncomingRequest } from "../incoming-request";
-import { IncomingResponse } from "../incoming-response";
-import { OutgoingRequest, OutgoingRequestDelegate } from "../outgoing-request";
-import { IncomingNotifyRequest } from "./notify";
+import { Subscription } from "../../subscription/subscription.js";
+import { IncomingRequest } from "../incoming-request.js";
+import { IncomingResponse } from "../incoming-response.js";
+import { OutgoingRequest, OutgoingRequestDelegate } from "../outgoing-request.js";
+import { IncomingNotifyRequest } from "./notify.js";
 
 /**
  * Incoming SUBSCRIBE request.

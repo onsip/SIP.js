@@ -16,13 +16,13 @@ setDescription(sdp: string, options?: SessionDescriptionHandlerOptions, modifier
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  sdp | <code>string</code> |  |
-|  options | <code>SessionDescriptionHandlerOptions</code> | Options object to be used by setDescription. |
-|  modifiers | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Array with one time use description modifiers. |
+|  sdp | string |  |
+|  options | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options object to be used by setDescription. |
+|  modifiers | Array&lt;[SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md)<!-- -->&gt; | Array with one time use description modifiers. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 Promise that resolves once the description is set. Rejects with `ClosedSessionDescriptionHandlerError` when this method is called after close or when close occurs before complete.
 

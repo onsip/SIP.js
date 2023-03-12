@@ -32,6 +32,5 @@ Publisher       | |                          v             v
 Constructed -> Initial -> Published -> Unpublished -> Terminated
                              |   ^____________|             ^
                              |______________________________|
-
 ```
 

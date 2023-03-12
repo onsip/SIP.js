@@ -16,11 +16,11 @@ onMessageReceived?(message: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>string</code> | The message received. |
+|  message | string | The message received. |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

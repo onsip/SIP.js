@@ -1,30 +1,28 @@
-import {
-  Body,
-  fromBodyLegacy,
-  getBody,
-  Grammar,
-  IncomingInviteRequest,
-  IncomingPrackRequest,
-  IncomingRequestMessage,
-  InviteUserAgentServer,
-  Logger,
-  NameAddrHeader,
-  OutgoingResponse,
-  OutgoingResponseWithSession,
-  SignalingState,
-  Timers,
-  TransactionStateError
-} from "../core";
-import { getReasonPhrase } from "../core/messages/utils";
-import { ContentTypeUnsupportedError, SessionDescriptionHandlerError, SessionTerminatedError } from "./exceptions";
-import { InvitationAcceptOptions } from "./invitation-accept-options";
-import { InvitationProgressOptions } from "./invitation-progress-options";
-import { InvitationRejectOptions } from "./invitation-reject-options";
-import { Session } from "./session";
-import { SessionState } from "./session-state";
-import { UserAgent } from "./user-agent";
-import { SIPExtension } from "./user-agent-options";
-import { Cancel } from "./cancel";
+import { Grammar } from "../grammar/grammar.js";
+import { NameAddrHeader } from "../grammar/name-addr-header.js";
+import { Body, fromBodyLegacy, getBody } from "../core/messages/body.js";
+import { IncomingInviteRequest } from "../core/messages/methods/invite.js";
+import { IncomingPrackRequest } from "../core/messages/methods/prack.js";
+import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
+import { InviteUserAgentServer } from "../core/user-agents/invite-user-agent-server.js";
+import { Logger } from "../core/log/logger.js";
+import { OutgoingResponse } from "../core/messages/outgoing-response.js";
+import { OutgoingResponseWithSession } from "../core/messages/methods/invite.js";
+import { SignalingState } from "../core/session/session.js";
+import { Timers } from "../core/timers.js";
+import { TransactionStateError } from "../core/exceptions/transaction-state-error.js";
+import { getReasonPhrase } from "../core/messages/utils.js";
+import { Cancel } from "./cancel.js";
+import { ContentTypeUnsupportedError } from "./exceptions/content-type-unsupported.js";
+import { SessionDescriptionHandlerError } from "./exceptions/session-description-handler.js";
+import { SessionTerminatedError } from "./exceptions/session-terminated.js";
+import { InvitationAcceptOptions } from "./invitation-accept-options.js";
+import { InvitationProgressOptions } from "./invitation-progress-options.js";
+import { InvitationRejectOptions } from "./invitation-reject-options.js";
+import { Session } from "./session.js";
+import { SessionState } from "./session-state.js";
+import { UserAgent } from "./user-agent.js";
+import { SIPExtension } from "./user-agent-options.js";
 
 type ResolveFunction = () => void;
 type RejectFunction = (reason: Error) => void;
@@ -88,7 +86,7 @@ export class Invitation extends Session {
     // so this is a hack to port a hack. At least one test spec
     // relies on it (which is yet another hack).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    incomingRequestMessage.toTag = ((incomingInviteRequest as InviteUserAgentServer) as any).toTag;
+    incomingRequestMessage.toTag = (incomingInviteRequest as InviteUserAgentServer as any).toTag;
     if (typeof incomingRequestMessage.toTag !== "string") {
       throw new TypeError("toTag should have been a string.");
     }
@@ -421,18 +419,15 @@ export class Invitation extends Session {
   public _onCancel(message: IncomingRequestMessage): void {
     this.logger.log("Invitation._onCancel");
 
-    // validate state for CANCEL delegation
-    if (this.state === SessionState.Initial || this.state === SessionState.Establishing) {
-      if (this.delegate && this.delegate.onCancel) {
-        const cancel = new Cancel(message);
-        this.delegate.onCancel(cancel);
-      }
-    }
-
     // validate state
     if (this.state !== SessionState.Initial && this.state !== SessionState.Establishing) {
       this.logger.error(`CANCEL received while in state ${this.state}, dropping request`);
       return;
+    }
+
+    if (this.delegate && this.delegate.onCancel) {
+      const cancel = new Cancel(message);
+      this.delegate.onCancel(cancel);
     }
 
     // flag canceled
@@ -507,7 +502,7 @@ export class Invitation extends Session {
     } else {
       // We don't actually know what a session description handler implementation might throw our way,
       // and more generally as a last resort catch all, just assume we are getting an "unknown" and log it.
-      this.logger.error((error as unknown) as string);
+      this.logger.error(error as unknown as string);
     }
 
     // Log Exception message
@@ -676,9 +671,7 @@ export class Invitation extends Session {
    * A version of `progress` which resolves when the reliable provisional response is acknowledged.
    * @param options - Options bucket.
    */
-  private sendProgressReliableWaitForPrack(
-    options: InvitationProgressOptions = {}
-  ): Promise<{
+  private sendProgressReliableWaitForPrack(options: InvitationProgressOptions = {}): Promise<{
     prackRequest: IncomingPrackRequest;
     prackResponse: OutgoingResponse;
     progressResponse: OutgoingResponseWithSession;

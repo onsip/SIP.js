@@ -18,10 +18,10 @@ info(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingInfo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  delegate | <code>OutgoingRequestDelegate</code> |  |
-|  options | <code>RequestOptions</code> | Options bucket. |
+|  delegate | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) |  |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingInfoRequest`
+[OutgoingInfoRequest](./sip.js.outgoinginforequest.md)
 

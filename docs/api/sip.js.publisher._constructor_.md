@@ -16,8 +16,8 @@ constructor(userAgent: UserAgent, targetURI: URI, eventType: string, options?: P
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  userAgent | <code>UserAgent</code> | User agent. See [UserAgent](./sip.js.useragent.md) for details. |
-|  targetURI | <code>URI</code> | Request URI identifying the target of the message. |
-|  eventType | <code>string</code> | The event type identifying the published document. |
-|  options | <code>PublisherOptions</code> | Options bucket. See [PublisherOptions](./sip.js.publisheroptions.md) for details. |
+|  userAgent | [UserAgent](./sip.js.useragent.md) | User agent. See [UserAgent](./sip.js.useragent.md) for details. |
+|  targetURI | URI | Request URI identifying the target of the message. |
+|  eventType | string | The event type identifying the published document. |
+|  options | [PublisherOptions](./sip.js.publisheroptions.md) | Options bucket. See [PublisherOptions](./sip.js.publisheroptions.md) for details. |
 

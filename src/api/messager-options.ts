@@ -1,4 +1,4 @@
-import { URI } from "../core";
+import { URI } from "../grammar/uri.js";
 
 /**
  * Options for {@link Messager} constructor.

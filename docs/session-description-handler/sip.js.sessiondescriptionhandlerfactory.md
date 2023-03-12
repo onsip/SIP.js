@@ -11,3 +11,5 @@ Factory for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md)<!
 ```typescript
 export interface SessionDescriptionHandlerFactory extends SessionDescriptionHandlerFactoryDefinition 
 ```
+<b>Extends:</b> [SessionDescriptionHandlerFactoryDefinition](./sip.js.sessiondescriptionhandlerfactory.md)
+

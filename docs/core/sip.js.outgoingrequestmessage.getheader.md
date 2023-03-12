@@ -16,11 +16,11 @@ getHeader(name: string): string | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> | header name |
+|  name | string | header name |
 
 <b>Returns:</b>
 
-`string | undefined`
+string \| undefined
 
 Returns the specified header, undefined if header doesn't exist.
 

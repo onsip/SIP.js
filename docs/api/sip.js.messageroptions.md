@@ -14,8 +14,8 @@ export interface MessagerOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [extraHeaders](./sip.js.messageroptions.extraheaders.md) | <code>Array&lt;string&gt;</code> | Array of extra headers added to the MESSAGE. |
-|  [params](./sip.js.messageroptions.params.md) | <code>{</code><br/><code>        fromDisplayName?: string;</code><br/><code>        fromTag?: string;</code><br/><code>        fromUri?: string &#124; URI;</code><br/><code>        toDisplayName?: string;</code><br/><code>        toUri?: string &#124; URI;</code><br/><code>    }</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [extraHeaders](./sip.js.messageroptions.extraheaders.md) |  | Array&lt;string&gt; | Array of extra headers added to the MESSAGE. |
+|  [params](./sip.js.messageroptions.params.md) |  | { fromDisplayName?: string; fromTag?: string; fromUri?: string \| URI; toDisplayName?: string; toUri?: string \| URI; } |  |
 

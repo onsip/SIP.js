@@ -14,8 +14,8 @@ export interface IncomingRequestWithSubscription
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [request](./sip.js.incomingrequestwithsubscription.request.md) | <code>IncomingNotifyRequest</code> | The NOTIFY request which established the subscription. |
-|  [subscription](./sip.js.incomingrequestwithsubscription.subscription.md) | <code>Subscription</code> | If subscription state is not "terminated", then the subscription. Otherwise undefined. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [request](./sip.js.incomingrequestwithsubscription.request.md) |  | [IncomingNotifyRequest](./sip.js.incomingnotifyrequest.md) | The NOTIFY request which established the subscription. |
+|  [subscription](./sip.js.incomingrequestwithsubscription.subscription.md) |  | [Subscription](./sip.js.subscription.md) | If subscription state is not "terminated", then the subscription. Otherwise undefined. |
 

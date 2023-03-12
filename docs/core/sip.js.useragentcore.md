@@ -30,14 +30,14 @@ UAS Core: The set of processing functions required at a UAS that resides above t
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [configuration](./sip.js.useragentcore.configuration.md) |  | <code>UserAgentCoreConfiguration</code> | Configuration. |
-|  [delegate](./sip.js.useragentcore.delegate.md) |  | <code>UserAgentCoreDelegate</code> | Delegate. |
-|  [dialogs](./sip.js.useragentcore.dialogs.md) |  | <code>Map&lt;string, Dialog&gt;</code> | Dialogs. |
-|  [loggerFactory](./sip.js.useragentcore.loggerfactory.md) |  | <code>LoggerFactory</code> | Logger factory. |
-|  [subscribers](./sip.js.useragentcore.subscribers.md) |  | <code>Map&lt;string, SubscribeUserAgentClient&gt;</code> | Subscribers. |
-|  [transport](./sip.js.useragentcore.transport.md) |  | <code>Transport</code> | Transport. |
-|  [userAgentClients](./sip.js.useragentcore.useragentclients.md) |  | <code>Map&lt;string, UserAgentClient&gt;</code> | UACs. |
-|  [userAgentServers](./sip.js.useragentcore.useragentservers.md) |  | <code>Map&lt;string, UserAgentServer&gt;</code> | UASs. |
+|  [configuration](./sip.js.useragentcore.configuration.md) |  | [UserAgentCoreConfiguration](./sip.js.useragentcoreconfiguration.md) | Configuration. |
+|  [delegate](./sip.js.useragentcore.delegate.md) |  | [UserAgentCoreDelegate](./sip.js.useragentcoredelegate.md) | Delegate. |
+|  [dialogs](./sip.js.useragentcore.dialogs.md) |  | Map&lt;string, [Dialog](./sip.js.dialog.md)<!-- -->&gt; | Dialogs. |
+|  [loggerFactory](./sip.js.useragentcore.loggerfactory.md) |  | [LoggerFactory](./sip.js.loggerfactory.md) | Logger factory. |
+|  [subscribers](./sip.js.useragentcore.subscribers.md) |  | Map&lt;string, [SubscribeUserAgentClient](./sip.js.subscribeuseragentclient.md)<!-- -->&gt; | Subscribers. |
+|  [transport](./sip.js.useragentcore.transport.md) |  | [Transport](./sip.js.transport.md) | Transport. |
+|  [userAgentClients](./sip.js.useragentcore.useragentclients.md) |  | Map&lt;string, [UserAgentClient](./sip.js.useragentclient.md)<!-- -->&gt; | UACs. |
+|  [userAgentServers](./sip.js.useragentcore.useragentservers.md) |  | Map&lt;string, [UserAgentServer](./sip.js.useragentserver.md)<!-- -->&gt; | UASs. |
 
 ## Methods
 

@@ -11,3 +11,5 @@ Outgoing REGISTER request.
 ```typescript
 export interface OutgoingRegisterRequest extends OutgoingRequest 
 ```
+<b>Extends:</b> [OutgoingRequest](./sip.js.outgoingrequest.md)
+

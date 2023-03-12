@@ -1,6 +1,7 @@
-import { LoggerFactory } from "../log";
-import { DigestAuthentication, URI } from "../messages";
-import { Transport } from "../transport";
+import { URI } from "../../grammar/uri.js";
+import { LoggerFactory } from "../log/logger-factory.js";
+import { DigestAuthentication } from "../messages/digest-authentication.js";
+import { Transport } from "../transport.js";
 
 /**
  * Contact.
@@ -15,7 +16,7 @@ export interface Contact {
   pubGruu: URI | undefined;
   tempGruu: URI | undefined;
   uri: URI;
-  toString: (options?: { anonymous?: boolean; outbound?: boolean }) => string;
+  toString: (options?: { anonymous?: boolean; outbound?: boolean; register?: boolean }) => string;
 }
 
 /**

@@ -14,10 +14,10 @@ redirect(contacts: Array<URI>, options?: ResponseOptions): OutgoingResponse;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  contacts | <code>Array&lt;URI&gt;</code> |  |
-|  options | <code>ResponseOptions</code> |  |
+|  contacts | Array&lt;[URI](./sip.js.uri.md)<!-- -->&gt; |  |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) |  |
 
 <b>Returns:</b>
 
-`OutgoingResponse`
+[OutgoingResponse](./sip.js.outgoingresponse.md)
 

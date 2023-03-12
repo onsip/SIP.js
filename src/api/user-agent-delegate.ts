@@ -1,9 +1,11 @@
-import { IncomingReferRequest, IncomingRegisterRequest, IncomingSubscribeRequest } from "../core";
-import { Invitation } from "./invitation";
-import { Message } from "./message";
-import { Notification } from "./notification";
-import { Referral } from "./referral";
-import { Subscription } from "./subscription";
+import { IncomingReferRequest } from "../core/messages/methods/refer.js";
+import { IncomingRegisterRequest } from "../core/messages/methods/register.js";
+import { IncomingSubscribeRequest } from "../core/messages/methods/subscribe.js";
+import { Invitation } from "./invitation.js";
+import { Message } from "./message.js";
+import { Notification } from "./notification.js";
+import { Referral } from "./referral.js";
+import { Subscription } from "./subscription.js";
 
 /**
  * Delegate for {@link UserAgent}.

@@ -14,9 +14,9 @@ export interface SessionReferOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [onNotify](./sip.js.sessionreferoptions.onnotify.md) | <code>(notification: Notification) =&gt; void</code> | Called upon receiving an incoming NOTIFY associated with a REFER. |
-|  [requestDelegate](./sip.js.sessionreferoptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.sessionreferoptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [onNotify](./sip.js.sessionreferoptions.onnotify.md) |  | (notification: [Notification](./sip.js.notification.md)<!-- -->) =&gt; void | Called upon receiving an incoming NOTIFY associated with a REFER. |
+|  [requestDelegate](./sip.js.sessionreferoptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.sessionreferoptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

@@ -16,9 +16,9 @@ onMessage?(request: IncomingMessageRequest): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  request | <code>IncomingMessageRequest</code> | Incoming MESSAGE request. |
+|  request | [IncomingMessageRequest](./sip.js.incomingmessagerequest.md) | Incoming MESSAGE request. |
 
 <b>Returns:</b>
 
-`void`
+void
 

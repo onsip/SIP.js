@@ -20,10 +20,10 @@ The constructor for this class is marked as internal. Third-party code should no
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [referredBy](./sip.js.referral.referredby.md) |  | <code>string &#124; undefined</code> |  |
-|  [referTo](./sip.js.referral.referto.md) |  | <code>NameAddrHeader</code> |  |
-|  [replaces](./sip.js.referral.replaces.md) |  | <code>string &#124; undefined</code> |  |
-|  [request](./sip.js.referral.request.md) |  | <code>IncomingRequestMessage</code> | Incoming REFER request message. |
+|  [referredBy](./sip.js.referral.referredby.md) |  | string \| undefined |  |
+|  [referTo](./sip.js.referral.referto.md) |  | NameAddrHeader |  |
+|  [replaces](./sip.js.referral.replaces.md) |  | string \| undefined |  |
+|  [request](./sip.js.referral.request.md) |  | IncomingRequestMessage | Incoming REFER request message. |
 
 ## Methods
 

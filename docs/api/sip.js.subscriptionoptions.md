@@ -14,7 +14,7 @@ export interface SubscriptionOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [delegate](./sip.js.subscriptionoptions.delegate.md) | <code>SubscriptionDelegate</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [delegate](./sip.js.subscriptionoptions.delegate.md) |  | [SubscriptionDelegate](./sip.js.subscriptiondelegate.md) |  |
 

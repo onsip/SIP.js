@@ -16,9 +16,9 @@ signalingStateTransition(message: IncomingRequestMessage | IncomingResponseMessa
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingRequestMessage &#124; IncomingResponseMessage &#124; OutgoingRequestMessage &#124; Body</code> | The message to base the update off of. |
+|  message | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) \| [IncomingResponseMessage](./sip.js.incomingresponsemessage.md) \| [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) \| [Body](./sip.js.body.md) | The message to base the update off of. |
 
 <b>Returns:</b>
 
-`void`
+void
 

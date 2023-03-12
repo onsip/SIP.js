@@ -2,8 +2,20 @@
 
 * From [Simple to SimpleUser](./migration-simple.md) is relatively simple.
 
-* From 0.17 to 1.0
-  * 1.0 is backwards compatible with 0.17
+* From [0.20 to 0.21](./migration-0.20-0.21.md)
+  * 0.21 has two minor breaking changes with 0.20
+  * ECMAScript module support and SessionManager introduction
+
+* From 0.19 to 0.20
+  * 0.20 is backwards compatible with 0.19
+
+* From 0.18 to 0.19
+  * 0.19 is backwards compatible with 0.18
+  * Contact matching rewrite
+
+* From 0.17 to 0.18
+  * 0.18 is backwards compatible with 0.17
+  * WebRTC SessionDescriptionHandler hold processing rewrite
 
 * From [0.16 to 0.17](./migration-0.16-0.17.md)
   * WebRTC SessionDescriptionHandler rewrite

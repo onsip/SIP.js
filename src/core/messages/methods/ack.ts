@@ -1,5 +1,5 @@
-import { IncomingRequestMessage } from "../incoming-request-message";
-import { OutgoingRequestMessage } from "../outgoing-request-message";
+import { IncomingRequestMessage } from "../incoming-request-message.js";
+import { OutgoingRequestMessage } from "../outgoing-request-message.js";
 
 // Note: As a request with no response, ACK is a special case.
 

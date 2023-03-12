@@ -16,7 +16,7 @@ constructor(core: UserAgentCore, message: OutgoingRequestMessage, delegate?: Out
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  core | <code>UserAgentCore</code> |  |
-|  message | <code>OutgoingRequestMessage</code> |  |
-|  delegate | <code>OutgoingInviteRequestDelegate</code> |  |
+|  core | [UserAgentCore](./sip.js.useragentcore.md) |  |
+|  message | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) |  |
+|  delegate | [OutgoingInviteRequestDelegate](./sip.js.outgoinginviterequestdelegate.md) |  |
 

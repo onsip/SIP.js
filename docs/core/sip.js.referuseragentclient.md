@@ -11,6 +11,9 @@ REFER UAC.
 ```typescript
 export declare class ReferUserAgentClient extends UserAgentClient implements OutgoingReferRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingReferRequest](./sip.js.outgoingreferrequest.md)
 
 ## Constructors
 

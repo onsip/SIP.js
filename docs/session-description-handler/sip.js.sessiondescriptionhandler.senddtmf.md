@@ -19,10 +19,10 @@ sendDtmf(tones: string, options?: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  tones | <code>string</code> | A string containing DTMF digits. |
-|  options | <code>{</code><br/><code>        duration: number;</code><br/><code>        interToneGap: number;</code><br/><code>    }</code> | Options object to be used by sendDtmf. |
+|  tones | string | A string containing DTMF digits. |
+|  options | { duration: number; interToneGap: number; } | Options object to be used by sendDtmf. |
 
 <b>Returns:</b>
 
-`boolean`
+boolean
 

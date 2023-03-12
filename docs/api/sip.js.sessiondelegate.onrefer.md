@@ -16,9 +16,9 @@ onRefer?(referral: Referral): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  referral | <code>Referral</code> | The referral. |
+|  referral | [Referral](./sip.js.referral.md) | The referral. |
 
 <b>Returns:</b>
 
-`void`
+void
 

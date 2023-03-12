@@ -1,11 +1,11 @@
-import { Logger } from "../../../../src/core";
+import { Logger } from "../../../../lib/core/index.js";
 import {
   defaultMediaStreamFactory,
   defaultSessionDescriptionHandlerFactory,
   SessionDescriptionHandlerFactoryOptions,
   SessionDescriptionHandler
-} from "../../../../src/platform/web";
-import { BodyAndContentType, Session, UserAgent } from "../../../../src";
+} from "../../../../lib/platform/web/index.js";
+import { BodyAndContentType, Session, UserAgent } from "../../../../lib/index.js";
 
 const splitFields = (body: string): Array<string> => body.split(/\r?\n/);
 
@@ -65,14 +65,14 @@ const exactlyZeroField = (startsWith: string): jasmine.AsymmetricMatcher<string>
 const sessionDescriptionHandlerFactory = defaultSessionDescriptionHandlerFactory();
 
 // A console logger
-const logger = (console as unknown) as Logger;
+const logger = console as unknown as Logger;
 
 // This is a fake Session with a console Logger to provide to the SessionDescriptionHandlerFactory.
 // Currently the default factory only uses the following properties, so the hacks "works".
 const session = {
-  userAgent: ({
+  userAgent: {
     getLogger: (): Logger => logger
-  } as unknown) as UserAgent
+  } as unknown as UserAgent
 } as Session;
 
 // Options for the SessionDescriptionHandlerFactory
@@ -610,7 +610,31 @@ describe("Web SessionDescriptionHandler", () => {
               if (!answer) {
                 throw new Error("Answer undefined.");
               }
-              return sdh1.setDescription(answer.body);
+              return sdh1.setDescription(answer.body).then(() => {
+                // Wait until both ends are reporting connected otherwise things
+                // may not yet work as expected (sending DTMF for example).
+                return new Promise<void>((resolve) => {
+                  const resolveIfConnected = (): void => {
+                    if (
+                      sdh1.peerConnection?.connectionState === "connected" &&
+                      sdh2.peerConnection?.connectionState === "connected"
+                    ) {
+                      resolve();
+                    }
+                  };
+                  resolveIfConnected();
+                  sdh1.peerConnectionDelegate = {
+                    onconnectionstatechange: (): void => {
+                      resolveIfConnected();
+                    }
+                  };
+                  sdh2.peerConnectionDelegate = {
+                    onconnectionstatechange: (): void => {
+                      resolveIfConnected();
+                    }
+                  };
+                });
+              });
             });
 
             it("signaling state should be stable", () => {

@@ -14,12 +14,12 @@ genericLog(levelToLog: Levels, category: string, label: string | undefined, cont
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  levelToLog | <code>Levels</code> |  |
-|  category | <code>string</code> |  |
-|  label | <code>string &#124; undefined</code> |  |
-|  content | <code>any</code> |  |
+|  levelToLog | [Levels](./sip.js.levels.md) |  |
+|  category | string |  |
+|  label | string \| undefined |  |
+|  content | any |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

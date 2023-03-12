@@ -11,6 +11,9 @@ PRACK UAC.
 ```typescript
 export declare class PrackUserAgentClient extends UserAgentClient implements OutgoingPrackRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingPrackRequest](./sip.js.outgoingprackrequest.md)
 
 ## Constructors
 

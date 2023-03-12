@@ -1,7 +1,7 @@
-import { TransportError } from "../exceptions";
-import { URI } from "../messages";
-import { IncomingRequestMessage } from "./incoming-request-message";
-import { OutgoingResponse, ResponseOptions } from "./outgoing-response";
+import { URI } from "../../grammar/uri.js";
+import { TransportError } from "../exceptions/transport-error.js";
+import { IncomingRequestMessage } from "./incoming-request-message.js";
+import { OutgoingResponse, ResponseOptions } from "./outgoing-response.js";
 
 /**
  * A SIP message sent from a remote client to a local server.

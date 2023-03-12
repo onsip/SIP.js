@@ -1,14 +1,12 @@
-import {
-  Body,
-  C,
-  IncomingRequestMessage,
-  IncomingResponseMessage,
-  NameAddrHeader,
-  OutgoingRequestMessage,
-  URI
-} from "../messages";
-import { UserAgentCore } from "../user-agent-core";
-import { DialogState } from "./dialog-state";
+import { NameAddrHeader } from "../../grammar/name-addr-header.js";
+import { URI } from "../../grammar/uri.js";
+import { Body } from "../messages/body.js";
+import { C } from "../messages/methods/constants.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { DialogState } from "./dialog-state.js";
 
 /**
  * Dialog.

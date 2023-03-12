@@ -1,6 +1,6 @@
-import { IncomingRequestMessage } from "./incoming-request-message";
-import { IncomingResponseMessage } from "./incoming-response-message";
-import { OutgoingRequestMessage } from "./outgoing-request-message";
+import { IncomingRequestMessage } from "./incoming-request-message.js";
+import { IncomingResponseMessage } from "./incoming-response-message.js";
+import { OutgoingRequestMessage } from "./outgoing-request-message.js";
 
 // If the Content-Disposition header field is missing, bodies of
 // Content-Type application/sdp imply the disposition "session", while

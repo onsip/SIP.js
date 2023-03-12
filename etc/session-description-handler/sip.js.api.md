@@ -14,7 +14,7 @@ export function defaultPeerConnectionConfiguration(): RTCConfiguration;
 export function defaultSessionDescriptionHandlerFactory(mediaStreamFactory?: (constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler) => Promise<MediaStream>): SessionDescriptionHandlerFactory;
 
 // @public
-export type MediaStreamFactory = (constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler) => Promise<MediaStream>;
+export type MediaStreamFactory = (constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler, options?: SessionDescriptionHandlerOptions) => Promise<MediaStream>;
 
 // @public
 export interface PeerConnectionDelegate {
@@ -26,7 +26,6 @@ export interface PeerConnectionDelegate {
     onicegatheringstatechange?(event: Event): void;
     onnegotiationneeded?(event: Event): void;
     onsignalingstatechange?(event: Event): void;
-    onstatsended?(event: Event): void;
     ontrack?(event: Event): void;
 }
 
@@ -41,13 +40,15 @@ export class SessionDescriptionHandler implements SessionDescriptionHandler_2 {
     protected createLocalOfferOrAnswer(options?: SessionDescriptionHandlerOptions): Promise<RTCSessionDescriptionInit>;
     get dataChannel(): RTCDataChannel | undefined;
     protected _dataChannel: RTCDataChannel | undefined;
+    enableReceiverTracks(enable: boolean): void;
+    enableSenderTracks(enable: boolean): void;
     // Warning: (ae-forgotten-export) The symbol "SessionDescriptionHandlerModifier" needs to be exported by the entry point index.d.ts
     // Warning: (ae-forgotten-export) The symbol "BodyAndContentType" needs to be exported by the entry point index.d.ts
     getDescription(options?: SessionDescriptionHandlerOptions, modifiers?: Array<SessionDescriptionHandlerModifier>): Promise<BodyAndContentType>;
     protected getLocalMediaStream(options?: SessionDescriptionHandlerOptions): Promise<void>;
     protected getLocalSessionDescription(): Promise<RTCSessionDescription>;
     hasDescription(contentType: string): boolean;
-    protected iceGatheringComplete(): void;
+    iceGatheringComplete(): void;
     get localMediaStream(): MediaStream;
     protected _localMediaStream: MediaStream;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
@@ -104,6 +105,20 @@ export interface SessionDescriptionHandlerOptions extends SessionDescriptionHand
     iceGatheringTimeout?: number;
     offerOptions?: RTCOfferOptions;
     onDataChannel?: (dataChannel: RTCDataChannel) => void;
+}
+
+// @beta
+export function startLocalConference(conferenceSessions: Array<Session>): void;
+
+// @beta
+export class WebAudioSessionDescriptionHandler extends SessionDescriptionHandler {
+    constructor(logger: Logger, mediaStreamFactory: MediaStreamFactory, sessionDescriptionHandlerConfiguration?: SessionDescriptionHandlerConfiguration);
+    // (undocumented)
+    static audioContext: AudioContext | undefined;
+    enableSenderTracks(enable: boolean): void;
+    initLocalMediaStream(stream: MediaStream): MediaStream;
+    joinWith(peer: WebAudioSessionDescriptionHandler): void;
+    setRealLocalMediaStream(stream: MediaStream): void;
 }
 
 

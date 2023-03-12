@@ -9,5 +9,7 @@ Interface of factory function which produces a MediaStream.
 <b>Signature:</b>
 
 ```typescript
-export declare type MediaStreamFactory = (constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler) => Promise<MediaStream>;
+export declare type MediaStreamFactory = (constraints: MediaStreamConstraints, sessionDescriptionHandler: SessionDescriptionHandler, options?: SessionDescriptionHandlerOptions) => Promise<MediaStream>;
 ```
+<b>References:</b> [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md)<!-- -->, [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md)
+

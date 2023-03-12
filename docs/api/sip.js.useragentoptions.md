@@ -14,40 +14,41 @@ export interface UserAgentOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [allowLegacyNotifications](./sip.js.useragentoptions.allowlegacynotifications.md) | <code>boolean</code> | If <code>true</code>, the user agent will accept out of dialog NOTIFY. |
-|  [authorizationHa1](./sip.js.useragentoptions.authorizationha1.md) | <code>string</code> | Authorization ha1. |
-|  [authorizationPassword](./sip.js.useragentoptions.authorizationpassword.md) | <code>string</code> | Authorization password. |
-|  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) | <code>string</code> | Authorization username. |
-|  [autoStart](./sip.js.useragentoptions.autostart.md) | <code>boolean</code> |  |
-|  [autoStop](./sip.js.useragentoptions.autostop.md) | <code>boolean</code> | If <code>true</code>, the user agent calls the <code>stop()</code> method on unload (if running in browser window). |
-|  [contactName](./sip.js.useragentoptions.contactname.md) | <code>string</code> | The user portion of user agent's contact URI. |
-|  [contactParams](./sip.js.useragentoptions.contactparams.md) | <code>{</code><br/><code>        [name: string]: string;</code><br/><code>    }</code> | The URI parameters of the user agent's contact URI. |
-|  [delegate](./sip.js.useragentoptions.delegate.md) | <code>UserAgentDelegate</code> | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
-|  [displayName](./sip.js.useragentoptions.displayname.md) | <code>string</code> | The display name associated with the user agent. |
-|  [forceRport](./sip.js.useragentoptions.forcerport.md) | <code>boolean</code> | Force adding rport to Via header. |
-|  [hackAllowUnregisteredOptionTags](./sip.js.useragentoptions.hackallowunregisteredoptiontags.md) | <code>boolean</code> | Hack |
-|  [hackIpInContact](./sip.js.useragentoptions.hackipincontact.md) | <code>boolean &#124; string</code> | Hack |
-|  [hackViaTcp](./sip.js.useragentoptions.hackviatcp.md) | <code>boolean</code> | Hack |
-|  [logBuiltinEnabled](./sip.js.useragentoptions.logbuiltinenabled.md) | <code>boolean</code> | Indicates whether log messages should be written to the browser console. |
-|  [logConfiguration](./sip.js.useragentoptions.logconfiguration.md) | <code>boolean</code> | If true, constructor logs the user agent configuration. |
-|  [logConnector](./sip.js.useragentoptions.logconnector.md) | <code>LogConnector</code> | A function which will be called every time a log is generated. |
-|  [logLevel](./sip.js.useragentoptions.loglevel.md) | <code>LogLevel</code> | Indicates the verbosity level of the log messages. |
-|  [noAnswerTimeout](./sip.js.useragentoptions.noanswertimeout.md) | <code>number</code> | Number of seconds after which an incoming call is rejected if not answered. |
-|  [preloadedRouteSet](./sip.js.useragentoptions.preloadedrouteset.md) | <code>Array&lt;string&gt;</code> | Adds a Route header(s) to outgoing requests. |
-|  [reconnectionAttempts](./sip.js.useragentoptions.reconnectionattempts.md) | <code>number</code> |  |
-|  [reconnectionDelay](./sip.js.useragentoptions.reconnectiondelay.md) | <code>number</code> |  |
-|  [sendInitialProvisionalResponse](./sip.js.useragentoptions.sendinitialprovisionalresponse.md) | <code>boolean</code> | If true, a first provisional response after the 100 Trying will be sent automatically if UAC does not require reliable provisional responses. |
-|  [sessionDescriptionHandlerFactory](./sip.js.useragentoptions.sessiondescriptionhandlerfactory.md) | <code>SessionDescriptionHandlerFactory</code> | A factory for generating <code>SessionDescriptionHandler</code> instances. |
-|  [sessionDescriptionHandlerFactoryOptions](./sip.js.useragentoptions.sessiondescriptionhandlerfactoryoptions.md) | <code>object</code> | Options to passed to <code>sessionDescriptionHandlerFactory</code>. |
-|  [sipExtension100rel](./sip.js.useragentoptions.sipextension100rel.md) | <code>SIPExtension</code> | Reliable provisional responses. https://tools.ietf.org/html/rfc3262 |
-|  [sipExtensionExtraSupported](./sip.js.useragentoptions.sipextensionextrasupported.md) | <code>Array&lt;string&gt;</code> | Extra option tags to claim support for. |
-|  [sipExtensionReplaces](./sip.js.useragentoptions.sipextensionreplaces.md) | <code>SIPExtension</code> | Replaces header. https://tools.ietf.org/html/rfc3891 |
-|  [sipjsId](./sip.js.useragentoptions.sipjsid.md) | <code>string</code> | An id uniquely identify this user agent instance. |
-|  [transportConstructor](./sip.js.useragentoptions.transportconstructor.md) | <code>new (logger: Logger, options: any) =&gt; Transport</code> | A constructor function for the user agent's <code>Transport</code>. |
-|  [transportOptions](./sip.js.useragentoptions.transportoptions.md) | <code>unknown</code> | An options bucket object passed to <code>transportConstructor</code> when instantiated. |
-|  [uri](./sip.js.useragentoptions.uri.md) | <code>URI</code> | SIP Addresses-of-Record URI associated with the user agent. |
-|  [userAgentString](./sip.js.useragentoptions.useragentstring.md) | <code>string</code> | User agent string used in the UserAgent header. |
-|  [viaHost](./sip.js.useragentoptions.viahost.md) | <code>string</code> | Hostname to use in Via header. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [allowLegacyNotifications](./sip.js.useragentoptions.allowlegacynotifications.md) |  | boolean | If <code>true</code>, the user agent will accept out of dialog NOTIFY. |
+|  [authorizationHa1](./sip.js.useragentoptions.authorizationha1.md) |  | string | Authorization ha1. |
+|  [authorizationPassword](./sip.js.useragentoptions.authorizationpassword.md) |  | string | Authorization password. |
+|  [authorizationUsername](./sip.js.useragentoptions.authorizationusername.md) |  | string | Authorization username. |
+|  [contactName](./sip.js.useragentoptions.contactname.md) |  | string | The user portion of user agent's contact URI. |
+|  [contactParams](./sip.js.useragentoptions.contactparams.md) |  | { \[name: string\]: string; } | The URI parameters of the user agent's contact URI. |
+|  [delegate](./sip.js.useragentoptions.delegate.md) |  | [UserAgentDelegate](./sip.js.useragentdelegate.md) | Delegate for [UserAgent](./sip.js.useragent.md)<!-- -->. |
+|  [displayName](./sip.js.useragentoptions.displayname.md) |  | string | The display name associated with the user agent. |
+|  [forceRport](./sip.js.useragentoptions.forcerport.md) |  | boolean | Force adding rport to Via header. |
+|  [gracefulShutdown](./sip.js.useragentoptions.gracefulshutdown.md) |  | boolean | If <code>true</code>, the <code>stop()</code> method will attempt to gracefully end all dialogs and registrations before disconnecting. Otherwise <code>stop()</code> will transition immediately abandoning all dialogs and registrations. |
+|  [hackAllowUnregisteredOptionTags](./sip.js.useragentoptions.hackallowunregisteredoptiontags.md) |  | boolean | Hack |
+|  [hackIpInContact](./sip.js.useragentoptions.hackipincontact.md) |  | boolean \| string | Hack |
+|  [hackViaTcp](./sip.js.useragentoptions.hackviatcp.md) |  | boolean | Hack |
+|  [instanceId](./sip.js.useragentoptions.instanceid.md) |  | string | UUID to provide with "+sip.instance" Contact header parameter. |
+|  [instanceIdAlwaysAdded](./sip.js.useragentoptions.instanceidalwaysadded.md) |  | boolean | Add "+sip.instance" Contact header parameter to all requests. |
+|  [logBuiltinEnabled](./sip.js.useragentoptions.logbuiltinenabled.md) |  | boolean | Indicates whether log messages should be written to the browser console. |
+|  [logConfiguration](./sip.js.useragentoptions.logconfiguration.md) |  | boolean | If true, constructor logs the user agent configuration. |
+|  [logConnector](./sip.js.useragentoptions.logconnector.md) |  | [LogConnector](./sip.js.logconnector.md) | A function which will be called every time a log is generated. |
+|  [logLevel](./sip.js.useragentoptions.loglevel.md) |  | [LogLevel](./sip.js.loglevel.md) | Indicates the verbosity level of the log messages. |
+|  [noAnswerTimeout](./sip.js.useragentoptions.noanswertimeout.md) |  | number | Number of seconds after which an incoming call is rejected if not answered. |
+|  [preloadedRouteSet](./sip.js.useragentoptions.preloadedrouteset.md) |  | Array&lt;string&gt; | Adds a Route header(s) to outgoing requests. |
+|  [reconnectionAttempts](./sip.js.useragentoptions.reconnectionattempts.md) |  | number |  |
+|  [reconnectionDelay](./sip.js.useragentoptions.reconnectiondelay.md) |  | number |  |
+|  [sendInitialProvisionalResponse](./sip.js.useragentoptions.sendinitialprovisionalresponse.md) |  | boolean | If true, a first provisional response after the 100 Trying will be sent automatically if UAC does not require reliable provisional responses. |
+|  [sessionDescriptionHandlerFactory](./sip.js.useragentoptions.sessiondescriptionhandlerfactory.md) |  | [SessionDescriptionHandlerFactory](./sip.js.sessiondescriptionhandlerfactory.md) | A factory for generating <code>SessionDescriptionHandler</code> instances. |
+|  [sessionDescriptionHandlerFactoryOptions](./sip.js.useragentoptions.sessiondescriptionhandlerfactoryoptions.md) |  | object | Options to passed to <code>sessionDescriptionHandlerFactory</code>. |
+|  [sipExtension100rel](./sip.js.useragentoptions.sipextension100rel.md) |  | [SIPExtension](./sip.js.sipextension.md) | Reliable provisional responses. https://tools.ietf.org/html/rfc3262 |
+|  [sipExtensionExtraSupported](./sip.js.useragentoptions.sipextensionextrasupported.md) |  | Array&lt;string&gt; | Extra option tags to claim support for. |
+|  [sipExtensionReplaces](./sip.js.useragentoptions.sipextensionreplaces.md) |  | [SIPExtension](./sip.js.sipextension.md) | Replaces header. https://tools.ietf.org/html/rfc3891 |
+|  [sipjsId](./sip.js.useragentoptions.sipjsid.md) |  | string | An id uniquely identify this user agent instance. |
+|  [transportConstructor](./sip.js.useragentoptions.transportconstructor.md) |  | new (logger: Logger, options: any) =&gt; [Transport](./sip.js.transport.md) | A constructor function for the user agent's <code>Transport</code>. |
+|  [transportOptions](./sip.js.useragentoptions.transportoptions.md) |  | unknown | An options bucket object passed to <code>transportConstructor</code> when instantiated. |
+|  [uri](./sip.js.useragentoptions.uri.md) |  | URI | SIP Addresses-of-Record URI associated with the user agent. |
+|  [userAgentString](./sip.js.useragentoptions.useragentstring.md) |  | string | User agent string used in the UserAgent header. |
+|  [viaHost](./sip.js.useragentoptions.viahost.md) |  | string | Hostname to use in Via header. |
 

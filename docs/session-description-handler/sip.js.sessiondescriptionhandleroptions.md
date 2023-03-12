@@ -11,18 +11,19 @@ Options for [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md)<!
 ```typescript
 export interface SessionDescriptionHandlerOptions extends SessionDescriptionHandlerOptionsDefinition 
 ```
+<b>Extends:</b> [SessionDescriptionHandlerOptionsDefinition](./sip.js.sessiondescriptionhandleroptions.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [answerOptions](./sip.js.sessiondescriptionhandleroptions.answeroptions.md) | <code>RTCAnswerOptions</code> | Answer options to use when creating an answer. |
-|  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) | <code>MediaStreamConstraints</code> | Constraints to use when creating local media stream. |
-|  [dataChannel](./sip.js.sessiondescriptionhandleroptions.datachannel.md) | <code>boolean</code> | If true, create a data channel when making initial offer. |
-|  [dataChannelLabel](./sip.js.sessiondescriptionhandleroptions.datachannellabel.md) | <code>string</code> | A human-readable name to use when creating the data channel. |
-|  [dataChannelOptions](./sip.js.sessiondescriptionhandleroptions.datachanneloptions.md) | <code>RTCDataChannelInit</code> | Configuration options for creating the data channel. |
-|  [hold](./sip.js.sessiondescriptionhandleroptions.hold.md) | <code>boolean</code> | If true, offer and answer directions will be set to place peer on hold. |
-|  [iceGatheringTimeout](./sip.js.sessiondescriptionhandleroptions.icegatheringtimeout.md) | <code>number</code> | The maximum duration to wait in ms for ICE gathering to complete. No timeout if undefined or zero. |
-|  [offerOptions](./sip.js.sessiondescriptionhandleroptions.offeroptions.md) | <code>RTCOfferOptions</code> | Offer options to use when creating an offer. |
-|  [onDataChannel](./sip.js.sessiondescriptionhandleroptions.ondatachannel.md) | <code>(dataChannel: RTCDataChannel) =&gt; void</code> | Called upon creating a data channel. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [answerOptions](./sip.js.sessiondescriptionhandleroptions.answeroptions.md) |  | RTCAnswerOptions | Answer options to use when creating an answer. |
+|  [constraints](./sip.js.sessiondescriptionhandleroptions.constraints.md) |  | MediaStreamConstraints | Constraints to use when creating local media stream. |
+|  [dataChannel](./sip.js.sessiondescriptionhandleroptions.datachannel.md) |  | boolean | If true, create a data channel when making initial offer. |
+|  [dataChannelLabel](./sip.js.sessiondescriptionhandleroptions.datachannellabel.md) |  | string | A human-readable name to use when creating the data channel. |
+|  [dataChannelOptions](./sip.js.sessiondescriptionhandleroptions.datachanneloptions.md) |  | RTCDataChannelInit | Configuration options for creating the data channel. |
+|  [hold](./sip.js.sessiondescriptionhandleroptions.hold.md) |  | boolean | If true, offer and answer directions will be set to place peer on hold. |
+|  [iceGatheringTimeout](./sip.js.sessiondescriptionhandleroptions.icegatheringtimeout.md) |  | number | The maximum duration to wait in ms for ICE gathering to complete. No timeout if undefined or zero. |
+|  [offerOptions](./sip.js.sessiondescriptionhandleroptions.offeroptions.md) |  | RTCOfferOptions | Offer options to use when creating an offer. |
+|  [onDataChannel](./sip.js.sessiondescriptionhandleroptions.ondatachannel.md) |  | (dataChannel: RTCDataChannel) =&gt; void | Called upon creating a data channel. |
 

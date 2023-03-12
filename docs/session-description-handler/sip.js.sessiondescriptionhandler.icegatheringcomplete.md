@@ -9,9 +9,13 @@ Called when ICE gathering completes and resolves any waiting promise.
 <b>Signature:</b>
 
 ```typescript
-protected iceGatheringComplete(): void;
+iceGatheringComplete(): void;
 ```
 <b>Returns:</b>
 
-`void`
+void
+
+## Remarks
+
+May be called prior to ICE gathering actually completing to allow the session descirption handler proceed with whatever candidates have been gathered up to this point in time. Use this to stop waiting on ICE to complete if you are implementing your own ICE gathering completion strategy.
 

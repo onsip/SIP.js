@@ -16,9 +16,9 @@ onDisconnect?(error?: Error): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  error | <code>Error</code> | An error if disconnect triggered by transport. Otherwise undefined. |
+|  error | Error | An error if disconnect triggered by transport. Otherwise undefined. |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -16,9 +16,9 @@ removeListener(listener: (data: T) => void): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  listener | <code>(data: T) =&gt; void</code> | Callback function. |
+|  listener | (data: T) =&gt; void | Callback function. |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -16,9 +16,9 @@ onBye?(bye: Bye): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  bye | <code>Bye</code> | The bye. |
+|  bye | [Bye](./sip.js.bye.md) | The bye. |
 
 <b>Returns:</b>
 
-`void`
+void
 
