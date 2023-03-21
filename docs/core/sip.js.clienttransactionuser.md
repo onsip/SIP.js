@@ -11,11 +11,12 @@ UAC Core Transaction User.
 ```typescript
 export interface ClientTransactionUser extends TransactionUser 
 ```
+<b>Extends:</b> [TransactionUser](./sip.js.transactionuser.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [onRequestTimeout](./sip.js.clienttransactionuser.onrequesttimeout.md) | <code>() =&gt; void</code> | Callback for request timeout error.<!-- -->When a timeout error is received from the transaction layer, it MUST be treated as if a 408 (Request Timeout) status code has been received. https://tools.ietf.org/html/rfc3261\#section-8.1.3.1 TU MUST be informed of a timeout. https://tools.ietf.org/html/rfc3261\#section-17.1.2.2 |
-|  [receiveResponse](./sip.js.clienttransactionuser.receiveresponse.md) | <code>(response: IncomingResponseMessage) =&gt; void</code> | Callback for delegation of valid response handling.<!-- -->Valid responses are passed up to the TU from the client transaction. https://tools.ietf.org/html/rfc3261\#section-17.1 |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [onRequestTimeout](./sip.js.clienttransactionuser.onrequesttimeout.md) |  | () =&gt; void | <p>Callback for request timeout error.</p><p>When a timeout error is received from the transaction layer, it MUST be treated as if a 408 (Request Timeout) status code has been received. https://tools.ietf.org/html/rfc3261\#section-8.1.3.1 TU MUST be informed of a timeout. https://tools.ietf.org/html/rfc3261\#section-17.1.2.2</p> |
+|  [receiveResponse](./sip.js.clienttransactionuser.receiveresponse.md) |  | (response: [IncomingResponseMessage](./sip.js.incomingresponsemessage.md)<!-- -->) =&gt; void | <p>Callback for delegation of valid response handling.</p><p>Valid responses are passed up to the TU from the client transaction. https://tools.ietf.org/html/rfc3261\#section-17.1</p> |
 

@@ -16,9 +16,9 @@ onnegotiationneeded?(event: Event): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  event | <code>Event</code> | Event. |
+|  event | Event | Event. |
 
 <b>Returns:</b>
 
-`void`
+void
 

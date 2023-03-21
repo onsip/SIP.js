@@ -2,11 +2,11 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { Server, WebSocket } from "mock-socket";
 
-import { StateTransitionError, TransportState } from "../../../../src/api";
-import { LoggerFactory } from "../../../../src/core";
-import { Transport } from "../../../../src/platform/web";
-import { EmitterSpy, makeEmitterSpy } from "../../../support/api/emitter-spy";
-import { soon } from "../../../support/api/utils";
+import { StateTransitionError, TransportState } from "../../../../lib/api/index.js";
+import { LoggerFactory } from "../../../../lib/core/index.js";
+import { Transport } from "../../../../lib/platform/web/index.js";
+import { EmitterSpy, makeEmitterSpy } from "../../../support/api/emitter-spy.js";
+import { soon } from "../../../support/api/utils.js";
 
 /**
  * Transport Unit Tests
@@ -74,7 +74,7 @@ describe("Web Transport", () => {
     mockServer = new Server(server, { selectProtocol: (protocols: Array<string>): string => "sip" });
     mockServer.on("connection", (socket) => {
       logger.log("Mock WebSocket Server: incoming connection");
-      mockServerWebSocket = socket;
+      mockServerWebSocket = socket as WebSocket; // TODO: Client and WebSocket do not have same signature - close() is an issue.
 
       socket.on("message", (receivedMessage) => {
         if (typeof receivedMessage !== "string") {

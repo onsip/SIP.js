@@ -20,18 +20,18 @@ https://tools.ietf.org/html/rfc3261\#section-12
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [callId](./sip.js.dialogstate.callid.md) | <code>string</code> |  |
-|  [early](./sip.js.dialogstate.early.md) | <code>boolean</code> |  |
-|  [id](./sip.js.dialogstate.id.md) | <code>string</code> |  |
-|  [localSequenceNumber](./sip.js.dialogstate.localsequencenumber.md) | <code>number &#124; undefined</code> |  |
-|  [localTag](./sip.js.dialogstate.localtag.md) | <code>string</code> |  |
-|  [localURI](./sip.js.dialogstate.localuri.md) | <code>URI</code> |  |
-|  [remoteSequenceNumber](./sip.js.dialogstate.remotesequencenumber.md) | <code>number &#124; undefined</code> |  |
-|  [remoteTag](./sip.js.dialogstate.remotetag.md) | <code>string</code> |  |
-|  [remoteTarget](./sip.js.dialogstate.remotetarget.md) | <code>URI</code> |  |
-|  [remoteURI](./sip.js.dialogstate.remoteuri.md) | <code>URI</code> |  |
-|  [routeSet](./sip.js.dialogstate.routeset.md) | <code>Array&lt;string&gt;</code> |  |
-|  [secure](./sip.js.dialogstate.secure.md) | <code>boolean</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [callId](./sip.js.dialogstate.callid.md) |  | string |  |
+|  [early](./sip.js.dialogstate.early.md) |  | boolean |  |
+|  [id](./sip.js.dialogstate.id.md) |  | string |  |
+|  [localSequenceNumber](./sip.js.dialogstate.localsequencenumber.md) |  | number \| undefined |  |
+|  [localTag](./sip.js.dialogstate.localtag.md) |  | string |  |
+|  [localURI](./sip.js.dialogstate.localuri.md) |  | [URI](./sip.js.uri.md) |  |
+|  [remoteSequenceNumber](./sip.js.dialogstate.remotesequencenumber.md) |  | number \| undefined |  |
+|  [remoteTag](./sip.js.dialogstate.remotetag.md) |  | string |  |
+|  [remoteTarget](./sip.js.dialogstate.remotetarget.md) |  | [URI](./sip.js.uri.md) |  |
+|  [remoteURI](./sip.js.dialogstate.remoteuri.md) |  | [URI](./sip.js.uri.md) |  |
+|  [routeSet](./sip.js.dialogstate.routeset.md) |  | Array&lt;string&gt; |  |
+|  [secure](./sip.js.dialogstate.secure.md) |  | boolean |  |
 

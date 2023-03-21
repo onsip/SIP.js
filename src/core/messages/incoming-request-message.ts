@@ -1,5 +1,5 @@
-import { URI } from "../messages";
-import { IncomingMessage } from "./incoming-message";
+import { URI } from "../../grammar/uri.js";
+import { IncomingMessage } from "./incoming-message.js";
 
 /**
  * Incoming request message.

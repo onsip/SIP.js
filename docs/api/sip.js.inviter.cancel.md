@@ -16,11 +16,11 @@ cancel(options?: InviterCancelOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>InviterCancelOptions</code> | Options bucket. |
+|  options | [InviterCancelOptions](./sip.js.invitercanceloptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

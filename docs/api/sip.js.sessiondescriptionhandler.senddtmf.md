@@ -16,12 +16,12 @@ sendDtmf(tones: string, options?: unknown): boolean;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  tones | <code>string</code> | A string containing DTMF digits. |
-|  options | <code>unknown</code> | Options object to be used by sendDtmf. |
+|  tones | string | A string containing DTMF digits. |
+|  options | unknown | Options object to be used by sendDtmf. |
 
 <b>Returns:</b>
 
-`boolean`
+boolean
 
 True if DTMF send is successful, false otherwise.
 

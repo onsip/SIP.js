@@ -16,7 +16,7 @@ constructor(dialog: SessionDialog, delegate?: OutgoingRequestDelegate, options?:
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  dialog | <code>SessionDialog</code> |  |
-|  delegate | <code>OutgoingRequestDelegate</code> |  |
-|  options | <code>RequestOptions</code> |  |
+|  dialog | [SessionDialog](./sip.js.sessiondialog.md) |  |
+|  delegate | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) |  |
+|  options | [RequestOptions](./sip.js.requestoptions.md) |  |
 

@@ -16,10 +16,10 @@ protected waitForIceGatheringComplete(restart?: boolean, timeout?: number): Prom
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  restart | <code>boolean</code> | If true, waits if current state is "complete" (waits for transition to "complete"). |
-|  timeout | <code>number</code> | Milliseconds after which waiting times out. No timeout if 0. |
+|  restart | boolean | If true, waits if current state is "complete" (waits for transition to "complete"). |
+|  timeout | number | Milliseconds after which waiting times out. No timeout if 0. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

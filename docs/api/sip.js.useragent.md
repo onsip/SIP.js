@@ -26,14 +26,15 @@ A user agent (UA) is associated with a user via the user's SIP address of record
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [configuration](./sip.js.useragent.configuration.md) |  | <code>Required&lt;UserAgentOptions&gt;</code> | User agent configuration. |
-|  [contact](./sip.js.useragent.contact.md) |  | <code>Contact</code> | User agent contact. |
-|  [data](./sip.js.useragent.data.md) |  | <code>unknown</code> | Property reserved for use by instance owner. |
-|  [delegate](./sip.js.useragent.delegate.md) |  | <code>UserAgentDelegate &#124; undefined</code> | Delegate. |
-|  [state](./sip.js.useragent.state.md) |  | <code>UserAgentState</code> | User agent state. |
-|  [stateChange](./sip.js.useragent.statechange.md) |  | <code>Emitter&lt;UserAgentState&gt;</code> | User agent state change emitter. |
-|  [transport](./sip.js.useragent.transport.md) |  | <code>Transport</code> | User agent transport. |
-|  [userAgentCore](./sip.js.useragent.useragentcore.md) |  | <code>UserAgentCore</code> | User agent core. |
+|  [configuration](./sip.js.useragent.configuration.md) |  | Required&lt;[UserAgentOptions](./sip.js.useragentoptions.md)<!-- -->&gt; | User agent configuration. |
+|  [contact](./sip.js.useragent.contact.md) |  | Contact | User agent contact. |
+|  [data](./sip.js.useragent.data.md) |  | unknown | Property reserved for use by instance owner. |
+|  [delegate](./sip.js.useragent.delegate.md) |  | [UserAgentDelegate](./sip.js.useragentdelegate.md) \| undefined | Delegate. |
+|  [instanceId](./sip.js.useragent.instanceid.md) |  | string | User agent instance id. |
+|  [state](./sip.js.useragent.state.md) |  | [UserAgentState](./sip.js.useragentstate.md) | User agent state. |
+|  [stateChange](./sip.js.useragent.statechange.md) |  | [Emitter](./sip.js.emitter.md)<!-- -->&lt;[UserAgentState](./sip.js.useragentstate.md)<!-- -->&gt; | User agent state change emitter. |
+|  [transport](./sip.js.useragent.transport.md) |  | [Transport](./sip.js.transport.md) | User agent transport. |
+|  [userAgentCore](./sip.js.useragent.useragentcore.md) |  | UserAgentCore | User agent core. |
 
 ## Methods
 

@@ -1,4 +1,4 @@
-import { Grammar, URI, equivalentURI } from "../../../src/core";
+import { Grammar, URI, equivalentURI } from "../../../lib/grammar/index.js";
 
 // TODO:
 // These tests were ported to typescript verbatim.

@@ -11,6 +11,7 @@ Delegate providing custom handling of outgoing INVITE requests.
 ```typescript
 export interface OutgoingInviteRequestDelegate extends OutgoingRequestDelegate 
 ```
+<b>Extends:</b> [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md)
 
 ## Methods
 

@@ -13,9 +13,9 @@ hangup(): Promise<void>;
 ```
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 
-Send a BYE request, CANCEL request or reject response to end the current Session. Resolves when the request/response is sent, otherwise rejects. Use `onCallTerminated` delegate method to determine if and when call is ended.
+Send a BYE request, CANCEL request or reject response to end the current Session. Resolves when the request/response is sent, otherwise rejects. Use `onCallHangup` delegate method to determine if and when call is ended.
 

@@ -14,8 +14,8 @@ export interface RegistererRegisterOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [requestDelegate](./sip.js.registererregisteroptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.registererregisteroptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [requestDelegate](./sip.js.registererregisteroptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.registererregisteroptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

@@ -11,3 +11,5 @@ Incoming MESSAGE request.
 ```typescript
 export interface IncomingMessageRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

@@ -16,9 +16,9 @@ send(message: string): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>string</code> | Message to send. |
+|  message | string | Message to send. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

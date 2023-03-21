@@ -13,5 +13,5 @@ export declare function defaultMediaStreamFactory(): MediaStreamFactory;
 ```
 <b>Returns:</b>
 
-`MediaStreamFactory`
+[MediaStreamFactory](./sip.js.mediastreamfactory.md)
 

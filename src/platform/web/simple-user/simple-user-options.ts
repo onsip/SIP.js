@@ -1,5 +1,6 @@
-import { UserAgentOptions } from "../../../api";
-import { SimpleUserDelegate } from "./simple-user-delegate";
+import { RegistererOptions } from "../../../api/registerer-options.js";
+import { UserAgentOptions } from "../../../api/user-agent-options.js";
+import { SimpleUserDelegate } from "./simple-user-delegate.js";
 
 /**
  * Media for {@link SimpleUserOptions}.
@@ -94,6 +95,17 @@ export interface SimpleUserOptions {
    * @defaultValue 4
    */
   reconnectionDelay?: number;
+
+  /**
+   * Options for Registerer.
+   */
+  registererOptions?: RegistererOptions;
+
+  /**
+   * Send DTMF using the session description handler (uses RFC 2833 DTMF).
+   * @defaultValue `false`
+   */
+  sendDTMFUsingSessionDescriptionHandler?: boolean;
 
   /**
    * Options for UserAgent.

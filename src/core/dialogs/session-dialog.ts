@@ -1,45 +1,43 @@
-import { Logger } from "../log";
-import {
-  Body,
-  C,
-  getBody,
-  IncomingRequestMessage,
-  IncomingResponseMessage,
-  isBody,
-  NameAddrHeader,
-  OutgoingAckRequest,
-  OutgoingByeRequest,
-  OutgoingInfoRequest,
-  OutgoingInviteRequest,
-  OutgoingInviteRequestDelegate,
-  OutgoingMessageRequest,
-  OutgoingNotifyRequest,
-  OutgoingPrackRequest,
-  OutgoingReferRequest,
-  OutgoingRequestDelegate,
-  OutgoingRequestMessage,
-  RequestOptions
-} from "../messages";
-import { Session, SessionDelegate, SessionState, SignalingState } from "../session";
-import { Timers } from "../timers";
-import { InviteClientTransaction, InviteServerTransaction, TransactionState } from "../transactions";
-import { UserAgentCore } from "../user-agent-core";
-import { ByeUserAgentClient } from "../user-agents/bye-user-agent-client";
-import { ByeUserAgentServer } from "../user-agents/bye-user-agent-server";
-import { InfoUserAgentClient } from "../user-agents/info-user-agent-client";
-import { InfoUserAgentServer } from "../user-agents/info-user-agent-server";
-import { MessageUserAgentClient } from "../user-agents/message-user-agent-client";
-import { MessageUserAgentServer } from "../user-agents/message-user-agent-server";
-import { NotifyUserAgentClient } from "../user-agents/notify-user-agent-client";
-import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server";
-import { PrackUserAgentClient } from "../user-agents/prack-user-agent-client";
-import { PrackUserAgentServer } from "../user-agents/prack-user-agent-server";
-import { ReInviteUserAgentClient } from "../user-agents/re-invite-user-agent-client";
-import { ReInviteUserAgentServer } from "../user-agents/re-invite-user-agent-server";
-import { ReferUserAgentClient } from "../user-agents/refer-user-agent-client";
-import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server";
-import { Dialog } from "./dialog";
-import { DialogState } from "./dialog-state";
+import { NameAddrHeader } from "../../grammar/name-addr-header.js";
+import { Logger } from "../log/logger.js";
+import { Body, getBody, isBody } from "../messages/body.js";
+import { C } from "../messages/methods/constants.js";
+import { IncomingRequestMessage } from "../messages/incoming-request-message.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingAckRequest } from "../messages/methods/ack.js";
+import { OutgoingByeRequest } from "../messages/methods/bye.js";
+import { OutgoingInfoRequest } from "../messages/methods/info.js";
+import { OutgoingInviteRequest, OutgoingInviteRequestDelegate } from "../messages/methods/invite.js";
+import { OutgoingMessageRequest } from "../messages/methods/message.js";
+import { OutgoingNotifyRequest } from "../messages/methods/notify.js";
+import { OutgoingPrackRequest } from "../messages/methods/prack.js";
+import { OutgoingReferRequest } from "../messages/methods/refer.js";
+import { OutgoingRequestDelegate, RequestOptions } from "../messages/outgoing-request.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { Session, SessionState } from "../session/session.js";
+import { SessionDelegate } from "../session/session-delegate.js";
+import { SignalingState } from "../session/session.js";
+import { Timers } from "../timers.js";
+import { InviteClientTransaction } from "../transactions/invite-client-transaction.js";
+import { InviteServerTransaction } from "../transactions/invite-server-transaction.js";
+import { TransactionState } from "../transactions/transaction-state.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
+import { ByeUserAgentClient } from "../user-agents/bye-user-agent-client.js";
+import { ByeUserAgentServer } from "../user-agents/bye-user-agent-server.js";
+import { InfoUserAgentClient } from "../user-agents/info-user-agent-client.js";
+import { InfoUserAgentServer } from "../user-agents/info-user-agent-server.js";
+import { MessageUserAgentClient } from "../user-agents/message-user-agent-client.js";
+import { MessageUserAgentServer } from "../user-agents/message-user-agent-server.js";
+import { NotifyUserAgentClient } from "../user-agents/notify-user-agent-client.js";
+import { NotifyUserAgentServer } from "../user-agents/notify-user-agent-server.js";
+import { PrackUserAgentClient } from "../user-agents/prack-user-agent-client.js";
+import { PrackUserAgentServer } from "../user-agents/prack-user-agent-server.js";
+import { ReInviteUserAgentClient } from "../user-agents/re-invite-user-agent-client.js";
+import { ReInviteUserAgentServer } from "../user-agents/re-invite-user-agent-server.js";
+import { ReferUserAgentClient } from "../user-agents/refer-user-agent-client.js";
+import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server.js";
+import { Dialog } from "./dialog.js";
+import { DialogState } from "./dialog-state.js";
 
 /**
  * Session Dialog.

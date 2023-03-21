@@ -16,10 +16,10 @@ subscribe(delegate?: OutgoingSubscribeRequestDelegate, options?: RequestOptions)
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  delegate | <code>OutgoingSubscribeRequestDelegate</code> | Request delegate. |
-|  options | <code>RequestOptions</code> | Options bucket |
+|  delegate | [OutgoingSubscribeRequestDelegate](./sip.js.outgoingsubscriberequestdelegate.md) | Request delegate. |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Options bucket |
 
 <b>Returns:</b>
 
-`OutgoingSubscribeRequest`
+[OutgoingSubscribeRequest](./sip.js.outgoingsubscriberequest.md)
 

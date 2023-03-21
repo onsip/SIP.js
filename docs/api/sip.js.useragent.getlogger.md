@@ -16,10 +16,10 @@ getLogger(category: string, label?: string): Logger;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  category | <code>string</code> |  |
-|  label | <code>string</code> |  |
+|  category | string |  |
+|  label | string |  |
 
 <b>Returns:</b>
 
-`Logger`
+Logger
 

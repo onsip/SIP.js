@@ -1,13 +1,10 @@
-import { SubscriptionDialog } from "../dialogs";
-import {
-  C,
-  IncomingResponseMessage,
-  OutgoingRequestDelegate,
-  OutgoingSubscribeRequest,
-  RequestOptions
-} from "../messages";
-import { NonInviteClientTransaction } from "../transactions";
-import { UserAgentClient } from "./user-agent-client";
+import { SubscriptionDialog } from "../dialogs/subscription-dialog.js";
+import { C } from "../messages/methods/constants.js";
+import { OutgoingSubscribeRequest } from "../messages/methods/subscribe.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequestDelegate, RequestOptions } from "../messages/outgoing-request.js";
+import { NonInviteClientTransaction } from "../transactions/non-invite-client-transaction.js";
+import { UserAgentClient } from "./user-agent-client.js";
 
 /**
  * Re-SUBSCRIBE UAC.

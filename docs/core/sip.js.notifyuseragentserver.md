@@ -11,6 +11,9 @@ NOTIFY UAS.
 ```typescript
 export declare class NotifyUserAgentServer extends UserAgentServer implements IncomingNotifyRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingNotifyRequest](./sip.js.incomingnotifyrequest.md)
 
 ## Constructors
 

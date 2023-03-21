@@ -1,10 +1,10 @@
-import { Session } from "../../session";
-import { IncomingRequest } from "../incoming-request";
-import { IncomingResponse } from "../incoming-response";
-import { OutgoingRequest, OutgoingRequestDelegate, RequestOptions } from "../outgoing-request";
-import { OutgoingResponse, ResponseOptions } from "../outgoing-response";
-import { OutgoingAckRequest } from "./ack";
-import { OutgoingPrackRequest } from "./prack";
+import { Session } from "../../session/session.js";
+import { IncomingRequest } from "../incoming-request.js";
+import { IncomingResponse } from "../incoming-response.js";
+import { OutgoingRequest, OutgoingRequestDelegate, RequestOptions } from "../outgoing-request.js";
+import { OutgoingResponse, ResponseOptions } from "../outgoing-response.js";
+import { OutgoingAckRequest } from "./ack.js";
+import { OutgoingPrackRequest } from "./prack.js";
 
 ////////////////////
 // Incoming INVITE

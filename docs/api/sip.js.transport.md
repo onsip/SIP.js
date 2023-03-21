@@ -11,6 +11,7 @@ Transport layer interface expected by the `UserAgent`<!-- -->.
 ```typescript
 export interface Transport extends CoreTransport 
 ```
+<b>Extends:</b> [CoreTransport](./sip.js.transport.md)
 
 ## Remarks
 
@@ -26,18 +27,17 @@ Proper handling the application level protocol recovery must be left to the appl
 transport.onDisconnect = () => {
   Promise.resolve().then(() => transport.connect());
 }
-
 ```
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [onConnect](./sip.js.transport.onconnect.md) | <code>(() =&gt; void) &#124; undefined</code> | Callback on state transition to "Connected". |
-|  [onDisconnect](./sip.js.transport.ondisconnect.md) | <code>((error?: Error) =&gt; void) &#124; undefined</code> | Callback on state transition from "Connected". |
-|  [onMessage](./sip.js.transport.onmessage.md) | <code>((message: string) =&gt; void) &#124; undefined</code> | Callback on receipt of a message. |
-|  [state](./sip.js.transport.state.md) | <code>TransportState</code> | Transport state. |
-|  [stateChange](./sip.js.transport.statechange.md) | <code>Emitter&lt;TransportState&gt;</code> | Transport state change emitter. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [onConnect](./sip.js.transport.onconnect.md) |  | (() =&gt; void) \| undefined | Callback on state transition to "Connected". |
+|  [onDisconnect](./sip.js.transport.ondisconnect.md) |  | ((error?: Error) =&gt; void) \| undefined | Callback on state transition from "Connected". |
+|  [onMessage](./sip.js.transport.onmessage.md) |  | ((message: string) =&gt; void) \| undefined | Callback on receipt of a message. |
+|  [state](./sip.js.transport.state.md) |  | [TransportState](./sip.js.transportstate.md) | Transport state. |
+|  [stateChange](./sip.js.transport.statechange.md) |  | [Emitter](./sip.js.emitter.md)<!-- -->&lt;[TransportState](./sip.js.transportstate.md)<!-- -->&gt; | Transport state change emitter. |
 
 ## Methods
 

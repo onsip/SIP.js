@@ -18,10 +18,10 @@ setViaHeader(branch: string, transport: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  branch | <code>string</code> |  |
-|  transport | <code>string</code> | The sent protocol transport. |
+|  branch | string |  |
+|  transport | string | The sent protocol transport. |
 
 <b>Returns:</b>
 
-`void`
+void
 

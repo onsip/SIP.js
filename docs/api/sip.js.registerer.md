@@ -22,10 +22,10 @@ export declare class Registerer
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [contacts](./sip.js.registerer.contacts.md) |  | <code>Array&lt;string&gt;</code> | The registered contacts. |
-|  [retryAfter](./sip.js.registerer.retryafter.md) |  | <code>number &#124; undefined</code> | The number of seconds to wait before retrying to register. |
-|  [state](./sip.js.registerer.state.md) |  | <code>RegistererState</code> | The registration state. |
-|  [stateChange](./sip.js.registerer.statechange.md) |  | <code>Emitter&lt;RegistererState&gt;</code> | Emits when the registerer state changes. |
+|  [contacts](./sip.js.registerer.contacts.md) |  | Array&lt;string&gt; | The registered contacts. |
+|  [retryAfter](./sip.js.registerer.retryafter.md) |  | number \| undefined | The number of seconds to wait before retrying to register. |
+|  [state](./sip.js.registerer.state.md) |  | [RegistererState](./sip.js.registererstate.md) | The registration state. |
+|  [stateChange](./sip.js.registerer.statechange.md) |  | [Emitter](./sip.js.emitter.md)<!-- -->&lt;[RegistererState](./sip.js.registererstate.md)<!-- -->&gt; | Emits when the registerer state changes. |
 
 ## Methods
 

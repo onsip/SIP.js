@@ -32,6 +32,5 @@ Registerer       | |                          v             v
 Constructed -> Initial -> Registered -> Unregistered -> Terminated
                              |   ^____________|             ^
                              |______________________________|
-
 ```
 

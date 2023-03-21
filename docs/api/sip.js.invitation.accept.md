@@ -16,11 +16,11 @@ accept(options?: InvitationAcceptOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>InvitationAcceptOptions</code> | Options bucket. |
+|  options | [InvitationAcceptOptions](./sip.js.invitationacceptoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

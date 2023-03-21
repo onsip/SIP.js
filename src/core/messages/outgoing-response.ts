@@ -1,6 +1,6 @@
-import { Body } from "./body";
-import { IncomingRequestMessage } from "./incoming-request-message";
-import { getReasonPhrase, newTag, utf8Length } from "./utils";
+import { Body } from "./body.js";
+import { IncomingRequestMessage } from "./incoming-request-message.js";
+import { getReasonPhrase, newTag, utf8Length } from "./utils.js";
 
 /**
  * A SIP message sent from a local server to a remote client.

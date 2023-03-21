@@ -16,9 +16,9 @@ protected setLocalSessionDescription(sessionDescription: RTCSessionDescriptionIn
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  sessionDescription | <code>RTCSessionDescriptionInit</code> | sessionDescription The session description. |
+|  sessionDescription | RTCSessionDescriptionInit | sessionDescription The session description. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

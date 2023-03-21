@@ -18,10 +18,10 @@ https://tools.ietf.org/html/rfc3261\#section-8.1.1.8 This is ported from UA.cont
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [pubGruu](./sip.js.contact.pubgruu.md) | <code>URI &#124; undefined</code> |  |
-|  [tempGruu](./sip.js.contact.tempgruu.md) | <code>URI &#124; undefined</code> |  |
-|  [toString](./sip.js.contact.tostring.md) | <code>(options?: {</code><br/><code>        anonymous?: boolean;</code><br/><code>        outbound?: boolean;</code><br/><code>    }) =&gt; string</code> |  |
-|  [uri](./sip.js.contact.uri.md) | <code>URI</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [pubGruu](./sip.js.contact.pubgruu.md) |  | [URI](./sip.js.uri.md) \| undefined |  |
+|  [tempGruu](./sip.js.contact.tempgruu.md) |  | [URI](./sip.js.uri.md) \| undefined |  |
+|  [toString](./sip.js.contact.tostring.md) |  | (options?: { anonymous?: boolean; outbound?: boolean; register?: boolean; }) =&gt; string |  |
+|  [uri](./sip.js.contact.uri.md) |  | [URI](./sip.js.uri.md) |  |
 

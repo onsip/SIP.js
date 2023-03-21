@@ -1,4 +1,4 @@
-import { UserAgent } from "../../../src/api";
+import { UserAgent } from "../../../lib/api/index.js";
 import {
   AckableIncomingResponseWithSession,
   C,
@@ -33,11 +33,10 @@ import {
   Timers,
   Transport,
   TransportError,
-  URI,
   UserAgentCore,
   UserAgentCoreConfiguration
-} from "../../../src/core";
-
+} from "../../../lib/core/index.js";
+import { URI } from "../../../lib/grammar/index.js";
 import {
   connectTransportToUA,
   makeMockOutgoingRequestDelegate,
@@ -48,9 +47,9 @@ import {
   makeMockUA,
   makeMockUserAgentCoreDelegate,
   makeUserAgentCoreConfigurationFromUserAgent
-} from "../../support/core/mocks";
+} from "../../support/core/mocks.js";
 
-import { soon } from "../../support/api/utils";
+import { soon } from "../../support/api/utils.js";
 
 describe("Core UserAgentCore", () => {
   const userAlice = "alice";

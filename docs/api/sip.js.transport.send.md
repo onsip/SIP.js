@@ -16,11 +16,11 @@ send(message: string): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>string</code> | Message to send. |
+|  message | string | Message to send. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 
@@ -30,6 +30,5 @@ send(message: string): Promise<void>;
 - If `state` is "Connected", resolves when the message is sent otherwise rejects with an Error.
 - If `state` is "Disconnecting", rejects with an Error.
 - If `state` is "Disconnected", rejects with an Error.
-
 ```
 

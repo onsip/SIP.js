@@ -16,9 +16,9 @@ onRedirect?(response: IncomingResponse): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  response | <code>IncomingResponse</code> | Incoming response. |
+|  response | [IncomingResponse](./sip.js.incomingresponse.md) | Incoming response. |
 
 <b>Returns:</b>
 
-`void`
+void
 

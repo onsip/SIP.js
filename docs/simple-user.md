@@ -6,7 +6,9 @@ The `SimpleUser` class provides an easy simplified interface for making audio an
 
 While not intended for all use cases, `SimpleUser` is intended to be suitable for many single page web browser applications. For instance, the examples on the [Demo](../demo/README.md) page are implemented using the `SimpleUser` class exclusively. Furthermore, the [Demo](../demo/README.md) source code provides concrete examples of how to use all the features provided by `SimpleUser`.
 
-If requirements are more advanced, working directly with the [API](./api.md) which `SimpleUser` is built on top of provides more flexiblity.
+If requirements are more advanced, working directly with the [SessionManager](./session-manager.md) which `SimpleUser` is built on top of provides more flexiblity and supports multiple concurrent calls.
+
+If requirements are still more advanced, working directly with the [API](./api.md) which `SessionManager` is built on top of provides more flexiblity.
 
 ## Reference Documentation
 

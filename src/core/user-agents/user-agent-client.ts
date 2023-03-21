@@ -1,22 +1,17 @@
-import { Dialog } from "../dialogs";
-import { TransportError } from "../exceptions";
-import { Logger, LoggerFactory } from "../log";
-import {
-  C,
-  IncomingResponseMessage,
-  OutgoingRequest,
-  OutgoingRequestDelegate,
-  OutgoingRequestMessage,
-  RequestOptions
-} from "../messages";
-import {
-  ClientTransaction,
-  ClientTransactionUser,
-  NonInviteClientTransaction,
-  TransactionState
-} from "../transactions";
-import { Transport } from "../transport";
-import { UserAgentCore } from "../user-agent-core";
+import { Dialog } from "../dialogs/dialog.js";
+import { TransportError } from "../exceptions/transport-error.js";
+import { Logger } from "../log/logger.js";
+import { LoggerFactory } from "../log/logger-factory.js";
+import { C } from "../messages/methods/constants.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequest, OutgoingRequestDelegate, RequestOptions } from "../messages/outgoing-request.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { ClientTransaction } from "../transactions/client-transaction.js";
+import { ClientTransactionUser } from "../transactions/transaction-user.js";
+import { NonInviteClientTransaction } from "../transactions/non-invite-client-transaction.js";
+import { TransactionState } from "../transactions/transaction-state.js";
+import { Transport } from "../transport.js";
+import { UserAgentCore } from "../user-agent-core/user-agent-core.js";
 
 type ClientTransactionConstructor = new (
   message: OutgoingRequestMessage,

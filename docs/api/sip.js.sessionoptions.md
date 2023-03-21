@@ -14,7 +14,7 @@ export interface SessionOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [delegate](./sip.js.sessionoptions.delegate.md) | <code>SessionDelegate</code> |  |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [delegate](./sip.js.sessionoptions.delegate.md) |  | [SessionDelegate](./sip.js.sessiondelegate.md) |  |
 

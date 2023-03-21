@@ -11,6 +11,9 @@ Re-INVITE UAC.
 ```typescript
 export declare class ReInviteUserAgentClient extends UserAgentClient implements OutgoingInviteRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingInviteRequest](./sip.js.outgoinginviterequest.md)
 
 ## Remarks
 
@@ -26,7 +29,7 @@ export declare class ReInviteUserAgentClient extends UserAgentClient implements 
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [delegate](./sip.js.reinviteuseragentclient.delegate.md) |  | <code>OutgoingInviteRequestDelegate &#124; undefined</code> |  |
+|  [delegate](./sip.js.reinviteuseragentclient.delegate.md) |  | [OutgoingInviteRequestDelegate](./sip.js.outgoinginviterequestdelegate.md) \| undefined |  |
 
 ## Methods
 

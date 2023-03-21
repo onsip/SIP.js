@@ -11,3 +11,5 @@ Incoming CANCEL request.
 ```typescript
 export interface IncomingCancelRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

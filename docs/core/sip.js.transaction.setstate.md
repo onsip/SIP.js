@@ -14,9 +14,9 @@ protected setState(state: TransactionState): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  state | <code>TransactionState</code> |  |
+|  state | [TransactionState](./sip.js.transactionstate.md) |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

@@ -1,18 +1,14 @@
-import {
-  Body,
-  OutgoingByeRequest,
-  OutgoingInfoRequest,
-  OutgoingInviteRequest,
-  OutgoingInviteRequestDelegate,
-  OutgoingMessageRequest,
-  OutgoingNotifyRequest,
-  OutgoingPrackRequest,
-  OutgoingReferRequest,
-  OutgoingRequestDelegate,
-  RequestOptions,
-  URI
-} from "../messages";
-import { SessionDelegate } from "./session-delegate";
+import { URI } from "../../grammar/uri.js";
+import { Body } from "../messages/body.js";
+import { OutgoingByeRequest } from "../messages/methods/bye.js";
+import { OutgoingInfoRequest } from "../messages/methods/info.js";
+import { OutgoingInviteRequest, OutgoingInviteRequestDelegate } from "../messages/methods/invite.js";
+import { OutgoingMessageRequest } from "../messages/methods/message.js";
+import { OutgoingNotifyRequest } from "../messages/methods/notify.js";
+import { OutgoingPrackRequest } from "../messages/methods/prack.js";
+import { OutgoingReferRequest } from "../messages/methods/refer.js";
+import { OutgoingRequestDelegate, RequestOptions } from "../messages/outgoing-request.js";
+import { SessionDelegate } from "./session-delegate.js";
 
 /**
  * Session.

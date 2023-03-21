@@ -16,11 +16,11 @@ onNotify?(notification: Notification): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  notification | <code>Notification</code> | The notification. |
+|  notification | [Notification](./sip.js.notification.md) | The notification. |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

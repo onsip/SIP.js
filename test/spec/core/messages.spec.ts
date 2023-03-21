@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  Grammar,
   IncomingRequestMessage as IncomingRequest,
   IncomingResponseMessage as IncomingResponse,
-  OutgoingRequestMessage as OutgoingRequest,
-  URI
-} from "../../../src/core";
-import * as Utils from "../../../src/core/messages/utils";
+  OutgoingRequestMessage as OutgoingRequest
+} from "../../../lib/core/index.js";
+import { Grammar, URI } from "../../../lib/grammar/index.js";
+import * as Utils from "../../../lib/core/messages/utils.js";
 
 // TODO:
 // These old tests were ported from JavaScript to TypesSript verbatim.

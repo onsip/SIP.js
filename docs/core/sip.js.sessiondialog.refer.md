@@ -16,10 +16,10 @@ refer(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingRef
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  delegate | <code>OutgoingRequestDelegate</code> |  |
-|  options | <code>RequestOptions</code> | Options bucket. |
+|  delegate | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) |  |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingReferRequest`
+[OutgoingReferRequest](./sip.js.outgoingreferrequest.md)
 

@@ -11,12 +11,13 @@ Incoming INVITE response received when request is accepted.
 ```typescript
 export interface AckableIncomingResponseWithSession extends IncomingResponse 
 ```
+<b>Extends:</b> [IncomingResponse](./sip.js.incomingresponse.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [session](./sip.js.ackableincomingresponsewithsession.session.md) | <code>Session</code> | Session associated with outgoing request acceptance. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [session](./sip.js.ackableincomingresponsewithsession.session.md) |  | [Session](./sip.js.session.md) | Session associated with outgoing request acceptance. |
 
 ## Methods
 

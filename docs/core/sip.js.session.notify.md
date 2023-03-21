@@ -16,10 +16,10 @@ notify(delegate?: OutgoingRequestDelegate, options?: RequestOptions): OutgoingNo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  delegate | <code>OutgoingRequestDelegate</code> | Request delegate. |
-|  options | <code>RequestOptions</code> | Options bucket. |
+|  delegate | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) | Request delegate. |
+|  options | [RequestOptions](./sip.js.requestoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`OutgoingNotifyRequest`
+[OutgoingNotifyRequest](./sip.js.outgoingnotifyrequest.md)
 

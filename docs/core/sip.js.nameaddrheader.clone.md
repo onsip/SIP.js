@@ -11,5 +11,5 @@ clone(): NameAddrHeader;
 ```
 <b>Returns:</b>
 
-`NameAddrHeader`
+[NameAddrHeader](./sip.js.nameaddrheader.md)
 

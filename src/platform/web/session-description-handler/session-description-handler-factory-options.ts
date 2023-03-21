@@ -1,4 +1,4 @@
-import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration";
+import { SessionDescriptionHandlerConfiguration } from "./session-description-handler-configuration.js";
 
 /**
  * Options for SessionDescriptionHandlerFactory.

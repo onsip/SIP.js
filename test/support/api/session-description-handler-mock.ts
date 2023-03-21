@@ -3,7 +3,7 @@ import {
   Session,
   SessionDescriptionHandler,
   SessionDescriptionHandlerFactory
-} from "../../../src/api";
+} from "../../../lib/api/index.js";
 
 export function makeMockSessionDescriptionHandler(name: string, id: number): jasmine.SpyObj<SessionDescriptionHandler> {
   let closed = false;

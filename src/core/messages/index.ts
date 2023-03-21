@@ -1,18 +1,15 @@
-// Grammar
-export * from "../../grammar";
-
 // Directories
-export * from "./methods";
+export * from "./methods/index.js";
 
 // Files
-export * from "./body";
-export * from "./digest-authentication";
-export * from "./incoming-message";
-export * from "./incoming-request-message";
-export * from "./incoming-request";
-export * from "./incoming-response-message";
-export * from "./incoming-response";
-export * from "./outgoing-request-message";
-export * from "./outgoing-request";
-export * from "./outgoing-response";
-export * from "./parser";
+export * from "./body.js";
+export * from "./digest-authentication.js";
+export * from "./incoming-message.js";
+export * from "./incoming-request-message.js";
+export * from "./incoming-request.js";
+export * from "./incoming-response-message.js";
+export * from "./incoming-response.js";
+export * from "./outgoing-request-message.js";
+export * from "./outgoing-request.js";
+export * from "./outgoing-response.js";
+export * from "./parser.js";

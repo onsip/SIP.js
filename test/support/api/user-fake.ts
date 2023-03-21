@@ -1,7 +1,7 @@
-import { URI } from "../../../src";
-import { SessionDescriptionHandler, SIPExtension, UserAgent, UserAgentOptions } from "../../../src/api";
-import { makeMockSessionDescriptionHandlerFactory } from "./session-description-handler-mock";
-import { TransportFake } from "./transport-fake";
+import { URI } from "../../../lib/index.js";
+import { SessionDescriptionHandler, SIPExtension, UserAgent, UserAgentOptions } from "../../../lib/api/index.js";
+import { makeMockSessionDescriptionHandlerFactory } from "./session-description-handler-mock.js";
+import { TransportFake } from "./transport-fake.js";
 
 export interface UserFake {
   user: string;
@@ -28,8 +28,6 @@ export async function makeUserFake(
   const uri = new URI("sip", userHack, domain);
   const userAgentOptions: UserAgentOptions = {
     ...{
-      autoStart: false,
-      autoStop: false,
       uri,
       displayName,
       noAnswerTimeout: 90, // seconds

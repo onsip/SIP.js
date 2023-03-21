@@ -11,6 +11,7 @@ Non-INVITE Client Transaction.
 ```typescript
 export declare class NonInviteClientTransaction extends ClientTransaction 
 ```
+<b>Extends:</b> [ClientTransaction](./sip.js.clienttransaction.md)
 
 ## Remarks
 
@@ -26,7 +27,7 @@ Non-INVITE transactions do not make use of ACK. They are simple request-response
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [kind](./sip.js.noninviteclienttransaction.kind.md) |  | <code>string</code> | Transaction kind. Deprecated. |
+|  [kind](./sip.js.noninviteclienttransaction.kind.md) |  | string | Transaction kind. Deprecated. |
 
 ## Methods
 

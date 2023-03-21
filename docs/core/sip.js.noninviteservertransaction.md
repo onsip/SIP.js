@@ -11,6 +11,7 @@ Non-INVITE Server Transaction.
 ```typescript
 export declare class NonInviteServerTransaction extends ServerTransaction 
 ```
+<b>Extends:</b> [ServerTransaction](./sip.js.servertransaction.md)
 
 ## Remarks
 
@@ -26,7 +27,7 @@ https://tools.ietf.org/html/rfc3261\#section-17.2.2
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [kind](./sip.js.noninviteservertransaction.kind.md) |  | <code>string</code> | Transaction kind. Deprecated. |
+|  [kind](./sip.js.noninviteservertransaction.kind.md) |  | string | Transaction kind. Deprecated. |
 
 ## Methods
 

@@ -1,7 +1,9 @@
-import { SessionDialog } from "../dialogs";
-import { C, OutgoingPrackRequest, OutgoingRequestDelegate, RequestOptions } from "../messages";
-import { NonInviteClientTransaction } from "../transactions";
-import { UserAgentClient } from "./user-agent-client";
+import { SessionDialog } from "../dialogs/session-dialog.js";
+import { C } from "../messages/methods/constants.js";
+import { OutgoingPrackRequest } from "../messages/methods/prack.js";
+import { OutgoingRequestDelegate, RequestOptions } from "../messages/outgoing-request.js";
+import { NonInviteClientTransaction } from "../transactions/non-invite-client-transaction.js";
+import { UserAgentClient } from "./user-agent-client.js";
 
 /**
  * PRACK UAC.

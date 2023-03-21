@@ -16,17 +16,20 @@ static makeURI(uri: string): URI | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  uri | <code>string</code> | The string to parse. |
+|  uri | string | The string to parse. |
 
 <b>Returns:</b>
 
-`URI | undefined`
+URI \| undefined
+
+## Remarks
+
+Returns undefined if the syntax of the URI is invalid. The syntax must conform to a SIP URI as defined in the RFC. 25 Augmented BNF for the SIP Protocol https://tools.ietf.org/html/rfc3261\#section-25
 
 ## Example
 
 
 ```ts
 const uri = UserAgent.makeURI("sip:edgar@example.com");
-
 ```
 

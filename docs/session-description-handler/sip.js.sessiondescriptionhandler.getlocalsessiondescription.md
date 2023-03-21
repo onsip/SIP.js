@@ -13,5 +13,5 @@ protected getLocalSessionDescription(): Promise<RTCSessionDescription>;
 ```
 <b>Returns:</b>
 
-`Promise<RTCSessionDescription>`
+Promise&lt;RTCSessionDescription&gt;
 

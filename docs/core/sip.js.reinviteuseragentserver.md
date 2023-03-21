@@ -11,6 +11,9 @@ Re-INVITE UAS.
 ```typescript
 export declare class ReInviteUserAgentServer extends UserAgentServer implements IncomingInviteRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingInviteRequest](./sip.js.incominginviterequest.md)
 
 ## Remarks
 

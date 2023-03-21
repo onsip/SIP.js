@@ -16,11 +16,11 @@ invite(options?: InviterInviteOptions): Promise<OutgoingInviteRequest>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>InviterInviteOptions</code> |  |
+|  options | [InviterInviteOptions](./sip.js.inviterinviteoptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<OutgoingInviteRequest>`
+Promise&lt;OutgoingInviteRequest&gt;
 
 ## Remarks
 

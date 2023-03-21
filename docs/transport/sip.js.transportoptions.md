@@ -14,9 +14,9 @@ export interface TransportOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [connectionTimeout](./sip.js.transportoptions.connectiontimeout.md) | <code>number</code> | Seconds to wait for WebSocket to connect before giving up. |
-|  [server](./sip.js.transportoptions.server.md) | <code>string</code> | URL of WebSocket server to connect with. For example, "wss://localhost:8080". |
-|  [traceSip](./sip.js.transportoptions.tracesip.md) | <code>boolean</code> | If true, messages sent and received by the transport are logged. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [connectionTimeout](./sip.js.transportoptions.connectiontimeout.md) |  | number | Seconds to wait for WebSocket to connect before giving up. |
+|  [server](./sip.js.transportoptions.server.md) |  | string | URL of WebSocket server to connect with. For example, "wss://localhost:8080". |
+|  [traceSip](./sip.js.transportoptions.tracesip.md) |  | boolean | If true, messages sent and received by the transport are logged. |
 

@@ -16,10 +16,10 @@ replyStateless(message: IncomingRequestMessage, options: ResponseOptions): Outgo
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  message | <code>IncomingRequestMessage</code> | Incoming request message to reply to. |
-|  options | <code>ResponseOptions</code> |  |
+|  message | [IncomingRequestMessage](./sip.js.incomingrequestmessage.md) | Incoming request message to reply to. |
+|  options | [ResponseOptions](./sip.js.responseoptions.md) |  |
 
 <b>Returns:</b>
 
-`OutgoingResponse`
+[OutgoingResponse](./sip.js.outgoingresponse.md)
 

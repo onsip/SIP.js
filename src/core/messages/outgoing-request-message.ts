@@ -1,6 +1,7 @@
-import { NameAddrHeader, URI } from "../../grammar";
-import { Body } from "./body";
-import { createRandomToken, headerize, newTag, utf8Length } from "./utils";
+import { NameAddrHeader } from "../../grammar/name-addr-header.js";
+import { URI } from "../../grammar/uri.js";
+import { Body } from "./body.js";
+import { createRandomToken, headerize, newTag, utf8Length } from "./utils.js";
 
 /**
  * Outgoing request message options.

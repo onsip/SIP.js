@@ -16,9 +16,9 @@ removeStateChangeListener(listener: () => void): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  listener | <code>() =&gt; void</code> | Callback function. |
+|  listener | () =&gt; void | Callback function. |
 
 <b>Returns:</b>
 
-`void`
+void
 

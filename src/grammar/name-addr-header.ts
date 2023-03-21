@@ -1,5 +1,5 @@
-import { Parameters } from "./parameters";
-import { URI } from "./uri";
+import { Parameters } from "./parameters.js";
+import { URI } from "./uri.js";
 
 /**
  * Name Address SIP header.

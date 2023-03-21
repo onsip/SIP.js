@@ -14,8 +14,8 @@ export interface SimpleUserMediaRemote
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [audio](./sip.js.simpleusermediaremote.audio.md) | <code>HTMLAudioElement</code> | The remote audio media stream is attached to this element. |
-|  [video](./sip.js.simpleusermediaremote.video.md) | <code>HTMLVideoElement</code> | The remote video media stream is attached to this element. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [audio](./sip.js.simpleusermediaremote.audio.md) |  | HTMLAudioElement | The remote audio media stream is attached to this element. |
+|  [video](./sip.js.simpleusermediaremote.video.md) |  | HTMLVideoElement | The remote video media stream is attached to this element. |
 

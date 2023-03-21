@@ -1,6 +1,5 @@
-import { UserAgentOptions } from "../../../src/api";
-import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake";
-import { soon } from "../../support/api/utils";
+import { connectUserFake, makeUserFake, UserFake } from "../../support/api/user-fake.js";
+import { soon } from "../../support/api/utils.js";
 
 /**
  * TODO:
@@ -13,11 +12,8 @@ describe("API UserAgent", () => {
 
   beforeEach(async () => {
     jasmine.clock().install();
-    const options: UserAgentOptions = {
-      autoStart: false
-    };
-    alice = await makeUserFake("alice", "example.com", "Alice", options);
-    bob = await makeUserFake("bob", "example.com", "Bob", options);
+    alice = await makeUserFake("alice", "example.com", "Alice");
+    bob = await makeUserFake("bob", "example.com", "Bob");
     connectUserFake(alice, bob);
   });
 

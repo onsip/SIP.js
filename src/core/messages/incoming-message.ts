@@ -1,5 +1,6 @@
-import { Grammar, NameAddrHeader } from "../../grammar";
-import { headerize } from "./utils";
+import { Grammar } from "../../grammar/grammar.js";
+import { NameAddrHeader } from "../../grammar/name-addr-header.js";
+import { headerize } from "./utils.js";
 
 /**
  * Incoming message.

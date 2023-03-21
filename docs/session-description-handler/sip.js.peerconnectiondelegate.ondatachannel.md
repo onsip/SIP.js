@@ -16,9 +16,9 @@ ondatachannel?(event: RTCDataChannelEvent): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  event | <code>RTCDataChannelEvent</code> | RTCDataChannelEvent. |
+|  event | RTCDataChannelEvent | RTCDataChannelEvent. |
 
 <b>Returns:</b>
 
-`void`
+void
 

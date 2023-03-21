@@ -16,11 +16,11 @@ unregister(registererUnregisterOptions?: RegistererUnregisterOptions): Promise<v
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  registererUnregisterOptions | <code>RegistererUnregisterOptions</code> |  |
+|  registererUnregisterOptions | RegistererUnregisterOptions |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

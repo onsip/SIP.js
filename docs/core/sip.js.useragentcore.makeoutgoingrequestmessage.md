@@ -16,15 +16,15 @@ makeOutgoingRequestMessage(method: string, requestURI: URI, fromURI: URI, toURI:
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  method | <code>string</code> | Method. |
-|  requestURI | <code>URI</code> | Request-URI. |
-|  fromURI | <code>URI</code> | From URI. |
-|  toURI | <code>URI</code> | To URI. |
-|  options | <code>OutgoingRequestMessageOptions</code> | Request options. |
-|  extraHeaders | <code>Array&lt;string&gt;</code> | Extra headers to add. |
-|  body | <code>Body</code> | Message body. |
+|  method | string | Method. |
+|  requestURI | [URI](./sip.js.uri.md) | Request-URI. |
+|  fromURI | [URI](./sip.js.uri.md) | From URI. |
+|  toURI | [URI](./sip.js.uri.md) | To URI. |
+|  options | [OutgoingRequestMessageOptions](./sip.js.outgoingrequestmessageoptions.md) | Request options. |
+|  extraHeaders | Array&lt;string&gt; | Extra headers to add. |
+|  body | [Body](./sip.js.body.md) | Message body. |
 
 <b>Returns:</b>
 
-`OutgoingRequestMessage`
+[OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md)
 

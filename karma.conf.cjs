@@ -24,11 +24,6 @@ module.exports = function(config) {
 
     webpack: {
       devtool: 'inline-source-map',
-      module: { rules: [ { test: /\.m?js/,
-        resolve: {
-	    fullySpecified: false
-	}
-      }]},
       mode: 'production'
     },
 
@@ -72,6 +67,7 @@ module.exports = function(config) {
       clearContext: false,
       captureConsole: false,
       jasmine: {
+        timeoutInterval: 10000,
         // only necessary due to potential bug in SpecSanityCheck 8.2.2.2, running
         // those out of order causes them to fail
         random: false

@@ -16,11 +16,11 @@ sendDTMF(tone: string): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  tone | <code>string</code> | Tone to send. |
+|  tone | string | Tone to send. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

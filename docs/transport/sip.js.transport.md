@@ -11,6 +11,7 @@ Transport for SIP over secure WebSocket (WSS).
 ```typescript
 export declare class Transport implements TransportDefinition 
 ```
+<b>Implements:</b> TransportDefinition
 
 ## Constructors
 
@@ -22,14 +23,14 @@ export declare class Transport implements TransportDefinition
 
 |  Property | Modifiers | Type | Description |
 |  --- | --- | --- | --- |
-|  [onConnect](./sip.js.transport.onconnect.md) |  | <code>(() =&gt; void) &#124; undefined</code> |  |
-|  [onDisconnect](./sip.js.transport.ondisconnect.md) |  | <code>((error?: Error) =&gt; void) &#124; undefined</code> |  |
-|  [onMessage](./sip.js.transport.onmessage.md) |  | <code>((message: string) =&gt; void) &#124; undefined</code> |  |
-|  [protocol](./sip.js.transport.protocol.md) |  | <code>string</code> | The protocol. |
-|  [server](./sip.js.transport.server.md) |  | <code>string</code> | The URL of the WebSocket Server. |
-|  [state](./sip.js.transport.state.md) |  | <code>TransportState</code> | Transport state. |
-|  [stateChange](./sip.js.transport.statechange.md) |  | <code>Emitter&lt;TransportState&gt;</code> | Transport state change emitter. |
-|  [ws](./sip.js.transport.ws.md) |  | <code>WebSocket &#124; undefined</code> | The WebSocket. |
+|  [onConnect](./sip.js.transport.onconnect.md) |  | (() =&gt; void) \| undefined |  |
+|  [onDisconnect](./sip.js.transport.ondisconnect.md) |  | ((error?: Error) =&gt; void) \| undefined |  |
+|  [onMessage](./sip.js.transport.onmessage.md) |  | ((message: string) =&gt; void) \| undefined |  |
+|  [protocol](./sip.js.transport.protocol.md) |  | string | The protocol. |
+|  [server](./sip.js.transport.server.md) |  | string | The URL of the WebSocket Server. |
+|  [state](./sip.js.transport.state.md) |  | TransportState | Transport state. |
+|  [stateChange](./sip.js.transport.statechange.md) |  | Emitter&lt;TransportState&gt; | Transport state change emitter. |
+|  [ws](./sip.js.transport.ws.md) |  | WebSocket \| undefined | The WebSocket. |
 
 ## Methods
 

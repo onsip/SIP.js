@@ -14,9 +14,9 @@ getHeader(name: string): Array<string> | undefined;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> |  |
+|  name | string |  |
 
 <b>Returns:</b>
 
-`Array<string> | undefined`
+Array&lt;string&gt; \| undefined
 

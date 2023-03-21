@@ -11,6 +11,9 @@ INFO UAS.
 ```typescript
 export declare class InfoUserAgentServer extends UserAgentServer implements IncomingInfoRequest 
 ```
+<b>Extends:</b> [UserAgentServer](./sip.js.useragentserver.md)
+
+<b>Implements:</b> [IncomingInfoRequest](./sip.js.incominginforequest.md)
 
 ## Constructors
 

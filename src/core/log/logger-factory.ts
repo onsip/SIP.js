@@ -1,5 +1,5 @@
-import { Levels } from "./levels";
-import { Logger } from "./logger";
+import { Levels } from "./levels.js";
+import { Logger } from "./logger.js";
 
 /**
  * Logger.

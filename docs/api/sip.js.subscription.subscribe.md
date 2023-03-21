@@ -16,9 +16,9 @@ abstract subscribe(options?: SubscriptionSubscribeOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SubscriptionSubscribeOptions</code> |  |
+|  options | [SubscriptionSubscribeOptions](./sip.js.subscriptionsubscribeoptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

@@ -14,8 +14,8 @@ export interface MessagerMessageOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [requestDelegate](./sip.js.messagermessageoptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.messagermessageoptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [requestDelegate](./sip.js.messagermessageoptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.messagermessageoptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

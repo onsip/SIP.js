@@ -16,10 +16,10 @@ publish(content: string, options?: PublisherPublishOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  content | <code>string</code> | Body to publish |
-|  options | <code>PublisherPublishOptions</code> |  |
+|  content | string | Body to publish |
+|  options | [PublisherPublishOptions](./sip.js.publisherpublishoptions.md) |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 

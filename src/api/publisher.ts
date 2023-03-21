@@ -1,20 +1,17 @@
-import {
-  Body,
-  C,
-  fromBodyLegacy,
-  IncomingResponseMessage,
-  Logger,
-  OutgoingPublishRequest,
-  OutgoingRequestMessage,
-  URI
-} from "../core";
-import { Emitter, EmitterImpl } from "./emitter";
-import { PublisherOptions } from "./publisher-options";
-import { PublisherPublishOptions } from "./publisher-publish-options";
-import { PublisherState } from "./publisher-state";
-import { PublisherUnpublishOptions } from "./publisher-unpublish-options";
-import { BodyAndContentType } from "./session-description-handler";
-import { UserAgent } from "./user-agent";
+import { URI } from "../grammar/uri.js";
+import { Body, fromBodyLegacy } from "../core/messages/body.js";
+import { C } from "../core/messages/methods/constants.js";
+import { Logger } from "../core/log/logger.js";
+import { OutgoingRequestMessage } from "../core/messages/outgoing-request-message.js";
+import { IncomingResponseMessage } from "../core/messages/incoming-response-message.js";
+import { OutgoingPublishRequest } from "../core/messages/methods/publish.js";
+import { Emitter, EmitterImpl } from "./emitter.js";
+import { PublisherOptions } from "./publisher-options.js";
+import { PublisherPublishOptions } from "./publisher-publish-options.js";
+import { PublisherState } from "./publisher-state.js";
+import { PublisherUnpublishOptions } from "./publisher-unpublish-options.js";
+import { BodyAndContentType } from "./session-description-handler.js";
+import { UserAgent } from "./user-agent.js";
 
 /**
  * A publisher publishes a publication (outgoing PUBLISH).

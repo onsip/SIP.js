@@ -16,11 +16,11 @@ getHeaders(name: string): Array<string>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  name | <code>string</code> | header name |
+|  name | string | header name |
 
 <b>Returns:</b>
 
-`Array<string>`
+Array&lt;string&gt;
 
 Array with all the headers of the specified name.
 

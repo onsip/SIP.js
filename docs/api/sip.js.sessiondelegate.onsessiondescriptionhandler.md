@@ -16,12 +16,12 @@ onSessionDescriptionHandler?(sessionDescriptionHandler: SessionDescriptionHandle
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  sessionDescriptionHandler | <code>SessionDescriptionHandler</code> | The handler. |
-|  provisional | <code>boolean</code> | True if created provisionally. |
+|  sessionDescriptionHandler | [SessionDescriptionHandler](./sip.js.sessiondescriptionhandler.md) | The handler. |
+|  provisional | boolean | True if created provisionally. |
 
 <b>Returns:</b>
 
-`void`
+void
 
 ## Remarks
 

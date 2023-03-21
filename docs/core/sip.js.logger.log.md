@@ -14,9 +14,9 @@ log(content: string): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  content | <code>string</code> |  |
+|  content | string |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

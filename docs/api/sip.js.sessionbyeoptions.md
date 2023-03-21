@@ -14,8 +14,8 @@ export interface SessionByeOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [requestDelegate](./sip.js.sessionbyeoptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.sessionbyeoptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [requestDelegate](./sip.js.sessionbyeoptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.sessionbyeoptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

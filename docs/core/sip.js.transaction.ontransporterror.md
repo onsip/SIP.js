@@ -14,9 +14,9 @@ protected abstract onTransportError(error: TransportError): void;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  error | <code>TransportError</code> |  |
+|  error | [TransportError](./sip.js.transporterror.md) |  |
 
 <b>Returns:</b>
 
-`void`
+void
 

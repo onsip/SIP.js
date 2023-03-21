@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import * as Modifiers from "../../../../src/platform/web/modifiers";
+import * as Modifiers from "../../../../lib/platform/web/modifiers/index.js";
 
 // TODO:
 // These old tests were ported from JavaScript to TypesSript verbatim.

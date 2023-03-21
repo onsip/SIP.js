@@ -1,5 +1,7 @@
 # Authors
 
+## John Riordan [@john-e-riordan](https://github.com/john-e-riordan)
+
 ## James Criscuolo [@james-criscuolo](https://github.com/james-criscuolo)
 
 ## Eric Green [@egreenmachine](https://github.com/egreenmachine)

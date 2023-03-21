@@ -18,10 +18,10 @@ For the purpose of invoking a particular operation. https://tools.ietf.org/html/
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [delegate](./sip.js.outgoingrequest.delegate.md) | <code>OutgoingRequestDelegate</code> | Delegate providing custom handling of this outgoing request. |
-|  [message](./sip.js.outgoingrequest.message.md) | <code>OutgoingRequestMessage</code> | The outgoing message. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [delegate](./sip.js.outgoingrequest.delegate.md) |  | [OutgoingRequestDelegate](./sip.js.outgoingrequestdelegate.md) | Delegate providing custom handling of this outgoing request. |
+|  [message](./sip.js.outgoingrequest.message.md) |  | [OutgoingRequestMessage](./sip.js.outgoingrequestmessage.md) | The outgoing message. |
 
 ## Methods
 

@@ -11,12 +11,13 @@ Outgoing SUBSCRIBE request.
 ```typescript
 export interface OutgoingSubscribeRequest extends OutgoingRequest 
 ```
+<b>Extends:</b> [OutgoingRequest](./sip.js.outgoingrequest.md)
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [delegate](./sip.js.outgoingsubscriberequest.delegate.md) | <code>OutgoingSubscribeRequestDelegate</code> | Delegate providing custom handling of this outgoing SUBSCRIBE request. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [delegate](./sip.js.outgoingsubscriberequest.delegate.md) |  | [OutgoingSubscribeRequestDelegate](./sip.js.outgoingsubscriberequestdelegate.md) | Delegate providing custom handling of this outgoing SUBSCRIBE request. |
 
 ## Methods
 

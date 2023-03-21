@@ -11,3 +11,5 @@ Incoming REGISTER request.
 ```typescript
 export interface IncomingRegisterRequest extends IncomingRequest 
 ```
+<b>Extends:</b> [IncomingRequest](./sip.js.incomingrequest.md)
+

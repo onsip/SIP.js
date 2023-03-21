@@ -18,10 +18,10 @@ addListener(listener: (data: T) => void, options?: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  listener | <code>(data: T) =&gt; void</code> | Callback function. |
-|  options | <code>{</code><br/><code>        once?: boolean;</code><br/><code>    }</code> | An options object that specifies characteristics about the listener. If once true, indicates that the listener should be invoked at most once after being added. If once true, the listener would be automatically removed when invoked. |
+|  listener | (data: T) =&gt; void | Callback function. |
+|  options | { once?: boolean; } | An options object that specifies characteristics about the listener. If once true, indicates that the listener should be invoked at most once after being added. If once true, the listener would be automatically removed when invoked. |
 
 <b>Returns:</b>
 
-`void`
+void
 

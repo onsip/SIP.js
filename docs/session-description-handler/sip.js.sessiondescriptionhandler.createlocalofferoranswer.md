@@ -16,9 +16,9 @@ protected createLocalOfferOrAnswer(options?: SessionDescriptionHandlerOptions): 
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>SessionDescriptionHandlerOptions</code> | Session description handler options. |
+|  options | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Session description handler options. |
 
 <b>Returns:</b>
 
-`Promise<RTCSessionDescriptionInit>`
+Promise&lt;RTCSessionDescriptionInit&gt;
 

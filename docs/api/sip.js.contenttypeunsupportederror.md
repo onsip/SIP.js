@@ -11,6 +11,7 @@ An exception indicating an unsupported content type prevented execution.
 ```typescript
 export declare class ContentTypeUnsupportedError extends Exception 
 ```
+<b>Extends:</b> Exception
 
 ## Constructors
 

@@ -14,11 +14,11 @@ export interface InviterInviteOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [requestDelegate](./sip.js.inviterinviteoptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.inviterinviteoptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
-|  [sessionDescriptionHandlerModifiers](./sip.js.inviterinviteoptions.sessiondescriptionhandlermodifiers.md) | <code>Array&lt;SessionDescriptionHandlerModifier&gt;</code> | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
-|  [sessionDescriptionHandlerOptions](./sip.js.inviterinviteoptions.sessiondescriptionhandleroptions.md) | <code>SessionDescriptionHandlerOptions</code> | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
-|  [withoutSdp](./sip.js.inviterinviteoptions.withoutsdp.md) | <code>boolean</code> | If true, send INVITE without SDP. Default is false. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [requestDelegate](./sip.js.inviterinviteoptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.inviterinviteoptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
+|  [sessionDescriptionHandlerModifiers](./sip.js.inviterinviteoptions.sessiondescriptionhandlermodifiers.md) |  | Array&lt;[SessionDescriptionHandlerModifier](./sip.js.sessiondescriptionhandlermodifier.md)<!-- -->&gt; | Modifiers to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [sessionDescriptionHandlerOptions](./sip.js.inviterinviteoptions.sessiondescriptionhandleroptions.md) |  | [SessionDescriptionHandlerOptions](./sip.js.sessiondescriptionhandleroptions.md) | Options to pass to SessionDescriptionHandler during the initial INVITE transaction. |
+|  [withoutSdp](./sip.js.inviterinviteoptions.withoutsdp.md) |  | boolean | If true, send INVITE without SDP. Default is false. |
 

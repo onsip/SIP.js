@@ -13,7 +13,7 @@ isMuted(): boolean;
 ```
 <b>Returns:</b>
 
-`boolean`
+boolean
 
 ## Remarks
 

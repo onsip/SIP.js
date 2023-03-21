@@ -1,4 +1,4 @@
-import { Exception } from "../../core";
+import { Exception } from "../../core/exceptions/exception.js";
 
 /**
  * An exception indicating a session description handler error occured.

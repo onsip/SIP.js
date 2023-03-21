@@ -14,9 +14,9 @@ export interface RegistererUnregisterOptions
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [all](./sip.js.registererunregisteroptions.all.md) | <code>boolean</code> | If true, unregister all contacts. |
-|  [requestDelegate](./sip.js.registererunregisteroptions.requestdelegate.md) | <code>OutgoingRequestDelegate</code> | See <code>core</code> API. |
-|  [requestOptions](./sip.js.registererunregisteroptions.requestoptions.md) | <code>RequestOptions</code> | See <code>core</code> API. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [all](./sip.js.registererunregisteroptions.all.md) |  | boolean | If true, unregister all contacts. |
+|  [requestDelegate](./sip.js.registererunregisteroptions.requestdelegate.md) |  | OutgoingRequestDelegate | See <code>core</code> API. |
+|  [requestOptions](./sip.js.registererunregisteroptions.requestoptions.md) |  | RequestOptions | See <code>core</code> API. |
 

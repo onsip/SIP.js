@@ -11,6 +11,9 @@ REGISTER UAC.
 ```typescript
 export declare class RegisterUserAgentClient extends UserAgentClient implements OutgoingRegisterRequest 
 ```
+<b>Extends:</b> [UserAgentClient](./sip.js.useragentclient.md)
+
+<b>Implements:</b> [OutgoingRegisterRequest](./sip.js.outgoingregisterrequest.md)
 
 ## Constructors
 

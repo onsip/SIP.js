@@ -16,11 +16,11 @@ progress(options?: InvitationProgressOptions): Promise<void>;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <code>InvitationProgressOptions</code> | Options bucket. |
+|  options | [InvitationProgressOptions](./sip.js.invitationprogressoptions.md) | Options bucket. |
 
 <b>Returns:</b>
 
-`Promise<void>`
+Promise&lt;void&gt;
 
 ## Remarks
 

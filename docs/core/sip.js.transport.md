@@ -18,9 +18,9 @@ The transport layer is responsible for the actual transmission of requests and r
 
 ## Properties
 
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [protocol](./sip.js.transport.protocol.md) | <code>string</code> | The transport protocol. |
+|  Property | Modifiers | Type | Description |
+|  --- | --- | --- | --- |
+|  [protocol](./sip.js.transport.protocol.md) |  | string | The transport protocol. |
 
 ## Methods
 

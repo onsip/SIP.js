@@ -1,10 +1,11 @@
-import { TransportError } from "../exceptions";
-import { IncomingResponseMessage, OutgoingRequestMessage } from "../messages";
-import { Timers } from "../timers";
-import { Transport } from "../transport";
-import { ClientTransaction } from "./client-transaction";
-import { TransactionState } from "./transaction-state";
-import { ClientTransactionUser } from "./transaction-user";
+import { TransportError } from "../exceptions/transport-error.js";
+import { IncomingResponseMessage } from "../messages/incoming-response-message.js";
+import { OutgoingRequestMessage } from "../messages/outgoing-request-message.js";
+import { Timers } from "../timers.js";
+import { Transport } from "../transport.js";
+import { ClientTransaction } from "./client-transaction.js";
+import { TransactionState } from "./transaction-state.js";
+import { ClientTransactionUser } from "./transaction-user.js";
 
 /**
  * Non-INVITE Client Transaction.
