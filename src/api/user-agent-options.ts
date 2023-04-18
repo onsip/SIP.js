@@ -49,13 +49,13 @@ export interface UserAgentOptions {
    * Authorization password.
    * @defaultValue `""`
    */
-  authorizationPassword?: string;
+  authorizationPassword?: string | (() => string);
 
   /**
    * Authorization username.
    * @defaultValue `""`
    */
-  authorizationUsername?: string;
+  authorizationUsername?: string | (() => string);
 
   /**
    * The user portion of user agent's contact URI.
