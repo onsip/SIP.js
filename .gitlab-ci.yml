@@ -5,7 +5,7 @@ stages:
   - deploy
 
 deploy-job:
-  stage: build
+  stage: deploy
   only:
     - main
   before_script:
