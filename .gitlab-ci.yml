@@ -13,7 +13,7 @@ deploy-job:
   script:
     - echo "NPM clean install..."
     - npm ci
-    - npm run test
     - npm run build --if-present
+    - npm run test
     - npm run build-bundles
     - npm publish
