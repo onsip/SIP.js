@@ -1,5 +1,5 @@
 {
-  "name": "sip.js",
+  "name": "@mangovoice/sip.js",
   "title": "SIP.js",
   "description": "A SIP library for JavaScript",
   "version": "0.21.2",
@@ -20,9 +20,9 @@
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
     }
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/onsip/SIP.js.git"
+  "repository": "git@gitlab.com:mangovoice/apps/sip.js.git",
+  "publishConfig": {
+    "@mangovoice:registry": "https://gitlab.com/api/v4/projects/46516830/packages/npm/"
   },
   "keywords": [
     "sip",
