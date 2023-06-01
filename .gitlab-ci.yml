@@ -1,5 +1,5 @@
 default:
-  image: ubuntu:latest
+  image: node:lts-alpine
 
 stages:
   - deploy
