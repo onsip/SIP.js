@@ -147,7 +147,7 @@ hostname        = ( domainlabel "." )* toplabel  "." ? {
 
 domainlabel     = domainlabel: ( [a-zA-Z0-9_-]+ )
 
-toplabel        = toplabel: ( [a-zA-Z][a-zA-Z0-9-]* )
+toplabel        = toplabel: ( [a-zA-Z0-9][a-zA-Z0-9-]* )
 
 IPv6reference   = "[" IPv6address "]" {
                     options = options || { data: {}};
