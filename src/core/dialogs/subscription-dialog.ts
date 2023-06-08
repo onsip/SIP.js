@@ -342,9 +342,8 @@ export class SubscriptionDialog extends Dialog implements Subscription {
    * 4.1.2.3.  Unsubscribing
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.3
    */
-  public unsubscribe(): OutgoingSubscribeRequest {
+  public unsubscribe(options: RequestOptions = {}): OutgoingSubscribeRequest {
     const allowHeader = "Allow: " + AllowedMethods.toString();
-    const options: RequestOptions = {};
     options.extraHeaders = (options.extraHeaders || []).slice();
     options.extraHeaders.push(allowHeader);
     options.extraHeaders.push("Event: " + this.subscriptionEvent);
