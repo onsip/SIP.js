@@ -1025,9 +1025,9 @@ export class UserAgent {
       throw new Error(`Invalid state transition from ${this._state} to ${newState}`);
     };
 
-    if(newState === this._state) {
-      this.logger.log(`Attempted to transition to the same state ${newState}`)
-      return
+    if (newState === this._state) {
+      this.logger.log(`Attempted to transition to the same state ${newState}`);
+      return;
     }
 
     // Validate state transition
