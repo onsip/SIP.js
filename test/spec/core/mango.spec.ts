@@ -1,4 +1,4 @@
-import { Grammar, URI, equivalentURI } from "../../../lib/grammar/index.js";
+import { Grammar, URI } from "../../../lib/grammar/index.js";
 
 describe("Mango URI", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
