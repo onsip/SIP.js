@@ -370,8 +370,10 @@ REFERm            = "\x52\x45\x46\x45\x52" // REFER in caps
 
 PUBLISHm          = "\x50\x55\x42\x4c\x49\x53\x48" // PUBLISH in caps
 
+UPDATEm           = "\x55\x50\x44\x41\x54\x45" // UPDATE in caps
+
 Method            = ( INVITEm / ACKm / OPTIONSm / BYEm / CANCELm / REGISTERm
-                    / SUBSCRIBEm / PUBLISHm / NOTIFYm / REFERm / extension_method ){
+                    / SUBSCRIBEm / PUBLISHm / NOTIFYm / REFERm / UPDATEm / extension_method ){
 
                     options = options || { data: {}};
                     options.data.method = text();

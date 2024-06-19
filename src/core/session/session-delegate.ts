@@ -1,3 +1,4 @@
+import { IncomingUpdateRequest } from "../messages/methods/update.js";
 import { IncomingAckRequest } from "../messages/methods/ack.js";
 import { IncomingByeRequest } from "../messages/methods/bye.js";
 import { IncomingInfoRequest } from "../messages/methods/info.js";
@@ -83,4 +84,10 @@ export interface SessionDelegate {
    * @param request - Incoming REFER request.
    */
   onRefer?(request: IncomingReferRequest): void;
+
+  /**
+   * Receive UPDATE request.
+   * @param request - Incoming UPDATE request.
+   */
+  onUpdate?(request: IncomingUpdateRequest): void;
 }
