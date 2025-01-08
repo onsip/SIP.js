@@ -20,9 +20,9 @@
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
     }
   ],
-  "repository": "git@gitlab.com:mangovoice/apps/sip.js.git",
+  "repository": "git@github.com:MangoVoice/SIP.js.git",
   "publishConfig": {
-    "@mangovoice:registry": "https://gitlab.com/api/v4/projects/46516830/packages/npm/"
+    "@mangovoice:registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "sip",
