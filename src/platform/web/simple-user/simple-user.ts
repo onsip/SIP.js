@@ -26,7 +26,7 @@ export class SimpleUser {
 
   private logger: Logger;
   private options: SimpleUserOptions;
-  private session: Session | undefined = undefined;
+  public session: Session | undefined = undefined;
   private sessionManager: SessionManager;
 
   /**
