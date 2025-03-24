@@ -11,3 +11,4 @@ export * from "./publish.js";
 export * from "./register.js";
 export * from "./refer.js";
 export * from "./subscribe.js";
+export * from "./update.js";

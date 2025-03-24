@@ -50,6 +50,7 @@ import { SessionOptions } from "./session-options.js";
 import { SessionReferOptions } from "./session-refer-options.js";
 import { SessionState } from "./session-state.js";
 import { UserAgent } from "./user-agent.js";
+import { IncomingUpdateRequest } from "../core/index.js";
 
 /**
  * A session provides real time communication between one or more participants.
@@ -1097,6 +1098,80 @@ export abstract class Session {
           this.logger.error(error.message);
         });
     }
+  }
+
+  protected onUpdateRequest(request: IncomingUpdateRequest): void {
+    this.logger.log("Session.onUpdateRequest");
+
+    const extraHeaders = ["Contact: " + this._contact];
+
+    // Handle P-Asserted-Identity
+    if (request.message.hasHeader("P-Asserted-Identity")) {
+      const header = request.message.getHeader("P-Asserted-Identity");
+      if (!header) {
+        throw new Error("Header undefined.");
+      }
+      this._assertedIdentity = Grammar.nameAddrHeaderParse(header);
+    }
+
+    const body = getBody(request.message);
+    const hasOffer = body && body.contentDisposition === "session";
+
+    if (!hasOffer) {
+      const response = request.accept({ statusCode: 200, extraHeaders });
+      this.delegate?.onUpdate?.(request.message, response.message, 200);
+      return;
+    }
+
+    const options = {
+      sessionDescriptionHandlerOptions: this.sessionDescriptionHandlerOptionsReInvite,
+      sessionDescriptionHandlerModifiers: this.sessionDescriptionHandlerModifiersReInvite
+    };
+
+    this.generateResponseOfferAnswerInDialog(options)
+      .then((body) => {
+        const response = request.accept({ statusCode: 200, extraHeaders, body });
+        this.delegate?.onUpdate?.(request.message, response.message, 200);
+      })
+      .catch((error: Error) => {
+        this.logger.error(error.message);
+        this.logger.error("Failed to handle to UPDATE request");
+        if (!this.dialog) {
+          throw new Error("Dialog undefined.");
+        }
+        this.logger.error(this.dialog.signalingState);
+        // If we don't have a local/remote offer...
+        if (this.dialog.signalingState === SignalingState.Stable) {
+          const response = request.reject({ statusCode: 488 }); // Not Acceptable Here
+          this.delegate?.onUpdate?.(request.message, response.message, 488);
+          return;
+        }
+        // Otherwise rollback
+        this.rollbackOffer()
+          .then(() => {
+            const response = request.reject({ statusCode: 488 }); // Not Acceptable Here
+            this.delegate?.onUpdate?.(request.message, response.message, 488);
+          })
+          .catch((errorRollback: Error) => {
+            // No way to recover, so terminate session and mark as failed.
+            this.logger.error(errorRollback.message);
+            this.logger.error("Failed to rollback offer on UPDATE request");
+            const response = request.reject({ statusCode: 488 }); // Not Acceptable Here
+            // A BYE should only be sent if session is not already terminated.
+            // For example, a BYE may be sent/received while re-INVITE is outstanding.
+            // Note that the ACK was already sent by the transaction, so just need to send BYE.
+            if (this.state !== SessionState.Terminated) {
+              if (!this.dialog) {
+                throw new Error("Dialog undefined.");
+              }
+              const extraHeadersBye: Array<string> = [];
+              extraHeadersBye.push("Reason: " + this.getReasonHeaderValue(500, "Internal Server Error"));
+              this.dialog.bye(undefined, { extraHeaders: extraHeadersBye });
+              this.stateTransition(SessionState.Terminated);
+            }
+            this.delegate?.onUpdate?.(request.message, response.message, 488);
+          });
+      });
   }
 
   /**

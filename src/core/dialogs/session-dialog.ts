@@ -36,6 +36,7 @@ import { ReInviteUserAgentClient } from "../user-agents/re-invite-user-agent-cli
 import { ReInviteUserAgentServer } from "../user-agents/re-invite-user-agent-server.js";
 import { ReferUserAgentClient } from "../user-agents/refer-user-agent-client.js";
 import { ReferUserAgentServer } from "../user-agents/refer-user-agent-server.js";
+import { UpdateUserAgentServer } from "../user-agents/update-user-agent-server.js";
 import { Dialog } from "./dialog.js";
 import { DialogState } from "./dialog-state.js";
 
@@ -48,6 +49,7 @@ export class SessionDialog extends Dialog implements Session {
 
   public reinviteUserAgentClient: ReInviteUserAgentClient | undefined;
   public reinviteUserAgentServer: ReInviteUserAgentServer | undefined;
+  public updateUserAgentServer: UpdateUserAgentServer | undefined;
 
   /** The state of the offer/answer exchange. */
   private _signalingState: SignalingState = SignalingState.Initial;
@@ -615,6 +617,45 @@ export class SessionDialog extends Dialog implements Session {
       this.dialogState.remoteTarget = contact.uri;
     }
 
+    if (message.method === C.UPDATE) {
+      const retryAfter = Math.floor(Math.random() * 10) + 1;
+      const extraHeaders = [`Retry-After: ${retryAfter}`];
+
+      const body = getBody(message);
+      const hasOffer = body && body.contentDisposition === "session";
+
+      if (hasOffer && this._signalingState === SignalingState.HaveLocalOffer) {
+        // If an UPDATE is received that contains an offer, and the UAS has
+        // generated an offer (in an UPDATE, PRACK or INVITE) to which it has
+        // not yet received an answer, the UAS MUST reject the UPDATE with a 491
+        // response
+        // https://datatracker.ietf.org/doc/html/rfc3311#section-5.2
+        this.core.replyStateless(message, { statusCode: 491 });
+        return;
+      }
+
+      if (hasOffer && this._signalingState === SignalingState.HaveRemoteOffer) {
+        // Similarly, if an UPDATE is received that contains an
+        // offer, and the UAS has received an offer (in an UPDATE, PRACK, or
+        // INVITE) to which it has not yet generated an answer, the UAS MUST
+        // reject the UPDATE with a 500 response, and MUST include a Retry-After
+        // header field with a randomly chosen value between 0 and 10 seconds.
+        // https://datatracker.ietf.org/doc/html/rfc3311#section-5.2
+        this.core.replyStateless(message, { statusCode: 500, extraHeaders });
+        return;
+      }
+
+      if (this.updateUserAgentServer) {
+        // A UAS that receives an UPDATE before it has generated a final
+        // response to a previous UPDATE on the same dialog MUST return a 500
+        // response to the new UPDATE, and MUST include a Retry-After header
+        // field with a randomly chosen value between 0 and 10 seconds.
+        // https://datatracker.ietf.org/doc/html/rfc3311#section-5.2
+        this.core.replyStateless(message, { statusCode: 500, extraHeaders });
+        return;
+      }
+    }
+
     // Switch on method and then delegate.
     switch (message.method) {
       case C.BYE:
@@ -690,6 +731,19 @@ export class SessionDialog extends Dialog implements Session {
         {
           const uas = new ReferUserAgentServer(this, message);
           this.delegate && this.delegate.onRefer ? this.delegate.onRefer(uas) : uas.reject();
+        }
+        break;
+      case C.UPDATE:
+        // However, unlike a re-INVITE, the UPDATE MUST be
+        // responded to promptly, and therefore the user cannot generally be
+        // prompted to approve the session changes. If the UAS cannot change
+        // the session parameters without prompting the user, it SHOULD reject
+        // the request with a 504 response.
+        // https://datatracker.ietf.org/doc/html/rfc3311#section-5.2
+        {
+          const uas = new UpdateUserAgentServer(this, message);
+          this.signalingStateTransition(message);
+          this.delegate && this.delegate.onUpdate ? this.delegate.onUpdate(uas) : uas.reject({ statusCode: 504 });
         }
         break;
       default:
