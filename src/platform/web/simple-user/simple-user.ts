@@ -44,6 +44,7 @@ export class SimpleUser {
     // Session manager options
     const sessionManagerOptions: SessionManagerOptions = {
       aor: this.options.aor,
+      autoStop: this.options.autoStop,
       delegate: {
         onCallAnswered: () => this.delegate?.onCallAnswered?.(),
         onCallCreated: (session: Session) => {

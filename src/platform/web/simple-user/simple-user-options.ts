@@ -69,6 +69,12 @@ export interface SimpleUserOptions {
   aor?: string;
 
   /**
+   * If `true`, the user agent calls the `stop()` method on the window event `beforeunload`.
+   * @defaultValue `true`
+   */
+  autoStop?: boolean;
+
+  /**
    * Delegate for SimpleUser.
    */
   delegate?: SimpleUserDelegate;
