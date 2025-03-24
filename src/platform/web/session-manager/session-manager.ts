@@ -571,7 +571,9 @@ export class SessionManager {
           throw new Error("Session description handler not instance of SessionDescriptionHandler");
         }
         sessionDescriptionHandler.peerConnectionDelegate = {
+          ...sessionDescriptionHandler.peerConnectionDelegate,
           onicecandidate: (event) => {
+            sessionDescriptionHandler.peerConnectionDelegate?.onicecandidate?.(event)
             if (event.candidate?.type === "srflx") {
               this.logger.log(`[${inviter.id}] Found srflx ICE candidate, stop waiting...`);
               // In sip.js > 0.20.1 this cast should be removed as iceGatheringComplete will be public
