@@ -574,11 +574,7 @@ export class SessionManager {
           onicecandidate: (event) => {
             if (event.candidate?.type === "srflx") {
               this.logger.log(`[${inviter.id}] Found srflx ICE candidate, stop waiting...`);
-              // In sip.js > 0.20.1 this cast should be removed as iceGatheringComplete will be public
-              const sdh = sessionDescriptionHandler as SessionDescriptionHandler & {
-                iceGatheringComplete: () => void;
-              };
-              sdh.iceGatheringComplete();
+              sessionDescriptionHandler.iceGatheringComplete();
             }
           }
         };
