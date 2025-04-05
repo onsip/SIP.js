@@ -665,7 +665,7 @@ export class SessionManager {
       return Promise.reject(new Error("Session not instance of Invitation."));
     }
 
-    return session.reject();
+    return session.reject({ statusCode: 603 });
   }
 
   /**
