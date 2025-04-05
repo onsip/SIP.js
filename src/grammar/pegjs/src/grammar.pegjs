@@ -177,8 +177,9 @@ IPv6address     = ( h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" h16 ":" ls32
 
 h16             = HEXDIG HEXDIG? HEXDIG? HEXDIG?
 
-ls32            = ( h16 ":" h16 ) / IPv4address
+ls32            = ( h16 ":" h16 (scope_identifier)? ) / IPv4address
 
+scope_identifier  = "%" (alphanum)+
 
 IPv4address     = dec_octet "." dec_octet "." dec_octet "." dec_octet {
                     options = options || { data: {}};
