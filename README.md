@@ -1,3 +1,5 @@
+# This repo is archived and the project has been moved into the `frontend-monorepo`
+
 ![SIP.js Logo](https://sipjs.com/shared/img/logo.png "SIP.js")
 
 ![Build Status](https://github.com/onsip/SIP.js/actions/workflows/node.js.yml/badge.svg)
