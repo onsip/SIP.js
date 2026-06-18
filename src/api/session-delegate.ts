@@ -73,6 +73,14 @@ export interface SessionDelegate {
   onRefer?(referral: Referral): void;
 
   /**
+   * Called upon receiving an incoming in dialog UPDATE request.
+   * @param request - The incoming update request.
+   * @param response - The response sent
+   * @param statusCode - The status code for the outgoing update response.
+   */
+  onUpdate?(request: IncomingRequestMessage, response: string, statusCode: number): void;
+
+  /**
    * Called upon creating a SessionDescriptionHandler.
    *
    * @remarks

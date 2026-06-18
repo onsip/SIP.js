@@ -136,7 +136,8 @@ export class Inviter extends Session {
     }
     extraHeaders.push("Contact: " + contact);
     extraHeaders.push(
-      "Allow: " + ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER"].toString()
+      "Allow: " +
+        ["ACK", "CANCEL", "INVITE", "MESSAGE", "BYE", "OPTIONS", "INFO", "NOTIFY", "REFER", "UPDATE"].toString()
     );
     if (userAgent.configuration.sipExtension100rel === SIPExtension.Required) {
       extraHeaders.push("Require: 100rel");
@@ -810,7 +811,8 @@ export class Inviter extends Session {
       onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
       onNotify: (notifyRequest): void => this.onNotifyRequest(notifyRequest),
       onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
-      onRefer: (referRequest): void => this.onReferRequest(referRequest)
+      onRefer: (referRequest): void => this.onReferRequest(referRequest),
+      onUpdate: (updateRequest): void => this.onUpdateRequest(updateRequest)
     };
     this._dialog = session;
 

@@ -270,7 +270,8 @@ export class Invitation extends Session {
             onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
             onNotify: (notifyRequest): void => this.onNotifyRequest(notifyRequest),
             onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
-            onRefer: (referRequest): void => this.onReferRequest(referRequest)
+            onRefer: (referRequest): void => this.onReferRequest(referRequest),
+            onUpdate: (updateRequest): void => this.onUpdateRequest(updateRequest)
           };
           this._dialog = session;
           this.stateTransition(SessionState.Established);
