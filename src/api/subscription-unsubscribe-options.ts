@@ -3,4 +3,6 @@
  * Options for {@link Subscription.unsubscribe}.
  * @public
  */
-export interface SubscriptionUnsubscribeOptions {}
+export interface SubscriptionUnsubscribeOptions {
+  extraHeaders?: Array<string>;
+}

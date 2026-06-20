@@ -44,7 +44,7 @@ export interface Subscription {
    * 4.1.2.3.  Unsubscribing
    * https://tools.ietf.org/html/rfc6665#section-4.1.2.3
    */
-  unsubscribe(): OutgoingSubscribeRequest;
+  unsubscribe(options?: RequestOptions): OutgoingSubscribeRequest;
 }
 
 /**
