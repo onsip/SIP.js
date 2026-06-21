@@ -19,8 +19,8 @@ export class DigestAuthentication {
 
   private logger: Logger;
   private ha1: string | undefined;
-  private username: string | undefined;
-  private password: string | undefined;
+  private username: string | (() => string) | undefined;
+  private password: string | (() => string) | undefined;
   private cnonce: string | undefined;
   private nc: number;
   private ncHex: string;
@@ -42,8 +42,8 @@ export class DigestAuthentication {
   constructor(
     loggerFactory: LoggerFactory,
     ha1: string | undefined,
-    username: string | undefined,
-    password: string | undefined
+    username: string | (() => string) | undefined,
+    password: string | (() => string) | undefined
   ) {
     this.logger = loggerFactory.getLogger("sipjs.digestauthentication");
     this.username = username;
@@ -135,7 +135,7 @@ export class DigestAuthentication {
     }
 
     authParams.push("algorithm=" + this.algorithm);
-    authParams.push('username="' + this.username + '"');
+    authParams.push('username="' + this.getUsername() + '"');
     authParams.push('realm="' + this.realm + '"');
     authParams.push('nonce="' + this.nonce + '"');
     authParams.push('uri="' + this.uri + '"');
@@ -168,7 +168,7 @@ export class DigestAuthentication {
     // HA1 = MD5(A1) = MD5(username:realm:password)
     ha1 = this.ha1;
     if (ha1 === "" || ha1 === undefined) {
-      ha1 = MD5(this.username + ":" + this.realm + ":" + this.password);
+      ha1 = MD5(this.getUsername() + ":" + this.realm + ":" + this.getPassword());
     }
 
     if (this.qop === "auth") {
@@ -186,6 +186,22 @@ export class DigestAuthentication {
       ha2 = MD5(this.method + ":" + this.uri);
       // response = MD5(HA1:nonce:HA2)
       this.response = MD5(ha1 + ":" + this.nonce + ":" + ha2);
+    }
+  }
+
+  private getUsername(): string | undefined {
+    if (typeof this.username === "function") {
+      return this.username();
+    } else {
+      return this.username;
+    }
+  }
+
+  private getPassword(): string | undefined {
+    if (typeof this.password === "function") {
+      return this.password();
+    } else {
+      return this.password;
     }
   }
 }
