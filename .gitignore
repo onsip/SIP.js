@@ -11,3 +11,4 @@ test/spec/api/*.js
 test/spec/core/*.js
 test/spec/platform/web/*.js
 test/support/**/*.js
+.idea/
