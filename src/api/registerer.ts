@@ -678,6 +678,10 @@ export class Registerer {
     // For that, calculate the delay as a percentage of the expiration time
     this.registrationTimer = setTimeout(() => {
       this.registrationTimer = undefined;
+      if (this.waiting) {
+        this.logger.warn("Outstanding REGISTER request already in progress, skipping re-registration");
+        return;
+      }
       this.register();
     }, (this.refreshFrequency / 100) * expires * 1000);
 
