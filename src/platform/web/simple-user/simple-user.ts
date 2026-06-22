@@ -24,10 +24,10 @@ export class SimpleUser {
   /** Delegate. */
   public delegate: SimpleUserDelegate | undefined;
 
-  private logger: Logger;
-  private options: SimpleUserOptions;
-  private session: Session | undefined = undefined;
-  private sessionManager: SessionManager;
+  protected logger: Logger;
+  protected options: SimpleUserOptions;
+  protected session: Session | undefined = undefined;
+  protected sessionManager: SessionManager;
 
   /**
    * Constructs a new instance of the `SimpleUser` class.
