@@ -16,7 +16,8 @@ export class Transport implements TransportDefinition {
     connectionTimeout: 5,
     keepAliveInterval: 0,
     keepAliveDebounce: 10,
-    traceSip: true
+    traceSip: true,
+    headerProtocol: ""
   };
 
   public onConnect: (() => void) | undefined;
@@ -100,7 +101,14 @@ export class Transport implements TransportDefinition {
       this.logger.error(`Invalid scheme in WebSocket Server URL "${url}"`);
       throw new Error("Invalid scheme in WebSocket Server URL");
     }
-    this._protocol = parsed.scheme.toUpperCase();
+
+    // Use the explicit header protocol if defined, but fall back to the
+    // server's indicated scheme
+    if (typeof this.configuration.headerProtocol === "string" && this.configuration.headerProtocol !== "") {
+      this._protocol = this.configuration.headerProtocol.toUpperCase();
+    } else {
+      this._protocol = parsed.scheme.toUpperCase();
+    }
   }
 
   public dispose(): Promise<void> {
