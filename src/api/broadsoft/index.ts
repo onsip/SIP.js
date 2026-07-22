@@ -66,5 +66,7 @@ export {
   parseEventHeaderFromNotification,
   parseNotifyBodyFromNotification,
   handleRemoteControlNotification,
-  isBroadSoftNotification
+  isBroadSoftNotification,
+  applyHoldAction,
+  holdModifier
 } from "./remote-control.js";

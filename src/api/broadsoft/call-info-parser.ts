@@ -57,7 +57,7 @@ export function parseCallInfoHeader(headerValue: string): CallInfoHeader | undef
       }
 
       // Convert to number if applicable
-      if (key === "answer-after" || key === "answerAfter") {
+      if (key.toLowerCase() === "answer-after" || key.toLowerCase() === "answerafter") {
         const numValue = parseInt(value as string, 10);
         if (!isNaN(numValue)) {
           params.answerAfter = numValue;

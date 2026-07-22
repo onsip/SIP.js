@@ -9,7 +9,15 @@ import { Invitation } from "../invitation.js";
 import { Notification } from "../notification.js";
 import { Session } from "../session.js";
 import { SessionState } from "../session-state.js";
-import { BroadSoftEvent, BroadSoftNotifyBody, RemoteControlOptions, TalkAction, TalkNotifyBody } from "./types.js";
+import {
+  BroadSoftEvent,
+  BroadSoftNotifyBody,
+  HoldAction,
+  HoldNotifyBody,
+  RemoteControlOptions,
+  TalkAction,
+  TalkNotifyBody
+} from "./types.js";
 
 /**
  * Parse the Event header from a NOTIFY request
@@ -27,7 +35,7 @@ export function parseEventHeader(request: IncomingNotifyRequest): BroadSoftEvent
     // Event header format: "talk" (may have parameters)
     const eventType = eventHeader.split(";")[0].trim().toLowerCase();
 
-    if (eventType === BroadSoftEvent.Talk) {
+    if (eventType === BroadSoftEvent.Talk || eventType === BroadSoftEvent.Hold) {
       return eventType as BroadSoftEvent;
     }
   } catch (e) {
@@ -76,6 +84,13 @@ export function parseNotifyBody(
           event: BroadSoftEvent.Talk,
           action: action as TalkAction
         } as TalkNotifyBody;
+      }
+    }
+
+    if (eventType === BroadSoftEvent.Hold) {
+      // Empty body or "hold" body both mean hold (FreeSWITCH uuid_phone_event sends empty body)
+      if (action === "" || action === HoldAction.Hold) {
+        return { event: BroadSoftEvent.Hold, action: HoldAction.Hold } as HoldNotifyBody;
       }
     }
   } catch (e) {
@@ -163,6 +178,34 @@ function resumeModifier(description: RTCSessionDescriptionInit): Promise<RTCSess
 }
 
 /**
+ * SDP modifier for placing a call on hold: sendrecv → sendonly, recvonly → inactive.
+ */
+export function holdModifier(description: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
+  if (!description.sdp) {
+    return Promise.resolve(description);
+  }
+  let sdp = description.sdp;
+  sdp = sdp.replace(/a=sendrecv\r\n/g, "a=sendonly\r\n");
+  sdp = sdp.replace(/a=recvonly\r\n/g, "a=inactive\r\n");
+  return Promise.resolve({ type: description.type, sdp });
+}
+
+/**
+ * Apply a hold action per BroadSoft spec: re-INVITE with a=sendonly.
+ * Only acts when the session is Established; all other states are a no-op
+ * (hold in ringing/dialing/terminated states must not execute).
+ */
+export async function applyHoldAction(session: Session): Promise<void> {
+  if (session.state !== SessionState.Established) {
+    return;
+  }
+  await session.invite({
+    sessionDescriptionHandlerOptions: session.sessionDescriptionHandlerOptions,
+    sessionDescriptionHandlerModifiers: [holdModifier]
+  });
+}
+
+/**
  * Handle a BroadSoft remote control NOTIFY request
  *
  * This function parses the NOTIFY request and automatically applies the appropriate
@@ -208,6 +251,19 @@ export async function handleRemoteControlNotify(
     return true;
   }
 
+  // Handle hold events
+  if (notifyBody.event === BroadSoftEvent.Hold) {
+    const holdBody = notifyBody as HoldNotifyBody;
+    if (options.onHoldEvent) {
+      try {
+        options.onHoldEvent(holdBody.action);
+      } catch (e) {
+        // Silently ignore callback errors
+      }
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -219,7 +275,7 @@ export async function handleRemoteControlNotify(
  */
 export function isBroadSoftNotify(request: IncomingNotifyRequest): boolean {
   const eventType = parseEventHeader(request);
-  return eventType === BroadSoftEvent.Talk;
+  return eventType === BroadSoftEvent.Talk || eventType === BroadSoftEvent.Hold;
 }
 
 /**
@@ -237,7 +293,7 @@ export function parseEventHeaderFromNotification(notification: Notification): Br
 
     const eventType = eventHeader.split(";")[0].trim().toLowerCase();
 
-    if (eventType === BroadSoftEvent.Talk) {
+    if (eventType === BroadSoftEvent.Talk || eventType === BroadSoftEvent.Hold) {
       return eventType as BroadSoftEvent;
     }
   } catch (e) {
@@ -280,6 +336,13 @@ export function parseNotifyBodyFromNotification(
           event: BroadSoftEvent.Talk,
           action: action as TalkAction
         } as TalkNotifyBody;
+      }
+    }
+
+    if (eventType === BroadSoftEvent.Hold) {
+      // Empty body or "hold" body both mean hold (FreeSWITCH uuid_phone_event sends empty body)
+      if (action === "" || action === HoldAction.Hold) {
+        return { event: BroadSoftEvent.Hold, action: HoldAction.Hold } as HoldNotifyBody;
       }
     }
   } catch (e) {
@@ -346,6 +409,26 @@ export async function handleRemoteControlNotification(
     return true;
   }
 
+  // Handle hold events
+  if (notifyBody.event === BroadSoftEvent.Hold) {
+    const holdBody = notifyBody as HoldNotifyBody;
+    if (options.onHoldEvent) {
+      try {
+        options.onHoldEvent(holdBody.action);
+      } catch (e) {
+        // Silently ignore callback errors
+      }
+    }
+    try {
+      await applyHoldAction(session);
+    } catch (e) {
+      /* eslint-disable no-console */
+      console.error("[BroadSoft] Error applying hold action:", e);
+      /* eslint-enable no-console */
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -357,5 +440,5 @@ export async function handleRemoteControlNotification(
  */
 export function isBroadSoftNotification(notification: Notification): boolean {
   const eventType = parseEventHeaderFromNotification(notification);
-  return eventType === BroadSoftEvent.Talk;
+  return eventType === BroadSoftEvent.Talk || eventType === BroadSoftEvent.Hold;
 }

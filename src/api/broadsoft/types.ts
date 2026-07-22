@@ -24,7 +24,9 @@ export interface CallInfoHeader {
  */
 export enum BroadSoftEvent {
   /** Remote control event for talk/mute operations */
-  Talk = "talk"
+  Talk = "talk",
+  /** Remote control event for hold operations (Access-Side Extension) */
+  Hold = "hold"
 }
 
 /**
@@ -46,9 +48,25 @@ export interface TalkNotifyBody {
 }
 
 /**
+ * Hold event actions
+ */
+export enum HoldAction {
+  /** Place the call on hold */
+  Hold = "hold"
+}
+
+/**
+ * Parsed NOTIFY body for hold events
+ */
+export interface HoldNotifyBody {
+  event: BroadSoftEvent.Hold;
+  action: HoldAction;
+}
+
+/**
  * Type for BroadSoft NOTIFY body
  */
-export type BroadSoftNotifyBody = TalkNotifyBody;
+export type BroadSoftNotifyBody = TalkNotifyBody | HoldNotifyBody;
 
 /**
  * Options for auto-answer behavior
@@ -72,6 +90,8 @@ export interface RemoteControlOptions {
   enabled: boolean;
   /** Callback for talk events */
   onTalkEvent?: (action: TalkAction) => void;
+  /** Callback for hold events */
+  onHoldEvent?: (action: HoldAction) => void;
 }
 
 /**
