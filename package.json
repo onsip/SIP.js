@@ -105,7 +105,6 @@
     "generate-grammar": "node build/grammarGenerator.cjs",
     "lint": "eslint --ext .ts .",
     "lint-fix": "eslint --ext .ts --fix .",
-    "prepare": "npm run build",
     "test": "npm run build-test && karma start karma.conf.cjs --reporters mocha --browsers ChromeHeadlessFakeMediaStream --single-run",
     "test-browser": "npm run build-test && sleep 2 && (open http://localhost:9876/debug.html &) && karma start karma.conf.cjs --reporters kjhtml --no-single-run",
     "version": "sed -i '' \"s/LIBRARY_VERSION = .*/LIBRARY_VERSION = \\\"$npm_package_version\\\";/\" src/version.ts"

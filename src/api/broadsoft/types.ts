@@ -4,6 +4,8 @@
  * This module provides type definitions for BroadSoft-specific SIP extensions.
  */
 
+import { Logger } from "../../core/log/logger.js";
+
 /**
  * Call-Info header parameters for BroadSoft extensions
  */
@@ -80,6 +82,8 @@ export interface AutoAnswerOptions {
   onAfterAutoAnswer?: () => void;
   /** Override delay (in seconds) regardless of header value */
   delayOverride?: number;
+  /** Optional logger; when provided, otherwise-silent failures (callback errors, accept rejections) are logged */
+  logger?: Logger;
 }
 
 /**
@@ -92,14 +96,6 @@ export interface RemoteControlOptions {
   onTalkEvent?: (action: TalkAction) => void;
   /** Callback for hold events */
   onHoldEvent?: (action: HoldAction) => void;
-}
-
-/**
- * Complete BroadSoft extension options
- */
-export interface BroadSoftOptions {
-  /** Auto-answer configuration */
-  autoAnswer?: AutoAnswerOptions;
-  /** Remote control configuration */
-  remoteControl?: RemoteControlOptions;
+  /** Optional logger; when provided, otherwise-silent failures (callback errors, action failures) are logged */
+  logger?: Logger;
 }

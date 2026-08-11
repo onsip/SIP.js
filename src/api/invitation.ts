@@ -436,6 +436,22 @@ export class Invitation extends Session {
   }
 
   /**
+   * Setup the delegate for an early dialog.
+   *
+   * Only NOTIFY is delegated on early dialogs (BroadSoft remote control while ringing).
+   * All other in-dialog requests intentionally fall through to the core's per-method
+   * defaults (BYE → 200 + dispose, INFO → 469, MESSAGE → 200, re-INVITE → 488) which
+   * would otherwise be lost by installing handlers that drop requests pre-Established.
+   * @param dialog - The early dialog (session) to setup.
+   * @internal
+   */
+  private setupEarlyDialogDelegate(dialog: SessionDialog): void {
+    dialog.delegate = {
+      onNotify: (notifyRequest: IncomingNotifyRequest): void => this.onNotifyRequest(notifyRequest)
+    };
+  }
+
+  /**
    * Setup dialog delegate to handle incoming requests.
    * @param dialog - The dialog (session) to setup.
    * @internal
@@ -643,8 +659,8 @@ export class Invitation extends Session {
     try {
       const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
       this._dialog = progressResponse.session;
-      // Setup dialog delegate to handle early-dialog NOTIFY (BroadSoft remote control)
-      this.setupDialogDelegate(progressResponse.session);
+      // Delegate only NOTIFY on the early dialog (BroadSoft remote control)
+      this.setupEarlyDialogDelegate(progressResponse.session);
       return Promise.resolve(progressResponse);
     } catch (error) {
       return Promise.reject(error);
@@ -669,8 +685,8 @@ export class Invitation extends Session {
       .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
         this._dialog = progressResponse.session;
-        // Setup dialog delegate to handle early-dialog NOTIFY (BroadSoft remote control)
-        this.setupDialogDelegate(progressResponse.session);
+        // Delegate only NOTIFY on the early dialog (BroadSoft remote control)
+        this.setupEarlyDialogDelegate(progressResponse.session);
         return progressResponse;
       });
   }
@@ -715,8 +731,8 @@ export class Invitation extends Session {
         })
         .then((progressResponse) => {
           this._dialog = progressResponse.session;
-          // Setup dialog delegate to handle early-dialog NOTIFY (BroadSoft remote control)
-          this.setupDialogDelegate(progressResponse.session);
+          // Delegate only NOTIFY on the early dialog (BroadSoft remote control)
+          this.setupEarlyDialogDelegate(progressResponse.session);
 
           let prackRequest: IncomingPrackRequest;
           let prackResponse: OutgoingResponse;

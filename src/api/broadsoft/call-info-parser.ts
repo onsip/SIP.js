@@ -57,10 +57,13 @@ export function parseCallInfoHeader(headerValue: string): CallInfoHeader | undef
       }
 
       // Convert to number if applicable
-      if (key.toLowerCase() === "answer-after" || key.toLowerCase() === "answerafter") {
-        const numValue = parseInt(value as string, 10);
-        if (!isNaN(numValue)) {
-          params.answerAfter = numValue;
+      if (key.toLowerCase() === "answer-after") {
+        // Strict parse: a non-negative integer only. Lenient parsing (parseInt) would
+        // turn malformed values like "1abc", "-5" or "1.9" into delays; if the value
+        // does not conform, the parameter is ignored (no auto-answer). If the parameter
+        // appears more than once in a header, the last conforming value wins.
+        if (/^\d+$/.test(value)) {
+          params.answerAfter = parseInt(value, 10);
         }
       } else {
         // Try to parse as number, otherwise keep as string

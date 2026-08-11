@@ -1027,11 +1027,19 @@ export abstract class Session {
   protected onNotifyRequest(request: IncomingNotifyRequest): void {
     this.logger.log("Session.onNotifyRequest");
 
-    // Allow NOTIFY during Initial and Establishing states for BroadSoft remote control
-    // Only reject NOTIFY if session is terminating or terminated
-    if (this.state === SessionState.Terminating || this.state === SessionState.Terminated) {
-      this.logger.error(`NOTIFY received while in state ${this.state}, dropping request`);
-      return;
+    if (this.state !== SessionState.Established) {
+      // BroadSoft Access-Side extensions deliver remote control NOTIFY (Event: talk/hold)
+      // on the early dialog, so those specific events are also accepted while the session
+      // is Initial or Establishing. All other NOTIFY retain the Established-only rule.
+      const eventHeader = request.message.getHeader("event");
+      const eventType = eventHeader ? eventHeader.split(";")[0].trim().toLowerCase() : "";
+      const earlyRemoteControl =
+        (eventType === "talk" || eventType === "hold") &&
+        (this.state === SessionState.Initial || this.state === SessionState.Establishing);
+      if (!earlyRemoteControl) {
+        this.logger.error(`NOTIFY received while in state ${this.state}, dropping request`);
+        return;
+      }
     }
 
     // If this a NOTIFY associated with the progress of a REFER,
