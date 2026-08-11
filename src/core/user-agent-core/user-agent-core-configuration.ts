@@ -105,6 +105,23 @@ export interface UserAgentCoreConfiguration {
   authenticationFactory(): DigestAuthentication | undefined;
 
   /**
+   * JWT authorization factory.
+   * @remarks
+   * If defined, called synchronously before each outgoing SIP request to
+   * obtain the current Bearer token. The returned value is set as the
+   * `Authorization: Bearer <token>` header on the outgoing request.
+   *
+   * When provided, takes precedence over digest authentication for the
+   * initial request attempt. The implementation is responsible for token
+   * caching and proactive refresh; the SIP stack treats this as a pure
+   * getter and does not manage token lifecycle.
+   *
+   * If the server responds with 401, the factory is called once more to
+   * allow the implementation to return a refreshed token before retrying.
+   */
+  authorizationJwtFactory?(): string;
+
+  /**
    * DEPRECATED: This is a hack to get around `Transport`
    * requiring the `UA` to start for construction.
    */

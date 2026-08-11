@@ -65,6 +65,7 @@
     "node": ">=10.0"
   },
   "scripts": {
+    "prepare": "npm run generate-grammar && npm run build-lib",
     "prebuild": "npm run lint",
     "build-bundles": "npm run build-reg-bundle && npm run build-min-bundle && npm run copy-dist-files",
     "build-reg-bundle": "webpack --progress --config build/webpack.config.cjs --env buildType=reg",

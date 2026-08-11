@@ -256,6 +256,7 @@ export class UserAgent {
     return {
       allowLegacyNotifications: false,
       authorizationHa1: "",
+      authorizationJwt: undefined as unknown as () => string,
       authorizationPassword: "",
       authorizationUsername: "",
       delegate: {},
@@ -711,6 +712,7 @@ export class UserAgent {
         const ha1 = this.options.authorizationHa1 ? this.options.authorizationHa1 : undefined;
         return new DigestAuthentication(this.getLoggerFactory(), ha1, username, password);
       },
+      authorizationJwtFactory: this.options.authorizationJwt ? () => this.options.authorizationJwt!() : undefined,
       transportAccessor: () => this.transport
     };
 

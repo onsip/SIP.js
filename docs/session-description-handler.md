@@ -20,7 +20,7 @@ If `Session` is an instance of `Inviter` and an offer was sent in the INVITE, `S
 
 ## How do I play the local and remote `MediaStream`?
 
-The session description handler and media tracks are availble once the `Session` state transitions to `SessionState.Established`...
+The session description handler and media tracks are available once the `Session` state transitions to `SessionState.Established`...
 
 ```ts
 import { Session, SessionState, Web } from "sip.js";
@@ -121,7 +121,7 @@ const myUserAgent = new UserAgent({
 
 ## How do I detect if a track was added or removed?
 
-The session description handler is availble once the `Session` state transitions to `SessionState.Established`, however there are cases where tracks are added or removed if the media changes - for example, on upgrade from audio only to a video session. Not also that when the `SessionDescriptionHandler` is constructed the media stream initially has no tracks, so the presence of tracks should not be assumed.
+The session description handler is available once the `Session` state transitions to `SessionState.Established`, however there are cases where tracks are added or removed if the media changes - for example, on upgrade from audio only to a video session. Not also that when the `SessionDescriptionHandler` is constructed the media stream initially has no tracks, so the presence of tracks should not be assumed.
 
 See [`SessionDescriptionHandler.remoteMediaStream` docs](./session-description-handler/sip.js.sessiondescriptionhandler.remotemediastream.md) for more info.
 

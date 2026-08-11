@@ -50,6 +50,11 @@ export class UserAgentClient implements OutgoingRequest {
     public delegate?: OutgoingRequestDelegate
   ) {
     this.logger = this.loggerFactory.getLogger("sip.user-agent-client");
+    // JWT: proactively set Authorization header before the transaction fires.
+    if (this.core.configuration.authorizationJwtFactory) {
+      const token = this.core.configuration.authorizationJwtFactory();
+      message.setHeader("authorization", `Bearer ${token}`);
+    }
     this.init();
   }
 
@@ -187,6 +192,28 @@ export class UserAgentClient implements OutgoingRequest {
     // https://tools.ietf.org/html/rfc3261#section-8.1.3.5
     if (statusCode !== 401 && statusCode !== 407) {
       return true;
+    }
+
+    // JWT: if a JWT factory is configured, retry once with a fresh token.
+    // The factory is responsible for returning an updated token on the second
+    // call (e.g. after proactive refresh triggered by the 401 event).
+    if (this.core.configuration.authorizationJwtFactory) {
+      if (this.challenged) {
+        this.logger.warn(statusCode + " with JWT authorization, already retried, giving up");
+        return true;
+      }
+      this.challenged = true;
+      const token = this.core.configuration.authorizationJwtFactory();
+      const authorizationHeaderName = statusCode === 401 ? "authorization" : "proxy-authorization";
+      let cseq = (this.message.cseq += 1);
+      if (dialog && dialog.localSequenceNumber) {
+        dialog.incrementLocalSequenceNumber();
+        cseq = this.message.cseq = dialog.localSequenceNumber;
+      }
+      this.message.setHeader("cseq", cseq + " " + this.message.method);
+      this.message.setHeader(authorizationHeaderName, `Bearer ${token}`);
+      this.init();
+      return false;
     }
 
     // Get and parse the appropriate WWW-Authenticate or Proxy-Authenticate header.

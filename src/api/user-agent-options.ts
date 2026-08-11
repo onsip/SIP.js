@@ -46,6 +46,31 @@ export interface UserAgentOptions {
   authorizationHa1?: string;
 
   /**
+   * JWT authorization factory.
+   * @remarks
+   * A callback invoked synchronously before each outgoing SIP request to
+   * obtain the current Bearer token for the `Authorization` header.
+   *
+   * The callback is responsible for token caching and proactive refresh.
+   * The SIP stack calls it as a pure getter and does not manage token
+   * lifecycle. When provided, takes precedence over digest authentication.
+   *
+   * If the server responds with 401, the callback is invoked once more,
+   * allowing the implementation to supply a refreshed token before the
+   * request is retried.
+   *
+   * @example
+   * ```typescript
+   * const ua = new UserAgent({
+   *   authorizationJwt: () => myTokenStore.currentToken,
+   *   uri: UserAgent.makeURI("sip:alice@example.com"),
+   *   ...
+   * });
+   * ```
+   */
+  authorizationJwt?: () => string;
+
+  /**
    * Authorization password.
    * @defaultValue `""`
    */
