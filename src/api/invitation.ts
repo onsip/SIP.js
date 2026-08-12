@@ -1,14 +1,20 @@
 import { Grammar } from "../grammar/grammar.js";
 import { NameAddrHeader } from "../grammar/name-addr-header.js";
 import { Body, fromBodyLegacy, getBody } from "../core/messages/body.js";
+import { IncomingAckRequest } from "../core/messages/methods/ack.js";
+import { IncomingByeRequest } from "../core/messages/methods/bye.js";
+import { IncomingInfoRequest } from "../core/messages/methods/info.js";
 import { IncomingInviteRequest } from "../core/messages/methods/invite.js";
+import { IncomingMessageRequest } from "../core/messages/methods/message.js";
+import { IncomingNotifyRequest } from "../core/messages/methods/notify.js";
 import { IncomingPrackRequest } from "../core/messages/methods/prack.js";
+import { IncomingReferRequest } from "../core/messages/methods/refer.js";
 import { IncomingRequestMessage } from "../core/messages/incoming-request-message.js";
 import { InviteUserAgentServer } from "../core/user-agents/invite-user-agent-server.js";
 import { Logger } from "../core/log/logger.js";
 import { OutgoingResponse } from "../core/messages/outgoing-response.js";
 import { OutgoingResponseWithSession } from "../core/messages/methods/invite.js";
-import { SignalingState } from "../core/session/session.js";
+import { Session as SessionDialog, SignalingState } from "../core/session/session.js";
 import { Timers } from "../core/timers.js";
 import { TransactionStateError } from "../core/exceptions/transaction-state-error.js";
 import { getReasonPhrase } from "../core/messages/utils.js";
@@ -261,17 +267,7 @@ export class Invitation extends Session {
       this.sendAccept(options)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .then(({ message, session }) => {
-          session.delegate = {
-            onAck: (ackRequest): Promise<void> => this.onAckRequest(ackRequest),
-            onAckTimeout: (): void => this.onAckTimeout(),
-            onBye: (byeRequest): void => this.onByeRequest(byeRequest),
-            onInfo: (infoRequest): void => this.onInfoRequest(infoRequest),
-            onInvite: (inviteRequest): void => this.onInviteRequest(inviteRequest),
-            onMessage: (messageRequest): void => this.onMessageRequest(messageRequest),
-            onNotify: (notifyRequest): void => this.onNotifyRequest(notifyRequest),
-            onPrack: (prackRequest): void => this.onPrackRequest(prackRequest),
-            onRefer: (referRequest): void => this.onReferRequest(referRequest)
-          };
+          this.setupDialogDelegate(session);
           this._dialog = session;
           this.stateTransition(SessionState.Established);
 
@@ -437,6 +433,41 @@ export class Invitation extends Session {
     this.incomingInviteRequest.reject({ statusCode: 487 });
 
     this.stateTransition(SessionState.Terminated);
+  }
+
+  /**
+   * Setup the delegate for an early dialog.
+   *
+   * Only NOTIFY is delegated on early dialogs (BroadSoft remote control while ringing).
+   * All other in-dialog requests intentionally fall through to the core's per-method
+   * defaults (BYE → 200 + dispose, INFO → 469, MESSAGE → 200, re-INVITE → 488) which
+   * would otherwise be lost by installing handlers that drop requests pre-Established.
+   * @param dialog - The early dialog (session) to setup.
+   * @internal
+   */
+  private setupEarlyDialogDelegate(dialog: SessionDialog): void {
+    dialog.delegate = {
+      onNotify: (notifyRequest: IncomingNotifyRequest): void => this.onNotifyRequest(notifyRequest)
+    };
+  }
+
+  /**
+   * Setup dialog delegate to handle incoming requests.
+   * @param dialog - The dialog (session) to setup.
+   * @internal
+   */
+  private setupDialogDelegate(dialog: SessionDialog): void {
+    dialog.delegate = {
+      onAck: (ackRequest: IncomingAckRequest): Promise<void> => this.onAckRequest(ackRequest),
+      onAckTimeout: (): void => this.onAckTimeout(),
+      onBye: (byeRequest: IncomingByeRequest): void => this.onByeRequest(byeRequest),
+      onInfo: (infoRequest: IncomingInfoRequest): void => this.onInfoRequest(infoRequest),
+      onInvite: (inviteRequest: IncomingInviteRequest): void => this.onInviteRequest(inviteRequest),
+      onMessage: (messageRequest: IncomingMessageRequest): void => this.onMessageRequest(messageRequest),
+      onNotify: (notifyRequest: IncomingNotifyRequest): void => this.onNotifyRequest(notifyRequest),
+      onPrack: (prackRequest: IncomingPrackRequest): void => this.onPrackRequest(prackRequest),
+      onRefer: (referRequest: IncomingReferRequest): void => this.onReferRequest(referRequest)
+    };
   }
 
   /**
@@ -628,6 +659,8 @@ export class Invitation extends Session {
     try {
       const progressResponse = this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body });
       this._dialog = progressResponse.session;
+      // Delegate only NOTIFY on the early dialog (BroadSoft remote control)
+      this.setupEarlyDialogDelegate(progressResponse.session);
       return Promise.resolve(progressResponse);
     } catch (error) {
       return Promise.reject(error);
@@ -652,6 +685,8 @@ export class Invitation extends Session {
       .then((body) => this.incomingInviteRequest.progress({ statusCode, reasonPhrase, extraHeaders, body }))
       .then((progressResponse) => {
         this._dialog = progressResponse.session;
+        // Delegate only NOTIFY on the early dialog (BroadSoft remote control)
+        this.setupEarlyDialogDelegate(progressResponse.session);
         return progressResponse;
       });
   }
@@ -696,10 +731,15 @@ export class Invitation extends Session {
         })
         .then((progressResponse) => {
           this._dialog = progressResponse.session;
+          // Delegate only NOTIFY on the early dialog (BroadSoft remote control)
+          this.setupEarlyDialogDelegate(progressResponse.session);
 
           let prackRequest: IncomingPrackRequest;
           let prackResponse: OutgoingResponse;
+          // Override onPrack for reliable provisional response handling
+          const existingDelegate = progressResponse.session.delegate;
           progressResponse.session.delegate = {
+            ...existingDelegate,
             onPrack: (request): void => {
               prackRequest = request;
               // eslint-disable-next-line @typescript-eslint/no-use-before-define

@@ -618,7 +618,10 @@ export class UserAgentCore {
     // existing dialogs.  If there is a match, this is a mid-dialog request.
     // https://tools.ietf.org/html/rfc3261#section-12.2.2
     const dialogId = message.callId + message.toTag + message.fromTag;
-    const dialog = this.dialogs.get(dialogId);
+    let dialog = this.dialogs.get(dialogId);
+    if (!dialog) {
+      dialog = this.recoverBroadSoftRemoteControlDialog(message);
+    }
     if (dialog) {
       // [Sip-implementors] Reg. SIP reinvite, UPDATE and OPTIONS
       // You got the question right.
@@ -711,6 +714,54 @@ export class UserAgentCore {
     // https://tools.ietf.org/html/rfc3261#section-12.2.2
     this.replyStateless(message, { statusCode: 481 });
     return;
+  }
+
+  /**
+   * Recover the dialog for a BroadSoft remote control NOTIFY whose To tag matches no dialog.
+   *
+   * @remarks
+   * Once the client sends an in-dialog re-INVITE on a call the server originated — which is
+   * exactly what a BroadSoft `Event: hold` asks it to do — FreeSWITCH (sofia-sip) reverses the
+   * dialog roles and takes the remote party from the incoming request's To header, which is the
+   * server's own identity. Every subsequent server-generated in-dialog request on that handle
+   * then carries `To == From`, so the resume (`Event: talk`) no longer matches the dialog and is
+   * rejected with a 481, leaving the call stuck on hold. The Call-ID, the From tag and the
+   * request target all remain correct, so the dialog is still unambiguously identifiable.
+   *
+   * RFC 3261 explicitly allows accepting a request whose To tag does not match: "Based on the To
+   * tag, the UAS MAY either accept or reject the request. Accepting the request for acceptable To
+   * tags provides robustness, so that dialogs can persist even through crashes."
+   * https://tools.ietf.org/html/rfc3261#section-12.2.2
+   *
+   * Kept deliberately narrow — NOTIFY only, the talk/hold events only, and only when exactly one
+   * dialog matches on Call-ID plus remote tag — so that dialog matching for every other request
+   * is unchanged and an ambiguous match still yields a 481.
+   *
+   * @param message - Incoming request message.
+   */
+  private recoverBroadSoftRemoteControlDialog(message: IncomingRequestMessage): Dialog | undefined {
+    if (message.method !== C.NOTIFY) {
+      return undefined;
+    }
+    const event = message.parseHeader("Event");
+    const eventType: string | undefined = event && event.event ? event.event.toLowerCase() : undefined;
+    if (eventType !== "talk" && eventType !== "hold") {
+      return undefined;
+    }
+    const matching: Array<Dialog> = [];
+    this.dialogs.forEach((candidate) => {
+      if (candidate.callId === message.callId && candidate.remoteTag === message.fromTag) {
+        matching.push(candidate);
+      }
+    });
+    if (matching.length !== 1) {
+      return undefined;
+    }
+    this.logger.warn(
+      `BroadSoft ${eventType} NOTIFY arrived with To tag ${message.toTag} matching no dialog; ` +
+        `recovered dialog ${matching[0].id} by Call-ID and remote tag.`
+    );
+    return matching[0];
   }
 
   /**

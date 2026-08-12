@@ -8,6 +8,7 @@ src/**/*.js
 temp/
 test/spec/*.spec.js
 test/spec/api/*.js
+test/spec/api/broadsoft/*.js
 test/spec/core/*.js
 test/spec/platform/web/*.js
 test/support/**/*.js

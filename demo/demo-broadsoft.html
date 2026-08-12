@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta charset="utf-8" />
+  <title>SIP.js Demo - BroadSoft Extensions</title>
+  <link rel="stylesheet" type="text/css" href="./demo-broadsoft.css">
+</head>
+
+<body>
+  <span><a href="index.html">&lt; Index</a></span>
+
+  <h2>Demo: BroadSoft Extensions Integration Test</h2>
+
+  <div class="description">
+    This demo is designed to test BroadSoft Access-Side Extensions with FreeSWITCH:
+    <ol>
+      <li><strong>Auto-Answer</strong> - Receives calls with Call-Info header (answer-after parameter)</li>
+      <li><strong>Remote Control - Talk Events</strong> - Receives NOTIFY with Event: talk</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h3>1. Configuration</h3>
+    <div class="config-form">
+      <div class="form-group">
+        <label for="server">WebSocket Server:</label>
+        <input type="text" id="server" value="ws://localhost:5066" placeholder="ws://your-freeswitch-server:5066">
+      </div>
+      <div class="form-group">
+        <label for="user">SIP User:</label>
+        <input type="text" id="user" value="1000" placeholder="1000">
+      </div>
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" value="1234" placeholder="password">
+      </div>
+      <div class="form-group">
+        <label for="domain">Domain:</label>
+        <input type="text" id="domain" value="localhost" placeholder="localhost">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>2. Connection</h3>
+    <button id="connect" class="btn btn-primary">Connect</button>
+    <button id="disconnect" class="btn btn-secondary" disabled>Disconnect</button>
+    <div class="status">
+      Status: <span id="connection-status" class="status-disconnected">Disconnected</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>3. Audio</h3>
+    <audio id="remoteAudio" controls>
+      <p>Your browser doesn't support HTML5 audio.</p>
+    </audio>
+    <audio id="localAudio" muted></audio>
+  </div>
+
+  <div class="section">
+    <h3>4. Manual Controls (for comparison)</h3>
+    <div class="controls">
+      <button id="answer" class="btn" disabled>Answer Call</button>
+      <button id="hangup" class="btn" disabled>Hangup</button>
+      <div class="checkbox-group">
+        <input type="checkbox" id="mute" disabled>
+        <label for="mute">Mute Microphone</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>5. BroadSoft Features Status</h3>
+
+    <div class="feature-panel">
+      <h4>Auto-Answer</h4>
+      <div class="feature-status">
+        <div>Enabled: <span id="auto-answer-enabled" class="value">-</span></div>
+        <div>Delay: <span id="auto-answer-delay" class="value">-</span></div>
+        <div>Countdown: <span id="auto-answer-countdown" class="value">-</span></div>
+        <div>Status: <span id="auto-answer-status" class="value">Waiting for call...</span></div>
+      </div>
+    </div>
+
+    <div class="feature-panel">
+      <h4>Remote Control - Talk Events</h4>
+      <div class="feature-status">
+        <div>Last Event: <span id="talk-event" class="value">None</span></div>
+        <div>Microphone: <span id="talk-status" class="value">Active</span></div>
+        <div>Auto-Apply: <span id="talk-auto-apply" class="value">✓ Enabled</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>6. Event Log</h3>
+    <div class="log-controls">
+      <button id="clear-log" class="btn btn-small">Clear Log</button>
+    </div>
+    <div id="event-log" class="event-log"></div>
+  </div>
+
+  <div class="section instructions">
+    <h3>Testing Instructions</h3>
+    <div class="test-scenario">
+      <h4>Test 1: Auto-Answer</h4>
+      <ol>
+        <li>Connect the SIP.js client above</li>
+        <li>From FreeSWITCH, originate a call with Call-Info header:
+          <pre>originate {sip_h_Call-Info=&lt;sip:${domain}&gt;; answer-after=2}user/1000 &echo</pre>
+        </li>
+        <li>Observe: Call should auto-answer after 2 seconds</li>
+      </ol>
+    </div>
+
+    <div class="test-scenario">
+      <h4>Test 2: Remote Control - Talk</h4>
+      <ol>
+        <li>Establish a call (auto-answer or manual)</li>
+        <li>From FreeSWITCH console, send talk event:
+          <pre>uuid_phone_event &lt;uuid&gt; talk</pre>
+        </li>
+        <li>Observe: Talk event is received and processed</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="./dist/demo-broadsoft.js"
+    onerror="alert('To run this demo you must first build it! Run: npm run build-demo')">
+  </script>
+</body>
+
+</html>
