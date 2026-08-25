@@ -322,6 +322,37 @@ export class SessionDescriptionHandler implements SessionDescriptionHandlerDefin
   }
 
   /**
+   * Discards an offer the peer connection has applied but not completed.
+   *
+   * @remarks
+   * Called when an offer/answer exchange fails, so that the next one starts
+   * from a stable peer connection. Without it a failed exchange leaves the
+   * offer in place and every attempt after it fails while creating its
+   * description, on a session that is otherwise still up.
+   *
+   * A stable connection has nothing to discard, which is not an error.
+   */
+  public rollbackDescription(): Promise<void> {
+    this.logger.debug("SessionDescriptionHandler.rollbackDescription");
+    if (this._peerConnection === undefined) {
+      return Promise.reject(new Error("Peer connection closed."));
+    }
+    switch (this._peerConnection.signalingState) {
+      case "stable":
+        return Promise.resolve();
+      case "have-local-offer":
+        return this._peerConnection.setLocalDescription({ type: "rollback" });
+      case "have-remote-offer":
+        return this._peerConnection.setRemoteDescription({ type: "rollback" });
+      case "have-local-pranswer":
+      case "have-remote-pranswer":
+      case "closed":
+      default:
+        return Promise.reject(new Error("Invalid signaling state " + this._peerConnection.signalingState));
+    }
+  }
+
+  /**
    * Send DTMF via RTP (RFC 4733).
    * Returns true if DTMF send is successful, false otherwise.
    * @param tones - A string containing DTMF digits.
