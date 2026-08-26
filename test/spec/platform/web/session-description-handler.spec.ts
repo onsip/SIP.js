@@ -110,6 +110,19 @@ class SessionDescriptionHandlerTimeoutTest extends SessionDescriptionHandler {
 }
 
 describe("Web SessionDescriptionHandler", () => {
+  // One track held for the file's whole run keeps Chrome's shared fake-device
+  // session open. Without it every spec boundary drops the consumer count to
+  // zero, the session starts an asynchronous teardown, and the next spec's
+  // getUserMedia occasionally joins the dying session and fails with
+  // NotReadableError: Could not start audio source.
+  let keepAliveStream: MediaStream;
+  beforeAll(async () => {
+    keepAliveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  });
+  afterAll(() => {
+    keepAliveStream.getTracks().forEach((track) => track.stop());
+  });
+
   beforeEach(() => {
     // jasmine.clock().install();
   });
