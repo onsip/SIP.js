@@ -404,6 +404,41 @@ describe("Web SessionDescriptionHandler", () => {
       });
     });
 
+    describe("sdh1 rollbackDescription", () => {
+      beforeEach(() => {
+        resetSpies();
+      });
+
+      it("leaves a stable peer connection stable", async () => {
+        await sdh1.rollbackDescription();
+        expect(sdh1.peerConnection?.signalingState).toBe("stable");
+      });
+
+      it("discards an offer it created", async () => {
+        await sdh1.getDescription();
+        expect(sdh1.peerConnection?.signalingState).toBe("have-local-offer");
+        await sdh1.rollbackDescription();
+        expect(sdh1.peerConnection?.signalingState).toBe("stable");
+      });
+
+      it("discards an offer it received", async () => {
+        const offer = await sdh2.getDescription();
+        await sdh1.setDescription(offer.body);
+        expect(sdh1.peerConnection?.signalingState).toBe("have-remote-offer");
+        await sdh1.rollbackDescription();
+        expect(sdh1.peerConnection?.signalingState).toBe("stable");
+      });
+
+      it("lets a description be created again", async () => {
+        await sdh1.getDescription();
+        await sdh1.rollbackDescription();
+        // Without the rollback this rejects, which is what leaves a session
+        // unable to renegotiate after one failed attempt.
+        const offer = await sdh1.getDescription();
+        expect(offer.contentType).toBe("application/sdp");
+      });
+    });
+
     describe("sdh1 getDescription", () => {
       let offer: BodyAndContentType | undefined;
       let answer: BodyAndContentType | undefined;

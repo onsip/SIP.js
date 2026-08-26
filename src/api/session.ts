@@ -923,7 +923,14 @@ export abstract class Session {
   protected onInviteRequest(request: IncomingInviteRequest): void {
     this.logger.log("Session.onInviteRequest");
     if (this.state !== SessionState.Established) {
-      this.logger.error(`INVITE received while in state ${this.state}, dropping request`);
+      // Refuse it rather than drop it: rejecting completes the server
+      // transaction, without which no re-INVITE of ours can be sent for the
+      // rest of the dialog. 491 invites the sender to retry once we settle.
+      this.logger.warn(`INVITE received while in state ${this.state}, rejecting with 491`);
+      const outgoingResponse = request.reject({ statusCode: 491 });
+      if (this.delegate && this.delegate.onInvite) {
+        this.delegate.onInvite(request.message, outgoingResponse.message, 491);
+      }
       return;
     }
 
