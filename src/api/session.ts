@@ -594,7 +594,16 @@ export abstract class Session {
         this.logger.error(error.message);
         this.logger.error("Failed to send re-INVITE");
         this.pendingReinvite = false;
-        throw error;
+        // The offer was applied before the send failed, so undo it; otherwise
+        // the next attempt cannot create a description at all.
+        return this.rollbackOffer()
+          .catch((rollbackError: Error) => {
+            this.logger.error(rollbackError.message);
+            this.logger.error("Failed to rollback offer after a failed re-INVITE");
+          })
+          .then(() => {
+            throw error;
+          });
       });
   }
 
