@@ -82,5 +82,5 @@ Build the bundle files to upload.
 
 * Find 'Releases' on repository page
 * Draft and publish release notes for new tag
-* Upload bundles for new verison
+* Upload bundles for new version
 
