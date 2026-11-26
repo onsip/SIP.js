@@ -250,6 +250,39 @@ describe("Core Grammar", () => {
     });
   });
 
+  describe("URI maddr and ttl parameters", () => {
+    // RFC 3261 Section 19.1.3
+    const uriString = "sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15";
+
+    it("keeps the URI host when maddr is present", () => {
+      const uri = Grammar.URIParse(uriString) as URI;
+      expect(uri.host).toEqual("atlanta.com");
+      expect(uri.getParam("maddr")).toEqual("239.255.255.1");
+    });
+
+    it("stores ttl as a URI parameter", () => {
+      const uri = Grammar.URIParse(uriString) as URI;
+      expect(uri.hasParam("ttl")).toBeTruthy();
+      expect(uri.getParam("ttl")).toEqual("15");
+      expect(uri.toString()).toEqual(uriString);
+    });
+
+    it("does not leak a URI ttl into the header parameters", () => {
+      const contacts = Grammar.parse("<sip:alice@atlanta.com;ttl=15>;expires=60", "Contact");
+      const contact = contacts[0].parsed as NameAddrHeader;
+      expect(contact.hasParam("ttl")).toBeFalsy();
+      expect(contact.getParam("expires")).toEqual("60");
+      expect(contact.uri.getParam("ttl")).toEqual("15");
+    });
+
+    it("keeps the Via sent-by host when maddr is present", () => {
+      const via = Grammar.parse("SIP/2.0/UDP pc33.atlanta.com;maddr=224.2.0.1;branch=z9hG4bK776asdhds", "Via");
+      expect(via.host).toEqual("pc33.atlanta.com");
+      expect(via.host_type).toEqual("domain");
+      expect(via.maddr).toEqual("224.2.0.1");
+    });
+  });
+
   describe("Replaces", () => {
     const goods = [
       "98732@sip.example.com\r\n" + "          ;from-tag=r33th4x0r\r\n" + "          ;to-tag=ff87ff",
