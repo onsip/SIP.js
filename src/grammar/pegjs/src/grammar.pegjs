@@ -226,13 +226,26 @@ method_param      = "method="i method: Method {
 
 ttl_param         = "ttl="i ttl: ttl {
                       options = options || { data: {}};
-                      if(!options.data.params) options.data.params={};
-                      options.data.params['ttl'] = ttl; }
+                      if(!options.data.uri_params) options.data.uri_params={};
+                      options.data.uri_params['ttl'] = ttl; }
 
-maddr_param       = "maddr="i maddr: host {
+maddr_param       = "maddr="i maddr: maddr_host {
                       options = options || { data: {}};
                       if(!options.data.uri_params) options.data.uri_params={};
                       options.data.uri_params['maddr'] = maddr; }
+
+// maddr carries a host value but must not go through the "host" rule, whose action
+// stores the URI (or Via sent-by) host and would overwrite it with the maddr value.
+// The host_type set by the sub-rules is restored so it keeps describing the host.
+maddr_host        = host_type: maddr_host_type ( hostname / IPv4address / IPv6reference ) {
+                      options = options || { data: {}};
+                      if (host_type === undefined) { delete options.data.host_type; }
+                      else { options.data.host_type = host_type; }
+                      return text(); }
+
+maddr_host_type   = "" {
+                      options = options || { data: {}};
+                      return options.data.host_type; }
 
 lr_param          = "lr"i ('=' token)? {
                       options = options || { data: {}};
@@ -870,7 +883,7 @@ via_ttl           = "ttl"i EQUAL via_ttl_value: ttl {
                       options = options || { data: {}};
                       options.data.ttl = via_ttl_value; }
 
-via_maddr         = "maddr"i EQUAL via_maddr: host {
+via_maddr         = "maddr"i EQUAL via_maddr: maddr_host {
                       options = options || { data: {}};
                       options.data.maddr = via_maddr; }
 
